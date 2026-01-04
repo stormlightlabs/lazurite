@@ -5,11 +5,15 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'daos/timeline_dao.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Posts, Profiles, TimelineItems, Accounts, FeedCursors])
+@DriftDatabase(
+  tables: [Posts, Profiles, TimelineItems, Accounts, FeedCursors],
+  daos: [TimelineDao],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 

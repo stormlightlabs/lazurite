@@ -1695,6 +1695,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TimelineItemsTable timelineItems = $TimelineItemsTable(this);
   late final $AccountsTable accounts = $AccountsTable(this);
   late final $FeedCursorsTable feedCursors = $FeedCursorsTable(this);
+  late final TimelineDao timelineDao = TimelineDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();

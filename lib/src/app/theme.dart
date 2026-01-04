@@ -17,7 +17,7 @@ abstract final class AppColors {
   static const Color lightOnBackground = Color(0xFF161616);
   static const Color lightOnSurface = Color(0xFF262626);
 
-  static const Color primary = Color(0xFF0085FF); // BlueSky blue
+  static const Color primary = Color(0xFF0085FF);
   static const Color secondary = Color(0xFF78A9FF);
   static const Color tertiary = Color(0xFF33B1FF);
   static const Color error = Color(0xFFEE5396);
@@ -28,6 +28,7 @@ abstract final class AppColors {
   static const Color cyanLight = Color(0xFF3DDBD9);
   static const Color purple = Color(0xFFBE95FF);
   static const Color blueLight = Color(0xFF82CFFF);
+  static const Color textSecondary = Color(0xFF697689);
 }
 
 /// App theme configuration with IBM Oxocarbon colors.
@@ -64,10 +65,7 @@ abstract final class AppTheme {
         indicatorColor: AppColors.primary.withAlpha(51),
         labelTextStyle: WidgetStateProperty.all(textTheme.labelMedium),
       ),
-      cardTheme: const CardThemeData(
-        color: AppColors.darkSurface,
-        elevation: 0,
-      ),
+      cardTheme: const CardThemeData(color: AppColors.darkSurface, elevation: 0),
     );
   }
 
@@ -103,10 +101,7 @@ abstract final class AppTheme {
         indicatorColor: AppColors.primary.withAlpha(51),
         labelTextStyle: WidgetStateProperty.all(textTheme.labelMedium),
       ),
-      cardTheme: const CardThemeData(
-        color: AppColors.lightSurface,
-        elevation: 0,
-      ),
+      cardTheme: const CardThemeData(color: AppColors.lightSurface, elevation: 0),
     );
   }
 
@@ -126,28 +121,11 @@ abstract final class AppTheme {
         fontWeight: FontWeight.w400,
         letterSpacing: -0.25,
       ),
-      displayMedium: displayStyle.copyWith(
-        fontSize: 45,
-        fontWeight: FontWeight.w400,
-      ),
-      displaySmall: displayStyle.copyWith(
-        fontSize: 36,
-        fontWeight: FontWeight.w400,
-      ),
-      // Headline styles - Lora
-      headlineLarge: displayStyle.copyWith(
-        fontSize: 32,
-        fontWeight: FontWeight.w400,
-      ),
-      headlineMedium: displayStyle.copyWith(
-        fontSize: 28,
-        fontWeight: FontWeight.w400,
-      ),
-      headlineSmall: displayStyle.copyWith(
-        fontSize: 24,
-        fontWeight: FontWeight.w400,
-      ),
-      // Title styles - Public Sans
+      displayMedium: displayStyle.copyWith(fontSize: 45, fontWeight: FontWeight.w400),
+      displaySmall: displayStyle.copyWith(fontSize: 36, fontWeight: FontWeight.w400),
+      headlineLarge: displayStyle.copyWith(fontSize: 32, fontWeight: FontWeight.w400),
+      headlineMedium: displayStyle.copyWith(fontSize: 28, fontWeight: FontWeight.w400),
+      headlineSmall: displayStyle.copyWith(fontSize: 24, fontWeight: FontWeight.w400),
       titleLarge: bodyStyle.copyWith(fontSize: 22, fontWeight: FontWeight.w500),
       titleMedium: bodyStyle.copyWith(
         fontSize: 16,
@@ -159,24 +137,13 @@ abstract final class AppTheme {
         fontWeight: FontWeight.w500,
         letterSpacing: 0.1,
       ),
-      // Body styles - Public Sans
-      bodyLarge: bodyStyle.copyWith(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.5,
-      ),
+      bodyLarge: bodyStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w400, letterSpacing: 0.5),
       bodyMedium: bodyStyle.copyWith(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         letterSpacing: 0.25,
       ),
-      bodySmall: monoStyle.copyWith(
-        // Monospace for code snippets
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.4,
-      ),
-      // Label styles - Public Sans
+      bodySmall: monoStyle.copyWith(fontSize: 12, fontWeight: FontWeight.w400, letterSpacing: 0.4),
       labelLarge: bodyStyle.copyWith(
         fontSize: 14,
         fontWeight: FontWeight.w500,

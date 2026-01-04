@@ -6,12 +6,12 @@ import 'package:lazurite/src/core/widgets/tab_scaffold.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/dms/presentation/dms_screen.dart';
-import 'package:lazurite/src/features/home/presentation/home_screen.dart';
 import 'package:lazurite/src/features/login/presentation/auth_progress_view.dart';
 import 'package:lazurite/src/features/login/presentation/login_screen.dart';
 import 'package:lazurite/src/features/notifications/presentation/notifications_screen.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
+import 'package:lazurite/src/features/timeline/presentation/timeline_screen.dart';
 
 /// Global navigator key for the root navigator.
 final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -56,7 +56,7 @@ GoRouter createRouter(Ref ref) {
               GoRoute(
                 path: AppRoutes.home,
                 name: AppRouteNames.home,
-                builder: (context, state) => const HomeScreen(),
+                builder: (context, state) => const TimelineScreen(),
                 routes: [
                   GoRoute(
                     path: AppRoutes.thread,
