@@ -257,7 +257,7 @@ final class AuthRepositoryProvider
   }
 }
 
-String _$authRepositoryHash() => r'0bc70c746ca9908cb6c0113950c7661496fd8b5c';
+String _$authRepositoryHash() => r'ac0027cb8723abddcb7ef457b45dd7b92286f5b6';
 
 @ProviderFor(AuthNotifier)
 final authProvider = AuthNotifierProvider._();

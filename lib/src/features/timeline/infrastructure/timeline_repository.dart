@@ -1,14 +1,16 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
 class TimelineRepository {
-  TimelineRepository(this._api, this._dao);
+  TimelineRepository(this._api, this._dao, this._logger);
   final XrpcClient _api;
   final TimelineDao _dao;
+  final Logger _logger;
 
   /// Helper to map API Post to DB Companion
   PostsCompanion _mapPost(Map<String, dynamic> json) {
@@ -38,51 +40,59 @@ class TimelineRepository {
 
   /// Fetch remote timeline and cache it
   Future<void> fetchAndCacheTimeline({String? cursor}) async {
-    final response = await _api.call(
-      'app.bsky.feed.getTimeline',
-      params: {'limit': 50, if (cursor != null) 'cursor': cursor},
-    );
+    _logger.info('Fetching timeline', {'cursor': cursor});
+    try {
+      final response = await _api.call(
+        'app.bsky.feed.getTimeline',
+        params: {'limit': 50, if (cursor != null) 'cursor': cursor},
+      );
 
-    final feed = response['feed'] as List;
-    final nextCursor = response['cursor'] as String?;
+      final feed = response['feed'] as List;
+      final nextCursor = response['cursor'] as String?;
+      _logger.debug('Fetched ${feed.length} items', {'nextCursor': nextCursor});
 
-    final posts = <PostsCompanion>[];
-    final profiles = <ProfilesCompanion>[];
-    final items = <TimelineItemsCompanion>[];
+      final posts = <PostsCompanion>[];
+      final profiles = <ProfilesCompanion>[];
+      final items = <TimelineItemsCompanion>[];
 
-    final baseTime = DateTime.now().millisecondsSinceEpoch;
+      final baseTime = DateTime.now().millisecondsSinceEpoch;
 
-    for (var i = 0; i < feed.length; i++) {
-      final item = feed[i] as Map<String, dynamic>;
-      final post = item['post'] as Map<String, dynamic>;
-      final author = post['author'] as Map<String, dynamic>;
-      final reason = item['reason'];
+      for (var i = 0; i < feed.length; i++) {
+        final item = feed[i] as Map<String, dynamic>;
+        final post = item['post'] as Map<String, dynamic>;
+        final author = post['author'] as Map<String, dynamic>;
+        final reason = item['reason'];
 
-      posts.add(_mapPost(post));
-      profiles.add(_mapProfile(author));
+        posts.add(_mapPost(post));
+        profiles.add(_mapProfile(author));
 
-      if (reason != null && reason['by'] != null) {
-        profiles.add(_mapProfile(reason['by']));
+        if (reason != null && reason['by'] != null) {
+          profiles.add(_mapProfile(reason['by']));
+        }
+
+        // TODO: support other feeds
+        items.add(
+          TimelineItemsCompanion.insert(
+            feedKey: 'home',
+            postUri: post['uri'],
+            reason: Value(reason != null ? jsonEncode(reason) : null),
+            sortKey: '${baseTime - i}',
+          ),
+        );
       }
 
-      // TODO: support other feeds
-      items.add(
-        TimelineItemsCompanion.insert(
-          feedKey: 'home',
-          postUri: post['uri'],
-          reason: Value(reason != null ? jsonEncode(reason) : null),
-          sortKey: '${baseTime - i}',
-        ),
+      await _dao.insertTimelineBatch(
+        feedKey: 'home',
+        newPosts: posts,
+        newProfiles: profiles,
+        newItems: items,
+        newCursor: nextCursor,
       );
+      _logger.info('Cached ${feed.length} timeline items');
+    } catch (e, stack) {
+      _logger.error('Failed to fetch/cache timeline', e, stack);
+      rethrow;
     }
-
-    await _dao.insertTimelineBatch(
-      feedKey: 'home',
-      newPosts: posts,
-      newProfiles: profiles,
-      newItems: items,
-      newCursor: nextCursor,
-    );
   }
 
   Stream<List<TimelineFeedItem>> watchTimeline() {

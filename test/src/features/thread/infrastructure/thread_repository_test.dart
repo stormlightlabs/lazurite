@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
@@ -7,15 +8,19 @@ import 'package:mocktail/mocktail.dart';
 
 class MockXrpcClient extends Mock implements XrpcClient {}
 
+class MockLogger extends Mock implements Logger {}
+
 void main() {
   late MockXrpcClient mockApi;
   late AppDatabase db;
+  late MockLogger mockLogger;
   late ThreadRepository repository;
 
   setUp(() {
     mockApi = MockXrpcClient();
     db = AppDatabase(NativeDatabase.memory());
-    repository = ThreadRepository(mockApi, db.timelineDao);
+    mockLogger = MockLogger();
+    repository = ThreadRepository(mockApi, db.timelineDao, mockLogger);
   });
 
   tearDown(() async {

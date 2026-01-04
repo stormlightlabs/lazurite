@@ -126,9 +126,9 @@ Tasks:
 - [x] ThreadPage: root post + replies tree, "reply" entry point (composer later)
 
 Tests:
-- [ ] Drift DAO tests: insert posts + timeline membership + query order.
-- [ ] Paging tests: cursor advances, dedupe by AT-URI, stable ordering.
-- [ ] UI tests: timeline renders from cache without network.
+- [x] Drift DAO tests: insert posts + timeline membership + query order.
+- [x] Paging tests: cursor advances, dedupe by AT-URI, stable ordering.
+- [x] UI tests: timeline renders from cache without network.
 
 Deliverables:
 - Home timeline works end-to-end with caching and pagination.

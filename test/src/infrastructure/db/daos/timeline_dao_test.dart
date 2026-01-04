@@ -76,4 +76,61 @@ void main() {
     final cursor = await dao.getCursor('home');
     expect(cursor, 'cursor123');
   });
+
+  test('watchTimeline returns items in descending sortKey order', () async {
+    await dao.insertTimelineBatch(
+      feedKey: 'home',
+      newPosts: [
+        PostsCompanion.insert(uri: 'p1', cid: 'c1', authorDid: 'd1', record: '{}'),
+        PostsCompanion.insert(uri: 'p2', cid: 'c2', authorDid: 'd1', record: '{}'),
+      ],
+      newProfiles: [ProfilesCompanion.insert(did: 'd1', handle: 'alice')],
+      newItems: [
+        TimelineItemsCompanion.insert(feedKey: 'home', postUri: 'p1', sortKey: '100'),
+        TimelineItemsCompanion.insert(feedKey: 'home', postUri: 'p2', sortKey: '200'),
+      ],
+    );
+
+    final timeline = await dao.watchTimeline('home').first;
+    expect(timeline, hasLength(2));
+    expect(timeline[0].item.sortKey, '200');
+    expect(timeline[0].post.uri, 'p2');
+    expect(timeline[1].item.sortKey, '100');
+    expect(timeline[1].post.uri, 'p1');
+  });
+
+  test('insertTimelineBatch updates existing posts', () async {
+    await dao.insertTimelineBatch(
+      feedKey: 'home',
+      newPosts: [
+        PostsCompanion.insert(
+          uri: 'p1',
+          cid: 'c1',
+          authorDid: 'd1',
+          record: '{}',
+          likeCount: const Value(0),
+        ),
+      ],
+      newProfiles: [ProfilesCompanion.insert(did: 'd1', handle: 'alice')],
+      newItems: [TimelineItemsCompanion.insert(feedKey: 'home', postUri: 'p1', sortKey: '100')],
+    );
+
+    await dao.insertTimelineBatch(
+      feedKey: 'home',
+      newPosts: [
+        PostsCompanion.insert(
+          uri: 'p1',
+          cid: 'c1',
+          authorDid: 'd1',
+          record: '{}',
+          likeCount: const Value(5),
+        ),
+      ],
+      newProfiles: [],
+      newItems: [],
+    );
+
+    final timeline = await dao.watchTimeline('home').first;
+    expect(timeline.first.post.likeCount, 5);
+  });
 }

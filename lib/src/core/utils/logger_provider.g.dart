@@ -59,7 +59,7 @@ final class LoggerProvider extends $FunctionalProvider<Logger, Logger, Logger>
   }
 }
 
-String _$loggerHash() => r'42eff2976367f834c084e9105c8a7548433dfdd8';
+String _$loggerHash() => r'bd47f4c6cd32d9afa5bd157104a6ad483aaafc58';
 
 final class LoggerFamily extends $Family with $FunctionalFamilyOverride<Logger, String> {
   LoggerFamily._()

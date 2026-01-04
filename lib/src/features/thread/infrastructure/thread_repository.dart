@@ -1,23 +1,32 @@
 import 'dart:convert';
 
+import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
 class ThreadRepository {
-  ThreadRepository(this._api, this._dao);
+  ThreadRepository(this._api, this._dao, this._logger);
 
   final XrpcClient _api;
   final TimelineDao _dao;
+  final Logger _logger;
 
   Future<ThreadViewPost> getPostThread(String uri) async {
-    final response = await _api.call('app.bsky.feed.getPostThread', params: {'uri': uri});
+    _logger.info('Fetching thread', {'uri': uri});
+    try {
+      final response = await _api.call('app.bsky.feed.getPostThread', params: {'uri': uri});
 
-    final thread = response['thread'] as Map<String, dynamic>;
+      final thread = response['thread'] as Map<String, dynamic>;
 
-    // TODO: Implement full thread structure caching.
-    await _cacheThreadParticipants(thread);
+      // TODO: Implement full thread structure caching.
+      await _cacheThreadParticipants(thread);
+      _logger.debug('Cached thread participants');
 
-    return ThreadViewPost.fromJson(thread);
+      return ThreadViewPost.fromJson(thread);
+    } catch (e, stack) {
+      _logger.error('Failed to fetch thread', e, stack);
+      rethrow;
+    }
   }
 
   Future<void> _cacheThreadParticipants(Map<String, dynamic> threadData) async {

@@ -51,6 +51,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
             }
             return ListView.separated(
               controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
               itemCount: items.length,
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {

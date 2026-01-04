@@ -1,7 +1,8 @@
+import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/core/utils/logger_provider.dart';
+import 'package:lazurite/src/infrastructure/network/providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../app/providers.dart';
-import '../../../infrastructure/network/providers.dart';
 import '../infrastructure/thread_repository.dart';
 
 part 'thread_providers.g.dart';
@@ -10,5 +11,6 @@ part 'thread_providers.g.dart';
 ThreadRepository threadRepository(Ref ref) {
   final api = ref.watch(xrpcClientProvider);
   final db = ref.watch(appDatabaseProvider);
-  return ThreadRepository(api, db.timelineDao);
+  final logger = ref.watch(loggerProvider('ThreadRepository'));
+  return ThreadRepository(api, db.timelineDao, logger);
 }
