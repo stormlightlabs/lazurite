@@ -58,19 +58,19 @@ A. Repo + app skeleton + quality gates                              *bsky-A*
 ==============================================================================
 
 Tasks:
-- [ ] Create Flutter project + Material 3 theme scaffolding.
-- [ ] Define feature-first module layout (src/app, core, infrastructure, features/*).
-- [ ] Add build_runner + lint rules + formatting hooks.
+- [x] Create Flutter project + Material 3 theme scaffolding.
+- [x] Define feature-first module layout (src/app, core, infrastructure, features/*).
+- [x] Add build_runner + lint rules + formatting hooks.
 - [ ] Define CI: analyze, test, format, integration tests.
-- [ ] Add go_router + router.dart
-    - [ ] Add tab scaffold using StatefulShellRoute.indexedStack
-    - [ ] Add route constants / names and a navigation helper
-- [ ] Add flutter_riverpod + riverpod_generator
-    - [ ] Wire ProviderScope at app root
-    - [ ] Establish provider naming conventions + folder placement
+- [x] Add go_router + router.dart
+    - [x] Add tab scaffold using StatefulShellRoute.indexedStack
+    - [x] Add route constants / names and a navigation helper
+- [x] Add flutter_riverpod + riverpod_generator
+    - [x] Wire ProviderScope at app root
+    - [x] Establish provider naming conventions + folder placement
 
 Tests:
-- [ ] Smoke test boots app + renders root scaffold.
+- [x] Smoke test boots app + renders root scaffold.
 - [ ] Unit tests for key base widgets (post card skeleton, avatar, empty state).
 
 Deliverables:
