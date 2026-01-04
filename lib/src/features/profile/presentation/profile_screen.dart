@@ -15,11 +15,7 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.person_outlined,
-              size: 64,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(Icons.person_outlined, size: 64, color: theme.colorScheme.primary),
             const SizedBox(height: 16),
             Text('Your Profile', style: theme.textTheme.headlineSmall),
             const SizedBox(height: 8),

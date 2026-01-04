@@ -14,11 +14,7 @@ class NotificationsScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.notifications_outlined,
-              size: 64,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(Icons.notifications_outlined, size: 64, color: theme.colorScheme.primary),
             const SizedBox(height: 16),
             Text('Notifications', style: theme.textTheme.headlineSmall),
             const SizedBox(height: 8),

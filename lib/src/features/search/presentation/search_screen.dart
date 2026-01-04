@@ -15,11 +15,7 @@ class SearchScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_outlined,
-              size: 64,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(Icons.search_outlined, size: 64, color: theme.colorScheme.primary),
             const SizedBox(height: 16),
             Text('Search', style: theme.textTheme.headlineSmall),
             const SizedBox(height: 8),

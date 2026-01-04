@@ -6,6 +6,9 @@ analyzer:
   errors:
     invalid_annotation_target: ignore
 
+formatter:
+  page_width: 99
+
 linter:
   rules:
     - prefer_single_quotes

@@ -35,22 +35,16 @@ final class TimelineNotifierProvider
 
 String _$timelineNotifierHash() => r'b218d4a4bc374d2a1bf64542694cf6ba26611206';
 
-abstract class _$TimelineNotifier
-    extends $StreamNotifier<List<TimelineFeedItem>> {
+abstract class _$TimelineNotifier extends $StreamNotifier<List<TimelineFeedItem>> {
   Stream<List<TimelineFeedItem>> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref =
-        this.ref
-            as $Ref<AsyncValue<List<TimelineFeedItem>>, List<TimelineFeedItem>>;
+    final ref = this.ref as $Ref<AsyncValue<List<TimelineFeedItem>>, List<TimelineFeedItem>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<
-                AsyncValue<List<TimelineFeedItem>>,
-                List<TimelineFeedItem>
-              >,
+              AnyNotifier<AsyncValue<List<TimelineFeedItem>>, List<TimelineFeedItem>>,
               AsyncValue<List<TimelineFeedItem>>,
               Object?,
               Object?
