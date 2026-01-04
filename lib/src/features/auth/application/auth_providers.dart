@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../core/utils/logger_provider.dart';
 import '../../../infrastructure/auth/auth_repository.dart';
 import '../../../infrastructure/auth/oauth_client.dart';
 import '../../../infrastructure/auth/server_metadata.dart';
@@ -45,6 +46,7 @@ AuthRepository authRepository(Ref ref) {
     sessionStorage: ref.watch(sessionStorageProvider),
     metadataRepository: ref.watch(serverMetadataRepositoryProvider),
     secureStorage: ref.watch(secureStorageProvider),
+    logger: ref.watch(loggerProvider('AuthRepository')),
   );
 }
 
@@ -99,18 +101,27 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
+  Future<void> loginWithAppPassword(String handle, String password) async {
+    state = const AuthState.loading();
+    try {
+      final session = await ref
+          .read(authRepositoryProvider)
+          .loginWithAppPassword(handle, password);
+      state = AuthState.authenticated(session);
+    } catch (e, st) {
+      state = AuthState.error(e, st);
+    }
+  }
+
   Future<void> logout() async {
     state = const AuthState.loading();
     try {
-      // Get current session for revocation
       final session = await ref.read(sessionStorageProvider).getSession();
 
-      // Revoke tokens on server (best-effort)
       if (session != null) {
         await ref.read(authRepositoryProvider).revokeSession(session);
       }
 
-      // Clear local session regardless of revocation result
       await ref.read(sessionStorageProvider).clearSession();
       state = const AuthState.unauthenticated();
     } catch (e, st) {

@@ -65,13 +65,13 @@ Tasks:
 - [x] Session model:
       - active account DID, handle, PDS URL
       - refresh workflow and concurrency guard (single-flight refresh)
-- [ ] dev fallback: com.atproto.server.createSession (app password)
+- [x] dev fallback: com.atproto.server.createSession (app password)
       (flagged build flavor).
 - [x] AuthButton Widget (primary CTA)
 - [x] AuthProgressView Widget (PKCE/PAR/DPoP steps, minimal UI)
 - [x] /login becomes "real"
 - [x] redirect() rules added (protected routes require auth):
-      - [ ] /notifs, /dms, /compose (later) require session
+      - [x] /notifs, /dms, /compose (later) require session
       - [x] /home and /search can remain browseable
 - [x] LoginPage (OAuth flow UI)
       - [x] "Continue" → external browser / in-app web auth
@@ -292,7 +292,8 @@ Tasks:
 - [ ] Moderation basics:
       - respect labels/filters returned by AppView/PDS (foundation)
 - [ ] Observability hooks:
-      - structured logging, crash reporting integration points (optional)
+      - [x] structured logging
+      - crash reporting integration points (optional)
 
 Tests:
 - [ ] Scroll perf sanity test on mid-range Android emulator profile.

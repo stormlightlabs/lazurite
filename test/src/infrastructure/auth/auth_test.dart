@@ -6,6 +6,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jose/jose.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/core/identity/did_document.dart';
+import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/auth/auth_repository.dart';
 import 'package:lazurite/src/infrastructure/auth/dpop_utils.dart';
 import 'package:lazurite/src/infrastructure/auth/oauth_client.dart';
@@ -13,6 +15,8 @@ import 'package:lazurite/src/infrastructure/auth/server_metadata.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/identity/identity_repository.dart';
 import 'package:mocktail/mocktail.dart';
+
+class MockLogger extends Mock implements Logger {}
 
 class MockDio extends Mock implements Dio {}
 
@@ -136,6 +140,7 @@ void main() {
     late MockSessionStorage sessionStorage;
     late MockFlutterSecureStorage secureStorage;
     late MockServerMetadataRepository metadataRepo;
+    late MockLogger logger;
     late AuthRepository authRepo;
 
     setUp(() {
@@ -144,6 +149,7 @@ void main() {
       sessionStorage = MockSessionStorage();
       secureStorage = MockFlutterSecureStorage();
       metadataRepo = MockServerMetadataRepository();
+      logger = MockLogger();
 
       authRepo = AuthRepository(
         identityRepository: identityRepo,
@@ -151,6 +157,7 @@ void main() {
         sessionStorage: sessionStorage,
         metadataRepository: metadataRepo,
         secureStorage: secureStorage,
+        logger: logger,
       );
     });
 
@@ -205,6 +212,108 @@ void main() {
       expect(session.did, 'did:plc:user');
       expect(session.accessJwt, 'access');
       verify(() => sessionStorage.saveSession(any())).called(1);
+    });
+
+    test('loginWithAppPassword success', () async {
+      final mockBootstrapDio = MockDio();
+
+      authRepo = AuthRepository(
+        identityRepository: identityRepo,
+        oauthClient: oauthClient,
+        sessionStorage: sessionStorage,
+        metadataRepository: metadataRepo,
+        secureStorage: secureStorage,
+        bootstrapDio: mockBootstrapDio,
+        logger: logger,
+      );
+
+      when(() => identityRepo.resolveHandle(any())).thenAnswer((_) async => 'did:plc:user');
+      when(() => identityRepo.resolveDidDocument(any())).thenAnswer(
+        (_) async => const DidDocument(
+          id: 'did:plc:user',
+          alsoKnownAs: [],
+          service: [
+            DidService(
+              id: '#atproto_pds',
+              type: 'AtprotoPersonalDataServer',
+              serviceEndpoint: 'https://pds.com',
+            ),
+          ],
+        ),
+      );
+
+      when(() => mockBootstrapDio.post(any(), data: any(named: 'data'))).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 200,
+          data: {
+            'accessJwt': 'access',
+            'refreshJwt': 'refresh',
+            'did': 'did:plc:user',
+            'handle': 'user.bsky.social',
+          },
+        ),
+      );
+
+      when(() => sessionStorage.saveSession(any())).thenAnswer((_) async {});
+
+      final session = await authRepo.loginWithAppPassword('user.bsky.social', 'password');
+
+      expect(session.did, 'did:plc:user');
+      expect(session.accessJwt, 'access');
+      expect(session.refreshJwt, 'refresh');
+      verify(
+        () => mockBootstrapDio.post(
+          '/xrpc/com.atproto.server.createSession',
+          data: {'identifier': 'user.bsky.social', 'password': 'password'},
+        ),
+      ).called(1);
+      verify(() => sessionStorage.saveSession(any())).called(1);
+    });
+
+    test('loginWithAppPassword failure', () async {
+      final mockBootstrapDio = MockDio();
+
+      authRepo = AuthRepository(
+        identityRepository: identityRepo,
+        oauthClient: oauthClient,
+        sessionStorage: sessionStorage,
+        metadataRepository: metadataRepo,
+        secureStorage: secureStorage,
+        bootstrapDio: mockBootstrapDio,
+        logger: logger,
+      );
+
+      when(() => identityRepo.resolveHandle(any())).thenAnswer((_) async => 'did:plc:user');
+      when(() => identityRepo.resolveDidDocument(any())).thenAnswer(
+        (_) async => const DidDocument(
+          id: 'did:plc:user',
+          alsoKnownAs: [],
+          service: [
+            DidService(
+              id: '#atproto_pds',
+              type: 'AtprotoPersonalDataServer',
+              serviceEndpoint: 'https://pds.com',
+            ),
+          ],
+        ),
+      );
+
+      when(() => mockBootstrapDio.post(any(), data: any(named: 'data'))).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: ''),
+          response: Response(
+            requestOptions: RequestOptions(path: ''),
+            statusCode: 401,
+            data: {'message': 'Invalid credentials'},
+          ),
+        ),
+      );
+
+      await expectLater(
+        () => authRepo.loginWithAppPassword('user.bsky.social', 'badpass'),
+        throwsA(isA<Exception>().having((e) => e.toString(), 'message', contains('Login failed'))),
+      );
     });
   });
 }

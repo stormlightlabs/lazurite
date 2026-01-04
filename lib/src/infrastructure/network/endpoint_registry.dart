@@ -141,6 +141,13 @@ class EndpointRegistry {
       requiresAuth: true,
     ),
 
+    'com.atproto.server.createSession': const EndpointMeta(
+      nsid: 'com.atproto.server.createSession',
+      method: HttpMethod.post,
+      hostKind: HostKind.pds,
+      requiresAuth: false,
+    ),
+
     'com.atproto.repo.createRecord': const EndpointMeta(
       nsid: 'com.atproto.repo.createRecord',
       method: HttpMethod.post,

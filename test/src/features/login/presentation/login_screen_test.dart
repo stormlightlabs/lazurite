@@ -99,7 +99,7 @@ void main() {
       expect(find.text('Sign in to Bluesky'), findsOneWidget);
     });
 
-    testWidgets('renders app password hint text', (tester) async {
+    testWidgets('renders app password login button', (tester) async {
       await tester.pumpApp(
         const LoginScreen(),
         overrides: [
@@ -108,7 +108,7 @@ void main() {
         ],
       );
       await tester.pumpAndSettle();
-      expect(find.text('You can also use an app password for testing.'), findsOneWidget);
+      expect(find.text('Use App Password (Dev)'), findsOneWidget);
     });
 
     testWidgets('can enter text in handle field', (tester) async {

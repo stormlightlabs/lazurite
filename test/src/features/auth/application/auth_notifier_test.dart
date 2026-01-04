@@ -152,5 +152,31 @@ void main() {
       verify(() => mockSessionStorage.clearSession()).called(1);
       expect(container.read(authProvider), const AuthState.unauthenticated());
     });
+
+    test('loginWithAppPassword triggers repo login', () async {
+      when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
+      when(() => mockAuthRepository.loginWithAppPassword(any(), any())).thenAnswer(
+        (_) async => Session(
+          did: 'did:web:example.com',
+          handle: 'example.com',
+          pdsUrl: 'https://example.com',
+          accessJwt: 'access',
+          refreshJwt: 'refresh',
+          scope: 'scope',
+          expiresAt: DateTime.now().add(const Duration(hours: 1)),
+          dpopKey: {},
+        ),
+      );
+
+      final container = createContainer();
+      container.listen(authProvider, (previous, next) {});
+      await Future<void>.delayed(Duration.zero);
+
+      await container.read(authProvider.notifier).loginWithAppPassword('handle', 'pass');
+
+      expect(container.read(authProvider), isA<AuthStateAuthenticated>());
+      await Future<void>.delayed(Duration.zero);
+      verify(() => mockAuthRepository.loginWithAppPassword('handle', 'pass')).called(1);
+    });
   });
 }

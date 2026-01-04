@@ -6,6 +6,7 @@ import 'package:lazurite/src/core/widgets/tab_scaffold.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/dms/presentation/dms_screen.dart';
+import 'package:lazurite/src/features/login/presentation/app_password_login_screen.dart';
 import 'package:lazurite/src/features/login/presentation/auth_progress_view.dart';
 import 'package:lazurite/src/features/login/presentation/login_screen.dart';
 import 'package:lazurite/src/features/notifications/presentation/notifications_screen.dart';
@@ -34,11 +35,15 @@ GoRouter createRouter(Ref ref) {
     refreshListenable: authState,
     redirect: (context, state) {
       final auth = authState.value;
-      final isLoggingIn = state.matchedLocation == AppRoutes.login;
-      final isCallback = state.matchedLocation == AppRoutes.callback;
+      final location = state.matchedLocation;
+      final isLoggingIn =
+          location == AppRoutes.login || location == '${AppRoutes.login}/app-password';
+      final isCallback = location == AppRoutes.callback;
+      final isPublic =
+          location.startsWith(AppRoutes.home) || location.startsWith(AppRoutes.search);
 
       if (auth is! AuthStateAuthenticated) {
-        if (isLoggingIn || isCallback) return null;
+        if (isLoggingIn || isCallback || isPublic) return null;
         return AppRoutes.login;
       }
 
@@ -168,6 +173,13 @@ GoRouter createRouter(Ref ref) {
         path: AppRoutes.login,
         name: AppRouteNames.login,
         builder: (context, state) => const LoginScreen(),
+        routes: [
+          GoRoute(
+            path: 'app-password',
+            name: 'login_app_password',
+            builder: (context, state) => const AppPasswordLoginScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.callback,

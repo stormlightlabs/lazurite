@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/widgets/app_app_bar.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
@@ -91,12 +92,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 16),
                 TextButton(onPressed: _showAccountSwitcher, child: const Text('Switch account')),
                 const Spacer(),
-                Text(
-                  'You can also use an app password for testing.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withAlpha(102),
+                TextButton(
+                  onPressed: () => context.pushNamed('login_app_password'),
+                  child: Text(
+                    'Use App Password (Dev)',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withAlpha(102),
+                    ),
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
