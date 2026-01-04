@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 class Session {
   const Session({
     required this.did,
@@ -22,6 +24,8 @@ class Session {
       dpopKey: json['dpopKey'] as Map<String, dynamic>,
     );
   }
+
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
 
   final String did;
   final String handle;
@@ -64,4 +68,29 @@ class Session {
       dpopKey: dpopKey ?? this.dpopKey,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Session &&
+          runtimeType == other.runtimeType &&
+          did == other.did &&
+          handle == other.handle &&
+          pdsUrl == other.pdsUrl &&
+          accessJwt == other.accessJwt &&
+          refreshJwt == other.refreshJwt &&
+          scope == other.scope &&
+          scope == other.scope &&
+          expiresAt == other.expiresAt &&
+          const DeepCollectionEquality().equals(dpopKey, other.dpopKey);
+
+  @override
+  int get hashCode =>
+      did.hashCode ^
+      handle.hashCode ^
+      pdsUrl.hashCode ^
+      accessJwt.hashCode ^
+      refreshJwt.hashCode ^
+      scope.hashCode ^
+      expiresAt.hashCode;
 }

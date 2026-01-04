@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/widgets/app_app_bar.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/login/presentation/account_switcher_sheet.dart';
+import 'package:lazurite/src/features/login/presentation/auth_button.dart';
+import 'package:lazurite/src/features/login/presentation/auth_progress_view.dart';
 
 /// Login screen for user authentication.
-///
-/// Provides a handle input field and login button. This is the UI shell
-/// for Milestone C; full OAuth implementation comes in Milestone D.
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   /// Creates a login screen.
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _handleController = TextEditingController();
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -27,76 +29,79 @@ class _LoginScreenState extends State<LoginScreen> {
     final handle = _handleController.text.trim();
     if (handle.isEmpty) return;
 
-    setState(() => _isLoading = true);
+    await ref.read(authProvider.notifier).login(handle);
+  }
 
-    // TODO: Implement OAuth flow
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Login for @$handle not yet implemented')));
-    }
+  void _showAccountSwitcher() {
+    showModalBottomSheet(context: context, builder: (context) => const AccountSwitcherSheet());
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final authState = ref.watch(authProvider);
+
+    ref.listen(authProvider, (previous, next) {
+      switch (next) {
+        case AuthStateError(error: final err):
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login failed: $err'),
+              backgroundColor: theme.colorScheme.error,
+            ),
+          );
+        case _:
+          break;
+      }
+    });
 
     return Scaffold(
       appBar: const AppAppBar(title: 'Login'),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Icon(Icons.cloud_outlined, size: 80, color: theme.colorScheme.primary),
-              const SizedBox(height: 24),
-              Text(
-                'Sign in to Bluesky',
-                style: theme.textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _handleController,
-                decoration: const InputDecoration(
-                  labelText: 'Handle',
-                  hintText: 'yourname.bsky.social',
-                  prefixIcon: Icon(Icons.alternate_email),
-                  border: OutlineInputBorder(),
+        child: switch (authState) {
+          AuthStateLoading() => const Center(child: AuthProgressView()),
+          _ => Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(Icons.cloud_outlined, size: 80, color: theme.colorScheme.primary),
+                const SizedBox(height: 24),
+                Text(
+                  'Sign in to Bluesky',
+                  style: theme.textTheme.headlineMedium,
+                  textAlign: TextAlign.center,
                 ),
-                keyboardType: TextInputType.text,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _handleLogin(),
-                enabled: !_isLoading,
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: _isLoading ? null : _handleLogin,
-                icon: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.login),
-                label: const Text('Continue with Bluesky'),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'You can also use an app password for testing.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withAlpha(102),
+                const SizedBox(height: 32),
+                TextField(
+                  controller: _handleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Handle',
+                    hintText: 'yourname.bsky.social',
+                    prefixIcon: Icon(Icons.alternate_email),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.text,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _handleLogin(),
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+                const SizedBox(height: 24),
+                AuthButton(text: 'Continue with Bluesky', onPressed: _handleLogin),
+                const SizedBox(height: 16),
+                TextButton(onPressed: _showAccountSwitcher, child: const Text('Switch account')),
+                const Spacer(),
+                Text(
+                  'You can also use an app password for testing.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withAlpha(102),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-        ),
+        },
       ),
     );
   }

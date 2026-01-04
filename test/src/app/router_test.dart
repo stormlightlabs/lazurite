@@ -1,41 +1,66 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/app/routes.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../helpers/pump_app.dart';
 
+class MockSessionStorage extends Mock implements SessionStorage {}
+
 void main() {
+  late MockSessionStorage mockSessionStorage;
+
+  setUp(() {
+    mockSessionStorage = MockSessionStorage();
+    when(() => mockSessionStorage.getSession()).thenAnswer(
+      (_) async => Session(
+        did: 'did:web:test',
+        handle: 'handle',
+        pdsUrl: 'https://pds',
+        accessJwt: 'access',
+        refreshJwt: 'refresh',
+        scope: 'scope',
+        expiresAt: DateTime.now().add(const Duration(hours: 1)),
+        dpopKey: {},
+      ),
+    );
+  });
+
   group('Router', () {
     testWidgets('navigates to home on initial load', (tester) async {
-      await tester.pumpRouterApp();
+      await tester.pumpRouterApp(
+        overrides: [sessionStorageProvider.overrideWithValue(mockSessionStorage)],
+      );
 
-      // Home screen should be displayed
       expect(find.text('Home Timeline'), findsOneWidget);
     });
 
     testWidgets('navigates between tabs preserving state', (tester) async {
-      await tester.pumpRouterApp();
+      await tester.pumpRouterApp(
+        overrides: [sessionStorageProvider.overrideWithValue(mockSessionStorage)],
+      );
 
-      // Verify starting on home
       expect(find.text('Home Timeline'), findsOneWidget);
 
-      // Navigate to search tab
       await tester.tap(find.text('Search'));
       await tester.pumpAndSettle();
       expect(find.text('Search'), findsWidgets);
 
-      // Navigate to notifications tab
       await tester.tap(find.text('Notifications'));
       await tester.pumpAndSettle();
       expect(find.text('Your notifications will appear here'), findsOneWidget);
 
-      // Navigate back to home - state should be preserved
       await tester.tap(find.text('Home'));
       await tester.pumpAndSettle();
       expect(find.text('Home Timeline'), findsOneWidget);
     });
 
     testWidgets('navigates to DMs tab', (tester) async {
-      await tester.pumpRouterApp();
+      await tester.pumpRouterApp(
+        overrides: [sessionStorageProvider.overrideWithValue(mockSessionStorage)],
+      );
 
       await tester.tap(find.text('Messages'));
       await tester.pumpAndSettle();
@@ -44,7 +69,9 @@ void main() {
     });
 
     testWidgets('navigates to Profile tab', (tester) async {
-      await tester.pumpRouterApp();
+      await tester.pumpRouterApp(
+        overrides: [sessionStorageProvider.overrideWithValue(mockSessionStorage)],
+      );
 
       await tester.tap(find.text('Profile'));
       await tester.pumpAndSettle();

@@ -10,6 +10,7 @@ abstract final class AppRoutes {
   static const String profile = '/profile';
 
   static const String login = '/login';
+  static const String callback = '/callback';
   static const String compose = '/compose';
   static const String settings = '/settings';
   static const String drafts = '/drafts';
@@ -28,6 +29,7 @@ abstract final class AppRouteNames {
   static const String dms = 'dms';
   static const String profile = 'profile';
   static const String login = 'login';
+  static const String callback = 'callback';
   static const String compose = 'compose';
   static const String settings = 'settings';
   static const String drafts = 'drafts';

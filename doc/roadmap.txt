@@ -139,17 +139,16 @@ Tasks:
       - refresh workflow and concurrency guard (single-flight refresh)
 - [ ] dev fallback: com.atproto.server.createSession (app password)
       (flagged build flavor).
-- [ ] AuthButton Widget (primary CTA)
-- [ ] AuthProgressView Widget (PKCE/PAR/DPoP steps, minimal UI)
-- [ ] /login becomes "real"
-- [ ] redirect() rules added (protected routes require auth):
+- [x] AuthButton Widget (primary CTA)
+- [x] AuthProgressView Widget (PKCE/PAR/DPoP steps, minimal UI)
+- [x] /login becomes "real"
+- [x] redirect() rules added (protected routes require auth):
       - [ ] /notifs, /dms, /compose (later) require session
-      - [ ] /home and /search can remain browseable
-- [ ] LoginPage (OAuth flow UI)
-      - [ ] "Continue" → external browser / in-app web auth
-      - [ ] "Switch account"
-            - [ ] AccountSwitcherSheet
-
+      - [x] /home and /search can remain browseable
+- [x] LoginPage (OAuth flow UI)
+      - [x] "Continue" → external browser / in-app web auth
+      - [x] "Switch account"
+            - [x] AccountSwitcherSheet
 
 Tests:
 - [x] Identity resolution parsing tests (handle->DID->PDS).
@@ -176,7 +175,8 @@ Tasks:
 - [ ] Drift setup + migrations:
       - posts, profiles, timeline_items, accounts
       - cursor persistence per feedKey
-      - indexes on (post.uri), (post.indexedAt), (timeline_items.feedKey, sortKey)
+      - indexes on (post.uri), (post.indexedAt),
+        (timeline_items.feedKey, sortKey)
       - enable isolate-friendly DB execution where appropriate.
 - [ ] Timeline feature:
       - cursor paging (infinite scroll)

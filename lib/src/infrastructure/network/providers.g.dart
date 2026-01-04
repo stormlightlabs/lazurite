@@ -63,9 +63,6 @@ String _$dioPublicHash() => r'b7ad12dfcf7bebb3ca8f836e21c9c41e9a698edc';
 ///
 /// This requires a logged-in user with a resolved PDS URL.
 /// Returns null if no user is logged in.
-///
-/// Note: This will be properly implemented in Milestone C when OAuth is added.
-/// For now, it returns null indicating no authenticated session.
 
 @ProviderFor(dioPds)
 final dioPdsProvider = DioPdsProvider._();
@@ -74,9 +71,6 @@ final dioPdsProvider = DioPdsProvider._();
 ///
 /// This requires a logged-in user with a resolved PDS URL.
 /// Returns null if no user is logged in.
-///
-/// Note: This will be properly implemented in Milestone C when OAuth is added.
-/// For now, it returns null indicating no authenticated session.
 
 final class DioPdsProvider extends $FunctionalProvider<Dio?, Dio?, Dio?>
     with $Provider<Dio?> {
@@ -84,9 +78,6 @@ final class DioPdsProvider extends $FunctionalProvider<Dio?, Dio?, Dio?>
   ///
   /// This requires a logged-in user with a resolved PDS URL.
   /// Returns null if no user is logged in.
-  ///
-  /// Note: This will be properly implemented in Milestone C when OAuth is added.
-  /// For now, it returns null indicating no authenticated session.
   DioPdsProvider._()
     : super(
         from: null,

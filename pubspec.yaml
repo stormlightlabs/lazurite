@@ -51,6 +51,7 @@ dependencies:
   jwt_decoder: ^2.0.1
   jose: ^0.3.5
   crypto: ^3.0.7
+  collection: ^1.19.1
 
 dev_dependencies:
   flutter_test:

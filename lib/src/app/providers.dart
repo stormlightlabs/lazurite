@@ -10,5 +10,5 @@ part 'providers.g.dart';
 /// Use it to access navigation from anywhere in the app via `ref.read(goRouterProvider)`.
 @Riverpod(keepAlive: true)
 GoRouter goRouter(Ref ref) {
-  return createRouter();
+  return createRouter(ref);
 }

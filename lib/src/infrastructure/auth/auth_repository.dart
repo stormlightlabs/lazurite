@@ -134,4 +134,29 @@ class AuthRepository {
       rethrow;
     }
   }
+
+  /// Refreshes the session using the refresh token.
+  Future<Session> refreshSession(Session session) async {
+    try {
+      final dpopKey = JsonWebKey.fromJson(session.dpopKey);
+      final tokenResponse = await _oauthClient.refreshToken(
+        pdsUrl: session.pdsUrl,
+        refreshToken: session.refreshJwt,
+        key: dpopKey,
+      );
+
+      final newSession = session.copyWith(
+        accessJwt: tokenResponse.accessToken,
+        refreshJwt: tokenResponse.refreshToken ?? session.refreshJwt,
+        scope: tokenResponse.scope ?? session.scope,
+        expiresAt: DateTime.now().add(Duration(seconds: tokenResponse.expiresIn ?? 3600)),
+      );
+
+      await _sessionStorage.saveSession(newSession);
+      return newSession;
+    } catch (e) {
+      // TODO: If refresh fails, we might want to clear session or let caller handle it.
+      rethrow;
+    }
+  }
 }

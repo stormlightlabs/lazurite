@@ -81,6 +81,31 @@ class OAuthClient {
     return TokenResponse.fromJson(response.data!);
   }
 
+  /// Refreshes the access token using the refresh token.
+  Future<TokenResponse> refreshToken({
+    required String pdsUrl,
+    required String refreshToken,
+    required JsonWebKey key,
+  }) async {
+    final tokenUrl = '$pdsUrl/oauth/token';
+
+    final proof = await DPoPUtils.createProof(url: tokenUrl, method: 'POST', privateKey: key);
+
+    final response = await _dio.post<Map<String, dynamic>>(
+      tokenUrl,
+      options: Options(
+        headers: {'DPoP': proof, 'Content-Type': 'application/x-www-form-urlencoded'},
+      ),
+      data: {'client_id': kClientId, 'grant_type': 'refresh_token', 'refresh_token': refreshToken},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Token refresh failed: ${response.statusCode} ${response.data}');
+    }
+
+    return TokenResponse.fromJson(response.data!);
+  }
+
   /// Builds the authorization URL for the browser.
   String buildAuthorizeUrl({required String pdsUrl, required String requestUri}) {
     return '$pdsUrl/oauth/authorize?client_id=$kClientId&request_uri=$requestUri';
