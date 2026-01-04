@@ -127,14 +127,14 @@ D. Identity bootstrap + OAuth session                                   *bsky-D*
 ================================================================================
 
 Tasks:
-- [ ] Identity resolution helpers (handle/DID bootstrap):
+- [x] Identity resolution helpers (handle/DID bootstrap):
       - com.atproto.identity.resolveHandle
       - com.atproto.identity.resolveDid / resolveIdentity
-- [ ] OAuth client:
+- [x] OAuth client:
       - publish client metadata JSON at stable https URL (required).
       - implement PKCE + PAR + DPoP per atproto OAuth profile.
       - token storage: secure storage (access/refresh, key material).
-- [ ] Session model:
+- [x] Session model:
       - active account DID, handle, PDS URL
       - refresh workflow and concurrency guard (single-flight refresh)
 - [ ] dev fallback: com.atproto.server.createSession (app password)
@@ -147,13 +147,13 @@ Tasks:
       - [ ] /home and /search can remain browseable
 - [ ] LoginPage (OAuth flow UI)
       - [ ] "Continue" → external browser / in-app web auth
-      - [ ] "Switch account" (future)
-- [ ] AccountSwitcherSheet (optional; if multi-account early)
+      - [ ] "Switch account"
+            - [ ] AccountSwitcherSheet
 
 
 Tests:
-- [ ] Identity resolution parsing tests (handle->DID->PDS).
-- [ ] OAuth state machine tests (happy path + expired token refresh).
+- [x] Identity resolution parsing tests (handle->DID->PDS).
+- [x] OAuth state machine tests (happy path + expired token refresh).
 
 Deliverables:
 - "Login" completes and yields a usable (did, pdsUrl, session).
