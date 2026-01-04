@@ -53,6 +53,12 @@ dependencies:
   crypto: ^3.0.7
   collection: ^1.19.1
 
+  # Persistence
+  drift: ^2.24.0
+  sqlite3_flutter_libs: ^0.5.0
+  path_provider: ^2.1.2
+  path: ^1.9.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -65,6 +71,7 @@ dev_dependencies:
   # Code Generation
   build_runner: ^2.10.4
   riverpod_generator: ^4.0.0
+  drift_dev: ^2.24.0
 
   # Mocking
   http_mock_adapter: ^0.6.1

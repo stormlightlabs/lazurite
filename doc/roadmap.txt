@@ -35,93 +35,21 @@ Secure secrets:
 ================================================================================
 A. Repo + app skeleton + quality gates                                  *bsky-A*
 ================================================================================
-
-Tasks:
-- [x] Create Flutter project + Material 3 theme scaffolding.
-- [x] Define feature-first module layout (src/app, core, infrastructure,
-  features/*).
-- [x] Add build_runner + lint rules + formatting hooks.
-- [x] Define CI: analyze, test, format, integration tests (justfile).
-- [x] Add go_router + router.dart
-    - [x] Add tab scaffold using StatefulShellRoute.indexedStack
-    - [x] Add route constants / names and a navigation helper
-- [x] Add flutter_riverpod + riverpod_generator
-    - [x] Wire ProviderScope at app root
-    - [x] Establish provider naming conventions + folder placement
-
-Tests:
-- [x] Smoke test boots app + renders root scaffold.
-- [x] Unit tests for key base widgets (post card skeleton, avatar, empty state).
-
-Deliverables:
-- App boots on Android + iOS simulators with placeholder routes.
-- Consistent linting/formatting enforced in CI.
+Summary: Repository skeleton, feature-first layout, and CI quality gates are
+fully in place.
 
 ================================================================================
 B. Networking (Dio) + routing matrix + error policy                     *bsky-B*
 ================================================================================
-
-Tasks:
-- [x] Implement Dio clients:
-      - dioPublic(baseUrl=https://public.api.bsky.app)
-      - dioPds(baseUrl=<resolved PDS>)
-- [x] Implement interceptors:
-      - logging (redact tokens)
-      - auth (attach access token + DPoP; refresh on 401 once)
-      - retry (GET only; bounded exponential backoff)
-      - proxy (chat.* -> set service proxy header)
-- [x] Encode a single endpoint map: NSID -> {method, path, hostKind, auth,
-  proxyKind}.
-- [x] Standardize failure model: network vs auth vs server vs decode.
-
-Tests:
-- [x] Unit tests for endpoint routing (NSID -> correct dio + headers).
-- [x] Unit tests for retry policy (GET retries, POST does not retry blindly).
-- [x] Contract test: public read hits public.api.bsky.app for app.bsky.*.
-
-Deliverables:
-- A small "XrpcClient" wrapper that all features use.
-- Routing rules implemented exactly as spec’d (public AppView vs PDS vs proxy).
+Summary: Networking stack with Dio clients, interceptors, and routing matrix is
+finished with standardized failure handling.
 
 ================================================================================
 C. App shell + navigation skeleton                                   *bsky-ui-C*
 ================================================================================
+Summary: App shell and navigation scaffold deliver all primary routes with
+reusable UI primitives and resilient state handling.
 
-Routes added (with wired error surfaces):
-- [x] /login
-- [x] /home
-- [x] /search
-- [x] /notifs
-- [x] /dms
-- [x] /me
-- [x] /settings
-
-Screens added:
-- All screens render:
-  - loading → data → error states
-- [x] LoginPage
-- [x] AppShell (StatefulShellRoute.indexedStack host)
-- [x] HomePage
-- [x] SearchPage
-- [x] NotificationsPage
-- [x] DmsInboxPage
-- [x] MePage
-
-Widgets added (core):
-- [x] AppScaffoldWithNav (NavigationBar + body slot)
-- [x] LoadingView / ErrorView / EmptyState
-- [x] AppAppBar (consistent actions slot)
-- [x] NetworkErrorBanner (inline retry)
-- [x] PullToRefreshWrapper (common)
-- [x] PagedListFooter (loading more / "end" / error)
-
-Note that every list screen must support:
-  - optimistic cached render (later)
-  - pull-to-refresh affordance
-  - inline error that doesn’t blank the whole screen
-
-DoD:
-- Bottom-tabs preserve state (indexed stack shell).
 ================================================================================
 D. Identity bootstrap + OAuth session                                   *bsky-D*
 ================================================================================
@@ -172,7 +100,7 @@ Endpoints (read):
 - app.bsky.feed.getPosts (GET hydrate)
 
 Tasks:
-- [ ] Drift setup + migrations:
+- [x] Drift setup + migrations:
       - posts, profiles, timeline_items, accounts
       - cursor persistence per feedKey
       - indexes on (post.uri), (post.indexedAt),
@@ -392,3 +320,9 @@ Tests:
 
 Deliverables:
 - Desktop build that is genuinely usable (not just "it runs").
+
+================================================================================
+Parking lot (Milestones A–D)
+================================================================================
+- Milestone D: Add dev fallback via com.atproto.server.createSession (app password, flagged build flavor).
+- Milestone D: Enforce redirect() rules so /notifs, /dms, and /compose require an authenticated session.
