@@ -12,7 +12,8 @@ part of 'thread_notifier.dart';
 @ProviderFor(ThreadNotifier)
 final threadProvider = ThreadNotifierFamily._();
 
-final class ThreadNotifierProvider extends $AsyncNotifierProvider<ThreadNotifier, ThreadViewPost> {
+final class ThreadNotifierProvider
+    extends $AsyncNotifierProvider<ThreadNotifier, ThreadViewPost> {
   ThreadNotifierProvider._({
     required ThreadNotifierFamily super.from,
     required String super.argument,

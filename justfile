@@ -6,9 +6,13 @@ format:
 lint:
     flutter analyze
 
+# Test with failures only to focus on failures and hanging tests
+test-quiet:
+    flutter test --reporter=failures-only --timeout=30s
+
 # Run all tests
 test:
-    flutter test
+    flutter test --timeout=60s
 
 # Run code gen
 gen:

@@ -13,7 +13,12 @@ part of 'thread_providers.dart';
 final threadRepositoryProvider = ThreadRepositoryProvider._();
 
 final class ThreadRepositoryProvider
-    extends $FunctionalProvider<ThreadRepository, ThreadRepository, ThreadRepository>
+    extends
+        $FunctionalProvider<
+          ThreadRepository,
+          ThreadRepository,
+          ThreadRepository
+        >
     with $Provider<ThreadRepository> {
   ThreadRepositoryProvider._()
     : super(

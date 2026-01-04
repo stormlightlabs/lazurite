@@ -6,6 +6,8 @@ import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/search/application/search_providers.dart';
+import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/features/timeline/application/timeline_notifier.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
@@ -17,13 +19,17 @@ import '../../helpers/test_database.dart';
 
 class MockSessionStorage extends Mock implements SessionStorage {}
 
+class MockSearchRepository extends Mock implements SearchRepository {}
+
 void main() {
   late MockSessionStorage mockSessionStorage;
+  late MockSearchRepository mockSearchRepository;
   late AppDatabase testDatabase;
   late Session testSession;
 
   setUp(() {
     mockSessionStorage = MockSessionStorage();
+    mockSearchRepository = MockSearchRepository();
     testDatabase = createTestDatabase();
     testSession = Session(
       did: 'did:web:test',
@@ -36,6 +42,7 @@ void main() {
       dpopKey: {},
     );
     when(() => mockSessionStorage.getSession()).thenAnswer((_) async => testSession);
+    when(() => mockSearchRepository.watchRecentSearches()).thenAnswer((_) => Stream.value([]));
   });
 
   tearDown(() async {
@@ -47,8 +54,8 @@ void main() {
       sessionStorageProvider.overrideWithValue(mockSessionStorage),
       appDatabaseProvider.overrideWithValue(testDatabase),
       authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
-      // Override timeline to return empty list immediately
       timelineProvider.overrideWith(() => _TestTimelineNotifier()),
+      searchRepositoryProvider.overrideWithValue(mockSearchRepository),
     ];
   }
 

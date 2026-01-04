@@ -61,3 +61,9 @@ class FeedCursors extends Table {
   @override
   Set<Column> get primaryKey => {feedKey};
 }
+
+class RecentSearches extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get query => text().unique()();
+  DateTimeColumn get searchedAt => dateTime()();
+}

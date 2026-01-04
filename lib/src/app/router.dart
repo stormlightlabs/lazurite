@@ -74,8 +74,8 @@ GoRouter createRouter(Ref ref) {
                     path: AppRoutes.profileDetail,
                     name: '${AppRouteNames.home}_${AppRouteNames.profileDetail}',
                     builder: (context, state) {
-                      final did = state.pathParameters['did']!;
-                      return _PlaceholderScreen(title: 'Profile', subtitle: 'DID: $did');
+                      final did = Uri.decodeComponent(state.pathParameters['did']!);
+                      return ProfilePage(did: did);
                     },
                   ),
                 ],
@@ -90,19 +90,19 @@ GoRouter createRouter(Ref ref) {
                 builder: (context, state) => const SearchScreen(),
                 routes: [
                   GoRoute(
-                    path: AppRoutes.thread,
+                    path: 't/:uri',
                     name: '${AppRouteNames.search}_${AppRouteNames.thread}',
                     builder: (context, state) {
-                      final postKey = state.pathParameters['postKey']!;
-                      return _PlaceholderScreen(title: 'Thread', subtitle: 'Post: $postKey');
+                      final uri = Uri.decodeComponent(state.pathParameters['uri']!);
+                      return ThreadScreen(postUri: uri);
                     },
                   ),
                   GoRoute(
                     path: AppRoutes.profileDetail,
                     name: '${AppRouteNames.search}_${AppRouteNames.profileDetail}',
                     builder: (context, state) {
-                      final did = state.pathParameters['did']!;
-                      return _PlaceholderScreen(title: 'Profile', subtitle: 'DID: $did');
+                      final did = Uri.decodeComponent(state.pathParameters['did']!);
+                      return ProfilePage(did: did);
                     },
                   ),
                 ],
@@ -120,16 +120,16 @@ GoRouter createRouter(Ref ref) {
                     path: AppRoutes.thread,
                     name: '${AppRouteNames.notifications}_${AppRouteNames.thread}',
                     builder: (context, state) {
-                      final uri = state.pathParameters['uri']!;
-                      return _PlaceholderScreen(title: 'Thread', subtitle: 'Post: $uri');
+                      final uri = Uri.decodeComponent(state.pathParameters['uri']!);
+                      return ThreadScreen(postUri: uri);
                     },
                   ),
                   GoRoute(
                     path: AppRoutes.profileDetail,
                     name: '${AppRouteNames.notifications}_${AppRouteNames.profileDetail}',
                     builder: (context, state) {
-                      final did = state.pathParameters['did']!;
-                      return _PlaceholderScreen(title: 'Profile', subtitle: 'DID: $did');
+                      final did = Uri.decodeComponent(state.pathParameters['did']!);
+                      return ProfilePage(did: did);
                     },
                   ),
                 ],

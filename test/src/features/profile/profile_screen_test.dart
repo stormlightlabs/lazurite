@@ -1,28 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
+import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
+import 'package:mocktail/mocktail.dart';
 
-import '../../../helpers/pump_app.dart';
+class MockSessionStorage extends Mock implements SessionStorage {}
 
 void main() {
+  late MockSessionStorage mockSessionStorage;
+
+  setUp(() {
+    mockSessionStorage = MockSessionStorage();
+  });
+
+  Widget createSubject() {
+    return ProviderScope(
+      overrides: [sessionStorageProvider.overrideWithValue(mockSessionStorage)],
+      child: const MaterialApp(home: ProfileScreen()),
+    );
+  }
+
   group('ProfileScreen', () {
-    testWidgets('renders app bar with title', (tester) async {
-      await tester.pumpApp(const ProfileScreen());
+    testWidgets('renders app bar with profile title', (tester) async {
+      when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
+
+      await tester.pumpWidget(createSubject());
+      await tester.pump();
 
       expect(find.text('Profile'), findsWidgets);
     });
 
-    testWidgets('renders person icon', (tester) async {
-      await tester.pumpApp(const ProfileScreen());
+    testWidgets('shows sign in message when not authenticated', (tester) async {
+      when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
 
-      expect(find.byIcon(Icons.person_outlined), findsOneWidget);
-    });
+      await tester.pumpWidget(createSubject());
+      await tester.pump();
 
-    testWidgets('renders profile placeholder text', (tester) async {
-      await tester.pumpApp(const ProfileScreen());
-
-      expect(find.text('Your Profile'), findsOneWidget);
-      expect(find.text('View and edit your profile'), findsOneWidget);
+      expect(find.text('Please sign in to view your profile'), findsOneWidget);
     });
   });
 }

@@ -13,7 +13,12 @@ part of 'timeline_providers.dart';
 final timelineRepositoryProvider = TimelineRepositoryProvider._();
 
 final class TimelineRepositoryProvider
-    extends $FunctionalProvider<TimelineRepository, TimelineRepository, TimelineRepository>
+    extends
+        $FunctionalProvider<
+          TimelineRepository,
+          TimelineRepository,
+          TimelineRepository
+        >
     with $Provider<TimelineRepository> {
   TimelineRepositoryProvider._()
     : super(
@@ -31,8 +36,9 @@ final class TimelineRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<TimelineRepository> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<TimelineRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
   TimelineRepository create(Ref ref) {
@@ -48,4 +54,5 @@ final class TimelineRepositoryProvider
   }
 }
 
-String _$timelineRepositoryHash() => r'1720caec9b667fc7648b98eb024a244fa35133c6';
+String _$timelineRepositoryHash() =>
+    r'1720caec9b667fc7648b98eb024a244fa35133c6';

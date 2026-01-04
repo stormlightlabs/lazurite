@@ -1,27 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/features/search/application/search_providers.dart';
+import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
+import 'package:mocktail/mocktail.dart';
 
-import '../../../helpers/pump_app.dart';
+class MockSearchRepository extends Mock implements SearchRepository {}
 
 void main() {
-  group('SearchScreen', () {
-    testWidgets('renders app bar with title', (tester) async {
-      await tester.pumpApp(const SearchScreen());
+  late MockSearchRepository mockRepository;
 
-      expect(find.text('Search'), findsWidgets);
+  setUp(() {
+    mockRepository = MockSearchRepository();
+  });
+
+  Widget createSubject() {
+    return ProviderScope(
+      overrides: [searchRepositoryProvider.overrideWithValue(mockRepository)],
+      child: const MaterialApp(home: SearchScreen()),
+    );
+  }
+
+  group('SearchScreen', () {
+    testWidgets('renders search bar', (tester) async {
+      when(() => mockRepository.watchRecentSearches()).thenAnswer((_) => Stream.value([]));
+
+      await tester.pumpWidget(createSubject());
+      await tester.pump();
+
+      expect(find.byType(TextField), findsOneWidget);
     });
 
     testWidgets('renders search icon', (tester) async {
-      await tester.pumpApp(const SearchScreen());
+      when(() => mockRepository.watchRecentSearches()).thenAnswer((_) => Stream.value([]));
 
-      expect(find.byIcon(Icons.search_outlined), findsOneWidget);
-    });
+      await tester.pumpWidget(createSubject());
+      await tester.pump();
 
-    testWidgets('renders search placeholder text', (tester) async {
-      await tester.pumpApp(const SearchScreen());
-
-      expect(find.text('Search posts and profiles'), findsOneWidget);
+      expect(find.byIcon(Icons.search), findsOneWidget);
     });
   });
 }

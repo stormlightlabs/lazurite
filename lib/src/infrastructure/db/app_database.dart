@@ -5,20 +5,22 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'daos/profile_dao.dart';
+import 'daos/search_dao.dart';
 import 'daos/timeline_dao.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [Posts, Profiles, TimelineItems, Accounts, FeedCursors],
-  daos: [TimelineDao],
+  tables: [Posts, Profiles, TimelineItems, Accounts, FeedCursors, RecentSearches],
+  daos: [TimelineDao, ProfileDao, SearchDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 }
 
 LazyDatabase _openConnection() {
