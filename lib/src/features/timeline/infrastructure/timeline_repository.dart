@@ -19,6 +19,7 @@ class TimelineRepository {
       cid: json['cid'],
       authorDid: json['author']['did'],
       record: jsonEncode(json['record']),
+      embed: Value(json['embed'] != null ? jsonEncode(json['embed']) : null),
       indexedAt: Value(DateTime.tryParse(json['indexedAt'] ?? '')),
       replyCount: Value(json['replyCount'] ?? 0),
       repostCount: Value(json['repostCount'] ?? 0),

@@ -97,7 +97,7 @@ final class ProfileNotifierProvider
   }
 }
 
-String _$profileNotifierHash() => r'64dd55fec0d7c7189141790373270bc9eb244789';
+String _$profileNotifierHash() => r'8c85b7b98f88588be316afe12936a90082506568';
 
 final class ProfileNotifierFamily extends $Family
     with
@@ -187,7 +187,7 @@ final class AuthorFeedNotifierProvider
 }
 
 String _$authorFeedNotifierHash() =>
-    r'905cb265b01479bfbfcd45bfe6f88573a6357a1a';
+    r'b241402d3ec7ba5ca64908fd166bbfa3d3b126c7';
 
 final class AuthorFeedNotifierFamily extends $Family
     with

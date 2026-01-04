@@ -5,6 +5,7 @@ class Posts extends Table {
   TextColumn get cid => text()();
   TextColumn get authorDid => text()();
   TextColumn get record => text()();
+  TextColumn get embed => text().nullable()();
   DateTimeColumn get indexedAt => dateTime().nullable()();
   IntColumn get replyCount => integer().withDefault(const Constant(0))();
   IntColumn get repostCount => integer().withDefault(const Constant(0))();

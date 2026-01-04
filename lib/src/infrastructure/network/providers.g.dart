@@ -19,7 +19,8 @@ final dioPublicProvider = DioPublicProvider._();
 ///
 /// This client is configured for the public AppView at public.api.bsky.app.
 
-final class DioPublicProvider extends $FunctionalProvider<Dio, Dio, Dio> with $Provider<Dio> {
+final class DioPublicProvider extends $FunctionalProvider<Dio, Dio, Dio>
+    with $Provider<Dio> {
   /// Provides the public Dio client for unauthenticated API access.
   ///
   /// This client is configured for the public AppView at public.api.bsky.app.
@@ -39,7 +40,8 @@ final class DioPublicProvider extends $FunctionalProvider<Dio, Dio, Dio> with $P
 
   @$internal
   @override
-  $ProviderElement<Dio> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
+  $ProviderElement<Dio> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
   Dio create(Ref ref) {
@@ -48,7 +50,10 @@ final class DioPublicProvider extends $FunctionalProvider<Dio, Dio, Dio> with $P
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(Dio value) {
-    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<Dio>(value));
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Dio>(value),
+    );
   }
 }
 
@@ -67,7 +72,8 @@ final dioPdsProvider = DioPdsProvider._();
 /// This requires a logged-in user with a resolved PDS URL.
 /// Returns null if no user is logged in.
 
-final class DioPdsProvider extends $FunctionalProvider<Dio?, Dio?, Dio?> with $Provider<Dio?> {
+final class DioPdsProvider extends $FunctionalProvider<Dio?, Dio?, Dio?>
+    with $Provider<Dio?> {
   /// Provides the PDS Dio client for authenticated API access.
   ///
   /// This requires a logged-in user with a resolved PDS URL.
@@ -88,7 +94,8 @@ final class DioPdsProvider extends $FunctionalProvider<Dio?, Dio?, Dio?> with $P
 
   @$internal
   @override
-  $ProviderElement<Dio?> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
+  $ProviderElement<Dio?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
   Dio? create(Ref ref) {
@@ -97,7 +104,10 @@ final class DioPdsProvider extends $FunctionalProvider<Dio?, Dio?, Dio?> with $P
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(Dio? value) {
-    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<Dio?>(value));
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Dio?>(value),
+    );
   }
 }
 
@@ -116,7 +126,8 @@ final xrpcClientProvider = XrpcClientProvider._();
 /// This client automatically routes requests to the correct host
 /// based on endpoint metadata in the registry.
 
-final class XrpcClientProvider extends $FunctionalProvider<XrpcClient, XrpcClient, XrpcClient>
+final class XrpcClientProvider
+    extends $FunctionalProvider<XrpcClient, XrpcClient, XrpcClient>
     with $Provider<XrpcClient> {
   /// Provides the XRPC client for making API requests.
   ///

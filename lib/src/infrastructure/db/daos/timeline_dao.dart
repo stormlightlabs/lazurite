@@ -41,6 +41,7 @@ class TimelineDao extends DatabaseAccessor<AppDatabase> with _$TimelineDaoMixin 
             cid: p.cid,
             authorDid: p.authorDid,
             record: p.record,
+            embed: Value(p.embed),
             indexedAt: Value(p.indexedAt),
             replyCount: Value(p.replyCount),
             repostCount: Value(p.repostCount),
@@ -124,6 +125,7 @@ class PostInsert {
     required this.cid,
     required this.authorDid,
     required this.record,
+    this.embed,
     this.indexedAt,
     this.replyCount = 0,
     this.repostCount = 0,
@@ -134,6 +136,7 @@ class PostInsert {
   final String cid;
   final String authorDid;
   final String record;
+  final String? embed;
   final DateTime? indexedAt;
   final int replyCount;
   final int repostCount;

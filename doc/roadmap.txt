@@ -82,7 +82,7 @@ Endpoints:
 Tasks:
 - [x] Profile screen: fetch + cache profile + author feed, cursor paging.
 - [x] Search screen: query -> paged results; store recent searches (local).
-- [ ] Shared hydration: ensure embeds/media are rendered consistently.
+- [x] Shared hydration: ensure embeds/media are rendered consistently.
 - [ ] Add routes
       - [ ] /search?q=<query>
         (SearchScreen has initialQuery but router doesn't wire query params)

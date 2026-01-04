@@ -7,6 +7,7 @@ import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
 
 import 'post_actions_row.dart';
 import 'post_body.dart';
+import 'post_embeds.dart';
 import 'post_header.dart';
 
 class PostCard extends StatelessWidget {
@@ -71,6 +72,14 @@ class PostCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   PostBody(text: text),
+                  if (item.post.embed != null) ...[
+                    const SizedBox(height: 8),
+                    PostEmbeds(
+                      embed: jsonDecode(item.post.embed!) as Map<String, dynamic>,
+                      authorDid: item.author.did,
+                      record: jsonDecode(item.post.record) as Map<String, dynamic>,
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   PostActionsRow(
                     replyCount: item.post.replyCount,

@@ -46,6 +46,15 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _embedMeta = const VerificationMeta('embed');
+  @override
+  late final GeneratedColumn<String> embed = GeneratedColumn<String>(
+    'embed',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _indexedAtMeta = const VerificationMeta(
     'indexedAt',
   );
@@ -99,6 +108,7 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
     cid,
     authorDid,
     record,
+    embed,
     indexedAt,
     replyCount,
     repostCount,
@@ -147,6 +157,12 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
       );
     } else if (isInserting) {
       context.missing(_recordMeta);
+    }
+    if (data.containsKey('embed')) {
+      context.handle(
+        _embedMeta,
+        embed.isAcceptableOrUnknown(data['embed']!, _embedMeta),
+      );
     }
     if (data.containsKey('indexed_at')) {
       context.handle(
@@ -200,6 +216,10 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
         DriftSqlType.string,
         data['${effectivePrefix}record'],
       )!,
+      embed: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}embed'],
+      ),
       indexedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}indexed_at'],
@@ -230,6 +250,7 @@ class Post extends DataClass implements Insertable<Post> {
   final String cid;
   final String authorDid;
   final String record;
+  final String? embed;
   final DateTime? indexedAt;
   final int replyCount;
   final int repostCount;
@@ -239,6 +260,7 @@ class Post extends DataClass implements Insertable<Post> {
     required this.cid,
     required this.authorDid,
     required this.record,
+    this.embed,
     this.indexedAt,
     required this.replyCount,
     required this.repostCount,
@@ -251,6 +273,9 @@ class Post extends DataClass implements Insertable<Post> {
     map['cid'] = Variable<String>(cid);
     map['author_did'] = Variable<String>(authorDid);
     map['record'] = Variable<String>(record);
+    if (!nullToAbsent || embed != null) {
+      map['embed'] = Variable<String>(embed);
+    }
     if (!nullToAbsent || indexedAt != null) {
       map['indexed_at'] = Variable<DateTime>(indexedAt);
     }
@@ -266,6 +291,9 @@ class Post extends DataClass implements Insertable<Post> {
       cid: Value(cid),
       authorDid: Value(authorDid),
       record: Value(record),
+      embed: embed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(embed),
       indexedAt: indexedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(indexedAt),
@@ -285,6 +313,7 @@ class Post extends DataClass implements Insertable<Post> {
       cid: serializer.fromJson<String>(json['cid']),
       authorDid: serializer.fromJson<String>(json['authorDid']),
       record: serializer.fromJson<String>(json['record']),
+      embed: serializer.fromJson<String?>(json['embed']),
       indexedAt: serializer.fromJson<DateTime?>(json['indexedAt']),
       replyCount: serializer.fromJson<int>(json['replyCount']),
       repostCount: serializer.fromJson<int>(json['repostCount']),
@@ -299,6 +328,7 @@ class Post extends DataClass implements Insertable<Post> {
       'cid': serializer.toJson<String>(cid),
       'authorDid': serializer.toJson<String>(authorDid),
       'record': serializer.toJson<String>(record),
+      'embed': serializer.toJson<String?>(embed),
       'indexedAt': serializer.toJson<DateTime?>(indexedAt),
       'replyCount': serializer.toJson<int>(replyCount),
       'repostCount': serializer.toJson<int>(repostCount),
@@ -311,6 +341,7 @@ class Post extends DataClass implements Insertable<Post> {
     String? cid,
     String? authorDid,
     String? record,
+    Value<String?> embed = const Value.absent(),
     Value<DateTime?> indexedAt = const Value.absent(),
     int? replyCount,
     int? repostCount,
@@ -320,6 +351,7 @@ class Post extends DataClass implements Insertable<Post> {
     cid: cid ?? this.cid,
     authorDid: authorDid ?? this.authorDid,
     record: record ?? this.record,
+    embed: embed.present ? embed.value : this.embed,
     indexedAt: indexedAt.present ? indexedAt.value : this.indexedAt,
     replyCount: replyCount ?? this.replyCount,
     repostCount: repostCount ?? this.repostCount,
@@ -331,6 +363,7 @@ class Post extends DataClass implements Insertable<Post> {
       cid: data.cid.present ? data.cid.value : this.cid,
       authorDid: data.authorDid.present ? data.authorDid.value : this.authorDid,
       record: data.record.present ? data.record.value : this.record,
+      embed: data.embed.present ? data.embed.value : this.embed,
       indexedAt: data.indexedAt.present ? data.indexedAt.value : this.indexedAt,
       replyCount: data.replyCount.present
           ? data.replyCount.value
@@ -349,6 +382,7 @@ class Post extends DataClass implements Insertable<Post> {
           ..write('cid: $cid, ')
           ..write('authorDid: $authorDid, ')
           ..write('record: $record, ')
+          ..write('embed: $embed, ')
           ..write('indexedAt: $indexedAt, ')
           ..write('replyCount: $replyCount, ')
           ..write('repostCount: $repostCount, ')
@@ -363,6 +397,7 @@ class Post extends DataClass implements Insertable<Post> {
     cid,
     authorDid,
     record,
+    embed,
     indexedAt,
     replyCount,
     repostCount,
@@ -376,6 +411,7 @@ class Post extends DataClass implements Insertable<Post> {
           other.cid == this.cid &&
           other.authorDid == this.authorDid &&
           other.record == this.record &&
+          other.embed == this.embed &&
           other.indexedAt == this.indexedAt &&
           other.replyCount == this.replyCount &&
           other.repostCount == this.repostCount &&
@@ -387,6 +423,7 @@ class PostsCompanion extends UpdateCompanion<Post> {
   final Value<String> cid;
   final Value<String> authorDid;
   final Value<String> record;
+  final Value<String?> embed;
   final Value<DateTime?> indexedAt;
   final Value<int> replyCount;
   final Value<int> repostCount;
@@ -397,6 +434,7 @@ class PostsCompanion extends UpdateCompanion<Post> {
     this.cid = const Value.absent(),
     this.authorDid = const Value.absent(),
     this.record = const Value.absent(),
+    this.embed = const Value.absent(),
     this.indexedAt = const Value.absent(),
     this.replyCount = const Value.absent(),
     this.repostCount = const Value.absent(),
@@ -408,6 +446,7 @@ class PostsCompanion extends UpdateCompanion<Post> {
     required String cid,
     required String authorDid,
     required String record,
+    this.embed = const Value.absent(),
     this.indexedAt = const Value.absent(),
     this.replyCount = const Value.absent(),
     this.repostCount = const Value.absent(),
@@ -422,6 +461,7 @@ class PostsCompanion extends UpdateCompanion<Post> {
     Expression<String>? cid,
     Expression<String>? authorDid,
     Expression<String>? record,
+    Expression<String>? embed,
     Expression<DateTime>? indexedAt,
     Expression<int>? replyCount,
     Expression<int>? repostCount,
@@ -433,6 +473,7 @@ class PostsCompanion extends UpdateCompanion<Post> {
       if (cid != null) 'cid': cid,
       if (authorDid != null) 'author_did': authorDid,
       if (record != null) 'record': record,
+      if (embed != null) 'embed': embed,
       if (indexedAt != null) 'indexed_at': indexedAt,
       if (replyCount != null) 'reply_count': replyCount,
       if (repostCount != null) 'repost_count': repostCount,
@@ -446,6 +487,7 @@ class PostsCompanion extends UpdateCompanion<Post> {
     Value<String>? cid,
     Value<String>? authorDid,
     Value<String>? record,
+    Value<String?>? embed,
     Value<DateTime?>? indexedAt,
     Value<int>? replyCount,
     Value<int>? repostCount,
@@ -457,6 +499,7 @@ class PostsCompanion extends UpdateCompanion<Post> {
       cid: cid ?? this.cid,
       authorDid: authorDid ?? this.authorDid,
       record: record ?? this.record,
+      embed: embed ?? this.embed,
       indexedAt: indexedAt ?? this.indexedAt,
       replyCount: replyCount ?? this.replyCount,
       repostCount: repostCount ?? this.repostCount,
@@ -479,6 +522,9 @@ class PostsCompanion extends UpdateCompanion<Post> {
     }
     if (record.present) {
       map['record'] = Variable<String>(record.value);
+    }
+    if (embed.present) {
+      map['embed'] = Variable<String>(embed.value);
     }
     if (indexedAt.present) {
       map['indexed_at'] = Variable<DateTime>(indexedAt.value);
@@ -505,6 +551,7 @@ class PostsCompanion extends UpdateCompanion<Post> {
           ..write('cid: $cid, ')
           ..write('authorDid: $authorDid, ')
           ..write('record: $record, ')
+          ..write('embed: $embed, ')
           ..write('indexedAt: $indexedAt, ')
           ..write('replyCount: $replyCount, ')
           ..write('repostCount: $repostCount, ')
@@ -2122,6 +2169,7 @@ typedef $$PostsTableCreateCompanionBuilder =
       required String cid,
       required String authorDid,
       required String record,
+      Value<String?> embed,
       Value<DateTime?> indexedAt,
       Value<int> replyCount,
       Value<int> repostCount,
@@ -2134,6 +2182,7 @@ typedef $$PostsTableUpdateCompanionBuilder =
       Value<String> cid,
       Value<String> authorDid,
       Value<String> record,
+      Value<String?> embed,
       Value<DateTime?> indexedAt,
       Value<int> replyCount,
       Value<int> repostCount,
@@ -2189,6 +2238,11 @@ class $$PostsTableFilterComposer extends Composer<_$AppDatabase, $PostsTable> {
 
   ColumnFilters<String> get record => $composableBuilder(
     column: $table.record,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get embed => $composableBuilder(
+    column: $table.embed,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2267,6 +2321,11 @@ class $$PostsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get embed => $composableBuilder(
+    column: $table.embed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get indexedAt => $composableBuilder(
     column: $table.indexedAt,
     builder: (column) => ColumnOrderings(column),
@@ -2308,6 +2367,9 @@ class $$PostsTableAnnotationComposer
 
   GeneratedColumn<String> get record =>
       $composableBuilder(column: $table.record, builder: (column) => column);
+
+  GeneratedColumn<String> get embed =>
+      $composableBuilder(column: $table.embed, builder: (column) => column);
 
   GeneratedColumn<DateTime> get indexedAt =>
       $composableBuilder(column: $table.indexedAt, builder: (column) => column);
@@ -2383,6 +2445,7 @@ class $$PostsTableTableManager
                 Value<String> cid = const Value.absent(),
                 Value<String> authorDid = const Value.absent(),
                 Value<String> record = const Value.absent(),
+                Value<String?> embed = const Value.absent(),
                 Value<DateTime?> indexedAt = const Value.absent(),
                 Value<int> replyCount = const Value.absent(),
                 Value<int> repostCount = const Value.absent(),
@@ -2393,6 +2456,7 @@ class $$PostsTableTableManager
                 cid: cid,
                 authorDid: authorDid,
                 record: record,
+                embed: embed,
                 indexedAt: indexedAt,
                 replyCount: replyCount,
                 repostCount: repostCount,
@@ -2405,6 +2469,7 @@ class $$PostsTableTableManager
                 required String cid,
                 required String authorDid,
                 required String record,
+                Value<String?> embed = const Value.absent(),
                 Value<DateTime?> indexedAt = const Value.absent(),
                 Value<int> replyCount = const Value.absent(),
                 Value<int> repostCount = const Value.absent(),
@@ -2415,6 +2480,7 @@ class $$PostsTableTableManager
                 cid: cid,
                 authorDid: authorDid,
                 record: record,
+                embed: embed,
                 indexedAt: indexedAt,
                 replyCount: replyCount,
                 repostCount: repostCount,
