@@ -1,14 +1,18 @@
 import 'package:dio/dio.dart';
 import 'package:jose/jose.dart';
 
+import '../../core/utils/logger.dart';
 import 'dpop_utils.dart';
 import 'oauth_exceptions.dart';
 import 'server_metadata.dart';
 
 class OAuthClient {
-  OAuthClient({required Dio dio}) : _dio = dio;
+  OAuthClient({required Dio dio, Logger? logger})
+      : _dio = dio,
+        _logger = logger ?? const Logger('OAuthClient');
 
   final Dio _dio;
+  final Logger _logger;
 
   static const kClientId = 'https://lazurite.stormlightlabs.org/client-metadata.json';
   static const kRedirectUri = 'org.stormlightlabs.lazurite://callback';
@@ -61,7 +65,28 @@ class OAuthClient {
       }
 
       final data = response.data!;
-      return data['request_uri'] as String;
+      final requestUri = data['request_uri'] as String?;
+
+      if (requestUri == null || requestUri.isEmpty) {
+        throw Exception('PAR response missing or empty request_uri');
+      }
+
+      // Validate request_uri format (should start with 'urn:ietf:params:oauth:request_uri:')
+      if (!requestUri.startsWith('urn:ietf:params:oauth:request_uri:')) {
+        throw Exception('Invalid request_uri format: $requestUri');
+      }
+
+      final expiresIn = data['expires_in'] as int?;
+      if (expiresIn == null) {
+        throw Exception('PAR response missing expires_in');
+      }
+
+      // Warn if expires_in is too short (less than 30 seconds)
+      if (expiresIn < 30) {
+        _logger.warning('PAR expires_in is very short: $expiresIn seconds');
+      }
+
+      return requestUri;
     } on DioException catch (e) {
       if (e.response?.data != null && e.response!.data is Map<String, dynamic>) {
         throw OAuthException.fromJson(e.response!.data as Map<String, dynamic>);
@@ -196,8 +221,8 @@ class OAuthClient {
       );
     } on DioException catch (e) {
       if (e.response?.data != null && e.response!.data is Map<String, dynamic>) {
-        // TODO: Log error for debugging: $error
-        OAuthException.fromJson(e.response!.data as Map<String, dynamic>);
+        final error = OAuthException.fromJson(e.response!.data as Map<String, dynamic>);
+        _logger.warning('Token revocation failed', error);
       }
     }
   }

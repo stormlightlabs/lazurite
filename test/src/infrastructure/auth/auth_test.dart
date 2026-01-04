@@ -97,6 +97,157 @@ void main() {
     });
   });
 
+  group('OAuthClient', () {
+    late MockDio dio;
+    late MockLogger logger;
+    late OAuthClient client;
+
+    setUp(() {
+      dio = MockDio();
+      logger = MockLogger();
+      client = OAuthClient(dio: dio, logger: logger);
+    });
+
+    test('pushedAuthorizationRequest validates request_uri format', () async {
+      const metadata = ServerMetadata(
+        issuer: 'https://pds.com',
+        authorizationEndpoint: 'https://pds.com/oauth/authorize',
+        tokenEndpoint: 'https://pds.com/oauth/token',
+        pushedAuthorizationRequestEndpoint: 'https://pds.com/oauth/par',
+      );
+
+      when(() => dio.post<Map<String, dynamic>>(any(), options: any(named: 'options'), data: any(named: 'data')))
+          .thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 201,
+          data: {
+            'request_uri': 'invalid-format',
+            'expires_in': 60,
+          },
+        ),
+      );
+
+      final key = await DPoPUtils.generateKey();
+
+      await expectLater(
+        () => client.pushedAuthorizationRequest(
+          metadata: metadata,
+          key: key,
+          state: 'state',
+          codeChallenge: 'challenge',
+        ),
+        throwsA(isA<Exception>().having(
+          (e) => e.toString(),
+          'message',
+          contains('Invalid request_uri format'),
+        )),
+      );
+    });
+
+    test('pushedAuthorizationRequest throws on missing expires_in', () async {
+      const metadata = ServerMetadata(
+        issuer: 'https://pds.com',
+        authorizationEndpoint: 'https://pds.com/oauth/authorize',
+        tokenEndpoint: 'https://pds.com/oauth/token',
+        pushedAuthorizationRequestEndpoint: 'https://pds.com/oauth/par',
+      );
+
+      when(() => dio.post<Map<String, dynamic>>(any(), options: any(named: 'options'), data: any(named: 'data')))
+          .thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 201,
+          data: {
+            'request_uri': 'urn:ietf:params:oauth:request_uri:test',
+          },
+        ),
+      );
+
+      final key = await DPoPUtils.generateKey();
+
+      await expectLater(
+        () => client.pushedAuthorizationRequest(
+          metadata: metadata,
+          key: key,
+          state: 'state',
+          codeChallenge: 'challenge',
+        ),
+        throwsA(isA<Exception>().having(
+          (e) => e.toString(),
+          'message',
+          contains('PAR response missing expires_in'),
+        )),
+      );
+    });
+
+    test('pushedAuthorizationRequest logs warning for short expires_in', () async {
+      const metadata = ServerMetadata(
+        issuer: 'https://pds.com',
+        authorizationEndpoint: 'https://pds.com/oauth/authorize',
+        tokenEndpoint: 'https://pds.com/oauth/token',
+        pushedAuthorizationRequestEndpoint: 'https://pds.com/oauth/par',
+      );
+
+      when(() => dio.post<Map<String, dynamic>>(any(), options: any(named: 'options'), data: any(named: 'data')))
+          .thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 201,
+          data: {
+            'request_uri': 'urn:ietf:params:oauth:request_uri:test',
+            'expires_in': 15, // Less than 30 seconds
+          },
+        ),
+      );
+      when(() => logger.warning(any())).thenReturn(null);
+
+      final key = await DPoPUtils.generateKey();
+
+      final requestUri = await client.pushedAuthorizationRequest(
+        metadata: metadata,
+        key: key,
+        state: 'state',
+        codeChallenge: 'challenge',
+      );
+
+      expect(requestUri, 'urn:ietf:params:oauth:request_uri:test');
+      verify(() => logger.warning(any(that: contains('very short')))).called(1);
+    });
+
+    test('pushedAuthorizationRequest succeeds with valid response', () async {
+      const metadata = ServerMetadata(
+        issuer: 'https://pds.com',
+        authorizationEndpoint: 'https://pds.com/oauth/authorize',
+        tokenEndpoint: 'https://pds.com/oauth/token',
+        pushedAuthorizationRequestEndpoint: 'https://pds.com/oauth/par',
+      );
+
+      when(() => dio.post<Map<String, dynamic>>(any(), options: any(named: 'options'), data: any(named: 'data')))
+          .thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 201,
+          data: {
+            'request_uri': 'urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY',
+            'expires_in': 60,
+          },
+        ),
+      );
+
+      final key = await DPoPUtils.generateKey();
+
+      final requestUri = await client.pushedAuthorizationRequest(
+        metadata: metadata,
+        key: key,
+        state: 'state',
+        codeChallenge: 'challenge',
+      );
+
+      expect(requestUri, 'urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY');
+    });
+  });
+
   group('DPoPUtils', () {
     test('generateKey returns ES256 key', () async {
       final key = await DPoPUtils.generateKey();
@@ -269,6 +420,116 @@ void main() {
         ),
       ).called(1);
       verify(() => sessionStorage.saveSession(any())).called(1);
+    });
+
+    test('completeLogin validates scopes and logs warning on mismatch', () async {
+      final uri = Uri.parse('org.stormlightlabs.lazurite://callback?code=abc&state=xyz');
+      final key = await DPoPUtils.generateKey();
+      final pendingState = {
+        'did': 'did:plc:user',
+        'handle': 'user.bsky.social',
+        'pdsUrl': 'https://pds.com',
+        'verifier': 'verifier123',
+        'state': 'xyz',
+        'dpopKey': key.toJson(),
+      };
+
+      const testMetadata = ServerMetadata(
+        issuer: 'https://pds.com',
+        authorizationEndpoint: 'https://pds.com/oauth/authorize',
+        tokenEndpoint: 'https://pds.com/oauth/token',
+      );
+
+      when(() => secureStorage.read(key: any(named: 'key')))
+          .thenAnswer((_) async => jsonEncode(pendingState));
+      when(() => secureStorage.delete(key: any(named: 'key'))).thenAnswer((_) async {});
+      when(() => metadataRepo.discover(any())).thenAnswer((_) async => testMetadata);
+      when(
+        () => oauthClient.exchangeCodeForToken(
+          metadata: any(named: 'metadata'),
+          code: any(named: 'code'),
+          codeVerifier: any(named: 'codeVerifier'),
+          key: any(named: 'key'),
+          nonce: any(named: 'nonce'),
+        ),
+      ).thenAnswer(
+        (_) async => TokenResponse(
+          accessToken: 'access',
+          tokenType: 'Bearer',
+          refreshToken: 'refresh',
+          scope: 'atproto', // Missing 'transition:generic'
+          expiresIn: 3600,
+        ),
+      );
+      when(() => sessionStorage.saveSession(any())).thenAnswer((_) async {});
+      when(() => logger.warning(any())).thenReturn(null);
+
+      await authRepo.completeLogin(uri);
+
+      // Verify warning was logged for reduced scopes
+      verify(() => logger.warning(any(that: contains('reduced scopes')))).called(1);
+    });
+
+    test('completeLogin validates JWT claims and logs warning on mismatch', () async {
+      final uri = Uri.parse('org.stormlightlabs.lazurite://callback?code=abc&state=xyz');
+      final key = await DPoPUtils.generateKey();
+
+      // Create a JWT with mismatched sub claim
+      final jwtKey = await DPoPUtils.generateKey();
+      final builder = JsonWebSignatureBuilder()
+        ..jsonContent = {
+          'sub': 'did:plc:wrong-user',
+          'iss': 'https://pds.com',
+          'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'exp': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
+        }
+        ..addRecipient(jwtKey, algorithm: 'ES256');
+      final jws = builder.build();
+      final accessToken = jws.toCompactSerialization();
+
+      final pendingState = {
+        'did': 'did:plc:user',
+        'handle': 'user.bsky.social',
+        'pdsUrl': 'https://pds.com',
+        'verifier': 'verifier123',
+        'state': 'xyz',
+        'dpopKey': key.toJson(),
+      };
+
+      const testMetadata = ServerMetadata(
+        issuer: 'https://pds.com',
+        authorizationEndpoint: 'https://pds.com/oauth/authorize',
+        tokenEndpoint: 'https://pds.com/oauth/token',
+      );
+
+      when(() => secureStorage.read(key: any(named: 'key')))
+          .thenAnswer((_) async => jsonEncode(pendingState));
+      when(() => secureStorage.delete(key: any(named: 'key'))).thenAnswer((_) async {});
+      when(() => metadataRepo.discover(any())).thenAnswer((_) async => testMetadata);
+      when(
+        () => oauthClient.exchangeCodeForToken(
+          metadata: any(named: 'metadata'),
+          code: any(named: 'code'),
+          codeVerifier: any(named: 'codeVerifier'),
+          key: any(named: 'key'),
+          nonce: any(named: 'nonce'),
+        ),
+      ).thenAnswer(
+        (_) async => TokenResponse(
+          accessToken: accessToken,
+          tokenType: 'Bearer',
+          refreshToken: 'refresh',
+          scope: 'atproto transition:generic',
+          expiresIn: 3600,
+        ),
+      );
+      when(() => sessionStorage.saveSession(any())).thenAnswer((_) async {});
+      when(() => logger.warning(any(), any())).thenReturn(null);
+
+      await authRepo.completeLogin(uri);
+
+      // Verify warning was logged for sub claim mismatch
+      verify(() => logger.warning(any(that: contains('sub claim mismatch')), any())).called(1);
     });
 
     test('loginWithAppPassword failure', () async {

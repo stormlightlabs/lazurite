@@ -166,6 +166,8 @@ class AuthRepository {
       );
 
       _logger.debug('Token exchange successful');
+      _validateScopes(tokenResponse.scope, OAuthClient.kScope);
+      _validateTokenClaims(tokenResponse.accessToken, did, pdsUrl);
 
       final session = Session(
         did: did,
@@ -203,6 +205,9 @@ class AuthRepository {
         key: dpopKey,
         nonce: nonce,
       );
+
+      _validateScopes(tokenResponse.scope, OAuthClient.kScope);
+      _validateTokenClaims(tokenResponse.accessToken, session.did, session.pdsUrl);
 
       final newSession = session.copyWith(
         accessJwt: tokenResponse.accessToken,
@@ -262,6 +267,54 @@ class AuthRepository {
       }
     } catch (e) {
       await _secureStorage.delete(key: _keyPendingSession);
+    }
+  }
+
+  /// Validates that granted scopes match requested scopes.
+  ///
+  /// Logs a warning if the server returned fewer scopes than requested.
+  void _validateScopes(String? grantedScope, String requestedScope) {
+    if (grantedScope == null || grantedScope.isEmpty) {
+      _logger.warning('No scopes granted by server. Requested: $requestedScope');
+      return;
+    }
+
+    final grantedScopes = grantedScope.split(' ').toSet();
+    final requestedScopes = requestedScope.split(' ').toSet();
+
+    final missingScopes = requestedScopes.difference(grantedScopes);
+    if (missingScopes.isNotEmpty) {
+      _logger.warning(
+        'Server granted reduced scopes. Requested: $requestedScope, Granted: $grantedScope, Missing: ${missingScopes.join(' ')}',
+      );
+    }
+  }
+
+  /// Validates JWT claims (sub and iss) match expected values.
+  ///
+  /// Decodes the access token and verifies:
+  /// - `sub` claim matches the expected DID
+  /// - `iss` claim matches the expected PDS URL
+  void _validateTokenClaims(String accessToken, String expectedDid, String expectedPdsUrl) {
+    try {
+      final jwt = JsonWebToken.unverified(accessToken);
+      final claims = jwt.claims;
+
+      final sub = claims.getTyped<String>('sub');
+      if (sub != expectedDid) {
+        _logger.warning(
+          'Token sub claim mismatch. Expected: $expectedDid, Got: $sub',
+        );
+      }
+
+      final iss = claims.getTyped<String>('iss');
+      if (iss != null && iss != expectedPdsUrl) {
+        _logger.warning(
+          'Token iss claim mismatch. Expected: $expectedPdsUrl, Got: $iss',
+        );
+      }
+    } catch (e) {
+      _logger.warning('Failed to validate token claims: $e');
     }
   }
 

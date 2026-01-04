@@ -30,7 +30,10 @@ IdentityRepository identityRepository(Ref ref) {
 
 @Riverpod(keepAlive: true)
 OAuthClient oauthClient(Ref ref) {
-  return OAuthClient(dio: Dio());
+  return OAuthClient(
+    dio: Dio(),
+    logger: ref.watch(loggerProvider('OAuthClient')),
+  );
 }
 
 @Riverpod(keepAlive: true)

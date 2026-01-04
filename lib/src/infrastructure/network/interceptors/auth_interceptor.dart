@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:jose/jose.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/auth/dpop_nonce_store.dart';
 import 'package:lazurite/src/infrastructure/auth/dpop_utils.dart';
 
@@ -19,7 +22,9 @@ class AuthInterceptor extends Interceptor {
     required this.getSession,
     required this.refreshSession,
     DPoPNonceStore? nonceStore,
-  }) : _nonceStore = nonceStore ?? DPoPNonceStore();
+    Logger? logger,
+  })  : _nonceStore = nonceStore ?? DPoPNonceStore(),
+        _logger = logger ?? const Logger('AuthInterceptor');
 
   /// Callback to get the current session.
   final SessionGetter getSession;
@@ -30,11 +35,63 @@ class AuthInterceptor extends Interceptor {
   /// Store for DPoP nonces.
   final DPoPNonceStore _nonceStore;
 
-  /// Lock to prevent concurrent refresh attempts.
-  bool _isRefreshing = false;
+  /// Logger instance.
+  final Logger _logger;
+
+  /// Completer used to queue requests during token refresh.
+  ///
+  /// When null, no refresh is in progress. When non-null, a refresh is in progress
+  /// and concurrent requests should wait for the completer to complete.
+  Completer<Session?>? _refreshCompleter;
 
   /// Key used to mark requests as requiring auth in options.extra.
   static const requiresAuthKey = 'requiresAuth';
+
+  /// Retries a request with a new session.
+  Future<void> _retryRequestWithSession(
+    DioException err,
+    Session newSession,
+    ErrorInterceptorHandler handler,
+  ) async {
+    final options = err.requestOptions;
+    options.headers['Authorization'] = 'Bearer ${newSession.accessJwt}';
+
+    try {
+      final dpopKey = JsonWebKey.fromJson(newSession.dpopKey);
+      final url = options.uri.toString();
+      final method = options.method;
+      final nonce = _nonceStore.get(newSession.pdsUrl);
+
+      final proof = await DPoPUtils.createProof(
+        url: url,
+        method: method,
+        privateKey: dpopKey,
+        accessToken: newSession.accessJwt,
+        nonce: nonce,
+      );
+
+      options.headers['DPoP'] = proof;
+    } catch (e) {
+      _logger.warning('Failed to create DPoP proof for retry', e);
+    }
+
+    options.extra['_authRetried'] = true;
+    final retryDio = Dio(
+      BaseOptions(
+        baseUrl: options.baseUrl,
+        connectTimeout: options.connectTimeout,
+        receiveTimeout: options.receiveTimeout,
+        sendTimeout: options.sendTimeout,
+      ),
+    );
+
+    try {
+      final response = await retryDio.fetch(options);
+      handler.resolve(response);
+    } catch (e) {
+      handler.next(err);
+    }
+  }
 
   @override
   Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
@@ -62,7 +119,7 @@ class AuthInterceptor extends Interceptor {
 
           options.headers['DPoP'] = proof;
         } catch (e) {
-          // TODO: Log error for debugging: $e
+          _logger.warning('Failed to create DPoP proof for request', e);
         }
       }
     }
@@ -107,61 +164,44 @@ class AuthInterceptor extends Interceptor {
       return handler.next(err);
     }
 
-    if (_isRefreshing) {
-      return handler.next(err);
-    }
     final hasRetried = err.requestOptions.extra['_authRetried'] == true;
     if (hasRetried) {
       return handler.next(err);
     }
 
-    _isRefreshing = true;
+    // If a refresh is already in progress, wait for it to complete
+    if (_refreshCompleter != null) {
+      try {
+        final newSession = await _refreshCompleter!.future;
+        if (newSession == null) {
+          return handler.next(err);
+        }
+
+        // Retry with the new session
+        return _retryRequestWithSession(err, newSession, handler);
+      } catch (e) {
+        return handler.next(err);
+      }
+    }
+
+    // Start a new refresh
+    _refreshCompleter = Completer<Session?>();
 
     try {
       final newSession = await refreshSession();
+      _refreshCompleter!.complete(newSession);
 
       if (newSession == null) {
         return handler.next(err);
       }
 
-      final options = err.requestOptions;
-      options.headers['Authorization'] = 'Bearer ${newSession.accessJwt}';
-
-      try {
-        final dpopKey = JsonWebKey.fromJson(newSession.dpopKey);
-        final url = options.uri.toString();
-        final method = options.method;
-        final nonce = _nonceStore.get(newSession.pdsUrl);
-
-        final proof = await DPoPUtils.createProof(
-          url: url,
-          method: method,
-          privateKey: dpopKey,
-          accessToken: newSession.accessJwt,
-          nonce: nonce,
-        );
-
-        options.headers['DPoP'] = proof;
-      } catch (e) {
-        // TODO: Log error for debugging: $e
-      }
-
-      options.extra['_authRetried'] = true;
-      final retryDio = Dio(
-        BaseOptions(
-          baseUrl: options.baseUrl,
-          connectTimeout: options.connectTimeout,
-          receiveTimeout: options.receiveTimeout,
-          sendTimeout: options.sendTimeout,
-        ),
-      );
-
-      final response = await retryDio.fetch(options);
-      return handler.resolve(response);
+      // Retry the original request
+      return _retryRequestWithSession(err, newSession, handler);
     } catch (e) {
+      _refreshCompleter!.completeError(e);
       return handler.next(err);
     } finally {
-      _isRefreshing = false;
+      _refreshCompleter = null;
     }
   }
 }
