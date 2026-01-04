@@ -7,9 +7,11 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/auth/session_model.dart';
 import '../identity/identity_repository.dart';
+import 'dpop_nonce_store.dart';
 import 'dpop_utils.dart';
 import 'oauth_client.dart';
 import 'pkce_utils.dart';
+import 'server_metadata.dart';
 import 'session_storage.dart';
 
 class AuthRepository {
@@ -17,27 +19,39 @@ class AuthRepository {
     required IdentityRepository identityRepository,
     required OAuthClient oauthClient,
     required SessionStorage sessionStorage,
+    required ServerMetadataRepository metadataRepository,
     FlutterSecureStorage? secureStorage,
+    DPoPNonceStore? nonceStore,
   }) : _identityRepo = identityRepository,
        _oauthClient = oauthClient,
        _sessionStorage = sessionStorage,
-       _secureStorage = secureStorage ?? const FlutterSecureStorage();
+       _metadataRepo = metadataRepository,
+       _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+       _nonceStore = nonceStore ?? DPoPNonceStore();
 
   final IdentityRepository _identityRepo;
   final OAuthClient _oauthClient;
   final SessionStorage _sessionStorage;
+  final ServerMetadataRepository _metadataRepo;
   final FlutterSecureStorage _secureStorage;
+  final DPoPNonceStore _nonceStore;
   static const _keyPendingSession = 'lazurite_pending_session';
   static const _uuid = Uuid();
+  static const _pendingSessionTimeout = Duration(minutes: 15);
 
   /// Initiates the login flow for the given handle.
   ///
-  /// 1. Resolves handle to DID.
-  /// 2. Resolves DID to PDS URL.
-  /// 3. Generates DPoP key and PKCE challenge.
-  /// 4. Performs PAR.
-  /// 5. Redirects user to PDS.
+  /// 1. Clears any expired pending sessions.
+  /// 2. Resolves handle to DID.
+  /// 3. Resolves DID to PDS URL.
+  /// 4. Discovers OAuth server metadata.
+  /// 5. Generates DPoP key and PKCE challenge.
+  /// 6. Performs PAR.
+  /// 7. Redirects user to PDS.
   Future<void> login(String handle) async {
+    // Clear any expired pending sessions
+    await _clearExpiredPendingSession();
+
     final did = await _identityRepo.resolveHandle(handle);
     if (did == null) {
       throw Exception('Could not resolve handle: $handle');
@@ -49,16 +63,20 @@ class AuthRepository {
       throw Exception('Could not find PDS endpoint for DID: $did');
     }
 
+    final metadata = await _metadataRepo.discover(pdsUrl);
+
     final state = _uuid.v4();
     final verifier = PkceUtils.generateVerifier();
     final challenge = PkceUtils.generateChallenge(verifier);
     final dpopKey = await DPoPUtils.generateKey();
 
+    final nonce = _nonceStore.get(pdsUrl);
     final requestUri = await _oauthClient.pushedAuthorizationRequest(
-      pdsUrl: pdsUrl,
+      metadata: metadata,
       key: dpopKey,
       state: state,
       codeChallenge: challenge,
+      nonce: nonce,
     );
 
     final pending = {
@@ -68,10 +86,14 @@ class AuthRepository {
       'verifier': verifier,
       'state': state,
       'dpopKey': dpopKey.toJson(),
+      'timestamp': DateTime.now().toIso8601String(),
     };
     await _secureStorage.write(key: _keyPendingSession, value: jsonEncode(pending));
 
-    final authorizeUrl = _oauthClient.buildAuthorizeUrl(pdsUrl: pdsUrl, requestUri: requestUri);
+    final authorizeUrl = _oauthClient.buildAuthorizeUrl(
+      metadata: metadata,
+      requestUri: requestUri,
+    );
 
     final uri = Uri.parse(authorizeUrl);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -82,6 +104,7 @@ class AuthRepository {
   /// Completes the login flow from a callback URL.
   Future<Session> completeLogin(Uri uri) async {
     if (uri.queryParameters.containsKey('error')) {
+      await _secureStorage.delete(key: _keyPendingSession);
       throw Exception('Login error: ${uri.queryParameters['error']}');
     }
 
@@ -99,6 +122,7 @@ class AuthRepository {
 
     final pending = jsonDecode(pendingJson) as Map<String, dynamic>;
     if (pending['state'] != state) {
+      await _secureStorage.delete(key: _keyPendingSession);
       throw Exception('State mismatch');
     }
 
@@ -109,11 +133,15 @@ class AuthRepository {
       final handle = pending['handle'] as String;
       final dpopKey = JsonWebKey.fromJson(pending['dpopKey'] as Map<String, dynamic>);
 
+      final metadata = await _metadataRepo.discover(pdsUrl);
+      final nonce = _nonceStore.get(pdsUrl);
+
       final tokenResponse = await _oauthClient.exchangeCodeForToken(
-        pdsUrl: pdsUrl,
+        metadata: metadata,
         code: code,
         codeVerifier: verifier,
         key: dpopKey,
+        nonce: nonce,
       );
 
       final session = Session(
@@ -131,6 +159,7 @@ class AuthRepository {
       await _secureStorage.delete(key: _keyPendingSession);
       return session;
     } catch (e) {
+      await _secureStorage.delete(key: _keyPendingSession);
       rethrow;
     }
   }
@@ -139,10 +168,14 @@ class AuthRepository {
   Future<Session> refreshSession(Session session) async {
     try {
       final dpopKey = JsonWebKey.fromJson(session.dpopKey);
+      final metadata = await _metadataRepo.discover(session.pdsUrl);
+      final nonce = _nonceStore.get(session.pdsUrl);
+
       final tokenResponse = await _oauthClient.refreshToken(
-        pdsUrl: session.pdsUrl,
+        metadata: metadata,
         refreshToken: session.refreshJwt,
         key: dpopKey,
+        nonce: nonce,
       );
 
       final newSession = session.copyWith(
@@ -155,8 +188,52 @@ class AuthRepository {
       await _sessionStorage.saveSession(newSession);
       return newSession;
     } catch (e) {
-      // TODO: If refresh fails, we might want to clear session or let caller handle it.
       rethrow;
+    }
+  }
+
+  /// Revokes the session tokens on the server.
+  ///
+  /// This should be called during logout to invalidate tokens server-side.
+  /// The method is best-effort and will not throw if revocation fails.
+  Future<void> revokeSession(Session session) async {
+    try {
+      final dpopKey = JsonWebKey.fromJson(session.dpopKey);
+      final metadata = await _metadataRepo.discover(session.pdsUrl);
+      final nonce = _nonceStore.get(session.pdsUrl);
+
+      await _oauthClient.revokeToken(
+        metadata: metadata,
+        token: session.refreshJwt,
+        key: dpopKey,
+        nonce: nonce,
+        tokenTypeHint: 'refresh_token',
+      );
+    } catch (e) {
+      // Log but don't throw - revocation is best-effort
+      // TODO: Log error for debugging: $e
+    }
+  }
+
+  /// Clears expired pending sessions.
+  Future<void> _clearExpiredPendingSession() async {
+    try {
+      final pendingJson = await _secureStorage.read(key: _keyPendingSession);
+      if (pendingJson == null) return;
+
+      final pending = jsonDecode(pendingJson) as Map<String, dynamic>;
+      final timestampStr = pending['timestamp'] as String?;
+
+      if (timestampStr != null) {
+        final timestamp = DateTime.parse(timestampStr);
+        final age = DateTime.now().difference(timestamp);
+
+        if (age > _pendingSessionTimeout) {
+          await _secureStorage.delete(key: _keyPendingSession);
+        }
+      }
+    } catch (e) {
+      await _secureStorage.delete(key: _keyPendingSession);
     }
   }
 }

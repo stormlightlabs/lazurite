@@ -1,5 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/infrastructure/network/dio_clients.dart';
+
+Session _createTestSession() {
+  return Session(
+    did: 'did:plc:test',
+    handle: 'test.bsky.social',
+    pdsUrl: 'https://pds.example.com',
+    accessJwt: 'test-token',
+    refreshJwt: 'refresh-token',
+    scope: 'atproto',
+    expiresAt: DateTime.now().add(const Duration(hours: 1)),
+    dpopKey: const {'kty': 'EC', 'crv': 'P-256', 'x': 'test', 'y': 'test', 'd': 'test'},
+  );
+}
 
 void main() {
   group('createPublicDio', () {
@@ -53,8 +67,8 @@ void main() {
     test('creates Dio with provided PDS URL', () {
       final dio = createPdsDio(
         pdsUrl: 'https://user.pds.example',
-        getAccessToken: () async => 'token',
-        refreshToken: () async => 'refreshed',
+        getSession: () async => _createTestSession(),
+        refreshSession: () async => _createTestSession(),
         enableLogging: false,
       );
 
@@ -64,8 +78,8 @@ void main() {
     test('sets correct timeouts', () {
       final dio = createPdsDio(
         pdsUrl: 'https://user.pds.example',
-        getAccessToken: () async => 'token',
-        refreshToken: () async => 'refreshed',
+        getSession: () async => _createTestSession(),
+        refreshSession: () async => _createTestSession(),
         enableLogging: false,
       );
 
@@ -77,8 +91,8 @@ void main() {
     test('includes auth interceptor', () {
       final dio = createPdsDio(
         pdsUrl: 'https://user.pds.example',
-        getAccessToken: () async => 'token',
-        refreshToken: () async => 'refreshed',
+        getSession: () async => _createTestSession(),
+        refreshSession: () async => _createTestSession(),
         enableLogging: false,
       );
 
@@ -91,8 +105,8 @@ void main() {
     test('includes proxy interceptor', () {
       final dio = createPdsDio(
         pdsUrl: 'https://user.pds.example',
-        getAccessToken: () async => 'token',
-        refreshToken: () async => 'refreshed',
+        getSession: () async => _createTestSession(),
+        refreshSession: () async => _createTestSession(),
         enableLogging: false,
       );
 
@@ -105,8 +119,8 @@ void main() {
     test('includes retry interceptor', () {
       final dio = createPdsDio(
         pdsUrl: 'https://user.pds.example',
-        getAccessToken: () async => 'token',
-        refreshToken: () async => 'refreshed',
+        getSession: () async => _createTestSession(),
+        refreshSession: () async => _createTestSession(),
         enableLogging: false,
       );
 
@@ -119,8 +133,8 @@ void main() {
     test('interceptors are in correct order', () {
       final dio = createPdsDio(
         pdsUrl: 'https://user.pds.example',
-        getAccessToken: () async => 'token',
-        refreshToken: () async => 'refreshed',
+        getSession: () async => _createTestSession(),
+        refreshSession: () async => _createTestSession(),
         enableLogging: true,
       );
 

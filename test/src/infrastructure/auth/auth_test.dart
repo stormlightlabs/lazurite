@@ -9,6 +9,7 @@ import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/infrastructure/auth/auth_repository.dart';
 import 'package:lazurite/src/infrastructure/auth/dpop_utils.dart';
 import 'package:lazurite/src/infrastructure/auth/oauth_client.dart';
+import 'package:lazurite/src/infrastructure/auth/server_metadata.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/identity/identity_repository.dart';
 import 'package:mocktail/mocktail.dart';
@@ -23,6 +24,8 @@ class MockOAuthClient extends Mock implements OAuthClient {}
 
 class MockIdentityRepository extends Mock implements IdentityRepository {}
 
+class MockServerMetadataRepository extends Mock implements ServerMetadataRepository {}
+
 /// Fake JsonWebKey for testing
 class FakeJsonWebKey extends Fake implements JsonWebKey {
   @override
@@ -31,10 +34,13 @@ class FakeJsonWebKey extends Fake implements JsonWebKey {
 
 class FakeSession extends Fake implements Session {}
 
+class FakeServerMetadata extends Fake implements ServerMetadata {}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(FakeJsonWebKey());
     registerFallbackValue(FakeSession());
+    registerFallbackValue(FakeServerMetadata());
   });
 
   group('IdentityRepository', () {
@@ -129,6 +135,7 @@ void main() {
     late MockOAuthClient oauthClient;
     late MockSessionStorage sessionStorage;
     late MockFlutterSecureStorage secureStorage;
+    late MockServerMetadataRepository metadataRepo;
     late AuthRepository authRepo;
 
     setUp(() {
@@ -136,11 +143,13 @@ void main() {
       oauthClient = MockOAuthClient();
       sessionStorage = MockSessionStorage();
       secureStorage = MockFlutterSecureStorage();
+      metadataRepo = MockServerMetadataRepository();
 
       authRepo = AuthRepository(
         identityRepository: identityRepo,
         oauthClient: oauthClient,
         sessionStorage: sessionStorage,
+        metadataRepository: metadataRepo,
         secureStorage: secureStorage,
       );
     });
@@ -157,18 +166,27 @@ void main() {
         'dpopKey': key.toJson(),
       };
 
+      const testMetadata = ServerMetadata(
+        issuer: 'https://pds.com',
+        authorizationEndpoint: 'https://pds.com/oauth/authorize',
+        tokenEndpoint: 'https://pds.com/oauth/token',
+      );
+
       when(
         () => secureStorage.read(key: any(named: 'key')),
       ).thenAnswer((_) async => jsonEncode(pendingState));
 
       when(() => secureStorage.delete(key: any(named: 'key'))).thenAnswer((_) async {});
 
+      when(() => metadataRepo.discover(any())).thenAnswer((_) async => testMetadata);
+
       when(
         () => oauthClient.exchangeCodeForToken(
-          pdsUrl: any(named: 'pdsUrl'),
+          metadata: any(named: 'metadata'),
           code: any(named: 'code'),
           codeVerifier: any(named: 'codeVerifier'),
           key: any(named: 'key'),
+          nonce: any(named: 'nonce'),
         ),
       ).thenAnswer(
         (_) async => TokenResponse(

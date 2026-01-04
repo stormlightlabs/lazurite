@@ -7,8 +7,8 @@ const publicApiBaseUrl = 'https://public.api.bsky.app';
 
 /// Creates a Dio client configured for public API access.
 ///
-/// This client is used for unauthenticated reads like fetching profiles,
-/// threads, and search results.
+/// This client is used for unauthenticated reads like fetching profiles, threads, and
+/// search results.
 Dio createPublicDio({bool enableLogging = true}) {
   final dio = Dio(
     BaseOptions(
@@ -27,12 +27,12 @@ Dio createPublicDio({bool enableLogging = true}) {
 
 /// Creates a Dio client configured for a user's PDS.
 ///
-/// This client is used for authenticated operations and requires the PDS URL to
-/// be provided (i.e. resolved from user's DID document).
+/// This client is used for authenticated operations and requires the PDS URL to be provided
+/// (i.e. resolved from user's DID document).
 Dio createPdsDio({
   required String pdsUrl,
-  required TokenGetter getAccessToken,
-  required TokenRefresher refreshToken,
+  required SessionGetter getSession,
+  required SessionRefresher refreshSession,
   bool enableLogging = true,
 }) {
   final dio = Dio(
@@ -47,7 +47,7 @@ Dio createPdsDio({
 
   dio.interceptors.addAll([
     if (enableLogging) LoggingInterceptor(),
-    AuthInterceptor(getAccessToken: getAccessToken, refreshToken: refreshToken),
+    AuthInterceptor(getSession: getSession, refreshSession: refreshSession),
     ProxyInterceptor(),
     RetryInterceptor(),
   ]);

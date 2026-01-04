@@ -1,26 +1,34 @@
 import 'package:dio/dio.dart';
+import 'package:jose/jose.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/infrastructure/auth/dpop_nonce_store.dart';
+import 'package:lazurite/src/infrastructure/auth/dpop_utils.dart';
 
-/// Callback type for getting the current access token.
-typedef TokenGetter = Future<String?> Function();
+/// Callback type for getting the current session.
+typedef SessionGetter = Future<Session?> Function();
 
-/// Callback type for refreshing the access token.
-typedef TokenRefresher = Future<String?> Function();
+/// Callback type for refreshing the session.
+typedef SessionRefresher = Future<Session?> Function();
 
 /// Interceptor that handles authentication for XRPC requests.
 ///
-/// Attaches the access token to requests that require authentication,
+/// Attaches the access token and DPoP proof to requests that require authentication,
 /// and handles 401 responses by attempting to refresh the token once.
-///
-/// Note: DPoP proof generation will be added in Milestone C when OAuth
-/// is implemented.
 class AuthInterceptor extends Interceptor {
-  AuthInterceptor({required this.getAccessToken, required this.refreshToken});
+  AuthInterceptor({
+    required this.getSession,
+    required this.refreshSession,
+    DPoPNonceStore? nonceStore,
+  }) : _nonceStore = nonceStore ?? DPoPNonceStore();
 
-  /// Callback to get the current access token.
-  final TokenGetter getAccessToken;
+  /// Callback to get the current session.
+  final SessionGetter getSession;
 
-  /// Callback to refresh the access token.
-  final TokenRefresher refreshToken;
+  /// Callback to refresh the session.
+  final SessionRefresher refreshSession;
+
+  /// Store for DPoP nonces.
+  final DPoPNonceStore _nonceStore;
 
   /// Lock to prevent concurrent refresh attempts.
   bool _isRefreshing = false;
@@ -33,10 +41,29 @@ class AuthInterceptor extends Interceptor {
     final requiresAuth = options.extra[requiresAuthKey] == true;
 
     if (requiresAuth) {
-      final token = await getAccessToken();
-      if (token != null) {
+      final session = await getSession();
+      if (session != null) {
+        final token = session.accessJwt;
         options.headers['Authorization'] = 'Bearer $token';
-        // TODO: Add DPoP proof header here
+
+        try {
+          final dpopKey = JsonWebKey.fromJson(session.dpopKey);
+          final url = options.uri.toString();
+          final method = options.method;
+          final nonce = _nonceStore.get(session.pdsUrl);
+
+          final proof = await DPoPUtils.createProof(
+            url: url,
+            method: method,
+            privateKey: dpopKey,
+            accessToken: token,
+            nonce: nonce,
+          );
+
+          options.headers['DPoP'] = proof;
+        } catch (e) {
+          // TODO: Log error for debugging: $e
+        }
       }
     }
 
@@ -44,12 +71,38 @@ class AuthInterceptor extends Interceptor {
   }
 
   @override
+  Future<void> onResponse(Response response, ResponseInterceptorHandler handler) async {
+    final requiresAuth = response.requestOptions.extra[requiresAuthKey] == true;
+    if (requiresAuth) {
+      final session = await getSession();
+      if (session != null) {
+        final nonce = DPoPNonceStore.extractFromHeaders(response.headers.map);
+        if (nonce != null) {
+          _nonceStore.store(session.pdsUrl, nonce);
+        }
+      }
+    }
+
+    handler.next(response);
+  }
+
+  @override
   Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+    final requiresAuth = err.requestOptions.extra[requiresAuthKey] == true;
+
+    if (requiresAuth) {
+      final session = await getSession();
+      if (session != null && err.response != null) {
+        final nonce = DPoPNonceStore.extractFromHeaders(err.response!.headers.map);
+        if (nonce != null) {
+          _nonceStore.store(session.pdsUrl, nonce);
+        }
+      }
+    }
+
     if (err.response?.statusCode != 401) {
       return handler.next(err);
     }
-
-    final requiresAuth = err.requestOptions.extra[requiresAuthKey] == true;
     if (!requiresAuth) {
       return handler.next(err);
     }
@@ -65,14 +118,34 @@ class AuthInterceptor extends Interceptor {
     _isRefreshing = true;
 
     try {
-      final newToken = await refreshToken();
+      final newSession = await refreshSession();
 
-      if (newToken == null) {
+      if (newSession == null) {
         return handler.next(err);
       }
 
       final options = err.requestOptions;
-      options.headers['Authorization'] = 'Bearer $newToken';
+      options.headers['Authorization'] = 'Bearer ${newSession.accessJwt}';
+
+      try {
+        final dpopKey = JsonWebKey.fromJson(newSession.dpopKey);
+        final url = options.uri.toString();
+        final method = options.method;
+        final nonce = _nonceStore.get(newSession.pdsUrl);
+
+        final proof = await DPoPUtils.createProof(
+          url: url,
+          method: method,
+          privateKey: dpopKey,
+          accessToken: newSession.accessJwt,
+          nonce: nonce,
+        );
+
+        options.headers['DPoP'] = proof;
+      } catch (e) {
+        // TODO: Log error for debugging: $e
+      }
+
       options.extra['_authRetried'] = true;
       final retryDio = Dio(
         BaseOptions(

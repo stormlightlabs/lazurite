@@ -186,6 +186,54 @@ final class OauthClientProvider
 
 String _$oauthClientHash() => r'5c4f5fd51c2d9f1936f004fba9dc1fa4b362e6ec';
 
+@ProviderFor(serverMetadataRepository)
+final serverMetadataRepositoryProvider = ServerMetadataRepositoryProvider._();
+
+final class ServerMetadataRepositoryProvider
+    extends
+        $FunctionalProvider<
+          ServerMetadataRepository,
+          ServerMetadataRepository,
+          ServerMetadataRepository
+        >
+    with $Provider<ServerMetadataRepository> {
+  ServerMetadataRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'serverMetadataRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$serverMetadataRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<ServerMetadataRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ServerMetadataRepository create(Ref ref) {
+    return serverMetadataRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ServerMetadataRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ServerMetadataRepository>(value),
+    );
+  }
+}
+
+String _$serverMetadataRepositoryHash() =>
+    r'8a4213bf3952ed89db571088d94fa6998211f96e';
+
 @ProviderFor(authRepository)
 final authRepositoryProvider = AuthRepositoryProvider._();
 
@@ -225,7 +273,7 @@ final class AuthRepositoryProvider
   }
 }
 
-String _$authRepositoryHash() => r'222b481dbbb37e89b231cb9dca97c4bca6aee1cf';
+String _$authRepositoryHash() => r'0bc70c746ca9908cb6c0113950c7661496fd8b5c';
 
 @ProviderFor(AuthNotifier)
 final authProvider = AuthNotifierProvider._();
@@ -259,7 +307,7 @@ final class AuthNotifierProvider
   }
 }
 
-String _$authNotifierHash() => r'6d0d44b544e65a6439092294b34d5782221ef2bb';
+String _$authNotifierHash() => r'4db1bc3111f8c6550eb2e3b3a9b2212d529e2579';
 
 abstract class _$AuthNotifier extends $Notifier<AuthState> {
   AuthState build();

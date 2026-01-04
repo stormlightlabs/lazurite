@@ -25,7 +25,10 @@ class Session {
     );
   }
 
-  bool get isExpired => DateTime.now().isAfter(expiresAt);
+  /// Checks if the session is expired with a 60-second buffer.
+  ///
+  /// This buffer accounts for network latency and clock skew to ensure tokens don't expire mid-request.
+  bool get isExpired => DateTime.now().add(const Duration(seconds: 60)).isAfter(expiresAt);
 
   final String did;
   final String handle;
@@ -79,7 +82,6 @@ class Session {
           pdsUrl == other.pdsUrl &&
           accessJwt == other.accessJwt &&
           refreshJwt == other.refreshJwt &&
-          scope == other.scope &&
           scope == other.scope &&
           expiresAt == other.expiresAt &&
           const DeepCollectionEquality().equals(dpopKey, other.dpopKey);
