@@ -5,7 +5,7 @@ Owais • Mobile-first (Android/iOS), then Desktop • Storage: Drift • HTTP: 
 Principles + References                                              *bsky-prin*
 ================================================================================
 
-Architecture principles (non-negotiable):
+Architecture principles:
 - Separation of concerns: UI layer vs Data layer, with clear boundaries.
 - Feature-first organization inside those layers (each feature owns its
   domain/data/presentation).
@@ -54,88 +54,17 @@ reusable UI primitives and resilient state handling.
 D. Identity bootstrap + OAuth session                                   *bsky-D*
 ================================================================================
 
-Tasks:
-- [x] Identity resolution helpers (handle/DID bootstrap):
-      - com.atproto.identity.resolveHandle
-      - com.atproto.identity.resolveDid / resolveIdentity
-- [x] OAuth client:
-      - publish client metadata JSON at stable https URL (required).
-      - implement PKCE + PAR + DPoP per atproto OAuth profile.
-      - token storage: secure storage (access/refresh, key material).
-- [x] Session model:
-      - active account DID, handle, PDS URL
-      - refresh workflow and concurrency guard (single-flight refresh)
-- [x] dev fallback: com.atproto.server.createSession (app password)
-      (flagged build flavor).
-- [x] AuthButton Widget (primary CTA)
-- [x] AuthProgressView Widget (PKCE/PAR/DPoP steps, minimal UI)
-- [x] /login becomes "real"
-- [x] redirect() rules added (protected routes require auth):
-      - [x] /notifs, /dms, /compose (later) require session
-      - [x] /home and /search can remain browseable
-- [x] LoginPage (OAuth flow UI)
-      - [x] "Continue" → external browser / in-app web auth
-      - [x] "Switch account"
-            - [x] AccountSwitcherSheet
-
-Tests:
-- [x] Identity resolution parsing tests (handle->DID->PDS).
-- [x] OAuth state machine tests (happy path + expired token refresh).
-
-Deliverables:
-- "Login" completes and yields a usable (did, pdsUrl, session).
-- Authenticated Dio calls succeed via dioPds with auth interceptor in place.
-- Logged-out users see:
-  - browseable Home/Search (read-only) OR
-  - forced login (your choice; both are consistent)
-- Logged-in users are redirected away from /login to /home
+Summary: Identity bootstrap and OAuth session flows are fully wired, delivering
+secure sign-in, protected routing, and refreshed sessions for every authenticated
+account.
 
 ================================================================================
 E. Timeline + thread + core cache (Drift)                               *bsky-E*
 ================================================================================
 
-Endpoints (read):
-- app.bsky.feed.getTimeline (GET)
-- app.bsky.feed.getPostThread (GET)
-- app.bsky.feed.getPosts (GET hydrate)
-
-Tasks:
-- [x] Drift setup + migrations:
-      - posts, profiles, timeline_items, accounts
-      - cursor persistence per feedKey
-      - indexes on (post.uri), (post.indexedAt),
-        (timeline_items.feedKey, sortKey)
-      - enable isolate-friendly DB execution where appropriate.
-- [x] Timeline feature:
-      - cursor paging (infinite scroll)
-      - pull-to-refresh (replace cursor, merge results)
-      - cache-first render: show cached timeline immediately, then refresh
-- [x] Thread feature:
-      - request thread, cache posts/profiles, render tree
-      - local "optimistic" markers (e.g., pending like count later)
-- [x] PostCard (real)
-- [x] PostHeader (avatar, name, handle, timestamp)
-- [x] PostBody (text + facets links)
-- [x] PostActionsRow (reply/like/repost placeholders)
-- [x] ThreadTree (indentation + reply chains)
-- [x] InlineComposerLauncher (CTA at bottom)
-- [x] Add Routes
-      - /home/t/:postKey   (ThreadPage)
-      - /home/u/:did       (ProfilePage (stub for now))
-- [x] HomePage becomes TimelinePage: cached items render immediately, then refresh
-- [x] ThreadPage: root post + replies tree, "reply" entry point (composer later)
-
-Tests:
-- [x] Drift DAO tests: insert posts + timeline membership + query order.
-- [x] Paging tests: cursor advances, dedupe by AT-URI, stable ordering.
-- [x] UI tests: timeline renders from cache without network.
-
-Deliverables:
-- Home timeline works end-to-end with caching and pagination.
-- Thread view works for any post opened from timeline.
-- Infinite scroll (cursor paging)
-- Pull-to-refresh on timeline
-- Tap post → thread view
+Summary: Drift-backed timeline and thread experiences now ship with cache-first
+reads, infinite scroll, pull-to-refresh, and deep links to thread views for
+every post.
 
 ================================================================================
 F. Profiles + graph + search                                            *bsky-F*
@@ -150,13 +79,36 @@ Tasks:
 - [ ] Profile screen: fetch + cache profile + author feed, cursor paging.
 - [ ] Search screen: query -> paged results; store recent searches (local).
 - [ ] Shared hydration: ensure embeds/media are rendered consistently.
-
+- [ ] Add routes
+      - [ ] /search?q=<query>                 (SearchResultsPage)
+      - [ ] /search/t/:postKey                (ThreadPage reuse)
+      - [ ] /search/u/:did                    (ProfilePage)
+      - [ ] /me (MePage becomes ProfilePage for self)
+      - [ ] /home/u/:did
+      - [ ] /notifs/u/:did
+- [ ] Widgets
+      - [ ] ProfileHeader
+      - [ ] FollowButton (disabled if read-only browsing)
+      - [ ] SearchBar (Material 3)
+      - [ ] RecentSearchChips
+      - [ ] ActorRow (for people results; if you add actor search)
+- [ ] Screens
+      - [ ] ProfilePage (full):
+            - header (avatar, bio, counts)
+            - tabs (Posts / Replies optional / Media optional)
+      - [ ] SearchPage (full):
+            - search input
+            - recent searches list
+            - results list page (or same screen w/ state)
+      - [ ] Follows/Followers (full):
+            - FollowersPage, FollowingPage
 Tests:
 - [ ] Profile caching: refresh merges, does not duplicate feed items.
 - [ ] Search paging: stable cursor behavior and local persistence.
 
 Deliverables:
 - Profile + author feed + search posts shipped.
+- Search is a first-class workflow with deep-linkable query params.
 
 ================================================================================
 G. Composer + local drafts + publish pipeline                           *bsky-G*
