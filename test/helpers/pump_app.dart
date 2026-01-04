@@ -30,23 +30,14 @@ extension PumpApp on WidgetTester {
   ///
   /// If [router] is provided, it will be used.
   /// Otherwise creates a router via [goRouterProvider].
-  Future<void> pumpRouterApp({
-    GoRouter? router,
-    List<Override> overrides = const [],
-  }) async {
+  Future<void> pumpRouterApp({GoRouter? router, List<Override> overrides = const []}) async {
     await pumpWidget(
       ProviderScope(
-        overrides: [
-          if (router != null) goRouterProvider.overrideWithValue(router),
-          ...overrides,
-        ],
+        overrides: [if (router != null) goRouterProvider.overrideWithValue(router), ...overrides],
         child: Consumer(
           builder: (context, ref, _) {
             final appRouter = ref.watch(goRouterProvider);
-            return MaterialApp.router(
-              theme: AppTheme.dark,
-              routerConfig: appRouter,
-            );
+            return MaterialApp.router(theme: AppTheme.dark, routerConfig: appRouter);
           },
         ),
       ),
@@ -56,12 +47,9 @@ extension PumpApp on WidgetTester {
 }
 
 /// Creates a simple GoRouter for testing individual screens.
-GoRouter createTestRouter({
-  required String initialLocation,
-  required Widget child,
-}) {
+GoRouter createTestRouter({required String initialLocation, required Widget child}) {
   return GoRouter(
     initialLocation: initialLocation,
-    routes: [GoRoute(path: initialLocation, builder: (_, __) => child)],
+    routes: [GoRoute(path: initialLocation, builder: (_, _) => child)],
   );
 }

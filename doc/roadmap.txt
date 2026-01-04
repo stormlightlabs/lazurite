@@ -61,7 +61,7 @@ Tasks:
 - [x] Create Flutter project + Material 3 theme scaffolding.
 - [x] Define feature-first module layout (src/app, core, infrastructure, features/*).
 - [x] Add build_runner + lint rules + formatting hooks.
-- [ ] Define CI: analyze, test, format, integration tests.
+- [x] Define CI: analyze, test, format, integration tests (justfile).
 - [x] Add go_router + router.dart
     - [x] Add tab scaffold using StatefulShellRoute.indexedStack
     - [x] Add route constants / names and a navigation helper
@@ -71,7 +71,7 @@ Tasks:
 
 Tests:
 - [x] Smoke test boots app + renders root scaffold.
-- [ ] Unit tests for key base widgets (post card skeleton, avatar, empty state).
+- [x] Unit tests for key base widgets (post card skeleton, avatar, empty state).
 
 Deliverables:
 - App boots on Android + iOS simulators with placeholder routes.
@@ -96,7 +96,7 @@ Tasks:
 Tests:
 - [ ] Unit tests for endpoint routing (NSID -> correct dio + headers).
 - [ ] Unit tests for retry policy (GET retries, POST does not retry blindly).
-- [ ] Contract test: public read hits public.api.bsky.app for app.bsky.*. :contentReference[oaicite:8]{index=8}
+- [ ] Contract test: public read hits public.api.bsky.app for app.bsky.*.
 
 Deliverables:
 - A small "XrpcClient" wrapper that all features use.
@@ -111,9 +111,9 @@ Tasks:
       - com.atproto.identity.resolveHandle
       - com.atproto.identity.resolveDid / resolveIdentity
 - [ ] OAuth client:
-      - publish client metadata JSON at stable https URL (required). :contentReference[oaicite:9]{index=9}
-      - implement PKCE + PAR + DPoP per atproto OAuth profile. :contentReference[oaicite:10]{index=10}
-      - token storage: secure storage (access/refresh, key material). :contentReference[oaicite:11]{index=11}
+      - publish client metadata JSON at stable https URL (required).
+      - implement PKCE + PAR + DPoP per atproto OAuth profile.
+      - token storage: secure storage (access/refresh, key material).
 - [ ] Session model:
       - active account DID, handle, PDS URL
       - refresh workflow and concurrency guard (single-flight refresh)
@@ -132,9 +132,9 @@ D. Timeline + thread + core cache (Drift)                           *bsky-D*
 ==============================================================================
 
 Endpoints (read):
-- app.bsky.feed.getTimeline (GET) :contentReference[oaicite:12]{index=12}
-- app.bsky.feed.getPostThread (GET) :contentReference[oaicite:13]{index=13}
-- app.bsky.feed.getPosts (GET hydrate) :contentReference[oaicite:14]{index=14}
+- app.bsky.feed.getTimeline (GET)
+- app.bsky.feed.getPostThread (GET)
+- app.bsky.feed.getPosts (GET hydrate)
 
 Tasks:
 - [ ] Drift setup + migrations:

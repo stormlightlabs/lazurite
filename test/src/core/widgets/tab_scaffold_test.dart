@@ -8,7 +8,6 @@ import '../../../helpers/pump_app.dart';
 void main() {
   group('TabScaffold', () {
     testWidgets('renders NavigationBar with 5 destinations', (tester) async {
-      // Create a minimal router for testing
       final router = GoRouter(
         initialLocation: '/home',
         routes: [
@@ -21,8 +20,7 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/home',
-                    builder: (_, __) =>
-                        const Scaffold(body: Center(child: Text('Home'))),
+                    builder: (_, _) => const Scaffold(body: Center(child: Text('Home'))),
                   ),
                 ],
               ),
@@ -30,8 +28,7 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/search',
-                    builder: (_, __) =>
-                        const Scaffold(body: Center(child: Text('Search'))),
+                    builder: (_, _) => const Scaffold(body: Center(child: Text('Search'))),
                   ),
                 ],
               ),
@@ -39,9 +36,7 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/notifications',
-                    builder: (_, __) => const Scaffold(
-                      body: Center(child: Text('Notifications')),
-                    ),
+                    builder: (_, _) => const Scaffold(body: Center(child: Text('Notifications'))),
                   ),
                 ],
               ),
@@ -49,8 +44,7 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/dms',
-                    builder: (_, __) =>
-                        const Scaffold(body: Center(child: Text('DMs'))),
+                    builder: (_, _) => const Scaffold(body: Center(child: Text('DMs'))),
                   ),
                 ],
               ),
@@ -58,8 +52,7 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/profile',
-                    builder: (_, __) =>
-                        const Scaffold(body: Center(child: Text('Profile'))),
+                    builder: (_, _) => const Scaffold(body: Center(child: Text('Profile'))),
                   ),
                 ],
               ),
@@ -69,11 +62,7 @@ void main() {
       );
 
       await tester.pumpRouterApp(router: router);
-
-      // Verify NavigationBar is present
       expect(find.byType(NavigationBar), findsOneWidget);
-
-      // Verify all 5 destinations are present
       expect(find.byType(NavigationDestination), findsNWidgets(5));
     });
 
@@ -90,9 +79,7 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/home',
-                    builder: (_, __) => const Scaffold(
-                      body: Center(child: Text('Home Content')),
-                    ),
+                    builder: (_, _) => const Scaffold(body: Center(child: Text('Home Content'))),
                   ),
                 ],
               ),
@@ -100,9 +87,7 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/search',
-                    builder: (_, __) => const Scaffold(
-                      body: Center(child: Text('Search Content')),
-                    ),
+                    builder: (_, _) => const Scaffold(body: Center(child: Text('Search Content'))),
                   ),
                 ],
               ),
@@ -110,9 +95,8 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/notifications',
-                    builder: (_, __) => const Scaffold(
-                      body: Center(child: Text('Notifications Content')),
-                    ),
+                    builder: (_, _) =>
+                        const Scaffold(body: Center(child: Text('Notifications Content'))),
                   ),
                 ],
               ),
@@ -120,9 +104,7 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/dms',
-                    builder: (_, __) => const Scaffold(
-                      body: Center(child: Text('DMs Content')),
-                    ),
+                    builder: (_, _) => const Scaffold(body: Center(child: Text('DMs Content'))),
                   ),
                 ],
               ),
@@ -130,9 +112,8 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/profile',
-                    builder: (_, __) => const Scaffold(
-                      body: Center(child: Text('Profile Content')),
-                    ),
+                    builder: (_, _) =>
+                        const Scaffold(body: Center(child: Text('Profile Content'))),
                   ),
                 ],
               ),
@@ -142,24 +123,16 @@ void main() {
       );
 
       await tester.pumpRouterApp(router: router);
-
-      // Initial state - Home
       expect(find.text('Home Content'), findsOneWidget);
-
-      // Tap Search tab
       await tester.tap(find.text('Search'));
       await tester.pumpAndSettle();
       expect(find.text('Search Content'), findsOneWidget);
-
-      // Tap Messages tab
       await tester.tap(find.text('Messages'));
       await tester.pumpAndSettle();
       expect(find.text('DMs Content'), findsOneWidget);
     });
 
-    testWidgets('shows correct icons for navigation destinations', (
-      tester,
-    ) async {
+    testWidgets('shows correct icons for navigation destinations', (tester) async {
       final router = GoRouter(
         initialLocation: '/home',
         routes: [
@@ -169,44 +142,21 @@ void main() {
             },
             branches: [
               StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/home',
-                    builder: (_, __) => const SizedBox.shrink(),
-                  ),
-                ],
+                routes: [GoRoute(path: '/home', builder: (_, _) => const SizedBox.shrink())],
+              ),
+              StatefulShellBranch(
+                routes: [GoRoute(path: '/search', builder: (_, _) => const SizedBox.shrink())],
               ),
               StatefulShellBranch(
                 routes: [
-                  GoRoute(
-                    path: '/search',
-                    builder: (_, __) => const SizedBox.shrink(),
-                  ),
+                  GoRoute(path: '/notifications', builder: (_, _) => const SizedBox.shrink()),
                 ],
               ),
               StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/notifications',
-                    builder: (_, __) => const SizedBox.shrink(),
-                  ),
-                ],
+                routes: [GoRoute(path: '/dms', builder: (_, _) => const SizedBox.shrink())],
               ),
               StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/dms',
-                    builder: (_, __) => const SizedBox.shrink(),
-                  ),
-                ],
-              ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/profile',
-                    builder: (_, __) => const SizedBox.shrink(),
-                  ),
-                ],
+                routes: [GoRoute(path: '/profile', builder: (_, _) => const SizedBox.shrink())],
               ),
             ],
           ),
@@ -214,8 +164,6 @@ void main() {
       );
 
       await tester.pumpRouterApp(router: router);
-
-      // Verify icons are present (home is selected, so it shows filled icon)
       expect(find.byIcon(Icons.home), findsOneWidget);
       expect(find.byIcon(Icons.search_outlined), findsOneWidget);
       expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
