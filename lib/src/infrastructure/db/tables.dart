@@ -6,6 +6,9 @@ class Posts extends Table {
   TextColumn get authorDid => text()();
   TextColumn get record => text()();
   DateTimeColumn get indexedAt => dateTime().nullable()();
+  IntColumn get replyCount => integer().withDefault(const Constant(0))();
+  IntColumn get repostCount => integer().withDefault(const Constant(0))();
+  IntColumn get likeCount => integer().withDefault(const Constant(0))();
 
   @override
   Set<Column> get primaryKey => {uri};

@@ -11,6 +11,7 @@ import 'package:lazurite/src/features/login/presentation/login_screen.dart';
 import 'package:lazurite/src/features/notifications/presentation/notifications_screen.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
+import 'package:lazurite/src/features/thread/presentation/thread_screen.dart';
 import 'package:lazurite/src/features/timeline/presentation/timeline_screen.dart';
 
 /// Global navigator key for the root navigator.
@@ -59,12 +60,10 @@ GoRouter createRouter(Ref ref) {
                 builder: (context, state) => const TimelineScreen(),
                 routes: [
                   GoRoute(
-                    path: AppRoutes.thread,
+                    path: 't/:uri',
                     name: '${AppRouteNames.home}_${AppRouteNames.thread}',
-                    builder: (context, state) {
-                      final postKey = state.pathParameters['postKey']!;
-                      return _PlaceholderScreen(title: 'Thread', subtitle: 'Post: $postKey');
-                    },
+                    builder: (context, state) =>
+                        ThreadScreen(postUri: state.pathParameters['uri']!),
                   ),
                   GoRoute(
                     path: AppRoutes.profileDetail,
@@ -116,8 +115,8 @@ GoRouter createRouter(Ref ref) {
                     path: AppRoutes.thread,
                     name: '${AppRouteNames.notifications}_${AppRouteNames.thread}',
                     builder: (context, state) {
-                      final postKey = state.pathParameters['postKey']!;
-                      return _PlaceholderScreen(title: 'Thread', subtitle: 'Post: $postKey');
+                      final uri = state.pathParameters['uri']!;
+                      return _PlaceholderScreen(title: 'Thread', subtitle: 'Post: $uri');
                     },
                   ),
                   GoRoute(

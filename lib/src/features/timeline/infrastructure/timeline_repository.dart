@@ -1,10 +1,9 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-
-import '../../../infrastructure/db/app_database.dart';
-import '../../../infrastructure/db/daos/timeline_dao.dart';
-import '../../../infrastructure/network/xrpc_client.dart';
+import 'package:lazurite/src/infrastructure/db/app_database.dart';
+import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
+import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
 class TimelineRepository {
   TimelineRepository(this._api, this._dao);
@@ -19,6 +18,9 @@ class TimelineRepository {
       authorDid: json['author']['did'],
       record: jsonEncode(json['record']),
       indexedAt: Value(DateTime.tryParse(json['indexedAt'] ?? '')),
+      replyCount: Value(json['replyCount'] ?? 0),
+      repostCount: Value(json['repostCount'] ?? 0),
+      likeCount: Value(json['likeCount'] ?? 0),
     );
   }
 
@@ -38,10 +40,7 @@ class TimelineRepository {
   Future<void> fetchAndCacheTimeline({String? cursor}) async {
     final response = await _api.call(
       'app.bsky.feed.getTimeline',
-      params: {
-        'limit': 50, // default
-        if (cursor != null) 'cursor': cursor,
-      },
+      params: {'limit': 50, if (cursor != null) 'cursor': cursor},
     );
 
     final feed = response['feed'] as List;

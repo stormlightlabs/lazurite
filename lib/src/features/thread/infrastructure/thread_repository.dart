@@ -37,6 +37,9 @@ class ThreadRepository {
           authorDid: author['did'],
           record: jsonEncode(post['record']),
           indexedAt: DateTime.tryParse(post['indexedAt'] ?? ''),
+          replyCount: post['replyCount'] ?? 0,
+          repostCount: post['repostCount'] ?? 0,
+          likeCount: post['likeCount'] ?? 0,
         ),
       );
 

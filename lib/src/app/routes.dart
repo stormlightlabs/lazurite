@@ -15,7 +15,7 @@ abstract final class AppRoutes {
   static const String settings = '/settings';
   static const String drafts = '/drafts';
 
-  static const String thread = 't/:postKey';
+  static const String thread = 't/:uri';
   static const String profileDetail = 'u/:did';
   static const String convo = 'c/:convoId';
   static const String draftDetail = ':draftId';

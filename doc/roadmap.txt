@@ -106,24 +106,24 @@ Tasks:
       - indexes on (post.uri), (post.indexedAt),
         (timeline_items.feedKey, sortKey)
       - enable isolate-friendly DB execution where appropriate.
-- [ ] Timeline feature:
+- [x] Timeline feature:
       - cursor paging (infinite scroll)
       - pull-to-refresh (replace cursor, merge results)
       - cache-first render: show cached timeline immediately, then refresh
-- [ ] Thread feature:
+- [x] Thread feature:
       - request thread, cache posts/profiles, render tree
       - local "optimistic" markers (e.g., pending like count later)
-- [ ] PostCard (real)
-- [ ] PostHeader (avatar, name, handle, timestamp)
-- [ ] PostBody (text + facets links)
-- [ ] PostActionsRow (reply/like/repost placeholders)
-- [ ] ThreadTree (indentation + reply chains)
-- [ ] InlineComposerLauncher (CTA at bottom)
-- [ ] Add Routes
+- [x] PostCard (real)
+- [x] PostHeader (avatar, name, handle, timestamp)
+- [x] PostBody (text + facets links)
+- [x] PostActionsRow (reply/like/repost placeholders)
+- [x] ThreadTree (indentation + reply chains)
+- [x] InlineComposerLauncher (CTA at bottom)
+- [x] Add Routes
       - /home/t/:postKey   (ThreadPage)
       - /home/u/:did       (ProfilePage (stub for now))
-- [ ] HomePage becomes TimelinePage: cached items render immediately, then refresh
-- [ ] ThreadPage: root post + replies tree, "reply" entry point (composer later)
+- [x] HomePage becomes TimelinePage: cached items render immediately, then refresh
+- [x] ThreadPage: root post + replies tree, "reply" entry point (composer later)
 
 Tests:
 - [ ] Drift DAO tests: insert posts + timeline membership + query order.

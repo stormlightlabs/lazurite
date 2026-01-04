@@ -2,14 +2,13 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../../core/widgets/error_view.dart';
-import '../../../core/widgets/loading_view.dart';
-import '../../../infrastructure/db/app_database.dart';
-import '../../../infrastructure/db/daos/timeline_dao.dart';
-import '../../timeline/presentation/widgets/post_card.dart';
-import '../application/thread_notifier.dart';
-import '../infrastructure/thread_repository.dart';
+import 'package:lazurite/src/core/widgets/error_view.dart';
+import 'package:lazurite/src/core/widgets/loading_view.dart';
+import 'package:lazurite/src/features/thread/application/thread_notifier.dart';
+import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
+import 'package:lazurite/src/features/timeline/presentation/widgets/post_card.dart';
+import 'package:lazurite/src/infrastructure/db/app_database.dart';
+import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
 
 class ThreadScreen extends ConsumerStatefulWidget {
   const ThreadScreen({required this.postUri, super.key});
@@ -121,6 +120,9 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
         authorDid: authorMap['did'],
         record: jsonEncode(postMap['record']),
         indexedAt: DateTime.tryParse(postMap['indexedAt'] ?? ''),
+        replyCount: postMap['replyCount'] ?? 0,
+        repostCount: postMap['repostCount'] ?? 0,
+        likeCount: postMap['likeCount'] ?? 0,
       ),
       author: Profile(
         did: authorMap['did'],

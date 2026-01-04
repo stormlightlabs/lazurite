@@ -57,6 +57,42 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _replyCountMeta = const VerificationMeta(
+    'replyCount',
+  );
+  @override
+  late final GeneratedColumn<int> replyCount = GeneratedColumn<int>(
+    'reply_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _repostCountMeta = const VerificationMeta(
+    'repostCount',
+  );
+  @override
+  late final GeneratedColumn<int> repostCount = GeneratedColumn<int>(
+    'repost_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _likeCountMeta = const VerificationMeta(
+    'likeCount',
+  );
+  @override
+  late final GeneratedColumn<int> likeCount = GeneratedColumn<int>(
+    'like_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     uri,
@@ -64,6 +100,9 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
     authorDid,
     record,
     indexedAt,
+    replyCount,
+    repostCount,
+    likeCount,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -115,6 +154,27 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
         indexedAt.isAcceptableOrUnknown(data['indexed_at']!, _indexedAtMeta),
       );
     }
+    if (data.containsKey('reply_count')) {
+      context.handle(
+        _replyCountMeta,
+        replyCount.isAcceptableOrUnknown(data['reply_count']!, _replyCountMeta),
+      );
+    }
+    if (data.containsKey('repost_count')) {
+      context.handle(
+        _repostCountMeta,
+        repostCount.isAcceptableOrUnknown(
+          data['repost_count']!,
+          _repostCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('like_count')) {
+      context.handle(
+        _likeCountMeta,
+        likeCount.isAcceptableOrUnknown(data['like_count']!, _likeCountMeta),
+      );
+    }
     return context;
   }
 
@@ -144,6 +204,18 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}indexed_at'],
       ),
+      replyCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reply_count'],
+      )!,
+      repostCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}repost_count'],
+      )!,
+      likeCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}like_count'],
+      )!,
     );
   }
 
@@ -159,12 +231,18 @@ class Post extends DataClass implements Insertable<Post> {
   final String authorDid;
   final String record;
   final DateTime? indexedAt;
+  final int replyCount;
+  final int repostCount;
+  final int likeCount;
   const Post({
     required this.uri,
     required this.cid,
     required this.authorDid,
     required this.record,
     this.indexedAt,
+    required this.replyCount,
+    required this.repostCount,
+    required this.likeCount,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -176,6 +254,9 @@ class Post extends DataClass implements Insertable<Post> {
     if (!nullToAbsent || indexedAt != null) {
       map['indexed_at'] = Variable<DateTime>(indexedAt);
     }
+    map['reply_count'] = Variable<int>(replyCount);
+    map['repost_count'] = Variable<int>(repostCount);
+    map['like_count'] = Variable<int>(likeCount);
     return map;
   }
 
@@ -188,6 +269,9 @@ class Post extends DataClass implements Insertable<Post> {
       indexedAt: indexedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(indexedAt),
+      replyCount: Value(replyCount),
+      repostCount: Value(repostCount),
+      likeCount: Value(likeCount),
     );
   }
 
@@ -202,6 +286,9 @@ class Post extends DataClass implements Insertable<Post> {
       authorDid: serializer.fromJson<String>(json['authorDid']),
       record: serializer.fromJson<String>(json['record']),
       indexedAt: serializer.fromJson<DateTime?>(json['indexedAt']),
+      replyCount: serializer.fromJson<int>(json['replyCount']),
+      repostCount: serializer.fromJson<int>(json['repostCount']),
+      likeCount: serializer.fromJson<int>(json['likeCount']),
     );
   }
   @override
@@ -213,6 +300,9 @@ class Post extends DataClass implements Insertable<Post> {
       'authorDid': serializer.toJson<String>(authorDid),
       'record': serializer.toJson<String>(record),
       'indexedAt': serializer.toJson<DateTime?>(indexedAt),
+      'replyCount': serializer.toJson<int>(replyCount),
+      'repostCount': serializer.toJson<int>(repostCount),
+      'likeCount': serializer.toJson<int>(likeCount),
     };
   }
 
@@ -222,12 +312,18 @@ class Post extends DataClass implements Insertable<Post> {
     String? authorDid,
     String? record,
     Value<DateTime?> indexedAt = const Value.absent(),
+    int? replyCount,
+    int? repostCount,
+    int? likeCount,
   }) => Post(
     uri: uri ?? this.uri,
     cid: cid ?? this.cid,
     authorDid: authorDid ?? this.authorDid,
     record: record ?? this.record,
     indexedAt: indexedAt.present ? indexedAt.value : this.indexedAt,
+    replyCount: replyCount ?? this.replyCount,
+    repostCount: repostCount ?? this.repostCount,
+    likeCount: likeCount ?? this.likeCount,
   );
   Post copyWithCompanion(PostsCompanion data) {
     return Post(
@@ -236,6 +332,13 @@ class Post extends DataClass implements Insertable<Post> {
       authorDid: data.authorDid.present ? data.authorDid.value : this.authorDid,
       record: data.record.present ? data.record.value : this.record,
       indexedAt: data.indexedAt.present ? data.indexedAt.value : this.indexedAt,
+      replyCount: data.replyCount.present
+          ? data.replyCount.value
+          : this.replyCount,
+      repostCount: data.repostCount.present
+          ? data.repostCount.value
+          : this.repostCount,
+      likeCount: data.likeCount.present ? data.likeCount.value : this.likeCount,
     );
   }
 
@@ -246,13 +349,25 @@ class Post extends DataClass implements Insertable<Post> {
           ..write('cid: $cid, ')
           ..write('authorDid: $authorDid, ')
           ..write('record: $record, ')
-          ..write('indexedAt: $indexedAt')
+          ..write('indexedAt: $indexedAt, ')
+          ..write('replyCount: $replyCount, ')
+          ..write('repostCount: $repostCount, ')
+          ..write('likeCount: $likeCount')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(uri, cid, authorDid, record, indexedAt);
+  int get hashCode => Object.hash(
+    uri,
+    cid,
+    authorDid,
+    record,
+    indexedAt,
+    replyCount,
+    repostCount,
+    likeCount,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -261,7 +376,10 @@ class Post extends DataClass implements Insertable<Post> {
           other.cid == this.cid &&
           other.authorDid == this.authorDid &&
           other.record == this.record &&
-          other.indexedAt == this.indexedAt);
+          other.indexedAt == this.indexedAt &&
+          other.replyCount == this.replyCount &&
+          other.repostCount == this.repostCount &&
+          other.likeCount == this.likeCount);
 }
 
 class PostsCompanion extends UpdateCompanion<Post> {
@@ -270,6 +388,9 @@ class PostsCompanion extends UpdateCompanion<Post> {
   final Value<String> authorDid;
   final Value<String> record;
   final Value<DateTime?> indexedAt;
+  final Value<int> replyCount;
+  final Value<int> repostCount;
+  final Value<int> likeCount;
   final Value<int> rowid;
   const PostsCompanion({
     this.uri = const Value.absent(),
@@ -277,6 +398,9 @@ class PostsCompanion extends UpdateCompanion<Post> {
     this.authorDid = const Value.absent(),
     this.record = const Value.absent(),
     this.indexedAt = const Value.absent(),
+    this.replyCount = const Value.absent(),
+    this.repostCount = const Value.absent(),
+    this.likeCount = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PostsCompanion.insert({
@@ -285,6 +409,9 @@ class PostsCompanion extends UpdateCompanion<Post> {
     required String authorDid,
     required String record,
     this.indexedAt = const Value.absent(),
+    this.replyCount = const Value.absent(),
+    this.repostCount = const Value.absent(),
+    this.likeCount = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : uri = Value(uri),
        cid = Value(cid),
@@ -296,6 +423,9 @@ class PostsCompanion extends UpdateCompanion<Post> {
     Expression<String>? authorDid,
     Expression<String>? record,
     Expression<DateTime>? indexedAt,
+    Expression<int>? replyCount,
+    Expression<int>? repostCount,
+    Expression<int>? likeCount,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -304,6 +434,9 @@ class PostsCompanion extends UpdateCompanion<Post> {
       if (authorDid != null) 'author_did': authorDid,
       if (record != null) 'record': record,
       if (indexedAt != null) 'indexed_at': indexedAt,
+      if (replyCount != null) 'reply_count': replyCount,
+      if (repostCount != null) 'repost_count': repostCount,
+      if (likeCount != null) 'like_count': likeCount,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -314,6 +447,9 @@ class PostsCompanion extends UpdateCompanion<Post> {
     Value<String>? authorDid,
     Value<String>? record,
     Value<DateTime?>? indexedAt,
+    Value<int>? replyCount,
+    Value<int>? repostCount,
+    Value<int>? likeCount,
     Value<int>? rowid,
   }) {
     return PostsCompanion(
@@ -322,6 +458,9 @@ class PostsCompanion extends UpdateCompanion<Post> {
       authorDid: authorDid ?? this.authorDid,
       record: record ?? this.record,
       indexedAt: indexedAt ?? this.indexedAt,
+      replyCount: replyCount ?? this.replyCount,
+      repostCount: repostCount ?? this.repostCount,
+      likeCount: likeCount ?? this.likeCount,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -344,6 +483,15 @@ class PostsCompanion extends UpdateCompanion<Post> {
     if (indexedAt.present) {
       map['indexed_at'] = Variable<DateTime>(indexedAt.value);
     }
+    if (replyCount.present) {
+      map['reply_count'] = Variable<int>(replyCount.value);
+    }
+    if (repostCount.present) {
+      map['repost_count'] = Variable<int>(repostCount.value);
+    }
+    if (likeCount.present) {
+      map['like_count'] = Variable<int>(likeCount.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -358,6 +506,9 @@ class PostsCompanion extends UpdateCompanion<Post> {
           ..write('authorDid: $authorDid, ')
           ..write('record: $record, ')
           ..write('indexedAt: $indexedAt, ')
+          ..write('replyCount: $replyCount, ')
+          ..write('repostCount: $repostCount, ')
+          ..write('likeCount: $likeCount, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1716,6 +1867,9 @@ typedef $$PostsTableCreateCompanionBuilder =
       required String authorDid,
       required String record,
       Value<DateTime?> indexedAt,
+      Value<int> replyCount,
+      Value<int> repostCount,
+      Value<int> likeCount,
       Value<int> rowid,
     });
 typedef $$PostsTableUpdateCompanionBuilder =
@@ -1725,6 +1879,9 @@ typedef $$PostsTableUpdateCompanionBuilder =
       Value<String> authorDid,
       Value<String> record,
       Value<DateTime?> indexedAt,
+      Value<int> replyCount,
+      Value<int> repostCount,
+      Value<int> likeCount,
       Value<int> rowid,
     });
 
@@ -1781,6 +1938,21 @@ class $$PostsTableFilterComposer extends Composer<_$AppDatabase, $PostsTable> {
 
   ColumnFilters<DateTime> get indexedAt => $composableBuilder(
     column: $table.indexedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get replyCount => $composableBuilder(
+    column: $table.replyCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get repostCount => $composableBuilder(
+    column: $table.repostCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get likeCount => $composableBuilder(
+    column: $table.likeCount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1843,6 +2015,21 @@ class $$PostsTableOrderingComposer
     column: $table.indexedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get replyCount => $composableBuilder(
+    column: $table.replyCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get repostCount => $composableBuilder(
+    column: $table.repostCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get likeCount => $composableBuilder(
+    column: $table.likeCount,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PostsTableAnnotationComposer
@@ -1868,6 +2055,19 @@ class $$PostsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get indexedAt =>
       $composableBuilder(column: $table.indexedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get replyCount => $composableBuilder(
+    column: $table.replyCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get repostCount => $composableBuilder(
+    column: $table.repostCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get likeCount =>
+      $composableBuilder(column: $table.likeCount, builder: (column) => column);
 
   Expression<T> timelineItemsRefs<T extends Object>(
     Expression<T> Function($$TimelineItemsTableAnnotationComposer a) f,
@@ -1928,6 +2128,9 @@ class $$PostsTableTableManager
                 Value<String> authorDid = const Value.absent(),
                 Value<String> record = const Value.absent(),
                 Value<DateTime?> indexedAt = const Value.absent(),
+                Value<int> replyCount = const Value.absent(),
+                Value<int> repostCount = const Value.absent(),
+                Value<int> likeCount = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PostsCompanion(
                 uri: uri,
@@ -1935,6 +2138,9 @@ class $$PostsTableTableManager
                 authorDid: authorDid,
                 record: record,
                 indexedAt: indexedAt,
+                replyCount: replyCount,
+                repostCount: repostCount,
+                likeCount: likeCount,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1944,6 +2150,9 @@ class $$PostsTableTableManager
                 required String authorDid,
                 required String record,
                 Value<DateTime?> indexedAt = const Value.absent(),
+                Value<int> replyCount = const Value.absent(),
+                Value<int> repostCount = const Value.absent(),
+                Value<int> likeCount = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PostsCompanion.insert(
                 uri: uri,
@@ -1951,6 +2160,9 @@ class $$PostsTableTableManager
                 authorDid: authorDid,
                 record: record,
                 indexedAt: indexedAt,
+                replyCount: replyCount,
+                repostCount: repostCount,
+                likeCount: likeCount,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
