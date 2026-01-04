@@ -4,6 +4,7 @@ import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/core/widgets/tab_scaffold.dart';
 import 'package:lazurite/src/features/dms/presentation/dms_screen.dart';
 import 'package:lazurite/src/features/home/presentation/home_screen.dart';
+import 'package:lazurite/src/features/login/presentation/login_screen.dart';
 import 'package:lazurite/src/features/notifications/presentation/notifications_screen.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
@@ -20,13 +21,11 @@ GoRouter createRouter() {
     initialLocation: AppRoutes.home,
     debugLogDiagnostics: true,
     routes: [
-      // Tab navigation with preserved state
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return TabScaffold(navigationShell: navigationShell);
         },
         branches: [
-          // Home tab
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -34,36 +33,26 @@ GoRouter createRouter() {
                 name: AppRouteNames.home,
                 builder: (context, state) => const HomeScreen(),
                 routes: [
-                  // Thread detail (nested under home)
                   GoRoute(
                     path: AppRoutes.thread,
                     name: '${AppRouteNames.home}_${AppRouteNames.thread}',
                     builder: (context, state) {
                       final postKey = state.pathParameters['postKey']!;
-                      return _PlaceholderScreen(
-                        title: 'Thread',
-                        subtitle: 'Post: $postKey',
-                      );
+                      return _PlaceholderScreen(title: 'Thread', subtitle: 'Post: $postKey');
                     },
                   ),
-                  // Profile detail (nested under home)
                   GoRoute(
                     path: AppRoutes.profileDetail,
-                    name:
-                        '${AppRouteNames.home}_${AppRouteNames.profileDetail}',
+                    name: '${AppRouteNames.home}_${AppRouteNames.profileDetail}',
                     builder: (context, state) {
                       final did = state.pathParameters['did']!;
-                      return _PlaceholderScreen(
-                        title: 'Profile',
-                        subtitle: 'DID: $did',
-                      );
+                      return _PlaceholderScreen(title: 'Profile', subtitle: 'DID: $did');
                     },
                   ),
                 ],
               ),
             ],
           ),
-          // Search tab
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -76,29 +65,21 @@ GoRouter createRouter() {
                     name: '${AppRouteNames.search}_${AppRouteNames.thread}',
                     builder: (context, state) {
                       final postKey = state.pathParameters['postKey']!;
-                      return _PlaceholderScreen(
-                        title: 'Thread',
-                        subtitle: 'Post: $postKey',
-                      );
+                      return _PlaceholderScreen(title: 'Thread', subtitle: 'Post: $postKey');
                     },
                   ),
                   GoRoute(
                     path: AppRoutes.profileDetail,
-                    name:
-                        '${AppRouteNames.search}_${AppRouteNames.profileDetail}',
+                    name: '${AppRouteNames.search}_${AppRouteNames.profileDetail}',
                     builder: (context, state) {
                       final did = state.pathParameters['did']!;
-                      return _PlaceholderScreen(
-                        title: 'Profile',
-                        subtitle: 'DID: $did',
-                      );
+                      return _PlaceholderScreen(title: 'Profile', subtitle: 'DID: $did');
                     },
                   ),
                 ],
               ),
             ],
           ),
-          // Notifications tab
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -108,33 +89,24 @@ GoRouter createRouter() {
                 routes: [
                   GoRoute(
                     path: AppRoutes.thread,
-                    name:
-                        '${AppRouteNames.notifications}_${AppRouteNames.thread}',
+                    name: '${AppRouteNames.notifications}_${AppRouteNames.thread}',
                     builder: (context, state) {
                       final postKey = state.pathParameters['postKey']!;
-                      return _PlaceholderScreen(
-                        title: 'Thread',
-                        subtitle: 'Post: $postKey',
-                      );
+                      return _PlaceholderScreen(title: 'Thread', subtitle: 'Post: $postKey');
                     },
                   ),
                   GoRoute(
                     path: AppRoutes.profileDetail,
-                    name:
-                        '${AppRouteNames.notifications}_${AppRouteNames.profileDetail}',
+                    name: '${AppRouteNames.notifications}_${AppRouteNames.profileDetail}',
                     builder: (context, state) {
                       final did = state.pathParameters['did']!;
-                      return _PlaceholderScreen(
-                        title: 'Profile',
-                        subtitle: 'DID: $did',
-                      );
+                      return _PlaceholderScreen(title: 'Profile', subtitle: 'DID: $did');
                     },
                   ),
                 ],
               ),
             ],
           ),
-          // DMs tab
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -157,7 +129,6 @@ GoRouter createRouter() {
               ),
             ],
           ),
-          // Profile tab
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -169,30 +140,22 @@ GoRouter createRouter() {
           ),
         ],
       ),
-      // Global routes (above tabs)
       GoRoute(
         path: AppRoutes.login,
         name: AppRouteNames.login,
-        builder: (context, state) => const _PlaceholderScreen(
-          title: 'Login',
-          subtitle: 'Sign in to continue',
-        ),
+        builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
         path: AppRoutes.compose,
         name: AppRouteNames.compose,
-        builder: (context, state) => const _PlaceholderScreen(
-          title: 'Compose',
-          subtitle: 'Create a new post',
-        ),
+        builder: (context, state) =>
+            const _PlaceholderScreen(title: 'Compose', subtitle: 'Create a new post'),
       ),
       GoRoute(
         path: AppRoutes.settings,
         name: AppRouteNames.settings,
-        builder: (context, state) => const _PlaceholderScreen(
-          title: 'Settings',
-          subtitle: 'App settings',
-        ),
+        builder: (context, state) =>
+            const _PlaceholderScreen(title: 'Settings', subtitle: 'App settings'),
       ),
     ],
   );

@@ -1,9 +1,9 @@
 *bsky_client_roadmap.vim*  Material You Bluesky Client (Flutter/Dart)
 Owais • Mobile-first (Android/iOS), then Desktop • Storage: Drift • HTTP: Dio
 
-==============================================================================
-0. Principles + references                                          *bsky-prin*
-==============================================================================
+================================================================================
+Principles + References                                              *bsky-prin*
+================================================================================
 
 Architecture principles (non-negotiable):
 - Separation of concerns: UI layer vs Data layer, with clear boundaries.
@@ -15,8 +15,8 @@ ATProto / Bluesky host rules (source of truth):
 - Public endpoints can be called directly via https://public.api.bsky.app.
 - Authenticated requests are usually made to the user’s PDS with automatic
   proxying.
-- Service proxying is controlled by an HTTP header ("Atproto-Proxy/atproto-proxy")
-  and specified in XRPC.
+- Service proxying is controlled by an HTTP header
+  ("Atproto-Proxy/atproto-proxy") and specified in XRPC.
 
 OAuth (mobile client reality):
 - atproto OAuth profile mandates DPoP and uses PAR in the initial auth request.
@@ -31,28 +31,6 @@ Drift:
 
 Secure secrets:
 - Store tokens/keys in secure storage, not Drift (e.g. flutter_secure_storage).
-
-
-==============================================================================
-1. Milestones overview                                              *bsky-ms*
-==============================================================================
-
-A. Repo + app skeleton + quality gates
-B. Networking layer (Dio) + endpoint routing + error policy
-C. Identity bootstrap + OAuth session
-D. Timeline + thread + core cache (Drift)
-E. Profiles + graph + search
-F. Composer + local drafts + publish pipeline (upload + createRecord)
-G. Notifications
-H. Smart folders (local-only saved views)
-I. DMs (read + write) + outbox + read-state
-J. Hardening (perf, a11y, moderation basics, crash/telemetry hooks)
-K. Desktop pass (layout, shortcuts, storage tweaks)
-
-Each milestone includes:
-- Tasks (implementation)
-- Tests (must-have)
-- Deliverables (what "done" means)
 
 ================================================================================
 A. Repo + app skeleton + quality gates                                  *bsky-A*
@@ -109,28 +87,38 @@ Deliverables:
 C. App shell + navigation skeleton                                   *bsky-ui-C*
 ================================================================================
 
-Routes added:
-- /login
-- /home
-- /search
-- /notifs
-- /dms
-- /me
-- /settings (optional placeholder)
+Routes added (with wired error surfaces):
+- [x] /login
+- [x] /home
+- [x] /search
+- [x] /notifs
+- [x] /dms
+- [x] /me
+- [x] /settings
 
 Screens added:
-- LoginPage (placeholder)
-- AppShell (StatefulShellRoute.indexedStack host)
-- HomePage (placeholder list)
-- SearchPage (placeholder)
-- NotificationsPage (placeholder)
-- DmsInboxPage (placeholder)
-- MePage (placeholder)
+- All screens render:
+  - loading → data → error states
+- [x] LoginPage
+- [x] AppShell (StatefulShellRoute.indexedStack host)
+- [x] HomePage
+- [x] SearchPage
+- [x] NotificationsPage
+- [x] DmsInboxPage
+- [x] MePage
 
 Widgets added (core):
-- AppScaffoldWithNav (NavigationBar + body slot)
-- LoadingView / ErrorView / EmptyState
-- AppAppBar (consistent actions slot)
+- [x] AppScaffoldWithNav (NavigationBar + body slot)
+- [x] LoadingView / ErrorView / EmptyState
+- [x] AppAppBar (consistent actions slot)
+- [x] NetworkErrorBanner (inline retry)
+- [x] PullToRefreshWrapper (common)
+- [x] PagedListFooter (loading more / "end" / error)
+
+Note that every list screen must support:
+  - optimistic cached render (later)
+  - pull-to-refresh affordance
+  - inline error that doesn’t blank the whole screen
 
 DoD:
 - Bottom-tabs preserve state (indexed stack shell).
@@ -149,7 +137,19 @@ Tasks:
 - [ ] Session model:
       - active account DID, handle, PDS URL
       - refresh workflow and concurrency guard (single-flight refresh)
-- [ ] dev fallback: com.atproto.server.createSession (app password) (flagged build flavor).
+- [ ] dev fallback: com.atproto.server.createSession (app password)
+      (flagged build flavor).
+- [ ] AuthButton Widget (primary CTA)
+- [ ] AuthProgressView Widget (PKCE/PAR/DPoP steps, minimal UI)
+- [ ] /login becomes "real"
+- [ ] redirect() rules added (protected routes require auth):
+      - [ ] /notifs, /dms, /compose (later) require session
+      - [ ] /home and /search can remain browseable
+- [ ] LoginPage (OAuth flow UI)
+      - [ ] "Continue" → external browser / in-app web auth
+      - [ ] "Switch account" (future)
+- [ ] AccountSwitcherSheet (optional; if multi-account early)
+
 
 Tests:
 - [ ] Identity resolution parsing tests (handle->DID->PDS).
@@ -158,6 +158,10 @@ Tests:
 Deliverables:
 - "Login" completes and yields a usable (did, pdsUrl, session).
 - Authenticated Dio calls succeed via dioPds with auth interceptor in place.
+- Logged-out users see:
+  - browseable Home/Search (read-only) OR
+  - forced login (your choice; both are consistent)
+- Logged-in users are redirected away from /login to /home
 
 ================================================================================
 E. Timeline + thread + core cache (Drift)                               *bsky-E*
@@ -181,6 +185,17 @@ Tasks:
 - [ ] Thread feature:
       - request thread, cache posts/profiles, render tree
       - local "optimistic" markers (e.g., pending like count later)
+- [ ] PostCard (real)
+- [ ] PostHeader (avatar, name, handle, timestamp)
+- [ ] PostBody (text + facets links)
+- [ ] PostActionsRow (reply/like/repost placeholders)
+- [ ] ThreadTree (indentation + reply chains)
+- [ ] InlineComposerLauncher (CTA at bottom)
+- [ ] Add Routes
+      - /home/t/:postKey   (ThreadPage)
+      - /home/u/:did       (ProfilePage (stub for now))
+- [ ] HomePage becomes TimelinePage: cached items render immediately, then refresh
+- [ ] ThreadPage: root post + replies tree, "reply" entry point (composer later)
 
 Tests:
 - [ ] Drift DAO tests: insert posts + timeline membership + query order.
@@ -190,6 +205,9 @@ Tests:
 Deliverables:
 - Home timeline works end-to-end with caching and pagination.
 - Thread view works for any post opened from timeline.
+- Infinite scroll (cursor paging)
+- Pull-to-refresh on timeline
+- Tap post → thread view
 
 ================================================================================
 F. Profiles + graph + search                                            *bsky-F*
