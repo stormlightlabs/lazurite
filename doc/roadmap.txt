@@ -1,0 +1,359 @@
+*bsky_client_roadmap.vim*  Material You Bluesky Client (Flutter/Dart)
+Owais • Mobile-first (Android/iOS), then Desktop • Storage: Drift • HTTP: Dio
+
+==============================================================================
+0. Principles + references                                          *bsky-prin*
+==============================================================================
+
+Architecture principles (non-negotiable):
+- Separation of concerns: UI layer vs Data layer, with clear boundaries.
+- Feature-first organization inside those layers (each feature owns its domain/data/presentation).
+- Cursor-based pagination everywhere (avoid OFFSET paging for feeds).
+
+ATProto / Bluesky host rules (source of truth):
+- Public endpoints can be called directly via https://public.api.bsky.app.
+- Authenticated requests are usually made to the user’s PDS with automatic
+  proxying.
+- Service proxying is controlled by an HTTP header ("Atproto-Proxy/atproto-proxy")
+  and specified in XRPC.
+
+OAuth (mobile client reality):
+- atproto OAuth profile mandates DPoP and uses PAR in the initial auth request.
+
+DMs (Chat service):
+- Chat requests go to the user’s PDS and are proxied to did:web:api.bsky.chat
+  via service proxy header.
+
+Drift:
+- Drift is the primary relational persistence library for Dart/Flutter; supports
+  reactive queries and isolates.
+
+Secure secrets:
+- Store tokens/keys in secure storage, not Drift (e.g. flutter_secure_storage).
+
+
+==============================================================================
+1. Milestones overview                                              *bsky-ms*
+==============================================================================
+
+A. Repo + app skeleton + quality gates
+B. Networking layer (Dio) + endpoint routing + error policy
+C. Identity bootstrap + OAuth session
+D. Timeline + thread + core cache (Drift)
+E. Profiles + graph + search
+F. Composer + local drafts + publish pipeline (upload + createRecord)
+G. Notifications
+H. Smart folders (local-only saved views)
+I. DMs (read + write) + outbox + read-state
+J. Hardening (perf, a11y, moderation basics, crash/telemetry hooks)
+K. Desktop pass (layout, shortcuts, storage tweaks)
+
+Each milestone includes:
+- Tasks (implementation)
+- Tests (must-have)
+- Deliverables (what "done" means)
+
+==============================================================================
+A. Repo + app skeleton + quality gates                              *bsky-A*
+==============================================================================
+
+Tasks:
+- [ ] Create Flutter project + Material 3 theme scaffolding.
+- [ ] Define feature-first module layout (src/app, core, infrastructure, features/*).
+- [ ] Add build_runner + lint rules + formatting hooks.
+- [ ] Define CI: analyze, test, format, integration tests.
+- [ ] Add go_router + router.dart
+    - [ ] Add tab scaffold using StatefulShellRoute.indexedStack
+    - [ ] Add route constants / names and a navigation helper
+- [ ] Add flutter_riverpod + riverpod_generator
+    - [ ] Wire ProviderScope at app root
+    - [ ] Establish provider naming conventions + folder placement
+
+Tests:
+- [ ] Smoke test boots app + renders root scaffold.
+- [ ] Unit tests for key base widgets (post card skeleton, avatar, empty state).
+
+Deliverables:
+- App boots on Android + iOS simulators with placeholder routes.
+- Consistent linting/formatting enforced in CI.
+
+==============================================================================
+B. Networking (Dio) + routing matrix + error policy                 *bsky-B*
+==============================================================================
+
+Tasks:
+- [ ] Implement Dio clients:
+      - dioPublic(baseUrl=https://public.api.bsky.app)
+      - dioPds(baseUrl=<resolved PDS>)
+- [ ] Implement interceptors:
+      - logging (redact tokens)
+      - auth (attach access token + DPoP; refresh on 401 once)
+      - retry (GET only; bounded exponential backoff)
+      - proxy (chat.* -> set service proxy header)
+- [ ] Encode a single endpoint map: NSID -> {method, path, hostKind, auth, proxyKind}.
+- [ ] Standardize failure model: network vs auth vs server vs decode.
+
+Tests:
+- [ ] Unit tests for endpoint routing (NSID -> correct dio + headers).
+- [ ] Unit tests for retry policy (GET retries, POST does not retry blindly).
+- [ ] Contract test: public read hits public.api.bsky.app for app.bsky.*. :contentReference[oaicite:8]{index=8}
+
+Deliverables:
+- A small "XrpcClient" wrapper that all features use.
+- Routing rules implemented exactly as spec’d (public AppView vs PDS vs proxy).
+
+==============================================================================
+C. Identity bootstrap + OAuth session                               *bsky-C*
+==============================================================================
+
+Tasks:
+- [ ] Identity resolution helpers (handle/DID bootstrap):
+      - com.atproto.identity.resolveHandle
+      - com.atproto.identity.resolveDid / resolveIdentity
+- [ ] OAuth client:
+      - publish client metadata JSON at stable https URL (required). :contentReference[oaicite:9]{index=9}
+      - implement PKCE + PAR + DPoP per atproto OAuth profile. :contentReference[oaicite:10]{index=10}
+      - token storage: secure storage (access/refresh, key material). :contentReference[oaicite:11]{index=11}
+- [ ] Session model:
+      - active account DID, handle, PDS URL
+      - refresh workflow and concurrency guard (single-flight refresh)
+- [ ] Optional dev fallback: com.atproto.server.createSession (app password) (flagged build flavor).
+
+Tests:
+- [ ] Identity resolution parsing tests (handle->DID->PDS).
+- [ ] OAuth state machine tests (happy path + expired token refresh).
+
+Deliverables:
+- "Login" completes and yields a usable (did, pdsUrl, session).
+- Authenticated Dio calls succeed via dioPds with auth interceptor in place.
+
+==============================================================================
+D. Timeline + thread + core cache (Drift)                           *bsky-D*
+==============================================================================
+
+Endpoints (read):
+- app.bsky.feed.getTimeline (GET) :contentReference[oaicite:12]{index=12}
+- app.bsky.feed.getPostThread (GET) :contentReference[oaicite:13]{index=13}
+- app.bsky.feed.getPosts (GET hydrate) :contentReference[oaicite:14]{index=14}
+
+Tasks:
+- [ ] Drift setup + migrations:
+      - posts, profiles, timeline_items, accounts
+      - cursor persistence per feedKey
+      - indexes on (post.uri), (post.indexedAt), (timeline_items.feedKey, sortKey)
+      - enable isolate-friendly DB execution where appropriate.
+- [ ] Timeline feature:
+      - cursor paging (infinite scroll)
+      - pull-to-refresh (replace cursor, merge results)
+      - cache-first render: show cached timeline immediately, then refresh
+- [ ] Thread feature:
+      - request thread, cache posts/profiles, render tree
+      - local "optimistic" markers (e.g., pending like count later)
+
+Tests:
+- [ ] Drift DAO tests: insert posts + timeline membership + query order.
+- [ ] Paging tests: cursor advances, dedupe by AT-URI, stable ordering.
+- [ ] UI tests: timeline renders from cache without network.
+
+Deliverables:
+- Home timeline works end-to-end with caching and pagination.
+- Thread view works for any post opened from timeline.
+
+==============================================================================
+E. Profiles + graph + search                                        *bsky-E*
+==============================================================================
+
+Endpoints:
+- app.bsky.actor.getProfile (GET)
+- app.bsky.feed.getAuthorFeed (GET)
+- app.bsky.feed.searchPosts (GET)
+
+Tasks:
+- [ ] Profile screen: fetch + cache profile + author feed, cursor paging.
+- [ ] Search screen: query -> paged results; store recent searches (local).
+- [ ] Shared hydration: ensure embeds/media are rendered consistently.
+
+Tests:
+- [ ] Profile caching: refresh merges, does not duplicate feed items.
+- [ ] Search paging: stable cursor behavior and local persistence.
+
+Deliverables:
+- Profile + author feed + search posts shipped.
+
+==============================================================================
+F. Composer + local drafts + publish pipeline                        *bsky-F*
+==============================================================================
+
+Endpoints (write):
+- com.atproto.repo.uploadBlob (POST)
+- com.atproto.repo.createRecord (POST)
+
+Tasks:
+- [ ] Drafts stored locally (Drift):
+      - drafts table (text, reply/quote refs, facets, status)
+      - draft_media table (local path, mime, alt text, uploadCid/blob ref)
+- [ ] Draft UX:
+      - autosave and recover
+      - "publish later" is a first-class state
+- [ ] Publish pipeline:
+      (1) upload blobs (if any)
+      (2) build post record payload
+      (3) createRecord (collection app.bsky.feed.post)
+      (4) mark draft posted (or archive)
+- [ ] Failure handling:
+      - partial upload failures -> retry UI
+      - publish failure -> draft remains editable
+
+Tests:
+- [ ] Draft persistence tests (save, load, migrate).
+- [ ] Publish pipeline unit tests (uploads then createRecord).
+- [ ] "airplane mode" test: drafts still editable and safe.
+
+Deliverables:
+- Offline drafts + reliable posting with media upload support.
+
+==============================================================================
+G. Notifications                                                    *bsky-G*
+==============================================================================
+
+Endpoints:
+- app.bsky.notification.listNotifications (GET)
+- app.bsky.notification.getUnreadCount (GET)
+
+Tasks:
+- [ ] Notifications tab: paged list + local seen state.
+- [ ] Badge count support (in-app; push later).
+- [ ] Tapping a notification routes to thread/profile as appropriate.
+
+Tests:
+- [ ] Unread count updates and "mark read" local behavior.
+
+Deliverables:
+- Notifications shipped with consistent navigation.
+
+==============================================================================
+H. Smart folders (local-only saved views)                           *bsky-H*
+==============================================================================
+
+Definition:
+- A smart folder is a saved query over cached posts + local metadata.
+- It never fetches from network by itself; it organizes what’s already cached.
+
+Tasks:
+- [ ] Drift tables:
+      - smart_folders (name, sortMode)
+      - smart_folder_rules (type, payloadJson)
+      - optional smart_folder_items materialization (later)
+- [ ] Rule engine (MVP rule types):
+      - author allow/deny (DIDs)
+      - keyword include/exclude (text)
+      - has media / has link
+      - bookmarked only
+      - exclude replies / replies only
+- [ ] UI:
+      - create/edit folder
+      - folder list and folder detail view
+
+Tests:
+- [ ] Rule evaluation tests against fixture posts.
+- [ ] Query performance test with N=10k cached posts.
+
+Deliverables:
+- "Saved views" that feel like feeds, entirely local and fast.
+
+==============================================================================
+I. DMs (read + write) + outbox + read-state                         *bsky-I*
+==============================================================================
+
+DM fundamentals:
+- Chat endpoints are called via user’s PDS and proxied to did:web:api.bsky.chat
+  via service proxy header, per chat endpoint docs and XRPC proxy spec.
+
+Endpoints:
+- chat.bsky.convo.listConvos (GET)
+- chat.bsky.convo.getMessages (GET)
+- chat.bsky.convo.sendMessage (POST)
+- chat.bsky.convo.acceptConvo (POST)
+- chat.bsky.convo.updateRead (POST)
+
+Tasks:
+- [ ] Dio proxying:
+      - add `atproto-proxy` header for all chat.* calls (service proxying).
+- [ ] Drift tables:
+      - dm_convos, dm_members, dm_messages
+      - dm_outbox (local queued sends)
+- [ ] Inbox UI:
+      - convo list, unread indicators, accept requests flow
+- [ ] Convo UI:
+      - message list paging
+      - compose/send
+      - mark read on view (updateRead)
+- [ ] Outbox worker:
+      - persist pending messages immediately
+      - retry sends safely (bounded; user-visible failure state)
+      - never double-send without explicit server acknowledgement
+
+Tests:
+- [ ] Proxy header unit test: chat.* requests include atproto-proxy.
+- [ ] Outbox tests: enqueue -> send -> mark delivered; retry on transient errors.
+- [ ] UI tests: offline send creates pending bubble; online later resolves.
+
+Deliverables:
+- DMs usable end-to-end: read, accept, send, read-state, robust retries.
+
+==============================================================================
+J. Hardening (mobile)                                               *bsky-J*
+==============================================================================
+
+Tasks:
+- [ ] Performance:
+      - image caching strategy; list virtualization sanity
+      - DB query profiling; add indexes as needed
+- [ ] Accessibility:
+      - semantic labels, dynamic type, contrast checks
+- [ ] Moderation basics:
+      - respect labels/filters returned by AppView/PDS (foundation)
+- [ ] Observability hooks:
+      - structured logging, crash reporting integration points (optional)
+
+Tests:
+- [ ] Scroll perf sanity test on mid-range Android emulator profile.
+- [ ] A11y audit checklist pass.
+
+Deliverables:
+- Mobile app feels stable and responsive for daily use.
+
+==============================================================================
+K. Desktop pass                                                     *bsky-K*
+==============================================================================
+
+Tasks:
+- [ ] Responsive layout:
+      - multi-column (timeline + thread) for wide screens
+- [ ] Keyboard shortcuts:
+      - navigate, like, repost, reply, new draft
+- [ ] Storage:
+      - confirm Drift backend performance on desktop targets
+- [ ] Window behaviors:
+      - restore last route, remember split pane sizes
+
+Tests:
+- [ ] Desktop smoke tests: app boots, auth works, DB works.
+
+Deliverables:
+- Desktop build that is genuinely usable (not just "it runs").
+
+==============================================================================
+Appendix: Implementation checklist (quick)                       *bsky-appendix*
+==============================================================================
+
+- Host routing:
+  - public browse -> public.api.bsky.app
+  - logged in -> PDS
+  - chat -> PDS + proxy header
+- OAuth:
+  - DPoP + PAR are required by atproto OAuth profile
+- Drift:
+  - reactive + isolate support; use migrations intentionally
+- Secrets:
+  - secure storage for tokens/keys

@@ -1,0 +1,105 @@
+==============================================================================
+State management: Riverpod conventions                               *bsky-rp*
+==============================================================================
+
+We use Riverpod for:
+- dependency injection (Dio clients, DB, repositories)
+- view-model state (timeline paging, thread loading, draft autosave, DM outbox)
+
+Why:
+- Flutter’s architecture guide strongly recommends separation of concerns and
+  "Views + ViewModels" with repositories in the data layer. Riverpod fits this
+  model cleanly without widget-level state soup.
+- Riverpod recommends (Async)Notifier/(Async)NotifierProvider for state that
+  changes via user interaction (exactly our app).
+
+------------------------------------------------------------------------------
+Provider types (opinionated standard)
+------------------------------------------------------------------------------
+
+Dependencies (singletons / resources):
+- Provider<AppDb>                 (Drift DB)
+- Provider<Dio> dioPublic
+- Provider<Dio> dioPds
+- Provider<AuthSessionStore>      (secure storage-backed)
+- Provider<EndpointMap>           (single source of routing truth)
+
+Repositories (data layer):
+- Provider<TimelineRepository>
+- Provider<ThreadRepository>
+- Provider<DmRepository>
+- Provider<DraftRepository>
+(repos depend on Dio + DAOs)
+
+ViewModels (presentation layer):
+- AsyncNotifierProvider<TimelineController, TimelineState>
+- AsyncNotifierProvider<ThreadController, ThreadState>
+- NotifierProvider<ComposerController, ComposerState> (often sync + autosave)
+- AsyncNotifierProvider<DmInboxController, DmInboxState>
+- AsyncNotifierProvider<DmConvoController, DmConvoState>
+
+Rule of thumb:
+- Use AsyncNotifier when you do I/O (network/db) or have "loading/error/data".
+- Use Notifier for purely local synchronous state (text fields + local draft),
+  while persisting via a repository.
+
+------------------------------------------------------------------------------
+File placement (ties into your module structure)
+------------------------------------------------------------------------------
+
+lib/src/app/providers.dart
+  - global providers for env, dio, db, secure storage, endpoint map
+
+lib/src/infrastructure/... (no Riverpod here)
+  - pure Dart classes: XrpcClient, interceptors, DAOs
+
+lib/src/features/<feature>/presentation/<feature>_controller.dart
+  - Notifier/AsyncNotifier implementation
+  - holds paging cursors, refresh logic, optimistic UI, etc.
+
+lib/src/features/<feature>/domain/usecases/
+  - optional: thin usecases called by controllers, especially for complex flows
+    (publish draft pipeline, DM outbox flush)
+
+------------------------------------------------------------------------------
+Testing conventions
+------------------------------------------------------------------------------
+
+- Unit test controllers with ProviderContainer:
+  - override repositories with fakes
+  - assert state transitions: loading -> data, optimistic updates, retry behavior
+- DAO tests run against an in-memory/temporary Drift database.
+- Network tests mock Dio adapters (or replace XrpcClient in providers).
+
+Note:
+- Riverpod 3.x added more flexible overrides for Notifier build, which helps
+  when you want to stub initial state but keep real behavior.
+
+
+==============================================================================
+Roadmap Mapping                                                     *bsky-rp-ms*
+==============================================================================
+
+Where to add Riverpod tasks in milestones/roadmap.txt.
+
+A. Repo + app skeleton + quality gates
+  Add:
+  - [ ] Add flutter_riverpod + riverpod_generator (if using codegen)
+  - [ ] Wire ProviderScope at app root
+  - [ ] Establish provider naming conventions + folder placement
+
+B. Networking + routing matrix
+  Add:
+  - [ ] Provide dioPublic/dioPds via Riverpod providers
+  - [ ] Provide EndpointMap via provider (so controllers don’t hardcode routing)
+
+C. Identity + OAuth session
+  Add:
+  - [ ] AuthSessionStore provider (secure storage-backed)
+  - [ ] AuthState notifier (logged out/logging in/logged in + active DID)
+
+D/E/F/G/H/I (feature milestones)
+  Add (each feature):
+  - [ ] <Feature>Controller as (Async)Notifier
+  - [ ] Provider-driven repository injection (no constructors in Widgets)
+  - [ ] Controller unit tests for paging + error + retry/refresh

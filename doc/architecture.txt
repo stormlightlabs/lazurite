@@ -1,0 +1,335 @@
+*bsky_client_roadmap.vim* - Flutter (Dart) Bluesky client
+Material You (M3) • Mobile-first (Android/iOS), then desktop • Drift • Dio
+
+================================================================================
+1. Scope                                                          *bsky-scope*
+================================================================================
+
+In-scope (MVP → v1):
+
+* Auth + identity resolution
+* Home timeline + threads + profiles + search + notifications
+* Compose (with media) + likes/reposts/replies
+* DMs (read + write): convo list, messages, send, read state
+* Local features:
+  * Smart folders (local-only "feeds" built from cached posts)
+  * Local post drafts (offline compose; later publish)
+
+Out-of-scope/maybes:
+
+* Firehose ingestion, custom feed generator hosting, heavy moderation tooling
+
+================================================================================
+2. Host routing model                                              *bsky-host*
+================================================================================
+
+Rule 1: Public AppView (read-only, no auth)
+
+* Public endpoints may be called directly at:
+  [https://public.api.bsky.app/xrpc/](https://public.api.bsky.app/xrpc/)<NSID> ([Bluesky Documentation][1])
+
+Rule 2: Authenticated requests → user’s PDS
+
+* Authenticated requests are "usually made to the user’s PDS," with service
+  proxying handled server-side when applicable. ([Bluesky Documentation][1])
+* This matters for read-after-write smoothing (PDS can patch AppView reads). ([Bluesky Documentation][2])
+
+Implementation:
+
+* Two Dio instances:
+  * `dioPublic`  baseUrl = [https://public.api.bsky.app](https://public.api.bsky.app)
+  * `dioPds`     baseUrl = user’s PDS URL (resolved via identity)
+* Never "guess" where to send a call at runtime; encode it in an endpoint map.
+
+================================================================================
+3. Identity resolution + session bootstrap                         *bsky-ident*
+================================================================================
+
+You need handle→DID→PDS resolution to:
+
+* log in
+* normalize cache keys to stable identifiers (DID, at:// URIs)
+
+Endpoints (GET):
+
+* /xrpc/com.atproto.identity.resolveHandle    ([Bluesky Documentation][3])
+* /xrpc/com.atproto.identity.resolveDid       ([Bluesky Documentation][4])
+* /xrpc/com.atproto.identity.resolveIdentity  ([Bluesky Documentation][5])
+
+Guidance:
+
+* Prefer DID + at:// URIs internally; handles are user-facing and less stable. ([AT Protocol][6])
+
+================================================================================
+4. Core read endpoints (feeds, threads, hydrate)                     *bsky-read*
+================================================================================
+
+Home timeline (GET):
+
+* /xrpc/app.bsky.feed.getTimeline ([Bluesky Documentation][7])
+
+Threads (GET):
+
+* /xrpc/app.bsky.feed.getPostThread ([Bluesky Documentation][8])
+
+Hydration (GET):
+
+* /xrpc/app.bsky.feed.getPosts  (hydrate views for a list of post AT-URIs) ([Bluesky Documentation][9])
+
+Search (GET):
+
+* /xrpc/app.bsky.feed.searchPosts ([Bluesky Documentation][10])
+
+Notifications (GET):
+
+* /xrpc/app.bsky.notification.listNotifications ([Bluesky Documentation][11])
+* /xrpc/app.bsky.notification.getUnreadCount   ([Bluesky Documentation][12])
+
+Note:
+
+* For these same endpoints, you can call:
+
+  * public mode → AppView (public.api)
+  * logged-in mode → PDS (better metadata + consistency + read-after-write) ([Bluesky Documentation][1])
+
+================================================================================
+5. Core write endpoints (posting + media)                           *bsky-write*
+================================================================================
+
+Create a post record (POST):
+
+* /xrpc/com.atproto.repo.createRecord ([Bluesky Documentation][13])
+
+Upload blobs for embeds (POST):
+
+* /xrpc/com.atproto.repo.uploadBlob ([Bluesky Documentation][14])
+
+Notes:
+
+* uploadBlob is "temporary" until referenced by a record (time window). ([Bluesky Documentation][14])
+* All repo writes go to the user’s PDS. ([Bluesky Documentation][13])
+
+================================================================================
+6. DMs (Bluesky Chat) - read + write                                  *bsky-dms*
+================================================================================
+
+Key constraint:
+
+* Chat XRPC calls are authenticated, sent to the user’s PDS, and proxied to the
+  central chat service by setting the service DID in the service proxy header. ([Bluesky Documentation][15])
+
+Service proxy header (XRPC spec):
+
+* Header name: `atproto-proxy`
+* Value format: `did#serviceId` ([AT Protocol][16])
+* For Bluesky chat, docs reference service DID `did:web:api.bsky.chat`. ([Bluesky Documentation][15])
+  (Common service id used in implementations: `#bsky_chat`.)
+
+Dio implementation (recommended):
+
+* Add an interceptor on `dioPds` for "chat.*" calls:
+
+  * set `atproto-proxy: did:web:api.bsky.chat#bsky_chat` (value per your SDK/constants)
+  * include auth headers (OAuth bearer + whatever your auth layer requires)
+
+Chat endpoints you need
+
+Convo list + detail (GET):
+
+* /xrpc/chat.bsky.convo.listConvos ([Bluesky Documentation][15])
+
+Messages (GET):
+
+* /xrpc/chat.bsky.convo.getMessages ([Bluesky Documentation][17])  (listed under HTTP ref; use the specific endpoint doc in your code comments)
+
+Send message (POST):
+
+* /xrpc/chat.bsky.convo.sendMessage ([Bluesky Documentation][18])
+
+Read state / requests (POST):
+
+* /xrpc/chat.bsky.convo.acceptConvo ([Bluesky Documentation][19])
+* /xrpc/chat.bsky.convo.updateRead  (mark a convo read)  (in HTTP ref; pin to endpoint doc in code)
+* /xrpc/chat.bsky.convo.leaveConvo  (optional) ([Bluesky Documentation][20])
+
+Practical warning:
+
+* If you call chat endpoints against public.api.bsky.app you will get 404/unsupported;
+  you must proxy via PDS with `atproto-proxy`. ([GitHub][21])
+
+================================================================================
+7. Local-only features (Smart Folders + Drafts)                     *bsky-local*
+================================================================================
+
+These are intentionally "offline-first" and do not map to protocol endpoints.
+
+---
+
+## 7.1 Smart folders (local-only "feeds")                        *bsky-folders*
+
+Definition:
+
+* A smart folder is a saved query over your local cache:
+
+  * cached posts + cached profiles + local metadata (bookmarks, read-state, tags)
+* It never fetches posts on its own; it only organizes what you already have.
+
+Inputs (sources that populate cache):
+
+* Timeline fetch: getTimeline ([Bluesky Documentation][7])
+* Thread fetch: getPostThread ([Bluesky Documentation][8])
+* Search fetch: searchPosts ([Bluesky Documentation][10])
+* Hydration: getPosts ([Bluesky Documentation][9])
+
+Folder rule types (suggested MVP):
+
+* Author allow/deny (DID list)
+* Keyword include/exclude (post text)
+* Has media / has link
+* Replies only / exclude replies
+* Bookmarked only
+* "Unread only" (local read-state)
+
+Execution strategy (opinionated):
+
+* Start non-materialized:
+
+  * SELECT posts WHERE <rules> ORDER BY indexedAt DESC LIMIT/OFFSET (or keyset)
+* Upgrade to materialized if needed:
+
+  * On cache insert, evaluate rules and populate local_folder_items
+
+---
+
+## 7.2 Local post drafts (offline compose)                        *bsky-drafts*
+
+Definition:
+
+* Drafts are local-only compose states: text, embeds, and pending uploads.
+* Publishing transforms a draft into:
+
+  * (optional) uploadBlob calls
+  * createRecord call
+
+Publish pipeline (when user hits "Post"):
+
+1. If draft has media files not yet uploaded → uploadBlob ([Bluesky Documentation][14])
+2. Construct app.bsky.feed.post record with blob references
+3. createRecord (collection app.bsky.feed.post) ([Bluesky Documentation][13])
+4. On success: mark draft as published (or delete)
+
+================================================================================
+8. Drift schema (mobile-first, desktop-ready)                          *bsky-db*
+================================================================================
+
+Principles:
+
+* Use stable keys (DID, at:// URIs).
+* Store raw JSON payloads for forward compatibility, plus minimal indexed columns.
+
+Core cache tables (minimum):
+
+* accounts(did PK, handle, pdsUrl, active, …)
+* profiles(did PK, handle, json, updatedAt)
+* posts(uri PK, cid, authorDid, textPreview, indexedAt, json, updatedAt)
+* timeline_items(feedKey, postUri, sortKey, cursor, PRIMARY KEY(feedKey, postUri))
+
+Notifications:
+
+* notifications(id PK, indexedAt, seenAt, json)
+
+DMs:
+
+* dm_convos(convoId PK, lastMessageAt, unreadCount, muted, json, updatedAt)
+* dm_members(convoId, memberDid, PRIMARY KEY(convoId, memberDid))
+* dm_messages(convoId, messageId, sentAt, senderDid, status, json,
+  PRIMARY KEY(convoId, messageId))
+* dm_outbox(localId PK, convoId, payloadJson, attemptCount, retryAt, createdAt)
+
+Smart folders:
+
+* smart_folders(folderId PK, name, sortMode, createdAt, updatedAt)
+* smart_folder_rules(ruleId PK, folderId, type, payloadJson)
+* smart_folder_items(folderId, postUri, score, insertedAt,
+  PRIMARY KEY(folderId, postUri))   (optional materialization)
+
+Drafts:
+
+* drafts(draftId PK, createdAt, updatedAt, status[draft|publishing|failed|posted],
+  text, facetsJson, replyToUri?, quoteUri?, embedJson?)
+* draft_media(draftId, localMediaId PK, pathOrUri, mime, size, altText,
+  uploadCid?, uploadBlobJson?, status[pending|uploaded|failed])
+
+Notes:
+
+* Keep auth secrets out of Drift; store them in secure storage.
+* Expect read-after-write inconsistencies if you only read from AppView; prefer
+  authed reads via PDS after posting. ([Bluesky Documentation][2])
+
+==============================================================================
+9. Milestones (Android/iOS first → desktop)                   *bsky-milestones*
+===============================================================================
+
+A. App shell + Material You
+
+* Navigation, theming, core widgets
+
+B. Identity + session bootstrap
+
+* resolveHandle/resolveIdentity, PDS baseUrl selection ([Bluesky Documentation][3])
+
+C. Timeline + thread + cache
+
+* getTimeline + paging + Drift
+* getPostThread for detail view ([Bluesky Documentation][7])
+
+D. Compose + drafts
+
+* drafts + draft_media schema, offline compose UX
+* publish pipeline (uploadBlob + createRecord) ([Bluesky Documentation][14])
+
+E. Notifications
+
+* listNotifications + unread count ([Bluesky Documentation][11])
+
+F. Search + cache hydration
+
+* searchPosts + getPosts hydration ([Bluesky Documentation][10])
+
+G. Smart folders
+
+* rule editor UI
+* non-materialized query → optional materialization
+
+H. DMs (read + write)
+
+* convo list, messages, send, read-state
+* PDS proxying via atproto-proxy header ([AT Protocol][16])
+
+I. Desktop pass
+
+* keyboard shortcuts, multi-column layouts, storage tweaks (still Drift)
+
+==============================================================================
+
+[1]: https://docs.bsky.app/docs/api/app-bsky-feed-get-feed "app.bsky.feed.getFeed"
+[2]: https://docs.bsky.app/docs/advanced-guides/read-after-write "Read-After-Write"
+[3]: https://docs.bsky.app/docs/api/com-atproto-identity-resolve-handle "com.atproto.identity.resolveHandle"
+[4]: https://docs.bsky.app/docs/api/com-atproto-identity-resolve-did "com.atproto.identity.resolveDid"
+[5]: https://docs.bsky.app/docs/api/com-atproto-identity-resolve-identity "com.atproto.identity.resolveIdentity"
+[6]: https://atproto.com/specs/handle "Handle"
+[7]: https://docs.bsky.app/docs/api/app-bsky-feed-get-timeline "app.bsky.feed.getTimeline"
+[8]: https://docs.bsky.app/docs/api/app-bsky-feed-get-post-thread "app.bsky.feed.getPostThread"
+[9]: https://docs.bsky.app/docs/api/app-bsky-feed-get-posts "app.bsky.feed.getPosts"
+[10]: https://docs.bsky.app/docs/api/app-bsky-feed-search-posts "app.bsky.feed.searchPosts"
+[11]: https://docs.bsky.app/docs/api/app-bsky-notification-list-notifications "app.bsky.notification.listNotifications"
+[12]: https://docs.bsky.app/docs/api/app-bsky-notification-get-unread-count "app.bsky.notification.getUnreadCount"
+[13]: https://docs.bsky.app/docs/api/com-atproto-repo-create-record "com.atproto.repo.createRecord"
+[14]: https://docs.bsky.app/docs/api/com-atproto-repo-upload-blob "com.atproto.repo.uploadBlob"
+[15]: https://docs.bsky.app/docs/api/chat-bsky-convo-list-convos "chat.bsky.convo.listConvos"
+[16]: https://atproto.com/specs/xrpc "HTTP API (XRPC)"
+[17]: https://docs.bsky.app/docs/category/http-reference "HTTP Reference"
+[18]: https://docs.bsky.app/docs/api/chat-bsky-convo-send-message "chat.bsky.convo.sendMessage"
+[19]: https://docs.bsky.app/docs/api/chat-bsky-convo-accept-convo "chat.bsky.convo.acceptConvo"
+[20]: https://docs.bsky.app/docs/api/chat-bsky-convo-leave-convo "chat.bsky.convo.leaveConvo"
+[21]: https://github.com/bluesky-social/atproto/issues/2775 "Problem to list convo and send message · Issue #2775"

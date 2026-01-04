@@ -1,0 +1,129 @@
+==============================================================================
+Routing: go_router + Riverpod (mobile-first, deep-linkable)        *bsky-router*
+==============================================================================
+
+We use go_router for:
+- URL-based navigation (deep links, shareable routes, desktop parity)
+- nested navigation with persistent tab state
+- auth gating via redirect()
+
+go_router capabilities we rely on:
+- path + query parameters, nested routes, and redirection support.
+
+------------------------------------------------------------------------------
+Router shape (recommended)                                      *bsky-router-shape*
+------------------------------------------------------------------------------
+
+Use StatefulShellRoute.indexedStack for bottom tabs so each tab preserves state
+(scroll position, nested stacks).
+
+Tabs (StatefulShellRoute branches):
+- Home
+- Search
+- Notifications
+- DMs
+- Profile (Me)
+
+Rules:
+- Put "detail" routes (thread, profile, convo) as children of the branch where
+  the user is coming from, so the bottom bar stays visible.
+- Put "global modals" (compose, settings) on the root navigator so they present
+  above tabs.
+
+------------------------------------------------------------------------------
+Route map (paths + params)                                        *bsky-route-map*
+------------------------------------------------------------------------------
+
+Top-level:
+- /splash                         (optional)
+- /login
+- /settings
+- /compose                         (root modal)
+- /drafts                          (local-only list)
+- /drafts/:draftId                 (edit draft)
+
+StatefulShellRoute (tabs):
+- /home
+  - thread:   /home/t/:postKey
+  - profile:  /home/u/:did
+
+- /search
+  - results:  /search?q=<query>          (query params are first-class)
+  - thread:   /search/t/:postKey
+  - profile:  /search/u/:did
+
+- /notifs
+  - thread:   /notifs/t/:postKey
+  - profile:  /notifs/u/:did
+
+- /dms
+  - convo:    /dms/c/:convoId
+
+- /me
+  - profile:  /me/u/:did                 (or just /me)
+
+About :postKey (important):
+- Don’t put raw `at://did/...` in the path. Encode it as a URL-safe token:
+  - base64url(atUri) or percent-encode into a query param (e.g., /home/t?uri=...)
+This keeps deep links robust across platforms.
+
+------------------------------------------------------------------------------
+Auth gating + reactive redirects (Riverpod)                         *bsky-auth-nav*
+------------------------------------------------------------------------------
+
+go_router redirects are not automatically reactive; you must provide a
+refreshListenable if you want auth changes to trigger redirects reliably.
+
+Pattern (opinionated, reliable):
+- Auth state lives in Riverpod (e.g., AuthController Notifier)
+- Create a small Listenable bridge for GoRouter.refreshListenable:
+  - ValueNotifier<int> "tick"
+  - ref.listen(authProvider, (_, __) => tick.value++)
+- In redirect(), read auth state and return:
+  - unauthenticated -> /login for protected routes (DMs, notifs, compose publish)
+  - authenticated -> redirect away from /login to /home
+This matches go_router’s redirection model.
+
+Protected vs public routes (recommended):
+- Public allowed: /home (read-only), /search, viewing threads/profiles
+- Auth required: /notifs, /dms, /compose publish, follow/like/repost actions
+
+------------------------------------------------------------------------------
+Deep linking checklist (Android/iOS)                                *bsky-deeplink*
+------------------------------------------------------------------------------
+
+- Use go_router URL paths that mirror shareable content.
+- Configure Android App Links + iOS Universal Links so https://<yourdomain>/...
+  can open the app to a matching route.
+- Prefer path params for required IDs; query params for optional filters/search.
+
+------------------------------------------------------------------------------
+Typed routes (optional but worth it)                                *bsky-typed*
+------------------------------------------------------------------------------
+
+If you want compile-time safety for paths/params, add go_router_builder for
+generated route helpers.
+
+------------------------------------------------------------------------------
+Milestone tasks to add (routing work items)                         *bsky-router-ms*
+------------------------------------------------------------------------------
+
+Add to Milestone A (skeleton):
+- [ ] Add go_router + router.dart
+- [ ] Add tab scaffold using StatefulShellRoute.indexedStack
+- [ ] Add route constants / names and a navigation helper
+
+Add to Milestone C (auth):
+- [ ] Implement Riverpod-backed auth state + GoRouter refreshListenable bridge
+- [ ] Implement redirect() logic for protected routes
+- [ ] Add postKey encoding/decoding helpers for thread deep links
+
+Add to Milestone K (desktop):
+- [ ] Replace bottom NavigationBar with NavigationRail on wide layouts (same routes)
+- [ ] Add keyboard shortcuts that call context.goNamed / pushNamed
+
+Definition of done:
+- Deep link opens:
+  - thread (/home/t/:postKey) and profile (/home/u/:did)
+- Switching tabs preserves scroll + nested stacks
+- Login/logout triggers immediate redirect without manual navigation calls
