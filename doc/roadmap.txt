@@ -55,8 +55,8 @@ D. Identity bootstrap + OAuth session                                   *bsky-D*
 ================================================================================
 
 Summary: Identity bootstrap and OAuth session flows are fully wired, delivering
-secure sign-in, protected routing, and refreshed sessions for every authenticated
-account.
+secure sign-in, protected routing, and refreshed sessions for every
+authenticated account.
 
 ================================================================================
 E. Timeline + thread + core cache (Drift)                               *bsky-E*
@@ -74,41 +74,82 @@ Endpoints:
 - app.bsky.actor.getProfile (GET)
 - app.bsky.feed.getAuthorFeed (GET)
 - app.bsky.feed.searchPosts (GET)
+- app.bsky.graph.getFollowers (GET) - needed for followers list
+- app.bsky.graph.getFollows (GET) - needed for following list
+- app.bsky.graph.follow (POST) - needed for follow functionality
+- app.bsky.graph.unfollow (POST) - needed for unfollow functionality
 
 Tasks:
-- [ ] Profile screen: fetch + cache profile + author feed, cursor paging.
-- [ ] Search screen: query -> paged results; store recent searches (local).
+- [x] Profile screen: fetch + cache profile + author feed, cursor paging.
+- [x] Search screen: query -> paged results; store recent searches (local).
 - [ ] Shared hydration: ensure embeds/media are rendered consistently.
 - [ ] Add routes
-      - [ ] /search?q=<query>                 (SearchResultsPage)
-      - [ ] /search/t/:postKey                (ThreadPage reuse)
-      - [ ] /search/u/:did                    (ProfilePage)
-      - [ ] /me (MePage becomes ProfilePage for self)
-      - [ ] /home/u/:did
-      - [ ] /notifs/u/:did
-- [ ] Widgets
-      - [ ] ProfileHeader
-      - [ ] FollowButton (disabled if read-only browsing)
-      - [ ] SearchBar (Material 3)
-      - [ ] RecentSearchChips
-      - [ ] ActorRow (for people results; if you add actor search)
+      - [ ] /search?q=<query>
+        (SearchScreen has initialQuery but router doesn't wire query params)
+      - [x] /search/t/:uri
+      - [x] /search/u/:did
+      - [x] /home/u/:did
+      - [x] /notifs/u/:did
+- [x] Widgets
+      - [x] ProfileHeader
+      - [x] FollowButton (disabled if read-only browsing)
+            - [ ] Implement follow functionality
+      - [x] SearchBar (Material 3)
+      - [x] RecentSearchChips
+      - [x] ActorRow
 - [ ] Screens
-      - [ ] ProfilePage (full):
-            - header (avatar, bio, counts)
-            - tabs (Posts / Replies optional / Media optional)
-      - [ ] SearchPage (full):
-            - search input
-            - recent searches list
-            - results list page (or same screen w/ state)
+      - [ ] ProfilePage (partial):
+            - [x] header (avatar, bio, counts)
+            - [ ] tabs (Posts / Replies optional / Media optional)
+      - [x] SearchPage (full):
+            - [x] search input
+            - [x] recent searches list
+            - [x] results list page
       - [ ] Follows/Followers (full):
-            - FollowersPage, FollowingPage
+            - [ ] FollowersPage
+            - [ ] FollowingPage
+- [ ] Social Graph:
+      - [ ] Follow/unfollow infrastructure:
+            - [ ] Implement getFollowers endpoint in ProfileRepository
+            - [ ] Implement getFollows endpoint in ProfileRepository
+            - [ ] Implement follow/unfollow mutations
+            - [ ] Wire FollowButton to follow/unfollow mutations
+            - [ ] Add following status to ProfileData domain model
+            - [ ] Cache relationship state in Drift (follows table)
+      - [ ] Followers screen:
+            - [ ] Create FollowersPage with cursor pagination
+            - [ ] Add route /profile/followers/:did
+            - [ ] Wire ProfileHeader follower stat button to FollowersPage
+            - [ ] Reuse ActorRow widget for follower list
+      - [ ] Following screen:
+            - [ ] Create FollowingPage with cursor pagination
+            - [ ] Add route /profile/following/:did
+            - [ ] Wire ProfileHeader following stat button to FollowingPage
+            - [ ] Reuse ActorRow widget for following list
+      - [ ] Profile tabs:
+            - [ ] Add TabBar to ProfilePage (Posts / Replies / Media)
+            - [ ] Use existing ProfilePostsTab widget
+            - [ ] Implement RepliesTab (filter author feed for replies)
+            - [ ] Implement MediaTab (filter author feed for posts with images)
+      - [ ] Polish:
+            - [ ] Wire /search?q=<query> query parameter in router
+            - [ ] Extract shared PostCard component
+            (deduplicate _PostCard and _SearchResultCard)
+            - [ ] Ensure consistent embed/media rendering across feeds
+
 Tests:
-- [ ] Profile caching: refresh merges, does not duplicate feed items.
-- [ ] Search paging: stable cursor behavior and local persistence.
+- [x] Profile caching: refresh merges, does not duplicate feed items.
+- [x] Search paging: stable cursor behavior and local persistence.
+- [ ] Follow/unfollow: mutations update cache and UI state.
+- [ ] Followers/following pagination: cursor stability and cache behavior.
+- [ ] Profile tabs: switching tabs preserves scroll position.
 
 Deliverables:
-- Profile + author feed + search posts shipped.
-- Search is a first-class workflow with deep-linkable query params.
+- [x] Profile + author feed + search posts shipped.
+- [ ] Search is a first-class workflow with deep-linkable query params
+      (deep links exist, query param routing incomplete).
+- [ ] Social graph complete: follow/unfollow, followers/following lists.
+- [ ] Profile tabs with Posts/Replies/Media navigation.
 
 ================================================================================
 G. Composer + local drafts + publish pipeline                           *bsky-G*
@@ -143,7 +184,7 @@ Deliverables:
 - Offline drafts + reliable posting with media upload support.
 
 ================================================================================
-H. Notifications                                                    *bsky-H*
+H. Notifications                                                        *bsky-H*
 ================================================================================
 
 Endpoints:
@@ -162,7 +203,7 @@ Deliverables:
 - Notifications shipped with consistent navigation.
 
 ================================================================================
-I. Smart folders (local-only saved views)                           *bsky-I*
+I. Smart folders (local-only saved views)                               *bsky-I*
 ================================================================================
 
 Definition:
@@ -273,9 +314,3 @@ Tests:
 
 Deliverables:
 - Desktop build that is genuinely usable (not just "it runs").
-
-================================================================================
-Parking lot (Milestones A–D)
-================================================================================
-- Milestone D: Add dev fallback via com.atproto.server.createSession (app password, flagged build flavor).
-- Milestone D: Enforce redirect() rules so /notifs, /dms, and /compose require an authenticated session.
