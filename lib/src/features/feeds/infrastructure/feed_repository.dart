@@ -408,6 +408,10 @@ class FeedRepository {
   static const kDiscoverFeedUri =
       'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
 
+  /// URI for the curated For You feed shown to authenticated users.
+  static const kForYouFeedUri =
+      'at://did:plc:3guzzweuqraryl3rdkimjamk/app.bsky.feed.generator/for-you';
+
   /// Seeds default feeds if they don't already exist.
   ///
   /// Ensures that Home (for authenticated users) and Discover (public) feeds
@@ -419,9 +423,45 @@ class FeedRepository {
     final now = DateTime.now();
     final defaultFeeds = <SavedFeedsCompanion>[];
 
+    if (_api.isAuthenticated) {
+      await _ensureHomeFeed(now, defaultFeeds);
+      await _ensureCuratedFeed(
+        uri: kForYouFeedUri,
+        fallbackName: 'For You',
+        fallbackDescription: 'Curated posts tailored to your interests',
+        sortOrder: 1,
+        shouldPin: true,
+        now: now,
+        feeds: defaultFeeds,
+      );
+      await _maybeUnpinFeed(kDiscoverFeedUri);
+    } else {
+      await _maybeUnpinFeed(kHomeFeedUri);
+      await _maybeUnpinFeed(kForYouFeedUri);
+      await _ensureCuratedFeed(
+        uri: kDiscoverFeedUri,
+        fallbackName: 'Discover',
+        fallbackDescription: 'Explore trending posts',
+        sortOrder: 0,
+        shouldPin: true,
+        now: now,
+        feeds: defaultFeeds,
+      );
+    }
+
+    if (defaultFeeds.isEmpty) {
+      _logger.debug('Default feeds already up to date');
+      return;
+    }
+
+    await _dao.upsertFeeds(defaultFeeds);
+    _logger.info('Seeded ${defaultFeeds.length} default feeds');
+  }
+
+  Future<void> _ensureHomeFeed(DateTime now, List<SavedFeedsCompanion> feeds) async {
     final homeFeed = await _dao.getFeed(kHomeFeedUri);
-    if (homeFeed == null && _api.isAuthenticated) {
-      defaultFeeds.add(
+    if (homeFeed == null) {
+      feeds.add(
         SavedFeedsCompanion.insert(
           uri: kHomeFeedUri,
           displayName: 'Home',
@@ -434,49 +474,74 @@ class FeedRepository {
           lastSynced: now,
         ),
       );
+      return;
     }
 
-    final discoverFeed = await _dao.getFeed(kDiscoverFeedUri);
-    if (discoverFeed == null) {
-      try {
-        final metadata = await getFeedMetadata(kDiscoverFeedUri);
-        defaultFeeds.add(
-          SavedFeedsCompanion.insert(
-            uri: kDiscoverFeedUri,
-            displayName: metadata['displayName'] ?? 'Discover',
-            description: Value(metadata['description']),
-            avatar: Value(metadata['avatar']),
-            creatorDid: metadata['creator']['did'] ?? '',
-            likeCount: Value(metadata['likeCount'] ?? 0),
-            sortOrder: 1,
-            isPinned: const Value(true),
-            lastSynced: now,
-          ),
-        );
-      } catch (e) {
-        _logger.error('Failed to fetch Discover feed metadata, using defaults', {'error': e});
+    await _ensurePinnedAndOrder(homeFeed, shouldPin: true, sortOrder: 0);
+  }
 
-        defaultFeeds.add(
-          SavedFeedsCompanion.insert(
-            uri: kDiscoverFeedUri,
-            displayName: 'Discover',
-            description: const Value('Explore trending posts'),
-            avatar: const Value(null),
-            creatorDid: '',
-            likeCount: const Value(0),
-            sortOrder: 1,
-            isPinned: const Value(true),
-            lastSynced: now,
-          ),
-        );
-      }
+  Future<void> _ensureCuratedFeed({
+    required String uri,
+    required String fallbackName,
+    required String fallbackDescription,
+    required int sortOrder,
+    required bool shouldPin,
+    required DateTime now,
+    required List<SavedFeedsCompanion> feeds,
+  }) async {
+    final existing = await _dao.getFeed(uri);
+    if (existing != null) {
+      await _ensurePinnedAndOrder(existing, shouldPin: shouldPin, sortOrder: sortOrder);
+      return;
     }
 
-    if (defaultFeeds.isNotEmpty) {
-      await _dao.upsertFeeds(defaultFeeds);
-      _logger.info('Seeded ${defaultFeeds.length} default feeds');
-    } else {
-      _logger.debug('Default feeds already exist');
+    Map<String, dynamic>? metadata;
+    try {
+      metadata = await getFeedMetadata(uri);
+    } catch (e) {
+      _logger.error('Failed to fetch metadata for feed $uri, using defaults', {'error': e});
+    }
+
+    String creatorDid = '';
+    if (metadata?['creator'] is Map<String, dynamic>) {
+      creatorDid = (metadata!['creator'] as Map<String, dynamic>)['did'] ?? '';
+    }
+
+    feeds.add(
+      SavedFeedsCompanion.insert(
+        uri: uri,
+        displayName: metadata?['displayName'] ?? fallbackName,
+        description: Value(metadata?['description'] ?? fallbackDescription),
+        avatar: Value(metadata?['avatar']),
+        creatorDid: creatorDid,
+        likeCount: Value(metadata?['likeCount'] ?? 0),
+        sortOrder: sortOrder,
+        isPinned: Value(shouldPin),
+        lastSynced: now,
+      ),
+    );
+  }
+
+  Future<void> _maybeUnpinFeed(String uri) async {
+    final feed = await _dao.getFeed(uri);
+    if (feed == null || !feed.isPinned) {
+      return;
+    }
+
+    await _dao.updatePinnedStatus(uri, false);
+  }
+
+  Future<void> _ensurePinnedAndOrder(
+    SavedFeed feed, {
+    required bool shouldPin,
+    required int sortOrder,
+  }) async {
+    if (feed.isPinned != shouldPin) {
+      await _dao.updatePinnedStatus(feed.uri, shouldPin);
+    }
+
+    if (feed.sortOrder != sortOrder) {
+      await _dao.updateSortOrder(feed.uri, sortOrder);
     }
   }
 }

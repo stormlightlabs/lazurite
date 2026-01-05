@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/feed_post_card.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
@@ -22,16 +23,66 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
 
-    if (authState is! AuthStateAuthenticated) {
-      return Scaffold(
+    return switch (authState) {
+      AuthStateAuthenticated(:final session) => ProfilePageContent(
+        did: session.did,
+        isCurrentUser: true,
+      ),
+      AuthStateLoading() => Scaffold(
         appBar: AppBar(title: const Text('Profile')),
-        body: const Center(child: Text('Please sign in to view your profile')),
-      );
-    }
+        body: const LoadingView(),
+      ),
+      AuthStateError(:final error) => Scaffold(
+        appBar: AppBar(title: const Text('Profile')),
+        body: Center(child: Text('Authentication error: $error')),
+      ),
+      _ => const _SignInRequiredView(),
+    };
+  }
+}
 
-    final did = authState.session.did;
+class _SignInRequiredView extends StatelessWidget {
+  const _SignInRequiredView();
 
-    return ProfilePageContent(did: did, isCurrentUser: true);
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Profile')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.lock_outline, size: 64, color: theme.colorScheme.primary),
+              const SizedBox(height: 16),
+              Text(
+                'Sign in to view your profile',
+                style: theme.textTheme.titleLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Login to sync your posts, followers, and saved preferences.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => context.go(AppRoutes.login),
+                  child: const Text('Sign in'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

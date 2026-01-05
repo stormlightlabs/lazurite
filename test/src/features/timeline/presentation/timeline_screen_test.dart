@@ -36,6 +36,10 @@ void main() {
     mockRepository = MockTimelineRepository();
   });
 
+  void stubInitialFetch() {
+    when(() => mockRepository.fetchAndCacheTimeline(feedUri: null)).thenAnswer((_) async {});
+  }
+
   Widget createSubject() {
     return ProviderScope(
       overrides: [
@@ -76,6 +80,7 @@ void main() {
     when(
       () => mockRepository.watchTimeline(feedKey: 'home'),
     ).thenAnswer((_) => Stream.value([feedItem]));
+    stubInitialFetch();
 
     await tester.pumpWidget(createSubject());
     await tester.pump();
@@ -104,7 +109,7 @@ void main() {
       () => mockRepository.watchTimeline(feedKey: 'home'),
     ).thenAnswer((_) => Stream.value([feedItem]));
 
-    when(() => mockRepository.fetchAndCacheTimeline(feedUri: null)).thenAnswer((_) async {});
+    stubInitialFetch();
 
     await tester.pumpWidget(createSubject());
     await tester.pump();
@@ -113,6 +118,18 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
+
+    verify(() => mockRepository.fetchAndCacheTimeline(feedUri: null)).called(2);
+  });
+
+  testWidgets('automatically refreshes the active feed on first build', (tester) async {
+    when(
+      () => mockRepository.watchTimeline(feedKey: 'home'),
+    ).thenAnswer((_) => const Stream.empty());
+    stubInitialFetch();
+
+    await tester.pumpWidget(createSubject());
+    await tester.pump();
 
     verify(() => mockRepository.fetchAndCacheTimeline(feedUri: null)).called(1);
   });

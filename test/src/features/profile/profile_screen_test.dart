@@ -38,7 +38,7 @@ void main() {
       await tester.pumpWidget(createSubject());
       await tester.pump();
 
-      expect(find.text('Please sign in to view your profile'), findsOneWidget);
+      expect(find.text('Sign in to view your profile'), findsOneWidget);
     });
   });
 }

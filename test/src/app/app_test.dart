@@ -13,10 +13,10 @@ import 'package:lazurite/src/features/profile/infrastructure/profile_repository.
 import 'package:lazurite/src/features/search/application/search_providers.dart';
 import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/features/timeline/application/timeline_cleanup_controller.dart';
-import 'package:lazurite/src/features/timeline/application/timeline_notifier.dart';
+import 'package:lazurite/src/features/timeline/application/timeline_providers.dart';
+import 'package:lazurite/src/features/timeline/infrastructure/timeline_repository.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
-import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -28,11 +28,14 @@ class MockAppDatabase extends Mock implements AppDatabase {}
 
 class MockProfileRepository extends Mock implements ProfileRepository {}
 
+class MockTimelineRepository extends Mock implements TimelineRepository {}
+
 void main() {
   late MockSessionStorage mockSessionStorage;
   late MockSearchRepository mockSearchRepository;
   late MockAppDatabase mockDatabase;
   late MockProfileRepository mockProfileRepository;
+  late MockTimelineRepository mockTimelineRepository;
   late Session testSession;
 
   setUp(() {
@@ -40,6 +43,7 @@ void main() {
     mockSearchRepository = MockSearchRepository();
     mockDatabase = MockAppDatabase();
     mockProfileRepository = MockProfileRepository();
+    mockTimelineRepository = MockTimelineRepository();
     testSession = Session(
       did: 'did:web:test',
       handle: 'handle',
@@ -65,6 +69,15 @@ void main() {
       ),
     );
     when(() => mockProfileRepository.watchProfile(any())).thenAnswer((_) => Stream.value(null));
+    when(() => mockTimelineRepository.watchTimeline(feedKey: any(named: 'feedKey')))
+        .thenAnswer((_) => Stream.value([]));
+    when(() => mockTimelineRepository.fetchAndCacheTimeline(feedUri: any(named: 'feedUri')))
+        .thenAnswer((_) async {});
+    when(() => mockTimelineRepository.fetchAndCacheTimeline(
+          cursor: any(named: 'cursor'),
+          feedUri: any(named: 'feedUri'),
+        )).thenAnswer((_) async {});
+    when(() => mockTimelineRepository.getCursor(any())).thenAnswer((_) async => null);
   });
 
   List<Override> getTestOverrides() {
@@ -73,7 +86,7 @@ void main() {
       appDatabaseProvider.overrideWithValue(mockDatabase),
       profileRepositoryProvider.overrideWithValue(mockProfileRepository),
       authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
-      timelineProvider.overrideWith(() => _TestTimelineNotifier()),
+      timelineRepositoryProvider.overrideWithValue(mockTimelineRepository),
       searchRepositoryProvider.overrideWithValue(mockSearchRepository),
       feedSyncControllerProvider.overrideWith((ref) {}),
       timelineCleanupControllerProvider.overrideWith((ref) {}),
@@ -142,13 +155,6 @@ class _TestAuthNotifier extends AuthNotifier {
   @override
   AuthState build() {
     return AuthState.authenticated(_session);
-  }
-}
-
-class _TestTimelineNotifier extends TimelineNotifier {
-  @override
-  Stream<List<TimelineFeedItem>> build() {
-    return Stream.value([]);
   }
 }
 

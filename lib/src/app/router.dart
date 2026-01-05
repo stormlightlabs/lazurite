@@ -35,7 +35,7 @@ GoRouter createRouter(Ref ref) {
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
-    initialLocation: AppRoutes.home,
+    initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
     refreshListenable: authState,
     redirect: (context, state) {

@@ -1,6 +1,37 @@
 *bsky_client_roadmap.vim* - Flutter (Dart) Bluesky client
 
 ================================================================================
+Principles + References                                              *bsky-prin*
+================================================================================
+
+Architecture principles:
+- Separation of concerns: UI layer vs Data layer, with clear boundaries.
+- Feature-first organization inside those layers (each feature owns its
+  domain/data/presentation).
+- Cursor-based pagination everywhere (avoid OFFSET paging for feeds).
+
+ATProto / Bluesky host rules (source of truth):
+- Public endpoints can be called directly via https://public.api.bsky.app.
+- Authenticated requests are usually made to the user’s PDS with automatic
+  proxying.
+- Service proxying is controlled by an HTTP header
+  ("Atproto-Proxy/atproto-proxy") and specified in XRPC.
+
+OAuth (mobile client reality):
+- atproto OAuth profile mandates DPoP and uses PAR in the initial auth request.
+
+DMs (Chat service):
+- Chat requests go to the user’s PDS and are proxied to did:web:api.bsky.chat
+  via service proxy header.
+
+Drift:
+- Drift is the primary relational persistence library for Dart/Flutter; supports
+  reactive queries and isolates.
+
+Secure secrets:
+- Store tokens/keys in secure storage, not Drift (e.g. flutter_secure_storage).
+
+================================================================================
 Host routing model (detailed implementation notes)                *bsky-host*
 ================================================================================
 
