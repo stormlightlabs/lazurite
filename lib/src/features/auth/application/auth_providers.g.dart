@@ -143,7 +143,7 @@ final class IdentityRepositoryProvider
 }
 
 String _$identityRepositoryHash() =>
-    r'38ca9e5b495eecbd5c25af2f3968a92b89f90c30';
+    r'7f543d08d0f1191bab2e4f1fb399949ee153704e';
 
 @ProviderFor(oauthClient)
 final oauthClientProvider = OauthClientProvider._();

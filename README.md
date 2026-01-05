@@ -2,9 +2,7 @@
 
 Cross-platform Bluesky client built with Flutter and Dart using Material You (M3) design.
 
-## Scope
-
-**In-scope (MVP → v1):**
+## Features
 
 - Auth + identity resolution
 - Home timeline + threads + profiles + search + notifications
@@ -14,7 +12,7 @@ Cross-platform Bluesky client built with Flutter and Dart using Material You (M3
     - Smart folders (local-only "feeds" built from cached posts)
     - Local post drafts (offline compose; later publish)
 
-**Out-of-scope/maybes:**
+### Maybes
 
 - Firehose ingestion, custom feed generator hosting, heavy moderation tooling
 

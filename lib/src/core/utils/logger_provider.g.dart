@@ -14,16 +14,14 @@ final loggerProvider = LoggerFamily._();
 
 final class LoggerProvider extends $FunctionalProvider<Logger, Logger, Logger>
     with $Provider<Logger> {
-  LoggerProvider._({
-    required LoggerFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'loggerProvider',
-         isAutoDispose: false,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
+  LoggerProvider._({required LoggerFamily super.from, required String super.argument})
+    : super(
+        retry: null,
+        name: r'loggerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
 
   @override
   String debugGetCreateSourceHash() => _$loggerHash();
@@ -37,8 +35,7 @@ final class LoggerProvider extends $FunctionalProvider<Logger, Logger, Logger>
 
   @$internal
   @override
-  $ProviderElement<Logger> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<Logger> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
 
   @override
   Logger create(Ref ref) {
@@ -48,10 +45,7 @@ final class LoggerProvider extends $FunctionalProvider<Logger, Logger, Logger>
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(Logger value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<Logger>(value),
-    );
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<Logger>(value));
   }
 
   @override
@@ -67,8 +61,7 @@ final class LoggerProvider extends $FunctionalProvider<Logger, Logger, Logger>
 
 String _$loggerHash() => r'bd47f4c6cd32d9afa5bd157104a6ad483aaafc58';
 
-final class LoggerFamily extends $Family
-    with $FunctionalFamilyOverride<Logger, String> {
+final class LoggerFamily extends $Family with $FunctionalFamilyOverride<Logger, String> {
   LoggerFamily._()
     : super(
         retry: null,
@@ -78,8 +71,7 @@ final class LoggerFamily extends $Family
         isAutoDispose: false,
       );
 
-  LoggerProvider call(String name) =>
-      LoggerProvider._(argument: name, from: this);
+  LoggerProvider call(String name) => LoggerProvider._(argument: name, from: this);
 
   @override
   String toString() => r'loggerProvider';

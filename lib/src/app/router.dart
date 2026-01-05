@@ -12,6 +12,7 @@ import 'package:lazurite/src/features/login/presentation/login_screen.dart';
 import 'package:lazurite/src/features/notifications/presentation/notifications_screen.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
+import 'package:lazurite/src/features/splash/presentation/splash_screen.dart';
 import 'package:lazurite/src/features/thread/presentation/thread_screen.dart';
 import 'package:lazurite/src/features/timeline/presentation/timeline_screen.dart';
 
@@ -36,6 +37,14 @@ GoRouter createRouter(Ref ref) {
     redirect: (context, state) {
       final auth = authState.value;
       final location = state.matchedLocation;
+      if (auth is AuthStateLoading) {
+        return AppRoutes.splash;
+      }
+
+      if (location == AppRoutes.splash) {
+        return AppRoutes.home;
+      }
+
       final isLoggingIn =
           location == AppRoutes.login || location == '${AppRoutes.login}/app-password';
       final isCallback = location == AppRoutes.callback;
@@ -201,6 +210,11 @@ GoRouter createRouter(Ref ref) {
         name: AppRouteNames.settings,
         builder: (context, state) =>
             const _PlaceholderScreen(title: 'Settings', subtitle: 'App settings'),
+      ),
+      GoRoute(
+        path: AppRoutes.splash,
+        name: AppRouteNames.splash,
+        builder: (context, state) => const SplashScreen(),
       ),
     ],
   );

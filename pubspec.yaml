@@ -49,6 +49,7 @@ dependencies:
   jose: ^0.3.5
   crypto: ^3.0.7
   collection: ^1.19.1
+  shelf: ^1.4.2
 
   # Persistence
   drift: ^2.24.0

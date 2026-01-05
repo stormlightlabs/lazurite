@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/login/presentation/login_screen.dart';
 import 'package:lazurite/src/infrastructure/auth/auth_repository.dart';
@@ -17,10 +18,21 @@ void main() {
 
   late MockSessionStorage mockSessionStorage;
 
+  final testSession = Session(
+    did: 'did:plc:test',
+    handle: 'test.bsky.social',
+    pdsUrl: 'https://test.pds.com',
+    accessJwt: 'access',
+    refreshJwt: 'refresh',
+    scope: 'atproto',
+    expiresAt: DateTime.now().add(const Duration(hours: 2)),
+    dpopKey: {},
+  );
+
   setUp(() {
     mockAuthRepository = MockAuthRepository();
     mockSessionStorage = MockSessionStorage();
-    when(() => mockAuthRepository.login(any())).thenAnswer((_) async {});
+    when(() => mockAuthRepository.login(any())).thenAnswer((_) async => testSession);
 
     when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
   });
@@ -125,7 +137,7 @@ void main() {
       expect(find.text('testuser.bsky.social'), findsOneWidget);
     });
 
-    testWidgets('login button shows loading state when tapped with valid input', (tester) async {
+    testWidgets('login button triggers authentication when tapped with valid input', (tester) async {
       await tester.pumpApp(
         const LoginScreen(),
         overrides: [
@@ -139,9 +151,9 @@ void main() {
       await tester.pump();
 
       await tester.tap(find.text('Continue with Bluesky'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      verify(() => mockAuthRepository.login('testuser.bsky.social')).called(1);
     });
 
     testWidgets('does not trigger login when handle is empty', (tester) async {
@@ -208,7 +220,7 @@ void main() {
       expect(find.byIcon(Icons.login), findsOneWidget);
     });
 
-    testWidgets('replaces form with progress view during loading', (tester) async {
+    testWidgets('triggers login with entered handle', (tester) async {
       await tester.pumpApp(
         const LoginScreen(),
         overrides: [
@@ -221,13 +233,9 @@ void main() {
       await tester.enterText(find.byType(TextField), 'testuser');
       await tester.pump();
       await tester.tap(find.text('Continue with Bluesky'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      final textField = find.byType(TextField);
-      expect(textField, findsNothing);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-
-      await tester.pump(const Duration(milliseconds: 600));
+      verify(() => mockAuthRepository.login('testuser')).called(1);
     });
   });
 }

@@ -49,11 +49,17 @@ void main() {
 
   group('IdentityRepository', () {
     late MockDio dio;
+    late MockLogger logger;
     late IdentityRepository repo;
 
     setUp(() {
       dio = MockDio();
-      repo = IdentityRepository(dio: dio);
+      logger = MockLogger();
+      when(() => logger.debug(any())).thenReturn(null);
+      when(() => logger.info(any())).thenReturn(null);
+      when(() => logger.warning(any())).thenReturn(null);
+      when(() => logger.error(any(), any(), any<StackTrace?>())).thenReturn(null);
+      repo = IdentityRepository(dio: dio, logger: logger);
     });
 
     test('resolveHandle returns DID on success', () async {
@@ -116,15 +122,17 @@ void main() {
         pushedAuthorizationRequestEndpoint: 'https://pds.com/oauth/par',
       );
 
-      when(() => dio.post<Map<String, dynamic>>(any(), options: any(named: 'options'), data: any(named: 'data')))
-          .thenAnswer(
+      when(
+        () => dio.post<Map<String, dynamic>>(
+          any(),
+          options: any(named: 'options'),
+          data: any(named: 'data'),
+        ),
+      ).thenAnswer(
         (_) async => Response(
           requestOptions: RequestOptions(path: ''),
           statusCode: 201,
-          data: {
-            'request_uri': 'invalid-format',
-            'expires_in': 60,
-          },
+          data: {'request_uri': 'invalid-format', 'expires_in': 60},
         ),
       );
 
@@ -136,12 +144,15 @@ void main() {
           key: key,
           state: 'state',
           codeChallenge: 'challenge',
+          redirectUri: 'http://127.0.0.1/callback',
         ),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'message',
-          contains('Invalid request_uri format'),
-        )),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Invalid request_uri format'),
+          ),
+        ),
       );
     });
 
@@ -153,14 +164,17 @@ void main() {
         pushedAuthorizationRequestEndpoint: 'https://pds.com/oauth/par',
       );
 
-      when(() => dio.post<Map<String, dynamic>>(any(), options: any(named: 'options'), data: any(named: 'data')))
-          .thenAnswer(
+      when(
+        () => dio.post<Map<String, dynamic>>(
+          any(),
+          options: any(named: 'options'),
+          data: any(named: 'data'),
+        ),
+      ).thenAnswer(
         (_) async => Response(
           requestOptions: RequestOptions(path: ''),
           statusCode: 201,
-          data: {
-            'request_uri': 'urn:ietf:params:oauth:request_uri:test',
-          },
+          data: {'request_uri': 'urn:ietf:params:oauth:request_uri:test'},
         ),
       );
 
@@ -172,12 +186,15 @@ void main() {
           key: key,
           state: 'state',
           codeChallenge: 'challenge',
+          redirectUri: 'http://127.0.0.1/callback',
         ),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'message',
-          contains('PAR response missing expires_in'),
-        )),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('PAR response missing expires_in'),
+          ),
+        ),
       );
     });
 
@@ -189,8 +206,13 @@ void main() {
         pushedAuthorizationRequestEndpoint: 'https://pds.com/oauth/par',
       );
 
-      when(() => dio.post<Map<String, dynamic>>(any(), options: any(named: 'options'), data: any(named: 'data')))
-          .thenAnswer(
+      when(
+        () => dio.post<Map<String, dynamic>>(
+          any(),
+          options: any(named: 'options'),
+          data: any(named: 'data'),
+        ),
+      ).thenAnswer(
         (_) async => Response(
           requestOptions: RequestOptions(path: ''),
           statusCode: 201,
@@ -209,6 +231,7 @@ void main() {
         key: key,
         state: 'state',
         codeChallenge: 'challenge',
+        redirectUri: 'http://localhost/callback',
       );
 
       expect(requestUri, 'urn:ietf:params:oauth:request_uri:test');
@@ -223,8 +246,13 @@ void main() {
         pushedAuthorizationRequestEndpoint: 'https://pds.com/oauth/par',
       );
 
-      when(() => dio.post<Map<String, dynamic>>(any(), options: any(named: 'options'), data: any(named: 'data')))
-          .thenAnswer(
+      when(
+        () => dio.post<Map<String, dynamic>>(
+          any(),
+          options: any(named: 'options'),
+          data: any(named: 'data'),
+        ),
+      ).thenAnswer(
         (_) async => Response(
           requestOptions: RequestOptions(path: ''),
           statusCode: 201,
@@ -242,6 +270,7 @@ void main() {
         key: key,
         state: 'state',
         codeChallenge: 'challenge',
+        redirectUri: 'http://localhost/callback',
       );
 
       expect(requestUri, 'urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY');
@@ -321,6 +350,7 @@ void main() {
         'pdsUrl': 'https://pds.com',
         'verifier': 'verifier123',
         'state': 'xyz',
+        'redirectUri': 'http://127.0.0.1:12345/callback',
         'dpopKey': key.toJson(),
       };
 
@@ -343,6 +373,7 @@ void main() {
           metadata: any(named: 'metadata'),
           code: any(named: 'code'),
           codeVerifier: any(named: 'codeVerifier'),
+          redirectUri: any(named: 'redirectUri'),
           key: any(named: 'key'),
           nonce: any(named: 'nonce'),
         ),
@@ -431,6 +462,7 @@ void main() {
         'pdsUrl': 'https://pds.com',
         'verifier': 'verifier123',
         'state': 'xyz',
+        'redirectUri': 'http://127.0.0.1:12345/callback',
         'dpopKey': key.toJson(),
       };
 
@@ -440,8 +472,9 @@ void main() {
         tokenEndpoint: 'https://pds.com/oauth/token',
       );
 
-      when(() => secureStorage.read(key: any(named: 'key')))
-          .thenAnswer((_) async => jsonEncode(pendingState));
+      when(
+        () => secureStorage.read(key: any(named: 'key')),
+      ).thenAnswer((_) async => jsonEncode(pendingState));
       when(() => secureStorage.delete(key: any(named: 'key'))).thenAnswer((_) async {});
       when(() => metadataRepo.discover(any())).thenAnswer((_) async => testMetadata);
       when(
@@ -449,6 +482,7 @@ void main() {
           metadata: any(named: 'metadata'),
           code: any(named: 'code'),
           codeVerifier: any(named: 'codeVerifier'),
+          redirectUri: any(named: 'redirectUri'),
           key: any(named: 'key'),
           nonce: any(named: 'nonce'),
         ),
@@ -493,6 +527,7 @@ void main() {
         'pdsUrl': 'https://pds.com',
         'verifier': 'verifier123',
         'state': 'xyz',
+        'redirectUri': 'http://127.0.0.1:12345/callback',
         'dpopKey': key.toJson(),
       };
 
@@ -502,8 +537,9 @@ void main() {
         tokenEndpoint: 'https://pds.com/oauth/token',
       );
 
-      when(() => secureStorage.read(key: any(named: 'key')))
-          .thenAnswer((_) async => jsonEncode(pendingState));
+      when(
+        () => secureStorage.read(key: any(named: 'key')),
+      ).thenAnswer((_) async => jsonEncode(pendingState));
       when(() => secureStorage.delete(key: any(named: 'key'))).thenAnswer((_) async {});
       when(() => metadataRepo.discover(any())).thenAnswer((_) async => testMetadata);
       when(
@@ -511,6 +547,7 @@ void main() {
           metadata: any(named: 'metadata'),
           code: any(named: 'code'),
           codeVerifier: any(named: 'codeVerifier'),
+          redirectUri: any(named: 'redirectUri'),
           key: any(named: 'key'),
           nonce: any(named: 'nonce'),
         ),

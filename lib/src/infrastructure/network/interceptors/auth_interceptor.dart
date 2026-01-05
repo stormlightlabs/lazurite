@@ -23,8 +23,8 @@ class AuthInterceptor extends Interceptor {
     required this.refreshSession,
     DPoPNonceStore? nonceStore,
     Logger? logger,
-  })  : _nonceStore = nonceStore ?? DPoPNonceStore(),
-        _logger = logger ?? const Logger('AuthInterceptor');
+  }) : _nonceStore = nonceStore ?? DPoPNonceStore(),
+       _logger = logger ?? const Logger('AuthInterceptor');
 
   /// Callback to get the current session.
   final SessionGetter getSession;

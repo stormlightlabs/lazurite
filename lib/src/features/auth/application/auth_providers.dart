@@ -25,15 +25,15 @@ SessionStorage sessionStorage(Ref ref) {
 
 @Riverpod(keepAlive: true)
 IdentityRepository identityRepository(Ref ref) {
-  return IdentityRepository(dio: ref.watch(dioPublicProvider));
+  return IdentityRepository(
+    dio: ref.watch(dioPublicProvider),
+    logger: ref.watch(loggerProvider('IdentityRepository')),
+  );
 }
 
 @Riverpod(keepAlive: true)
 OAuthClient oauthClient(Ref ref) {
-  return OAuthClient(
-    dio: Dio(),
-    logger: ref.watch(loggerProvider('OAuthClient')),
-  );
+  return OAuthClient(dio: Dio(), logger: ref.watch(loggerProvider('OAuthClient')));
 }
 
 @Riverpod(keepAlive: true)
@@ -88,7 +88,8 @@ class AuthNotifier extends _$AuthNotifier {
   Future<void> login(String handle) async {
     state = const AuthState.loading();
     try {
-      await ref.read(authRepositoryProvider).login(handle);
+      final session = await ref.read(authRepositoryProvider).login(handle);
+      state = AuthState.authenticated(session);
     } catch (e, st) {
       state = AuthState.error(e, st);
     }

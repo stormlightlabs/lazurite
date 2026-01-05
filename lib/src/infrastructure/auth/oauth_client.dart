@@ -2,20 +2,23 @@ import 'package:dio/dio.dart';
 import 'package:jose/jose.dart';
 
 import '../../core/utils/logger.dart';
+import 'dpop_nonce_store.dart';
 import 'dpop_utils.dart';
 import 'oauth_exceptions.dart';
 import 'server_metadata.dart';
 
 class OAuthClient {
-  OAuthClient({required Dio dio, Logger? logger})
-      : _dio = dio,
-        _logger = logger ?? const Logger('OAuthClient');
+  OAuthClient({required Dio dio, Logger? logger, DPoPNonceStore? nonceStore})
+    : _dio = dio,
+      _logger = logger ?? const Logger('OAuthClient'),
+      _nonceStore = nonceStore ?? DPoPNonceStore();
 
   final Dio _dio;
   final Logger _logger;
+  final DPoPNonceStore _nonceStore;
 
   static const kClientId = 'https://lazurite.stormlightlabs.org/client-metadata.json';
-  static const kRedirectUri = 'org.stormlightlabs.lazurite://callback';
+  static const kRedirectUri = 'http://127.0.0.1/callback';
   static const kScope = 'atproto transition:generic';
 
   /// Performs Pushed Authorization Request (PAR).
@@ -26,6 +29,7 @@ class OAuthClient {
     required JsonWebKey key,
     required String state,
     required String codeChallenge,
+    required String redirectUri,
     String? nonce,
   }) async {
     final parUrl = metadata.pushedAuthorizationRequestEndpoint;
@@ -51,11 +55,14 @@ class OAuthClient {
           'response_type': 'code',
           'code_challenge': codeChallenge,
           'code_challenge_method': 'S256',
-          'redirect_uri': kRedirectUri,
+          'redirect_uri': redirectUri,
           'state': state,
           'scope': kScope,
         },
       );
+
+      // Extract and store DPoP nonce from successful response
+      _extractAndStoreNonce(response, parUrl);
 
       if (response.statusCode != 201) {
         if (response.data != null && response.data is Map<String, dynamic>) {
@@ -88,10 +95,41 @@ class OAuthClient {
 
       return requestUri;
     } on DioException catch (e) {
+      // Check for use_dpop_nonce error
       if (e.response?.data != null && e.response!.data is Map<String, dynamic>) {
-        throw OAuthException.fromJson(e.response!.data as Map<String, dynamic>);
+        final errorData = e.response!.data as Map<String, dynamic>;
+        final error = errorData['error'] as String?;
+
+        if (error == 'use_dpop_nonce') {
+          // Extract nonce from error response
+          _extractAndStoreNonce(e.response!, parUrl);
+          final newNonce = _nonceStore.get(parUrl);
+
+          _logger.debug('Retrying PAR with DPoP nonce');
+
+          // Retry with new nonce
+          return pushedAuthorizationRequest(
+            metadata: metadata,
+            key: key,
+            state: state,
+            codeChallenge: codeChallenge,
+            redirectUri: redirectUri,
+            nonce: newNonce,
+          );
+        }
+
+        throw OAuthException.fromJson(errorData);
       }
       rethrow;
+    }
+  }
+
+  /// Extracts DPoP-Nonce header from response and stores it.
+  void _extractAndStoreNonce(Response response, String url) {
+    final nonce = response.headers.value('dpop-nonce');
+    if (nonce != null) {
+      _nonceStore.store(url, nonce);
+      _logger.debug('Stored DPoP nonce for $url');
     }
   }
 
@@ -100,6 +138,7 @@ class OAuthClient {
     required ServerMetadata metadata,
     required String code,
     required String codeVerifier,
+    required String redirectUri,
     required JsonWebKey key,
     String? nonce,
   }) async {
@@ -123,7 +162,7 @@ class OAuthClient {
           'grant_type': 'authorization_code',
           'code': code,
           'code_verifier': codeVerifier,
-          'redirect_uri': kRedirectUri,
+          'redirect_uri': redirectUri,
         },
       );
 

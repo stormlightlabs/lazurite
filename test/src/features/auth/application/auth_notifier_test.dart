@@ -83,8 +83,19 @@ void main() {
     });
 
     test('login triggers repo login', () async {
+      final testSession = Session(
+        did: 'did:web:test.com',
+        handle: 'test.com',
+        pdsUrl: 'https://test.com',
+        accessJwt: 'access',
+        refreshJwt: 'refresh',
+        scope: 'scope',
+        expiresAt: DateTime.now().add(const Duration(hours: 1)),
+        dpopKey: {},
+      );
+
       when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
-      when(() => mockAuthRepository.login(any())).thenAnswer((_) async {});
+      when(() => mockAuthRepository.login(any())).thenAnswer((_) async => testSession);
 
       final container = createContainer();
       container.listen(authProvider, (previous, next) {});
@@ -92,8 +103,8 @@ void main() {
 
       await container.read(authProvider.notifier).login('handle');
 
-      expect(container.read(authProvider), const AuthState.loading());
       await Future<void>.delayed(Duration.zero);
+      expect(container.read(authProvider), AuthState.authenticated(testSession));
       verify(() => mockAuthRepository.login('handle')).called(1);
     });
     test('expired session triggers refresh', () async {

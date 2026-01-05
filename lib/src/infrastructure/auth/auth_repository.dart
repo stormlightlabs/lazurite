@@ -11,6 +11,7 @@ import '../../core/utils/logger.dart';
 import '../identity/identity_repository.dart';
 import 'dpop_nonce_store.dart';
 import 'dpop_utils.dart';
+import 'loopback_server.dart';
 import 'oauth_client.dart';
 import 'pkce_utils.dart';
 import 'server_metadata.dart';
@@ -43,6 +44,7 @@ class AuthRepository {
   final FlutterSecureStorage _secureStorage;
   final DPoPNonceStore _nonceStore;
   final Dio? _bootstrapDio;
+  LoopbackServer? _loopbackServer;
   static const _keyPendingSession = 'lazurite_pending_session';
   static const _uuid = Uuid();
   static const _pendingSessionTimeout = Duration(minutes: 15);
@@ -50,25 +52,35 @@ class AuthRepository {
   /// Initiates the login flow for the given handle.
   ///
   /// 1. Clears any expired pending sessions.
-  /// 2. Resolves handle to DID.
-  /// 3. Resolves DID to PDS URL.
-  /// 4. Discovers OAuth server metadata.
-  /// 5. Generates DPoP key and PKCE challenge.
-  /// 6. Performs PAR.
-  /// 7. Redirects user to PDS.
-  Future<void> login(String handle) async {
+  /// 2. Starts loopback server for OAuth callback.
+  /// 3. Resolves handle to DID.
+  /// 4. Resolves DID to PDS URL.
+  /// 5. Discovers OAuth server metadata.
+  /// 6. Generates DPoP key and PKCE challenge.
+  /// 7. Performs PAR with dynamic redirect URI.
+  /// 8. Redirects user to OAuth authorization page.
+  /// 9. Waits for callback on loopback server.
+  /// 10. Completes login with authorization code.
+  Future<Session> login(String handle) async {
     _logger.info('Initiating login for handle: $handle');
     try {
       await _clearExpiredPendingSession();
 
+      // Start loopback server for OAuth callback
+      _loopbackServer = LoopbackServer(logger: _logger);
+      final redirectUri = await _loopbackServer!.start();
+      _logger.debug('Loopback server started with redirect URI: $redirectUri');
+
       final did = await _identityRepo.resolveHandle(handle);
       if (did == null) {
+        await _loopbackServer!.stop();
         throw Exception('Could not resolve handle: $handle');
       }
 
       final doc = await _identityRepo.resolveDidDocument(did);
       final pdsUrl = doc?.pdsEndpoint;
       if (pdsUrl == null) {
+        await _loopbackServer!.stop();
         throw Exception('Could not find PDS endpoint for DID: $did');
       }
 
@@ -85,6 +97,7 @@ class AuthRepository {
         key: dpopKey,
         state: state,
         codeChallenge: challenge,
+        redirectUri: redirectUri,
         nonce: nonce,
       );
 
@@ -96,6 +109,7 @@ class AuthRepository {
         'pdsUrl': pdsUrl,
         'verifier': verifier,
         'state': state,
+        'redirectUri': redirectUri,
         'dpopKey': dpopKey.toJson(),
         'timestamp': DateTime.now().toIso8601String(),
       };
@@ -108,9 +122,23 @@ class AuthRepository {
 
       final uri = Uri.parse(authorizeUrl);
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        await _loopbackServer!.stop();
         throw Exception('Could not launch browser for $uri');
       }
+
+      // Wait for OAuth callback
+      _logger.info('Waiting for OAuth callback...');
+      final callbackUri = await _loopbackServer!.waitForCallback();
+      await _loopbackServer!.stop();
+      _loopbackServer = null;
+
+      _logger.debug('Received callback: $callbackUri');
+
+      // Complete login with the callback
+      return await completeLogin(callbackUri);
     } catch (e, st) {
+      await _loopbackServer?.stop();
+      _loopbackServer = null;
       _logger.error('Login failed', e, st);
       rethrow;
     }
@@ -152,6 +180,7 @@ class AuthRepository {
       final verifier = pending['verifier'] as String;
       final did = pending['did'] as String;
       final handle = pending['handle'] as String;
+      final redirectUri = pending['redirectUri'] as String;
       final dpopKey = JsonWebKey.fromJson(pending['dpopKey'] as Map<String, dynamic>);
 
       final metadata = await _metadataRepo.discover(pdsUrl);
@@ -161,6 +190,7 @@ class AuthRepository {
         metadata: metadata,
         code: code,
         codeVerifier: verifier,
+        redirectUri: redirectUri,
         key: dpopKey,
         nonce: nonce,
       );
@@ -302,16 +332,12 @@ class AuthRepository {
 
       final sub = claims.getTyped<String>('sub');
       if (sub != expectedDid) {
-        _logger.warning(
-          'Token sub claim mismatch. Expected: $expectedDid, Got: $sub',
-        );
+        _logger.warning('Token sub claim mismatch. Expected: $expectedDid, Got: $sub');
       }
 
       final iss = claims.getTyped<String>('iss');
       if (iss != null && iss != expectedPdsUrl) {
-        _logger.warning(
-          'Token iss claim mismatch. Expected: $expectedPdsUrl, Got: $iss',
-        );
+        _logger.warning('Token iss claim mismatch. Expected: $expectedPdsUrl, Got: $iss');
       }
     } catch (e) {
       _logger.warning('Failed to validate token claims: $e');

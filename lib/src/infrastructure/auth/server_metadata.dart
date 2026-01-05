@@ -142,13 +142,16 @@ class ServerMetadataRepository {
   /// Discovers OAuth server metadata for the given PDS URL.
   ///
   /// Fetches metadata from the .well-known/oauth-authorization-server endpoint and caches it with a TTL.
+  /// For Bluesky-hosted PDS instances (*.host.bsky.network), uses bsky.social as the OAuth server.
   Future<ServerMetadata> discover(String pdsUrl) async {
     final cached = _cache[pdsUrl];
     if (cached != null && !cached.isExpired) {
       return cached.metadata;
     }
 
-    final metadataUrl = '$pdsUrl/.well-known/oauth-authorization-server';
+    // For Bluesky-hosted PDS instances, use bsky.social as the OAuth server
+    final oauthServer = _getOAuthServerUrl(pdsUrl);
+    final metadataUrl = '$oauthServer/.well-known/oauth-authorization-server';
 
     try {
       final response = await _dio.get<Map<String, dynamic>>(metadataUrl);
@@ -168,8 +171,23 @@ class ServerMetadataRepository {
 
       return metadata;
     } catch (e) {
-      return _defaultMetadata(pdsUrl);
+      return _defaultMetadata(oauthServer);
     }
+  }
+
+  /// Determines the OAuth server URL for a given PDS URL.
+  ///
+  /// For Bluesky-hosted PDS instances (*.host.bsky.network), returns https://bsky.social.
+  /// For self-hosted instances, returns the PDS URL itself.
+  String _getOAuthServerUrl(String pdsUrl) {
+    final uri = Uri.parse(pdsUrl);
+
+    // Check if this is a Bluesky-hosted PDS
+    if (uri.host.endsWith('.host.bsky.network')) {
+      return 'https://bsky.social';
+    }
+
+    return pdsUrl;
   }
 
   /// Clears the metadata cache for a specific PDS URL or all entries.

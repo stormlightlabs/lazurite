@@ -8,6 +8,7 @@ abstract final class AppRoutes {
   static const String notifications = '/notifications';
   static const String dms = '/dms';
   static const String profile = '/profile';
+  static const String splash = '/splash';
 
   static const String login = '/login';
   static const String callback = '/callback';
@@ -28,6 +29,8 @@ abstract final class AppRouteNames {
   static const String notifications = 'notifications';
   static const String dms = 'dms';
   static const String profile = 'profile';
+  static const String splash = 'splash';
+
   static const String login = 'login';
   static const String callback = 'callback';
   static const String compose = 'compose';
