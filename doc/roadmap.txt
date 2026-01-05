@@ -33,47 +33,6 @@ Secure secrets:
 - Store tokens/keys in secure storage, not Drift (e.g. flutter_secure_storage).
 
 ================================================================================
-A. Repo + app skeleton + quality gates                                  *bsky-A*
-================================================================================
-Summary: Repository skeleton, feature-first layout, and CI quality gates are
-fully in place.
-
-================================================================================
-B. Networking (Dio) + routing matrix + error policy                     *bsky-B*
-================================================================================
-Summary: Networking stack with Dio clients, interceptors, and routing matrix is
-finished with standardized failure handling.
-
-================================================================================
-C. App shell + navigation skeleton                                   *bsky-ui-C*
-================================================================================
-Summary: App shell and navigation scaffold deliver all primary routes with
-reusable UI primitives and resilient state handling.
-
-================================================================================
-D. Identity bootstrap + OAuth session                                   *bsky-D*
-================================================================================
-
-Summary: Identity bootstrap and OAuth session flows are fully wired, delivering
-secure sign-in, protected routing, and refreshed sessions for every
-authenticated account.
-
-================================================================================
-E. Timeline + thread + core cache (Drift)                               *bsky-E*
-================================================================================
-
-Summary: Drift-backed timeline and thread experiences now ship with cache-first
-reads, infinite scroll, pull-to-refresh, and deep links to thread views for
-every post.
-
-================================================================================
-F. Profiles + graph + search                                            *bsky-F*
-================================================================================
-Summary: Profiles, search, and the full social graph experience are complete
-with cached profile data, deep-linkable search, and responsive follow/following
-workflows.
-
-================================================================================
 G. Multi-feed support + preferences sync                                *bsky-G*
 ================================================================================
 
@@ -113,11 +72,12 @@ Tasks:
             in sort order
       - [x] TimelineNotifier listens to active feed changes, reloads content
             and clears items/cursors on feed switch
-- [ ] UI components:
-      - [ ] FeedSelectorTab: horizontal tabs for pinned feeds with icons/names
-      - [ ] FeedDiscoveryScreen: trending feeds with preview and save actions
-      - [ ] FeedManagementScreen: reorderable list, unpin actions
-      - [ ] Integrate feed selector into TimelineScreen header
+- [x] UI components:
+      - [x] FeedSelectorTab: horizontal tabs for pinned feeds with icons/names
+      - [x] FeedDiscoveryScreen: trending feeds with preview and save actions
+      - [x] FeedManagementScreen: reorderable list, unpin actions
+      - [x] Integrate feed selector into TimelineScreen header
+      - [x] AppRoutes / Router
 - [ ] Preference syncing:
       - [ ] Sync on app foreground resume to reconcile remote changes
       - [ ] Optimistic updates with background sync retry
@@ -126,14 +86,14 @@ Tasks:
       - [ ] Refresh stale metadata (lastSynced > 24h) from getFeedGenerator
 
 Tests:
-- [ ] FeedRepository unit tests: syncPreferences, saveFeed, removeFeed,
+- [x] FeedRepository unit tests: syncPreferences, saveFeed, removeFeed,
       discoverFeeds
 - [ ] Preference sync does not overwrite other preference categories
 - [ ] Feed switching preserves cursor state per feed
 - [ ] Offline feed saving queues updates for background sync
 - [ ] Cross-device sync: changes in web client appear after syncPreferences
 - [ ] Cache eviction: timeline items for feeds not viewed in 7 days are removed
-- [ ] Widget tests for feed selector, discovery, and management screens
+- [x] Widget tests for feed selector, discovery, and management screens
 
 Deliverables:
 - [ ] Users can discover, save, and switch between custom algorithm feeds

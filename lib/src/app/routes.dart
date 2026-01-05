@@ -22,6 +22,8 @@ abstract final class AppRoutes {
   static const String following = 'following/:did';
   static const String convo = 'c/:convoId';
   static const String draftDetail = ':draftId';
+  static const String feeds = '/feeds';
+  static const String discoverFeeds = 'discover';
 }
 
 /// Route names for named navigation.
@@ -44,4 +46,6 @@ abstract final class AppRouteNames {
   static const String following = 'following';
   static const String convo = 'convo';
   static const String draftDetail = 'draftDetail';
+  static const String feeds = 'feeds';
+  static const String discoverFeeds = 'discoverFeeds';
 }

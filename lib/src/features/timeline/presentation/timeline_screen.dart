@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/core/widgets/pull_to_refresh_wrapper.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/feed_selector_tab.dart';
 import 'package:lazurite/src/features/timeline/application/timeline_notifier.dart';
 
 import 'widgets/post_card.dart';
@@ -40,30 +41,46 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     final timelineState = ref.watch(timelineProvider);
 
     return Scaffold(
-      body: PullToRefreshWrapper(
-        onRefresh: () async {
-          await ref.read(timelineProvider.notifier).refresh();
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            const SliverAppBar(
+              title: Text('Lazurite'),
+              floating: true,
+              snap: true,
+              bottom: PreferredSize(
+                preferredSize: Size.fromHeight(56),
+                child: Padding(padding: EdgeInsets.only(bottom: 8.0), child: FeedSelectorTab()),
+              ),
+            ),
+          ];
         },
-        child: timelineState.when(
-          data: (items) {
-            if (items.isEmpty) {
-              return const Center(child: Text('No posts yet'));
-            }
-            return ListView.separated(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: items.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                return PostCard(item: items[index]);
-              },
-            );
+        body: PullToRefreshWrapper(
+          onRefresh: () async {
+            await ref.read(timelineProvider.notifier).refresh();
           },
-          loading: () => const LoadingView(),
-          error: (err, stack) => ErrorView(
-            title: 'Failed to load timeline',
-            message: err.toString(),
-            onRetry: () => ref.read(timelineProvider.notifier).refresh(),
+          child: timelineState.when(
+            data: (items) {
+              if (items.isEmpty) {
+                return const Center(child: Text('No posts yet'));
+              }
+              // TODO: use valid key for ListView to preserve state
+              return ListView.separated(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: items.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  return PostCard(item: items[index]);
+                },
+              );
+            },
+            loading: () => const LoadingView(),
+            error: (err, stack) => ErrorView(
+              title: 'Failed to load timeline',
+              message: err.toString(),
+              onRetry: () => ref.read(timelineProvider.notifier).refresh(),
+            ),
           ),
         ),
       ),

@@ -1,0 +1,26 @@
+# CHANGELOG
+
+## [Unreleased]
+
+### Added
+
+#### [2026-01-04]
+
+- Profiles, search, and the full social graph experience are complete with cached
+  profile data, deep-linkable search, and responsive follow/following workflows.
+
+- Drift-backed timeline and thread experiences now ship with cache-first reads, infinite
+  scroll, pull-to-refresh, and deep links to thread views for every post.
+
+- Identity bootstrap and OAuth session flows are fully wired with secure sign-in,
+  protected routing, and refreshed sessions for authenticated accounts.
+
+#### [2026-01-03]
+
+- App shell and navigation scaffold deliver all primary routes with reusable UI
+  primitives and state handling.
+
+- Networking stack with Dio clients, interceptors, and routing matrix is finished with
+  standardized failure handling.
+
+- Repository skeleton, feature-first layout, and CI quality gates are fully in place.

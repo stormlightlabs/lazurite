@@ -6,6 +6,8 @@ import 'package:lazurite/src/core/widgets/tab_scaffold.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/dms/presentation/dms_screen.dart';
+import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
+import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
 import 'package:lazurite/src/features/login/presentation/app_password_login_screen.dart';
 import 'package:lazurite/src/features/login/presentation/auth_progress_view.dart';
 import 'package:lazurite/src/features/login/presentation/login_screen.dart';
@@ -238,6 +240,18 @@ GoRouter createRouter(Ref ref) {
         path: AppRoutes.splash,
         name: AppRouteNames.splash,
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.feeds,
+        name: AppRouteNames.feeds,
+        builder: (context, state) => const FeedManagementScreen(),
+        routes: [
+          GoRoute(
+            path: AppRoutes.discoverFeeds,
+            name: AppRouteNames.discoverFeeds,
+            builder: (context, state) => const FeedDiscoveryScreen(),
+          ),
+        ],
       ),
     ],
   );
