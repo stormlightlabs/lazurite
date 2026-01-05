@@ -6,6 +6,7 @@ import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
+import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/follow_button.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_header.dart';
 
@@ -50,6 +51,12 @@ class ProfilePageContent extends ConsumerWidget {
   final String did;
   final bool isCurrentUser;
 
+  Widget _followButton(ProfileData p) => _ProfileFollowButton(
+    subjectDid: p.did,
+    isFollowing: p.viewerFollowing,
+    followUri: p.viewerFollowUri,
+  );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileProvider(did));
@@ -92,9 +99,7 @@ class ProfilePageContent extends ConsumerWidget {
                     onFollowingPressed: () {
                       // TODO: Navigate to following page
                     },
-                    followButton: isCurrentUser
-                        ? null
-                        : const FollowButton(isFollowing: false, isDisabled: true),
+                    followButton: isCurrentUser ? null : _followButton(profile),
                   ),
                 ),
                 feedAsync.when(
@@ -122,8 +127,11 @@ class ProfilePageContent extends ConsumerWidget {
                     );
                   },
                   loading: () => const SliverFillRemaining(child: LoadingView()),
-                  error: (err, _) =>
-                      SliverFillRemaining(child: Center(child: Text('Error loading posts: $err'))),
+                  error: (err, _) {
+                    return SliverFillRemaining(
+                      child: Center(child: Text('Error loading posts: $err')),
+                    );
+                  },
                 ),
               ],
             ),
@@ -217,6 +225,41 @@ class _ActionItem extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Follow button that connects to the FollowNotifier for mutations.
+class _ProfileFollowButton extends ConsumerWidget {
+  const _ProfileFollowButton({
+    required this.subjectDid,
+    required this.isFollowing,
+    this.followUri,
+  });
+
+  final String subjectDid;
+  final bool isFollowing;
+  final String? followUri;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final followState = ref.watch(followProvider);
+    final isLoading = followState.isLoading;
+
+    final authState = ref.watch(authProvider);
+    final isDisabled = authState is! AuthStateAuthenticated;
+
+    return FollowButton(
+      isFollowing: isFollowing,
+      isLoading: isLoading,
+      isDisabled: isDisabled,
+      onPressed: () {
+        if (isFollowing && followUri != null) {
+          ref.read(followProvider.notifier).unfollow(subjectDid, followUri!);
+        } else {
+          ref.read(followProvider.notifier).follow(subjectDid);
+        }
+      },
     );
   }
 }

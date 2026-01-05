@@ -20,7 +20,7 @@ void main() {
     mockApi = MockXrpcClient();
     db = AppDatabase(NativeDatabase.memory());
     mockLogger = MockLogger();
-    repository = ProfileRepository(mockApi, db.profileDao, mockLogger);
+    repository = ProfileRepository(mockApi, db.profileDao, db.followsDao, mockLogger);
   });
 
   tearDown(() async {
@@ -153,10 +153,155 @@ void main() {
         expect(result.hasMore, isFalse);
       });
     });
+
+    group('getProfile viewer relationship', () {
+      test('parses viewerFollowing from API response', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockProfileResponse(withViewer: true));
+
+        final profile = await repository.getProfile('testuser');
+
+        expect(profile.viewerFollowing, isTrue);
+        expect(profile.viewerFollowUri, 'at://did:plc:viewer/app.bsky.graph.follow/abc123');
+      });
+
+      test('handles missing viewer in response', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockProfileResponse());
+
+        final profile = await repository.getProfile('testuser');
+
+        expect(profile.viewerFollowing, isFalse);
+        expect(profile.viewerFollowUri, isNull);
+      });
+    });
+
+    group('getFollowers', () {
+      test('fetches followers with pagination', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockFollowersResponse(cursor: 'next'));
+
+        final result = await repository.getFollowers('did:plc:test123');
+
+        expect(result.followers, hasLength(2));
+        expect(result.cursor, 'next');
+        expect(result.hasMore, isTrue);
+        expect(result.followers.first.did, 'did:plc:follower1');
+        expect(result.followers.first.displayName, 'Follower One');
+      });
+
+      test('handles empty followers', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => {'followers': <dynamic>[]});
+
+        final result = await repository.getFollowers('did:plc:test123');
+
+        expect(result.followers, isEmpty);
+        expect(result.hasMore, isFalse);
+      });
+    });
+
+    group('getFollows', () {
+      test('fetches follows with pagination', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockFollowsResponse(cursor: 'next'));
+
+        final result = await repository.getFollows('did:plc:test123');
+
+        expect(result.follows, hasLength(1));
+        expect(result.cursor, 'next');
+        expect(result.hasMore, isTrue);
+        expect(result.follows.first.did, 'did:plc:following1');
+      });
+
+      test('handles empty follows', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => {'follows': <dynamic>[]});
+
+        final result = await repository.getFollows('did:plc:test123');
+
+        expect(result.follows, isEmpty);
+        expect(result.hasMore, isFalse);
+      });
+    });
+
+    group('follow', () {
+      test('creates follow record and caches it', () async {
+        when(() => mockApi.call(any(), body: any(named: 'body'))).thenAnswer(
+          (_) async => {
+            'uri': 'at://did:plc:actor/app.bsky.graph.follow/rkey123',
+            'cid': 'cid123',
+          },
+        );
+
+        final uri = await repository.follow('did:plc:actor', 'did:plc:subject');
+
+        expect(uri, 'at://did:plc:actor/app.bsky.graph.follow/rkey123');
+
+        // Verify cached in DB
+        final cached = await repository.getCachedFollow('did:plc:actor', 'did:plc:subject');
+        expect(cached, isNotNull);
+        expect(cached!.uri, uri);
+      });
+
+      test('logs error and rethrows on API failure', () async {
+        final exception = Exception('Network error');
+        when(() => mockApi.call(any(), body: any(named: 'body'))).thenThrow(exception);
+
+        expect(
+          () => repository.follow('did:plc:actor', 'did:plc:subject'),
+          throwsA(isA<Exception>()),
+        );
+
+        verify(() => mockLogger.error(any(), exception, any())).called(1);
+      });
+    });
+
+    group('unfollow', () {
+      test('deletes follow record and removes from cache', () async {
+        // First create a follow
+        when(
+          () => mockApi.call('com.atproto.repo.createRecord', body: any(named: 'body')),
+        ).thenAnswer(
+          (_) async => {
+            'uri': 'at://did:plc:actor/app.bsky.graph.follow/rkey123',
+            'cid': 'cid123',
+          },
+        );
+        await repository.follow('did:plc:actor', 'did:plc:subject');
+
+        // Now unfollow
+        when(
+          () => mockApi.call('com.atproto.repo.deleteRecord', body: any(named: 'body')),
+        ).thenAnswer((_) async => <String, dynamic>{});
+
+        await repository.unfollow(
+          'did:plc:actor',
+          'at://did:plc:actor/app.bsky.graph.follow/rkey123',
+        );
+
+        // Verify removed from cache
+        final cached = await repository.getCachedFollow('did:plc:actor', 'did:plc:subject');
+        expect(cached, isNull);
+      });
+
+      test('throws on invalid follow URI format', () async {
+        expect(
+          () => repository.unfollow('did:plc:actor', 'invalid-uri'),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
+    });
   });
 }
 
-Map<String, dynamic> _mockProfileResponse() => {
+Map<String, dynamic> _mockProfileResponse({bool withViewer = false}) => {
   'did': 'did:plc:test123',
   'handle': 'testuser.bsky.social',
   'displayName': 'Test User',
@@ -167,6 +312,7 @@ Map<String, dynamic> _mockProfileResponse() => {
   'followsCount': 50,
   'postsCount': 25,
   'indexedAt': '2024-01-01T12:00:00.000Z',
+  if (withViewer) 'viewer': {'following': 'at://did:plc:viewer/app.bsky.graph.follow/abc123'},
 };
 
 Map<String, dynamic> _mockAuthorFeedResponse({String? cursor = 'next_cursor'}) => {
@@ -195,6 +341,30 @@ Map<String, dynamic> _mockAuthorFeedResponse({String? cursor = 'next_cursor'}) =
         'record': {'text': 'Second post'},
         'indexedAt': '2024-01-02T12:00:00.000Z',
       },
+    },
+  ],
+  if (cursor != null) 'cursor': cursor,
+};
+
+Map<String, dynamic> _mockFollowersResponse({String? cursor}) => {
+  'followers': [
+    {
+      'did': 'did:plc:follower1',
+      'handle': 'follower1.bsky.social',
+      'displayName': 'Follower One',
+      'avatar': 'https://example.com/f1.jpg',
+    },
+    {'did': 'did:plc:follower2', 'handle': 'follower2.bsky.social'},
+  ],
+  if (cursor != null) 'cursor': cursor,
+};
+
+Map<String, dynamic> _mockFollowsResponse({String? cursor}) => {
+  'follows': [
+    {
+      'did': 'did:plc:following1',
+      'handle': 'following1.bsky.social',
+      'displayName': 'Following One',
     },
   ],
   if (cursor != null) 'cursor': cursor,

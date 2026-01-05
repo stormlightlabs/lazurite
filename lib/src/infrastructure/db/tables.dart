@@ -68,3 +68,21 @@ class RecentSearches extends Table {
   TextColumn get query => text().unique()();
   DateTimeColumn get searchedAt => dateTime()();
 }
+
+/// Stores follow relationships for caching viewer state.
+class Follows extends Table {
+  /// The DID of the user doing the following.
+  TextColumn get actorDid => text()();
+
+  /// The DID of the user being followed.
+  TextColumn get subjectDid => text()();
+
+  /// The AT URI of the follow record (at://did:plc:xxx/app.bsky.graph.follow/yyy).
+  TextColumn get uri => text()();
+
+  /// When the follow was created.
+  DateTimeColumn get createdAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {actorDid, subjectDid};
+}

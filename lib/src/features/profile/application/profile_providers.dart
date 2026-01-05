@@ -1,5 +1,7 @@
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -11,7 +13,7 @@ ProfileRepository profileRepository(Ref ref) {
   final api = ref.watch(xrpcClientProvider);
   final db = ref.watch(appDatabaseProvider);
   final logger = ref.watch(loggerProvider('ProfileRepository'));
-  return ProfileRepository(api, db.profileDao, logger);
+  return ProfileRepository(api, db.profileDao, db.followsDao, logger);
 }
 
 @riverpod
@@ -29,6 +31,14 @@ class ProfileNotifier extends _$ProfileNotifier {
   Future<void> refresh() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => _fetchProfile(actor));
+  }
+
+  /// Updates the local following state (used after follow/unfollow mutations).
+  void updateFollowingState({required bool isFollowing, String? followUri}) {
+    final current = state.value;
+    if (current == null) return;
+
+    state = AsyncData(current.copyWith(viewerFollowing: isFollowing, viewerFollowUri: followUri));
   }
 }
 
@@ -69,5 +79,52 @@ class AuthorFeedNotifier extends _$AuthorFeedNotifier {
     _hasMore = true;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => _fetchFeed(actor));
+  }
+}
+
+/// Notifier for managing follow/unfollow mutations.
+@riverpod
+class FollowNotifier extends _$FollowNotifier {
+  @override
+  AsyncValue<void> build() {
+    return const AsyncData(null);
+  }
+
+  /// Follow a user.
+  Future<void> follow(String subjectDid) async {
+    final authState = ref.read(authProvider);
+    if (authState is! AuthStateAuthenticated) {
+      state = AsyncError(StateError('Must be authenticated to follow'), StackTrace.current);
+      return;
+    }
+
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(profileRepositoryProvider);
+      final uri = await repo.follow(authState.session.did, subjectDid);
+
+      ref
+          .read(profileProvider(subjectDid).notifier)
+          .updateFollowingState(isFollowing: true, followUri: uri);
+    });
+  }
+
+  /// Unfollow a user.
+  Future<void> unfollow(String subjectDid, String followUri) async {
+    final authState = ref.read(authProvider);
+    if (authState is! AuthStateAuthenticated) {
+      state = AsyncError(StateError('Must be authenticated to unfollow'), StackTrace.current);
+      return;
+    }
+
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(profileRepositoryProvider);
+      await repo.unfollow(authState.session.did, followUri);
+
+      ref
+          .read(profileProvider(subjectDid).notifier)
+          .updateFollowingState(isFollowing: false, followUri: null);
+    });
   }
 }

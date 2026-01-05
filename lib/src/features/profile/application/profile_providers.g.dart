@@ -54,7 +54,7 @@ final class ProfileRepositoryProvider
   }
 }
 
-String _$profileRepositoryHash() => r'4a5451dcb14bab06d8f4aa74b24602cae850aff5';
+String _$profileRepositoryHash() => r'50dea0ace0390282f36fddb6c1282c58a38c914e';
 
 @ProviderFor(ProfileNotifier)
 final profileProvider = ProfileNotifierFamily._();
@@ -97,7 +97,7 @@ final class ProfileNotifierProvider
   }
 }
 
-String _$profileNotifierHash() => r'8c85b7b98f88588be316afe12936a90082506568';
+String _$profileNotifierHash() => r'00ebf266582ea6e4165ddcca5d07080030e65f02';
 
 final class ProfileNotifierFamily extends $Family
     with
@@ -232,5 +232,63 @@ abstract class _$AuthorFeedNotifier extends $AsyncNotifier<List<FeedItem>> {
               Object?
             >;
     element.handleCreate(ref, () => build(_$args));
+  }
+}
+
+/// Notifier for managing follow/unfollow mutations.
+
+@ProviderFor(FollowNotifier)
+final followProvider = FollowNotifierProvider._();
+
+/// Notifier for managing follow/unfollow mutations.
+final class FollowNotifierProvider
+    extends $NotifierProvider<FollowNotifier, AsyncValue<void>> {
+  /// Notifier for managing follow/unfollow mutations.
+  FollowNotifierProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'followProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$followNotifierHash();
+
+  @$internal
+  @override
+  FollowNotifier create() => FollowNotifier();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<void> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<void>>(value),
+    );
+  }
+}
+
+String _$followNotifierHash() => r'e09f5c13a62d4bb0585962eab95c6505a1f0fdb3';
+
+/// Notifier for managing follow/unfollow mutations.
+
+abstract class _$FollowNotifier extends $Notifier<AsyncValue<void>> {
+  AsyncValue<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, AsyncValue<void>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, AsyncValue<void>>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
   }
 }

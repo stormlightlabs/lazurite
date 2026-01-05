@@ -108,14 +108,14 @@ Tasks:
       - [ ] Follows/Followers (full):
             - [ ] FollowersPage
             - [ ] FollowingPage
-- [ ] Social Graph:
-      - [ ] Follow/unfollow infrastructure:
-            - [ ] Implement getFollowers endpoint in ProfileRepository
-            - [ ] Implement getFollows endpoint in ProfileRepository
-            - [ ] Implement follow/unfollow mutations
-            - [ ] Wire FollowButton to follow/unfollow mutations
-            - [ ] Add following status to ProfileData domain model
-            - [ ] Cache relationship state in Drift (follows table)
+- [x] Social Graph:
+      - [x] Follow/unfollow infrastructure:
+            - [x] Implement getFollowers endpoint in ProfileRepository
+            - [x] Implement getFollows endpoint in ProfileRepository
+            - [x] Implement follow/unfollow mutations
+            - [x] Wire FollowButton to follow/unfollow mutations
+            - [x] Add following status to ProfileData domain model
+            - [x] Cache relationship state in Drift (follows table)
       - [ ] Followers screen:
             - [ ] Create FollowersPage with cursor pagination
             - [ ] Add route /profile/followers/:did
@@ -140,7 +140,7 @@ Tasks:
 Tests:
 - [x] Profile caching: refresh merges, does not duplicate feed items.
 - [x] Search paging: stable cursor behavior and local persistence.
-- [ ] Follow/unfollow: mutations update cache and UI state.
+- [x] Follow/unfollow: mutations update cache and UI state.
 - [ ] Followers/following pagination: cursor stability and cache behavior.
 - [ ] Profile tabs: switching tabs preserves scroll position.
 
@@ -152,7 +152,77 @@ Deliverables:
 - [ ] Profile tabs with Posts/Replies/Media navigation.
 
 ================================================================================
-G. Composer + local drafts + publish pipeline                           *bsky-G*
+G. Multi-feed support + preferences sync                                *bsky-G*
+================================================================================
+
+Summary: Multi-feed architecture enables users to browse, save, and switch
+between custom algorithm feeds. User preferences (savedFeedsPref) are the
+canonical source of truth, synced via getPreferences/putPreferences. Local
+SavedFeeds table caches remote preferences enriched with feed metadata.
+
+Endpoints:
+- app.bsky.actor.getPreferences (GET) - fetch user preferences including saved
+  feeds
+- app.bsky.actor.putPreferences (POST) - update user preferences (full object)
+- app.bsky.feed.getFeed (GET) - fetch posts from a custom feed URI
+- app.bsky.feed.getFeedGenerator (GET) - fetch metadata for a specific feed
+- app.bsky.unspecced.getPopularFeedGenerators (GET) - discover trending feeds
+
+Tasks:
+- [ ] Data layer:
+      - [ ] Create SavedFeeds Drift table (uri, displayName, description,
+            avatar, creatorDid, likeCount, sortOrder, isPinned, lastSynced)
+      - [ ] Update TimelineRepository.fetchAndCacheTimeline to accept optional
+            feedUri parameter
+      - [ ] Derive feedKey from feed URI for database storage
+      - [ ] Seed default feeds: Home (authenticated) and Discover (public)
+- [ ] FeedRepository:
+      - [ ] syncPreferences: fetch savedFeedsPref from getPreferences, hydrate
+            local cache with metadata from getFeedGenerator
+      - [ ] saveFeed: add URI to savedFeedsPref array, push via putPreferences,
+            update local cache
+      - [ ] removeFeed: remove URI from both local and remote storage
+      - [ ] discoverFeeds: fetch trending feeds from getPopularFeedGenerators
+      - [ ] Ensure putPreferences sends entire preferences object to avoid
+            overwriting other preference categories
+- [ ] State management:
+      - [ ] ActiveFeedNotifier: tracks currently selected feed URI
+      - [ ] SavedFeedsNotifier: watches SavedFeeds table, exposes pinned feeds
+            in sort order
+      - [ ] TimelineNotifier listens to active feed changes, reloads content
+            and clears items/cursors on feed switch
+- [ ] UI components:
+      - [ ] FeedSelectorTab: horizontal tabs for pinned feeds with icons/names
+      - [ ] FeedDiscoveryScreen: trending feeds with preview and save actions
+      - [ ] FeedManagementScreen: reorderable list, unpin actions
+      - [ ] Integrate feed selector into TimelineScreen header
+- [ ] Preference syncing:
+      - [ ] Sync on app foreground resume to reconcile remote changes
+      - [ ] Optimistic updates with background sync retry
+      - [ ] Queue preference updates offline, retry on network restoration
+      - [ ] Show sync indicator when local state diverges from remote
+      - [ ] Refresh stale metadata (lastSynced > 24h) from getFeedGenerator
+
+Tests:
+- [ ] FeedRepository unit tests: syncPreferences, saveFeed, removeFeed,
+      discoverFeeds
+- [ ] Preference sync does not overwrite other preference categories
+- [ ] Feed switching preserves cursor state per feed
+- [ ] Offline feed saving queues updates for background sync
+- [ ] Cross-device sync: changes in web client appear after syncPreferences
+- [ ] Cache eviction: timeline items for feeds not viewed in 7 days are removed
+- [ ] Widget tests for feed selector, discovery, and management screens
+
+Deliverables:
+- [ ] Users can discover, save, and switch between custom algorithm feeds
+- [ ] Saved feeds sync across devices via user preferences
+- [ ] Feed switching feels instant with cached content
+- [ ] Offline-capable: feed selector works from cache, discovery requires
+      network
+- [ ] No performance degradation with up to 20 saved feeds
+
+================================================================================
+H. Composer + local drafts + publish pipeline                           *bsky-H*
 ================================================================================
 
 Endpoints (write):
@@ -184,7 +254,7 @@ Deliverables:
 - Offline drafts + reliable posting with media upload support.
 
 ================================================================================
-H. Notifications                                                        *bsky-H*
+I. Notifications                                                        *bsky-I*
 ================================================================================
 
 Endpoints:
@@ -203,7 +273,7 @@ Deliverables:
 - Notifications shipped with consistent navigation.
 
 ================================================================================
-I. Smart folders (local-only saved views)                               *bsky-I*
+J. Smart folders (local-only saved views)                               *bsky-J*
 ================================================================================
 
 Definition:
@@ -233,7 +303,7 @@ Deliverables:
 - "Saved views" that feel like feeds, entirely local and fast.
 
 ================================================================================
-J. DMs (read + write) + outbox + read-state                             *bsky-J*
+K. DMs (read + write) + outbox + read-state                             *bsky-K*
 ================================================================================
 
 DM fundamentals:
@@ -266,14 +336,14 @@ Tasks:
 
 Tests:
 - [ ] Proxy header unit test: chat.* requests include atproto-proxy.
-- [ ] Outbox tests: enqueue -> send -> mark delivered; retry on transient errors.
+- [ ] Outbox tests: enqueue -> send -> mark delivered; retry on transient errors
 - [ ] UI tests: offline send creates pending bubble; online later resolves.
 
 Deliverables:
 - DMs usable end-to-end: read, accept, send, read-state, robust retries.
 
 ================================================================================
-K. Hardening (mobile)                                                   *bsky-K*
+L. Hardening (mobile)                                                   *bsky-L*
 ================================================================================
 
 Tasks:
@@ -296,7 +366,7 @@ Deliverables:
 - Mobile app feels stable and responsive for daily use.
 
 ================================================================================
-L. Desktop pass                                                         *bsky-L*
+M. Desktop pass                                                         *bsky-M*
 ================================================================================
 
 Tasks:

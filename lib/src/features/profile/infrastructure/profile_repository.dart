@@ -1,15 +1,17 @@
 import 'package:drift/drift.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
+import 'package:lazurite/src/infrastructure/db/daos/follows_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/profile_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
 /// Repository for profile data with cache-first reads.
 class ProfileRepository {
-  ProfileRepository(this._api, this._dao, this._logger);
+  ProfileRepository(this._api, this._dao, this._followsDao, this._logger);
 
   final XrpcClient _api;
   final ProfileDao _dao;
+  final FollowsDao _followsDao;
   final Logger _logger;
 
   /// Fetches a profile from the API and caches it.
@@ -19,10 +21,8 @@ class ProfileRepository {
     _logger.info('Fetching profile', {'actor': actor});
     try {
       final response = await _api.call('app.bsky.actor.getProfile', params: {'actor': actor});
-
       final profile = ProfileData.fromJson(response);
 
-      // Cache the profile
       await _dao.upsertProfile(
         ProfilesCompanion.insert(
           did: profile.did,
@@ -76,11 +76,132 @@ class ProfileRepository {
       rethrow;
     }
   }
+
+  /// Fetches followers of an actor with cursor pagination.
+  Future<FollowersResult> getFollowers(String actor, {String? cursor}) async {
+    _logger.info('Fetching followers', {'actor': actor, 'cursor': cursor});
+    try {
+      final response = await _api.call(
+        'app.bsky.graph.getFollowers',
+        params: {'actor': actor, 'limit': 50, if (cursor != null) 'cursor': cursor},
+      );
+
+      final followers =
+          (response['followers'] as List?)
+              ?.map((e) => ActorBasic.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [];
+      final nextCursor = response['cursor'] as String?;
+
+      _logger.debug('Fetched ${followers.length} followers');
+      return FollowersResult(followers: followers, cursor: nextCursor);
+    } catch (e, stack) {
+      _logger.error('Failed to fetch followers', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Fetches accounts an actor is following with cursor pagination.
+  Future<FollowsResult> getFollows(String actor, {String? cursor}) async {
+    _logger.info('Fetching follows', {'actor': actor, 'cursor': cursor});
+    try {
+      final response = await _api.call(
+        'app.bsky.graph.getFollows',
+        params: {'actor': actor, 'limit': 50, if (cursor != null) 'cursor': cursor},
+      );
+
+      final follows =
+          (response['follows'] as List?)
+              ?.map((e) => ActorBasic.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [];
+      final nextCursor = response['cursor'] as String?;
+
+      _logger.debug('Fetched ${follows.length} follows');
+      return FollowsResult(follows: follows, cursor: nextCursor);
+    } catch (e, stack) {
+      _logger.error('Failed to fetch follows', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Follow a user. Returns the created follow record URI.
+  Future<String> follow(String actorDid, String subjectDid) async {
+    _logger.info('Following user', {'subject': subjectDid});
+    try {
+      final response = await _api.call(
+        'com.atproto.repo.createRecord',
+        body: {
+          'repo': actorDid,
+          'collection': 'app.bsky.graph.follow',
+          'record': {
+            r'$type': 'app.bsky.graph.follow',
+            'subject': subjectDid,
+            'createdAt': DateTime.now().toUtc().toIso8601String(),
+          },
+        },
+      );
+
+      final uri = response['uri'] as String;
+
+      await _followsDao.upsertFollow(
+        FollowsCompanion.insert(
+          actorDid: actorDid,
+          subjectDid: subjectDid,
+          uri: uri,
+          createdAt: Value(DateTime.now()),
+        ),
+      );
+
+      _logger.debug('Created follow record', {'uri': uri});
+      return uri;
+    } catch (e, stack) {
+      _logger.error('Failed to follow user', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Unfollow a user by deleting the follow record.
+  Future<void> unfollow(String actorDid, String followUri) async {
+    _logger.info('Unfollowing user', {'uri': followUri});
+    try {
+      // Parse rkey from AT URI: at://did:plc:xxx/app.bsky.graph.follow/rkey
+      // AT URIs don't parse with Uri.parse, so use string manipulation
+      final parts = followUri.split('/');
+      if (parts.length < 2) {
+        throw ArgumentError('Invalid follow URI: $followUri');
+      }
+      final rkey = parts.last;
+
+      await _api.call(
+        'com.atproto.repo.deleteRecord',
+        body: {'repo': actorDid, 'collection': 'app.bsky.graph.follow', 'rkey': rkey},
+      );
+
+      await _followsDao.deleteFollowByUri(followUri);
+
+      _logger.debug('Deleted follow record', {'uri': followUri});
+    } catch (e, stack) {
+      _logger.error('Failed to unfollow user', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Gets cached follow state for a user.
+  Future<Follow?> getCachedFollow(String actorDid, String subjectDid) {
+    return _followsDao.getFollow(actorDid, subjectDid);
+  }
+
+  /// Watches cached follow state for a user.
+  Stream<Follow?> watchFollow(String actorDid, String subjectDid) {
+    return _followsDao.watchFollow(actorDid, subjectDid);
+  }
 }
 
 /// Domain model for profile data from API.
 class ProfileData {
   factory ProfileData.fromJson(Map<String, dynamic> json) {
+    final viewer = json['viewer'] as Map<String, dynamic>?;
     return ProfileData(
       did: json['did'] as String,
       handle: json['handle'] as String,
@@ -92,6 +213,8 @@ class ProfileData {
       followsCount: json['followsCount'] as int? ?? 0,
       postsCount: json['postsCount'] as int? ?? 0,
       indexedAt: json['indexedAt'] != null ? DateTime.tryParse(json['indexedAt'] as String) : null,
+      viewerFollowing: viewer?['following'] != null,
+      viewerFollowUri: viewer?['following'] as String?,
     );
   }
 
@@ -106,6 +229,8 @@ class ProfileData {
     this.followsCount = 0,
     this.postsCount = 0,
     this.indexedAt,
+    this.viewerFollowing = false,
+    this.viewerFollowUri,
   });
 
   final String did;
@@ -119,8 +244,32 @@ class ProfileData {
   final int postsCount;
   final DateTime? indexedAt;
 
+  /// Whether the current viewer is following this profile.
+  final bool viewerFollowing;
+
+  /// The URI of the follow record (needed for unfollow).
+  final String? viewerFollowUri;
+
   /// Returns display name or handle.
   String get displayNameOrHandle => displayName ?? handle;
+
+  /// Creates a copy with updated viewer following state.
+  ProfileData copyWith({bool? viewerFollowing, String? viewerFollowUri}) {
+    return ProfileData(
+      did: did,
+      handle: handle,
+      displayName: displayName,
+      description: description,
+      avatar: avatar,
+      banner: banner,
+      followersCount: followersCount,
+      followsCount: followsCount,
+      postsCount: postsCount,
+      indexedAt: indexedAt,
+      viewerFollowing: viewerFollowing ?? this.viewerFollowing,
+      viewerFollowUri: viewerFollowUri ?? this.viewerFollowUri,
+    );
+  }
 }
 
 /// Result of fetching author feed.
@@ -131,6 +280,48 @@ class AuthorFeedResult {
   final String? cursor;
 
   bool get hasMore => cursor != null;
+}
+
+/// Result of fetching followers.
+class FollowersResult {
+  FollowersResult({required this.followers, this.cursor});
+
+  final List<ActorBasic> followers;
+  final String? cursor;
+
+  bool get hasMore => cursor != null;
+}
+
+/// Result of fetching follows.
+class FollowsResult {
+  FollowsResult({required this.follows, this.cursor});
+
+  final List<ActorBasic> follows;
+  final String? cursor;
+
+  bool get hasMore => cursor != null;
+}
+
+/// Basic actor information for follow lists.
+class ActorBasic {
+  factory ActorBasic.fromJson(Map<String, dynamic> json) {
+    return ActorBasic(
+      did: json['did'] as String,
+      handle: json['handle'] as String,
+      displayName: json['displayName'] as String?,
+      avatar: json['avatar'] as String?,
+    );
+  }
+
+  ActorBasic({required this.did, required this.handle, this.displayName, this.avatar});
+
+  final String did;
+  final String handle;
+  final String? displayName;
+  final String? avatar;
+
+  /// Returns display name or handle.
+  String get displayNameOrHandle => displayName ?? handle;
 }
 
 /// Represents a single feed item from author feed.
