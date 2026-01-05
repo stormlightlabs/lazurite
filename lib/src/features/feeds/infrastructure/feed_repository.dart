@@ -418,43 +418,34 @@ class FeedRepository {
 
   /// Seeds default feeds if they don't already exist.
   ///
-  /// Ensures that Home (for authenticated users) and Discover (public) feeds
-  /// are always available in the local cache. This should be called during
-  /// app initialization or after user login.
+  /// For unauthenticated users, ensures the Discover feed is available.
+  /// For authenticated users, removes all seeded feeds since they should only see feeds
+  /// from their preferences.
   Future<void> seedDefaultFeeds() async {
     _logger.debug('Seeding default feeds');
 
-    // Clean up deprecated feed URI (renamed from 'discover' to 'whats-hot')
     await _dao.deleteFeed(_kDeprecatedDiscoverUri);
+
+    if (_api.isAuthenticated) {
+      await _dao.deleteFeed(kHomeFeedUri);
+      await _dao.deleteFeed(kForYouFeedUri);
+      await _dao.deleteFeed(kDiscoverFeedUri);
+      _logger.debug('Removed seeded feeds for authenticated user');
+      return;
+    }
 
     final now = DateTime.now();
     final defaultFeeds = <SavedFeedsCompanion>[];
 
-    if (_api.isAuthenticated) {
-      await _ensureHomeFeed(now, defaultFeeds);
-      await _ensureCuratedFeed(
-        uri: kForYouFeedUri,
-        fallbackName: 'For You',
-        fallbackDescription: 'Curated posts tailored to your interests',
-        sortOrder: 1,
-        shouldPin: true,
-        now: now,
-        feeds: defaultFeeds,
-      );
-      await _maybeUnpinFeed(kDiscoverFeedUri);
-    } else {
-      await _maybeUnpinFeed(kHomeFeedUri);
-      await _maybeUnpinFeed(kForYouFeedUri);
-      await _ensureCuratedFeed(
-        uri: kDiscoverFeedUri,
-        fallbackName: 'Discover',
-        fallbackDescription: 'Explore trending posts',
-        sortOrder: 0,
-        shouldPin: true,
-        now: now,
-        feeds: defaultFeeds,
-      );
-    }
+    await _ensureCuratedFeed(
+      uri: kDiscoverFeedUri,
+      fallbackName: 'Discover',
+      fallbackDescription: 'Explore trending posts',
+      sortOrder: 0,
+      shouldPin: true,
+      now: now,
+      feeds: defaultFeeds,
+    );
 
     if (defaultFeeds.isEmpty) {
       _logger.debug('Default feeds already up to date');
@@ -463,28 +454,6 @@ class FeedRepository {
 
     await _dao.upsertFeeds(defaultFeeds);
     _logger.info('Seeded ${defaultFeeds.length} default feeds');
-  }
-
-  Future<void> _ensureHomeFeed(DateTime now, List<SavedFeedsCompanion> feeds) async {
-    final homeFeed = await _dao.getFeed(kHomeFeedUri);
-    if (homeFeed == null) {
-      feeds.add(
-        SavedFeedsCompanion.insert(
-          uri: kHomeFeedUri,
-          displayName: 'Home',
-          description: const Value('Your personalized timeline'),
-          avatar: const Value(null),
-          creatorDid: '',
-          likeCount: const Value(0),
-          sortOrder: 0,
-          isPinned: const Value(true),
-          lastSynced: now,
-        ),
-      );
-      return;
-    }
-
-    await _ensurePinnedAndOrder(homeFeed, shouldPin: true, sortOrder: 0);
   }
 
   Future<void> _ensureCuratedFeed({
@@ -498,7 +467,6 @@ class FeedRepository {
   }) async {
     final existing = await _dao.getFeed(uri);
     if (existing != null) {
-      await _ensurePinnedAndOrder(existing, shouldPin: shouldPin, sortOrder: sortOrder);
       return;
     }
 
@@ -527,28 +495,5 @@ class FeedRepository {
         lastSynced: now,
       ),
     );
-  }
-
-  Future<void> _maybeUnpinFeed(String uri) async {
-    final feed = await _dao.getFeed(uri);
-    if (feed == null || !feed.isPinned) {
-      return;
-    }
-
-    await _dao.updatePinnedStatus(uri, false);
-  }
-
-  Future<void> _ensurePinnedAndOrder(
-    SavedFeed feed, {
-    required bool shouldPin,
-    required int sortOrder,
-  }) async {
-    if (feed.isPinned != shouldPin) {
-      await _dao.updatePinnedStatus(feed.uri, shouldPin);
-    }
-
-    if (feed.sortOrder != sortOrder) {
-      await _dao.updateSortOrder(feed.uri, sortOrder);
-    }
   }
 }

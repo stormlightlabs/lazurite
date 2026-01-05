@@ -34,7 +34,8 @@ class EndpointRegistry {
     'app.bsky.feed.searchPosts': const EndpointMeta(
       nsid: 'app.bsky.feed.searchPosts',
       method: HttpMethod.get,
-      hostKind: HostKind.publicApi,
+      hostKind: HostKind.pds,
+      requiresAuth: true,
     ),
     'app.bsky.feed.getAuthorFeed': const EndpointMeta(
       nsid: 'app.bsky.feed.getAuthorFeed',

@@ -173,7 +173,6 @@ void main() {
       final publicReads = [
         'app.bsky.feed.getPostThread',
         'app.bsky.feed.getPosts',
-        'app.bsky.feed.searchPosts',
         'app.bsky.actor.getProfile',
         'com.atproto.identity.resolveHandle',
       ];
@@ -188,6 +187,7 @@ void main() {
     test('authenticated read endpoints use pds host', () {
       final authReads = [
         'app.bsky.feed.getTimeline',
+        'app.bsky.feed.searchPosts',
         'app.bsky.notification.listNotifications',
         'app.bsky.actor.getPreferences',
       ];

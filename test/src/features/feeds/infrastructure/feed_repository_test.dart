@@ -720,4 +720,159 @@ void main() {
       expect(feed!.displayName, 'Test Feed');
     });
   });
+
+  group('seedDefaultFeeds', () {
+    test('removes all seeded feeds for authenticated users', () async {
+      when(() => mockApi.isAuthenticated).thenReturn(true);
+
+      // Insert seeded feeds to verify they get removed
+      await db.savedFeedsDao.upsertFeeds([
+        SavedFeedsCompanion.insert(
+          uri: FeedRepository.kHomeFeedUri,
+          displayName: 'Home',
+          creatorDid: '',
+          sortOrder: 0,
+          isPinned: const Value(true),
+          lastSynced: DateTime.now(),
+        ),
+        SavedFeedsCompanion.insert(
+          uri: FeedRepository.kForYouFeedUri,
+          displayName: 'For You',
+          creatorDid: 'did:plc:test',
+          sortOrder: 1,
+          isPinned: const Value(true),
+          lastSynced: DateTime.now(),
+        ),
+        SavedFeedsCompanion.insert(
+          uri: FeedRepository.kDiscoverFeedUri,
+          displayName: 'Discover',
+          creatorDid: 'did:plc:test2',
+          sortOrder: 2,
+          isPinned: const Value(true),
+          lastSynced: DateTime.now(),
+        ),
+      ]);
+
+      await repository.seedDefaultFeeds();
+
+      final feeds = await db.savedFeedsDao.getAllFeeds();
+      expect(feeds, isEmpty);
+    });
+
+    test('seeds Discover feed for unauthenticated users', () async {
+      when(() => mockApi.isAuthenticated).thenReturn(false);
+
+      final mockMetadata = {
+        'view': {
+          'displayName': 'What\'s Hot',
+          'description': 'Trending posts',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur'},
+          'likeCount': 1000,
+        },
+      };
+
+      when(
+        () => mockApi.call(
+          'app.bsky.feed.getFeedGenerator',
+          params: {'feed': FeedRepository.kDiscoverFeedUri},
+        ),
+      ).thenAnswer((_) async => mockMetadata);
+
+      await repository.seedDefaultFeeds();
+
+      final feeds = await db.savedFeedsDao.getAllFeeds();
+      expect(feeds, hasLength(1));
+      expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
+      expect(feeds[0].displayName, 'What\'s Hot');
+      expect(feeds[0].isPinned, true);
+    });
+
+    test('uses fallback metadata if fetch fails for unauthenticated users', () async {
+      when(() => mockApi.isAuthenticated).thenReturn(false);
+
+      when(
+        () => mockApi.call(
+          'app.bsky.feed.getFeedGenerator',
+          params: {'feed': FeedRepository.kDiscoverFeedUri},
+        ),
+      ).thenThrow(Exception('Network error'));
+
+      await repository.seedDefaultFeeds();
+
+      final feeds = await db.savedFeedsDao.getAllFeeds();
+      expect(feeds, hasLength(1));
+      expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
+      expect(feeds[0].displayName, 'Discover');
+      expect(feeds[0].description, 'Explore trending posts');
+      expect(feeds[0].isPinned, true);
+    });
+
+    test('does not re-add Discover feed if it already exists for unauthenticated users', () async {
+      when(() => mockApi.isAuthenticated).thenReturn(false);
+
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: FeedRepository.kDiscoverFeedUri,
+          displayName: 'Existing Discover',
+          creatorDid: 'did:plc:test',
+          sortOrder: 0,
+          isPinned: const Value(true),
+          lastSynced: DateTime.now(),
+        ),
+      );
+
+      await repository.seedDefaultFeeds();
+
+      final feeds = await db.savedFeedsDao.getAllFeeds();
+      expect(feeds, hasLength(1));
+      expect(feeds[0].displayName, 'Existing Discover');
+      verifyNever(
+        () => mockApi.call('app.bsky.feed.getFeedGenerator', params: any(named: 'params')),
+      );
+    });
+
+    test('removes deprecated discover URI', () async {
+      when(() => mockApi.isAuthenticated).thenReturn(false);
+
+      const deprecatedUri =
+          'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
+
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: deprecatedUri,
+          displayName: 'Old Discover',
+          creatorDid: 'did:plc:test',
+          sortOrder: 0,
+          lastSynced: DateTime.now(),
+        ),
+      );
+
+      final mockMetadata = {
+        'view': {
+          'displayName': 'What\'s Hot',
+          'description': 'Trending posts',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur'},
+          'likeCount': 1000,
+        },
+      };
+
+      when(
+        () => mockApi.call(
+          'app.bsky.feed.getFeedGenerator',
+          params: {'feed': FeedRepository.kDiscoverFeedUri},
+        ),
+      ).thenAnswer((_) async => mockMetadata);
+
+      await repository.seedDefaultFeeds();
+
+      final deprecatedFeed = await db.savedFeedsDao.getFeed(deprecatedUri);
+      expect(deprecatedFeed, isNull);
+
+      final feeds = await db.savedFeedsDao.getAllFeeds();
+      expect(feeds, hasLength(1));
+      expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
+    });
+  });
 }
