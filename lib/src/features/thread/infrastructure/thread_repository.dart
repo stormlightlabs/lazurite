@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:lazurite/src/core/utils/logger.dart';
+import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
@@ -16,73 +17,67 @@ class ThreadRepository {
     try {
       final response = await _api.call('app.bsky.feed.getPostThread', params: {'uri': uri});
 
-      final thread = response['thread'] as Map<String, dynamic>;
+      final threadJson = response['thread'] as Map<String, dynamic>;
+      final thread = ThreadViewPost.fromJson(threadJson);
 
-      // TODO: Implement full thread structure caching.
-      await _cacheThreadParticipants(thread);
-      _logger.debug('Cached thread participants');
+      await _cacheThread(thread);
+      _logger.debug('Cached thread posts and participants');
 
-      return ThreadViewPost.fromJson(thread);
+      return thread;
     } catch (e, stack) {
       _logger.error('Failed to fetch thread', e, stack);
       rethrow;
     }
   }
 
-  Future<void> _cacheThreadParticipants(Map<String, dynamic> threadData) async {
+  Future<void> _cacheThread(ThreadViewPost thread) async {
     final posts = <PostInsert>[];
     final profiles = <ProfileInsert>[];
+    final timelineItems = <TimelineItemInsert>[];
+    final seenPosts = <String>{};
+    final seenProfiles = <String>{};
 
-    void extract(Map<String, dynamic> data) {
-      if (data[r'$type'] != 'app.bsky.feed.defs#threadViewPost') return;
+    final feedKey = 'thread:${thread.post.uri}';
+    var order = 0;
 
-      final post = data['post'] as Map<String, dynamic>;
-      final author = post['author'] as Map<String, dynamic>;
+    void visit(ThreadViewPost node) {
+      final postInsert = node.post.toPostInsert();
+      final profileInsert = node.post.toProfileInsert();
 
-      posts.add(
-        PostInsert(
-          uri: post['uri'],
-          cid: post['cid'],
-          authorDid: author['did'],
-          record: jsonEncode(post['record']),
-          indexedAt: DateTime.tryParse(post['indexedAt'] ?? ''),
-          replyCount: post['replyCount'] ?? 0,
-          repostCount: post['repostCount'] ?? 0,
-          likeCount: post['likeCount'] ?? 0,
-        ),
-      );
-
-      profiles.add(
-        ProfileInsert(
-          did: author['did'],
-          handle: author['handle'],
-          displayName: author['displayName'],
-          description: author['description'],
-          avatar: author['avatar'],
-        ),
-      );
-
-      final replies = data['replies'] as List?;
-      if (replies != null) {
-        for (final reply in replies) {
-          extract(reply as Map<String, dynamic>);
-        }
+      if (seenPosts.add(postInsert.uri)) {
+        posts.add(postInsert);
+      }
+      if (seenProfiles.add(profileInsert.did)) {
+        profiles.add(profileInsert);
       }
 
-      final parent = data['parent'];
-      if (parent != null) {
-        extract(parent as Map<String, dynamic>);
+      timelineItems.add(
+        TimelineItemInsert(
+          feedKey: feedKey,
+          postUri: postInsert.uri,
+          sortKey: order.toString().padLeft(6, '0'),
+          reason: node.post.placeholderReason,
+        ),
+      );
+      order += 1;
+
+      for (final reply in node.replies) {
+        visit(reply);
       }
     }
 
-    extract(threadData);
+    for (final parent in thread.ancestorChain) {
+      visit(parent);
+    }
+    visit(thread);
 
     if (posts.isNotEmpty) {
       await _dao.insertTimeline(
-        feedKey: 'thread_cache_temp',
+        feedKey: feedKey,
         newPosts: posts,
         newProfiles: profiles,
         nextCursor: null,
+        newItems: timelineItems,
       );
     }
   }
@@ -91,24 +86,191 @@ class ThreadRepository {
 /// Domain model for a thread view post
 class ThreadViewPost {
   factory ThreadViewPost.fromJson(Map<String, dynamic> json) {
-    if (json[r'$type'] != 'app.bsky.feed.defs#threadViewPost') {
-      // TODO: Handle blocked/not-found posts or other variants
-      return ThreadViewPost(post: json['post'] ?? {}, parent: null, replies: []);
+    final type = json[r'$type'];
+    switch (type) {
+      case 'app.bsky.feed.defs#threadViewPost':
+        return ThreadViewPost(
+          post: ThreadPost.fromJson(json['post'] as Map<String, dynamic>),
+          parent: json['parent'] != null ? ThreadViewPost.fromJson(json['parent']) : null,
+          replies:
+              (json['replies'] as List?)
+                  ?.map((e) => ThreadViewPost.fromJson(e as Map<String, dynamic>))
+                  .toList() ??
+              [],
+        );
+      case 'app.bsky.feed.defs#blockedPost':
+        return ThreadViewPost(
+          post: ThreadPost.placeholder(
+            uri: json['uri'] as String? ?? 'unknown',
+            reason: 'Post blocked',
+          ),
+        );
+      case 'app.bsky.feed.defs#notFoundPost':
+        return ThreadViewPost(
+          post: ThreadPost.placeholder(
+            uri: json['uri'] as String? ?? 'unknown',
+            reason: 'Post not found',
+          ),
+        );
+      default:
+        return ThreadViewPost(
+          post: ThreadPost.placeholder(
+            uri: json['uri'] as String? ?? 'unknown',
+            reason: 'Unsupported thread item',
+          ),
+        );
     }
-
-    return ThreadViewPost(
-      post: json['post'] as Map<String, dynamic>,
-      parent: json['parent'] != null ? ThreadViewPost.fromJson(json['parent']) : null,
-      replies:
-          (json['replies'] as List?)
-              ?.map((e) => ThreadViewPost.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-    );
   }
+
   ThreadViewPost({required this.post, this.parent, this.replies = const []});
 
-  final Map<String, dynamic> post;
+  final ThreadPost post;
   final ThreadViewPost? parent;
   final List<ThreadViewPost> replies;
+
+  List<ThreadViewPost> get ancestorChain {
+    final chain = <ThreadViewPost>[];
+    var current = parent;
+    while (current != null) {
+      chain.add(current);
+      current = current.parent;
+    }
+    return chain.reversed.toList();
+  }
+}
+
+class ThreadPost {
+  ThreadPost({
+    required this.uri,
+    required this.cid,
+    required this.author,
+    required this.record,
+    this.embed,
+    this.indexedAt,
+    this.replyCount = 0,
+    this.repostCount = 0,
+    this.likeCount = 0,
+    this.placeholderReason,
+  });
+
+  factory ThreadPost.fromJson(Map<String, dynamic> json) {
+    final author = ThreadAuthor.fromJson(json['author'] as Map<String, dynamic>);
+    return ThreadPost(
+      uri: json['uri'] as String,
+      cid: json['cid'] as String? ?? json['uri'] as String,
+      author: author,
+      record: (json['record'] as Map<String, dynamic>?) ?? const {},
+      embed: json['embed'] != null ? jsonEncode(json['embed']) : null,
+      indexedAt: DateTime.tryParse(json['indexedAt'] ?? ''),
+      replyCount: json['replyCount'] as int? ?? 0,
+      repostCount: json['repostCount'] as int? ?? 0,
+      likeCount: json['likeCount'] as int? ?? 0,
+    );
+  }
+
+  factory ThreadPost.placeholder({required String uri, required String reason}) {
+    return ThreadPost(
+      uri: uri,
+      cid: uri,
+      author: ThreadAuthor(did: 'placeholder:$uri', handle: 'unknown', displayName: reason),
+      record: {'text': reason},
+      placeholderReason: reason,
+      indexedAt: DateTime.now(),
+    );
+  }
+
+  final String uri;
+  final String cid;
+  final ThreadAuthor author;
+  final Map<String, dynamic> record;
+  final String? embed;
+  final DateTime? indexedAt;
+  final int replyCount;
+  final int repostCount;
+  final int likeCount;
+  final String? placeholderReason;
+
+  PostInsert toPostInsert() {
+    return PostInsert(
+      uri: uri,
+      cid: cid,
+      authorDid: author.did,
+      record: jsonEncode(record),
+      embed: embed,
+      indexedAt: indexedAt,
+      replyCount: replyCount,
+      repostCount: repostCount,
+      likeCount: likeCount,
+    );
+  }
+
+  ProfileInsert toProfileInsert() {
+    return ProfileInsert(
+      did: author.did,
+      handle: author.handle,
+      displayName: author.displayName ?? placeholderReason,
+      description: author.description,
+      avatar: author.avatar,
+      indexedAt: indexedAt,
+    );
+  }
+
+  Post toPostModel() {
+    return Post(
+      uri: uri,
+      cid: cid,
+      authorDid: author.did,
+      record: jsonEncode(record),
+      embed: embed,
+      indexedAt: indexedAt,
+      replyCount: replyCount,
+      repostCount: repostCount,
+      likeCount: likeCount,
+    );
+  }
+
+  Profile toProfileModel() {
+    return Profile(
+      did: author.did,
+      handle: author.handle,
+      displayName: author.displayName ?? placeholderReason,
+      description: author.description,
+      avatar: author.avatar,
+      indexedAt: indexedAt,
+    );
+  }
+
+  TimelineFeedItem toTimelineFeedItem({String feedKey = 'thread', String sortKey = ''}) {
+    return TimelineFeedItem(
+      post: toPostModel(),
+      author: toProfileModel(),
+      item: TimelineItem(feedKey: feedKey, postUri: uri, sortKey: sortKey),
+    );
+  }
+}
+
+class ThreadAuthor {
+  ThreadAuthor({
+    required this.did,
+    required this.handle,
+    this.displayName,
+    this.description,
+    this.avatar,
+  });
+
+  factory ThreadAuthor.fromJson(Map<String, dynamic> json) {
+    return ThreadAuthor(
+      did: json['did'] as String,
+      handle: json['handle'] as String,
+      displayName: json['displayName'] as String?,
+      description: json['description'] as String?,
+      avatar: json['avatar'] as String?,
+    );
+  }
+
+  final String did;
+  final String handle;
+  final String? displayName;
+  final String? description;
+  final String? avatar;
 }

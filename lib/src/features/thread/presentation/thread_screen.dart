@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
@@ -7,7 +5,6 @@ import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/thread/application/thread_notifier.dart';
 import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
 import 'package:lazurite/src/features/timeline/presentation/widgets/post_card.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
 
 class ThreadScreen extends ConsumerStatefulWidget {
@@ -108,31 +105,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     return list;
   }
 
-  TimelineFeedItem _mapToTimelineItem(ThreadViewPost view) {
-    // TODO: refactor to use domain models
-    final postMap = view.post;
-    final authorMap = postMap['author'] as Map<String, dynamic>;
-
-    return TimelineFeedItem(
-      post: Post(
-        uri: postMap['uri'],
-        cid: postMap['cid'],
-        authorDid: authorMap['did'],
-        record: jsonEncode(postMap['record']),
-        indexedAt: DateTime.tryParse(postMap['indexedAt'] ?? ''),
-        replyCount: postMap['replyCount'] ?? 0,
-        repostCount: postMap['repostCount'] ?? 0,
-        likeCount: postMap['likeCount'] ?? 0,
-      ),
-      author: Profile(
-        did: authorMap['did'],
-        handle: authorMap['handle'],
-        displayName: authorMap['displayName'],
-        description: authorMap['description'],
-        avatar: authorMap['avatar'],
-        indexedAt: DateTime.now(),
-      ),
-      item: const TimelineItem(feedKey: 'thread', postUri: '', sortKey: ''),
-    );
+  TimelineFeedItem _mapToTimelineItem(ThreadViewPost view, {String sortKey = ''}) {
+    return view.post.toTimelineFeedItem(sortKey: sortKey);
   }
 }

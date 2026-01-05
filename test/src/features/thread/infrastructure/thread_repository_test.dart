@@ -76,12 +76,49 @@ void main() {
         ),
       ).called(1);
 
-      expect(thread.post['uri'], 'at://did:1/app.bsky.feed.post/1');
+      expect(thread.post.uri, 'at://did:1/app.bsky.feed.post/1');
       expect(thread.replies, hasLength(1));
-      expect(thread.replies.first.post['uri'], 'at://did:2/app.bsky.feed.post/2');
+      expect(thread.replies.first.post.uri, 'at://did:2/app.bsky.feed.post/2');
 
-      // TODO: Check cache side-effect
-      // TODO: use a separate DAO query to verify insertion if we want.
+      final cached = await db.timelineDao
+          .watchTimeline('thread:at://did:1/app.bsky.feed.post/1')
+          .first;
+      expect(cached, hasLength(2));
+      expect(
+        cached.map((item) => item.post.uri),
+        containsAll(['at://did:1/app.bsky.feed.post/1', 'at://did:2/app.bsky.feed.post/2']),
+      );
+    });
+
+    test('handles blocked and unavailable thread entries', () async {
+      final mockResponse = {
+        'thread': {
+          r'$type': 'app.bsky.feed.defs#threadViewPost',
+          'post': {
+            'uri': 'at://did:1/app.bsky.feed.post/1',
+            'cid': 'cid1',
+            'author': {'did': 'did:1', 'handle': 'alice', 'displayName': 'Alice'},
+            'record': {'text': 'Root post', 'createdAt': '2024-01-01T00:00:00Z'},
+            'indexedAt': '2024-01-01T00:00:00Z',
+          },
+          'replies': [
+            {r'$type': 'app.bsky.feed.defs#blockedPost', 'uri': 'at://did:3/app.bsky.feed.post/3'},
+            {
+              r'$type': 'app.bsky.feed.defs#notFoundPost',
+              'uri': 'at://did:4/app.bsky.feed.post/4',
+            },
+          ],
+        },
+      };
+
+      when(
+        () => mockApi.call(any(), params: any(named: 'params')),
+      ).thenAnswer((_) async => mockResponse);
+
+      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1');
+      expect(thread.replies, hasLength(2));
+      expect(thread.replies.first.post.placeholderReason, 'Post blocked');
+      expect(thread.replies.last.post.placeholderReason, 'Post not found');
     });
   });
 }

@@ -16,6 +16,7 @@ class TimelineDao extends DatabaseAccessor<AppDatabase> with _$TimelineDaoMixin 
     required List<PostInsert> newPosts,
     required List<ProfileInsert> newProfiles,
     required String? nextCursor,
+    List<TimelineItemInsert> newItems = const [],
   }) async {
     await batch((batch) {
       batch.insertAll(
@@ -50,6 +51,21 @@ class TimelineDao extends DatabaseAccessor<AppDatabase> with _$TimelineDaoMixin 
         ),
         mode: InsertMode.insertOrReplace,
       );
+
+      if (newItems.isNotEmpty) {
+        batch.insertAll(
+          timelineItems,
+          newItems.map(
+            (item) => TimelineItemsCompanion.insert(
+              feedKey: item.feedKey,
+              postUri: item.postUri,
+              reason: Value(item.reason),
+              sortKey: item.sortKey,
+            ),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+      }
     });
   }
 
@@ -180,4 +196,18 @@ class ProfileInsert {
   final String? description;
   final String? avatar;
   final DateTime? indexedAt;
+}
+
+class TimelineItemInsert {
+  TimelineItemInsert({
+    required this.feedKey,
+    required this.postUri,
+    required this.sortKey,
+    this.reason,
+  });
+
+  final String feedKey;
+  final String postUri;
+  final String sortKey;
+  final String? reason;
 }
