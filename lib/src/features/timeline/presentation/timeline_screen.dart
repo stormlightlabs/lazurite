@@ -4,6 +4,7 @@ import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/core/widgets/pull_to_refresh_wrapper.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/feed_selector_tab.dart';
+import 'package:lazurite/src/features/timeline/application/timeline_cleanup_controller.dart';
 import 'package:lazurite/src/features/timeline/application/timeline_notifier.dart';
 
 import 'widgets/post_card.dart';
@@ -38,6 +39,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(timelineCleanupControllerProvider);
     final timelineState = ref.watch(timelineProvider);
 
     return Scaffold(

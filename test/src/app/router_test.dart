@@ -9,9 +9,12 @@ import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
+import 'package:lazurite/src/features/profile/application/profile_providers.dart';
+import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
 import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/features/splash/presentation/splash_screen.dart';
+import 'package:lazurite/src/features/timeline/application/timeline_cleanup_controller.dart';
 import 'package:lazurite/src/features/timeline/application/timeline_notifier.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
@@ -20,22 +23,27 @@ import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../helpers/pump_app.dart';
-import '../../helpers/test_database.dart';
 
 class MockSessionStorage extends Mock implements SessionStorage {}
 
 class MockSearchRepository extends Mock implements SearchRepository {}
 
+class MockAppDatabase extends Mock implements AppDatabase {}
+
+class MockProfileRepository extends Mock implements ProfileRepository {}
+
 void main() {
   late MockSessionStorage mockSessionStorage;
   late MockSearchRepository mockSearchRepository;
-  late AppDatabase testDatabase;
+  late MockProfileRepository mockProfileRepository;
+  late MockAppDatabase mockDatabase;
   late Session testSession;
 
   setUp(() {
     mockSessionStorage = MockSessionStorage();
     mockSearchRepository = MockSearchRepository();
-    testDatabase = createTestDatabase();
+    mockProfileRepository = MockProfileRepository();
+    mockDatabase = MockAppDatabase();
     testSession = Session(
       did: 'did:web:test',
       handle: 'handle',
@@ -48,20 +56,31 @@ void main() {
     );
     when(() => mockSessionStorage.getSession()).thenAnswer((_) async => testSession);
     when(() => mockSearchRepository.watchRecentSearches()).thenAnswer((_) => Stream.value([]));
-  });
+    when(() => mockProfileRepository.getProfile(any())).thenAnswer(
+      (_) async => ProfileData(
+        did: 'did:web:test',
+        handle: 'handle',
+        displayName: 'Test User',
+        viewerFollowing: false,
 
-  tearDown(() async {
-    await testDatabase.close();
+        followsCount: 0,
+        followersCount: 0,
+        postsCount: 0,
+        indexedAt: DateTime.now(),
+      ),
+    );
   });
 
   List<Override> getTestOverrides() {
     return [
       sessionStorageProvider.overrideWithValue(mockSessionStorage),
-      appDatabaseProvider.overrideWithValue(testDatabase),
+      appDatabaseProvider.overrideWithValue(mockDatabase),
+      profileRepositoryProvider.overrideWithValue(mockProfileRepository),
       authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
       timelineProvider.overrideWith(() => _TestTimelineNotifier()),
       searchRepositoryProvider.overrideWithValue(mockSearchRepository),
       feedSyncControllerProvider.overrideWith((ref) {}),
+      timelineCleanupControllerProvider.overrideWith((ref) {}),
       pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
       activeFeedProvider.overrideWith(() => MockActiveFeed()),
     ];
@@ -89,7 +108,7 @@ void main() {
           ),
         ),
       );
-      await tester.pump(); // Pump one frame to let the router process
+      await tester.pump();
       expect(find.byType(SplashScreen), findsOneWidget);
     });
 

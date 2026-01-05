@@ -74,3 +74,16 @@ Pattern:
 
 Test files should mirror source code (`lib`) structure.
 All tests in `test/src/` with helpers in `test/helpers/`.
+
+## Preventing Hangs and Leaks
+
+- **ALWAYS use MockAppDatabase**:
+  Never use `NativeDatabase.memory()` in widget tests or unit tests that don't explicitly need integration-level database behavior.
+  Real database instances spawn background isolates and use timers that can cause tests to hang or fail with "Timer is still pending".
+- **Override Controllers**:
+  Background controllers (like `timelineCleanupController`) that use `Future.microtask` or listen to lifecycle events must be overridden with `(ref) {}` (no-op) in tests.
+  This prevents them from firing async work that outlives the test widget tree.
+- **Close Streams**:
+  Ensure any streams created in `setUp` are properly closed or are mocked using `Stream.value([])` which completes immediately.
+- **Dispose Containers**:
+  If manually creating a `ProviderContainer`, always call `dispose()` in `tearDown`.

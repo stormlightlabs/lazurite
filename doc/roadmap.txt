@@ -78,30 +78,30 @@ Tasks:
       - [x] FeedManagementScreen: reorderable list, unpin actions
       - [x] Integrate feed selector into TimelineScreen header
       - [x] AppRoutes / Router
-- [ ] Preference syncing:
+- [x] Preference syncing:
       - [x] Sync on app foreground resume to reconcile remote changes
       - [x] Optimistic updates with background sync retry
       - [x] Queue preference updates offline, retry on network restoration
-      - [ ] Show sync indicator when local state diverges from remote
+      - [x] Show sync indicator when local state diverges from remote
       - [x] Refresh stale metadata (lastSynced > 24h) from getFeedGenerator
 
 Tests:
 - [x] FeedRepository unit tests: syncPreferences, saveFeed, removeFeed,
       discoverFeeds
 - [x] Preference sync does not overwrite other preference categories
-- [ ] Feed switching preserves cursor state per feed
+- [x] Feed switching preserves cursor state per feed
 - [x] Offline feed saving queues updates for background sync
-- [ ] Cross-device sync: changes in web client appear after syncPreferences
-- [ ] Cache eviction: timeline items for feeds not viewed in 7 days are removed
+- [x] Cross-device sync: changes in web client appear after syncPreferences
+- [x] Cache eviction: timeline items for feeds not viewed in 7 days are removed
 - [x] Widget tests for feed selector, discovery, and management screens
 
 Deliverables:
-- [ ] Users can discover, save, and switch between custom algorithm feeds
-- [ ] Saved feeds sync across devices via user preferences
-- [ ] Feed switching feels instant with cached content
-- [ ] Offline-capable: feed selector works from cache, discovery requires
+- [x] Users can discover, save, and switch between custom algorithm feeds
+- [x] Saved feeds sync across devices via user preferences
+- [x] Feed switching feels instant with cached content
+- [x] Offline-capable: feed selector works from cache, discovery requires
       network
-- [ ] No performance degradation with up to 20 saved feeds
+- [x] No performance degradation with up to 20 saved feeds
 
 ================================================================================
 H. Composer + local drafts + publish pipeline                           *bsky-H*

@@ -108,6 +108,27 @@ class TimelineDao extends DatabaseAccessor<AppDatabase> with _$TimelineDaoMixin 
 
   Future<void> clearTimeline(String feedKey) async {
     await (delete(timelineItems)..where((t) => t.feedKey.equals(feedKey))).go();
+    await (delete(feedCursors)..where((t) => t.feedKey.equals(feedKey))).go();
+  }
+
+  /// Deletes timeline items and cursors for feeds not updated since [threshold].
+  Future<int> deleteStaleTimelineItems(DateTime threshold) async {
+    return transaction(() async {
+      final staleCursors = await (select(
+        feedCursors,
+      )..where((t) => t.lastUpdated.isSmallerThanValue(threshold))).get();
+
+      int deletedCount = 0;
+
+      for (final cursor in staleCursors) {
+        deletedCount += await (delete(
+          timelineItems,
+        )..where((t) => t.feedKey.equals(cursor.feedKey))).go();
+        await (delete(feedCursors)..where((t) => t.feedKey.equals(cursor.feedKey))).go();
+      }
+
+      return deletedCount;
+    });
   }
 }
 

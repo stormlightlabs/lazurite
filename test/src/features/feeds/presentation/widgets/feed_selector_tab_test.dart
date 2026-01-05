@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
+import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
+import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/feed_selector_tab.dart';
+import 'package:lazurite/src/features/timeline/application/timeline_cleanup_controller.dart';
+import 'package:lazurite/src/infrastructure/db/app_database.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockAppDatabase extends Mock implements AppDatabase {}
 
 class MockPinnedFeedsNotifier extends PinnedFeedsNotifier {
   MockPinnedFeedsNotifier(this._initialData);
@@ -16,6 +24,8 @@ class MockPinnedFeedsNotifier extends PinnedFeedsNotifier {
 
 void main() {
   testWidgets('FeedSelectorTab displays feeds and allows switching', (tester) async {
+    final mockDatabase = MockAppDatabase();
+
     final kFeeds = [
       SavedFeedData(
         uri: 'home',
@@ -39,7 +49,13 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier(kFeeds))],
+        overrides: [
+          pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier(kFeeds)),
+          appDatabaseProvider.overrideWithValue(mockDatabase),
+          feedSyncControllerProvider.overrideWith((ref) {}),
+          timelineCleanupControllerProvider.overrideWith((ref) {}),
+          hasPendingSyncProvider.overrideWith((ref) => Stream.value(false)),
+        ],
         child: const MaterialApp(home: Scaffold(body: FeedSelectorTab())),
       ),
     );

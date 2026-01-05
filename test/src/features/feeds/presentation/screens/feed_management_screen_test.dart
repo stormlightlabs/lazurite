@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
+import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
+import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
+import 'package:lazurite/src/features/timeline/application/timeline_cleanup_controller.dart';
+import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockFeedRepository extends Mock implements FeedRepository {}
+
+class MockAppDatabase extends Mock implements AppDatabase {}
 
 class MockAllFeedsNotifier extends AllFeedsNotifier {
   MockAllFeedsNotifier(this._initialData);
@@ -22,6 +29,7 @@ class MockAllFeedsNotifier extends AllFeedsNotifier {
 void main() {
   testWidgets('FeedManagementScreen lists saved feeds and allows actions', (tester) async {
     final mockRepository = MockFeedRepository();
+    final mockDatabase = MockAppDatabase();
 
     final kFeeds = [
       SavedFeedData(
@@ -53,6 +61,10 @@ void main() {
         overrides: [
           allFeedsProvider.overrideWith(() => MockAllFeedsNotifier(kFeeds)),
           feedRepositoryProvider.overrideWithValue(mockRepository),
+          appDatabaseProvider.overrideWithValue(mockDatabase),
+          feedSyncControllerProvider.overrideWith((ref) {}),
+          timelineCleanupControllerProvider.overrideWith((ref) {}),
+          hasPendingSyncProvider.overrideWith((ref) => Stream.value(false)),
         ],
         child: const MaterialApp(home: FeedManagementScreen()),
       ),

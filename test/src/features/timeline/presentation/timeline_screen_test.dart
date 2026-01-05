@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
+import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
+import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
+import 'package:lazurite/src/features/timeline/application/timeline_cleanup_controller.dart';
 import 'package:lazurite/src/features/timeline/application/timeline_providers.dart';
 import 'package:lazurite/src/features/timeline/infrastructure/timeline_repository.dart';
 import 'package:lazurite/src/features/timeline/presentation/timeline_screen.dart';
@@ -12,6 +16,8 @@ import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockTimelineRepository extends Mock implements TimelineRepository {}
+
+class MockAppDatabase extends Mock implements AppDatabase {}
 
 class MockActiveFeed extends ActiveFeed {
   @override
@@ -36,6 +42,10 @@ void main() {
         timelineRepositoryProvider.overrideWithValue(mockRepository),
         pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
         activeFeedProvider.overrideWith(() => MockActiveFeed()),
+        appDatabaseProvider.overrideWithValue(MockAppDatabase()),
+        feedSyncControllerProvider.overrideWith((ref) {}),
+        timelineCleanupControllerProvider.overrideWith((ref) {}),
+        hasPendingSyncProvider.overrideWith((ref) => Stream.value(false)),
       ],
       child: const MaterialApp(home: TimelineScreen()),
     );
@@ -100,9 +110,9 @@ void main() {
     await tester.pump();
 
     await tester.drag(find.text('Hello'), const Offset(0, 300));
-    await tester.pump(); // Start animation
-    await tester.pump(const Duration(seconds: 1)); // Wait for indicator to settle
-    await tester.pump(const Duration(seconds: 1)); // Wait for refresh to complete
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
 
     verify(() => mockRepository.fetchAndCacheTimeline(feedUri: null)).called(1);
   });

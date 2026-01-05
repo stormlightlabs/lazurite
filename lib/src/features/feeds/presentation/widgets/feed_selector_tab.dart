@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
+import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
 
 class FeedSelectorTab extends ConsumerWidget {
   const FeedSelectorTab({super.key});
@@ -23,12 +24,38 @@ class FeedSelectorTab extends ConsumerWidget {
             separatorBuilder: (context, index) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               if (index == feeds.length) {
-                return IconButton(
-                  icon: const Icon(Icons.tune),
-                  tooltip: 'Manage Feeds',
-                  onPressed: () {
-                    context.push(AppRoutes.feeds);
-                  },
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.tune),
+                      tooltip: 'Manage Feeds',
+                      onPressed: () {
+                        context.push(AppRoutes.feeds);
+                      },
+                    ),
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final hasPending =
+                            ref.watch(hasPendingSyncProvider).asData?.value ?? false;
+                        if (hasPending) {
+                          return Positioned(
+                            right: 8,
+                            top: 8,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Colors.blue,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ],
                 );
               }
 

@@ -25,6 +25,13 @@ class PreferenceSyncQueueDao extends DatabaseAccessor<AppDatabase>
     )..orderBy([(t) => OrderingTerm(expression: t.createdAt)])).get();
   }
 
+  /// Watches all pending items in the queue.
+  Stream<List<PreferenceSyncQueueData>> watchPendingItems() {
+    return (select(
+      preferenceSyncQueue,
+    )..orderBy([(t) => OrderingTerm(expression: t.createdAt)])).watch();
+  }
+
   /// Deletes a specific item from the queue.
   Future<int> deleteItem(int id) {
     return (delete(preferenceSyncQueue)..where((t) => t.id.equals(id))).go();

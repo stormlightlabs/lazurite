@@ -153,4 +153,13 @@ class TimelineRepository {
   Future<void> clearTimeline(String feedKey) {
     return _dao.clearTimeline(feedKey);
   }
+
+  /// Cleans up stale timeline items (not viewed in 7 days).
+  Future<void> cleanupCache() async {
+    final threshold = DateTime.now().subtract(const Duration(days: 7));
+    final count = await _dao.deleteStaleTimelineItems(threshold);
+    if (count > 0) {
+      _logger.info('Cleaned up $count stale timeline items');
+    }
+  }
 }

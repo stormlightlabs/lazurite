@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
+import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
 
 class FeedManagementScreen extends ConsumerWidget {
   const FeedManagementScreen({super.key});
@@ -16,6 +17,21 @@ class FeedManagementScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('My Feeds'),
         actions: [
+          Consumer(
+            builder: (context, ref, child) {
+              final hasPending = ref.watch(hasPendingSyncProvider).asData?.value ?? false;
+              if (hasPending) {
+                return const Tooltip(
+                  message: 'Syncing preferences...',
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Icon(Icons.sync, size: 20),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => context.push('/feeds/discover'),
@@ -77,7 +93,6 @@ class FeedManagementScreen extends ConsumerWidget {
           title: 'Failed to load feeds',
           message: err.toString(),
           onRetry: () {
-            // TODO: Consider re-watch
             ref.invalidate(allFeedsProvider);
           },
         ),

@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
@@ -316,6 +317,54 @@ void main() {
 
       final stream = repository.watchTimeline(feedKey: customFeedKey);
       expect(stream, emits(hasLength(1)));
+    });
+  });
+  group('cleanupCache', () {
+    test('deletes stale timeline items and cursors', () async {
+      final oldDate = DateTime.now().subtract(const Duration(days: 8));
+      final freshDate = DateTime.now();
+
+      await db.batch((batch) {
+        batch.insertAll(db.posts, [
+          PostsCompanion.insert(uri: 'uri1', cid: 'c1', authorDid: 'd1', record: '{}'),
+          PostsCompanion.insert(uri: 'uri2', cid: 'c2', authorDid: 'd1', record: '{}'),
+        ]);
+        batch.insertAll(db.profiles, [ProfilesCompanion.insert(did: 'd1', handle: 'h1')]);
+        batch.insertAll(db.feedCursors, [
+          FeedCursorsCompanion.insert(feedKey: 'stale', cursor: 'c1', lastUpdated: Value(oldDate)),
+          FeedCursorsCompanion.insert(
+            feedKey: 'fresh',
+            cursor: 'c2',
+            lastUpdated: Value(freshDate),
+          ),
+        ]);
+        batch.insertAll(db.timelineItems, [
+          TimelineItemsCompanion.insert(feedKey: 'stale', postUri: 'uri1', sortKey: '1'),
+          TimelineItemsCompanion.insert(feedKey: 'fresh', postUri: 'uri2', sortKey: '2'),
+        ]);
+      });
+
+      await repository.cleanupCache();
+
+      final staleItems = await (db.select(
+        db.timelineItems,
+      )..where((t) => t.feedKey.equals('stale'))).get();
+      expect(staleItems, isEmpty);
+
+      final freshItems = await (db.select(
+        db.timelineItems,
+      )..where((t) => t.feedKey.equals('fresh'))).get();
+      expect(freshItems, hasLength(1));
+
+      final staleCursor = await (db.select(
+        db.feedCursors,
+      )..where((t) => t.feedKey.equals('stale'))).getSingleOrNull();
+      expect(staleCursor, isNull);
+
+      final freshCursor = await (db.select(
+        db.feedCursors,
+      )..where((t) => t.feedKey.equals('fresh'))).getSingleOrNull();
+      expect(freshCursor, isNotNull);
     });
   });
 }
