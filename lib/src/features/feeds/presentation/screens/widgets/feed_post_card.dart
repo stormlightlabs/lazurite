@@ -3,17 +3,20 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/theme.dart';
-import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_actions_row.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_body.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_embeds.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_header.dart';
+import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 
-import 'post_actions_row.dart';
-import 'post_body.dart';
-import 'post_embeds.dart';
-import 'post_header.dart';
+/// A post card widget for displaying feed content items.
+///
+/// Adapts [FeedPost] data to display a rich post card with
+/// author info, post text, embeds, and action counts.
+class FeedPostCard extends StatelessWidget {
+  const FeedPostCard({required this.item, this.onTap, super.key});
 
-class PostCard extends StatelessWidget {
-  const PostCard({required this.item, this.onTap, super.key});
-
-  final TimelineFeedItem item;
+  final FeedPost item;
   final VoidCallback? onTap;
 
   @override
@@ -22,8 +25,8 @@ class PostCard extends StatelessWidget {
     final text = record['text'] as String? ?? '';
     final createdAt = DateTime.tryParse(item.post.indexedAt?.toIso8601String() ?? '');
 
-    final reasonJson = item.item.reason != null
-        ? jsonDecode(item.item.reason!) as Map<String, dynamic>
+    final reasonJson = item.reason != null
+        ? jsonDecode(item.reason!) as Map<String, dynamic>
         : null;
     final isRepost =
         reasonJson != null && reasonJson[r'$type'] == 'app.bsky.feed.defs#reasonRepost';

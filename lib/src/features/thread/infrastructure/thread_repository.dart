@@ -1,15 +1,16 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
-import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
+import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
 class ThreadRepository {
   ThreadRepository(this._api, this._dao, this._logger);
 
   final XrpcClient _api;
-  final TimelineDao _dao;
+  final FeedContentDao _dao;
   final Logger _logger;
 
   Future<ThreadViewPost> getPostThread(String uri) async {
@@ -31,9 +32,9 @@ class ThreadRepository {
   }
 
   Future<void> _cacheThread(ThreadViewPost thread) async {
-    final posts = <PostInsert>[];
-    final profiles = <ProfileInsert>[];
-    final timelineItems = <TimelineItemInsert>[];
+    final posts = <PostsCompanion>[];
+    final profiles = <ProfilesCompanion>[];
+    final feedContentItems = <FeedContentItemsCompanion>[];
     final seenPosts = <String>{};
     final seenProfiles = <String>{};
 
@@ -41,22 +42,21 @@ class ThreadRepository {
     var order = 0;
 
     void visit(ThreadViewPost node) {
-      final postInsert = node.post.toPostInsert();
-      final profileInsert = node.post.toProfileInsert();
+      final postCompanion = node.post.toPostsCompanion();
+      final profileCompanion = node.post.toProfilesCompanion();
 
-      if (seenPosts.add(postInsert.uri)) {
-        posts.add(postInsert);
+      if (seenPosts.add(node.post.uri)) {
+        posts.add(postCompanion);
       }
-      if (seenProfiles.add(profileInsert.did)) {
-        profiles.add(profileInsert);
+      if (seenProfiles.add(node.post.author.did)) {
+        profiles.add(profileCompanion);
       }
 
-      timelineItems.add(
-        TimelineItemInsert(
+      feedContentItems.add(
+        FeedContentItemsCompanion.insert(
           feedKey: feedKey,
-          postUri: postInsert.uri,
+          postUri: node.post.uri,
           sortKey: order.toString().padLeft(6, '0'),
-          reason: node.post.placeholderReason,
         ),
       );
       order += 1;
@@ -72,12 +72,11 @@ class ThreadRepository {
     visit(thread);
 
     if (posts.isNotEmpty) {
-      await _dao.insertTimeline(
+      await _dao.insertFeedContentBatch(
         feedKey: feedKey,
         newPosts: posts,
         newProfiles: profiles,
-        nextCursor: null,
-        newItems: timelineItems,
+        newItems: feedContentItems,
       );
     }
   }
@@ -190,28 +189,28 @@ class ThreadPost {
   final int likeCount;
   final String? placeholderReason;
 
-  PostInsert toPostInsert() {
-    return PostInsert(
+  PostsCompanion toPostsCompanion() {
+    return PostsCompanion.insert(
       uri: uri,
       cid: cid,
       authorDid: author.did,
       record: jsonEncode(record),
-      embed: embed,
-      indexedAt: indexedAt,
-      replyCount: replyCount,
-      repostCount: repostCount,
-      likeCount: likeCount,
+      embed: Value(embed),
+      indexedAt: Value(indexedAt),
+      replyCount: Value(replyCount),
+      repostCount: Value(repostCount),
+      likeCount: Value(likeCount),
     );
   }
 
-  ProfileInsert toProfileInsert() {
-    return ProfileInsert(
+  ProfilesCompanion toProfilesCompanion() {
+    return ProfilesCompanion.insert(
       did: author.did,
       handle: author.handle,
-      displayName: author.displayName ?? placeholderReason,
-      description: author.description,
-      avatar: author.avatar,
-      indexedAt: indexedAt,
+      displayName: Value(author.displayName ?? placeholderReason),
+      description: Value(author.description),
+      avatar: Value(author.avatar),
+      indexedAt: Value(indexedAt),
     );
   }
 
@@ -240,12 +239,8 @@ class ThreadPost {
     );
   }
 
-  TimelineFeedItem toTimelineFeedItem({String feedKey = 'thread', String sortKey = ''}) {
-    return TimelineFeedItem(
-      post: toPostModel(),
-      author: toProfileModel(),
-      item: TimelineItem(feedKey: feedKey, postUri: uri, sortKey: sortKey),
-    );
+  FeedPost toFeedPost({String? reason}) {
+    return FeedPost(post: toPostModel(), author: toProfileModel(), reason: reason);
   }
 }
 

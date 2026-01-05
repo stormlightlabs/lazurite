@@ -31,8 +31,8 @@ class Profiles extends Table {
   Set<Column> get primaryKey => {did};
 }
 
-@TableIndex(name: 'timeline_sort_idx', columns: {#feedKey, #sortKey})
-class TimelineItems extends Table {
+@TableIndex(name: 'feed_content_sort_idx', columns: {#feedKey, #sortKey})
+class FeedContentItems extends Table {
   TextColumn get feedKey => text()();
   TextColumn get postUri => text().references(Posts, #uri)();
   TextColumn get reason => text().nullable()();

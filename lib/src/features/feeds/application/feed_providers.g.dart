@@ -348,7 +348,10 @@ abstract class _$DiscoverFeedsNotifier
 /// Notifier for tracking the currently active feed.
 ///
 /// This notifier maintains the URI of the currently selected feed and allows
-/// switching between feeds. The timeline will reactively update based on this value.
+/// switching between feeds. The feed content will reactively update based on this value.
+///
+/// For authenticated users, defaults to 'home' feed.
+/// For unauthenticated users, defaults to the Discover (What's Hot) feed.
 
 @ProviderFor(ActiveFeed)
 final activeFeedProvider = ActiveFeedProvider._();
@@ -356,12 +359,18 @@ final activeFeedProvider = ActiveFeedProvider._();
 /// Notifier for tracking the currently active feed.
 ///
 /// This notifier maintains the URI of the currently selected feed and allows
-/// switching between feeds. The timeline will reactively update based on this value.
+/// switching between feeds. The feed content will reactively update based on this value.
+///
+/// For authenticated users, defaults to 'home' feed.
+/// For unauthenticated users, defaults to the Discover (What's Hot) feed.
 final class ActiveFeedProvider extends $NotifierProvider<ActiveFeed, String> {
   /// Notifier for tracking the currently active feed.
   ///
   /// This notifier maintains the URI of the currently selected feed and allows
-  /// switching between feeds. The timeline will reactively update based on this value.
+  /// switching between feeds. The feed content will reactively update based on this value.
+  ///
+  /// For authenticated users, defaults to 'home' feed.
+  /// For unauthenticated users, defaults to the Discover (What's Hot) feed.
   ActiveFeedProvider._()
     : super(
         from: null,
@@ -389,12 +398,15 @@ final class ActiveFeedProvider extends $NotifierProvider<ActiveFeed, String> {
   }
 }
 
-String _$activeFeedHash() => r'cf0f3b24f7c1c4fa050790651b30e1a1687b8b68';
+String _$activeFeedHash() => r'55ee07ebf8d7f2100eb6822a0a4f968f7c039c43';
 
 /// Notifier for tracking the currently active feed.
 ///
 /// This notifier maintains the URI of the currently selected feed and allows
-/// switching between feeds. The timeline will reactively update based on this value.
+/// switching between feeds. The feed content will reactively update based on this value.
+///
+/// For authenticated users, defaults to 'home' feed.
+/// For unauthenticated users, defaults to the Discover (What's Hot) feed.
 
 abstract class _$ActiveFeed extends $Notifier<String> {
   String build();

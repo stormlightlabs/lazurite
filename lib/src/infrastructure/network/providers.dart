@@ -38,7 +38,7 @@ Dio? dioPds(Ref ref) {
       // Clear user-specific cached data
       try {
         final db = ref.read(appDatabaseProvider);
-        db.timelineDao.clearTimeline('home');
+        db.feedContentDao.clearFeedContent('home');
       } catch (e) {
         // Ignore if database not available
       }

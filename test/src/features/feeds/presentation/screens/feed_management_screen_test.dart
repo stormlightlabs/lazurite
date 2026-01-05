@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_controller.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
 import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
-import 'package:lazurite/src/features/timeline/application/timeline_cleanup_controller.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -63,7 +63,7 @@ void main() {
           feedRepositoryProvider.overrideWithValue(mockRepository),
           appDatabaseProvider.overrideWithValue(mockDatabase),
           feedSyncControllerProvider.overrideWith((ref) {}),
-          timelineCleanupControllerProvider.overrideWith((ref) {}),
+          feedContentCleanupControllerProvider.overrideWith((ref) {}),
           hasPendingSyncProvider.overrideWith((ref) => Stream.value(false)),
         ],
         child: const MaterialApp(home: FeedManagementScreen()),

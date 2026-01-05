@@ -7,16 +7,16 @@ import 'package:lazurite/src/app/theme.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_controller.dart';
+import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
+import 'package:lazurite/src/features/feeds/infrastructure/feed_content_repository.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
 import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/features/splash/presentation/splash_screen.dart';
-import 'package:lazurite/src/features/timeline/application/timeline_cleanup_controller.dart';
-import 'package:lazurite/src/features/timeline/application/timeline_providers.dart';
-import 'package:lazurite/src/features/timeline/infrastructure/timeline_repository.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:mocktail/mocktail.dart';
@@ -32,14 +32,14 @@ class MockAppDatabase extends Mock implements AppDatabase {}
 
 class MockProfileRepository extends Mock implements ProfileRepository {}
 
-class MockTimelineRepository extends Mock implements TimelineRepository {}
+class MockFeedContentRepository extends Mock implements FeedContentRepository {}
 
 void main() {
   late MockSessionStorage mockSessionStorage;
   late MockSearchRepository mockSearchRepository;
   late MockProfileRepository mockProfileRepository;
   late MockAppDatabase mockDatabase;
-  late MockTimelineRepository mockTimelineRepository;
+  late MockFeedContentRepository mockFeedContentRepository;
   late Session testSession;
 
   setUp(() {
@@ -47,7 +47,7 @@ void main() {
     mockSearchRepository = MockSearchRepository();
     mockProfileRepository = MockProfileRepository();
     mockDatabase = MockAppDatabase();
-    mockTimelineRepository = MockTimelineRepository();
+    mockFeedContentRepository = MockFeedContentRepository();
     testSession = Session(
       did: 'did:web:test',
       handle: 'handle',
@@ -66,22 +66,27 @@ void main() {
         handle: 'handle',
         displayName: 'Test User',
         viewerFollowing: false,
-
         followsCount: 0,
         followersCount: 0,
         postsCount: 0,
         indexedAt: DateTime.now(),
       ),
     );
-    when(() => mockTimelineRepository.watchTimeline(feedKey: any(named: 'feedKey')))
-        .thenAnswer((_) => Stream.value([]));
-    when(() => mockTimelineRepository.fetchAndCacheTimeline(feedUri: any(named: 'feedUri')))
-        .thenAnswer((_) async {});
-    when(() => mockTimelineRepository.fetchAndCacheTimeline(
-          cursor: any(named: 'cursor'),
-          feedUri: any(named: 'feedUri'),
-        )).thenAnswer((_) async {});
-    when(() => mockTimelineRepository.getCursor(any())).thenAnswer((_) async => null);
+
+    // FeedContentRepository mocks
+    when(
+      () => mockFeedContentRepository.watchFeedContent(feedKey: any(named: 'feedKey')),
+    ).thenAnswer((_) => Stream.value([]));
+    when(
+      () => mockFeedContentRepository.fetchAndCacheFeed(feedUri: any(named: 'feedUri')),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockFeedContentRepository.fetchAndCacheFeed(
+        cursor: any(named: 'cursor'),
+        feedUri: any(named: 'feedUri'),
+      ),
+    ).thenAnswer((_) async {});
+    when(() => mockFeedContentRepository.getCursor(any())).thenAnswer((_) async => null);
   });
 
   List<Override> getTestOverrides() {
@@ -89,10 +94,10 @@ void main() {
       sessionStorageProvider.overrideWithValue(mockSessionStorage),
       appDatabaseProvider.overrideWithValue(mockDatabase),
       profileRepositoryProvider.overrideWithValue(mockProfileRepository),
-      timelineRepositoryProvider.overrideWithValue(mockTimelineRepository),
+      feedContentRepositoryProvider.overrideWithValue(mockFeedContentRepository),
       searchRepositoryProvider.overrideWithValue(mockSearchRepository),
       feedSyncControllerProvider.overrideWith((ref) {}),
-      timelineCleanupControllerProvider.overrideWith((ref) {}),
+      feedContentCleanupControllerProvider.overrideWith((ref) {}),
       pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
       activeFeedProvider.overrideWith(() => MockActiveFeed()),
     ];

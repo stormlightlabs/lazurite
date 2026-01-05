@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/features/timeline/presentation/widgets/embeds/embed_images.dart';
-import 'package:lazurite/src/features/timeline/presentation/widgets/embeds/embed_video.dart';
-import 'package:lazurite/src/features/timeline/presentation/widgets/post_embeds.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/embeds/embed_images.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/embeds/embed_video.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_embeds.dart';
 
 void main() {
   group('PostEmbeds', () {

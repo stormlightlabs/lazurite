@@ -1,5 +1,7 @@
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
@@ -152,18 +154,25 @@ class DiscoverFeedsNotifier extends _$DiscoverFeedsNotifier {
 /// Notifier for tracking the currently active feed.
 ///
 /// This notifier maintains the URI of the currently selected feed and allows
-/// switching between feeds. The timeline will reactively update based on this value.
+/// switching between feeds. The feed content will reactively update based on this value.
+///
+/// For authenticated users, defaults to 'home' feed.
+/// For unauthenticated users, defaults to the Discover (What's Hot) feed.
 @riverpod
 class ActiveFeed extends _$ActiveFeed {
   @override
   String build() {
-    return FeedRepository.kHomeFeedUri;
+    final authState = ref.watch(authProvider);
+
+    if (authState is AuthStateAuthenticated) {
+      return FeedRepository.kHomeFeedUri;
+    }
+    return FeedRepository.kDiscoverFeedUri;
   }
 
   /// Switches to a different feed.
   ///
-  /// Updates the active feed URI, which will trigger timeline reload in
-  /// TimelineNotifier.
+  /// Updates the active feed URI, which will trigger feed content reload in FeedContentNotifier.
   void switchFeed(String feedUri) {
     state = feedUri;
   }

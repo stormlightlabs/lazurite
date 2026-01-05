@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
@@ -14,9 +17,12 @@ void main() {
     mockRepository = MockFeedRepository();
   });
 
-  ProviderContainer createContainer() {
+  ProviderContainer createContainer({bool authenticated = false}) {
     return ProviderContainer(
-      overrides: [feedRepositoryProvider.overrideWithValue(mockRepository)],
+      overrides: [
+        feedRepositoryProvider.overrideWithValue(mockRepository),
+        authProvider.overrideWith(() => _FakeAuthNotifier(authenticated: authenticated)),
+      ],
     );
   }
 
@@ -122,34 +128,46 @@ void main() {
   });
 
   group('ActiveFeed', () {
-    test('initial state is home feed', () {
-      final container = createContainer();
+    test('initial state is home feed when authenticated', () {
+      final container = createContainer(authenticated: true);
 
       expect(container.read(activeFeedProvider), FeedRepository.kHomeFeedUri);
     });
 
+    test('initial state is discover feed when unauthenticated', () {
+      final container = createContainer(authenticated: false);
+
+      expect(container.read(activeFeedProvider), FeedRepository.kDiscoverFeedUri);
+    });
+
     test('switchFeed changes active feed', () {
-      final container = createContainer();
+      final container = createContainer(authenticated: true);
 
       final notifier = container.read(activeFeedProvider.notifier);
       notifier.switchFeed('at://did:plc:test/app.bsky.feed.generator/custom');
 
-      expect(container.read(activeFeedProvider), 'at://did:plc:test/app.bsky.feed.generator/custom');
+      expect(
+        container.read(activeFeedProvider),
+        'at://did:plc:test/app.bsky.feed.generator/custom',
+      );
     });
 
     test('switchToHome changes to home feed', () {
-      final container = createContainer();
+      final container = createContainer(authenticated: true);
 
       final notifier = container.read(activeFeedProvider.notifier);
       notifier.switchFeed('at://did:plc:test/app.bsky.feed.generator/custom');
-      expect(container.read(activeFeedProvider), 'at://did:plc:test/app.bsky.feed.generator/custom');
+      expect(
+        container.read(activeFeedProvider),
+        'at://did:plc:test/app.bsky.feed.generator/custom',
+      );
 
       notifier.switchToHome();
       expect(container.read(activeFeedProvider), FeedRepository.kHomeFeedUri);
     });
 
     test('switchToDiscover changes to discover feed', () {
-      final container = createContainer();
+      final container = createContainer(authenticated: true);
 
       final notifier = container.read(activeFeedProvider.notifier);
       notifier.switchToDiscover();
@@ -158,15 +176,12 @@ void main() {
     });
 
     test('notifies listeners on feed change', () {
-      final container = createContainer();
+      final container = createContainer(authenticated: true);
       final states = <String>[];
 
-      container.listen(
-        activeFeedProvider,
-        (previous, next) {
-          states.add(next);
-        },
-      );
+      container.listen(activeFeedProvider, (previous, next) {
+        states.add(next);
+      });
 
       final notifier = container.read(activeFeedProvider.notifier);
       notifier.switchFeed('at://did:plc:test/app.bsky.feed.generator/feed1');
@@ -178,4 +193,30 @@ void main() {
       ]);
     });
   });
+}
+
+/// Fake AuthNotifier that returns a fixed auth state.
+class _FakeAuthNotifier extends AuthNotifier {
+  _FakeAuthNotifier({required this.authenticated});
+
+  final bool authenticated;
+
+  @override
+  AuthState build() {
+    if (authenticated) {
+      return AuthState.authenticated(
+        Session(
+          did: 'did:plc:test',
+          scope: 'test',
+          handle: 'test.bsky.social',
+          accessJwt: 'test-access',
+          refreshJwt: 'test-refresh',
+          pdsUrl: 'https://bsky.social',
+          dpopKey: {'test': 'test'},
+          expiresAt: DateTime.now().add(const Duration(hours: 1)),
+        ),
+      );
+    }
+    return const AuthState.unauthenticated();
+  }
 }

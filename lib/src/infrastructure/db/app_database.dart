@@ -6,12 +6,12 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'daos/drafts_dao.dart';
+import 'daos/feed_content_dao.dart';
 import 'daos/follows_dao.dart';
 import 'daos/preference_sync_queue_dao.dart';
 import 'daos/profile_dao.dart';
 import 'daos/saved_feeds_dao.dart';
 import 'daos/search_dao.dart';
-import 'daos/timeline_dao.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -20,7 +20,7 @@ part 'app_database.g.dart';
   tables: [
     Posts,
     Profiles,
-    TimelineItems,
+    FeedContentItems,
     Accounts,
     FeedCursors,
     RecentSearches,
@@ -31,7 +31,7 @@ part 'app_database.g.dart';
     DraftMedia,
   ],
   daos: [
-    TimelineDao,
+    FeedContentDao,
     ProfileDao,
     SearchDao,
     FollowsDao,
@@ -44,7 +44,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -58,6 +58,13 @@ class AppDatabase extends _$AppDatabase {
       if (from < 6) {
         await m.createTable(drafts);
         await m.createTable(draftMedia);
+      }
+      if (from < 7) {
+        await customStatement('ALTER TABLE timeline_items RENAME TO feed_content_items');
+        await customStatement('DROP INDEX IF EXISTS timeline_sort_idx');
+        await customStatement(
+          'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
+        );
       }
     },
   );

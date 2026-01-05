@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'timeline_cleanup_controller.dart';
+part of 'feed_content_cleanup_controller.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -8,39 +8,40 @@ part of 'timeline_cleanup_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Controller that manages cache cleanup for timeline items.
+/// Controller that manages cache cleanup for feed content items.
 ///
-/// Listens to app lifecycle changes and triggers [TimelineRepository.cleanupCache]
+/// Listens to app lifecycle changes and triggers [FeedContentRepository.cleanupCache]
 /// when the app is resumed or on startup.
 
-@ProviderFor(timelineCleanupController)
-final timelineCleanupControllerProvider = TimelineCleanupControllerProvider._();
+@ProviderFor(feedContentCleanupController)
+final feedContentCleanupControllerProvider =
+    FeedContentCleanupControllerProvider._();
 
-/// Controller that manages cache cleanup for timeline items.
+/// Controller that manages cache cleanup for feed content items.
 ///
-/// Listens to app lifecycle changes and triggers [TimelineRepository.cleanupCache]
+/// Listens to app lifecycle changes and triggers [FeedContentRepository.cleanupCache]
 /// when the app is resumed or on startup.
 
-final class TimelineCleanupControllerProvider
+final class FeedContentCleanupControllerProvider
     extends $FunctionalProvider<void, void, void>
     with $Provider<void> {
-  /// Controller that manages cache cleanup for timeline items.
+  /// Controller that manages cache cleanup for feed content items.
   ///
-  /// Listens to app lifecycle changes and triggers [TimelineRepository.cleanupCache]
+  /// Listens to app lifecycle changes and triggers [FeedContentRepository.cleanupCache]
   /// when the app is resumed or on startup.
-  TimelineCleanupControllerProvider._()
+  FeedContentCleanupControllerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'timelineCleanupControllerProvider',
+        name: r'feedContentCleanupControllerProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$timelineCleanupControllerHash();
+  String debugGetCreateSourceHash() => _$feedContentCleanupControllerHash();
 
   @$internal
   @override
@@ -49,7 +50,7 @@ final class TimelineCleanupControllerProvider
 
   @override
   void create(Ref ref) {
-    return timelineCleanupController(ref);
+    return feedContentCleanupController(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -61,5 +62,5 @@ final class TimelineCleanupControllerProvider
   }
 }
 
-String _$timelineCleanupControllerHash() =>
-    r'667638f13eba96955f77f35b50bcc619ef50f8d5';
+String _$feedContentCleanupControllerHash() =>
+    r'eb2027b4d945ded8b13c6919bc993e8881fe1e5d';

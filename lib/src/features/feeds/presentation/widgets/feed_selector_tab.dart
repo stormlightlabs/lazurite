@@ -2,28 +2,85 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/routes.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
+import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 
+/// Tab widget for selecting between pinned feeds.
+///
+/// For authenticated users, shows their pinned feeds plus a "Manage Feeds" button.
+/// For unauthenticated users, shows only the "Discover" feed chip.
 class FeedSelectorTab extends ConsumerWidget {
   const FeedSelectorTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final isAuthenticated = authState is AuthStateAuthenticated;
+
+    if (!isAuthenticated) {
+      return _buildUnauthenticatedView(context, ref);
+    }
+
+    return _buildAuthenticatedView(context, ref);
+  }
+
+  /// Builds the feed selector for unauthenticated users.
+  /// Shows only the "Discover" chip with no management options.
+  Widget _buildUnauthenticatedView(BuildContext context, WidgetRef ref) {
+    return SizedBox(
+      height: 48,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            ChoiceChip(
+              showCheckmark: false,
+              label: const Text('Discover'),
+              selected: true,
+              onSelected: (_) {
+                // Already on discover, no-op
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds the feed selector for authenticated users.
+  /// Shows pinned feeds and a "Manage Feeds" button.
+  Widget _buildAuthenticatedView(BuildContext context, WidgetRef ref) {
     final pinnedFeedsAsync = ref.watch(pinnedFeedsProvider);
     final activeFeedUri = ref.watch(activeFeedProvider);
 
     return pinnedFeedsAsync.when(
       data: (feeds) {
+        final displayFeeds = feeds.isEmpty
+            ? [
+                SavedFeedData(
+                  uri: FeedRepository.kHomeFeedUri,
+                  displayName: 'Home',
+                  creatorDid: '',
+                  likeCount: 0,
+                  sortOrder: 0,
+                  isPinned: true,
+                  lastSynced: DateTime.now(),
+                ),
+              ]
+            : feeds;
+
         return SizedBox(
           height: 48,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
-            itemCount: feeds.length + 1,
+            itemCount: displayFeeds.length + 1,
             separatorBuilder: (context, index) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
-              if (index == feeds.length) {
+              if (index == displayFeeds.length) {
                 return Stack(
                   alignment: Alignment.center,
                   children: [
@@ -59,7 +116,7 @@ class FeedSelectorTab extends ConsumerWidget {
                 );
               }
 
-              final feed = feeds[index];
+              final feed = displayFeeds[index];
               final isActive = feed.uri == activeFeedUri;
 
               return ChoiceChip(

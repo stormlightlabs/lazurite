@@ -2,14 +2,19 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
+import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
-import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
+import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
-class TimelineRepository {
-  TimelineRepository(this._api, this._dao, this._logger);
+/// Repository for managing feed content (posts from feeds).
+///
+/// Handles fetching and caching posts from feed generators.
+/// Works in conjunction with [FeedRepository] which manages feed metadata.
+class FeedContentRepository {
+  FeedContentRepository(this._api, this._dao, this._logger);
   final XrpcClient _api;
-  final TimelineDao _dao;
+  final FeedContentDao _dao;
   final Logger _logger;
 
   /// Helper to map API Post to DB Companion
@@ -35,30 +40,25 @@ class TimelineRepository {
       displayName: Value(json['displayName']),
       description: Value(json['description']),
       avatar: Value(json['avatar']),
-      // TODO: hostedAt
     );
   }
-
-  /// The official What's Hot feed for unauthenticated users
-  static const kDiscoverFeedUri =
-      'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
   /// Derives a feedKey from a feed URI.
   ///
   /// Uses the full URI as the feedKey to ensure uniqueness.
-  /// For the home timeline (null feedUri), returns 'home'.
+  /// For the home feed (null feedUri), returns 'home'.
   String _feedKeyFromUri(String? feedUri) {
     return feedUri ?? 'home';
   }
 
-  /// Fetch remote timeline and cache it.
+  /// Fetch remote feed content and cache it.
   ///
   /// If [feedUri] is provided, fetches that specific feed using
   /// app.bsky.feed.getFeed (even when authenticated). Otherwise, fetches
-  /// the user's home timeline (authenticated) or Discover feed (unauthenticated).
-  Future<void> fetchAndCacheTimeline({String? cursor, String? feedUri}) async {
+  /// the user's home feed (authenticated) or Discover feed (unauthenticated).
+  Future<void> fetchAndCacheFeed({String? cursor, String? feedUri}) async {
     final feedKey = _feedKeyFromUri(feedUri);
-    _logger.info('Fetching timeline', {
+    _logger.info('Fetching feed content', {
       'cursor': cursor,
       'authenticated': _api.isAuthenticated,
       'feedUri': feedUri,
@@ -81,7 +81,11 @@ class TimelineRepository {
       } else {
         response = await _api.call(
           'app.bsky.feed.getFeed',
-          params: {'feed': kDiscoverFeedUri, 'limit': 50, if (cursor != null) 'cursor': cursor},
+          params: {
+            'feed': FeedRepository.kDiscoverFeedUri,
+            'limit': 50,
+            if (cursor != null) 'cursor': cursor,
+          },
         );
       }
 
@@ -91,7 +95,7 @@ class TimelineRepository {
 
       final posts = <PostsCompanion>[];
       final profiles = <ProfilesCompanion>[];
-      final items = <TimelineItemsCompanion>[];
+      final items = <FeedContentItemsCompanion>[];
 
       final baseTime = DateTime.now().millisecondsSinceEpoch;
 
@@ -109,7 +113,7 @@ class TimelineRepository {
         }
 
         items.add(
-          TimelineItemsCompanion.insert(
+          FeedContentItemsCompanion.insert(
             feedKey: feedKey,
             postUri: post['uri'],
             reason: Value(reason != null ? jsonEncode(reason) : null),
@@ -118,26 +122,26 @@ class TimelineRepository {
         );
       }
 
-      await _dao.insertTimelineBatch(
+      await _dao.insertFeedContentBatch(
         feedKey: feedKey,
         newPosts: posts,
         newProfiles: profiles,
         newItems: items,
         newCursor: nextCursor,
       );
-      _logger.info('Cached ${feed.length} timeline items');
+      _logger.info('Cached ${feed.length} feed items');
     } catch (e, stack) {
-      _logger.error('Failed to fetch/cache timeline', e, stack);
+      _logger.error('Failed to fetch/cache feed content', e, stack);
       rethrow;
     }
   }
 
-  /// Watches a timeline feed reactively.
+  /// Watches a feed's content reactively.
   ///
   /// If [feedKey] is provided, watches that specific feed. Otherwise, watches
-  /// the home timeline.
-  Stream<List<TimelineFeedItem>> watchTimeline({String? feedKey}) {
-    return _dao.watchTimeline(feedKey ?? 'home');
+  /// the home feed.
+  Stream<List<FeedPost>> watchFeedContent({String? feedKey}) {
+    return _dao.watchFeedContent(feedKey ?? 'home');
   }
 
   /// Gets the cursor for a specific feed.
@@ -149,17 +153,17 @@ class TimelineRepository {
 
   /// Clears all cached items for a specific feed.
   ///
-  /// Removes timeline items and cursor for the given feedKey.
-  Future<void> clearTimeline(String feedKey) {
-    return _dao.clearTimeline(feedKey);
+  /// Removes feed content items and cursor for the given feedKey.
+  Future<void> clearFeedContent(String feedKey) {
+    return _dao.clearFeedContent(feedKey);
   }
 
-  /// Cleans up stale timeline items (not viewed in 7 days).
+  /// Cleans up stale feed content (not viewed in 7 days).
   Future<void> cleanupCache() async {
     final threshold = DateTime.now().subtract(const Duration(days: 7));
-    final count = await _dao.deleteStaleTimelineItems(threshold);
+    final count = await _dao.deleteStaleFeedContentItems(threshold);
     if (count > 0) {
-      _logger.info('Cleaned up $count stale timeline items');
+      _logger.info('Cleaned up $count stale feed content items');
     }
   }
 }

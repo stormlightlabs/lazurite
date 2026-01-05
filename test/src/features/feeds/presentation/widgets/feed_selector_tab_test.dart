@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_controller.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
 import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/feed_selector_tab.dart';
-import 'package:lazurite/src/features/timeline/application/timeline_cleanup_controller.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -22,8 +25,34 @@ class MockPinnedFeedsNotifier extends PinnedFeedsNotifier {
   }
 }
 
+/// Fake AuthNotifier for testing.
+class FakeAuthNotifier extends AuthNotifier {
+  FakeAuthNotifier({required this.authenticated});
+
+  final bool authenticated;
+
+  @override
+  AuthState build() {
+    if (authenticated) {
+      return AuthState.authenticated(
+        Session(
+          did: 'did:plc:test',
+          handle: 'test.bsky.social',
+          accessJwt: 'test-access',
+          refreshJwt: 'test-refresh',
+          pdsUrl: 'https://bsky.social',
+          dpopKey: {'test': 'test'},
+          scope: 'test',
+          expiresAt: DateTime.now().add(const Duration(hours: 1)),
+        ),
+      );
+    }
+    return const AuthState.unauthenticated();
+  }
+}
+
 void main() {
-  testWidgets('FeedSelectorTab displays feeds and allows switching', (tester) async {
+  testWidgets('FeedSelectorTab displays feeds for authenticated users', (tester) async {
     final mockDatabase = MockAppDatabase();
 
     final kFeeds = [
@@ -53,8 +82,9 @@ void main() {
           pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier(kFeeds)),
           appDatabaseProvider.overrideWithValue(mockDatabase),
           feedSyncControllerProvider.overrideWith((ref) {}),
-          timelineCleanupControllerProvider.overrideWith((ref) {}),
+          feedContentCleanupControllerProvider.overrideWith((ref) {}),
           hasPendingSyncProvider.overrideWith((ref) => Stream.value(false)),
+          authProvider.overrideWith(() => FakeAuthNotifier(authenticated: true)),
         ],
         child: const MaterialApp(home: Scaffold(body: FeedSelectorTab())),
       ),
@@ -81,5 +111,28 @@ void main() {
 
     final homeChipAfter = tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Home'));
     expect(homeChipAfter.selected, isFalse);
+  });
+
+  testWidgets('FeedSelectorTab shows only Discover for unauthenticated users', (tester) async {
+    final mockDatabase = MockAppDatabase();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(mockDatabase),
+          authProvider.overrideWith(() => FakeAuthNotifier(authenticated: false)),
+        ],
+        child: const MaterialApp(home: Scaffold(body: FeedSelectorTab())),
+      ),
+    );
+
+    await tester.pump();
+
+    // Unauthenticated view shows only Discover chip
+    expect(find.text('Discover'), findsOneWidget);
+    expect(find.text('Home'), findsNothing);
+
+    // No manage feeds button for unauthenticated users
+    expect(find.byIcon(Icons.tune), findsNothing);
   });
 }

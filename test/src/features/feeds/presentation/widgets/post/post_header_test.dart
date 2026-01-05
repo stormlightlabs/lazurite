@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/features/timeline/presentation/widgets/post_header.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_header.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 
 void main() {

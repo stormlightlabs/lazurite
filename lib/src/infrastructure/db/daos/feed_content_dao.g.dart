@@ -1,11 +1,11 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'timeline_dao.dart';
+part of 'feed_content_dao.dart';
 
 // ignore_for_file: type=lint
-mixin _$TimelineDaoMixin on DatabaseAccessor<AppDatabase> {
+mixin _$FeedContentDaoMixin on DatabaseAccessor<AppDatabase> {
   $PostsTable get posts => attachedDatabase.posts;
   $ProfilesTable get profiles => attachedDatabase.profiles;
-  $TimelineItemsTable get timelineItems => attachedDatabase.timelineItems;
+  $FeedContentItemsTable get feedContentItems => attachedDatabase.feedContentItems;
   $FeedCursorsTable get feedCursors => attachedDatabase.feedCursors;
 }

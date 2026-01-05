@@ -20,7 +20,7 @@ void main() {
     mockApi = MockXrpcClient();
     db = AppDatabase(NativeDatabase.memory());
     mockLogger = MockLogger();
-    repository = ThreadRepository(mockApi, db.timelineDao, mockLogger);
+    repository = ThreadRepository(mockApi, db.feedContentDao, mockLogger);
   });
 
   tearDown(() async {
@@ -80,8 +80,8 @@ void main() {
       expect(thread.replies, hasLength(1));
       expect(thread.replies.first.post.uri, 'at://did:2/app.bsky.feed.post/2');
 
-      final cached = await db.timelineDao
-          .watchTimeline('thread:at://did:1/app.bsky.feed.post/1')
+      final cached = await db.feedContentDao
+          .watchFeedContent('thread:at://did:1/app.bsky.feed.post/1')
           .first;
       expect(cached, hasLength(2));
       expect(

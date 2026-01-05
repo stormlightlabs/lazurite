@@ -18,7 +18,7 @@ import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
 import 'package:lazurite/src/features/splash/presentation/splash_screen.dart';
 import 'package:lazurite/src/features/thread/presentation/thread_screen.dart';
-import 'package:lazurite/src/features/timeline/presentation/timeline_screen.dart';
+import 'package:lazurite/src/features/feeds/presentation/screens/feed_screen.dart';
 
 /// Global navigator key for the root navigator.
 final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -75,7 +75,7 @@ GoRouter createRouter(Ref ref) {
               GoRoute(
                 path: AppRoutes.home,
                 name: AppRouteNames.home,
-                builder: (context, state) => const TimelineScreen(),
+                builder: (context, state) => const FeedScreen(),
                 routes: [
                   GoRoute(
                     path: 't/:uri',

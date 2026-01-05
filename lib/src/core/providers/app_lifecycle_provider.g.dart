@@ -14,8 +14,7 @@ part of 'app_lifecycle_provider.dart';
 final appLifecycleProvider = AppLifecycleProvider._();
 
 /// Provides the current [AppLifecycleState].
-final class AppLifecycleProvider
-    extends $NotifierProvider<AppLifecycle, AppLifecycleState> {
+final class AppLifecycleProvider extends $NotifierProvider<AppLifecycle, AppLifecycleState> {
   /// Provides the current [AppLifecycleState].
   AppLifecycleProvider._()
     : super(

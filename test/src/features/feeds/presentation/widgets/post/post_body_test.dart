@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/features/timeline/presentation/widgets/post_body.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_body.dart';
 
 void main() {
   group('PostBody', () {

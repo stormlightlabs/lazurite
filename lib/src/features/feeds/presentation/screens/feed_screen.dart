@@ -3,21 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/core/widgets/pull_to_refresh_wrapper.dart';
-import 'package:lazurite/src/features/feeds/presentation/widgets/feed_selector_tab.dart';
+import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_controller.dart';
+import 'package:lazurite/src/features/feeds/application/feed_content_notifier.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
-import 'package:lazurite/src/features/timeline/application/timeline_cleanup_controller.dart';
-import 'package:lazurite/src/features/timeline/application/timeline_notifier.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/feed_selector_tab.dart';
 
-import 'widgets/post_card.dart';
+import 'widgets/feed_post_card.dart';
 
-class TimelineScreen extends ConsumerStatefulWidget {
-  const TimelineScreen({super.key});
+/// Main screen for displaying feed content.
+///
+/// Shows the user's active feed with pull-to-refresh and infinite scroll.
+/// Displays a FeedSelectorTab in the app bar for switching between feeds.
+class FeedScreen extends ConsumerStatefulWidget {
+  const FeedScreen({super.key});
 
   @override
-  ConsumerState<TimelineScreen> createState() => _TimelineScreenState();
+  ConsumerState<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _TimelineScreenState extends ConsumerState<TimelineScreen> {
+class _FeedScreenState extends ConsumerState<FeedScreen> {
   final ScrollController _scrollController = ScrollController();
   String? _lastRequestedFeed;
 
@@ -35,23 +39,23 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
 
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      ref.read(timelineProvider.notifier).loadMore();
+      ref.read(feedContentProvider.notifier).loadMore();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(timelineCleanupControllerProvider);
-    final timelineState = ref.watch(timelineProvider);
+    ref.watch(feedContentCleanupControllerProvider);
+    final feedContentState = ref.watch(feedContentProvider);
     final activeFeedUri = ref.watch(activeFeedProvider);
     _ensureFeedLoaded(activeFeedUri);
 
     return Scaffold(
-      body: timelineState.when(
+      body: feedContentState.when(
         data: (items) {
           return PullToRefreshWrapper(
             onRefresh: () async {
-              await ref.read(timelineProvider.notifier).refresh();
+              await ref.read(feedContentProvider.notifier).refresh();
             },
             child: CustomScrollView(
               controller: _scrollController,
@@ -81,7 +85,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                         return const Divider(height: 1);
                       }
                       final itemIndex = index ~/ 2;
-                      return PostCard(item: items[itemIndex]);
+                      return FeedPostCard(item: items[itemIndex]);
                     }, childCount: items.length * 2 - 1),
                   ),
               ],
@@ -90,9 +94,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         },
         loading: () => const LoadingView(),
         error: (err, stack) => ErrorView(
-          title: 'Failed to load timeline',
+          title: 'Failed to load feed',
           message: err.toString(),
-          onRetry: () => ref.read(timelineProvider.notifier).refresh(),
+          onRetry: () => ref.read(feedContentProvider.notifier).refresh(),
         ),
       ),
     );
@@ -105,7 +109,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     _lastRequestedFeed = feedUri;
     Future.microtask(() {
       if (!mounted) return;
-      ref.read(timelineProvider.notifier).refresh();
+      ref.read(feedContentProvider.notifier).refresh();
     });
   }
 }

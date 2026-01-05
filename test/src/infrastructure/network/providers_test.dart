@@ -6,7 +6,7 @@ import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
-import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
+import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:lazurite/src/infrastructure/network/interceptors/auth_interceptor.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
 import 'package:mocktail/mocktail.dart';
@@ -15,7 +15,7 @@ class MockSessionStorage extends Mock implements SessionStorage {}
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
-class MockTimelineDao extends Mock implements TimelineDao {}
+class MockFeedContentDao extends Mock implements FeedContentDao {}
 
 class TestAuthNotifier extends AuthNotifier {
   TestAuthNotifier(this._initialState, {this.refreshedSession});
@@ -68,17 +68,17 @@ void main() {
   group('dioPdsProvider', () {
     late MockSessionStorage mockSessionStorage;
     late MockAppDatabase mockDatabase;
-    late MockTimelineDao mockTimelineDao;
+    late MockFeedContentDao mockFeedContentDao;
 
     setUp(() {
       mockSessionStorage = MockSessionStorage();
       mockDatabase = MockAppDatabase();
-      mockTimelineDao = MockTimelineDao();
+      mockFeedContentDao = MockFeedContentDao();
 
       when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
       when(() => mockSessionStorage.clearSession()).thenAnswer((_) async {});
-      when(() => mockDatabase.timelineDao).thenReturn(mockTimelineDao);
-      when(() => mockTimelineDao.clearTimeline(any())).thenAnswer((_) async {});
+      when(() => mockDatabase.feedContentDao).thenReturn(mockFeedContentDao);
+      when(() => mockFeedContentDao.clearFeedContent(any())).thenAnswer((_) async {});
     });
 
     test('returns null when user is not authenticated', () {
@@ -141,7 +141,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(notifier.logoutInvoked, isTrue);
-      verify(() => mockTimelineDao.clearTimeline('home')).called(1);
+      verify(() => mockFeedContentDao.clearFeedContent('home')).called(1);
     });
   });
 }

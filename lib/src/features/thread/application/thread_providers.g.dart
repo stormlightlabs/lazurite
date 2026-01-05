@@ -53,7 +53,7 @@ final class ThreadRepositoryProvider
   }
 }
 
-String _$threadRepositoryHash() => r'5ecebedf27c147e6f689dc66d63141de0823b6d7';
+String _$threadRepositoryHash() => r'cd0ceeed0f8b07eed6b2a8e93431e7780a704902';
 
 @ProviderFor(threadCache)
 final threadCacheProvider = ThreadCacheFamily._();
@@ -61,13 +61,11 @@ final threadCacheProvider = ThreadCacheFamily._();
 final class ThreadCacheProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<TimelineFeedItem>>,
-          List<TimelineFeedItem>,
-          Stream<List<TimelineFeedItem>>
+          AsyncValue<List<FeedPost>>,
+          List<FeedPost>,
+          Stream<List<FeedPost>>
         >
-    with
-        $FutureModifier<List<TimelineFeedItem>>,
-        $StreamProvider<List<TimelineFeedItem>> {
+    with $FutureModifier<List<FeedPost>>, $StreamProvider<List<FeedPost>> {
   ThreadCacheProvider._({
     required ThreadCacheFamily super.from,
     required String super.argument,
@@ -91,12 +89,12 @@ final class ThreadCacheProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<TimelineFeedItem>> $createElement(
+  $StreamProviderElement<List<FeedPost>> $createElement(
     $ProviderPointer pointer,
   ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<List<TimelineFeedItem>> create(Ref ref) {
+  Stream<List<FeedPost>> create(Ref ref) {
     final argument = this.argument as String;
     return threadCache(ref, argument);
   }
@@ -112,10 +110,10 @@ final class ThreadCacheProvider
   }
 }
 
-String _$threadCacheHash() => r'a4ee0dbdad659bceb5027f127586f401526e11ca';
+String _$threadCacheHash() => r'310780d1a52f20ec5d8752ce4ec6c687c8eb2226';
 
 final class ThreadCacheFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<TimelineFeedItem>>, String> {
+    with $FunctionalFamilyOverride<Stream<List<FeedPost>>, String> {
   ThreadCacheFamily._()
     : super(
         retry: null,

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
+import 'package:lazurite/src/features/feeds/presentation/screens/widgets/feed_post_card.dart';
 import 'package:lazurite/src/features/thread/application/thread_notifier.dart';
 import 'package:lazurite/src/features/thread/application/thread_providers.dart';
 import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
-import 'package:lazurite/src/features/timeline/presentation/widgets/post_card.dart';
-import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
+import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 
 class ThreadScreen extends ConsumerStatefulWidget {
   const ThreadScreen({required this.postUri, super.key});
@@ -56,7 +56,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
               if (parents.isNotEmpty)
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => PostCard(item: _mapToTimelineItem(parents[index])),
+                    (context, index) => FeedPostCard(item: _mapToFeedPost(parents[index])),
                     childCount: parents.length,
                   ),
                 ),
@@ -68,13 +68,13 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                       bottom: BorderSide(color: Theme.of(context).dividerColor, width: 4),
                     ),
                   ),
-                  child: PostCard(item: _mapToTimelineItem(thread)),
+                  child: FeedPostCard(item: _mapToFeedPost(thread)),
                 ),
               ),
 
               SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) => PostCard(item: _mapToTimelineItem(replies[index])),
+                  (context, index) => FeedPostCard(item: _mapToFeedPost(replies[index])),
                   childCount: replies.length,
                 ),
               ),
@@ -107,19 +107,16 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     return list;
   }
 
-  Widget _buildFlattenedView(
-    AsyncValue<List<TimelineFeedItem>> cachedTimeline,
-    ThreadViewPost thread,
-  ) {
-    return cachedTimeline.when(
+  Widget _buildFlattenedView(AsyncValue<List<FeedPost>> cachedFeedContent, ThreadViewPost thread) {
+    return cachedFeedContent.when(
       data: (items) {
-        final timelineItems = items.isEmpty ? _buildFallbackLinearTimeline(thread) : items;
+        final feedContentItems = items.isEmpty ? _buildFallbackLinearTimeline(thread) : items;
         return CustomScrollView(
           slivers: [
             SliverList(
               delegate: SliverChildBuilderDelegate(
-                (context, index) => PostCard(item: timelineItems[index]),
-                childCount: timelineItems.length,
+                (context, index) => FeedPostCard(item: feedContentItems[index]),
+                childCount: feedContentItems.length,
               ),
             ),
           ],
@@ -134,17 +131,13 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     );
   }
 
-  List<TimelineFeedItem> _buildFallbackLinearTimeline(ThreadViewPost thread) {
+  List<FeedPost> _buildFallbackLinearTimeline(ThreadViewPost thread) {
     final parents = thread.parent != null ? _getParents(thread.parent!) : <ThreadViewPost>[];
     final replies = _getAllReplies(thread);
     final linear = [...parents, thread, ...replies];
 
-    return [
-      for (var i = 0; i < linear.length; i++)
-        _mapToTimelineItem(linear[i], sortKey: i.toString().padLeft(6, '0')),
-    ];
+    return [for (var i = 0; i < linear.length; i++) _mapToFeedPost(linear[i])];
   }
 
-  TimelineFeedItem _mapToTimelineItem(ThreadViewPost view, {String sortKey = ''}) =>
-      view.post.toTimelineFeedItem(sortKey: sortKey);
+  FeedPost _mapToFeedPost(ThreadViewPost view) => view.post.toFeedPost();
 }
