@@ -16,17 +16,17 @@ Endpoints (already registered):
 - app.bsky.feed.getTimeline (GET)
 
 Tasks:
-- [ ] Feed Data Integrity (CRITICAL):
+- [x] Feed Data Integrity (CRITICAL):
       - [x] Fix home feed key collision risk:
             - replace 'home' literal with '__internal:home' prefix
             - add validation to prevent AT URI collisions
       - [x] Fix sortKey collision potential:
             - use microsecond precision instead of milliseconds
             - compound key: {timestamp}-{index}-{postUri}
-      - [ ] Add feed URI validation:
+      - [x] Add feed URI validation:
             - validate AT URI format before saveFeed()
             - reject malformed URIs with clear error message
-      - [ ] Fix optimistic update race condition:
+      - [x] Fix optimistic update race condition:
             - wrap saveFeed/removeFeed in database transaction
             - ensure atomicity of local update + queue insert
 - [ ] Feed Sync Improvements (HIGH):

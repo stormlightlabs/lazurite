@@ -18,6 +18,61 @@ class FeedRepository {
   final PreferenceSyncQueueDao _syncQueueDao;
   final Logger _logger;
 
+  /// Validates that a feed URI follows the AT Protocol URI format.
+  ///
+  /// AT URIs for feed generators must follow the format:
+  /// `at://did:METHOD:IDENTIFIER/app.bsky.feed.generator/RKEY`
+  ///
+  /// Throws [ArgumentError] if the URI is invalid.
+  void _validateFeedUri(String feedUri) {
+    if (feedUri.isEmpty) {
+      throw ArgumentError.value(feedUri, 'feedUri', 'Feed URI cannot be empty');
+    }
+
+    if (!feedUri.startsWith('at://')) {
+      throw ArgumentError.value(feedUri, 'feedUri', 'Feed URI must start with "at://"');
+    }
+
+    final uriWithoutScheme = feedUri.substring(5);
+    final parts = uriWithoutScheme.split('/');
+
+    if (parts.length < 3) {
+      throw ArgumentError.value(
+        feedUri,
+        'feedUri',
+        'Feed URI must have format: at://did:METHOD:ID/collection/rkey',
+      );
+    }
+
+    final did = parts[0];
+    final collection = parts[1];
+    final rkey = parts[2];
+
+    if (!did.startsWith('did:')) {
+      throw ArgumentError.value(
+        feedUri,
+        'feedUri',
+        'Feed URI must contain a valid DID (e.g., did:plc:...)',
+      );
+    }
+
+    if (collection != 'app.bsky.feed.generator') {
+      throw ArgumentError.value(
+        feedUri,
+        'feedUri',
+        'Feed URI collection must be "app.bsky.feed.generator"',
+      );
+    }
+
+    if (rkey.isEmpty) {
+      throw ArgumentError.value(
+        feedUri,
+        'feedUri',
+        'Feed URI must have a valid record key (rkey)',
+      );
+    }
+  }
+
   /// Syncs saved feeds from user preferences and hydrates with metadata.
   ///
   /// Fetches the savedFeedsPref array from app.bsky.actor.getPreferences,
@@ -92,69 +147,88 @@ class FeedRepository {
 
   /// Saves a feed to user preferences and local cache.
   ///
-  /// Optimistically updates the local cache, then attempts to sync to remote.
-  /// If remote sync fails, queues the operation for later.
+  /// Uses a fail-safe transaction pattern:
+  /// 1. Atomically update local state AND queue sync operation
+  /// 2. Attempt remote sync
+  /// 3. If remote succeeds, dequeue the operation
+  ///
+  /// This ensures data consistency even if the app crashes during sync.
+  ///
+  /// Throws [ArgumentError] if the feed URI is invalid.
   Future<void> saveFeed(String feedUri, {bool pin = false}) async {
     if (!_api.isAuthenticated) {
       throw Exception('Cannot save feed: user not authenticated');
     }
 
+    _validateFeedUri(feedUri);
+
     _logger.info('Saving feed', {'uri': feedUri, 'pin': pin});
 
+    Map<String, dynamic> metadata = {};
     try {
-      Map<String, dynamic> metadata = {};
-      try {
-        metadata = await getFeedMetadata(feedUri);
-      } catch (e) {
-        final existing = await _dao.getFeed(feedUri);
-        if (existing != null) {
-          metadata = {
-            'displayName': existing.displayName,
-            'description': existing.description,
-            'avatar': existing.avatar,
-            'creator': {'did': existing.creatorDid},
-            'likeCount': existing.likeCount,
-          };
-        } else {
-          _logger.warning('Could not fetch metadata for feed save, proceeding with defaults');
-          metadata = {
-            'displayName': 'Saved Feed',
-            'creator': {'did': ''},
-          };
-        }
-      }
-
-      final allFeeds = await _dao.getAllFeeds();
-
-      await _dao.upsertFeed(
-        SavedFeedsCompanion.insert(
-          uri: feedUri,
-          displayName: metadata['displayName'] ?? 'Unknown Feed',
-          description: Value(metadata['description']),
-          avatar: Value(metadata['avatar']),
-          creatorDid: metadata['creator']['did'] ?? '',
-          likeCount: Value(metadata['likeCount'] ?? 0),
-          sortOrder: allFeeds.length, // Append to end
-          isPinned: Value(pin),
-          lastSynced: DateTime.now(),
-        ),
-      );
+      metadata = await getFeedMetadata(feedUri);
     } catch (e) {
-      _logger.error('Failed to perform local optimistic update', {'error': e});
+      final existing = await _dao.getFeed(feedUri);
+      if (existing != null) {
+        metadata = {
+          'displayName': existing.displayName,
+          'description': existing.description,
+          'avatar': existing.avatar,
+          'creator': {'did': existing.creatorDid},
+          'likeCount': existing.likeCount,
+        };
+      } else {
+        _logger.warning('Could not fetch metadata for feed save, proceeding with defaults');
+        metadata = {
+          'displayName': 'Saved Feed',
+          'creator': {'did': ''},
+        };
+      }
+    }
+
+    final allFeeds = await _dao.getAllFeeds();
+
+    int? queueId;
+    try {
+      queueId = await _dao.db.transaction(() async {
+        await _dao.upsertFeed(
+          SavedFeedsCompanion.insert(
+            uri: feedUri,
+            displayName: metadata['displayName'] ?? 'Unknown Feed',
+            description: Value(metadata['description']),
+            avatar: Value(metadata['avatar']),
+            creatorDid: metadata['creator']['did'] ?? '',
+            likeCount: Value(metadata['likeCount'] ?? 0),
+            sortOrder: allFeeds.length,
+            isPinned: Value(pin),
+            lastSynced: DateTime.now(),
+          ),
+        );
+
+        return await _syncQueueDao.enqueue(
+          PreferenceSyncQueueCompanion.insert(
+            type: 'save',
+            feedUri: feedUri,
+            createdAt: DateTime.now(),
+          ),
+        );
+      });
+    } catch (e) {
+      _logger.error('Failed to perform atomic local update + queue', {'error': e});
+      rethrow;
     }
 
     try {
       await _executeRemoteSaveFeed(feedUri, pin);
       _logger.info('Feed saved to remote successfully');
+      if (queueId != null) {
+        await _syncQueueDao.deleteItem(queueId);
+      }
     } catch (e) {
-      _logger.warning('Network failed during saveFeed, queuing for sync', {'error': e});
-      await _syncQueueDao.enqueue(
-        PreferenceSyncQueueCompanion.insert(
-          type: 'save',
-          feedUri: feedUri,
-          createdAt: DateTime.now(),
-        ),
-      );
+      _logger.warning('Network failed during saveFeed, operation queued for retry', {
+        'error': e,
+        'queueId': queueId,
+      });
     }
   }
 
@@ -203,8 +277,12 @@ class FeedRepository {
 
   /// Removes a feed from user preferences and local cache.
   ///
-  /// Optimistically removes from local cache, then attempts to sync to remote.
-  /// If remote sync fails, queues the operation for later.
+  /// Uses a fail-safe transaction pattern:
+  /// 1. Atomically remove from local state AND queue sync operation
+  /// 2. Attempt remote sync
+  /// 3. If remote succeeds, dequeue the operation
+  ///
+  /// This ensures data consistency even if the app crashes during sync.
   Future<void> removeFeed(String feedUri) async {
     if (!_api.isAuthenticated) {
       throw Exception('Cannot remove feed: user not authenticated');
@@ -212,20 +290,35 @@ class FeedRepository {
 
     _logger.info('Removing feed', {'uri': feedUri});
 
-    await _dao.deleteFeed(feedUri);
+    int? queueId;
+    try {
+      queueId = await _dao.db.transaction(() async {
+        await _dao.deleteFeed(feedUri);
+
+        return await _syncQueueDao.enqueue(
+          PreferenceSyncQueueCompanion.insert(
+            type: 'remove',
+            feedUri: feedUri,
+            createdAt: DateTime.now(),
+          ),
+        );
+      });
+    } catch (e) {
+      _logger.error('Failed to perform atomic local delete + queue', {'error': e});
+      rethrow;
+    }
 
     try {
       await _executeRemoteRemoveFeed(feedUri);
       _logger.info('Feed removed from remote successfully');
+      if (queueId != null) {
+        await _syncQueueDao.deleteItem(queueId);
+      }
     } catch (e) {
-      _logger.warning('Network failed during removeFeed, queuing for sync', {'error': e});
-      await _syncQueueDao.enqueue(
-        PreferenceSyncQueueCompanion.insert(
-          type: 'remove',
-          feedUri: feedUri,
-          createdAt: DateTime.now(),
-        ),
-      );
+      _logger.warning('Network failed during removeFeed, operation queued for retry', {
+        'error': e,
+        'queueId': queueId,
+      });
     }
   }
 

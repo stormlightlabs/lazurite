@@ -875,4 +875,248 @@ void main() {
       expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
     });
   });
+
+  group('Feed URI Validation', () {
+    test('rejects empty feed URI', () {
+      expect(
+        () => repository.saveFeed(''),
+        throwsA(
+          isA<ArgumentError>().having((e) => e.message, 'message', contains('cannot be empty')),
+        ),
+      );
+    });
+
+    test('rejects URI without at:// scheme', () {
+      expect(
+        () => repository.saveFeed('did:plc:abc/app.bsky.feed.generator/test'),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('must start with "at://"'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects URI with insufficient components', () {
+      expect(
+        () => repository.saveFeed('at://did:plc:abc'),
+        throwsA(
+          isA<ArgumentError>().having((e) => e.message, 'message', contains('must have format')),
+        ),
+      );
+    });
+
+    test('rejects URI without valid DID', () {
+      expect(
+        () => repository.saveFeed('at://invalid/app.bsky.feed.generator/test'),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('must contain a valid DID'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects URI with wrong collection', () {
+      expect(
+        () => repository.saveFeed('at://did:plc:abc/app.bsky.post/test'),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('collection must be "app.bsky.feed.generator"'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects URI with empty rkey', () {
+      expect(
+        () => repository.saveFeed('at://did:plc:abc/app.bsky.feed.generator/'),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('must have a valid record key'),
+          ),
+        ),
+      );
+    });
+
+    test('accepts valid AT URI', () async {
+      const validUri = 'at://did:plc:abc123xyz/app.bsky.feed.generator/my-feed';
+
+      final currentPrefs = {'preferences': <Map<String, dynamic>>[]};
+
+      final feedMetadata = {
+        'view': {
+          'displayName': 'Valid Feed',
+          'description': 'A valid feed',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:abc123xyz'},
+          'likeCount': 5,
+        },
+      };
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => currentPrefs);
+
+      when(
+        () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
+      ).thenAnswer((_) async => {});
+
+      when(
+        () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': validUri}),
+      ).thenAnswer((_) async => feedMetadata);
+
+      await repository.saveFeed(validUri);
+
+      final feed = await db.savedFeedsDao.getFeed(validUri);
+      expect(feed, isNotNull);
+      expect(feed!.displayName, 'Valid Feed');
+    });
+  });
+
+  group('Transaction Atomicity', () {
+    test('saveFeed creates queue entry atomically with local update', () async {
+      const feedUri = 'at://did:plc:test/app.bsky.feed.generator/atomic';
+
+      final feedMetadata = {
+        'view': {
+          'displayName': 'Atomic Feed',
+          'description': 'Test atomic operations',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:test'},
+          'likeCount': 42,
+        },
+      };
+
+      when(
+        () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
+      ).thenAnswer((_) async => feedMetadata);
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenThrow(Exception('Network error'));
+
+      await repository.saveFeed(feedUri);
+
+      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      expect(feed, isNotNull, reason: 'Local feed should be saved');
+
+      final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queueItems, hasLength(1), reason: 'Should have queued sync operation');
+      expect(queueItems[0].feedUri, feedUri);
+      expect(queueItems[0].type, 'save');
+    });
+
+    test('saveFeed removes queue entry on successful remote sync', () async {
+      const feedUri = 'at://did:plc:success/app.bsky.feed.generator/sync';
+
+      final currentPrefs = {'preferences': <Map<String, dynamic>>[]};
+
+      final feedMetadata = {
+        'view': {
+          'displayName': 'Success Feed',
+          'description': 'Successful sync test',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:success'},
+          'likeCount': 10,
+        },
+      };
+
+      when(
+        () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
+      ).thenAnswer((_) async => feedMetadata);
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => currentPrefs);
+
+      when(
+        () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
+      ).thenAnswer((_) async => {});
+
+      await repository.saveFeed(feedUri);
+
+      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      expect(feed, isNotNull, reason: 'Local feed should be saved');
+
+      final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queueItems, isEmpty, reason: 'Queue should be empty after successful sync');
+    });
+
+    test('removeFeed creates queue entry atomically with local delete', () async {
+      const feedUri = 'at://did:plc:remove/app.bsky.feed.generator/test';
+
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: feedUri,
+          displayName: 'To Remove',
+          creatorDid: 'did:plc:remove',
+          sortOrder: 0,
+          lastSynced: DateTime.now(),
+        ),
+      );
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenThrow(Exception('Network error'));
+
+      await repository.removeFeed(feedUri);
+
+      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      expect(feed, isNull, reason: 'Local feed should be deleted');
+
+      final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queueItems, hasLength(1), reason: 'Should have queued sync operation');
+      expect(queueItems[0].feedUri, feedUri);
+      expect(queueItems[0].type, 'remove');
+    });
+
+    test('removeFeed removes queue entry on successful remote sync', () async {
+      const feedUri = 'at://did:plc:remove/app.bsky.feed.generator/success';
+
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: feedUri,
+          displayName: 'To Remove',
+          creatorDid: 'did:plc:remove',
+          sortOrder: 0,
+          lastSynced: DateTime.now(),
+        ),
+      );
+
+      final currentPrefs = {
+        'preferences': [
+          {
+            '\$type': 'app.bsky.actor.defs#savedFeedsPref',
+            'saved': [feedUri],
+            'pinned': <String>[],
+          },
+        ],
+      };
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => currentPrefs);
+
+      when(
+        () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
+      ).thenAnswer((_) async => {});
+
+      await repository.removeFeed(feedUri);
+
+      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      expect(feed, isNull, reason: 'Local feed should be deleted');
+
+      final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queueItems, isEmpty, reason: 'Queue should be empty after successful sync');
+    });
+  });
 }
