@@ -101,7 +101,8 @@ class AuthRepository {
       final challenge = PkceUtils.generateChallenge(verifier);
       final dpopKey = await DPoPUtils.generateKey();
 
-      final nonce = _nonceStore.get(pdsUrl);
+      final parEndpoint = metadata.pushedAuthorizationRequestEndpoint;
+      final nonce = parEndpoint != null ? _nonceStore.get(parEndpoint) : null;
       final requestUri = await _oauthClient.pushedAuthorizationRequest(
         metadata: metadata,
         key: dpopKey,
@@ -209,7 +210,7 @@ class AuthRepository {
       final dpopKey = JsonWebKey.fromJson(pending['dpopKey'] as Map<String, dynamic>);
 
       final metadata = await _metadataRepo.discover(pdsUrl);
-      final nonce = _nonceStore.get(pdsUrl);
+      final nonce = _nonceStore.get(metadata.tokenEndpoint);
 
       final tokenResponse = await _oauthClient.exchangeCodeForToken(
         metadata: metadata,
@@ -252,7 +253,7 @@ class AuthRepository {
     try {
       final dpopKey = JsonWebKey.fromJson(session.dpopKey);
       final metadata = await _metadataRepo.discover(session.pdsUrl);
-      final nonce = _nonceStore.get(session.pdsUrl);
+      final nonce = _nonceStore.get(metadata.tokenEndpoint);
 
       final tokenResponse = await _oauthClient.refreshToken(
         metadata: metadata,
@@ -289,7 +290,8 @@ class AuthRepository {
     try {
       final dpopKey = JsonWebKey.fromJson(session.dpopKey);
       final metadata = await _metadataRepo.discover(session.pdsUrl);
-      final nonce = _nonceStore.get(session.pdsUrl);
+      final revocationEndpoint = metadata.revocationEndpoint;
+      final nonce = revocationEndpoint != null ? _nonceStore.get(revocationEndpoint) : null;
 
       await _oauthClient.revokeToken(
         metadata: metadata,

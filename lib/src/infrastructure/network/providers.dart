@@ -34,6 +34,7 @@ Dio? dioPds(Ref ref) {
     pdsUrl: session.pdsUrl,
     getSession: () => _readCurrentSession(ref),
     refreshSession: () => ref.read(authProvider.notifier).refreshActiveSession(),
+    nonceStore: ref.read(dpopNonceStoreProvider),
     onSessionInvalidated: () {
       // Clear user-specific cached data
       try {

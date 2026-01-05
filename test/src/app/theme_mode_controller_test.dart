@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/app/theme_mode_controller.dart';
-import 'package:riverpod/riverpod.dart';
 
 void main() {
   test('themeModeProvider defaults to dark mode', () {

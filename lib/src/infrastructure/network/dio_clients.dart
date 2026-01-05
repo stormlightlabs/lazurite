@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../auth/dpop_nonce_store.dart';
 import 'interceptors/interceptors.dart';
 
 /// The base URL for the public Bluesky AppView API.
@@ -33,6 +34,7 @@ Dio createPdsDio({
   required String pdsUrl,
   required SessionGetter getSession,
   required SessionRefresher refreshSession,
+  DPoPNonceStore? nonceStore,
   SessionInvalidatedCallback? onSessionInvalidated,
   bool enableLogging = true,
 }) {
@@ -51,6 +53,7 @@ Dio createPdsDio({
     AuthInterceptor(
       getSession: getSession,
       refreshSession: refreshSession,
+      nonceStore: nonceStore,
       onSessionInvalidated: onSessionInvalidated,
     ),
     ProxyInterceptor(),

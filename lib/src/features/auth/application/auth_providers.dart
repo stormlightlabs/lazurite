@@ -9,6 +9,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../app/router.dart';
 import '../../../core/utils/logger_provider.dart';
 import '../../../infrastructure/auth/auth_repository.dart';
+import '../../../infrastructure/auth/dpop_nonce_store.dart';
 import '../../../infrastructure/auth/oauth_client.dart';
 import '../../../infrastructure/auth/server_metadata.dart';
 import '../../../infrastructure/auth/session_storage.dart';
@@ -43,8 +44,17 @@ IdentityRepository identityRepository(Ref ref) {
 }
 
 @Riverpod(keepAlive: true)
+DPoPNonceStore dpopNonceStore(Ref ref) {
+  return DPoPNonceStore();
+}
+
+@Riverpod(keepAlive: true)
 OAuthClient oauthClient(Ref ref) {
-  return OAuthClient(dio: Dio(), logger: ref.watch(loggerProvider('OAuthClient')));
+  return OAuthClient(
+    dio: Dio(),
+    logger: ref.watch(loggerProvider('OAuthClient')),
+    nonceStore: ref.watch(dpopNonceStoreProvider),
+  );
 }
 
 @Riverpod(keepAlive: true)
@@ -85,6 +95,7 @@ AuthRepository authRepository(Ref ref) {
     sessionStorage: ref.watch(sessionStorageProvider),
     metadataRepository: ref.watch(serverMetadataRepositoryProvider),
     secureStorage: ref.watch(secureStorageProvider),
+    nonceStore: ref.watch(dpopNonceStoreProvider),
     logger: ref.watch(loggerProvider('AuthRepository')),
     oauthBrowserCallback: ref.watch(oauthBrowserCallbackProvider),
   );

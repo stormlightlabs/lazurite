@@ -185,6 +185,47 @@ final class IdentityRepositoryProvider
 String _$identityRepositoryHash() =>
     r'610d18b70c1662d3db4749898e54094197d4fa45';
 
+@ProviderFor(dpopNonceStore)
+final dpopNonceStoreProvider = DpopNonceStoreProvider._();
+
+final class DpopNonceStoreProvider
+    extends $FunctionalProvider<DPoPNonceStore, DPoPNonceStore, DPoPNonceStore>
+    with $Provider<DPoPNonceStore> {
+  DpopNonceStoreProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'dpopNonceStoreProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$dpopNonceStoreHash();
+
+  @$internal
+  @override
+  $ProviderElement<DPoPNonceStore> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  DPoPNonceStore create(Ref ref) {
+    return dpopNonceStore(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DPoPNonceStore value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DPoPNonceStore>(value),
+    );
+  }
+}
+
+String _$dpopNonceStoreHash() => r'41637ad5cd21210697f095006b0dd4bb0c0daef6';
+
 @ProviderFor(oauthClient)
 final oauthClientProvider = OauthClientProvider._();
 
@@ -224,7 +265,7 @@ final class OauthClientProvider
   }
 }
 
-String _$oauthClientHash() => r'4262ff26da2346cd4a0fb28eaacc66c2b0587cdf';
+String _$oauthClientHash() => r'0b88d7a031ca6aa7d539603ef166c38d3a1137b3';
 
 @ProviderFor(serverMetadataRepository)
 final serverMetadataRepositoryProvider = ServerMetadataRepositoryProvider._();
@@ -361,7 +402,7 @@ final class AuthRepositoryProvider
   }
 }
 
-String _$authRepositoryHash() => r'f3432b4ec2505c63b85712c12963c58e0d86ca92';
+String _$authRepositoryHash() => r'b1e8bc3a4d29b9c77445091055bc4c5f2e73069f';
 
 @ProviderFor(AuthNotifier)
 final authProvider = AuthNotifierProvider._();
@@ -395,7 +436,7 @@ final class AuthNotifierProvider
   }
 }
 
-String _$authNotifierHash() => r'c6fc522300e74e7b5d1745f7835d8f254c96c39b';
+String _$authNotifierHash() => r'dbda52499efed00533eed6dd50ab9cc8f143892b';
 
 abstract class _$AuthNotifier extends $Notifier<AuthState> {
   AuthState build();
