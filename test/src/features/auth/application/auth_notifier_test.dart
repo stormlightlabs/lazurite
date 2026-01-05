@@ -28,6 +28,7 @@ void main() {
         dpopKey: {},
       ),
     );
+    registerFallbackValue(Uri.parse('lazurite://callback'));
   });
 
   setUp(() {
@@ -107,6 +108,36 @@ void main() {
       expect(container.read(authProvider), AuthState.authenticated(testSession));
       verify(() => mockAuthRepository.login('handle')).called(1);
     });
+
+    test('completeLogin updates state after OAuth callback', () async {
+      final completedSession = Session(
+        did: 'did:web:auth-callback',
+        handle: 'auth-callback',
+        pdsUrl: 'https://auth-callback',
+        accessJwt: 'access',
+        refreshJwt: 'refresh',
+        scope: 'scope',
+        expiresAt: DateTime.now().add(const Duration(hours: 1)),
+        dpopKey: {},
+      );
+
+      when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
+      when(
+        () => mockAuthRepository.completeLogin(any()),
+      ).thenAnswer((_) async => completedSession);
+
+      final container = createContainer();
+      container.listen(authProvider, (previous, next) {});
+      await Future<void>.delayed(Duration.zero);
+
+      final callbackUri = Uri.parse('app://callback?code=1234');
+      await container.read(authProvider.notifier).completeLogin(callbackUri);
+
+      await Future<void>.delayed(Duration.zero);
+      expect(container.read(authProvider), AuthState.authenticated(completedSession));
+      verify(() => mockAuthRepository.completeLogin(callbackUri)).called(1);
+    });
+
     test('expired session triggers refresh', () async {
       final expiredSession = Session(
         did: 'did:web:expired',
@@ -188,6 +219,36 @@ void main() {
       expect(container.read(authProvider), isA<AuthStateAuthenticated>());
       await Future<void>.delayed(Duration.zero);
       verify(() => mockAuthRepository.loginWithAppPassword('handle', 'pass')).called(1);
+    });
+
+    test('logout revokes session and clears storage', () async {
+      final session = Session(
+        did: 'did:web:authed',
+        handle: 'authed.com',
+        pdsUrl: 'https://authed.com',
+        accessJwt: 'access',
+        refreshJwt: 'refresh',
+        scope: 'scope',
+        expiresAt: DateTime.now().add(const Duration(hours: 1)),
+        dpopKey: {},
+      );
+
+      when(() => mockSessionStorage.getSession()).thenAnswer((_) async => session);
+      when(() => mockAuthRepository.revokeSession(any())).thenAnswer((_) async {});
+      when(() => mockSessionStorage.clearSession()).thenAnswer((_) async {});
+
+      final container = createContainer();
+      container.listen(authProvider, (previous, next) {});
+      await Future<void>.delayed(Duration.zero);
+
+      expect(container.read(authProvider), AuthState.authenticated(session));
+
+      await container.read(authProvider.notifier).logout();
+      await Future<void>.delayed(Duration.zero);
+
+      verify(() => mockAuthRepository.revokeSession(session)).called(1);
+      verify(() => mockSessionStorage.clearSession()).called(1);
+      expect(container.read(authProvider), const AuthState.unauthenticated());
     });
   });
 }

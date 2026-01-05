@@ -51,5 +51,5 @@ class AuthStateError extends AuthState {
           error.toString() == other.error.toString();
 
   @override
-  int get hashCode => error.hashCode;
+  int get hashCode => error.toString().hashCode;
 }

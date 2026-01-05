@@ -4,6 +4,10 @@
 
 ### Added
 
+#### [2026-01-05]
+
+- Multi-feed support with discovery, switching, caching, & offline resilience.
+
 #### [2026-01-04]
 
 - Profiles, search, and the full social graph experience are complete with cached

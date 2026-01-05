@@ -74,7 +74,7 @@ void main() {
 
     test('feed switching preserves cursor usage', () async {
       final container = createContainer();
-      container.listen(timelineProvider, (_, __) {});
+      container.listen(timelineProvider, (previous, next) {});
       container.read(activeFeedProvider.notifier).switchFeed('feedA');
 
       void stubRepo() {
