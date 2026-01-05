@@ -14,11 +14,11 @@ Tasks:
       - [ ] /drafts (DraftListPage)
       - [ ] /drafts/:draftId (DraftEditorPage)
 - Widgets to add:
-      - [ ] ComposerTextField (supports mentions/links)
-      - [ ] MediaPickerRow
-      - [ ] DraftStatusChip
-      - [ ] PublishButton (disabled + spinner)
-      - [ ] UploadProgressTile (per media)
+      - [x] ComposerTextField (supports mentions/links)
+      - [x] MediaPickerRow
+      - [x] DraftStatusChip
+      - [x] PublishButton (disabled + spinner)
+      - [x] UploadProgressTile (per media)
 - Screens to add:
       - [ ] ComposePage (Draft-first)
             - [ ] always editing a local draft (even “new post”)

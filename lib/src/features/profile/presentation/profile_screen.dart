@@ -11,6 +11,7 @@ import 'package:lazurite/src/features/profile/application/profile_providers.dart
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/follow_button.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/media_tab.dart';
+import 'package:lazurite/src/features/profile/presentation/widgets/profile_actions_sheet.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_header.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/replies_tab.dart';
 
@@ -131,6 +132,14 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
     followUri: p.viewerFollowUri,
   );
 
+  Future<void> _showMoreOptions(BuildContext context) {
+    return showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => ProfileActionsSheet(isCurrentUser: widget.isCurrentUser),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider(widget.did));
@@ -151,9 +160,7 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
                 ),
               IconButton(
                 icon: const Icon(Icons.more_vert),
-                onPressed: () {
-                  // TODO: Show more options
-                },
+                onPressed: () => _showMoreOptions(context),
               ),
             ],
             bottom: TabBar(
