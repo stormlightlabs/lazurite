@@ -57,7 +57,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     return Scaffold(
-      appBar: const AppAppBar(title: 'Login'),
+      appBar: AppAppBar(
+        title: 'Login',
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
+      ),
       body: SafeArea(
         child: switch (authState) {
           AuthStateLoading() => const Center(child: AuthProgressView()),

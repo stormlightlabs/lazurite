@@ -1,14 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
+import 'package:lazurite/src/infrastructure/db/app_database.dart';
+import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
 import 'package:lazurite/src/infrastructure/network/interceptors/auth_interceptor.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSessionStorage extends Mock implements SessionStorage {}
+
+class MockAppDatabase extends Mock implements AppDatabase {}
+
+class MockTimelineDao extends Mock implements TimelineDao {}
 
 class TestAuthNotifier extends AuthNotifier {
   TestAuthNotifier(this._initialState, {this.refreshedSession});
@@ -16,6 +23,7 @@ class TestAuthNotifier extends AuthNotifier {
   final AuthState _initialState;
   Session? refreshedSession;
   bool refreshInvoked = false;
+  bool logoutInvoked = false;
 
   @override
   AuthState build() => _initialState;
@@ -24,6 +32,12 @@ class TestAuthNotifier extends AuthNotifier {
   Future<Session?> refreshActiveSession() async {
     refreshInvoked = true;
     return refreshedSession;
+  }
+
+  @override
+  Future<void> logout() async {
+    logoutInvoked = true;
+    state = const AuthState.unauthenticated();
   }
 }
 
@@ -53,11 +67,18 @@ void main() {
 
   group('dioPdsProvider', () {
     late MockSessionStorage mockSessionStorage;
+    late MockAppDatabase mockDatabase;
+    late MockTimelineDao mockTimelineDao;
 
     setUp(() {
       mockSessionStorage = MockSessionStorage();
+      mockDatabase = MockAppDatabase();
+      mockTimelineDao = MockTimelineDao();
+
       when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
       when(() => mockSessionStorage.clearSession()).thenAnswer((_) async {});
+      when(() => mockDatabase.timelineDao).thenReturn(mockTimelineDao);
+      when(() => mockTimelineDao.clearTimeline(any())).thenAnswer((_) async {});
     });
 
     test('returns null when user is not authenticated', () {
@@ -96,6 +117,31 @@ void main() {
       final refreshedSession = await authInterceptor.refreshSession();
       expect(refreshedSession, equals(refreshed));
       expect(notifier.refreshInvoked, isTrue);
+    });
+
+    test('wires onSessionInvalidated to trigger logout and clear cache', () async {
+      final session = buildSession();
+      final notifier = TestAuthNotifier(AuthState.authenticated(session));
+      final container = ProviderContainer(
+        overrides: [
+          sessionStorageProvider.overrideWithValue(mockSessionStorage),
+          authProvider.overrideWith(() => notifier),
+          appDatabaseProvider.overrideWithValue(mockDatabase),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final dio = container.read(dioPdsProvider);
+      expect(dio, isNotNull);
+
+      final authInterceptor = dio!.interceptors.whereType<AuthInterceptor>().single;
+
+      authInterceptor.onSessionInvalidated?.call();
+
+      await Future<void>.delayed(Duration.zero);
+
+      expect(notifier.logoutInvoked, isTrue);
+      verify(() => mockTimelineDao.clearTimeline('home')).called(1);
     });
   });
 }

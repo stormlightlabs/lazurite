@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../core/utils/logger_provider.dart';
 import '../../../features/feeds/application/feed_providers.dart';
 import '../../../infrastructure/db/daos/timeline_dao.dart';
 import 'timeline_providers.dart';
@@ -12,9 +13,15 @@ class TimelineNotifier extends _$TimelineNotifier {
   Stream<List<TimelineFeedItem>> build() {
     final activeFeedUri = ref.watch(activeFeedProvider);
     final repository = ref.watch(timelineRepositoryProvider);
+    final logger = ref.watch(loggerProvider('TimelineNotifier'));
 
     final feedKey = _feedKeyFromUri(activeFeedUri);
-    return repository.watchTimeline(feedKey: feedKey);
+    logger.debug('Watching timeline stream', {'feedKey': feedKey, 'activeFeedUri': activeFeedUri});
+
+    return repository.watchTimeline(feedKey: feedKey).map((items) {
+      logger.debug('Stream emitted', {'itemCount': items.length, 'feedKey': feedKey});
+      return items;
+    });
   }
 
   /// Derives a feedKey from a feed URI.

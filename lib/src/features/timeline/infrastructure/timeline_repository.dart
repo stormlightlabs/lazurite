@@ -39,9 +39,9 @@ class TimelineRepository {
     );
   }
 
-  /// The official Discover feed for unauthenticated users
+  /// The official What's Hot feed for unauthenticated users
   static const kDiscoverFeedUri =
-      'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
+      'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
   /// Derives a feedKey from a feed URI.
   ///

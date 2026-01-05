@@ -33,6 +33,7 @@ Dio createPdsDio({
   required String pdsUrl,
   required SessionGetter getSession,
   required SessionRefresher refreshSession,
+  SessionInvalidatedCallback? onSessionInvalidated,
   bool enableLogging = true,
 }) {
   final dio = Dio(
@@ -47,7 +48,11 @@ Dio createPdsDio({
 
   dio.interceptors.addAll([
     if (enableLogging) LoggingInterceptor(),
-    AuthInterceptor(getSession: getSession, refreshSession: refreshSession),
+    AuthInterceptor(
+      getSession: getSession,
+      refreshSession: refreshSession,
+      onSessionInvalidated: onSessionInvalidated,
+    ),
     ProxyInterceptor(),
     RetryInterceptor(),
   ]);

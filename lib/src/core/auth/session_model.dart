@@ -30,6 +30,11 @@ class Session {
   /// This buffer accounts for network latency and clock skew to ensure tokens don't expire mid-request.
   bool get isExpired => DateTime.now().add(const Duration(seconds: 60)).isAfter(expiresAt);
 
+  /// Returns true if the access token expires within 5 minutes.
+  ///
+  /// Used for proactive token refresh to avoid mid-session expirations.
+  bool get isNearExpiration => DateTime.now().add(const Duration(minutes: 5)).isAfter(expiresAt);
+
   final String did;
   final String handle;
   final String pdsUrl;

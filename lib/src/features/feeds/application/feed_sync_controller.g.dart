@@ -62,4 +62,4 @@ final class FeedSyncControllerProvider
 }
 
 String _$feedSyncControllerHash() =>
-    r'3542183f0226415ca09e211b0e2b1d197d326716';
+    r'7d38314fa642349f48e8bf5f242cc8f95be23bca';

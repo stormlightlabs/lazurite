@@ -33,7 +33,7 @@ final class TimelineNotifierProvider
   TimelineNotifier create() => TimelineNotifier();
 }
 
-String _$timelineNotifierHash() => r'53ed6dc549673c17a958982bbaea7088a10bc329';
+String _$timelineNotifierHash() => r'b371ed018d1d11b49958ba6f617de19b1b2e58c7';
 
 abstract class _$TimelineNotifier
     extends $StreamNotifier<List<TimelineFeedItem>> {

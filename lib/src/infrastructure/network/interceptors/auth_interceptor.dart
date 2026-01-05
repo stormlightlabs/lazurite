@@ -13,6 +13,9 @@ typedef SessionGetter = Future<Session?> Function();
 /// Callback type for refreshing the session.
 typedef SessionRefresher = Future<Session?> Function();
 
+/// Callback type for notifying when session is invalidated.
+typedef SessionInvalidatedCallback = void Function();
+
 /// Interceptor that handles authentication for XRPC requests.
 ///
 /// Attaches the access token and DPoP proof to requests that require authentication,
@@ -21,6 +24,7 @@ class AuthInterceptor extends Interceptor {
   AuthInterceptor({
     required this.getSession,
     required this.refreshSession,
+    this.onSessionInvalidated,
     DPoPNonceStore? nonceStore,
     Logger? logger,
   }) : _nonceStore = nonceStore ?? DPoPNonceStore(),
@@ -31,6 +35,12 @@ class AuthInterceptor extends Interceptor {
 
   /// Callback to refresh the session.
   final SessionRefresher refreshSession;
+
+  /// Callback invoked when the session is invalidated (e.g., InvalidToken).
+  final SessionInvalidatedCallback? onSessionInvalidated;
+
+  /// ATProto error codes that indicate an invalid/expired token.
+  static const _invalidTokenErrorCodes = {'InvalidToken', 'ExpiredToken'};
 
   /// Store for DPoP nonces.
   final DPoPNonceStore _nonceStore;
@@ -93,12 +103,48 @@ class AuthInterceptor extends Interceptor {
     }
   }
 
+  /// Performs a token refresh with completer-based coordination.
+  ///
+  /// If a refresh is already in progress, waits for it to complete.
+  /// Otherwise, initiates a new refresh.
+  Future<Session?> _performRefresh() async {
+    if (_refreshCompleter != null) {
+      return _refreshCompleter!.future;
+    }
+
+    _refreshCompleter = Completer<Session?>();
+
+    try {
+      final newSession = await refreshSession();
+      _refreshCompleter!.complete(newSession);
+      return newSession;
+    } catch (e) {
+      _refreshCompleter!.completeError(e);
+      rethrow;
+    } finally {
+      _refreshCompleter = null;
+    }
+  }
+
   @override
   Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     final requiresAuth = options.extra[requiresAuthKey] == true;
 
     if (requiresAuth) {
-      final session = await getSession();
+      var session = await getSession();
+
+      // Proactively refresh if token is near expiration
+      if (session != null && session.isNearExpiration && !session.isExpired) {
+        _logger.debug('Token near expiration, proactively refreshing');
+        try {
+          session = await _performRefresh();
+        } catch (e) {
+          _logger.warning('Proactive refresh failed, continuing with existing token', {
+            'error': e,
+          });
+        }
+      }
+
       if (session != null) {
         final token = session.accessJwt;
         options.headers['Authorization'] = 'Bearer $token';
@@ -155,6 +201,15 @@ class AuthInterceptor extends Interceptor {
           _nonceStore.store(session.pdsUrl, nonce);
         }
       }
+
+      if (err.response?.statusCode == 400) {
+        final errorCode = _extractErrorCode(err.response);
+        if (errorCode != null && _invalidTokenErrorCodes.contains(errorCode)) {
+          _logger.warning('Session invalidated due to $errorCode');
+          onSessionInvalidated?.call();
+          return handler.next(err);
+        }
+      }
     }
 
     if (err.response?.statusCode != 401) {
@@ -199,5 +254,14 @@ class AuthInterceptor extends Interceptor {
     } finally {
       _refreshCompleter = null;
     }
+  }
+
+  /// Extracts the ATProto error code from a response.
+  String? _extractErrorCode(Response<dynamic>? response) {
+    final data = response?.data;
+    if (data is Map<String, dynamic>) {
+      return data['error'] as String?;
+    }
+    return null;
   }
 }

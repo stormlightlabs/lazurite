@@ -281,6 +281,129 @@ void main() {
         expect(refreshCalled, isFalse);
       });
     });
+
+    group('session invalidation on 400 InvalidToken', () {
+      test('calls onSessionInvalidated when 400 InvalidToken error occurs', () async {
+        final dio = Dio(BaseOptions(baseUrl: 'https://test.api'));
+        final adapter = DioAdapter(dio: dio);
+
+        var sessionInvalidated = false;
+
+        dio.interceptors.add(
+          AuthInterceptor(
+            getSession: () async => _createTestSession(),
+            refreshSession: () async => _createTestSession(),
+            onSessionInvalidated: () {
+              sessionInvalidated = true;
+            },
+          ),
+        );
+
+        adapter.onGet(
+          '/test',
+          (server) => server.reply(400, {'error': 'InvalidToken', 'message': 'Malformed token'}),
+        );
+
+        try {
+          await dio.get('/test', options: Options(extra: {AuthInterceptor.requiresAuthKey: true}));
+          fail('Should throw exception');
+        } catch (e) {
+          expect(e, isA<DioException>());
+        }
+
+        expect(sessionInvalidated, isTrue);
+      });
+
+      test('calls onSessionInvalidated when 400 ExpiredToken error occurs', () async {
+        final dio = Dio(BaseOptions(baseUrl: 'https://test.api'));
+        final adapter = DioAdapter(dio: dio);
+
+        var sessionInvalidated = false;
+
+        dio.interceptors.add(
+          AuthInterceptor(
+            getSession: () async => _createTestSession(),
+            refreshSession: () async => _createTestSession(),
+            onSessionInvalidated: () {
+              sessionInvalidated = true;
+            },
+          ),
+        );
+
+        adapter.onGet(
+          '/test',
+          (server) => server.reply(400, {'error': 'ExpiredToken', 'message': 'Token expired'}),
+        );
+
+        try {
+          await dio.get('/test', options: Options(extra: {AuthInterceptor.requiresAuthKey: true}));
+          fail('Should throw exception');
+        } catch (e) {
+          expect(e, isA<DioException>());
+        }
+
+        expect(sessionInvalidated, isTrue);
+      });
+
+      test('does not call onSessionInvalidated for other 400 errors', () async {
+        final dio = Dio(BaseOptions(baseUrl: 'https://test.api'));
+        final adapter = DioAdapter(dio: dio);
+
+        var sessionInvalidated = false;
+
+        dio.interceptors.add(
+          AuthInterceptor(
+            getSession: () async => _createTestSession(),
+            refreshSession: () async => _createTestSession(),
+            onSessionInvalidated: () {
+              sessionInvalidated = true;
+            },
+          ),
+        );
+
+        adapter.onGet(
+          '/test',
+          (server) => server.reply(400, {'error': 'InvalidRequest', 'message': 'Bad request'}),
+        );
+
+        try {
+          await dio.get('/test', options: Options(extra: {AuthInterceptor.requiresAuthKey: true}));
+          fail('Should throw exception');
+        } catch (e) {
+          expect(e, isA<DioException>());
+        }
+
+        expect(sessionInvalidated, isFalse);
+      });
+
+      test('does not call onSessionInvalidated for non-auth requests with 400', () async {
+        final dio = Dio(BaseOptions(baseUrl: 'https://test.api'));
+        final adapter = DioAdapter(dio: dio);
+
+        var sessionInvalidated = false;
+
+        dio.interceptors.add(
+          AuthInterceptor(
+            getSession: () async => _createTestSession(),
+            refreshSession: () async => _createTestSession(),
+            onSessionInvalidated: () {
+              sessionInvalidated = true;
+            },
+          ),
+        );
+
+        adapter.onGet('/public', (server) => server.reply(400, {'error': 'InvalidToken'}));
+
+        try {
+          await dio.get('/public'); // No requiresAuth flag
+          fail('Should throw exception');
+        } catch (e) {
+          expect(e, isA<DioException>());
+        }
+
+        expect(sessionInvalidated, isFalse);
+      });
+    });
   });
 }
 

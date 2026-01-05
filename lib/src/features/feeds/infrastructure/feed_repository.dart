@@ -404,13 +404,17 @@ class FeedRepository {
   /// URI for the Home timeline (authenticated users).
   static const kHomeFeedUri = 'home';
 
-  /// URI for the Discover feed (public).
+  /// URI for the What's Hot feed (public).
   static const kDiscoverFeedUri =
-      'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
+      'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
   /// URI for the curated For You feed shown to authenticated users.
   static const kForYouFeedUri =
       'at://did:plc:3guzzweuqraryl3rdkimjamk/app.bsky.feed.generator/for-you';
+
+  /// Deprecated URI that was renamed - kept for cleanup purposes.
+  static const _kDeprecatedDiscoverUri =
+      'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
 
   /// Seeds default feeds if they don't already exist.
   ///
@@ -419,6 +423,9 @@ class FeedRepository {
   /// app initialization or after user login.
   Future<void> seedDefaultFeeds() async {
     _logger.debug('Seeding default feeds');
+
+    // Clean up deprecated feed URI (renamed from 'discover' to 'whats-hot')
+    await _dao.deleteFeed(_kDeprecatedDiscoverUri);
 
     final now = DateTime.now();
     final defaultFeeds = <SavedFeedsCompanion>[];
