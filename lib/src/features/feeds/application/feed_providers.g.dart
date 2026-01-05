@@ -87,8 +87,7 @@ abstract class _$AllFeedsNotifier extends $StreamNotifier<List<SavedFeedData>> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref =
-        this.ref as $Ref<AsyncValue<List<SavedFeedData>>, List<SavedFeedData>>;
+    final ref = this.ref as $Ref<AsyncValue<List<SavedFeedData>>, List<SavedFeedData>>;
     final element =
         ref.element
             as $ClassProviderElement<
@@ -129,19 +128,16 @@ final class PinnedFeedsNotifierProvider
   PinnedFeedsNotifier create() => PinnedFeedsNotifier();
 }
 
-String _$pinnedFeedsNotifierHash() =>
-    r'042b4477bb79cfdbd28b02edca0d6d23df571434';
+String _$pinnedFeedsNotifierHash() => r'042b4477bb79cfdbd28b02edca0d6d23df571434';
 
 /// Notifier for watching pinned feeds reactively.
 
-abstract class _$PinnedFeedsNotifier
-    extends $StreamNotifier<List<SavedFeedData>> {
+abstract class _$PinnedFeedsNotifier extends $StreamNotifier<List<SavedFeedData>> {
   Stream<List<SavedFeedData>> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref =
-        this.ref as $Ref<AsyncValue<List<SavedFeedData>>, List<SavedFeedData>>;
+    final ref = this.ref as $Ref<AsyncValue<List<SavedFeedData>>, List<SavedFeedData>>;
     final element =
         ref.element
             as $ClassProviderElement<
@@ -190,8 +186,7 @@ final class SavedFeedsNotifierProvider
   }
 }
 
-String _$savedFeedsNotifierHash() =>
-    r'68a14844d9eb86981133d500f484d9353db677b1';
+String _$savedFeedsNotifierHash() => r'68a14844d9eb86981133d500f484d9353db677b1';
 
 /// Notifier for syncing saved feeds from remote preferences.
 
@@ -249,8 +244,7 @@ final class FeedMutationNotifierProvider
   }
 }
 
-String _$feedMutationNotifierHash() =>
-    r'ad6870f92cbb804ff2abc617a59d1face16ad19e';
+String _$feedMutationNotifierHash() => r'ad6870f92cbb804ff2abc617a59d1face16ad19e';
 
 /// Notifier for feed mutations (save, remove, pin).
 
@@ -279,11 +273,7 @@ final discoverFeedsProvider = DiscoverFeedsNotifierProvider._();
 
 /// Notifier for discovering trending feeds.
 final class DiscoverFeedsNotifierProvider
-    extends
-        $NotifierProvider<
-          DiscoverFeedsNotifier,
-          AsyncValue<List<Map<String, dynamic>>>
-        > {
+    extends $NotifierProvider<DiscoverFeedsNotifier, AsyncValue<List<Map<String, dynamic>>>> {
   /// Notifier for discovering trending feeds.
   DiscoverFeedsNotifierProvider._()
     : super(
@@ -307,19 +297,16 @@ final class DiscoverFeedsNotifierProvider
   Override overrideWithValue(AsyncValue<List<Map<String, dynamic>>> value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride:
-          $SyncValueProvider<AsyncValue<List<Map<String, dynamic>>>>(value),
+      providerOverride: $SyncValueProvider<AsyncValue<List<Map<String, dynamic>>>>(value),
     );
   }
 }
 
-String _$discoverFeedsNotifierHash() =>
-    r'b72bee4db40bfc4f140ae6056d047e8ae20ec7c5';
+String _$discoverFeedsNotifierHash() => r'b72bee4db40bfc4f140ae6056d047e8ae20ec7c5';
 
 /// Notifier for discovering trending feeds.
 
-abstract class _$DiscoverFeedsNotifier
-    extends $Notifier<AsyncValue<List<Map<String, dynamic>>>> {
+abstract class _$DiscoverFeedsNotifier extends $Notifier<AsyncValue<List<Map<String, dynamic>>>> {
   AsyncValue<List<Map<String, dynamic>>> build();
   @$mustCallSuper
   @override
@@ -391,10 +378,7 @@ final class ActiveFeedProvider extends $NotifierProvider<ActiveFeed, String> {
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(String value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<String>(value),
-    );
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<String>(value));
   }
 }
 
@@ -416,12 +400,7 @@ abstract class _$ActiveFeed extends $Notifier<String> {
     final ref = this.ref as $Ref<String, String>;
     final element =
         ref.element
-            as $ClassProviderElement<
-              AnyNotifier<String, String>,
-              String,
-              Object?,
-              Object?
-            >;
+            as $ClassProviderElement<AnyNotifier<String, String>, String, Object?, Object?>;
     element.handleCreate(ref, build);
   }
 }

@@ -13,8 +13,7 @@ part of 'composer_providers.dart';
 final draftRepositoryProvider = DraftRepositoryProvider._();
 
 final class DraftRepositoryProvider
-    extends
-        $FunctionalProvider<DraftRepository, DraftRepository, DraftRepository>
+    extends $FunctionalProvider<DraftRepository, DraftRepository, DraftRepository>
     with $Provider<DraftRepository> {
   DraftRepositoryProvider._()
     : super(
@@ -61,9 +60,7 @@ final class DraftsProvider
           List<composer.Draft>,
           Stream<List<composer.Draft>>
         >
-    with
-        $FutureModifier<List<composer.Draft>>,
-        $StreamProvider<List<composer.Draft>> {
+    with $FutureModifier<List<composer.Draft>>, $StreamProvider<List<composer.Draft>> {
   DraftsProvider._()
     : super(
         from: null,
@@ -80,9 +77,8 @@ final class DraftsProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<composer.Draft>> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  $StreamProviderElement<List<composer.Draft>> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
 
   @override
   Stream<List<composer.Draft>> create(Ref ref) {
@@ -97,22 +93,16 @@ final draftProvider = DraftFamily._();
 
 final class DraftProvider
     extends
-        $FunctionalProvider<
-          AsyncValue<composer.Draft?>,
-          composer.Draft?,
-          Stream<composer.Draft?>
-        >
+        $FunctionalProvider<AsyncValue<composer.Draft?>, composer.Draft?, Stream<composer.Draft?>>
     with $FutureModifier<composer.Draft?>, $StreamProvider<composer.Draft?> {
-  DraftProvider._({
-    required DraftFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'draftProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
+  DraftProvider._({required DraftFamily super.from, required String super.argument})
+    : super(
+        retry: null,
+        name: r'draftProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
 
   @override
   String debugGetCreateSourceHash() => _$draftHash();
@@ -126,9 +116,8 @@ final class DraftProvider
 
   @$internal
   @override
-  $StreamProviderElement<composer.Draft?> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  $StreamProviderElement<composer.Draft?> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
 
   @override
   Stream<composer.Draft?> create(Ref ref) {

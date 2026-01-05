@@ -14,8 +14,7 @@ part of 'theme_mode_controller.dart';
 final themeModeControllerProvider = ThemeModeControllerProvider._();
 
 /// Controls the current [ThemeMode] for the application.
-final class ThemeModeControllerProvider
-    extends $NotifierProvider<ThemeModeController, ThemeMode> {
+final class ThemeModeControllerProvider extends $NotifierProvider<ThemeModeController, ThemeMode> {
   /// Controls the current [ThemeMode] for the application.
   ThemeModeControllerProvider._()
     : super(
@@ -37,15 +36,11 @@ final class ThemeModeControllerProvider
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(ThemeMode value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<ThemeMode>(value),
-    );
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<ThemeMode>(value));
   }
 }
 
-String _$themeModeControllerHash() =>
-    r'b71a9386d085d056a2cdd446468907bb691a5cca';
+String _$themeModeControllerHash() => r'b71a9386d085d056a2cdd446468907bb691a5cca';
 
 /// Controls the current [ThemeMode] for the application.
 

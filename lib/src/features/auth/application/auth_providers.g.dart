@@ -13,12 +13,7 @@ part of 'auth_providers.dart';
 final secureStorageProvider = SecureStorageProvider._();
 
 final class SecureStorageProvider
-    extends
-        $FunctionalProvider<
-          FlutterSecureStorage,
-          FlutterSecureStorage,
-          FlutterSecureStorage
-        >
+    extends $FunctionalProvider<FlutterSecureStorage, FlutterSecureStorage, FlutterSecureStorage>
     with $Provider<FlutterSecureStorage> {
   SecureStorageProvider._()
     : super(
@@ -36,9 +31,8 @@ final class SecureStorageProvider
 
   @$internal
   @override
-  $ProviderElement<FlutterSecureStorage> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  $ProviderElement<FlutterSecureStorage> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
   FlutterSecureStorage create(Ref ref) {
@@ -100,8 +94,7 @@ String _$sessionStorageHash() => r'7f22871707fb4b3eea41742c80279e67b673f580';
 @ProviderFor(authSupportDio)
 final authSupportDioProvider = AuthSupportDioProvider._();
 
-final class AuthSupportDioProvider extends $FunctionalProvider<Dio, Dio, Dio>
-    with $Provider<Dio> {
+final class AuthSupportDioProvider extends $FunctionalProvider<Dio, Dio, Dio> with $Provider<Dio> {
   AuthSupportDioProvider._()
     : super(
         from: null,
@@ -118,8 +111,7 @@ final class AuthSupportDioProvider extends $FunctionalProvider<Dio, Dio, Dio>
 
   @$internal
   @override
-  $ProviderElement<Dio> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<Dio> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
 
   @override
   Dio create(Ref ref) {
@@ -128,10 +120,7 @@ final class AuthSupportDioProvider extends $FunctionalProvider<Dio, Dio, Dio>
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(Dio value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<Dio>(value),
-    );
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<Dio>(value));
   }
 }
 
@@ -141,12 +130,7 @@ String _$authSupportDioHash() => r'cd2e5e87f63e34ee08ada5ab37908f10357a4d50';
 final identityRepositoryProvider = IdentityRepositoryProvider._();
 
 final class IdentityRepositoryProvider
-    extends
-        $FunctionalProvider<
-          IdentityRepository,
-          IdentityRepository,
-          IdentityRepository
-        >
+    extends $FunctionalProvider<IdentityRepository, IdentityRepository, IdentityRepository>
     with $Provider<IdentityRepository> {
   IdentityRepositoryProvider._()
     : super(
@@ -164,9 +148,8 @@ final class IdentityRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<IdentityRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  $ProviderElement<IdentityRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
   IdentityRepository create(Ref ref) {
@@ -182,8 +165,7 @@ final class IdentityRepositoryProvider
   }
 }
 
-String _$identityRepositoryHash() =>
-    r'610d18b70c1662d3db4749898e54094197d4fa45';
+String _$identityRepositoryHash() => r'610d18b70c1662d3db4749898e54094197d4fa45';
 
 @ProviderFor(dpopNonceStore)
 final dpopNonceStoreProvider = DpopNonceStoreProvider._();
@@ -229,8 +211,7 @@ String _$dpopNonceStoreHash() => r'41637ad5cd21210697f095006b0dd4bb0c0daef6';
 @ProviderFor(oauthClient)
 final oauthClientProvider = OauthClientProvider._();
 
-final class OauthClientProvider
-    extends $FunctionalProvider<OAuthClient, OAuthClient, OAuthClient>
+final class OauthClientProvider extends $FunctionalProvider<OAuthClient, OAuthClient, OAuthClient>
     with $Provider<OAuthClient> {
   OauthClientProvider._()
     : super(
@@ -294,9 +275,8 @@ final class ServerMetadataRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<ServerMetadataRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  $ProviderElement<ServerMetadataRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
   ServerMetadataRepository create(Ref ref) {
@@ -312,19 +292,14 @@ final class ServerMetadataRepositoryProvider
   }
 }
 
-String _$serverMetadataRepositoryHash() =>
-    r'68adaa79c66df4c1af4e5097063f05542deb2675';
+String _$serverMetadataRepositoryHash() => r'68adaa79c66df4c1af4e5097063f05542deb2675';
 
 @ProviderFor(oauthBrowserCallback)
 final oauthBrowserCallbackProvider = OauthBrowserCallbackProvider._();
 
 final class OauthBrowserCallbackProvider
     extends
-        $FunctionalProvider<
-          OAuthBrowserCallback?,
-          OAuthBrowserCallback?,
-          OAuthBrowserCallback?
-        >
+        $FunctionalProvider<OAuthBrowserCallback?, OAuthBrowserCallback?, OAuthBrowserCallback?>
     with $Provider<OAuthBrowserCallback?> {
   OauthBrowserCallbackProvider._()
     : super(
@@ -342,9 +317,8 @@ final class OauthBrowserCallbackProvider
 
   @$internal
   @override
-  $ProviderElement<OAuthBrowserCallback?> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  $ProviderElement<OAuthBrowserCallback?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
   OAuthBrowserCallback? create(Ref ref) {
@@ -360,8 +334,7 @@ final class OauthBrowserCallbackProvider
   }
 }
 
-String _$oauthBrowserCallbackHash() =>
-    r'a9d0a5ea8491f7c13cc261728398c9c3bf7080c1';
+String _$oauthBrowserCallbackHash() => r'a9d0a5ea8491f7c13cc261728398c9c3bf7080c1';
 
 @ProviderFor(authRepository)
 final authRepositoryProvider = AuthRepositoryProvider._();
@@ -407,8 +380,7 @@ String _$authRepositoryHash() => r'b1e8bc3a4d29b9c77445091055bc4c5f2e73069f';
 @ProviderFor(AuthNotifier)
 final authProvider = AuthNotifierProvider._();
 
-final class AuthNotifierProvider
-    extends $NotifierProvider<AuthNotifier, AuthState> {
+final class AuthNotifierProvider extends $NotifierProvider<AuthNotifier, AuthState> {
   AuthNotifierProvider._()
     : super(
         from: null,
@@ -429,10 +401,7 @@ final class AuthNotifierProvider
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(AuthState value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<AuthState>(value),
-    );
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<AuthState>(value));
   }
 }
 

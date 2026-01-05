@@ -21,8 +21,7 @@ final feedSyncControllerProvider = FeedSyncControllerProvider._();
 /// Listens to app lifecycle changes and triggers [FeedRepository.syncOnResume]
 /// when the app is resumed.
 
-final class FeedSyncControllerProvider
-    extends $FunctionalProvider<void, void, void>
+final class FeedSyncControllerProvider extends $FunctionalProvider<void, void, void>
     with $Provider<void> {
   /// Controller that manages automatic background synchronization of feeds.
   ///
@@ -44,8 +43,7 @@ final class FeedSyncControllerProvider
 
   @$internal
   @override
-  $ProviderElement<void> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<void> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
 
   @override
   void create(Ref ref) {
@@ -54,12 +52,8 @@ final class FeedSyncControllerProvider
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(void value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<void>(value),
-    );
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<void>(value));
   }
 }
 
-String _$feedSyncControllerHash() =>
-    r'7d38314fa642349f48e8bf5f242cc8f95be23bca';
+String _$feedSyncControllerHash() => r'7d38314fa642349f48e8bf5f242cc8f95be23bca';

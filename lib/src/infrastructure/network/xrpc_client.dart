@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:lazurite/src/core/utils/logger.dart';
 
 import 'endpoint_meta.dart';
 import 'endpoint_registry.dart';
@@ -15,13 +16,19 @@ import 'network_failure.dart';
 /// - Routes requests to the correct Dio client (public vs PDS)
 /// - Handles response parsing and error conversion
 class XrpcClient {
-  XrpcClient({required Dio publicDio, required Dio? pdsDio, EndpointRegistry? registry})
-    : _publicDio = publicDio,
-      _pdsDio = pdsDio,
-      _registry = registry ?? EndpointRegistry.instance;
+  XrpcClient({
+    required Dio publicDio,
+    required Dio? pdsDio,
+    required Logger logger,
+    EndpointRegistry? registry,
+  }) : _publicDio = publicDio,
+       _pdsDio = pdsDio,
+       _logger = logger,
+       _registry = registry ?? EndpointRegistry.instance;
 
   final Dio _publicDio;
   final Dio? _pdsDio;
+  final Logger _logger;
   final EndpointRegistry _registry;
 
   /// Whether the client has a PDS configured for authenticated requests.
@@ -64,7 +71,9 @@ class XrpcClient {
 
       return _parseResponse(response);
     } on DioException catch (e) {
-      throw _convertError(e);
+      final failure = _convertError(e);
+      _logger.error('XRPC call failed: $nsid', failure, e.stackTrace);
+      throw failure;
     }
   }
 
@@ -101,7 +110,9 @@ class XrpcClient {
           );
       }
     } on DioException catch (e) {
-      throw _convertError(e);
+      final failure = _convertError(e);
+      _logger.error('XRPC raw call failed: $nsid', failure, e.stackTrace);
+      throw failure;
     }
   }
 

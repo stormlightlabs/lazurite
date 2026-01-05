@@ -13,12 +13,7 @@ part of 'profile_providers.dart';
 final profileRepositoryProvider = ProfileRepositoryProvider._();
 
 final class ProfileRepositoryProvider
-    extends
-        $FunctionalProvider<
-          ProfileRepository,
-          ProfileRepository,
-          ProfileRepository
-        >
+    extends $FunctionalProvider<ProfileRepository, ProfileRepository, ProfileRepository>
     with $Provider<ProfileRepository> {
   ProfileRepositoryProvider._()
     : super(
@@ -36,9 +31,8 @@ final class ProfileRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<ProfileRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  $ProviderElement<ProfileRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
   ProfileRepository create(Ref ref) {
@@ -59,8 +53,7 @@ String _$profileRepositoryHash() => r'50dea0ace0390282f36fddb6c1282c58a38c914e';
 @ProviderFor(ProfileNotifier)
 final profileProvider = ProfileNotifierFamily._();
 
-final class ProfileNotifierProvider
-    extends $AsyncNotifierProvider<ProfileNotifier, ProfileData> {
+final class ProfileNotifierProvider extends $AsyncNotifierProvider<ProfileNotifier, ProfileData> {
   ProfileNotifierProvider._({
     required ProfileNotifierFamily super.from,
     required String super.argument,
@@ -186,8 +179,7 @@ final class AuthorFeedNotifierProvider
   }
 }
 
-String _$authorFeedNotifierHash() =>
-    r'b241402d3ec7ba5ca64908fd166bbfa3d3b126c7';
+String _$authorFeedNotifierHash() => r'b241402d3ec7ba5ca64908fd166bbfa3d3b126c7';
 
 final class AuthorFeedNotifierFamily extends $Family
     with
@@ -241,8 +233,7 @@ abstract class _$AuthorFeedNotifier extends $AsyncNotifier<List<FeedItem>> {
 final followProvider = FollowNotifierProvider._();
 
 /// Notifier for managing follow/unfollow mutations.
-final class FollowNotifierProvider
-    extends $NotifierProvider<FollowNotifier, AsyncValue<void>> {
+final class FollowNotifierProvider extends $NotifierProvider<FollowNotifier, AsyncValue<void>> {
   /// Notifier for managing follow/unfollow mutations.
   FollowNotifierProvider._()
     : super(
@@ -379,8 +370,7 @@ abstract class _$FollowersNotifier extends $AsyncNotifier<List<ActorBasic>> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref =
-        this.ref as $Ref<AsyncValue<List<ActorBasic>>, List<ActorBasic>>;
+    final ref = this.ref as $Ref<AsyncValue<List<ActorBasic>>, List<ActorBasic>>;
     final element =
         ref.element
             as $ClassProviderElement<
@@ -479,8 +469,7 @@ abstract class _$FollowingNotifier extends $AsyncNotifier<List<ActorBasic>> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref =
-        this.ref as $Ref<AsyncValue<List<ActorBasic>>, List<ActorBasic>>;
+    final ref = this.ref as $Ref<AsyncValue<List<ActorBasic>>, List<ActorBasic>>;
     final element =
         ref.element
             as $ClassProviderElement<

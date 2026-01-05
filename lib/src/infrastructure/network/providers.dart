@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/core/utils/logger_provider.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -36,7 +37,6 @@ Dio? dioPds(Ref ref) {
     refreshSession: () => ref.read(authProvider.notifier).refreshActiveSession(),
     nonceStore: ref.read(dpopNonceStoreProvider),
     onSessionInvalidated: () {
-      // Clear user-specific cached data
       try {
         final db = ref.read(appDatabaseProvider);
         db.feedContentDao.clearFeedContent('home');
@@ -44,7 +44,6 @@ Dio? dioPds(Ref ref) {
         // Ignore if database not available
       }
 
-      // Clear session and revert to unauthenticated state
       ref.read(authProvider.notifier).logout();
     },
   );
@@ -56,7 +55,11 @@ Dio? dioPds(Ref ref) {
 /// based on endpoint metadata in the registry.
 @Riverpod(keepAlive: true)
 XrpcClient xrpcClient(Ref ref) {
-  return XrpcClient(publicDio: ref.watch(dioPublicProvider), pdsDio: ref.watch(dioPdsProvider));
+  return XrpcClient(
+    publicDio: ref.watch(dioPublicProvider),
+    pdsDio: ref.watch(dioPdsProvider),
+    logger: ref.watch(loggerProvider('XrpcClient')),
+  );
 }
 
 Future<Session?> _readCurrentSession(Ref ref) async {

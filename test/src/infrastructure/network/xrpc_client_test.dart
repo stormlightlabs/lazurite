@@ -1,11 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
+import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/network/endpoint_registry.dart';
 import 'package:lazurite/src/infrastructure/network/host_kind.dart';
 import 'package:lazurite/src/infrastructure/network/network_failure.dart';
 import 'package:lazurite/src/infrastructure/network/proxy_kind.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockDio extends Mock implements Dio {}
+
+class MockLogger extends Mock implements Logger {}
 
 void main() {
   late Dio publicDio;
@@ -19,7 +25,7 @@ void main() {
     pdsDio = Dio(BaseOptions(baseUrl: 'https://user.pds.example'));
     publicAdapter = DioAdapter(dio: publicDio);
     pdsAdapter = DioAdapter(dio: pdsDio);
-    client = XrpcClient(publicDio: publicDio, pdsDio: pdsDio);
+    client = XrpcClient(publicDio: publicDio, pdsDio: pdsDio, logger: MockLogger());
   });
 
   group('XrpcClient routing', () {
@@ -93,7 +99,11 @@ void main() {
     });
 
     test('throws StateError when PDS not configured for auth endpoint', () {
-      final publicOnlyClient = XrpcClient(publicDio: publicDio, pdsDio: null);
+      final publicOnlyClient = XrpcClient(
+        publicDio: publicDio,
+        pdsDio: null,
+        logger: MockLogger(),
+      );
 
       expect(() => publicOnlyClient.call('app.bsky.feed.getTimeline'), throwsA(isA<StateError>()));
     });

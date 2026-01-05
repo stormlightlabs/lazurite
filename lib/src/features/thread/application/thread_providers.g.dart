@@ -13,12 +13,7 @@ part of 'thread_providers.dart';
 final threadRepositoryProvider = ThreadRepositoryProvider._();
 
 final class ThreadRepositoryProvider
-    extends
-        $FunctionalProvider<
-          ThreadRepository,
-          ThreadRepository,
-          ThreadRepository
-        >
+    extends $FunctionalProvider<ThreadRepository, ThreadRepository, ThreadRepository>
     with $Provider<ThreadRepository> {
   ThreadRepositoryProvider._()
     : super(
@@ -59,23 +54,16 @@ String _$threadRepositoryHash() => r'cd0ceeed0f8b07eed6b2a8e93431e7780a704902';
 final threadCacheProvider = ThreadCacheFamily._();
 
 final class ThreadCacheProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<FeedPost>>,
-          List<FeedPost>,
-          Stream<List<FeedPost>>
-        >
+    extends $FunctionalProvider<AsyncValue<List<FeedPost>>, List<FeedPost>, Stream<List<FeedPost>>>
     with $FutureModifier<List<FeedPost>>, $StreamProvider<List<FeedPost>> {
-  ThreadCacheProvider._({
-    required ThreadCacheFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'threadCacheProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
+  ThreadCacheProvider._({required ThreadCacheFamily super.from, required String super.argument})
+    : super(
+        retry: null,
+        name: r'threadCacheProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
 
   @override
   String debugGetCreateSourceHash() => _$threadCacheHash();
@@ -89,9 +77,8 @@ final class ThreadCacheProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<FeedPost>> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  $StreamProviderElement<List<FeedPost>> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
 
   @override
   Stream<List<FeedPost>> create(Ref ref) {
@@ -123,8 +110,7 @@ final class ThreadCacheFamily extends $Family
         isAutoDispose: true,
       );
 
-  ThreadCacheProvider call(String postUri) =>
-      ThreadCacheProvider._(argument: postUri, from: this);
+  ThreadCacheProvider call(String postUri) => ThreadCacheProvider._(argument: postUri, from: this);
 
   @override
   String toString() => r'threadCacheProvider';

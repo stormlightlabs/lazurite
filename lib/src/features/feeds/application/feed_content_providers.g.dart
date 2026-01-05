@@ -14,11 +14,7 @@ final feedContentRepositoryProvider = FeedContentRepositoryProvider._();
 
 final class FeedContentRepositoryProvider
     extends
-        $FunctionalProvider<
-          FeedContentRepository,
-          FeedContentRepository,
-          FeedContentRepository
-        >
+        $FunctionalProvider<FeedContentRepository, FeedContentRepository, FeedContentRepository>
     with $Provider<FeedContentRepository> {
   FeedContentRepositoryProvider._()
     : super(
@@ -36,9 +32,8 @@ final class FeedContentRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<FeedContentRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  $ProviderElement<FeedContentRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
   FeedContentRepository create(Ref ref) {
@@ -54,5 +49,4 @@ final class FeedContentRepositoryProvider
   }
 }
 
-String _$feedContentRepositoryHash() =>
-    r'2a56c50c1bfb039e006652ce656ec261adb4d12d';
+String _$feedContentRepositoryHash() => r'2a56c50c1bfb039e006652ce656ec261adb4d12d';

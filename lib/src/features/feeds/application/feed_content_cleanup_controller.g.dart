@@ -14,16 +14,14 @@ part of 'feed_content_cleanup_controller.dart';
 /// when the app is resumed or on startup.
 
 @ProviderFor(feedContentCleanupController)
-final feedContentCleanupControllerProvider =
-    FeedContentCleanupControllerProvider._();
+final feedContentCleanupControllerProvider = FeedContentCleanupControllerProvider._();
 
 /// Controller that manages cache cleanup for feed content items.
 ///
 /// Listens to app lifecycle changes and triggers [FeedContentRepository.cleanupCache]
 /// when the app is resumed or on startup.
 
-final class FeedContentCleanupControllerProvider
-    extends $FunctionalProvider<void, void, void>
+final class FeedContentCleanupControllerProvider extends $FunctionalProvider<void, void, void>
     with $Provider<void> {
   /// Controller that manages cache cleanup for feed content items.
   ///
@@ -45,8 +43,7 @@ final class FeedContentCleanupControllerProvider
 
   @$internal
   @override
-  $ProviderElement<void> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<void> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
 
   @override
   void create(Ref ref) {
@@ -55,12 +52,8 @@ final class FeedContentCleanupControllerProvider
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(void value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<void>(value),
-    );
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<void>(value));
   }
 }
 
-String _$feedContentCleanupControllerHash() =>
-    r'eb2027b4d945ded8b13c6919bc993e8881fe1e5d';
+String _$feedContentCleanupControllerHash() => r'eb2027b4d945ded8b13c6919bc993e8881fe1e5d';
