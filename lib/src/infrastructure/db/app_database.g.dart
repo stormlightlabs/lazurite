@@ -3415,6 +3415,1399 @@ class PreferenceSyncQueueCompanion
   }
 }
 
+class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DraftsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _replyParentUriMeta = const VerificationMeta(
+    'replyParentUri',
+  );
+  @override
+  late final GeneratedColumn<String> replyParentUri = GeneratedColumn<String>(
+    'reply_parent_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _replyParentCidMeta = const VerificationMeta(
+    'replyParentCid',
+  );
+  @override
+  late final GeneratedColumn<String> replyParentCid = GeneratedColumn<String>(
+    'reply_parent_cid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _replyRootUriMeta = const VerificationMeta(
+    'replyRootUri',
+  );
+  @override
+  late final GeneratedColumn<String> replyRootUri = GeneratedColumn<String>(
+    'reply_root_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _replyRootCidMeta = const VerificationMeta(
+    'replyRootCid',
+  );
+  @override
+  late final GeneratedColumn<String> replyRootCid = GeneratedColumn<String>(
+    'reply_root_cid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _quoteUriMeta = const VerificationMeta(
+    'quoteUri',
+  );
+  @override
+  late final GeneratedColumn<String> quoteUri = GeneratedColumn<String>(
+    'quote_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _quoteCidMeta = const VerificationMeta(
+    'quoteCid',
+  );
+  @override
+  late final GeneratedColumn<String> quoteCid = GeneratedColumn<String>(
+    'quote_cid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _facetsJsonMeta = const VerificationMeta(
+    'facetsJson',
+  );
+  @override
+  late final GeneratedColumn<String> facetsJson = GeneratedColumn<String>(
+    'facets_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _errorMessageMeta = const VerificationMeta(
+    'errorMessage',
+  );
+  @override
+  late final GeneratedColumn<String> errorMessage = GeneratedColumn<String>(
+    'error_message',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    content,
+    replyParentUri,
+    replyParentCid,
+    replyRootUri,
+    replyRootCid,
+    quoteUri,
+    quoteCid,
+    facetsJson,
+    status,
+    errorMessage,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'drafts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Draft> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    }
+    if (data.containsKey('reply_parent_uri')) {
+      context.handle(
+        _replyParentUriMeta,
+        replyParentUri.isAcceptableOrUnknown(
+          data['reply_parent_uri']!,
+          _replyParentUriMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reply_parent_cid')) {
+      context.handle(
+        _replyParentCidMeta,
+        replyParentCid.isAcceptableOrUnknown(
+          data['reply_parent_cid']!,
+          _replyParentCidMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reply_root_uri')) {
+      context.handle(
+        _replyRootUriMeta,
+        replyRootUri.isAcceptableOrUnknown(
+          data['reply_root_uri']!,
+          _replyRootUriMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reply_root_cid')) {
+      context.handle(
+        _replyRootCidMeta,
+        replyRootCid.isAcceptableOrUnknown(
+          data['reply_root_cid']!,
+          _replyRootCidMeta,
+        ),
+      );
+    }
+    if (data.containsKey('quote_uri')) {
+      context.handle(
+        _quoteUriMeta,
+        quoteUri.isAcceptableOrUnknown(data['quote_uri']!, _quoteUriMeta),
+      );
+    }
+    if (data.containsKey('quote_cid')) {
+      context.handle(
+        _quoteCidMeta,
+        quoteCid.isAcceptableOrUnknown(data['quote_cid']!, _quoteCidMeta),
+      );
+    }
+    if (data.containsKey('facets_json')) {
+      context.handle(
+        _facetsJsonMeta,
+        facetsJson.isAcceptableOrUnknown(data['facets_json']!, _facetsJsonMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('error_message')) {
+      context.handle(
+        _errorMessageMeta,
+        errorMessage.isAcceptableOrUnknown(
+          data['error_message']!,
+          _errorMessageMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Draft map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Draft(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      replyParentUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reply_parent_uri'],
+      ),
+      replyParentCid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reply_parent_cid'],
+      ),
+      replyRootUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reply_root_uri'],
+      ),
+      replyRootCid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reply_root_cid'],
+      ),
+      quoteUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quote_uri'],
+      ),
+      quoteCid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quote_cid'],
+      ),
+      facetsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}facets_json'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      errorMessage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error_message'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DraftsTable createAlias(String alias) {
+    return $DraftsTable(attachedDatabase, alias);
+  }
+}
+
+class Draft extends DataClass implements Insertable<Draft> {
+  final String id;
+  final String content;
+  final String? replyParentUri;
+  final String? replyParentCid;
+  final String? replyRootUri;
+  final String? replyRootCid;
+  final String? quoteUri;
+  final String? quoteCid;
+  final String? facetsJson;
+  final String status;
+  final String? errorMessage;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const Draft({
+    required this.id,
+    required this.content,
+    this.replyParentUri,
+    this.replyParentCid,
+    this.replyRootUri,
+    this.replyRootCid,
+    this.quoteUri,
+    this.quoteCid,
+    this.facetsJson,
+    required this.status,
+    this.errorMessage,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['content'] = Variable<String>(content);
+    if (!nullToAbsent || replyParentUri != null) {
+      map['reply_parent_uri'] = Variable<String>(replyParentUri);
+    }
+    if (!nullToAbsent || replyParentCid != null) {
+      map['reply_parent_cid'] = Variable<String>(replyParentCid);
+    }
+    if (!nullToAbsent || replyRootUri != null) {
+      map['reply_root_uri'] = Variable<String>(replyRootUri);
+    }
+    if (!nullToAbsent || replyRootCid != null) {
+      map['reply_root_cid'] = Variable<String>(replyRootCid);
+    }
+    if (!nullToAbsent || quoteUri != null) {
+      map['quote_uri'] = Variable<String>(quoteUri);
+    }
+    if (!nullToAbsent || quoteCid != null) {
+      map['quote_cid'] = Variable<String>(quoteCid);
+    }
+    if (!nullToAbsent || facetsJson != null) {
+      map['facets_json'] = Variable<String>(facetsJson);
+    }
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || errorMessage != null) {
+      map['error_message'] = Variable<String>(errorMessage);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  DraftsCompanion toCompanion(bool nullToAbsent) {
+    return DraftsCompanion(
+      id: Value(id),
+      content: Value(content),
+      replyParentUri: replyParentUri == null && nullToAbsent
+          ? const Value.absent()
+          : Value(replyParentUri),
+      replyParentCid: replyParentCid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(replyParentCid),
+      replyRootUri: replyRootUri == null && nullToAbsent
+          ? const Value.absent()
+          : Value(replyRootUri),
+      replyRootCid: replyRootCid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(replyRootCid),
+      quoteUri: quoteUri == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quoteUri),
+      quoteCid: quoteCid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quoteCid),
+      facetsJson: facetsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(facetsJson),
+      status: Value(status),
+      errorMessage: errorMessage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(errorMessage),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Draft.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Draft(
+      id: serializer.fromJson<String>(json['id']),
+      content: serializer.fromJson<String>(json['content']),
+      replyParentUri: serializer.fromJson<String?>(json['replyParentUri']),
+      replyParentCid: serializer.fromJson<String?>(json['replyParentCid']),
+      replyRootUri: serializer.fromJson<String?>(json['replyRootUri']),
+      replyRootCid: serializer.fromJson<String?>(json['replyRootCid']),
+      quoteUri: serializer.fromJson<String?>(json['quoteUri']),
+      quoteCid: serializer.fromJson<String?>(json['quoteCid']),
+      facetsJson: serializer.fromJson<String?>(json['facetsJson']),
+      status: serializer.fromJson<String>(json['status']),
+      errorMessage: serializer.fromJson<String?>(json['errorMessage']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'content': serializer.toJson<String>(content),
+      'replyParentUri': serializer.toJson<String?>(replyParentUri),
+      'replyParentCid': serializer.toJson<String?>(replyParentCid),
+      'replyRootUri': serializer.toJson<String?>(replyRootUri),
+      'replyRootCid': serializer.toJson<String?>(replyRootCid),
+      'quoteUri': serializer.toJson<String?>(quoteUri),
+      'quoteCid': serializer.toJson<String?>(quoteCid),
+      'facetsJson': serializer.toJson<String?>(facetsJson),
+      'status': serializer.toJson<String>(status),
+      'errorMessage': serializer.toJson<String?>(errorMessage),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  Draft copyWith({
+    String? id,
+    String? content,
+    Value<String?> replyParentUri = const Value.absent(),
+    Value<String?> replyParentCid = const Value.absent(),
+    Value<String?> replyRootUri = const Value.absent(),
+    Value<String?> replyRootCid = const Value.absent(),
+    Value<String?> quoteUri = const Value.absent(),
+    Value<String?> quoteCid = const Value.absent(),
+    Value<String?> facetsJson = const Value.absent(),
+    String? status,
+    Value<String?> errorMessage = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => Draft(
+    id: id ?? this.id,
+    content: content ?? this.content,
+    replyParentUri: replyParentUri.present
+        ? replyParentUri.value
+        : this.replyParentUri,
+    replyParentCid: replyParentCid.present
+        ? replyParentCid.value
+        : this.replyParentCid,
+    replyRootUri: replyRootUri.present ? replyRootUri.value : this.replyRootUri,
+    replyRootCid: replyRootCid.present ? replyRootCid.value : this.replyRootCid,
+    quoteUri: quoteUri.present ? quoteUri.value : this.quoteUri,
+    quoteCid: quoteCid.present ? quoteCid.value : this.quoteCid,
+    facetsJson: facetsJson.present ? facetsJson.value : this.facetsJson,
+    status: status ?? this.status,
+    errorMessage: errorMessage.present ? errorMessage.value : this.errorMessage,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  Draft copyWithCompanion(DraftsCompanion data) {
+    return Draft(
+      id: data.id.present ? data.id.value : this.id,
+      content: data.content.present ? data.content.value : this.content,
+      replyParentUri: data.replyParentUri.present
+          ? data.replyParentUri.value
+          : this.replyParentUri,
+      replyParentCid: data.replyParentCid.present
+          ? data.replyParentCid.value
+          : this.replyParentCid,
+      replyRootUri: data.replyRootUri.present
+          ? data.replyRootUri.value
+          : this.replyRootUri,
+      replyRootCid: data.replyRootCid.present
+          ? data.replyRootCid.value
+          : this.replyRootCid,
+      quoteUri: data.quoteUri.present ? data.quoteUri.value : this.quoteUri,
+      quoteCid: data.quoteCid.present ? data.quoteCid.value : this.quoteCid,
+      facetsJson: data.facetsJson.present
+          ? data.facetsJson.value
+          : this.facetsJson,
+      status: data.status.present ? data.status.value : this.status,
+      errorMessage: data.errorMessage.present
+          ? data.errorMessage.value
+          : this.errorMessage,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Draft(')
+          ..write('id: $id, ')
+          ..write('content: $content, ')
+          ..write('replyParentUri: $replyParentUri, ')
+          ..write('replyParentCid: $replyParentCid, ')
+          ..write('replyRootUri: $replyRootUri, ')
+          ..write('replyRootCid: $replyRootCid, ')
+          ..write('quoteUri: $quoteUri, ')
+          ..write('quoteCid: $quoteCid, ')
+          ..write('facetsJson: $facetsJson, ')
+          ..write('status: $status, ')
+          ..write('errorMessage: $errorMessage, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    content,
+    replyParentUri,
+    replyParentCid,
+    replyRootUri,
+    replyRootCid,
+    quoteUri,
+    quoteCid,
+    facetsJson,
+    status,
+    errorMessage,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Draft &&
+          other.id == this.id &&
+          other.content == this.content &&
+          other.replyParentUri == this.replyParentUri &&
+          other.replyParentCid == this.replyParentCid &&
+          other.replyRootUri == this.replyRootUri &&
+          other.replyRootCid == this.replyRootCid &&
+          other.quoteUri == this.quoteUri &&
+          other.quoteCid == this.quoteCid &&
+          other.facetsJson == this.facetsJson &&
+          other.status == this.status &&
+          other.errorMessage == this.errorMessage &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DraftsCompanion extends UpdateCompanion<Draft> {
+  final Value<String> id;
+  final Value<String> content;
+  final Value<String?> replyParentUri;
+  final Value<String?> replyParentCid;
+  final Value<String?> replyRootUri;
+  final Value<String?> replyRootCid;
+  final Value<String?> quoteUri;
+  final Value<String?> quoteCid;
+  final Value<String?> facetsJson;
+  final Value<String> status;
+  final Value<String?> errorMessage;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const DraftsCompanion({
+    this.id = const Value.absent(),
+    this.content = const Value.absent(),
+    this.replyParentUri = const Value.absent(),
+    this.replyParentCid = const Value.absent(),
+    this.replyRootUri = const Value.absent(),
+    this.replyRootCid = const Value.absent(),
+    this.quoteUri = const Value.absent(),
+    this.quoteCid = const Value.absent(),
+    this.facetsJson = const Value.absent(),
+    this.status = const Value.absent(),
+    this.errorMessage = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DraftsCompanion.insert({
+    required String id,
+    this.content = const Value.absent(),
+    this.replyParentUri = const Value.absent(),
+    this.replyParentCid = const Value.absent(),
+    this.replyRootUri = const Value.absent(),
+    this.replyRootCid = const Value.absent(),
+    this.quoteUri = const Value.absent(),
+    this.quoteCid = const Value.absent(),
+    this.facetsJson = const Value.absent(),
+    required String status,
+    this.errorMessage = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       status = Value(status),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Draft> custom({
+    Expression<String>? id,
+    Expression<String>? content,
+    Expression<String>? replyParentUri,
+    Expression<String>? replyParentCid,
+    Expression<String>? replyRootUri,
+    Expression<String>? replyRootCid,
+    Expression<String>? quoteUri,
+    Expression<String>? quoteCid,
+    Expression<String>? facetsJson,
+    Expression<String>? status,
+    Expression<String>? errorMessage,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (content != null) 'content': content,
+      if (replyParentUri != null) 'reply_parent_uri': replyParentUri,
+      if (replyParentCid != null) 'reply_parent_cid': replyParentCid,
+      if (replyRootUri != null) 'reply_root_uri': replyRootUri,
+      if (replyRootCid != null) 'reply_root_cid': replyRootCid,
+      if (quoteUri != null) 'quote_uri': quoteUri,
+      if (quoteCid != null) 'quote_cid': quoteCid,
+      if (facetsJson != null) 'facets_json': facetsJson,
+      if (status != null) 'status': status,
+      if (errorMessage != null) 'error_message': errorMessage,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DraftsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? content,
+    Value<String?>? replyParentUri,
+    Value<String?>? replyParentCid,
+    Value<String?>? replyRootUri,
+    Value<String?>? replyRootCid,
+    Value<String?>? quoteUri,
+    Value<String?>? quoteCid,
+    Value<String?>? facetsJson,
+    Value<String>? status,
+    Value<String?>? errorMessage,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return DraftsCompanion(
+      id: id ?? this.id,
+      content: content ?? this.content,
+      replyParentUri: replyParentUri ?? this.replyParentUri,
+      replyParentCid: replyParentCid ?? this.replyParentCid,
+      replyRootUri: replyRootUri ?? this.replyRootUri,
+      replyRootCid: replyRootCid ?? this.replyRootCid,
+      quoteUri: quoteUri ?? this.quoteUri,
+      quoteCid: quoteCid ?? this.quoteCid,
+      facetsJson: facetsJson ?? this.facetsJson,
+      status: status ?? this.status,
+      errorMessage: errorMessage ?? this.errorMessage,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (replyParentUri.present) {
+      map['reply_parent_uri'] = Variable<String>(replyParentUri.value);
+    }
+    if (replyParentCid.present) {
+      map['reply_parent_cid'] = Variable<String>(replyParentCid.value);
+    }
+    if (replyRootUri.present) {
+      map['reply_root_uri'] = Variable<String>(replyRootUri.value);
+    }
+    if (replyRootCid.present) {
+      map['reply_root_cid'] = Variable<String>(replyRootCid.value);
+    }
+    if (quoteUri.present) {
+      map['quote_uri'] = Variable<String>(quoteUri.value);
+    }
+    if (quoteCid.present) {
+      map['quote_cid'] = Variable<String>(quoteCid.value);
+    }
+    if (facetsJson.present) {
+      map['facets_json'] = Variable<String>(facetsJson.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (errorMessage.present) {
+      map['error_message'] = Variable<String>(errorMessage.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DraftsCompanion(')
+          ..write('id: $id, ')
+          ..write('content: $content, ')
+          ..write('replyParentUri: $replyParentUri, ')
+          ..write('replyParentCid: $replyParentCid, ')
+          ..write('replyRootUri: $replyRootUri, ')
+          ..write('replyRootCid: $replyRootCid, ')
+          ..write('quoteUri: $quoteUri, ')
+          ..write('quoteCid: $quoteCid, ')
+          ..write('facetsJson: $facetsJson, ')
+          ..write('status: $status, ')
+          ..write('errorMessage: $errorMessage, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DraftMediaTable extends DraftMedia
+    with TableInfo<$DraftMediaTable, DraftMediaData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DraftMediaTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _draftIdMeta = const VerificationMeta(
+    'draftId',
+  );
+  @override
+  late final GeneratedColumn<String> draftId = GeneratedColumn<String>(
+    'draft_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES drafts (id)',
+    ),
+  );
+  static const VerificationMeta _localPathMeta = const VerificationMeta(
+    'localPath',
+  );
+  @override
+  late final GeneratedColumn<String> localPath = GeneratedColumn<String>(
+    'local_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mimeTypeMeta = const VerificationMeta(
+    'mimeType',
+  );
+  @override
+  late final GeneratedColumn<String> mimeType = GeneratedColumn<String>(
+    'mime_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _altTextMeta = const VerificationMeta(
+    'altText',
+  );
+  @override
+  late final GeneratedColumn<String> altText = GeneratedColumn<String>(
+    'alt_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _uploadCidMeta = const VerificationMeta(
+    'uploadCid',
+  );
+  @override
+  late final GeneratedColumn<String> uploadCid = GeneratedColumn<String>(
+    'upload_cid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _blobRefJsonMeta = const VerificationMeta(
+    'blobRefJson',
+  );
+  @override
+  late final GeneratedColumn<String> blobRefJson = GeneratedColumn<String>(
+    'blob_ref_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    draftId,
+    localPath,
+    mimeType,
+    altText,
+    uploadCid,
+    blobRefJson,
+    status,
+    sortOrder,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'draft_media';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DraftMediaData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('draft_id')) {
+      context.handle(
+        _draftIdMeta,
+        draftId.isAcceptableOrUnknown(data['draft_id']!, _draftIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_draftIdMeta);
+    }
+    if (data.containsKey('local_path')) {
+      context.handle(
+        _localPathMeta,
+        localPath.isAcceptableOrUnknown(data['local_path']!, _localPathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_localPathMeta);
+    }
+    if (data.containsKey('mime_type')) {
+      context.handle(
+        _mimeTypeMeta,
+        mimeType.isAcceptableOrUnknown(data['mime_type']!, _mimeTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mimeTypeMeta);
+    }
+    if (data.containsKey('alt_text')) {
+      context.handle(
+        _altTextMeta,
+        altText.isAcceptableOrUnknown(data['alt_text']!, _altTextMeta),
+      );
+    }
+    if (data.containsKey('upload_cid')) {
+      context.handle(
+        _uploadCidMeta,
+        uploadCid.isAcceptableOrUnknown(data['upload_cid']!, _uploadCidMeta),
+      );
+    }
+    if (data.containsKey('blob_ref_json')) {
+      context.handle(
+        _blobRefJsonMeta,
+        blobRefJson.isAcceptableOrUnknown(
+          data['blob_ref_json']!,
+          _blobRefJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DraftMediaData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DraftMediaData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      draftId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}draft_id'],
+      )!,
+      localPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_path'],
+      )!,
+      mimeType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mime_type'],
+      )!,
+      altText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}alt_text'],
+      ),
+      uploadCid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}upload_cid'],
+      ),
+      blobRefJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}blob_ref_json'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DraftMediaTable createAlias(String alias) {
+    return $DraftMediaTable(attachedDatabase, alias);
+  }
+}
+
+class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
+  final int id;
+  final String draftId;
+  final String localPath;
+  final String mimeType;
+  final String? altText;
+  final String? uploadCid;
+  final String? blobRefJson;
+  final String status;
+  final int sortOrder;
+  final DateTime createdAt;
+  const DraftMediaData({
+    required this.id,
+    required this.draftId,
+    required this.localPath,
+    required this.mimeType,
+    this.altText,
+    this.uploadCid,
+    this.blobRefJson,
+    required this.status,
+    required this.sortOrder,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['draft_id'] = Variable<String>(draftId);
+    map['local_path'] = Variable<String>(localPath);
+    map['mime_type'] = Variable<String>(mimeType);
+    if (!nullToAbsent || altText != null) {
+      map['alt_text'] = Variable<String>(altText);
+    }
+    if (!nullToAbsent || uploadCid != null) {
+      map['upload_cid'] = Variable<String>(uploadCid);
+    }
+    if (!nullToAbsent || blobRefJson != null) {
+      map['blob_ref_json'] = Variable<String>(blobRefJson);
+    }
+    map['status'] = Variable<String>(status);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  DraftMediaCompanion toCompanion(bool nullToAbsent) {
+    return DraftMediaCompanion(
+      id: Value(id),
+      draftId: Value(draftId),
+      localPath: Value(localPath),
+      mimeType: Value(mimeType),
+      altText: altText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(altText),
+      uploadCid: uploadCid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(uploadCid),
+      blobRefJson: blobRefJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(blobRefJson),
+      status: Value(status),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory DraftMediaData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DraftMediaData(
+      id: serializer.fromJson<int>(json['id']),
+      draftId: serializer.fromJson<String>(json['draftId']),
+      localPath: serializer.fromJson<String>(json['localPath']),
+      mimeType: serializer.fromJson<String>(json['mimeType']),
+      altText: serializer.fromJson<String?>(json['altText']),
+      uploadCid: serializer.fromJson<String?>(json['uploadCid']),
+      blobRefJson: serializer.fromJson<String?>(json['blobRefJson']),
+      status: serializer.fromJson<String>(json['status']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'draftId': serializer.toJson<String>(draftId),
+      'localPath': serializer.toJson<String>(localPath),
+      'mimeType': serializer.toJson<String>(mimeType),
+      'altText': serializer.toJson<String?>(altText),
+      'uploadCid': serializer.toJson<String?>(uploadCid),
+      'blobRefJson': serializer.toJson<String?>(blobRefJson),
+      'status': serializer.toJson<String>(status),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  DraftMediaData copyWith({
+    int? id,
+    String? draftId,
+    String? localPath,
+    String? mimeType,
+    Value<String?> altText = const Value.absent(),
+    Value<String?> uploadCid = const Value.absent(),
+    Value<String?> blobRefJson = const Value.absent(),
+    String? status,
+    int? sortOrder,
+    DateTime? createdAt,
+  }) => DraftMediaData(
+    id: id ?? this.id,
+    draftId: draftId ?? this.draftId,
+    localPath: localPath ?? this.localPath,
+    mimeType: mimeType ?? this.mimeType,
+    altText: altText.present ? altText.value : this.altText,
+    uploadCid: uploadCid.present ? uploadCid.value : this.uploadCid,
+    blobRefJson: blobRefJson.present ? blobRefJson.value : this.blobRefJson,
+    status: status ?? this.status,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  DraftMediaData copyWithCompanion(DraftMediaCompanion data) {
+    return DraftMediaData(
+      id: data.id.present ? data.id.value : this.id,
+      draftId: data.draftId.present ? data.draftId.value : this.draftId,
+      localPath: data.localPath.present ? data.localPath.value : this.localPath,
+      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
+      altText: data.altText.present ? data.altText.value : this.altText,
+      uploadCid: data.uploadCid.present ? data.uploadCid.value : this.uploadCid,
+      blobRefJson: data.blobRefJson.present
+          ? data.blobRefJson.value
+          : this.blobRefJson,
+      status: data.status.present ? data.status.value : this.status,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DraftMediaData(')
+          ..write('id: $id, ')
+          ..write('draftId: $draftId, ')
+          ..write('localPath: $localPath, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('altText: $altText, ')
+          ..write('uploadCid: $uploadCid, ')
+          ..write('blobRefJson: $blobRefJson, ')
+          ..write('status: $status, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    draftId,
+    localPath,
+    mimeType,
+    altText,
+    uploadCid,
+    blobRefJson,
+    status,
+    sortOrder,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DraftMediaData &&
+          other.id == this.id &&
+          other.draftId == this.draftId &&
+          other.localPath == this.localPath &&
+          other.mimeType == this.mimeType &&
+          other.altText == this.altText &&
+          other.uploadCid == this.uploadCid &&
+          other.blobRefJson == this.blobRefJson &&
+          other.status == this.status &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt);
+}
+
+class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
+  final Value<int> id;
+  final Value<String> draftId;
+  final Value<String> localPath;
+  final Value<String> mimeType;
+  final Value<String?> altText;
+  final Value<String?> uploadCid;
+  final Value<String?> blobRefJson;
+  final Value<String> status;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  const DraftMediaCompanion({
+    this.id = const Value.absent(),
+    this.draftId = const Value.absent(),
+    this.localPath = const Value.absent(),
+    this.mimeType = const Value.absent(),
+    this.altText = const Value.absent(),
+    this.uploadCid = const Value.absent(),
+    this.blobRefJson = const Value.absent(),
+    this.status = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  DraftMediaCompanion.insert({
+    this.id = const Value.absent(),
+    required String draftId,
+    required String localPath,
+    required String mimeType,
+    this.altText = const Value.absent(),
+    this.uploadCid = const Value.absent(),
+    this.blobRefJson = const Value.absent(),
+    required String status,
+    required int sortOrder,
+    required DateTime createdAt,
+  }) : draftId = Value(draftId),
+       localPath = Value(localPath),
+       mimeType = Value(mimeType),
+       status = Value(status),
+       sortOrder = Value(sortOrder),
+       createdAt = Value(createdAt);
+  static Insertable<DraftMediaData> custom({
+    Expression<int>? id,
+    Expression<String>? draftId,
+    Expression<String>? localPath,
+    Expression<String>? mimeType,
+    Expression<String>? altText,
+    Expression<String>? uploadCid,
+    Expression<String>? blobRefJson,
+    Expression<String>? status,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (draftId != null) 'draft_id': draftId,
+      if (localPath != null) 'local_path': localPath,
+      if (mimeType != null) 'mime_type': mimeType,
+      if (altText != null) 'alt_text': altText,
+      if (uploadCid != null) 'upload_cid': uploadCid,
+      if (blobRefJson != null) 'blob_ref_json': blobRefJson,
+      if (status != null) 'status': status,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  DraftMediaCompanion copyWith({
+    Value<int>? id,
+    Value<String>? draftId,
+    Value<String>? localPath,
+    Value<String>? mimeType,
+    Value<String?>? altText,
+    Value<String?>? uploadCid,
+    Value<String?>? blobRefJson,
+    Value<String>? status,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+  }) {
+    return DraftMediaCompanion(
+      id: id ?? this.id,
+      draftId: draftId ?? this.draftId,
+      localPath: localPath ?? this.localPath,
+      mimeType: mimeType ?? this.mimeType,
+      altText: altText ?? this.altText,
+      uploadCid: uploadCid ?? this.uploadCid,
+      blobRefJson: blobRefJson ?? this.blobRefJson,
+      status: status ?? this.status,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (draftId.present) {
+      map['draft_id'] = Variable<String>(draftId.value);
+    }
+    if (localPath.present) {
+      map['local_path'] = Variable<String>(localPath.value);
+    }
+    if (mimeType.present) {
+      map['mime_type'] = Variable<String>(mimeType.value);
+    }
+    if (altText.present) {
+      map['alt_text'] = Variable<String>(altText.value);
+    }
+    if (uploadCid.present) {
+      map['upload_cid'] = Variable<String>(uploadCid.value);
+    }
+    if (blobRefJson.present) {
+      map['blob_ref_json'] = Variable<String>(blobRefJson.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DraftMediaCompanion(')
+          ..write('id: $id, ')
+          ..write('draftId: $draftId, ')
+          ..write('localPath: $localPath, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('altText: $altText, ')
+          ..write('uploadCid: $uploadCid, ')
+          ..write('blobRefJson: $blobRefJson, ')
+          ..write('status: $status, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3428,6 +4821,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SavedFeedsTable savedFeeds = $SavedFeedsTable(this);
   late final $PreferenceSyncQueueTable preferenceSyncQueue =
       $PreferenceSyncQueueTable(this);
+  late final $DraftsTable drafts = $DraftsTable(this);
+  late final $DraftMediaTable draftMedia = $DraftMediaTable(this);
   late final Index timelineSortIdx = Index(
     'timeline_sort_idx',
     'CREATE INDEX timeline_sort_idx ON timeline_items (feed_key, sort_key)',
@@ -3439,6 +4834,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final SavedFeedsDao savedFeedsDao = SavedFeedsDao(this as AppDatabase);
   late final PreferenceSyncQueueDao preferenceSyncQueueDao =
       PreferenceSyncQueueDao(this as AppDatabase);
+  late final DraftsDao draftsDao = DraftsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3453,6 +4849,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     follows,
     savedFeeds,
     preferenceSyncQueue,
+    drafts,
+    draftMedia,
     timelineSortIdx,
   ];
 }
@@ -5521,6 +6919,874 @@ typedef $$PreferenceSyncQueueTableProcessedTableManager =
       PreferenceSyncQueueData,
       PrefetchHooks Function()
     >;
+typedef $$DraftsTableCreateCompanionBuilder =
+    DraftsCompanion Function({
+      required String id,
+      Value<String> content,
+      Value<String?> replyParentUri,
+      Value<String?> replyParentCid,
+      Value<String?> replyRootUri,
+      Value<String?> replyRootCid,
+      Value<String?> quoteUri,
+      Value<String?> quoteCid,
+      Value<String?> facetsJson,
+      required String status,
+      Value<String?> errorMessage,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$DraftsTableUpdateCompanionBuilder =
+    DraftsCompanion Function({
+      Value<String> id,
+      Value<String> content,
+      Value<String?> replyParentUri,
+      Value<String?> replyParentCid,
+      Value<String?> replyRootUri,
+      Value<String?> replyRootCid,
+      Value<String?> quoteUri,
+      Value<String?> quoteCid,
+      Value<String?> facetsJson,
+      Value<String> status,
+      Value<String?> errorMessage,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$DraftsTableReferences
+    extends BaseReferences<_$AppDatabase, $DraftsTable, Draft> {
+  $$DraftsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$DraftMediaTable, List<DraftMediaData>>
+  _draftMediaRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.draftMedia,
+    aliasName: $_aliasNameGenerator(db.drafts.id, db.draftMedia.draftId),
+  );
+
+  $$DraftMediaTableProcessedTableManager get draftMediaRefs {
+    final manager = $$DraftMediaTableTableManager(
+      $_db,
+      $_db.draftMedia,
+    ).filter((f) => f.draftId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_draftMediaRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$DraftsTableFilterComposer
+    extends Composer<_$AppDatabase, $DraftsTable> {
+  $$DraftsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get replyParentUri => $composableBuilder(
+    column: $table.replyParentUri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get replyParentCid => $composableBuilder(
+    column: $table.replyParentCid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get replyRootUri => $composableBuilder(
+    column: $table.replyRootUri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get replyRootCid => $composableBuilder(
+    column: $table.replyRootCid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get quoteUri => $composableBuilder(
+    column: $table.quoteUri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get quoteCid => $composableBuilder(
+    column: $table.quoteCid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get facetsJson => $composableBuilder(
+    column: $table.facetsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> draftMediaRefs(
+    Expression<bool> Function($$DraftMediaTableFilterComposer f) f,
+  ) {
+    final $$DraftMediaTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.draftMedia,
+      getReferencedColumn: (t) => t.draftId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DraftMediaTableFilterComposer(
+            $db: $db,
+            $table: $db.draftMedia,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$DraftsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DraftsTable> {
+  $$DraftsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get replyParentUri => $composableBuilder(
+    column: $table.replyParentUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get replyParentCid => $composableBuilder(
+    column: $table.replyParentCid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get replyRootUri => $composableBuilder(
+    column: $table.replyRootUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get replyRootCid => $composableBuilder(
+    column: $table.replyRootCid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get quoteUri => $composableBuilder(
+    column: $table.quoteUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get quoteCid => $composableBuilder(
+    column: $table.quoteCid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get facetsJson => $composableBuilder(
+    column: $table.facetsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DraftsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DraftsTable> {
+  $$DraftsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<String> get replyParentUri => $composableBuilder(
+    column: $table.replyParentUri,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get replyParentCid => $composableBuilder(
+    column: $table.replyParentCid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get replyRootUri => $composableBuilder(
+    column: $table.replyRootUri,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get replyRootCid => $composableBuilder(
+    column: $table.replyRootCid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get quoteUri =>
+      $composableBuilder(column: $table.quoteUri, builder: (column) => column);
+
+  GeneratedColumn<String> get quoteCid =>
+      $composableBuilder(column: $table.quoteCid, builder: (column) => column);
+
+  GeneratedColumn<String> get facetsJson => $composableBuilder(
+    column: $table.facetsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> draftMediaRefs<T extends Object>(
+    Expression<T> Function($$DraftMediaTableAnnotationComposer a) f,
+  ) {
+    final $$DraftMediaTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.draftMedia,
+      getReferencedColumn: (t) => t.draftId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DraftMediaTableAnnotationComposer(
+            $db: $db,
+            $table: $db.draftMedia,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$DraftsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DraftsTable,
+          Draft,
+          $$DraftsTableFilterComposer,
+          $$DraftsTableOrderingComposer,
+          $$DraftsTableAnnotationComposer,
+          $$DraftsTableCreateCompanionBuilder,
+          $$DraftsTableUpdateCompanionBuilder,
+          (Draft, $$DraftsTableReferences),
+          Draft,
+          PrefetchHooks Function({bool draftMediaRefs})
+        > {
+  $$DraftsTableTableManager(_$AppDatabase db, $DraftsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DraftsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DraftsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DraftsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<String?> replyParentUri = const Value.absent(),
+                Value<String?> replyParentCid = const Value.absent(),
+                Value<String?> replyRootUri = const Value.absent(),
+                Value<String?> replyRootCid = const Value.absent(),
+                Value<String?> quoteUri = const Value.absent(),
+                Value<String?> quoteCid = const Value.absent(),
+                Value<String?> facetsJson = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> errorMessage = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DraftsCompanion(
+                id: id,
+                content: content,
+                replyParentUri: replyParentUri,
+                replyParentCid: replyParentCid,
+                replyRootUri: replyRootUri,
+                replyRootCid: replyRootCid,
+                quoteUri: quoteUri,
+                quoteCid: quoteCid,
+                facetsJson: facetsJson,
+                status: status,
+                errorMessage: errorMessage,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String> content = const Value.absent(),
+                Value<String?> replyParentUri = const Value.absent(),
+                Value<String?> replyParentCid = const Value.absent(),
+                Value<String?> replyRootUri = const Value.absent(),
+                Value<String?> replyRootCid = const Value.absent(),
+                Value<String?> quoteUri = const Value.absent(),
+                Value<String?> quoteCid = const Value.absent(),
+                Value<String?> facetsJson = const Value.absent(),
+                required String status,
+                Value<String?> errorMessage = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => DraftsCompanion.insert(
+                id: id,
+                content: content,
+                replyParentUri: replyParentUri,
+                replyParentCid: replyParentCid,
+                replyRootUri: replyRootUri,
+                replyRootCid: replyRootCid,
+                quoteUri: quoteUri,
+                quoteCid: quoteCid,
+                facetsJson: facetsJson,
+                status: status,
+                errorMessage: errorMessage,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$DraftsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback: ({draftMediaRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (draftMediaRefs) db.draftMedia],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (draftMediaRefs)
+                    await $_getPrefetchedData<
+                      Draft,
+                      $DraftsTable,
+                      DraftMediaData
+                    >(
+                      currentTable: table,
+                      referencedTable: $$DraftsTableReferences
+                          ._draftMediaRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$DraftsTableReferences(db, table, p0).draftMediaRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.draftId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DraftsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DraftsTable,
+      Draft,
+      $$DraftsTableFilterComposer,
+      $$DraftsTableOrderingComposer,
+      $$DraftsTableAnnotationComposer,
+      $$DraftsTableCreateCompanionBuilder,
+      $$DraftsTableUpdateCompanionBuilder,
+      (Draft, $$DraftsTableReferences),
+      Draft,
+      PrefetchHooks Function({bool draftMediaRefs})
+    >;
+typedef $$DraftMediaTableCreateCompanionBuilder =
+    DraftMediaCompanion Function({
+      Value<int> id,
+      required String draftId,
+      required String localPath,
+      required String mimeType,
+      Value<String?> altText,
+      Value<String?> uploadCid,
+      Value<String?> blobRefJson,
+      required String status,
+      required int sortOrder,
+      required DateTime createdAt,
+    });
+typedef $$DraftMediaTableUpdateCompanionBuilder =
+    DraftMediaCompanion Function({
+      Value<int> id,
+      Value<String> draftId,
+      Value<String> localPath,
+      Value<String> mimeType,
+      Value<String?> altText,
+      Value<String?> uploadCid,
+      Value<String?> blobRefJson,
+      Value<String> status,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+    });
+
+final class $$DraftMediaTableReferences
+    extends BaseReferences<_$AppDatabase, $DraftMediaTable, DraftMediaData> {
+  $$DraftMediaTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $DraftsTable _draftIdTable(_$AppDatabase db) => db.drafts.createAlias(
+    $_aliasNameGenerator(db.draftMedia.draftId, db.drafts.id),
+  );
+
+  $$DraftsTableProcessedTableManager get draftId {
+    final $_column = $_itemColumn<String>('draft_id')!;
+
+    final manager = $$DraftsTableTableManager(
+      $_db,
+      $_db.drafts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_draftIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$DraftMediaTableFilterComposer
+    extends Composer<_$AppDatabase, $DraftMediaTable> {
+  $$DraftMediaTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get altText => $composableBuilder(
+    column: $table.altText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get uploadCid => $composableBuilder(
+    column: $table.uploadCid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get blobRefJson => $composableBuilder(
+    column: $table.blobRefJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$DraftsTableFilterComposer get draftId {
+    final $$DraftsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.draftId,
+      referencedTable: $db.drafts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DraftsTableFilterComposer(
+            $db: $db,
+            $table: $db.drafts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DraftMediaTableOrderingComposer
+    extends Composer<_$AppDatabase, $DraftMediaTable> {
+  $$DraftMediaTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get altText => $composableBuilder(
+    column: $table.altText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get uploadCid => $composableBuilder(
+    column: $table.uploadCid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get blobRefJson => $composableBuilder(
+    column: $table.blobRefJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$DraftsTableOrderingComposer get draftId {
+    final $$DraftsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.draftId,
+      referencedTable: $db.drafts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DraftsTableOrderingComposer(
+            $db: $db,
+            $table: $db.drafts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DraftMediaTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DraftMediaTable> {
+  $$DraftMediaTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get localPath =>
+      $composableBuilder(column: $table.localPath, builder: (column) => column);
+
+  GeneratedColumn<String> get mimeType =>
+      $composableBuilder(column: $table.mimeType, builder: (column) => column);
+
+  GeneratedColumn<String> get altText =>
+      $composableBuilder(column: $table.altText, builder: (column) => column);
+
+  GeneratedColumn<String> get uploadCid =>
+      $composableBuilder(column: $table.uploadCid, builder: (column) => column);
+
+  GeneratedColumn<String> get blobRefJson => $composableBuilder(
+    column: $table.blobRefJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$DraftsTableAnnotationComposer get draftId {
+    final $$DraftsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.draftId,
+      referencedTable: $db.drafts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DraftsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.drafts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DraftMediaTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DraftMediaTable,
+          DraftMediaData,
+          $$DraftMediaTableFilterComposer,
+          $$DraftMediaTableOrderingComposer,
+          $$DraftMediaTableAnnotationComposer,
+          $$DraftMediaTableCreateCompanionBuilder,
+          $$DraftMediaTableUpdateCompanionBuilder,
+          (DraftMediaData, $$DraftMediaTableReferences),
+          DraftMediaData,
+          PrefetchHooks Function({bool draftId})
+        > {
+  $$DraftMediaTableTableManager(_$AppDatabase db, $DraftMediaTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DraftMediaTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DraftMediaTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DraftMediaTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> draftId = const Value.absent(),
+                Value<String> localPath = const Value.absent(),
+                Value<String> mimeType = const Value.absent(),
+                Value<String?> altText = const Value.absent(),
+                Value<String?> uploadCid = const Value.absent(),
+                Value<String?> blobRefJson = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => DraftMediaCompanion(
+                id: id,
+                draftId: draftId,
+                localPath: localPath,
+                mimeType: mimeType,
+                altText: altText,
+                uploadCid: uploadCid,
+                blobRefJson: blobRefJson,
+                status: status,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String draftId,
+                required String localPath,
+                required String mimeType,
+                Value<String?> altText = const Value.absent(),
+                Value<String?> uploadCid = const Value.absent(),
+                Value<String?> blobRefJson = const Value.absent(),
+                required String status,
+                required int sortOrder,
+                required DateTime createdAt,
+              }) => DraftMediaCompanion.insert(
+                id: id,
+                draftId: draftId,
+                localPath: localPath,
+                mimeType: mimeType,
+                altText: altText,
+                uploadCid: uploadCid,
+                blobRefJson: blobRefJson,
+                status: status,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$DraftMediaTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({draftId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (draftId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.draftId,
+                                referencedTable: $$DraftMediaTableReferences
+                                    ._draftIdTable(db),
+                                referencedColumn: $$DraftMediaTableReferences
+                                    ._draftIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DraftMediaTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DraftMediaTable,
+      DraftMediaData,
+      $$DraftMediaTableFilterComposer,
+      $$DraftMediaTableOrderingComposer,
+      $$DraftMediaTableAnnotationComposer,
+      $$DraftMediaTableCreateCompanionBuilder,
+      $$DraftMediaTableUpdateCompanionBuilder,
+      (DraftMediaData, $$DraftMediaTableReferences),
+      DraftMediaData,
+      PrefetchHooks Function({bool draftId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5543,4 +7809,8 @@ class $AppDatabaseManager {
       $$SavedFeedsTableTableManager(_db, _db.savedFeeds);
   $$PreferenceSyncQueueTableTableManager get preferenceSyncQueue =>
       $$PreferenceSyncQueueTableTableManager(_db, _db.preferenceSyncQueue);
+  $$DraftsTableTableManager get drafts =>
+      $$DraftsTableTableManager(_db, _db.drafts);
+  $$DraftMediaTableTableManager get draftMedia =>
+      $$DraftMediaTableTableManager(_db, _db.draftMedia);
 }

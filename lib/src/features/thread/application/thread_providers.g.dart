@@ -54,3 +54,80 @@ final class ThreadRepositoryProvider
 }
 
 String _$threadRepositoryHash() => r'5ecebedf27c147e6f689dc66d63141de0823b6d7';
+
+@ProviderFor(threadCache)
+final threadCacheProvider = ThreadCacheFamily._();
+
+final class ThreadCacheProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<TimelineFeedItem>>,
+          List<TimelineFeedItem>,
+          Stream<List<TimelineFeedItem>>
+        >
+    with
+        $FutureModifier<List<TimelineFeedItem>>,
+        $StreamProvider<List<TimelineFeedItem>> {
+  ThreadCacheProvider._({
+    required ThreadCacheFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'threadCacheProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$threadCacheHash();
+
+  @override
+  String toString() {
+    return r'threadCacheProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<TimelineFeedItem>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<TimelineFeedItem>> create(Ref ref) {
+    final argument = this.argument as String;
+    return threadCache(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ThreadCacheProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$threadCacheHash() => r'e9560e0ba72d5de83d3f095d62285748e8cb324e';
+
+final class ThreadCacheFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<TimelineFeedItem>>, String> {
+  ThreadCacheFamily._()
+    : super(
+        retry: null,
+        name: r'threadCacheProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  ThreadCacheProvider call(String postUri) =>
+      ThreadCacheProvider._(argument: postUri, from: this);
+
+  @override
+  String toString() => r'threadCacheProvider';
+}

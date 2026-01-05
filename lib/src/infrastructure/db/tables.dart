@@ -136,3 +136,35 @@ class PreferenceSyncQueue extends Table {
   /// Number of times we've tried to process this item.
   IntColumn get retryCount => integer().withDefault(const Constant(0))();
 }
+
+class Drafts extends Table {
+  TextColumn get id => text()();
+  TextColumn get content => text().withDefault(const Constant(''))();
+  TextColumn get replyParentUri => text().nullable()();
+  TextColumn get replyParentCid => text().nullable()();
+  TextColumn get replyRootUri => text().nullable()();
+  TextColumn get replyRootCid => text().nullable()();
+  TextColumn get quoteUri => text().nullable()();
+  TextColumn get quoteCid => text().nullable()();
+  TextColumn get facetsJson => text().nullable()();
+  TextColumn get status => text()();
+  TextColumn get errorMessage => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class DraftMedia extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get draftId => text().references(Drafts, #id)();
+  TextColumn get localPath => text()();
+  TextColumn get mimeType => text()();
+  TextColumn get altText => text().nullable()();
+  TextColumn get uploadCid => text().nullable()();
+  TextColumn get blobRefJson => text().nullable()();
+  TextColumn get status => text()();
+  IntColumn get sortOrder => integer()();
+  DateTimeColumn get createdAt => dateTime()();
+}

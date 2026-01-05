@@ -81,15 +81,13 @@ GoRouter createRouter(Ref ref) {
                     path: 't/:uri',
                     name: '${AppRouteNames.home}_${AppRouteNames.thread}',
                     builder: (context, state) =>
-                        ThreadScreen(postUri: state.pathParameters['uri']!),
+                        ThreadScreen(postUri: Uri.decodeComponent(state.pathParameters['uri']!)),
                   ),
                   GoRoute(
                     path: AppRoutes.profileDetail,
                     name: '${AppRouteNames.home}_${AppRouteNames.profileDetail}',
-                    builder: (context, state) {
-                      final did = Uri.decodeComponent(state.pathParameters['did']!);
-                      return ProfilePage(did: did);
-                    },
+                    builder: (context, state) =>
+                        ProfilePage(did: Uri.decodeComponent(state.pathParameters['did']!)),
                   ),
                 ],
               ),
@@ -100,26 +98,20 @@ GoRouter createRouter(Ref ref) {
               GoRoute(
                 path: AppRoutes.search,
                 name: AppRouteNames.search,
-                builder: (context, state) {
-                  final query = state.uri.queryParameters['q'];
-                  return SearchScreen(initialQuery: query);
-                },
+                builder: (context, state) =>
+                    SearchScreen(initialQuery: state.uri.queryParameters['q']),
                 routes: [
                   GoRoute(
                     path: 't/:uri',
                     name: '${AppRouteNames.search}_${AppRouteNames.thread}',
-                    builder: (context, state) {
-                      final uri = Uri.decodeComponent(state.pathParameters['uri']!);
-                      return ThreadScreen(postUri: uri);
-                    },
+                    builder: (context, state) =>
+                        ThreadScreen(postUri: Uri.decodeComponent(state.pathParameters['uri']!)),
                   ),
                   GoRoute(
                     path: AppRoutes.profileDetail,
                     name: '${AppRouteNames.search}_${AppRouteNames.profileDetail}',
-                    builder: (context, state) {
-                      final did = Uri.decodeComponent(state.pathParameters['did']!);
-                      return ProfilePage(did: did);
-                    },
+                    builder: (context, state) =>
+                        ProfilePage(did: Uri.decodeComponent(state.pathParameters['did']!)),
                   ),
                 ],
               ),
@@ -135,18 +127,14 @@ GoRouter createRouter(Ref ref) {
                   GoRoute(
                     path: AppRoutes.thread,
                     name: '${AppRouteNames.notifications}_${AppRouteNames.thread}',
-                    builder: (context, state) {
-                      final uri = Uri.decodeComponent(state.pathParameters['uri']!);
-                      return ThreadScreen(postUri: uri);
-                    },
+                    builder: (context, state) =>
+                        ThreadScreen(postUri: Uri.decodeComponent(state.pathParameters['uri']!)),
                   ),
                   GoRoute(
                     path: AppRoutes.profileDetail,
                     name: '${AppRouteNames.notifications}_${AppRouteNames.profileDetail}',
-                    builder: (context, state) {
-                      final did = Uri.decodeComponent(state.pathParameters['did']!);
-                      return ProfilePage(did: did);
-                    },
+                    builder: (context, state) =>
+                        ProfilePage(did: Uri.decodeComponent(state.pathParameters['did']!)),
                   ),
                 ],
               ),
@@ -162,13 +150,10 @@ GoRouter createRouter(Ref ref) {
                   GoRoute(
                     path: AppRoutes.convo,
                     name: AppRouteNames.convo,
-                    builder: (context, state) {
-                      final convoId = state.pathParameters['convoId']!;
-                      return _PlaceholderScreen(
-                        title: 'Conversation',
-                        subtitle: 'Convo: $convoId',
-                      );
-                    },
+                    builder: (context, state) => _PlaceholderScreen(
+                      title: 'Conversation',
+                      subtitle: 'Convo: ${state.pathParameters['convoId']}',
+                    ),
                   ),
                 ],
               ),
@@ -184,18 +169,12 @@ GoRouter createRouter(Ref ref) {
                   GoRoute(
                     path: AppRoutes.followers,
                     name: AppRouteNames.followers,
-                    builder: (context, state) {
-                      final did = Uri.decodeComponent(state.pathParameters['did']!);
-                      return FollowersPage(did: did);
-                    },
+                    builder: (context, state) => FollowersPage(did: state.pathParameters['did']!),
                   ),
                   GoRoute(
                     path: AppRoutes.following,
                     name: AppRouteNames.following,
-                    builder: (context, state) {
-                      final did = Uri.decodeComponent(state.pathParameters['did']!);
-                      return FollowingPage(did: did);
-                    },
+                    builder: (context, state) => FollowingPage(did: state.pathParameters['did']!),
                   ),
                 ],
               ),
@@ -218,11 +197,7 @@ GoRouter createRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.callback,
         name: AppRouteNames.callback,
-        builder: (context, state) {
-          final uri = state.uri;
-          // TODO: CallbackScreen widget that initiates the completion.
-          return _CallbackHandler(uri: uri);
-        },
+        builder: (context, state) => _CallbackHandler(uri: state.uri),
       ),
       GoRoute(
         path: AppRoutes.compose,

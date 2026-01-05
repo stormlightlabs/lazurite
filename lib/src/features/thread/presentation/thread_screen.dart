@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/thread/application/thread_notifier.dart';
+import 'package:lazurite/src/features/thread/application/thread_providers.dart';
 import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
 import 'package:lazurite/src/features/timeline/presentation/widgets/post_card.dart';
 import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
@@ -22,6 +23,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
   @override
   Widget build(BuildContext context) {
     final threadAsync = ref.watch(threadProvider(widget.postUri));
+    final threadCacheAsync = ref.watch(threadCacheProvider(widget.postUri));
 
     return Scaffold(
       appBar: AppBar(
@@ -42,15 +44,21 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
           onRetry: () => ref.refresh(threadProvider(widget.postUri)),
         ),
         data: (thread) {
+          if (_flattenedView) {
+            return _buildFlattenedView(threadCacheAsync, thread);
+          }
+
+          final parents = thread.parent != null ? _getParents(thread.parent!) : <ThreadViewPost>[];
+          final replies = thread.replies;
+
           return CustomScrollView(
             slivers: [
-              if (thread.parent != null)
+              if (parents.isNotEmpty)
                 SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final parents = _getParents(thread.parent!);
-                    final parent = parents[index];
-                    return PostCard(item: _mapToTimelineItem(parent));
-                  }, childCount: _getParents(thread.parent!).length),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => PostCard(item: _mapToTimelineItem(parents[index])),
+                    childCount: parents.length,
+                  ),
                 ),
 
               SliverToBoxAdapter(
@@ -64,18 +72,12 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                 ),
               ),
 
-              (thread.replies.isNotEmpty && _flattenedView)
-                  ? SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final allReplies = _getAllReplies(thread);
-                        return PostCard(item: _mapToTimelineItem(allReplies[index]));
-                      }, childCount: _getAllReplies(thread).length),
-                    )
-                  : SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        return PostCard(item: _mapToTimelineItem(thread.replies[index]));
-                      }, childCount: thread.replies.length),
-                    ),
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => PostCard(item: _mapToTimelineItem(replies[index])),
+                  childCount: replies.length,
+                ),
+              ),
             ],
           );
         },
@@ -105,7 +107,44 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     return list;
   }
 
-  TimelineFeedItem _mapToTimelineItem(ThreadViewPost view, {String sortKey = ''}) {
-    return view.post.toTimelineFeedItem(sortKey: sortKey);
+  Widget _buildFlattenedView(
+    AsyncValue<List<TimelineFeedItem>> cachedTimeline,
+    ThreadViewPost thread,
+  ) {
+    return cachedTimeline.when(
+      data: (items) {
+        final timelineItems = items.isEmpty ? _buildFallbackLinearTimeline(thread) : items;
+        return CustomScrollView(
+          slivers: [
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => PostCard(item: timelineItems[index]),
+                childCount: timelineItems.length,
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const LoadingView(),
+      error: (err, stack) => ErrorView(
+        title: 'Thread cache unavailable',
+        message: err.toString(),
+        onRetry: () => ref.refresh(threadProvider(widget.postUri)),
+      ),
+    );
   }
+
+  List<TimelineFeedItem> _buildFallbackLinearTimeline(ThreadViewPost thread) {
+    final parents = thread.parent != null ? _getParents(thread.parent!) : <ThreadViewPost>[];
+    final replies = _getAllReplies(thread);
+    final linear = [...parents, thread, ...replies];
+
+    return [
+      for (var i = 0; i < linear.length; i++)
+        _mapToTimelineItem(linear[i], sortKey: i.toString().padLeft(6, '0')),
+    ];
+  }
+
+  TimelineFeedItem _mapToTimelineItem(ThreadViewPost view, {String sortKey = ''}) =>
+      view.post.toTimelineFeedItem(sortKey: sortKey);
 }
