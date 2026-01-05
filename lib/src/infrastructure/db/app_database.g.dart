@@ -3428,6 +3428,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SavedFeedsTable savedFeeds = $SavedFeedsTable(this);
   late final $PreferenceSyncQueueTable preferenceSyncQueue =
       $PreferenceSyncQueueTable(this);
+  late final Index timelineSortIdx = Index(
+    'timeline_sort_idx',
+    'CREATE INDEX timeline_sort_idx ON timeline_items (feed_key, sort_key)',
+  );
   late final TimelineDao timelineDao = TimelineDao(this as AppDatabase);
   late final ProfileDao profileDao = ProfileDao(this as AppDatabase);
   late final SearchDao searchDao = SearchDao(this as AppDatabase);
@@ -3449,6 +3453,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     follows,
     savedFeeds,
     preferenceSyncQueue,
+    timelineSortIdx,
   ];
 }
 

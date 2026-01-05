@@ -31,6 +31,7 @@ class Profiles extends Table {
   Set<Column> get primaryKey => {did};
 }
 
+@TableIndex(name: 'timeline_sort_idx', columns: {#feedKey, #sortKey})
 class TimelineItems extends Table {
   TextColumn get feedKey => text()();
   TextColumn get postUri => text().references(Posts, #uri)();
@@ -39,10 +40,6 @@ class TimelineItems extends Table {
 
   @override
   Set<Column> get primaryKey => {feedKey, postUri};
-
-  // TODO: Add composite index for timeline queries
-  // @override
-  // List<Index> get indexes => [Index('timeline_sort_idx', 'feedKey, sortKey')];
 }
 
 class Accounts extends Table {

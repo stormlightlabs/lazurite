@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../app/router.dart';
@@ -12,7 +13,7 @@ import '../../../infrastructure/auth/oauth_client.dart';
 import '../../../infrastructure/auth/server_metadata.dart';
 import '../../../infrastructure/auth/session_storage.dart';
 import '../../../infrastructure/identity/identity_repository.dart';
-import '../../../infrastructure/network/providers.dart';
+import '../../../infrastructure/network/dio_clients.dart';
 import '../domain/auth_state.dart';
 import '../presentation/oauth_webview_screen.dart';
 
@@ -29,9 +30,14 @@ SessionStorage sessionStorage(Ref ref) {
 }
 
 @Riverpod(keepAlive: true)
+Dio authSupportDio(Ref ref) {
+  return createPublicDio();
+}
+
+@Riverpod(keepAlive: true)
 IdentityRepository identityRepository(Ref ref) {
   return IdentityRepository(
-    dio: ref.watch(dioPublicProvider),
+    dio: ref.watch(authSupportDioProvider),
     logger: ref.watch(loggerProvider('IdentityRepository')),
   );
 }
@@ -43,7 +49,7 @@ OAuthClient oauthClient(Ref ref) {
 
 @Riverpod(keepAlive: true)
 ServerMetadataRepository serverMetadataRepository(Ref ref) {
-  return ServerMetadataRepository(dio: ref.watch(dioPublicProvider));
+  return ServerMetadataRepository(dio: ref.watch(authSupportDioProvider));
 }
 
 @Riverpod(keepAlive: true)
@@ -162,5 +168,29 @@ class AuthNotifier extends _$AuthNotifier {
     } catch (e, st) {
       state = AuthState.error(e, st);
     }
+  }
+
+  Future<Session?> refreshActiveSession() async {
+    final currentSession = await _currentSession();
+    if (currentSession == null) {
+      return null;
+    }
+
+    try {
+      final refreshed = await ref.read(authRepositoryProvider).refreshSession(currentSession);
+      state = AuthState.authenticated(refreshed);
+      return refreshed;
+    } catch (e, st) {
+      state = AuthState.error(e, st);
+      rethrow;
+    }
+  }
+
+  Future<Session?> _currentSession() async {
+    final currentState = state;
+    if (currentState is AuthStateAuthenticated) {
+      return currentState.session;
+    }
+    return ref.read(sessionStorageProvider).getSession();
   }
 }

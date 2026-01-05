@@ -1,5 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 
 import 'dio_clients.dart';
 import 'xrpc_client.dart';
@@ -20,19 +23,17 @@ Dio dioPublic(Ref ref) {
 /// Returns null if no user is logged in.
 @Riverpod(keepAlive: true)
 Dio? dioPds(Ref ref) {
-  // TODO: Implement session provider and wire up here
-  // final session = ref.watch(sessionProvider);
-  // if (session == null) return null;
-  // return createPdsDio(
-  //   pdsUrl: session.pdsUrl,
-  //   getAccessToken: () async => session.accessToken,
-  //   refreshToken: () async {
-  //     // Trigger refresh and return new token
-  //     await ref.read(sessionProvider.notifier).refresh();
-  //     return ref.read(sessionProvider)?.accessToken;
-  //   },
-  // );
-  return null;
+  final authState = ref.watch(authProvider);
+  final session = authState is AuthStateAuthenticated ? authState.session : null;
+  if (session == null) {
+    return null;
+  }
+
+  return createPdsDio(
+    pdsUrl: session.pdsUrl,
+    getSession: () => _readCurrentSession(ref),
+    refreshSession: () => ref.read(authProvider.notifier).refreshActiveSession(),
+  );
 }
 
 /// Provides the XRPC client for making API requests.
@@ -42,4 +43,12 @@ Dio? dioPds(Ref ref) {
 @Riverpod(keepAlive: true)
 XrpcClient xrpcClient(Ref ref) {
   return XrpcClient(publicDio: ref.watch(dioPublicProvider), pdsDio: ref.watch(dioPdsProvider));
+}
+
+Future<Session?> _readCurrentSession(Ref ref) async {
+  final authState = ref.read(authProvider);
+  if (authState is AuthStateAuthenticated) {
+    return authState.session;
+  }
+  return ref.read(sessionStorageProvider).getSession();
 }

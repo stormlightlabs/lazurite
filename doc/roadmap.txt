@@ -41,6 +41,26 @@ Endpoints (write):
 - com.atproto.repo.createRecord (POST)
 
 Tasks:
+- Routes to add:
+      - [ ] /compose (modal over root navigator)
+      - [ ] /drafts (DraftListPage)
+      - [ ] /drafts/:draftId (DraftEditorPage)
+- Widgets to add:
+      - [ ] ComposerTextField (supports mentions/links later)
+      - [ ] MediaPickerRow
+      - [ ] DraftStatusChip
+      - [ ] PublishButton (disabled + spinner)
+      - [ ] UploadProgressTile (per media)
+- Screens to add:
+      - [ ] ComposePage (Draft-first)
+            - [ ] always editing a local draft (even “new post”)
+            - [ ] attach media (images first)
+            - [ ] alt text editor (v1 quality bar)
+      - [ ] DraftListPage
+            - [ ] list drafts by updatedAt
+            - [ ] status badges: Draft / Failed / Publishing
+      - [ ] DraftEditorPage
+      - [ ] DraftRecoverySheet (if crash/interruption on publish)
 - [ ] Drafts stored locally (Drift):
       - drafts table (text, reply/quote refs, facets, status)
       - draft_media table (local path, mime, alt text, uploadCid/blob ref)
@@ -62,7 +82,9 @@ Tests:
 - [ ] "airplane mode" test: drafts still editable and safe.
 
 Deliverables:
-- Offline drafts + reliable posting with media upload support.
+- [ ] Offline drafts + reliable posting with media upload support.
+- [ ] Airplane mode: drafts still editable
+- [ ] Publish failures never destroy a draft (user trust)
 
 ================================================================================
 I. Notifications                                                        *bsky-I*
@@ -73,8 +95,19 @@ Endpoints:
 - app.bsky.notification.getUnreadCount (GET)
 
 Tasks:
-- [ ] Notifications tab: paged list + local seen state.
-- [ ] Badge count support (in-app; push later).
+- Routes to add:
+      - [ ] /notifs/t/:postKey  (ThreadPage reuse)
+      - [ ] /notifs/u/:did      (ProfilePage reuse)
+- Screens to add:
+      - [ ] NotificationsPage (Notifications tab: paged list + local seen state):
+            - [ ] list notifications
+            - [ ] local seen state
+            - [ ] tap routes to thread/profile
+- Widgets to add:
+      - [ ] NotificationRow (icon + actor + snippet + time)
+      - [ ] UnreadDot / SeenStyle
+      - [ ] NotificationFilterChips (optional: replies/mentions/reposts)
+- [ ] Badge count support (in-app + push).
 - [ ] Tapping a notification routes to thread/profile as appropriate.
 
 Tests:
@@ -82,39 +115,11 @@ Tests:
 
 Deliverables:
 - Notifications shipped with consistent navigation.
+- Notifications tab becomes meaningful
+- Badge integration
 
 ================================================================================
-J. Smart folders (local-only saved views)                               *bsky-J*
-================================================================================
-
-Definition:
-- A smart folder is a saved query over cached posts + local metadata.
-- It never fetches from network by itself; it organizes what’s already cached.
-
-Tasks:
-- [ ] Drift tables:
-      - smart_folders (name, sortMode)
-      - smart_folder_rules (type, payloadJson)
-      - optional smart_folder_items materialization (later)
-- [ ] Rule engine (MVP rule types):
-      - author allow/deny (DIDs)
-      - keyword include/exclude (text)
-      - has media / has link
-      - bookmarked only
-      - exclude replies / replies only
-- [ ] UI:
-      - create/edit folder
-      - folder list and folder detail view
-
-Tests:
-- [ ] Rule evaluation tests against fixture posts.
-- [ ] Query performance test with N=10k cached posts.
-
-Deliverables:
-- "Saved views" that feel like feeds, entirely local and fast.
-
-================================================================================
-K. DMs (read + write) + outbox + read-state                             *bsky-K*
+J. DMs (read + write) + outbox + read-state                             *bsky-J*
 ================================================================================
 
 DM fundamentals:
@@ -154,7 +159,7 @@ Deliverables:
 - DMs usable end-to-end: read, accept, send, read-state, robust retries.
 
 ================================================================================
-L. Hardening (mobile)                                                   *bsky-L*
+K. Hardening (mobile)                                                   *bsky-K*
 ================================================================================
 
 Tasks:
@@ -175,6 +180,36 @@ Tests:
 
 Deliverables:
 - Mobile app feels stable and responsive for daily use.
+
+================================================================================
+L. Smart folders (local-only saved views)                               *bsky-L*
+================================================================================
+
+Definition:
+- A smart folder is a saved query over cached posts + local metadata.
+- It never fetches from network by itself; it organizes what’s already cached.
+
+Tasks:
+- [ ] Drift tables:
+      - smart_folders (name, sortMode)
+      - smart_folder_rules (type, payloadJson)
+      - optional smart_folder_items materialization (later)
+- [ ] Rule engine (MVP rule types):
+      - author allow/deny (DIDs)
+      - keyword include/exclude (text)
+      - has media / has link
+      - bookmarked only
+      - exclude replies / replies only
+- [ ] UI:
+      - create/edit folder
+      - folder list and folder detail view
+
+Tests:
+- [ ] Rule evaluation tests against fixture posts.
+- [ ] Query performance test with N=10k cached posts.
+
+Deliverables:
+- "Saved views" that feel like feeds, entirely local and fast.
 
 ================================================================================
 M. Desktop pass                                                         *bsky-M*

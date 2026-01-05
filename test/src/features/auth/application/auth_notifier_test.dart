@@ -250,5 +250,45 @@ void main() {
       verify(() => mockSessionStorage.clearSession()).called(1);
       expect(container.read(authProvider), const AuthState.unauthenticated());
     });
+
+    test('refreshActiveSession refreshes tokens when authenticated', () async {
+      final session = Session(
+        did: 'did:web:authed',
+        handle: 'authed.com',
+        pdsUrl: 'https://authed.com',
+        accessJwt: 'access',
+        refreshJwt: 'refresh',
+        scope: 'scope',
+        expiresAt: DateTime.now().add(const Duration(hours: 1)),
+        dpopKey: {},
+      );
+      final refreshed = session.copyWith(accessJwt: 'new_access');
+
+      when(() => mockSessionStorage.getSession()).thenAnswer((_) async => session);
+      when(() => mockAuthRepository.refreshSession(any())).thenAnswer((_) async => refreshed);
+
+      final container = createContainer();
+      container.listen(authProvider, (previous, next) {});
+      await Future<void>.delayed(Duration.zero);
+
+      final result = await container.read(authProvider.notifier).refreshActiveSession();
+
+      expect(result, refreshed);
+      expect(container.read(authProvider), AuthState.authenticated(refreshed));
+      verify(() => mockAuthRepository.refreshSession(session)).called(1);
+    });
+
+    test('refreshActiveSession returns null when no session available', () async {
+      when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
+
+      final container = createContainer();
+      container.listen(authProvider, (previous, next) {});
+      await Future<void>.delayed(Duration.zero);
+
+      final result = await container.read(authProvider.notifier).refreshActiveSession();
+
+      expect(result, isNull);
+      verifyNever(() => mockAuthRepository.refreshSession(any()));
+    });
   });
 }
