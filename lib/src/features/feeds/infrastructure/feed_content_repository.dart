@@ -17,6 +17,11 @@ class FeedContentRepository {
   final FeedContentDao _dao;
   final Logger _logger;
 
+  /// Internal feed key for the home timeline.
+  ///
+  /// Uses a namespaced prefix to prevent collisions with actual AT URIs.
+  static const String kInternalHomeFeedKey = '__internal:home';
+
   /// Helper to map API Post to DB Companion
   PostsCompanion _mapPost(Map<String, dynamic> json) {
     return PostsCompanion.insert(
@@ -46,9 +51,24 @@ class FeedContentRepository {
   /// Derives a feedKey from a feed URI.
   ///
   /// Uses the full URI as the feedKey to ensure uniqueness.
-  /// For the home feed (null feedUri), returns 'home'.
+  /// For the home feed (null feedUri), returns the internal home feed key.
+  ///
+  /// Validates that the feedUri doesn't collide with internal keys.
   String _feedKeyFromUri(String? feedUri) {
-    return feedUri ?? 'home';
+    if (feedUri == null) {
+      return kInternalHomeFeedKey;
+    }
+
+    // Validate that the feed URI doesn't start with internal prefix
+    if (feedUri.startsWith('__internal:')) {
+      throw ArgumentError.value(
+        feedUri,
+        'feedUri',
+        'Feed URI cannot start with reserved prefix "__internal:"',
+      );
+    }
+
+    return feedUri;
   }
 
   /// Fetch remote feed content and cache it.
@@ -97,13 +117,14 @@ class FeedContentRepository {
       final profiles = <ProfilesCompanion>[];
       final items = <FeedContentItemsCompanion>[];
 
-      final baseTime = DateTime.now().millisecondsSinceEpoch;
+      final baseTime = DateTime.now().microsecondsSinceEpoch;
 
       for (var i = 0; i < feed.length; i++) {
         final item = feed[i] as Map<String, dynamic>;
         final post = item['post'] as Map<String, dynamic>;
         final author = post['author'] as Map<String, dynamic>;
         final reason = item['reason'];
+        final postUri = post['uri'] as String;
 
         posts.add(_mapPost(post));
         profiles.add(_mapProfile(author));
@@ -112,12 +133,17 @@ class FeedContentRepository {
           profiles.add(_mapProfile(reason['by']));
         }
 
+        // Use compound sortKey with microsecond precision to prevent collisions:
+        // Format: {timestamp}-{index}-{postUriHash}
+        // This ensures uniqueness even on rapid fetches
+        final sortKey = '${baseTime - i}-$i-${postUri.hashCode.abs()}';
+
         items.add(
           FeedContentItemsCompanion.insert(
             feedKey: feedKey,
-            postUri: post['uri'],
+            postUri: postUri,
             reason: Value(reason != null ? jsonEncode(reason) : null),
-            sortKey: '${baseTime - i}',
+            sortKey: sortKey,
           ),
         );
       }
@@ -141,7 +167,7 @@ class FeedContentRepository {
   /// If [feedKey] is provided, watches that specific feed. Otherwise, watches
   /// the home feed.
   Stream<List<FeedPost>> watchFeedContent({String? feedKey}) {
-    return _dao.watchFeedContent(feedKey ?? 'home');
+    return _dao.watchFeedContent(feedKey ?? kInternalHomeFeedKey);
   }
 
   /// Gets the cursor for a specific feed.

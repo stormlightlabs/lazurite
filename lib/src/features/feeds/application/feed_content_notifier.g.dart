@@ -45,7 +45,7 @@ final class FeedContentNotifierProvider
   FeedContentNotifier create() => FeedContentNotifier();
 }
 
-String _$feedContentNotifierHash() => r'25bee0959689eb1234073456f48d7b6c37abacfa';
+String _$feedContentNotifierHash() => r'4e01a294bfcec416d3540a5b4a7bfd4412f636a2';
 
 /// Notifier for managing feed content (posts from the active feed).
 ///

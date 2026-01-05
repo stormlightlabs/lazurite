@@ -2,6 +2,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/utils/logger_provider.dart';
 import '../../../infrastructure/db/daos/feed_content_dao.dart';
+import '../infrastructure/feed_content_repository.dart';
+import '../infrastructure/feed_repository.dart';
 import 'feed_content_providers.dart';
 import 'feed_providers.dart';
 
@@ -33,9 +35,11 @@ class FeedContentNotifier extends _$FeedContentNotifier {
 
   /// Derives a feedKey from a feed URI.
   ///
-  /// Uses 'home' for the home feed, otherwise uses the full URI.
+  /// Uses the internal home feed key for the home feed, otherwise uses the full URI.
   String _feedKeyFromUri(String feedUri) {
-    return feedUri == 'home' ? 'home' : feedUri;
+    return feedUri == FeedRepository.kHomeFeedUri
+        ? FeedContentRepository.kInternalHomeFeedKey
+        : feedUri;
   }
 
   /// Refreshes the current feed content.
@@ -45,7 +49,7 @@ class FeedContentNotifier extends _$FeedContentNotifier {
     final activeFeedUri = ref.read(activeFeedProvider);
     final repository = ref.read(feedContentRepositoryProvider);
 
-    final feedUri = activeFeedUri == 'home' ? null : activeFeedUri;
+    final feedUri = activeFeedUri == FeedRepository.kHomeFeedUri ? null : activeFeedUri;
     await repository.fetchAndCacheFeed(feedUri: feedUri);
   }
 
@@ -60,7 +64,7 @@ class FeedContentNotifier extends _$FeedContentNotifier {
     final cursor = await repository.getCursor(feedKey);
 
     if (cursor != null) {
-      final feedUri = activeFeedUri == 'home' ? null : activeFeedUri;
+      final feedUri = activeFeedUri == FeedRepository.kHomeFeedUri ? null : activeFeedUri;
       await repository.fetchAndCacheFeed(cursor: cursor, feedUri: feedUri);
     }
   }

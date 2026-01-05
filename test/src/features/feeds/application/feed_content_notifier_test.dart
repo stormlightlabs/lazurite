@@ -63,7 +63,9 @@ void main() {
 
       await Future.delayed(Duration.zero);
 
-      verify(() => mockRepository.watchFeedContent(feedKey: 'home')).called(1);
+      verify(
+        () => mockRepository.watchFeedContent(feedKey: FeedContentRepository.kInternalHomeFeedKey),
+      ).called(1);
     });
 
     test('build watches specific feed content when activeFeed is set', () async {
@@ -123,7 +125,9 @@ void main() {
     });
 
     test('loadMore fetches next page using cursor', () async {
-      when(() => mockRepository.getCursor('home')).thenAnswer((_) async => 'next_cursor');
+      when(
+        () => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey),
+      ).thenAnswer((_) async => 'next_cursor');
       when(
         () => mockRepository.fetchAndCacheFeed(cursor: 'next_cursor', feedUri: null),
       ).thenAnswer((_) async {});
@@ -132,20 +136,22 @@ void main() {
 
       await container.read(feedContentProvider.notifier).loadMore();
 
-      verify(() => mockRepository.getCursor('home')).called(1);
+      verify(() => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey)).called(1);
       verify(
         () => mockRepository.fetchAndCacheFeed(cursor: 'next_cursor', feedUri: null),
       ).called(1);
     });
 
     test('loadMore does nothing if no cursor found', () async {
-      when(() => mockRepository.getCursor('home')).thenAnswer((_) async => null);
+      when(
+        () => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey),
+      ).thenAnswer((_) async => null);
 
       container.read(feedContentProvider);
 
       await container.read(feedContentProvider.notifier).loadMore();
 
-      verify(() => mockRepository.getCursor('home')).called(1);
+      verify(() => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey)).called(1);
       verifyNever(
         () => mockRepository.fetchAndCacheFeed(
           cursor: any(named: 'cursor'),
@@ -155,13 +161,17 @@ void main() {
     });
 
     test('clearFeedContent calls repository clearFeedContent', () async {
-      when(() => mockRepository.clearFeedContent('home')).thenAnswer((_) async {});
+      when(
+        () => mockRepository.clearFeedContent(FeedContentRepository.kInternalHomeFeedKey),
+      ).thenAnswer((_) async {});
 
       container.read(feedContentProvider);
 
       await container.read(feedContentProvider.notifier).clearFeedContent();
 
-      verify(() => mockRepository.clearFeedContent('home')).called(1);
+      verify(
+        () => mockRepository.clearFeedContent(FeedContentRepository.kInternalHomeFeedKey),
+      ).called(1);
     });
   });
 }

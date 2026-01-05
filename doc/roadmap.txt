@@ -17,12 +17,12 @@ Endpoints (already registered):
 
 Tasks:
 - [ ] Feed Data Integrity (CRITICAL):
-      - [ ] Fix home feed key collision risk:
+      - [x] Fix home feed key collision risk:
             - replace 'home' literal with '__internal:home' prefix
             - add validation to prevent AT URI collisions
-      - [ ] Fix sortKey collision potential:
+      - [x] Fix sortKey collision potential:
             - use microsecond precision instead of milliseconds
-            - consider compound key: {timestamp}-{index}-{postUri}
+            - compound key: {timestamp}-{index}-{postUri}
       - [ ] Add feed URI validation:
             - validate AT URI format before saveFeed()
             - reject malformed URIs with clear error message
