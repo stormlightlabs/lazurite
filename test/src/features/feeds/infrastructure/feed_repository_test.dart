@@ -21,7 +21,7 @@ void main() {
     mockApi = MockXrpcClient();
     db = AppDatabase(NativeDatabase.memory());
     mockLogger = MockLogger();
-    repository = FeedRepository(mockApi, db.savedFeedsDao, mockLogger);
+    repository = FeedRepository(mockApi, db.savedFeedsDao, db.preferenceSyncQueueDao, mockLogger);
 
     when(() => mockApi.isAuthenticated).thenReturn(true);
   });
@@ -190,7 +190,7 @@ void main() {
   });
 
   group('saveFeed', () {
-    test('saves new feed to preferences and local cache', () async {
+    test('optimistically saves feed and syncs to remote', () async {
       const feedUri = 'at://did:plc:abc/app.bsky.feed.generator/new';
 
       const currentPrefs = {
@@ -241,7 +241,59 @@ void main() {
       final feed = await db.savedFeedsDao.getFeed(feedUri);
       expect(feed, isNotNull);
       expect(feed!.displayName, 'New Feed');
-      expect(feed.isPinned, false);
+      final queue = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queue, isEmpty);
+    });
+
+    test('optimistically saves with default metadata if fetch fails', () async {
+      const feedUri = 'at://did:plc:abc/app.bsky.feed.generator/failmeta';
+
+      const currentPrefs = {
+        'preferences': [
+          {'\$type': 'app.bsky.actor.defs#savedFeedsPref', 'saved': [], 'pinned': []},
+        ],
+      };
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => currentPrefs);
+
+      when(
+        () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
+      ).thenAnswer((_) async => {});
+
+      when(
+        () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
+      ).thenThrow(Exception('Network error'));
+
+      await repository.saveFeed(feedUri);
+
+      verify(
+        () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
+      ).called(1);
+      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      expect(feed, isNotNull);
+      expect(feed!.displayName, 'Saved Feed');
+    });
+
+    test('queues update if network call fails', () async {
+      const feedUri = 'at://did:plc:abc/app.bsky.feed.generator/offline';
+
+      when(
+        () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
+      ).thenThrow(Exception('Network error'));
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenThrow(Exception('Network error'));
+
+      await repository.saveFeed(feedUri);
+
+      final queue = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queue, hasLength(1));
+      expect(queue.first.type, 'save');
+      expect(queue.first.feedUri, feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      expect(feed, isNotNull);
     });
 
     test('saves feed with pin=true', () async {

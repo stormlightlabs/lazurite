@@ -122,3 +122,20 @@ class SavedFeeds extends Table {
   @override
   Set<Column> get primaryKey => {uri};
 }
+
+/// Stores queued preference updates for offline synchronization.
+class PreferenceSyncQueue extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Type of operation: 'save' or 'remove'.
+  TextColumn get type => text()();
+
+  /// The feed URI to sync.
+  TextColumn get feedUri => text()();
+
+  /// When the item was queued.
+  DateTimeColumn get createdAt => dateTime()();
+
+  /// Number of times we've tried to process this item.
+  IntColumn get retryCount => integer().withDefault(const Constant(0))();
+}

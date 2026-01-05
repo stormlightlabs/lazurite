@@ -5,8 +5,8 @@ import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/feed_selector_tab.dart';
 
 class MockPinnedFeedsNotifier extends PinnedFeedsNotifier {
-  final List<SavedFeedData> _initialData;
   MockPinnedFeedsNotifier(this._initialData);
+  final List<SavedFeedData> _initialData;
 
   @override
   Stream<List<SavedFeedData>> build() {

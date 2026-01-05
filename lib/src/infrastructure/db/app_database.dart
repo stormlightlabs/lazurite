@@ -12,6 +12,8 @@ import 'daos/search_dao.dart';
 import 'daos/timeline_dao.dart';
 import 'tables.dart';
 
+import 'daos/preference_sync_queue_dao.dart';
+
 part 'app_database.g.dart';
 
 @DriftDatabase(
@@ -24,14 +26,29 @@ part 'app_database.g.dart';
     RecentSearches,
     Follows,
     SavedFeeds,
+    PreferenceSyncQueue,
   ],
-  daos: [TimelineDao, ProfileDao, SearchDao, FollowsDao, SavedFeedsDao],
+  daos: [TimelineDao, ProfileDao, SearchDao, FollowsDao, SavedFeedsDao, PreferenceSyncQueueDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 5) {
+          await m.createTable(preferenceSyncQueue);
+        }
+      },
+    );
+  }
 }
 
 LazyDatabase _openConnection() {

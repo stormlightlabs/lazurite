@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/app/theme.dart';
+import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
 
 /// The main application widget.
 ///
@@ -12,6 +13,8 @@ class App extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(goRouterProvider);
+    // Initialize feed sync controller to handle background sync
+    ref.watch(feedSyncControllerProvider);
 
     return MaterialApp.router(
       title: 'Lazurite',

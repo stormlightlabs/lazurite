@@ -7,6 +7,8 @@ import 'package:lazurite/src/app/theme.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
+import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
 import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/features/splash/presentation/splash_screen.dart';
@@ -59,6 +61,9 @@ void main() {
       authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
       timelineProvider.overrideWith(() => _TestTimelineNotifier()),
       searchRepositoryProvider.overrideWithValue(mockSearchRepository),
+      feedSyncControllerProvider.overrideWith((ref) {}),
+      pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
+      activeFeedProvider.overrideWith(() => MockActiveFeed()),
     ];
   }
 
@@ -203,4 +208,14 @@ class _TestTimelineNotifier extends TimelineNotifier {
   Stream<List<TimelineFeedItem>> build() {
     return Stream.value([]);
   }
+}
+
+class MockActiveFeed extends ActiveFeed {
+  @override
+  String build() => 'home';
+}
+
+class MockPinnedFeedsNotifier extends PinnedFeedsNotifier {
+  @override
+  Stream<List<SavedFeedData>> build() => Stream.value([]);
 }

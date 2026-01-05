@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/timeline/application/timeline_providers.dart';
 import 'package:lazurite/src/features/timeline/infrastructure/timeline_repository.dart';
 import 'package:lazurite/src/features/timeline/presentation/timeline_screen.dart';
@@ -11,6 +12,16 @@ import 'package:lazurite/src/infrastructure/db/daos/timeline_dao.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockTimelineRepository extends Mock implements TimelineRepository {}
+
+class MockActiveFeed extends ActiveFeed {
+  @override
+  String build() => 'home';
+}
+
+class MockPinnedFeedsNotifier extends PinnedFeedsNotifier {
+  @override
+  Stream<List<SavedFeedData>> build() => Stream.value([]);
+}
 
 void main() {
   late MockTimelineRepository mockRepository;
@@ -21,7 +32,11 @@ void main() {
 
   Widget createSubject() {
     return ProviderScope(
-      overrides: [timelineRepositoryProvider.overrideWithValue(mockRepository)],
+      overrides: [
+        timelineRepositoryProvider.overrideWithValue(mockRepository),
+        pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
+        activeFeedProvider.overrideWith(() => MockActiveFeed()),
+      ],
       child: const MaterialApp(home: TimelineScreen()),
     );
   }
@@ -48,7 +63,9 @@ void main() {
 
     final feedItem = TimelineFeedItem(post: post, author: author, item: item);
 
-    when(() => mockRepository.watchTimeline(feedKey: 'home')).thenAnswer((_) => Stream.value([feedItem]));
+    when(
+      () => mockRepository.watchTimeline(feedKey: 'home'),
+    ).thenAnswer((_) => Stream.value([feedItem]));
 
     await tester.pumpWidget(createSubject());
     await tester.pump();
@@ -73,7 +90,9 @@ void main() {
     const item = TimelineItem(feedKey: 'home', postUri: 'uri1', sortKey: '100');
     final feedItem = TimelineFeedItem(post: post, author: author, item: item);
 
-    when(() => mockRepository.watchTimeline(feedKey: 'home')).thenAnswer((_) => Stream.value([feedItem]));
+    when(
+      () => mockRepository.watchTimeline(feedKey: 'home'),
+    ).thenAnswer((_) => Stream.value([feedItem]));
 
     when(() => mockRepository.fetchAndCacheTimeline(feedUri: null)).thenAnswer((_) async {});
 
@@ -81,7 +100,9 @@ void main() {
     await tester.pump();
 
     await tester.drag(find.text('Hello'), const Offset(0, 300));
-    await tester.pumpAndSettle();
+    await tester.pump(); // Start animation
+    await tester.pump(const Duration(seconds: 1)); // Wait for indicator to settle
+    await tester.pump(const Duration(seconds: 1)); // Wait for refresh to complete
 
     verify(() => mockRepository.fetchAndCacheTimeline(feedUri: null)).called(1);
   });

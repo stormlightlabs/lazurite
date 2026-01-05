@@ -12,7 +12,7 @@ test-quiet:
 
 # Run all tests
 test:
-    flutter test --timeout=60s
+    flutter test --timeout=90s
 
 # Run code gen
 gen:

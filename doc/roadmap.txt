@@ -79,18 +79,18 @@ Tasks:
       - [x] Integrate feed selector into TimelineScreen header
       - [x] AppRoutes / Router
 - [ ] Preference syncing:
-      - [ ] Sync on app foreground resume to reconcile remote changes
-      - [ ] Optimistic updates with background sync retry
-      - [ ] Queue preference updates offline, retry on network restoration
+      - [x] Sync on app foreground resume to reconcile remote changes
+      - [x] Optimistic updates with background sync retry
+      - [x] Queue preference updates offline, retry on network restoration
       - [ ] Show sync indicator when local state diverges from remote
-      - [ ] Refresh stale metadata (lastSynced > 24h) from getFeedGenerator
+      - [x] Refresh stale metadata (lastSynced > 24h) from getFeedGenerator
 
 Tests:
 - [x] FeedRepository unit tests: syncPreferences, saveFeed, removeFeed,
       discoverFeeds
-- [ ] Preference sync does not overwrite other preference categories
+- [x] Preference sync does not overwrite other preference categories
 - [ ] Feed switching preserves cursor state per feed
-- [ ] Offline feed saving queues updates for background sync
+- [x] Offline feed saving queues updates for background sync
 - [ ] Cross-device sync: changes in web client appear after syncPreferences
 - [ ] Cache eviction: timeline items for feeds not viewed in 7 days are removed
 - [x] Widget tests for feed selector, discovery, and management screens

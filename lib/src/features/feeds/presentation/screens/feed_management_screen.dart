@@ -77,8 +77,7 @@ class FeedManagementScreen extends ConsumerWidget {
           title: 'Failed to load feeds',
           message: err.toString(),
           onRetry: () {
-            // TODO: Consider re-watch as riverpod streams auto-retry often, but we can't force
-            // it easily on a stream provider without invalidating it.
+            // TODO: Consider re-watch
             ref.invalidate(allFeedsProvider);
           },
         ),

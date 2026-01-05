@@ -3052,6 +3052,369 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
   }
 }
 
+class $PreferenceSyncQueueTable extends PreferenceSyncQueue
+    with TableInfo<$PreferenceSyncQueueTable, PreferenceSyncQueueData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PreferenceSyncQueueTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _feedUriMeta = const VerificationMeta(
+    'feedUri',
+  );
+  @override
+  late final GeneratedColumn<String> feedUri = GeneratedColumn<String>(
+    'feed_uri',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _retryCountMeta = const VerificationMeta(
+    'retryCount',
+  );
+  @override
+  late final GeneratedColumn<int> retryCount = GeneratedColumn<int>(
+    'retry_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    type,
+    feedUri,
+    createdAt,
+    retryCount,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'preference_sync_queue';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PreferenceSyncQueueData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('feed_uri')) {
+      context.handle(
+        _feedUriMeta,
+        feedUri.isAcceptableOrUnknown(data['feed_uri']!, _feedUriMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_feedUriMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('retry_count')) {
+      context.handle(
+        _retryCountMeta,
+        retryCount.isAcceptableOrUnknown(data['retry_count']!, _retryCountMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PreferenceSyncQueueData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PreferenceSyncQueueData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      feedUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}feed_uri'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      retryCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}retry_count'],
+      )!,
+    );
+  }
+
+  @override
+  $PreferenceSyncQueueTable createAlias(String alias) {
+    return $PreferenceSyncQueueTable(attachedDatabase, alias);
+  }
+}
+
+class PreferenceSyncQueueData extends DataClass
+    implements Insertable<PreferenceSyncQueueData> {
+  final int id;
+
+  /// Type of operation: 'save' or 'remove'.
+  final String type;
+
+  /// The feed URI to sync.
+  final String feedUri;
+
+  /// When the item was queued.
+  final DateTime createdAt;
+
+  /// Number of times we've tried to process this item.
+  final int retryCount;
+  const PreferenceSyncQueueData({
+    required this.id,
+    required this.type,
+    required this.feedUri,
+    required this.createdAt,
+    required this.retryCount,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['type'] = Variable<String>(type);
+    map['feed_uri'] = Variable<String>(feedUri);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['retry_count'] = Variable<int>(retryCount);
+    return map;
+  }
+
+  PreferenceSyncQueueCompanion toCompanion(bool nullToAbsent) {
+    return PreferenceSyncQueueCompanion(
+      id: Value(id),
+      type: Value(type),
+      feedUri: Value(feedUri),
+      createdAt: Value(createdAt),
+      retryCount: Value(retryCount),
+    );
+  }
+
+  factory PreferenceSyncQueueData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PreferenceSyncQueueData(
+      id: serializer.fromJson<int>(json['id']),
+      type: serializer.fromJson<String>(json['type']),
+      feedUri: serializer.fromJson<String>(json['feedUri']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      retryCount: serializer.fromJson<int>(json['retryCount']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'type': serializer.toJson<String>(type),
+      'feedUri': serializer.toJson<String>(feedUri),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'retryCount': serializer.toJson<int>(retryCount),
+    };
+  }
+
+  PreferenceSyncQueueData copyWith({
+    int? id,
+    String? type,
+    String? feedUri,
+    DateTime? createdAt,
+    int? retryCount,
+  }) => PreferenceSyncQueueData(
+    id: id ?? this.id,
+    type: type ?? this.type,
+    feedUri: feedUri ?? this.feedUri,
+    createdAt: createdAt ?? this.createdAt,
+    retryCount: retryCount ?? this.retryCount,
+  );
+  PreferenceSyncQueueData copyWithCompanion(PreferenceSyncQueueCompanion data) {
+    return PreferenceSyncQueueData(
+      id: data.id.present ? data.id.value : this.id,
+      type: data.type.present ? data.type.value : this.type,
+      feedUri: data.feedUri.present ? data.feedUri.value : this.feedUri,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      retryCount: data.retryCount.present
+          ? data.retryCount.value
+          : this.retryCount,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PreferenceSyncQueueData(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('feedUri: $feedUri, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('retryCount: $retryCount')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, type, feedUri, createdAt, retryCount);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PreferenceSyncQueueData &&
+          other.id == this.id &&
+          other.type == this.type &&
+          other.feedUri == this.feedUri &&
+          other.createdAt == this.createdAt &&
+          other.retryCount == this.retryCount);
+}
+
+class PreferenceSyncQueueCompanion
+    extends UpdateCompanion<PreferenceSyncQueueData> {
+  final Value<int> id;
+  final Value<String> type;
+  final Value<String> feedUri;
+  final Value<DateTime> createdAt;
+  final Value<int> retryCount;
+  const PreferenceSyncQueueCompanion({
+    this.id = const Value.absent(),
+    this.type = const Value.absent(),
+    this.feedUri = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.retryCount = const Value.absent(),
+  });
+  PreferenceSyncQueueCompanion.insert({
+    this.id = const Value.absent(),
+    required String type,
+    required String feedUri,
+    required DateTime createdAt,
+    this.retryCount = const Value.absent(),
+  }) : type = Value(type),
+       feedUri = Value(feedUri),
+       createdAt = Value(createdAt);
+  static Insertable<PreferenceSyncQueueData> custom({
+    Expression<int>? id,
+    Expression<String>? type,
+    Expression<String>? feedUri,
+    Expression<DateTime>? createdAt,
+    Expression<int>? retryCount,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (type != null) 'type': type,
+      if (feedUri != null) 'feed_uri': feedUri,
+      if (createdAt != null) 'created_at': createdAt,
+      if (retryCount != null) 'retry_count': retryCount,
+    });
+  }
+
+  PreferenceSyncQueueCompanion copyWith({
+    Value<int>? id,
+    Value<String>? type,
+    Value<String>? feedUri,
+    Value<DateTime>? createdAt,
+    Value<int>? retryCount,
+  }) {
+    return PreferenceSyncQueueCompanion(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      feedUri: feedUri ?? this.feedUri,
+      createdAt: createdAt ?? this.createdAt,
+      retryCount: retryCount ?? this.retryCount,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (feedUri.present) {
+      map['feed_uri'] = Variable<String>(feedUri.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (retryCount.present) {
+      map['retry_count'] = Variable<int>(retryCount.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PreferenceSyncQueueCompanion(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('feedUri: $feedUri, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('retryCount: $retryCount')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3063,11 +3426,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RecentSearchesTable recentSearches = $RecentSearchesTable(this);
   late final $FollowsTable follows = $FollowsTable(this);
   late final $SavedFeedsTable savedFeeds = $SavedFeedsTable(this);
+  late final $PreferenceSyncQueueTable preferenceSyncQueue =
+      $PreferenceSyncQueueTable(this);
   late final TimelineDao timelineDao = TimelineDao(this as AppDatabase);
   late final ProfileDao profileDao = ProfileDao(this as AppDatabase);
   late final SearchDao searchDao = SearchDao(this as AppDatabase);
   late final FollowsDao followsDao = FollowsDao(this as AppDatabase);
   late final SavedFeedsDao savedFeedsDao = SavedFeedsDao(this as AppDatabase);
+  late final PreferenceSyncQueueDao preferenceSyncQueueDao =
+      PreferenceSyncQueueDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3081,6 +3448,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     recentSearches,
     follows,
     savedFeeds,
+    preferenceSyncQueue,
   ];
 }
 
@@ -4936,6 +5304,218 @@ typedef $$SavedFeedsTableProcessedTableManager =
       SavedFeed,
       PrefetchHooks Function()
     >;
+typedef $$PreferenceSyncQueueTableCreateCompanionBuilder =
+    PreferenceSyncQueueCompanion Function({
+      Value<int> id,
+      required String type,
+      required String feedUri,
+      required DateTime createdAt,
+      Value<int> retryCount,
+    });
+typedef $$PreferenceSyncQueueTableUpdateCompanionBuilder =
+    PreferenceSyncQueueCompanion Function({
+      Value<int> id,
+      Value<String> type,
+      Value<String> feedUri,
+      Value<DateTime> createdAt,
+      Value<int> retryCount,
+    });
+
+class $$PreferenceSyncQueueTableFilterComposer
+    extends Composer<_$AppDatabase, $PreferenceSyncQueueTable> {
+  $$PreferenceSyncQueueTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get feedUri => $composableBuilder(
+    column: $table.feedUri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get retryCount => $composableBuilder(
+    column: $table.retryCount,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PreferenceSyncQueueTableOrderingComposer
+    extends Composer<_$AppDatabase, $PreferenceSyncQueueTable> {
+  $$PreferenceSyncQueueTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get feedUri => $composableBuilder(
+    column: $table.feedUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get retryCount => $composableBuilder(
+    column: $table.retryCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PreferenceSyncQueueTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PreferenceSyncQueueTable> {
+  $$PreferenceSyncQueueTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get feedUri =>
+      $composableBuilder(column: $table.feedUri, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get retryCount => $composableBuilder(
+    column: $table.retryCount,
+    builder: (column) => column,
+  );
+}
+
+class $$PreferenceSyncQueueTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PreferenceSyncQueueTable,
+          PreferenceSyncQueueData,
+          $$PreferenceSyncQueueTableFilterComposer,
+          $$PreferenceSyncQueueTableOrderingComposer,
+          $$PreferenceSyncQueueTableAnnotationComposer,
+          $$PreferenceSyncQueueTableCreateCompanionBuilder,
+          $$PreferenceSyncQueueTableUpdateCompanionBuilder,
+          (
+            PreferenceSyncQueueData,
+            BaseReferences<
+              _$AppDatabase,
+              $PreferenceSyncQueueTable,
+              PreferenceSyncQueueData
+            >,
+          ),
+          PreferenceSyncQueueData,
+          PrefetchHooks Function()
+        > {
+  $$PreferenceSyncQueueTableTableManager(
+    _$AppDatabase db,
+    $PreferenceSyncQueueTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PreferenceSyncQueueTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PreferenceSyncQueueTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PreferenceSyncQueueTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String> feedUri = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> retryCount = const Value.absent(),
+              }) => PreferenceSyncQueueCompanion(
+                id: id,
+                type: type,
+                feedUri: feedUri,
+                createdAt: createdAt,
+                retryCount: retryCount,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String type,
+                required String feedUri,
+                required DateTime createdAt,
+                Value<int> retryCount = const Value.absent(),
+              }) => PreferenceSyncQueueCompanion.insert(
+                id: id,
+                type: type,
+                feedUri: feedUri,
+                createdAt: createdAt,
+                retryCount: retryCount,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PreferenceSyncQueueTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PreferenceSyncQueueTable,
+      PreferenceSyncQueueData,
+      $$PreferenceSyncQueueTableFilterComposer,
+      $$PreferenceSyncQueueTableOrderingComposer,
+      $$PreferenceSyncQueueTableAnnotationComposer,
+      $$PreferenceSyncQueueTableCreateCompanionBuilder,
+      $$PreferenceSyncQueueTableUpdateCompanionBuilder,
+      (
+        PreferenceSyncQueueData,
+        BaseReferences<
+          _$AppDatabase,
+          $PreferenceSyncQueueTable,
+          PreferenceSyncQueueData
+        >,
+      ),
+      PreferenceSyncQueueData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4956,4 +5536,6 @@ class $AppDatabaseManager {
       $$FollowsTableTableManager(_db, _db.follows);
   $$SavedFeedsTableTableManager get savedFeeds =>
       $$SavedFeedsTableTableManager(_db, _db.savedFeeds);
+  $$PreferenceSyncQueueTableTableManager get preferenceSyncQueue =>
+      $$PreferenceSyncQueueTableTableManager(_db, _db.preferenceSyncQueue);
 }

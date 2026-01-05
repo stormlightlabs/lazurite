@@ -68,7 +68,7 @@ void main() {
       newCursor: 'cursor123',
     );
 
-    final timeline = await dao.watchTimeline('home').first;
+    final timeline = await dao.watchTimeline('home').first.timeout(const Duration(seconds: 2));
     expect(timeline.length, 1);
     expect(timeline.first.post.uri, 'at://did:1/app.bsky.feed.post/1');
     expect(timeline.first.author.handle, 'alice.test');
@@ -91,7 +91,7 @@ void main() {
       ],
     );
 
-    final timeline = await dao.watchTimeline('home').first;
+    final timeline = await dao.watchTimeline('home').first.timeout(const Duration(seconds: 2));
     expect(timeline, hasLength(2));
     expect(timeline[0].item.sortKey, '200');
     expect(timeline[0].post.uri, 'p2');
@@ -130,7 +130,7 @@ void main() {
       newItems: [],
     );
 
-    final timeline = await dao.watchTimeline('home').first;
+    final timeline = await dao.watchTimeline('home').first.timeout(const Duration(seconds: 2));
     expect(timeline.first.post.likeCount, 5);
   });
 }

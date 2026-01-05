@@ -12,7 +12,7 @@ FeedRepository feedRepository(Ref ref) {
   final api = ref.watch(xrpcClientProvider);
   final db = ref.watch(appDatabaseProvider);
   final logger = ref.watch(loggerProvider('FeedRepository'));
-  return FeedRepository(api, db.savedFeedsDao, logger);
+  return FeedRepository(api, db.savedFeedsDao, db.preferenceSyncQueueDao, logger);
 }
 
 /// Domain model for saved feed data (mirrors SavedFeed but is code-generator compatible).
