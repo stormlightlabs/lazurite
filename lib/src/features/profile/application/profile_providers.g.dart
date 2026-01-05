@@ -292,3 +292,203 @@ abstract class _$FollowNotifier extends $Notifier<AsyncValue<void>> {
     element.handleCreate(ref, build);
   }
 }
+
+/// Notifier for managing followers list with cursor pagination.
+
+@ProviderFor(FollowersNotifier)
+final followersProvider = FollowersNotifierFamily._();
+
+/// Notifier for managing followers list with cursor pagination.
+final class FollowersNotifierProvider
+    extends $AsyncNotifierProvider<FollowersNotifier, List<ActorBasic>> {
+  /// Notifier for managing followers list with cursor pagination.
+  FollowersNotifierProvider._({
+    required FollowersNotifierFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'followersProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$followersNotifierHash();
+
+  @override
+  String toString() {
+    return r'followersProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  FollowersNotifier create() => FollowersNotifier();
+
+  @override
+  bool operator ==(Object other) {
+    return other is FollowersNotifierProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$followersNotifierHash() => r'780708982a3a4207b47f22e314705befeeb13ab0';
+
+/// Notifier for managing followers list with cursor pagination.
+
+final class FollowersNotifierFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          FollowersNotifier,
+          AsyncValue<List<ActorBasic>>,
+          List<ActorBasic>,
+          FutureOr<List<ActorBasic>>,
+          String
+        > {
+  FollowersNotifierFamily._()
+    : super(
+        retry: null,
+        name: r'followersProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Notifier for managing followers list with cursor pagination.
+
+  FollowersNotifierProvider call(String actor) =>
+      FollowersNotifierProvider._(argument: actor, from: this);
+
+  @override
+  String toString() => r'followersProvider';
+}
+
+/// Notifier for managing followers list with cursor pagination.
+
+abstract class _$FollowersNotifier extends $AsyncNotifier<List<ActorBasic>> {
+  late final _$args = ref.$arg as String;
+  String get actor => _$args;
+
+  FutureOr<List<ActorBasic>> build(String actor);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref =
+        this.ref as $Ref<AsyncValue<List<ActorBasic>>, List<ActorBasic>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<ActorBasic>>, List<ActorBasic>>,
+              AsyncValue<List<ActorBasic>>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, () => build(_$args));
+  }
+}
+
+/// Notifier for managing following list with cursor pagination.
+
+@ProviderFor(FollowingNotifier)
+final followingProvider = FollowingNotifierFamily._();
+
+/// Notifier for managing following list with cursor pagination.
+final class FollowingNotifierProvider
+    extends $AsyncNotifierProvider<FollowingNotifier, List<ActorBasic>> {
+  /// Notifier for managing following list with cursor pagination.
+  FollowingNotifierProvider._({
+    required FollowingNotifierFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'followingProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$followingNotifierHash();
+
+  @override
+  String toString() {
+    return r'followingProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  FollowingNotifier create() => FollowingNotifier();
+
+  @override
+  bool operator ==(Object other) {
+    return other is FollowingNotifierProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$followingNotifierHash() => r'bd2e177823a3055aa5653f03fd3e593198651111';
+
+/// Notifier for managing following list with cursor pagination.
+
+final class FollowingNotifierFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          FollowingNotifier,
+          AsyncValue<List<ActorBasic>>,
+          List<ActorBasic>,
+          FutureOr<List<ActorBasic>>,
+          String
+        > {
+  FollowingNotifierFamily._()
+    : super(
+        retry: null,
+        name: r'followingProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Notifier for managing following list with cursor pagination.
+
+  FollowingNotifierProvider call(String actor) =>
+      FollowingNotifierProvider._(argument: actor, from: this);
+
+  @override
+  String toString() => r'followingProvider';
+}
+
+/// Notifier for managing following list with cursor pagination.
+
+abstract class _$FollowingNotifier extends $AsyncNotifier<List<ActorBasic>> {
+  late final _$args = ref.$arg as String;
+  String get actor => _$args;
+
+  FutureOr<List<ActorBasic>> build(String actor);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref =
+        this.ref as $Ref<AsyncValue<List<ActorBasic>>, List<ActorBasic>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<ActorBasic>>, List<ActorBasic>>,
+              AsyncValue<List<ActorBasic>>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, () => build(_$args));
+  }
+}

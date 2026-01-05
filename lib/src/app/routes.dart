@@ -18,6 +18,8 @@ abstract final class AppRoutes {
 
   static const String thread = 't/:uri';
   static const String profileDetail = 'u/:did';
+  static const String followers = 'followers/:did';
+  static const String following = 'following/:did';
   static const String convo = 'c/:convoId';
   static const String draftDetail = ':draftId';
 }
@@ -38,6 +40,8 @@ abstract final class AppRouteNames {
   static const String drafts = 'drafts';
   static const String thread = 'thread';
   static const String profileDetail = 'profileDetail';
+  static const String followers = 'followers';
+  static const String following = 'following';
   static const String convo = 'convo';
   static const String draftDetail = 'draftDetail';
 }

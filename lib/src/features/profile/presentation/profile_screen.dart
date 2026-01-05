@@ -94,10 +94,12 @@ class ProfilePageContent extends ConsumerWidget {
                   child: ProfileHeader(
                     profile: profile,
                     onFollowersPressed: () {
-                      // TODO: Navigate to followers page
+                      final encodedDid = Uri.encodeComponent(profile.did);
+                      context.push('/profile/followers/$encodedDid');
                     },
                     onFollowingPressed: () {
-                      // TODO: Navigate to following page
+                      final encodedDid = Uri.encodeComponent(profile.did);
+                      context.push('/profile/following/$encodedDid');
                     },
                     followButton: isCurrentUser ? null : _followButton(profile),
                   ),

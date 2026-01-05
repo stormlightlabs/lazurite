@@ -10,6 +10,8 @@ import 'package:lazurite/src/features/login/presentation/app_password_login_scre
 import 'package:lazurite/src/features/login/presentation/auth_progress_view.dart';
 import 'package:lazurite/src/features/login/presentation/login_screen.dart';
 import 'package:lazurite/src/features/notifications/presentation/notifications_screen.dart';
+import 'package:lazurite/src/features/profile/presentation/followers_page.dart';
+import 'package:lazurite/src/features/profile/presentation/following_page.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
 import 'package:lazurite/src/features/splash/presentation/splash_screen.dart';
@@ -173,6 +175,24 @@ GoRouter createRouter(Ref ref) {
                 path: AppRoutes.profile,
                 name: AppRouteNames.profile,
                 builder: (context, state) => const ProfileScreen(),
+                routes: [
+                  GoRoute(
+                    path: AppRoutes.followers,
+                    name: AppRouteNames.followers,
+                    builder: (context, state) {
+                      final did = Uri.decodeComponent(state.pathParameters['did']!);
+                      return FollowersPage(did: did);
+                    },
+                  ),
+                  GoRoute(
+                    path: AppRoutes.following,
+                    name: AppRouteNames.following,
+                    builder: (context, state) {
+                      final did = Uri.decodeComponent(state.pathParameters['did']!);
+                      return FollowingPage(did: did);
+                    },
+                  ),
+                ],
               ),
             ],
           ),

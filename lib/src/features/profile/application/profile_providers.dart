@@ -128,3 +128,85 @@ class FollowNotifier extends _$FollowNotifier {
     });
   }
 }
+
+/// Notifier for managing followers list with cursor pagination.
+@riverpod
+class FollowersNotifier extends _$FollowersNotifier {
+  String? _cursor;
+  bool _hasMore = true;
+
+  @override
+  Future<List<ActorBasic>> build(String actor) async {
+    return _fetchFollowers(actor);
+  }
+
+  Future<List<ActorBasic>> _fetchFollowers(String actor, {bool loadMore = false}) async {
+    final repository = ref.read(profileRepositoryProvider);
+    final result = await repository.getFollowers(actor, cursor: loadMore ? _cursor : null);
+
+    _cursor = result.cursor;
+    _hasMore = result.hasMore;
+
+    if (loadMore) {
+      final current = state.value ?? [];
+      return [...current, ...result.followers];
+    }
+    return result.followers;
+  }
+
+  bool get hasMore => _hasMore;
+
+  Future<void> loadMore() async {
+    if (!_hasMore || state.isLoading) return;
+
+    state = AsyncData(await _fetchFollowers(actor, loadMore: true));
+  }
+
+  Future<void> refresh() async {
+    _cursor = null;
+    _hasMore = true;
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _fetchFollowers(actor));
+  }
+}
+
+/// Notifier for managing following list with cursor pagination.
+@riverpod
+class FollowingNotifier extends _$FollowingNotifier {
+  String? _cursor;
+  bool _hasMore = true;
+
+  @override
+  Future<List<ActorBasic>> build(String actor) async {
+    return _fetchFollowing(actor);
+  }
+
+  Future<List<ActorBasic>> _fetchFollowing(String actor, {bool loadMore = false}) async {
+    final repository = ref.read(profileRepositoryProvider);
+    final result = await repository.getFollows(actor, cursor: loadMore ? _cursor : null);
+
+    _cursor = result.cursor;
+    _hasMore = result.hasMore;
+
+    if (loadMore) {
+      final current = state.value ?? [];
+      return [...current, ...result.follows];
+    }
+    return result.follows;
+  }
+
+  bool get hasMore => _hasMore;
+
+  Future<void> loadMore() async {
+    if (!_hasMore || state.isLoading) return;
+
+    state = AsyncData(await _fetchFollowing(actor, loadMore: true));
+  }
+
+  Future<void> refresh() async {
+    _cursor = null;
+    _hasMore = true;
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _fetchFollowing(actor));
+  }
+}

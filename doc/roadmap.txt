@@ -105,9 +105,9 @@ Tasks:
             - [x] search input
             - [x] recent searches list
             - [x] results list page
-      - [ ] Follows/Followers (full):
-            - [ ] FollowersPage
-            - [ ] FollowingPage
+      - [x] Follows/Followers (full):
+            - [x] FollowersPage
+            - [x] FollowingPage
 - [x] Social Graph:
       - [x] Follow/unfollow infrastructure:
             - [x] Implement getFollowers endpoint in ProfileRepository
@@ -116,16 +116,16 @@ Tasks:
             - [x] Wire FollowButton to follow/unfollow mutations
             - [x] Add following status to ProfileData domain model
             - [x] Cache relationship state in Drift (follows table)
-      - [ ] Followers screen:
-            - [ ] Create FollowersPage with cursor pagination
-            - [ ] Add route /profile/followers/:did
-            - [ ] Wire ProfileHeader follower stat button to FollowersPage
-            - [ ] Reuse ActorRow widget for follower list
-      - [ ] Following screen:
-            - [ ] Create FollowingPage with cursor pagination
-            - [ ] Add route /profile/following/:did
-            - [ ] Wire ProfileHeader following stat button to FollowingPage
-            - [ ] Reuse ActorRow widget for following list
+      - [x] Followers screen:
+            - [x] Create FollowersPage with cursor pagination
+            - [x] Add route /profile/followers/:did
+            - [x] Wire ProfileHeader follower stat button to FollowersPage
+            - [x] Reuse ActorRow widget for follower list
+      - [x] Following screen:
+            - [x] Create FollowingPage with cursor pagination
+            - [x] Add route /profile/following/:did
+            - [x] Wire ProfileHeader following stat button to FollowingPage
+            - [x] Reuse ActorRow widget for following list
       - [ ] Profile tabs:
             - [ ] Add TabBar to ProfilePage (Posts / Replies / Media)
             - [ ] Use existing ProfilePostsTab widget
@@ -141,7 +141,7 @@ Tests:
 - [x] Profile caching: refresh merges, does not duplicate feed items.
 - [x] Search paging: stable cursor behavior and local persistence.
 - [x] Follow/unfollow: mutations update cache and UI state.
-- [ ] Followers/following pagination: cursor stability and cache behavior.
+- [x] Followers/following pagination: cursor stability and cache behavior.
 - [ ] Profile tabs: switching tabs preserves scroll position.
 
 Deliverables:
