@@ -500,7 +500,6 @@ void main() {
 
       await authRepo.completeLogin(uri);
 
-      // Verify warning was logged for reduced scopes
       verify(() => logger.warning(any(that: contains('reduced scopes')))).called(1);
     });
 
@@ -508,7 +507,6 @@ void main() {
       final uri = Uri.parse('org.stormlightlabs.lazurite://callback?code=abc&state=xyz');
       final key = await DPoPUtils.generateKey();
 
-      // Create a JWT with mismatched sub claim
       final jwtKey = await DPoPUtils.generateKey();
       final builder = JsonWebSignatureBuilder()
         ..jsonContent = {
@@ -565,7 +563,6 @@ void main() {
 
       await authRepo.completeLogin(uri);
 
-      // Verify warning was logged for sub claim mismatch
       verify(() => logger.warning(any(that: contains('sub claim mismatch')), any())).called(1);
     });
 

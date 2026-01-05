@@ -165,8 +165,6 @@ class ProfileRepository {
   Future<void> unfollow(String actorDid, String followUri) async {
     _logger.info('Unfollowing user', {'uri': followUri});
     try {
-      // Parse rkey from AT URI: at://did:plc:xxx/app.bsky.graph.follow/rkey
-      // AT URIs don't parse with Uri.parse, so use string manipulation
       final parts = followUri.split('/');
       if (parts.length < 2) {
         throw ArgumentError('Invalid follow URI: $followUri');

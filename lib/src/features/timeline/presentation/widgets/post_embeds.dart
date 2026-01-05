@@ -20,15 +20,12 @@ class PostEmbeds extends StatelessWidget {
     }
 
     if (type == 'app.bsky.embed.video#view') {
-      // Extract CID from record if available
       String? cid;
       if (record != null &&
           record![r'$type'] == 'app.bsky.feed.post' &&
           record!['embed'] != null &&
           record!['embed'][r'$type'] == 'app.bsky.embed.video') {
         final video = record!['embed']['video'];
-        // The structure might be { ref: {$link: ...}, ... } or just blob?
-        // Usually blob is { ref: {$link: ...}, mimeType: ..., size: ...}
         if (video != null && video['ref'] != null) {
           cid = video['ref'][r'$link'] as String?;
         }

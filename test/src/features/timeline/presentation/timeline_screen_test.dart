@@ -48,7 +48,7 @@ void main() {
 
     final feedItem = TimelineFeedItem(post: post, author: author, item: item);
 
-    when(() => mockRepository.watchTimeline()).thenAnswer((_) => Stream.value([feedItem]));
+    when(() => mockRepository.watchTimeline(feedKey: 'home')).thenAnswer((_) => Stream.value([feedItem]));
 
     await tester.pumpWidget(createSubject());
     await tester.pump();
@@ -73,9 +73,9 @@ void main() {
     const item = TimelineItem(feedKey: 'home', postUri: 'uri1', sortKey: '100');
     final feedItem = TimelineFeedItem(post: post, author: author, item: item);
 
-    when(() => mockRepository.watchTimeline()).thenAnswer((_) => Stream.value([feedItem]));
+    when(() => mockRepository.watchTimeline(feedKey: 'home')).thenAnswer((_) => Stream.value([feedItem]));
 
-    when(() => mockRepository.fetchAndCacheTimeline()).thenAnswer((_) async {});
+    when(() => mockRepository.fetchAndCacheTimeline(feedUri: null)).thenAnswer((_) async {});
 
     await tester.pumpWidget(createSubject());
     await tester.pump();
@@ -83,6 +83,6 @@ void main() {
     await tester.drag(find.text('Hello'), const Offset(0, 300));
     await tester.pumpAndSettle();
 
-    verify(() => mockRepository.fetchAndCacheTimeline()).called(1);
+    verify(() => mockRepository.fetchAndCacheTimeline(feedUri: null)).called(1);
   });
 }

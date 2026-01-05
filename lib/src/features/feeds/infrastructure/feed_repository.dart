@@ -310,4 +310,83 @@ class FeedRepository {
   Future<SavedFeed?> getFeed(String uri) {
     return _dao.getFeed(uri);
   }
+
+  /// URI for the Home timeline (authenticated users).
+  static const kHomeFeedUri = 'home';
+
+  /// URI for the Discover feed (public).
+  static const kDiscoverFeedUri =
+      'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
+
+  /// Seeds default feeds if they don't already exist.
+  ///
+  /// Ensures that Home (for authenticated users) and Discover (public) feeds
+  /// are always available in the local cache. This should be called during
+  /// app initialization or after user login.
+  Future<void> seedDefaultFeeds() async {
+    _logger.debug('Seeding default feeds');
+
+    final now = DateTime.now();
+    final defaultFeeds = <SavedFeedsCompanion>[];
+
+    final homeFeed = await _dao.getFeed(kHomeFeedUri);
+    if (homeFeed == null && _api.isAuthenticated) {
+      defaultFeeds.add(
+        SavedFeedsCompanion.insert(
+          uri: kHomeFeedUri,
+          displayName: 'Home',
+          description: const Value('Your personalized timeline'),
+          avatar: const Value(null),
+          creatorDid: '',
+          likeCount: const Value(0),
+          sortOrder: 0,
+          isPinned: const Value(true),
+          lastSynced: now,
+        ),
+      );
+    }
+
+    final discoverFeed = await _dao.getFeed(kDiscoverFeedUri);
+    if (discoverFeed == null) {
+      try {
+        final metadata = await getFeedMetadata(kDiscoverFeedUri);
+        defaultFeeds.add(
+          SavedFeedsCompanion.insert(
+            uri: kDiscoverFeedUri,
+            displayName: metadata['displayName'] ?? 'Discover',
+            description: Value(metadata['description']),
+            avatar: Value(metadata['avatar']),
+            creatorDid: metadata['creator']['did'] ?? '',
+            likeCount: Value(metadata['likeCount'] ?? 0),
+            sortOrder: 1,
+            isPinned: const Value(true),
+            lastSynced: now,
+          ),
+        );
+      } catch (e) {
+        _logger.error('Failed to fetch Discover feed metadata, using defaults', {'error': e});
+
+        defaultFeeds.add(
+          SavedFeedsCompanion.insert(
+            uri: kDiscoverFeedUri,
+            displayName: 'Discover',
+            description: const Value('Explore trending posts'),
+            avatar: const Value(null),
+            creatorDid: '',
+            likeCount: const Value(0),
+            sortOrder: 1,
+            isPinned: const Value(true),
+            lastSynced: now,
+          ),
+        );
+      }
+    }
+
+    if (defaultFeeds.isNotEmpty) {
+      await _dao.upsertFeeds(defaultFeeds);
+      _logger.info('Seeded ${defaultFeeds.length} default feeds');
+    } else {
+      _logger.debug('Default feeds already exist');
+    }
+  }
 }

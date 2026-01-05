@@ -75,7 +75,6 @@ class AuthRepository {
     try {
       await _clearExpiredPendingSession();
 
-      // Start loopback server for OAuth callback (all platforms use HTTP)
       _loopbackServer = LoopbackServer(logger: _logger);
       final redirectUri = await _loopbackServer!.start();
       _logger.debug('Loopback server started with redirect URI: $redirectUri');
@@ -133,8 +132,6 @@ class AuthRepository {
 
       final Uri callbackUri;
 
-      // Use custom OAuth browser callback on iOS (WebView that can reach localhost)
-      // Use external browser + loopback server on other platforms
       if (Platform.isIOS && _oauthBrowserCallback != null) {
         _logger.info('Using custom OAuth browser callback for iOS');
         try {
@@ -148,7 +145,6 @@ class AuthRepository {
         await _loopbackServer!.stop();
         _loopbackServer = null;
       } else {
-        // Desktop/Android: use external browser
         final uri = Uri.parse(authorizeUrl);
         if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
           await _loopbackServer!.stop();

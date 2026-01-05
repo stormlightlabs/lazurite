@@ -139,4 +139,18 @@ class TimelineRepository {
   Stream<List<TimelineFeedItem>> watchTimeline({String? feedKey}) {
     return _dao.watchTimeline(feedKey ?? 'home');
   }
+
+  /// Gets the cursor for a specific feed.
+  ///
+  /// Returns null if no cursor is stored for the feed.
+  Future<String?> getCursor(String feedKey) {
+    return _dao.getCursor(feedKey);
+  }
+
+  /// Clears all cached items for a specific feed.
+  ///
+  /// Removes timeline items and cursor for the given feedKey.
+  Future<void> clearTimeline(String feedKey) {
+    return _dao.clearTimeline(feedKey);
+  }
 }

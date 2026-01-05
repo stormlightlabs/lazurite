@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 ///
 /// Uses [StatefulNavigationShell] to preserve state across tab switches.
 class TabScaffold extends StatelessWidget {
-  /// Creates a tab scaffold.
   const TabScaffold({required this.navigationShell, super.key});
 
   /// The navigation shell from [StatefulShellRoute].
@@ -18,14 +17,7 @@ class TabScaffold extends StatelessWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) {
-          // Navigate to the branch with the corresponding index.
-          // goBranch(index) navigates to the initial route of the branch.
-          navigationShell.goBranch(
-            index,
-            // If the current branch is the same as the destination,
-            // navigate to the initial location of the branch.
-            initialLocation: index == navigationShell.currentIndex,
-          );
+          navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex);
         },
         destinations: const [
           NavigationDestination(

@@ -169,7 +169,6 @@ class AuthInterceptor extends Interceptor {
       return handler.next(err);
     }
 
-    // If a refresh is already in progress, wait for it to complete
     if (_refreshCompleter != null) {
       try {
         final newSession = await _refreshCompleter!.future;
@@ -177,14 +176,12 @@ class AuthInterceptor extends Interceptor {
           return handler.next(err);
         }
 
-        // Retry with the new session
         return _retryRequestWithSession(err, newSession, handler);
       } catch (e) {
         return handler.next(err);
       }
     }
 
-    // Start a new refresh
     _refreshCompleter = Completer<Session?>();
 
     try {
@@ -195,7 +192,6 @@ class AuthInterceptor extends Interceptor {
         return handler.next(err);
       }
 
-      // Retry the original request
       return _retryRequestWithSession(err, newSession, handler);
     } catch (e) {
       _refreshCompleter!.completeError(e);

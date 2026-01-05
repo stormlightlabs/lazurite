@@ -54,14 +54,10 @@ void main() {
       test('redacts case-insensitive headers', () {
         final options = RequestOptions(
           path: '/test',
-          headers: {
-            'authorization': 'Bearer token', // lowercase
-            'DPOP': 'proof', // uppercase
-          },
+          headers: {'authorization': 'Bearer token', 'DPOP': 'proof'},
         );
 
         final interceptor = LoggingInterceptor();
-        // Should handle without error
         interceptor.onRequest(options, RequestInterceptorHandler());
       });
     });

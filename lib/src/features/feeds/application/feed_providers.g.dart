@@ -344,3 +344,72 @@ abstract class _$DiscoverFeedsNotifier
     element.handleCreate(ref, build);
   }
 }
+
+/// Notifier for tracking the currently active feed.
+///
+/// This notifier maintains the URI of the currently selected feed and allows
+/// switching between feeds. The timeline will reactively update based on this value.
+
+@ProviderFor(ActiveFeed)
+final activeFeedProvider = ActiveFeedProvider._();
+
+/// Notifier for tracking the currently active feed.
+///
+/// This notifier maintains the URI of the currently selected feed and allows
+/// switching between feeds. The timeline will reactively update based on this value.
+final class ActiveFeedProvider extends $NotifierProvider<ActiveFeed, String> {
+  /// Notifier for tracking the currently active feed.
+  ///
+  /// This notifier maintains the URI of the currently selected feed and allows
+  /// switching between feeds. The timeline will reactively update based on this value.
+  ActiveFeedProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'activeFeedProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$activeFeedHash();
+
+  @$internal
+  @override
+  ActiveFeed create() => ActiveFeed();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$activeFeedHash() => r'cf0f3b24f7c1c4fa050790651b30e1a1687b8b68';
+
+/// Notifier for tracking the currently active feed.
+///
+/// This notifier maintains the URI of the currently selected feed and allows
+/// switching between feeds. The timeline will reactively update based on this value.
+
+abstract class _$ActiveFeed extends $Notifier<String> {
+  String build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<String, String>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<String, String>,
+              String,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

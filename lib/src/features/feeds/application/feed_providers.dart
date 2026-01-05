@@ -148,3 +148,33 @@ class DiscoverFeedsNotifier extends _$DiscoverFeedsNotifier {
     });
   }
 }
+
+/// Notifier for tracking the currently active feed.
+///
+/// This notifier maintains the URI of the currently selected feed and allows
+/// switching between feeds. The timeline will reactively update based on this value.
+@riverpod
+class ActiveFeed extends _$ActiveFeed {
+  @override
+  String build() {
+    return FeedRepository.kHomeFeedUri;
+  }
+
+  /// Switches to a different feed.
+  ///
+  /// Updates the active feed URI, which will trigger timeline reload in
+  /// TimelineNotifier.
+  void switchFeed(String feedUri) {
+    state = feedUri;
+  }
+
+  /// Switches to the home feed.
+  void switchToHome() {
+    state = FeedRepository.kHomeFeedUri;
+  }
+
+  /// Switches to the discover feed.
+  void switchToDiscover() {
+    state = FeedRepository.kDiscoverFeedUri;
+  }
+}

@@ -149,7 +149,6 @@ class ServerMetadataRepository {
       return cached.metadata;
     }
 
-    // For Bluesky-hosted PDS instances, use bsky.social as the OAuth server
     final oauthServer = _getOAuthServerUrl(pdsUrl);
     final metadataUrl = '$oauthServer/.well-known/oauth-authorization-server';
 
@@ -182,7 +181,6 @@ class ServerMetadataRepository {
   String _getOAuthServerUrl(String pdsUrl) {
     final uri = Uri.parse(pdsUrl);
 
-    // Check if this is a Bluesky-hosted PDS
     if (uri.host.endsWith('.host.bsky.network')) {
       return 'https://bsky.social';
     }

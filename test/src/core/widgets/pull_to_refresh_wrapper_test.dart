@@ -42,7 +42,6 @@ void main() {
         ),
       );
 
-      // Perform a fling down gesture to trigger refresh
       await tester.fling(find.byType(ListView), const Offset(0, 300), 1000);
       await tester.pumpAndSettle();
 

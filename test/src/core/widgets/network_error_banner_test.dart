@@ -9,13 +9,11 @@ void main() {
     testWidgets('renders error message', (tester) async {
       const message = 'Unable to connect';
       await tester.pumpApp(const Column(children: [NetworkErrorBanner(message: message)]));
-
       expect(find.text(message), findsOneWidget);
     });
 
     testWidgets('renders cloud_off icon', (tester) async {
       await tester.pumpApp(const Column(children: [NetworkErrorBanner(message: 'Error')]));
-
       expect(find.byIcon(Icons.cloud_off), findsOneWidget);
     });
 
@@ -31,7 +29,6 @@ void main() {
 
     testWidgets('does not render retry button when onRetry is null', (tester) async {
       await tester.pumpApp(const Column(children: [NetworkErrorBanner(message: 'Error')]));
-
       expect(find.text('Retry'), findsNothing);
     });
 
@@ -51,21 +48,17 @@ void main() {
 
     testWidgets('uses error container color for background', (tester) async {
       await tester.pumpApp(const Column(children: [NetworkErrorBanner(message: 'Error')]));
-
-      // Material widget wraps the banner for background color
       expect(find.byType(Material), findsWidgets);
     });
 
     testWidgets('is displayed in a row layout', (tester) async {
       await tester.pumpApp(const Column(children: [NetworkErrorBanner(message: 'Error')]));
-
       expect(find.byType(Row), findsOneWidget);
     });
 
     testWidgets('message expands to fill available space', (tester) async {
       const longMessage = 'This is a very long error message that should expand';
       await tester.pumpApp(const Column(children: [NetworkErrorBanner(message: longMessage)]));
-
       expect(find.text(longMessage), findsOneWidget);
       expect(find.byType(Expanded), findsOneWidget);
     });

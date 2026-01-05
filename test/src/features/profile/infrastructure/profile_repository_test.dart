@@ -48,7 +48,6 @@ void main() {
               mockApi.call('app.bsky.actor.getProfile', params: {'actor': 'testuser.bsky.social'}),
         ).called(1);
 
-        // Verify cached in DB
         final cached = await db.profileDao.getProfile('did:plc:test123');
         expect(cached, isNotNull);
         expect(cached!.handle, 'testuser.bsky.social');
@@ -244,7 +243,6 @@ void main() {
 
         expect(uri, 'at://did:plc:actor/app.bsky.graph.follow/rkey123');
 
-        // Verify cached in DB
         final cached = await repository.getCachedFollow('did:plc:actor', 'did:plc:subject');
         expect(cached, isNotNull);
         expect(cached!.uri, uri);
@@ -265,7 +263,6 @@ void main() {
 
     group('unfollow', () {
       test('deletes follow record and removes from cache', () async {
-        // First create a follow
         when(
           () => mockApi.call('com.atproto.repo.createRecord', body: any(named: 'body')),
         ).thenAnswer(
@@ -276,7 +273,6 @@ void main() {
         );
         await repository.follow('did:plc:actor', 'did:plc:subject');
 
-        // Now unfollow
         when(
           () => mockApi.call('com.atproto.repo.deleteRecord', body: any(named: 'body')),
         ).thenAnswer((_) async => <String, dynamic>{});
@@ -286,7 +282,6 @@ void main() {
           'at://did:plc:actor/app.bsky.graph.follow/rkey123',
         );
 
-        // Verify removed from cache
         final cached = await repository.getCachedFollow('did:plc:actor', 'did:plc:subject');
         expect(cached, isNull);
       });

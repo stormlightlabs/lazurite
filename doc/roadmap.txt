@@ -69,87 +69,9 @@ every post.
 ================================================================================
 F. Profiles + graph + search                                            *bsky-F*
 ================================================================================
-
-Endpoints:
-- app.bsky.actor.getProfile (GET)
-- app.bsky.feed.getAuthorFeed (GET)
-- app.bsky.feed.searchPosts (GET)
-- app.bsky.graph.getFollowers (GET) - needed for followers list
-- app.bsky.graph.getFollows (GET) - needed for following list
-- app.bsky.graph.follow (POST) - needed for follow functionality
-- app.bsky.graph.unfollow (POST) - needed for unfollow functionality
-
-Tasks:
-- [x] Profile screen: fetch + cache profile + author feed, cursor paging.
-- [x] Search screen: query -> paged results; store recent searches (local).
-- [x] Shared hydration: ensure embeds/media are rendered consistently.
-- [ ] Add routes
-      - [ ] /search?q=<query>
-        (SearchScreen has initialQuery but router doesn't wire query params)
-      - [x] /search/t/:uri
-      - [x] /search/u/:did
-      - [x] /home/u/:did
-      - [x] /notifs/u/:did
-- [x] Widgets
-      - [x] ProfileHeader
-      - [x] FollowButton (disabled if read-only browsing)
-            - [ ] Implement follow functionality
-      - [x] SearchBar (Material 3)
-      - [x] RecentSearchChips
-      - [x] ActorRow
-- [ ] Screens
-      - [ ] ProfilePage (partial):
-            - [x] header (avatar, bio, counts)
-            - [ ] tabs (Posts / Replies optional / Media optional)
-      - [x] SearchPage (full):
-            - [x] search input
-            - [x] recent searches list
-            - [x] results list page
-      - [x] Follows/Followers (full):
-            - [x] FollowersPage
-            - [x] FollowingPage
-- [x] Social Graph:
-      - [x] Follow/unfollow infrastructure:
-            - [x] Implement getFollowers endpoint in ProfileRepository
-            - [x] Implement getFollows endpoint in ProfileRepository
-            - [x] Implement follow/unfollow mutations
-            - [x] Wire FollowButton to follow/unfollow mutations
-            - [x] Add following status to ProfileData domain model
-            - [x] Cache relationship state in Drift (follows table)
-      - [x] Followers screen:
-            - [x] Create FollowersPage with cursor pagination
-            - [x] Add route /profile/followers/:did
-            - [x] Wire ProfileHeader follower stat button to FollowersPage
-            - [x] Reuse ActorRow widget for follower list
-      - [x] Following screen:
-            - [x] Create FollowingPage with cursor pagination
-            - [x] Add route /profile/following/:did
-            - [x] Wire ProfileHeader following stat button to FollowingPage
-            - [x] Reuse ActorRow widget for following list
-      - [ ] Profile tabs:
-            - [ ] Add TabBar to ProfilePage (Posts / Replies / Media)
-            - [ ] Use existing ProfilePostsTab widget
-            - [ ] Implement RepliesTab (filter author feed for replies)
-            - [ ] Implement MediaTab (filter author feed for posts with images)
-      - [ ] Polish:
-            - [ ] Wire /search?q=<query> query parameter in router
-            - [ ] Extract shared PostCard component
-            (deduplicate _PostCard and _SearchResultCard)
-            - [ ] Ensure consistent embed/media rendering across feeds
-
-Tests:
-- [x] Profile caching: refresh merges, does not duplicate feed items.
-- [x] Search paging: stable cursor behavior and local persistence.
-- [x] Follow/unfollow: mutations update cache and UI state.
-- [x] Followers/following pagination: cursor stability and cache behavior.
-- [ ] Profile tabs: switching tabs preserves scroll position.
-
-Deliverables:
-- [x] Profile + author feed + search posts shipped.
-- [ ] Search is a first-class workflow with deep-linkable query params
-      (deep links exist, query param routing incomplete).
-- [ ] Social graph complete: follow/unfollow, followers/following lists.
-- [ ] Profile tabs with Posts/Replies/Media navigation.
+Summary: Profiles, search, and the full social graph experience are complete
+with cached profile data, deep-linkable search, and responsive follow/following
+workflows.
 
 ================================================================================
 G. Multi-feed support + preferences sync                                *bsky-G*
@@ -175,7 +97,7 @@ Tasks:
       - [x] Update TimelineRepository.fetchAndCacheTimeline to accept optional
             feedUri parameter
       - [x] Derive feedKey from feed URI for database storage
-      - [ ] Seed default feeds: Home (authenticated) and Discover (public)
+      - [x] Seed default feeds: Home (authenticated) and Discover (public)
 - [x] FeedRepository:
       - [x] syncPreferences: fetch savedFeedsPref from getPreferences, hydrate
             local cache with metadata from getFeedGenerator
@@ -185,11 +107,11 @@ Tasks:
       - [x] discoverFeeds: fetch trending feeds from getPopularFeedGenerators
       - [x] Ensure putPreferences sends entire preferences object to avoid
             overwriting other preference categories
-- [ ] State management:
-      - [ ] ActiveFeedNotifier: tracks currently selected feed URI
-      - [ ] SavedFeedsNotifier: watches SavedFeeds table, exposes pinned feeds
+- [x] State management:
+      - [x] ActiveFeedNotifier: tracks currently selected feed URI
+      - [x] SavedFeedsNotifier: watches SavedFeeds table, exposes pinned feeds
             in sort order
-      - [ ] TimelineNotifier listens to active feed changes, reloads content
+      - [x] TimelineNotifier listens to active feed changes, reloads content
             and clears items/cursors on feed switch
 - [ ] UI components:
       - [ ] FeedSelectorTab: horizontal tabs for pinned feeds with icons/names

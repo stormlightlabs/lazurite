@@ -230,7 +230,6 @@ void main() {
             getSession: () async => _createTestSession(),
             refreshSession: () async {
               refreshCount++;
-              // Simulate slow refresh
               await Future.delayed(const Duration(milliseconds: 100));
               return _createTestSession(accessJwt: 'refreshed-token');
             },
@@ -240,7 +239,6 @@ void main() {
         adapter.onGet('/test1', (server) => server.reply(401, {'error': 'Unauthorized'}));
         adapter.onGet('/test2', (server) => server.reply(401, {'error': 'Unauthorized'}));
 
-        // Fire two concurrent requests that will both get 401
         final futures = [
           dio.get('/test1', options: Options(extra: {AuthInterceptor.requiresAuthKey: true})),
           dio.get('/test2', options: Options(extra: {AuthInterceptor.requiresAuthKey: true})),
@@ -252,7 +250,6 @@ void main() {
           // Expected to fail since mock adapter can't handle retries properly
         }
 
-        // Both requests should trigger only ONE refresh due to queueing
         expect(refreshCount, equals(1));
       });
 
