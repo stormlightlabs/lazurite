@@ -1,7 +1,120 @@
 *roadmap.txt*                         Material You Bluesky Client (Flutter/Dart)
 
 ================================================================================
-H. Composer + local drafts + publish pipeline                           *bsky-H*
+H. Search and Feed Part 2 (hardening + completion)                      *bsky-H*
+================================================================================
+
+Context:
+- Basic search and feeds are functional but have correctness issues and gaps.
+- Feeds are prioritized over search improvements.
+- Focus on data integrity, consistency, and UX polish.
+
+Endpoints (already registered):
+- app.bsky.feed.searchPosts (GET, requires auth)
+- app.bsky.actor.searchActors (GET, registered but unused)
+- app.bsky.feed.getFeed (GET)
+- app.bsky.feed.getTimeline (GET)
+
+Tasks:
+- [ ] Feed Data Integrity (CRITICAL):
+      - [ ] Fix home feed key collision risk:
+            - replace 'home' literal with '__internal:home' prefix
+            - add validation to prevent AT URI collisions
+      - [ ] Fix sortKey collision potential:
+            - use microsecond precision instead of milliseconds
+            - consider compound key: {timestamp}-{index}-{postUri}
+      - [ ] Add feed URI validation:
+            - validate AT URI format before saveFeed()
+            - reject malformed URIs with clear error message
+      - [ ] Fix optimistic update race condition:
+            - wrap saveFeed/removeFeed in database transaction
+            - ensure atomicity of local update + queue insert
+- [ ] Feed Sync Improvements (HIGH):
+      - [ ] Add sync queue retry limits:
+            - add retryCount to PreferenceSyncQueue table
+            - max 5 retries, then mark as permanently failed
+            - cleanup failed items older than 30 days
+      - [ ] Add conflict resolution for multi-device sync:
+            - timestamp-based merge strategy
+            - preserve user intent (pins, order) on conflict
+      - [ ] Improve deprecated feed migration:
+            - migrate users from _kDeprecatedDiscoverUri
+            - preserve pin status and sortOrder
+- [ ] Feed UX Enhancements (MEDIUM):
+      - [ ] Feed reordering UI:
+            - drag-to-reorder in FeedManagementScreen
+            - update sortOrder on drag complete
+            - sync to remote preferences
+      - [ ] Feed preview:
+            - preview feed content before saving
+            - show 10-20 posts in modal/sheet
+            - "Save Feed" button from preview
+      - [ ] Feed discovery improvements:
+            - search feeds by name/creator
+            - category filters (if API supports)
+- [ ] Search Auth & Caching (HIGH):
+      - [ ] Fix search auth requirement mismatch:
+            - handle unauthenticated users gracefully
+            - show "Sign in to search" state
+            - or make searchPosts use publicApi (verify with spec)
+      - [ ] Implement recent search saving:
+            - call saveRecentSearch() after successful query
+            - wire up in SearchNotifier._search()
+      - [ ] Add search results caching:
+            - cache SearchPostItems in database
+            - similar to feed content caching strategy
+            - 7-day retention policy
+- [ ] Search Feature Completion (MEDIUM):
+      - [ ] Add embed support to SearchPostItem:
+            - include embed field in model
+            - render images/videos in search results
+            - reuse post embed widgets from feeds
+      - [ ] Implement actor search:
+            - use app.bsky.actor.searchActors endpoint
+            - tab switcher: Posts / People
+            - actor search results with follow button
+      - [ ] Add search input debouncing:
+            - 300ms debounce on text input
+            - cancel in-flight requests on new input
+- [ ] Architecture & Code Quality (MEDIUM):
+      - [ ] Create unified post domain model:
+            - consolidate SearchPostItem and FeedPost
+            - shared Post model with adapters
+            - reduce duplication in repository layer
+      - [ ] Shared pagination utilities:
+            - extract pagination logic to utility class
+            - consistent cursor + hasMore pattern
+            - reuse in search and feeds
+      - [ ] Improve null safety:
+            - typed models for API responses
+            - safe navigation for nested JSON
+            - reduce fragile metadata?['creator'] patterns
+      - [ ] Profile deduplication:
+            - profiles table as single source of truth
+            - reference by DID across all features
+
+Tests:
+- [ ] Feed key collision test: ensure '__internal:home' never collides
+- [ ] sortKey uniqueness test: verify no duplicates on rapid pagination
+- [ ] Sync queue retry test: verify max retries + cleanup
+- [ ] Optimistic update transaction test: rollback on queue failure
+- [ ] Search auth test: unauthenticated user sees sign-in prompt
+- [ ] Recent search persistence test: verify saveRecentSearch() called
+- [ ] Search cache test: second query serves from cache
+- [ ] Offline search test: cached results available offline
+- [ ] Feed sync conflict test: multi-device pin resolution
+- [ ] Feed URI validation test: reject malformed URIs
+
+Deliverables:
+- [ ] Feeds are data-safe: no collisions, no race conditions
+- [ ] Sync queue is bounded and self-cleaning
+- [ ] Search works for unauthenticated users (with appropriate UX)
+- [ ] Search results are cached for performance
+- [ ] Feed reordering and preview improve discoverability
+- [ ] Code quality: unified models, shared utilities
+
+================================================================================
+I. Composer + local drafts + publish pipeline                           *bsky-I*
 ================================================================================
 
 Endpoints (write):
@@ -55,7 +168,7 @@ Deliverables:
 - [ ] Publish failures never destroy a draft (user trust)
 
 ================================================================================
-I. Notifications                                                        *bsky-I*
+J. Notifications                                                        *bsky-J*
 ================================================================================
 
 Endpoints:
@@ -87,7 +200,7 @@ Deliverables:
 - Badge integration
 
 ================================================================================
-J. DMs (read + write) + outbox + read-state                             *bsky-J*
+K. DMs (read + write) + outbox + read-state                             *bsky-K*
 ================================================================================
 
 DM fundamentals:
@@ -127,7 +240,7 @@ Deliverables:
 - DMs usable end-to-end: read, accept, send, read-state, robust retries.
 
 ================================================================================
-K. Hardening (mobile)                                                   *bsky-K*
+L. Hardening (mobile)                                                   *bsky-L*
 ================================================================================
 
 Tasks:
@@ -150,7 +263,7 @@ Deliverables:
 - Mobile app feels stable and responsive for daily use.
 
 ================================================================================
-L. Smart folders (local-only saved views)                               *bsky-L*
+M. Smart folders (local-only saved views)                               *bsky-M*
 ================================================================================
 
 Definition:
@@ -180,7 +293,7 @@ Deliverables:
 - "Saved views" that feel like feeds, entirely local and fast.
 
 ================================================================================
-M. Desktop pass                                                         *bsky-M*
+N. Desktop pass                                                         *bsky-N*
 ================================================================================
 
 Tasks:
