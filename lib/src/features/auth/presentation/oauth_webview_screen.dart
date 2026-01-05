@@ -39,9 +39,7 @@ class _OAuthWebViewScreenState extends State<OAuthWebViewScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-            debugPrint('[OAuthWebView] Page started: $url');
             if (url.startsWith(widget.callbackUrlPrefix)) {
-              debugPrint('[OAuthWebView] Callback URL detected, completing flow');
               final uri = Uri.parse(url);
               if (!_callbackCompleter.isCompleted) {
                 _callbackCompleter.complete(uri);
@@ -53,15 +51,12 @@ class _OAuthWebViewScreenState extends State<OAuthWebViewScreen> {
             }
           },
           onPageFinished: (String url) {
-            debugPrint('[OAuthWebView] Page finished: $url');
             setState(() {
               _isLoading = false;
             });
           },
           onWebResourceError: (WebResourceError error) {
-            debugPrint('[OAuthWebView] Resource error: ${error.description} for ${error.url}');
             if (error.url?.startsWith(widget.callbackUrlPrefix) == true) {
-              debugPrint('[OAuthWebView] Callback URL in error, completing flow anyway');
               final uri = Uri.parse(error.url!);
               if (!_callbackCompleter.isCompleted) {
                 _callbackCompleter.complete(uri);
@@ -72,16 +67,13 @@ class _OAuthWebViewScreenState extends State<OAuthWebViewScreen> {
             }
           },
           onNavigationRequest: (NavigationRequest request) {
-            debugPrint('[OAuthWebView] Navigation request: ${request.url}');
             if (request.url.startsWith(widget.callbackUrlPrefix)) {
-              debugPrint('[OAuthWebView] Intercepting callback URL navigation');
               final uri = Uri.parse(request.url);
               if (!_callbackCompleter.isCompleted) {
                 _callbackCompleter.complete(uri);
               }
               Future.microtask(() {
                 if (mounted) {
-                  debugPrint('[OAuthWebView] Closing WebView with callback result');
                   Navigator.of(context).pop(uri);
                 }
               });
@@ -92,8 +84,6 @@ class _OAuthWebViewScreenState extends State<OAuthWebViewScreen> {
         ),
       )
       ..loadRequest(Uri.parse(widget.authorizeUrl));
-
-    debugPrint('[OAuthWebView] WebView initialized, loading: ${widget.authorizeUrl}');
   }
 
   @override

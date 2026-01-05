@@ -173,6 +173,58 @@ void main() {
         expect(find.text('Search'), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'handles transition from authenticated to unauthenticated without GlobalKey errors',
+      (tester) async {
+        final router = _createTestRouter();
+        final authNotifier = _TestAuthNotifier(AuthState.authenticated(_testSession()));
+
+        await tester.pumpRouterApp(
+          router: router,
+          overrides: [authProvider.overrideWith(() => authNotifier)],
+        );
+
+        // Verify authenticated state
+        expect(find.byType(NavigationDestination), findsNWidgets(5));
+        expect(find.text('Home'), findsOneWidget);
+        expect(find.text('Search'), findsOneWidget);
+
+        // Transition to unauthenticated - should not result in GlobalKey errors
+        authNotifier.updateState(const AuthState.unauthenticated());
+        await tester.pumpAndSettle();
+
+        // Verify unauthenticated state
+        expect(find.byType(NavigationDestination), findsNWidgets(2));
+        expect(find.text('Home'), findsOneWidget);
+        expect(find.text('Login'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'resets to Home tab content when transitioning from authenticated to unauthenticated',
+      (tester) async {
+        final router = _createTestRouter();
+        final authNotifier = _TestAuthNotifier(AuthState.authenticated(_testSession()));
+
+        await tester.pumpRouterApp(
+          router: router,
+          overrides: [authProvider.overrideWith(() => authNotifier)],
+        );
+
+        // Switch away from the Home branch while authenticated.
+        await tester.tap(find.text('Messages'));
+        await tester.pumpAndSettle();
+        expect(find.text('DMs Content'), findsOneWidget);
+
+        // Transition to unauthenticated - content should snap back to Home.
+        authNotifier.updateState(const AuthState.unauthenticated());
+        await tester.pumpAndSettle();
+
+        expect(find.text('DMs Content'), findsNothing);
+        expect(find.text('Home Content'), findsOneWidget);
+      },
+    );
   });
 
   group('TabScaffold - Unauthenticated', () {

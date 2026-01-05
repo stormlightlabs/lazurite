@@ -99,7 +99,7 @@ void main() {
 
         await interceptor.onRequest(options, _NoOpRequestHandler());
 
-        expect(options.headers['Authorization'], equals('Bearer my-token'));
+        expect(options.headers['Authorization'], equals('DPoP my-token'));
       });
 
       test('does not add Authorization header when session is null', () async {
@@ -152,13 +152,13 @@ void main() {
         adapter.onGet(
           '/test',
           (server) => server.reply(401, {'error': 'Unauthorized'}),
-          headers: {'Authorization': 'Bearer test-token'},
+          headers: {'Authorization': 'DPoP test-token'},
         );
 
         adapter.onGet(
           '/test',
           (server) => server.reply(200, {'success': true}),
-          headers: {'Authorization': 'Bearer new-token'},
+          headers: {'Authorization': 'DPoP new-token'},
         );
 
         try {
@@ -282,17 +282,21 @@ void main() {
       });
     });
 
-    group('session invalidation on 400 InvalidToken', () {
-      test('calls onSessionInvalidated when 400 InvalidToken error occurs', () async {
+    group('invalid token handling', () {
+      test('refreshes session on 400 InvalidToken before logging out', () async {
         final dio = Dio(BaseOptions(baseUrl: 'https://test.api'));
         final adapter = DioAdapter(dio: dio);
 
         var sessionInvalidated = false;
+        var refreshCalled = false;
 
         dio.interceptors.add(
           AuthInterceptor(
             getSession: () async => _createTestSession(),
-            refreshSession: () async => _createTestSession(),
+            refreshSession: () async {
+              refreshCalled = true;
+              return _createTestSession(accessJwt: 'refreshed');
+            },
             onSessionInvalidated: () {
               sessionInvalidated = true;
             },
@@ -304,17 +308,16 @@ void main() {
           (server) => server.reply(400, {'error': 'InvalidToken', 'message': 'Malformed token'}),
         );
 
-        try {
-          await dio.get('/test', options: Options(extra: {AuthInterceptor.requiresAuthKey: true}));
-          fail('Should throw exception');
-        } catch (e) {
-          expect(e, isA<DioException>());
-        }
+        await expectLater(
+          dio.get('/test', options: Options(extra: {AuthInterceptor.requiresAuthKey: true})),
+          throwsA(isA<DioException>()),
+        );
 
-        expect(sessionInvalidated, isTrue);
+        expect(refreshCalled, isTrue);
+        expect(sessionInvalidated, isFalse);
       });
 
-      test('calls onSessionInvalidated when 400 ExpiredToken error occurs', () async {
+      test('invalidates session when refresh fails for 400 InvalidToken', () async {
         final dio = Dio(BaseOptions(baseUrl: 'https://test.api'));
         final adapter = DioAdapter(dio: dio);
 
@@ -323,7 +326,36 @@ void main() {
         dio.interceptors.add(
           AuthInterceptor(
             getSession: () async => _createTestSession(),
-            refreshSession: () async => _createTestSession(),
+            refreshSession: () async => throw Exception('refresh failed'),
+            onSessionInvalidated: () {
+              sessionInvalidated = true;
+            },
+          ),
+        );
+
+        adapter.onGet(
+          '/test',
+          (server) => server.reply(400, {'error': 'InvalidToken', 'message': 'Malformed token'}),
+        );
+
+        await expectLater(
+          dio.get('/test', options: Options(extra: {AuthInterceptor.requiresAuthKey: true})),
+          throwsA(isA<DioException>()),
+        );
+
+        expect(sessionInvalidated, isTrue);
+      });
+
+      test('invalidates session when refresh returns null for 400 ExpiredToken', () async {
+        final dio = Dio(BaseOptions(baseUrl: 'https://test.api'));
+        final adapter = DioAdapter(dio: dio);
+
+        var sessionInvalidated = false;
+
+        dio.interceptors.add(
+          AuthInterceptor(
+            getSession: () async => _createTestSession(),
+            refreshSession: () async => null,
             onSessionInvalidated: () {
               sessionInvalidated = true;
             },
@@ -335,12 +367,10 @@ void main() {
           (server) => server.reply(400, {'error': 'ExpiredToken', 'message': 'Token expired'}),
         );
 
-        try {
-          await dio.get('/test', options: Options(extra: {AuthInterceptor.requiresAuthKey: true}));
-          fail('Should throw exception');
-        } catch (e) {
-          expect(e, isA<DioException>());
-        }
+        await expectLater(
+          dio.get('/test', options: Options(extra: {AuthInterceptor.requiresAuthKey: true})),
+          throwsA(isA<DioException>()),
+        );
 
         expect(sessionInvalidated, isTrue);
       });

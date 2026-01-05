@@ -8,6 +8,7 @@ import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/dms/presentation/dms_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
+import 'package:lazurite/src/features/feeds/presentation/screens/feed_screen.dart';
 import 'package:lazurite/src/features/login/presentation/app_password_login_screen.dart';
 import 'package:lazurite/src/features/login/presentation/auth_progress_view.dart';
 import 'package:lazurite/src/features/login/presentation/login_screen.dart';
@@ -18,7 +19,6 @@ import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
 import 'package:lazurite/src/features/splash/presentation/splash_screen.dart';
 import 'package:lazurite/src/features/thread/presentation/thread_screen.dart';
-import 'package:lazurite/src/features/feeds/presentation/screens/feed_screen.dart';
 
 /// Global navigator key for the root navigator.
 final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -28,25 +28,34 @@ final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 /// Uses [StatefulShellRoute.indexedStack] to preserve state across tabs.
 GoRouter createRouter(Ref ref) {
   final authState = ValueNotifier(ref.read(authProvider));
+  final splashMinWait = ValueNotifier(true);
 
   ref.listen(authProvider, (previous, next) {
     authState.value = next;
+  });
+
+  Future.delayed(const Duration(milliseconds: 500), () {
+    splashMinWait.value = false;
   });
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
-    refreshListenable: authState,
+    refreshListenable: Listenable.merge([authState, splashMinWait]),
     redirect: (context, state) {
       final auth = authState.value;
       final location = state.matchedLocation;
-      if (auth is AuthStateLoading) {
-        return AppRoutes.splash;
-      }
 
       if (location == AppRoutes.splash) {
-        return AppRoutes.home;
+        if (auth is AuthStateLoading || splashMinWait.value) {
+          return null;
+        }
+
+        if (auth is AuthStateAuthenticated) {
+          return AppRoutes.home;
+        }
+        return AppRoutes.login;
       }
 
       final isLoggingIn =

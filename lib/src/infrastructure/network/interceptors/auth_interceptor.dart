@@ -57,6 +57,9 @@ class AuthInterceptor extends Interceptor {
   /// Key used to mark requests as requiring auth in options.extra.
   static const requiresAuthKey = 'requiresAuth';
 
+  /// Key used to ensure invalid token retries only happen once.
+  static const _invalidTokenRetriedKey = '_invalidTokenRetried';
+
   /// Retries a request with a new session.
   Future<void> _retryRequestWithSession(
     DioException err,
@@ -64,7 +67,8 @@ class AuthInterceptor extends Interceptor {
     ErrorInterceptorHandler handler,
   ) async {
     final options = err.requestOptions;
-    options.headers['Authorization'] = 'Bearer ${newSession.accessJwt}';
+    // Use DPoP scheme for Authorization header as per RFC 9449
+    options.headers['Authorization'] = 'DPoP ${newSession.accessJwt}';
 
     try {
       final dpopKey = JsonWebKey.fromJson(newSession.dpopKey);
@@ -118,9 +122,10 @@ class AuthInterceptor extends Interceptor {
       final newSession = await refreshSession();
       _refreshCompleter!.complete(newSession);
       return newSession;
-    } catch (e) {
-      _refreshCompleter!.completeError(e);
-      rethrow;
+    } catch (e, st) {
+      _logger.warning('Session refresh failed', e, st);
+      _refreshCompleter!.complete(null);
+      return null;
     } finally {
       _refreshCompleter = null;
     }
@@ -136,18 +141,18 @@ class AuthInterceptor extends Interceptor {
       // Proactively refresh if token is near expiration
       if (session != null && session.isNearExpiration && !session.isExpired) {
         _logger.debug('Token near expiration, proactively refreshing');
-        try {
-          session = await _performRefresh();
-        } catch (e) {
-          _logger.warning('Proactive refresh failed, continuing with existing token', {
-            'error': e,
-          });
+        final refreshed = await _performRefresh();
+        if (refreshed != null) {
+          session = refreshed;
+        } else {
+          _logger.warning('Proactive refresh failed, continuing with existing token');
         }
       }
 
       if (session != null) {
         final token = session.accessJwt;
-        options.headers['Authorization'] = 'Bearer $token';
+        // Use DPoP scheme for Authorization header as per RFC 9449
+        options.headers['Authorization'] = 'DPoP $token';
 
         try {
           final dpopKey = JsonWebKey.fromJson(session.dpopKey);
@@ -202,13 +207,8 @@ class AuthInterceptor extends Interceptor {
         }
       }
 
-      if (err.response?.statusCode == 400) {
-        final errorCode = _extractErrorCode(err.response);
-        if (errorCode != null && _invalidTokenErrorCodes.contains(errorCode)) {
-          _logger.warning('Session invalidated due to $errorCode');
-          onSessionInvalidated?.call();
-          return handler.next(err);
-        }
+      if (await _tryRefreshAfterInvalidToken(err, handler)) {
+        return;
       }
     }
 
@@ -254,6 +254,36 @@ class AuthInterceptor extends Interceptor {
     } finally {
       _refreshCompleter = null;
     }
+  }
+
+  Future<bool> _tryRefreshAfterInvalidToken(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    if (err.response?.statusCode != 400) {
+      return false;
+    }
+
+    final errorCode = _extractErrorCode(err.response);
+    final isInvalidTokenError = errorCode != null && _invalidTokenErrorCodes.contains(errorCode);
+    if (!isInvalidTokenError) {
+      return false;
+    }
+
+    final hasRetried = err.requestOptions.extra[_invalidTokenRetriedKey] == true;
+    if (!hasRetried) {
+      err.requestOptions.extra[_invalidTokenRetriedKey] = true;
+      final newSession = await _performRefresh();
+      if (newSession != null) {
+        await _retryRequestWithSession(err, newSession, handler);
+        return true;
+      }
+    }
+
+    _logger.warning('Session invalidated due to $errorCode');
+    onSessionInvalidated?.call();
+    handler.next(err);
+    return true;
   }
 
   /// Extracts the ATProto error code from a response.

@@ -222,7 +222,7 @@ class AuthRepository {
 
       _logger.debug('Token exchange successful');
       _validateScopes(tokenResponse.scope, OAuthClient.kScope);
-      _validateTokenClaims(tokenResponse.accessToken, did, pdsUrl);
+      _validateTokenClaims(tokenResponse.accessToken, did, metadata.issuer);
 
       final session = Session(
         did: did,
@@ -262,7 +262,7 @@ class AuthRepository {
       );
 
       _validateScopes(tokenResponse.scope, OAuthClient.kScope);
-      _validateTokenClaims(tokenResponse.accessToken, session.did, session.pdsUrl);
+      _validateTokenClaims(tokenResponse.accessToken, session.did, metadata.issuer);
 
       final newSession = session.copyWith(
         accessJwt: tokenResponse.accessToken,
@@ -349,8 +349,8 @@ class AuthRepository {
   ///
   /// Decodes the access token and verifies:
   /// - `sub` claim matches the expected DID
-  /// - `iss` claim matches the expected PDS URL
-  void _validateTokenClaims(String accessToken, String expectedDid, String expectedPdsUrl) {
+  /// - `iss` claim matches the expected issuer
+  void _validateTokenClaims(String accessToken, String expectedDid, String expectedIssuer) {
     try {
       final jwt = JsonWebToken.unverified(accessToken);
       final claims = jwt.claims;
@@ -361,8 +361,8 @@ class AuthRepository {
       }
 
       final iss = claims.getTyped<String>('iss');
-      if (iss != null && iss != expectedPdsUrl) {
-        _logger.warning('Token iss claim mismatch. Expected: $expectedPdsUrl, Got: $iss');
+      if (iss != null && iss != expectedIssuer) {
+        _logger.warning('Token iss claim mismatch. Expected: $expectedIssuer, Got: $iss');
       }
     } catch (e) {
       _logger.warning('Failed to validate token claims: $e');

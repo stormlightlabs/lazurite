@@ -238,10 +238,8 @@ void main() {
       when(() => mockSessionStorage.clearSession()).thenAnswer((_) async {});
 
       final container = createContainer();
-      container.listen(authProvider, (previous, next) {});
-      await Future<void>.delayed(Duration.zero);
-
-      expect(container.read(authProvider), AuthState.authenticated(session));
+      final states = <AuthState>[];
+      container.listen(authProvider, (previous, next) => states.add(next));
 
       await container.read(authProvider.notifier).logout();
       await Future<void>.delayed(Duration.zero);
@@ -249,6 +247,9 @@ void main() {
       verify(() => mockAuthRepository.revokeSession(session)).called(1);
       verify(() => mockSessionStorage.clearSession()).called(1);
       expect(container.read(authProvider), const AuthState.unauthenticated());
+
+      expect(states.whereType<AuthStateLoading>(), isEmpty);
+      expect(states.last, const AuthState.unauthenticated());
     });
 
     test('refreshActiveSession refreshes tokens when authenticated', () async {

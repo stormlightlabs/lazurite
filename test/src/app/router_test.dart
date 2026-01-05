@@ -124,8 +124,43 @@ void main() {
           ),
         ),
       );
+
       await tester.pump();
       expect(find.byType(SplashScreen), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      expect(find.byType(SplashScreen), findsOneWidget);
+    });
+
+    testWidgets('navigates to home after splash timer and auth complete', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          ...getTestOverrides(),
+          authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: Consumer(
+            builder: (context, ref, _) {
+              final appRouter = ref.watch(goRouterProvider);
+              return MaterialApp.router(theme: AppTheme.dark, routerConfig: appRouter);
+            },
+          ),
+        ),
+      );
+
+      await tester.pump();
+      expect(find.byType(SplashScreen), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No posts yet'), findsOneWidget);
     });
 
     testWidgets('navigates to home on initial load', (tester) async {

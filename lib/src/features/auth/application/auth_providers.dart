@@ -155,18 +155,21 @@ class AuthNotifier extends _$AuthNotifier {
   }
 
   Future<void> logout() async {
-    state = const AuthState.loading();
     try {
       final session = await ref.read(sessionStorageProvider).getSession();
 
       if (session != null) {
-        await ref.read(authRepositoryProvider).revokeSession(session);
+        try {
+          await ref.read(authRepositoryProvider).revokeSession(session);
+        } catch (_) {
+          // Ignore revocation errors during logout
+        }
       }
 
       await ref.read(sessionStorageProvider).clearSession();
       state = const AuthState.unauthenticated();
-    } catch (e, st) {
-      state = AuthState.error(e, st);
+    } catch (e, _) {
+      state = const AuthState.unauthenticated();
     }
   }
 
