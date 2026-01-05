@@ -98,7 +98,10 @@ GoRouter createRouter(Ref ref) {
               GoRoute(
                 path: AppRoutes.search,
                 name: AppRouteNames.search,
-                builder: (context, state) => const SearchScreen(),
+                builder: (context, state) {
+                  final query = state.uri.queryParameters['q'];
+                  return SearchScreen(initialQuery: query);
+                },
                 routes: [
                   GoRoute(
                     path: 't/:uri',

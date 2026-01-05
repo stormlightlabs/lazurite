@@ -330,6 +330,15 @@ class FeedItem {
     final post = json['post'] as Map<String, dynamic>;
     final author = post['author'] as Map<String, dynamic>;
     final record = post['record'] as Map<String, dynamic>;
+    final reply = record['reply'] as Map<String, dynamic>?;
+    final isReply = reply != null;
+    final embed = post['embed'] as Map<String, dynamic>?;
+    final embedType = embed?[r'$type'] as String?;
+    final hasImages =
+        embedType == 'app.bsky.embed.images#view' ||
+        embedType == 'app.bsky.embed.recordWithMedia#view' &&
+            (embed?['media'] as Map<String, dynamic>?)?[r'$type'] == 'app.bsky.embed.images#view';
+    final hasVideo = embedType == 'app.bsky.embed.video#view';
 
     return FeedItem(
       uri: post['uri'] as String,
@@ -343,6 +352,10 @@ class FeedItem {
       replyCount: post['replyCount'] as int? ?? 0,
       repostCount: post['repostCount'] as int? ?? 0,
       likeCount: post['likeCount'] as int? ?? 0,
+      isReply: isReply,
+      hasImages: hasImages,
+      hasVideo: hasVideo,
+      embedType: embedType,
     );
   }
 
@@ -358,6 +371,10 @@ class FeedItem {
     this.replyCount = 0,
     this.repostCount = 0,
     this.likeCount = 0,
+    this.isReply = false,
+    this.hasImages = false,
+    this.hasVideo = false,
+    this.embedType,
   });
 
   final String uri;
@@ -371,4 +388,19 @@ class FeedItem {
   final int replyCount;
   final int repostCount;
   final int likeCount;
+
+  /// Whether this post is a reply to another post.
+  final bool isReply;
+
+  /// Whether this post has embedded images.
+  final bool hasImages;
+
+  /// Whether this post has embedded video.
+  final bool hasVideo;
+
+  /// The embed type string (e.g., 'app.bsky.embed.images#view').
+  final String? embedType;
+
+  /// Whether this post has any media (images or video).
+  bool get hasMedia => hasImages || hasVideo;
 }

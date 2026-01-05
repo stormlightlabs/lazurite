@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
+import 'package:lazurite/src/core/widgets/feed_post_card.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/follow_button.dart';
+import 'package:lazurite/src/features/profile/presentation/widgets/media_tab.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_header.dart';
+import 'package:lazurite/src/features/profile/presentation/widgets/replies_tab.dart';
 
 /// Profile screen showing the current user's profile.
 class ProfileScreen extends ConsumerWidget {
@@ -44,12 +47,32 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-/// Shared content for profile screens.
-class ProfilePageContent extends ConsumerWidget {
+/// Shared content for profile screens with tabbed feed views.
+class ProfilePageContent extends ConsumerStatefulWidget {
   const ProfilePageContent({required this.did, required this.isCurrentUser, super.key});
 
   final String did;
   final bool isCurrentUser;
+
+  @override
+  ConsumerState<ProfilePageContent> createState() => _ProfilePageContentState();
+}
+
+class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   Widget _followButton(ProfileData p) => _ProfileFollowButton(
     subjectDid: p.did,
@@ -58,19 +81,19 @@ class ProfilePageContent extends ConsumerWidget {
   );
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(profileProvider(did));
-    final feedAsync = ref.watch(authorFeedProvider(did));
+  Widget build(BuildContext context) {
+    final profileAsync = ref.watch(profileProvider(widget.did));
+    final feedAsync = ref.watch(authorFeedProvider(widget.did));
 
     return profileAsync.when(
       data: (profile) {
-        final hasMore = ref.read(authorFeedProvider(did).notifier).hasMore;
+        final hasMore = ref.read(authorFeedProvider(widget.did).notifier).hasMore;
 
         return Scaffold(
           appBar: AppBar(
             title: Text(profile.displayNameOrHandle),
             actions: [
-              if (isCurrentUser)
+              if (widget.isCurrentUser)
                 IconButton(
                   icon: const Icon(Icons.settings_outlined),
                   onPressed: () => context.push('/settings'),
@@ -82,14 +105,18 @@ class ProfilePageContent extends ConsumerWidget {
                 },
               ),
             ],
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'Posts'),
+                Tab(text: 'Replies'),
+                Tab(text: 'Media'),
+              ],
+            ),
           ),
-          body: RefreshIndicator(
-            onRefresh: () async {
-              await ref.read(profileProvider(did).notifier).refresh();
-              await ref.read(authorFeedProvider(did).notifier).refresh();
-            },
-            child: CustomScrollView(
-              slivers: [
+          body: NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
                 SliverToBoxAdapter(
                   child: ProfileHeader(
                     profile: profile,
@@ -101,41 +128,54 @@ class ProfilePageContent extends ConsumerWidget {
                       final encodedDid = Uri.encodeComponent(profile.did);
                       context.push('/profile/following/$encodedDid');
                     },
-                    followButton: isCurrentUser ? null : _followButton(profile),
+                    followButton: widget.isCurrentUser ? null : _followButton(profile),
                   ),
                 ),
-                feedAsync.when(
-                  data: (items) {
-                    if (items.isEmpty) {
-                      return const SliverFillRemaining(child: Center(child: Text('No posts yet')));
-                    }
-
-                    return SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        if (index >= items.length) {
-                          if (hasMore) {
-                            ref.read(authorFeedProvider(did).notifier).loadMore();
-                            return const Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          }
-                          return null;
-                        }
-
-                        final item = items[index];
-                        return _PostCard(item: item);
-                      }, childCount: items.length + (hasMore ? 1 : 0)),
-                    );
-                  },
-                  loading: () => const SliverFillRemaining(child: LoadingView()),
-                  error: (err, _) {
-                    return SliverFillRemaining(
-                      child: Center(child: Text('Error loading posts: $err')),
-                    );
-                  },
-                ),
-              ],
+              ];
+            },
+            body: feedAsync.when(
+              data: (items) {
+                return TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _PostsTab(
+                      items: items.where((item) => !item.isReply).toList(),
+                      hasMore: hasMore,
+                      isLoading: false,
+                      onLoadMore: () =>
+                          ref.read(authorFeedProvider(widget.did).notifier).loadMore(),
+                      onRefresh: () async {
+                        await ref.read(profileProvider(widget.did).notifier).refresh();
+                        await ref.read(authorFeedProvider(widget.did).notifier).refresh();
+                      },
+                    ),
+                    RepliesTab(
+                      items: items,
+                      hasMore: hasMore,
+                      isLoading: false,
+                      onLoadMore: () =>
+                          ref.read(authorFeedProvider(widget.did).notifier).loadMore(),
+                      onRefresh: () async {
+                        await ref.read(profileProvider(widget.did).notifier).refresh();
+                        await ref.read(authorFeedProvider(widget.did).notifier).refresh();
+                      },
+                    ),
+                    MediaTab(
+                      items: items,
+                      hasMore: hasMore,
+                      isLoading: false,
+                      onLoadMore: () =>
+                          ref.read(authorFeedProvider(widget.did).notifier).loadMore(),
+                      onRefresh: () async {
+                        await ref.read(profileProvider(widget.did).notifier).refresh();
+                        await ref.read(authorFeedProvider(widget.did).notifier).refresh();
+                      },
+                    ),
+                  ],
+                );
+              },
+              loading: () => const LoadingView(),
+              error: (err, _) => Center(child: Text('Error loading posts: $err')),
             ),
           ),
         );
@@ -149,84 +189,82 @@ class ProfilePageContent extends ConsumerWidget {
         body: ErrorView(
           title: 'Failed to load profile',
           message: error.toString(),
-          onRetry: () => ref.read(profileProvider(did).notifier).refresh(),
+          onRetry: () => ref.read(profileProvider(widget.did).notifier).refresh(),
         ),
       ),
     );
   }
 }
 
-class _PostCard extends StatelessWidget {
-  const _PostCard({required this.item});
+/// Posts tab showing author's posts (excluding replies).
+class _PostsTab extends StatefulWidget {
+  const _PostsTab({
+    required this.items,
+    required this.hasMore,
+    required this.isLoading,
+    required this.onLoadMore,
+    required this.onRefresh,
+  });
 
-  final dynamic item;
+  final List<FeedItem> items;
+  final bool hasMore;
+  final bool isLoading;
+  final VoidCallback onLoadMore;
+  final Future<void> Function() onRefresh;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      onTap: () {
-        final encodedUri = Uri.encodeComponent(item.uri);
-        GoRouter.of(context).push('/home/t/$encodedUri');
-      },
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.text,
-                  style: theme.textTheme.bodyMedium,
-                  maxLines: 6,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _ActionItem(icon: Icons.chat_bubble_outline, count: item.replyCount),
-                    const SizedBox(width: 24),
-                    _ActionItem(icon: Icons.repeat, count: item.repostCount),
-                    const SizedBox(width: 24),
-                    _ActionItem(icon: Icons.favorite_outline, count: item.likeCount),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-        ],
-      ),
-    );
-  }
+  State<_PostsTab> createState() => _PostsTabState();
 }
 
-class _ActionItem extends StatelessWidget {
-  const _ActionItem({required this.icon, required this.count});
-
-  final IconData icon;
-  final int count;
+class _PostsTabState extends State<_PostsTab> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    super.build(context);
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: theme.colorScheme.onSurface.withAlpha(153)),
-        if (count > 0) ...[
-          const SizedBox(width: 4),
-          Text(
-            count.toString(),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withAlpha(153),
-            ),
-          ),
-        ],
-      ],
+    if (widget.items.isEmpty && !widget.isLoading) {
+      return const Center(child: Text('No posts yet'));
+    }
+
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: widget.items.length + (widget.hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index >= widget.items.length) {
+            widget.onLoadMore();
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final item = widget.items[index];
+          return FeedPostCard(
+            uri: item.uri,
+            authorDid: item.authorDid,
+            authorHandle: item.authorHandle,
+            authorDisplayName: item.authorDisplayName,
+            authorAvatar: item.authorAvatar,
+            text: item.text,
+            indexedAt: item.indexedAt,
+            replyCount: item.replyCount,
+            repostCount: item.repostCount,
+            likeCount: item.likeCount,
+            onTap: () {
+              final encodedUri = Uri.encodeComponent(item.uri);
+              GoRouter.of(context).push('/home/t/$encodedUri');
+            },
+            onAvatarTap: () {
+              final encodedDid = Uri.encodeComponent(item.authorDid);
+              GoRouter.of(context).push('/home/u/$encodedDid');
+            },
+          );
+        },
+      ),
     );
   }
 }
