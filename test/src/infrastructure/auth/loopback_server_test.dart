@@ -22,14 +22,12 @@ void main() {
         expect(redirectUri, startsWith('http://127.0.0.1:'));
         expect(redirectUri, endsWith('/callback'));
 
-        // Verify the server is actually listening
         final uri = Uri.parse(redirectUri);
         expect(uri.scheme, 'http');
         expect(uri.host, '127.0.0.1');
         expect(uri.port, greaterThan(0));
         expect(uri.path, '/callback');
 
-        // Test that the server responds to requests
         final client = HttpClient();
         try {
           final request = await client.getUrl(uri);
@@ -63,11 +61,7 @@ void main() {
 
         expect(
           () => server.start(),
-          throwsA(isA<StateError>().having(
-            (e) => e.message,
-            'message',
-            'Server already started',
-          )),
+          throwsA(isA<StateError>().having((e) => e.message, 'message', 'Server already started')),
         );
       });
     });
@@ -77,15 +71,11 @@ void main() {
         final redirectUri = await server.start();
         final callbackFuture = server.waitForCallback();
 
-        // Simulate OAuth callback
         final client = HttpClient();
         try {
-          final uri = Uri.parse(redirectUri).replace(
-            queryParameters: {
-              'code': 'test_code',
-              'state': 'test_state',
-            },
-          );
+          final uri = Uri.parse(
+            redirectUri,
+          ).replace(queryParameters: {'code': 'test_code', 'state': 'test_state'});
           final request = await client.getUrl(uri);
           await request.close();
 
@@ -128,20 +118,14 @@ void main() {
 
         final client = HttpClient();
         try {
-          // First request
-          final uri1 = Uri.parse(redirectUri).replace(
-            queryParameters: {'code': 'first'},
-          );
+          final uri1 = Uri.parse(redirectUri).replace(queryParameters: {'code': 'first'});
           final request1 = await client.getUrl(uri1);
           await request1.close();
 
           final callbackUri = await callbackFuture;
           expect(callbackUri.queryParameters['code'], 'first');
 
-          // Second request should not affect the completed future
-          final uri2 = Uri.parse(redirectUri).replace(
-            queryParameters: {'code': 'second'},
-          );
+          final uri2 = Uri.parse(redirectUri).replace(queryParameters: {'code': 'second'});
           final request2 = await client.getUrl(uri2);
           final response2 = await request2.close();
           expect(response2.statusCode, 200);
@@ -168,10 +152,7 @@ void main() {
 
           final callbackUri = await callbackFuture;
           expect(callbackUri.queryParameters['error'], 'access_denied');
-          expect(
-            callbackUri.queryParameters['error_description'],
-            'User denied access',
-          );
+          expect(callbackUri.queryParameters['error_description'], 'User denied access');
           expect(callbackUri.queryParameters['state'], 'test_state');
         } finally {
           client.close();
@@ -184,14 +165,10 @@ void main() {
         final redirectUri = await server.start();
         await server.stop();
 
-        // Verify server is no longer accepting connections
         final client = HttpClient();
         try {
           final uri = Uri.parse(redirectUri);
-          await expectLater(
-            client.getUrl(uri),
-            throwsA(isA<SocketException>()),
-          );
+          await expectLater(client.getUrl(uri), throwsA(isA<SocketException>()));
         } finally {
           client.close();
         }
@@ -200,11 +177,11 @@ void main() {
       test('can be called multiple times safely', () async {
         await server.start();
         await server.stop();
-        await server.stop(); // Should not throw
+        await server.stop();
       });
 
       test('can be called without starting server', () async {
-        await server.stop(); // Should not throw
+        await server.stop();
       });
 
       test('allows server to be restarted after stop', () async {
@@ -214,7 +191,6 @@ void main() {
         final redirectUri2 = await server.start();
         expect(redirectUri2, isNot(equals(redirectUri1)));
 
-        // Verify new server works
         final client = HttpClient();
         try {
           final request = await client.getUrl(Uri.parse(redirectUri2));
@@ -236,12 +212,8 @@ void main() {
           final response = await request.close();
 
           expect(response.statusCode, 200);
-          expect(
-            response.headers.value('content-type'),
-            contains('text/html'),
-          );
+          expect(response.headers.value('content-type'), contains('text/html'));
 
-          // Verify response contains success HTML
           final body = await response.transform(const SystemEncoding().decoder).join();
           expect(body, contains('Login Successful'));
           expect(body, contains('<!DOCTYPE html>'));
@@ -275,13 +247,10 @@ void main() {
 
           final body = await response.transform(const SystemEncoding().decoder).join();
 
-          // Verify HTML structure
           expect(body, contains('<html>'));
           expect(body, contains('<head>'));
           expect(body, contains('<body>'));
           expect(body, contains('<title>Login Successful</title>'));
-
-          // Verify user-facing content
           expect(body, contains('Login Successful'));
           expect(body, contains('You can close this window'));
         } finally {
@@ -296,21 +265,14 @@ void main() {
 
         final client = HttpClient();
         try {
-          // Send multiple requests concurrently
-          final futures = List.generate(
-            5,
-            (i) async {
-              final uri = Uri.parse(redirectUri).replace(
-                queryParameters: {'request': '$i'},
-              );
-              final request = await client.getUrl(uri);
-              return await request.close();
-            },
-          );
+          final futures = List.generate(5, (i) async {
+            final uri = Uri.parse(redirectUri).replace(queryParameters: {'request': '$i'});
+            final request = await client.getUrl(uri);
+            return await request.close();
+          });
 
           final responses = await Future.wait(futures);
 
-          // All requests should succeed
           for (final response in responses) {
             expect(response.statusCode, 200);
           }
@@ -326,11 +288,9 @@ void main() {
 
         final client = HttpClient();
         try {
-          // Send request without query parameters
           final request = await client.getUrl(Uri.parse(redirectUri));
           final response = await request.close();
 
-          // Should still return 200 and complete the callback
           expect(response.statusCode, 200);
 
           final callbackUri = await server.waitForCallback();
@@ -346,12 +306,9 @@ void main() {
 
         final client = HttpClient();
         try {
-          final uri = Uri.parse(redirectUri).replace(
-            queryParameters: {
-              'code': 'abc+123/xyz=',
-              'state': 'test&value',
-            },
-          );
+          final uri = Uri.parse(
+            redirectUri,
+          ).replace(queryParameters: {'code': 'abc+123/xyz=', 'state': 'test&value'});
           final request = await client.getUrl(uri);
           await request.close();
 

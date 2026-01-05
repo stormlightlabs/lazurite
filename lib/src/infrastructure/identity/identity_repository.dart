@@ -5,8 +5,8 @@ import '../../core/utils/logger.dart';
 
 class IdentityRepository {
   IdentityRepository({required Dio dio, Logger? logger})
-      : _dio = dio,
-        _logger = logger ?? const Logger('IdentityRepository');
+    : _dio = dio,
+      _logger = logger ?? const Logger('IdentityRepository');
 
   final Dio _dio;
   final Logger _logger;
@@ -18,13 +18,10 @@ class IdentityRepository {
   /// 2. Direct .well-known/atproto-did lookup (for self-hosted)
   /// 3. DNS TXT (not implemented yet)
   Future<String?> resolveHandle(String handle) async {
-    // Try AppView resolution first (works for all Bluesky handles)
     final appViewDid = await _resolveViaAppView(handle);
     if (appViewDid != null) {
       return appViewDid;
     }
-
-    // Fallback to direct .well-known lookup
     final wellKnownDid = await _resolveViaWellKnown(handle);
     if (wellKnownDid != null) {
       return wellKnownDid;
@@ -75,7 +72,6 @@ class IdentityRepository {
       final response = await _dio.get<dynamic>(url);
       if (response.statusCode == 200 && response.data != null) {
         final did = response.data.toString().trim();
-        // Validate it looks like a DID
         if (did.startsWith('did:')) {
           _logger.info('Successfully resolved handle $handle to $did via .well-known');
           return did;

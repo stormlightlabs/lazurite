@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -17,6 +18,11 @@ import 'pkce_utils.dart';
 import 'server_metadata.dart';
 import 'session_storage.dart';
 
+/// Callback for opening OAuth authorization URL and waiting for callback.
+///
+/// Returns the callback URI when the OAuth flow completes.
+typedef OAuthBrowserCallback = Future<Uri> Function(String authorizeUrl, String callbackUrlPrefix);
+
 class AuthRepository {
   AuthRepository({
     required IdentityRepository identityRepository,
@@ -27,6 +33,7 @@ class AuthRepository {
     FlutterSecureStorage? secureStorage,
     DPoPNonceStore? nonceStore,
     Dio? bootstrapDio,
+    OAuthBrowserCallback? oauthBrowserCallback,
   }) : _identityRepo = identityRepository,
        _oauthClient = oauthClient,
        _sessionStorage = sessionStorage,
@@ -34,7 +41,8 @@ class AuthRepository {
        _logger = logger,
        _secureStorage = secureStorage ?? const FlutterSecureStorage(),
        _nonceStore = nonceStore ?? DPoPNonceStore(),
-       _bootstrapDio = bootstrapDio;
+       _bootstrapDio = bootstrapDio,
+       _oauthBrowserCallback = oauthBrowserCallback;
 
   final IdentityRepository _identityRepo;
   final OAuthClient _oauthClient;
@@ -44,6 +52,7 @@ class AuthRepository {
   final FlutterSecureStorage _secureStorage;
   final DPoPNonceStore _nonceStore;
   final Dio? _bootstrapDio;
+  final OAuthBrowserCallback? _oauthBrowserCallback;
   LoopbackServer? _loopbackServer;
   static const _keyPendingSession = 'lazurite_pending_session';
   static const _uuid = Uuid();
@@ -57,16 +66,16 @@ class AuthRepository {
   /// 4. Resolves DID to PDS URL.
   /// 5. Discovers OAuth server metadata.
   /// 6. Generates DPoP key and PKCE challenge.
-  /// 7. Performs PAR with dynamic redirect URI.
-  /// 8. Redirects user to OAuth authorization page.
-  /// 9. Waits for callback on loopback server.
+  /// 7. Performs PAR with HTTP loopback redirect URI.
+  /// 8. Redirects user to OAuth authorization page (in-app browser on iOS).
+  /// 9. Waits for callback via loopback server.
   /// 10. Completes login with authorization code.
   Future<Session> login(String handle) async {
     _logger.info('Initiating login for handle: $handle');
     try {
       await _clearExpiredPendingSession();
 
-      // Start loopback server for OAuth callback
+      // Start loopback server for OAuth callback (all platforms use HTTP)
       _loopbackServer = LoopbackServer(logger: _logger);
       final redirectUri = await _loopbackServer!.start();
       _logger.debug('Loopback server started with redirect URI: $redirectUri');
@@ -74,6 +83,7 @@ class AuthRepository {
       final did = await _identityRepo.resolveHandle(handle);
       if (did == null) {
         await _loopbackServer!.stop();
+        _loopbackServer = null;
         throw Exception('Could not resolve handle: $handle');
       }
 
@@ -81,6 +91,7 @@ class AuthRepository {
       final pdsUrl = doc?.pdsEndpoint;
       if (pdsUrl == null) {
         await _loopbackServer!.stop();
+        _loopbackServer = null;
         throw Exception('Could not find PDS endpoint for DID: $did');
       }
 
@@ -120,21 +131,39 @@ class AuthRepository {
         requestUri: requestUri,
       );
 
-      final uri = Uri.parse(authorizeUrl);
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        await _loopbackServer!.stop();
-        throw Exception('Could not launch browser for $uri');
-      }
+      final Uri callbackUri;
 
-      // Wait for OAuth callback
-      _logger.info('Waiting for OAuth callback...');
-      final callbackUri = await _loopbackServer!.waitForCallback();
-      await _loopbackServer!.stop();
-      _loopbackServer = null;
+      // Use custom OAuth browser callback on iOS (WebView that can reach localhost)
+      // Use external browser + loopback server on other platforms
+      if (Platform.isIOS && _oauthBrowserCallback != null) {
+        _logger.info('Using custom OAuth browser callback for iOS');
+        try {
+          callbackUri = await _oauthBrowserCallback(authorizeUrl, redirectUri);
+        } catch (e, st) {
+          await _loopbackServer!.stop();
+          _loopbackServer = null;
+          _logger.error('OAuth browser callback failed', e, st);
+          rethrow;
+        }
+        await _loopbackServer!.stop();
+        _loopbackServer = null;
+      } else {
+        // Desktop/Android: use external browser
+        final uri = Uri.parse(authorizeUrl);
+        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+          await _loopbackServer!.stop();
+          _loopbackServer = null;
+          throw Exception('Could not launch browser for $uri');
+        }
+
+        _logger.info('Waiting for OAuth callback...');
+        callbackUri = await _loopbackServer!.waitForCallback();
+        await _loopbackServer!.stop();
+        _loopbackServer = null;
+      }
 
       _logger.debug('Received callback: $callbackUri');
 
-      // Complete login with the callback
       return await completeLogin(callbackUri);
     } catch (e, st) {
       await _loopbackServer?.stop();

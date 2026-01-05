@@ -137,7 +137,9 @@ void main() {
       expect(find.text('testuser.bsky.social'), findsOneWidget);
     });
 
-    testWidgets('login button triggers authentication when tapped with valid input', (tester) async {
+    testWidgets('login button triggers authentication when tapped with valid input', (
+      tester,
+    ) async {
       await tester.pumpApp(
         const LoginScreen(),
         overrides: [

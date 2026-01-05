@@ -234,6 +234,54 @@ final class ServerMetadataRepositoryProvider
 String _$serverMetadataRepositoryHash() =>
     r'8a4213bf3952ed89db571088d94fa6998211f96e';
 
+@ProviderFor(oauthBrowserCallback)
+final oauthBrowserCallbackProvider = OauthBrowserCallbackProvider._();
+
+final class OauthBrowserCallbackProvider
+    extends
+        $FunctionalProvider<
+          OAuthBrowserCallback?,
+          OAuthBrowserCallback?,
+          OAuthBrowserCallback?
+        >
+    with $Provider<OAuthBrowserCallback?> {
+  OauthBrowserCallbackProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'oauthBrowserCallbackProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$oauthBrowserCallbackHash();
+
+  @$internal
+  @override
+  $ProviderElement<OAuthBrowserCallback?> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  OAuthBrowserCallback? create(Ref ref) {
+    return oauthBrowserCallback(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(OAuthBrowserCallback? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<OAuthBrowserCallback?>(value),
+    );
+  }
+}
+
+String _$oauthBrowserCallbackHash() =>
+    r'a9d0a5ea8491f7c13cc261728398c9c3bf7080c1';
+
 @ProviderFor(authRepository)
 final authRepositoryProvider = AuthRepositoryProvider._();
 
@@ -273,7 +321,7 @@ final class AuthRepositoryProvider
   }
 }
 
-String _$authRepositoryHash() => r'ac0027cb8723abddcb7ef457b45dd7b92286f5b6';
+String _$authRepositoryHash() => r'f3432b4ec2505c63b85712c12963c58e0d86ca92';
 
 @ProviderFor(AuthNotifier)
 final authProvider = AuthNotifierProvider._();
@@ -307,7 +355,7 @@ final class AuthNotifierProvider
   }
 }
 
-String _$authNotifierHash() => r'bb8d2f70ff5377fe618f0cd79f74f7b02f4818c6';
+String _$authNotifierHash() => r'e1b111d5a518718815fdda19239f2184c83c3cd2';
 
 abstract class _$AuthNotifier extends $Notifier<AuthState> {
   AuthState build();

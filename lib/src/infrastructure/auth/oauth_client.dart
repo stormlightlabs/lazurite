@@ -61,7 +61,6 @@ class OAuthClient {
         },
       );
 
-      // Extract and store DPoP nonce from successful response
       _extractAndStoreNonce(response, parUrl);
 
       if (response.statusCode != 201) {
@@ -78,7 +77,6 @@ class OAuthClient {
         throw Exception('PAR response missing or empty request_uri');
       }
 
-      // Validate request_uri format (should start with 'urn:ietf:params:oauth:request_uri:')
       if (!requestUri.startsWith('urn:ietf:params:oauth:request_uri:')) {
         throw Exception('Invalid request_uri format: $requestUri');
       }
@@ -88,26 +86,22 @@ class OAuthClient {
         throw Exception('PAR response missing expires_in');
       }
 
-      // Warn if expires_in is too short (less than 30 seconds)
       if (expiresIn < 30) {
         _logger.warning('PAR expires_in is very short: $expiresIn seconds');
       }
 
       return requestUri;
     } on DioException catch (e) {
-      // Check for use_dpop_nonce error
       if (e.response?.data != null && e.response!.data is Map<String, dynamic>) {
         final errorData = e.response!.data as Map<String, dynamic>;
         final error = errorData['error'] as String?;
 
         if (error == 'use_dpop_nonce') {
-          // Extract nonce from error response
           _extractAndStoreNonce(e.response!, parUrl);
           final newNonce = _nonceStore.get(parUrl);
 
           _logger.debug('Retrying PAR with DPoP nonce');
 
-          // Retry with new nonce
           return pushedAuthorizationRequest(
             metadata: metadata,
             key: key,
@@ -166,6 +160,8 @@ class OAuthClient {
         },
       );
 
+      _extractAndStoreNonce(response, tokenUrl);
+
       if (response.statusCode != 200) {
         if (response.data != null && response.data is Map<String, dynamic>) {
           throw OAuthException.fromJson(response.data!);
@@ -176,7 +172,26 @@ class OAuthClient {
       return TokenResponse.fromJson(response.data!);
     } on DioException catch (e) {
       if (e.response?.data != null && e.response!.data is Map<String, dynamic>) {
-        throw OAuthException.fromJson(e.response!.data as Map<String, dynamic>);
+        final errorData = e.response!.data as Map<String, dynamic>;
+        final error = errorData['error'] as String?;
+
+        if (error == 'use_dpop_nonce') {
+          _extractAndStoreNonce(e.response!, tokenUrl);
+          final newNonce = _nonceStore.get(tokenUrl);
+
+          _logger.debug('Retrying token exchange with DPoP nonce');
+
+          return exchangeCodeForToken(
+            metadata: metadata,
+            code: code,
+            codeVerifier: codeVerifier,
+            redirectUri: redirectUri,
+            key: key,
+            nonce: newNonce,
+          );
+        }
+
+        throw OAuthException.fromJson(errorData);
       }
       rethrow;
     }
@@ -211,6 +226,8 @@ class OAuthClient {
         },
       );
 
+      _extractAndStoreNonce(response, tokenUrl);
+
       if (response.statusCode != 200) {
         if (response.data != null && response.data is Map<String, dynamic>) {
           throw OAuthException.fromJson(response.data!);
@@ -221,7 +238,24 @@ class OAuthClient {
       return TokenResponse.fromJson(response.data!);
     } on DioException catch (e) {
       if (e.response?.data != null && e.response!.data is Map<String, dynamic>) {
-        throw OAuthException.fromJson(e.response!.data as Map<String, dynamic>);
+        final errorData = e.response!.data as Map<String, dynamic>;
+        final error = errorData['error'] as String?;
+
+        if (error == 'use_dpop_nonce') {
+          _extractAndStoreNonce(e.response!, tokenUrl);
+          final newNonce = _nonceStore.get(tokenUrl);
+
+          _logger.debug('Retrying token refresh with DPoP nonce');
+
+          return this.refreshToken(
+            metadata: metadata,
+            refreshToken: refreshToken,
+            key: key,
+            nonce: newNonce,
+          );
+        }
+
+        throw OAuthException.fromJson(errorData);
       }
       rethrow;
     }

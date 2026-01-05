@@ -32,13 +32,7 @@ class LoopbackServer {
         .addMiddleware(shelf.logRequests())
         .addHandler(_handleRequest);
 
-    // Bind to 127.0.0.1 with port 0 (random available port)
-    // Per RFC 8252: use loopback IP instead of 'localhost' hostname
-    _server = await shelf_io.serve(
-      handler,
-      InternetAddress.loopbackIPv4,
-      0, // Port 0 means use any available port
-    );
+    _server = await shelf_io.serve(handler, InternetAddress.loopbackIPv4, 0);
 
     final port = _server!.port;
     final redirectUri = 'http://127.0.0.1:$port/callback';
@@ -75,11 +69,7 @@ class LoopbackServer {
         _callbackCompleter.complete(request.requestedUri);
       }
 
-      // Return a success page to the browser
-      return shelf.Response.ok(
-        _successHtml,
-        headers: {'Content-Type': 'text/html'},
-      );
+      return shelf.Response.ok(_successHtml, headers: {'Content-Type': 'text/html'});
     }
 
     return shelf.Response.notFound('Not found');
@@ -107,6 +97,7 @@ class LoopbackServer {
       background: white;
       padding: 3rem;
       border-radius: 1rem;
+      margin: auto;
       box-shadow: 0 10px 40px rgba(0,0,0,0.2);
     }
     .checkmark {

@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../app/router.dart';
 import '../../../core/utils/logger_provider.dart';
 import '../../../infrastructure/auth/auth_repository.dart';
 import '../../../infrastructure/auth/oauth_client.dart';
@@ -10,6 +14,7 @@ import '../../../infrastructure/auth/session_storage.dart';
 import '../../../infrastructure/identity/identity_repository.dart';
 import '../../../infrastructure/network/providers.dart';
 import '../domain/auth_state.dart';
+import '../presentation/oauth_webview_screen.dart';
 
 part 'auth_providers.g.dart';
 
@@ -42,6 +47,31 @@ ServerMetadataRepository serverMetadataRepository(Ref ref) {
 }
 
 @Riverpod(keepAlive: true)
+OAuthBrowserCallback? oauthBrowserCallback(Ref ref) {
+  if (!Platform.isIOS) return null;
+
+  return (String authorizeUrl, String callbackUrlPrefix) async {
+    final navigator = rootNavigatorKey.currentState;
+    if (navigator == null) {
+      throw Exception('Navigator not available for OAuth WebView');
+    }
+
+    final result = await navigator.push<Uri>(
+      MaterialPageRoute(
+        builder: (context) =>
+            OAuthWebViewScreen(authorizeUrl: authorizeUrl, callbackUrlPrefix: callbackUrlPrefix),
+      ),
+    );
+
+    if (result == null) {
+      throw Exception('OAuth flow cancelled');
+    }
+
+    return result;
+  };
+}
+
+@Riverpod(keepAlive: true)
 AuthRepository authRepository(Ref ref) {
   return AuthRepository(
     identityRepository: ref.watch(identityRepositoryProvider),
@@ -50,6 +80,7 @@ AuthRepository authRepository(Ref ref) {
     metadataRepository: ref.watch(serverMetadataRepositoryProvider),
     secureStorage: ref.watch(secureStorageProvider),
     logger: ref.watch(loggerProvider('AuthRepository')),
+    oauthBrowserCallback: ref.watch(oauthBrowserCallbackProvider),
   );
 }
 
