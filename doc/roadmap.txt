@@ -169,21 +169,21 @@ Endpoints:
 - app.bsky.unspecced.getPopularFeedGenerators (GET) - discover trending feeds
 
 Tasks:
-- [ ] Data layer:
-      - [ ] Create SavedFeeds Drift table (uri, displayName, description,
+- [x] Data layer:
+      - [x] Create SavedFeeds Drift table (uri, displayName, description,
             avatar, creatorDid, likeCount, sortOrder, isPinned, lastSynced)
-      - [ ] Update TimelineRepository.fetchAndCacheTimeline to accept optional
+      - [x] Update TimelineRepository.fetchAndCacheTimeline to accept optional
             feedUri parameter
-      - [ ] Derive feedKey from feed URI for database storage
+      - [x] Derive feedKey from feed URI for database storage
       - [ ] Seed default feeds: Home (authenticated) and Discover (public)
-- [ ] FeedRepository:
-      - [ ] syncPreferences: fetch savedFeedsPref from getPreferences, hydrate
+- [x] FeedRepository:
+      - [x] syncPreferences: fetch savedFeedsPref from getPreferences, hydrate
             local cache with metadata from getFeedGenerator
-      - [ ] saveFeed: add URI to savedFeedsPref array, push via putPreferences,
+      - [x] saveFeed: add URI to savedFeedsPref array, push via putPreferences,
             update local cache
-      - [ ] removeFeed: remove URI from both local and remote storage
-      - [ ] discoverFeeds: fetch trending feeds from getPopularFeedGenerators
-      - [ ] Ensure putPreferences sends entire preferences object to avoid
+      - [x] removeFeed: remove URI from both local and remote storage
+      - [x] discoverFeeds: fetch trending feeds from getPopularFeedGenerators
+      - [x] Ensure putPreferences sends entire preferences object to avoid
             overwriting other preference categories
 - [ ] State management:
       - [ ] ActiveFeedNotifier: tracks currently selected feed URI

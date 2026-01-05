@@ -86,3 +86,39 @@ class Follows extends Table {
   @override
   Set<Column> get primaryKey => {actorDid, subjectDid};
 }
+
+/// Stores saved feed generators with metadata.
+///
+/// This table caches user preferences from app.bsky.actor.getPreferences
+/// (savedFeedsPref) and enriches them with metadata from app.bsky.feed.getFeedGenerator.
+class SavedFeeds extends Table {
+  /// Feed generator AT URI (at://did:plc:xxx/app.bsky.feed.generator/yyy).
+  TextColumn get uri => text()();
+
+  /// Display name of the feed.
+  TextColumn get displayName => text()();
+
+  /// Feed description.
+  TextColumn get description => text().nullable()();
+
+  /// Feed avatar URL.
+  TextColumn get avatar => text().nullable()();
+
+  /// DID of the feed creator.
+  TextColumn get creatorDid => text()();
+
+  /// Number of likes the feed has received.
+  IntColumn get likeCount => integer().withDefault(const Constant(0))();
+
+  /// Sort order for display (lower values appear first).
+  IntColumn get sortOrder => integer()();
+
+  /// Whether the feed is pinned by the user.
+  BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
+
+  /// When the feed metadata was last synced from remote.
+  DateTimeColumn get lastSynced => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {uri};
+}

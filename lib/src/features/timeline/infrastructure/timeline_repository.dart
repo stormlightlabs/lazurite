@@ -43,13 +43,37 @@ class TimelineRepository {
   static const kDiscoverFeedUri =
       'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
 
-  /// Fetch remote timeline and cache it
-  Future<void> fetchAndCacheTimeline({String? cursor}) async {
-    _logger.info('Fetching timeline', {'cursor': cursor, 'authenticated': _api.isAuthenticated});
+  /// Derives a feedKey from a feed URI.
+  ///
+  /// Uses the full URI as the feedKey to ensure uniqueness.
+  /// For the home timeline (null feedUri), returns 'home'.
+  String _feedKeyFromUri(String? feedUri) {
+    return feedUri ?? 'home';
+  }
+
+  /// Fetch remote timeline and cache it.
+  ///
+  /// If [feedUri] is provided, fetches that specific feed using
+  /// app.bsky.feed.getFeed (even when authenticated). Otherwise, fetches
+  /// the user's home timeline (authenticated) or Discover feed (unauthenticated).
+  Future<void> fetchAndCacheTimeline({String? cursor, String? feedUri}) async {
+    final feedKey = _feedKeyFromUri(feedUri);
+    _logger.info('Fetching timeline', {
+      'cursor': cursor,
+      'authenticated': _api.isAuthenticated,
+      'feedUri': feedUri,
+      'feedKey': feedKey,
+    });
+
     try {
       final Map<String, dynamic> response;
 
-      if (_api.isAuthenticated) {
+      if (feedUri != null) {
+        response = await _api.call(
+          'app.bsky.feed.getFeed',
+          params: {'feed': feedUri, 'limit': 50, if (cursor != null) 'cursor': cursor},
+        );
+      } else if (_api.isAuthenticated) {
         response = await _api.call(
           'app.bsky.feed.getTimeline',
           params: {'limit': 50, if (cursor != null) 'cursor': cursor},
@@ -84,10 +108,9 @@ class TimelineRepository {
           profiles.add(_mapProfile(reason['by']));
         }
 
-        // TODO: support other feeds
         items.add(
           TimelineItemsCompanion.insert(
-            feedKey: 'home',
+            feedKey: feedKey,
             postUri: post['uri'],
             reason: Value(reason != null ? jsonEncode(reason) : null),
             sortKey: '${baseTime - i}',
@@ -96,7 +119,7 @@ class TimelineRepository {
       }
 
       await _dao.insertTimelineBatch(
-        feedKey: 'home',
+        feedKey: feedKey,
         newPosts: posts,
         newProfiles: profiles,
         newItems: items,
@@ -109,7 +132,11 @@ class TimelineRepository {
     }
   }
 
-  Stream<List<TimelineFeedItem>> watchTimeline() {
-    return _dao.watchTimeline('home');
+  /// Watches a timeline feed reactively.
+  ///
+  /// If [feedKey] is provided, watches that specific feed. Otherwise, watches
+  /// the home timeline.
+  Stream<List<TimelineFeedItem>> watchTimeline({String? feedKey}) {
+    return _dao.watchTimeline(feedKey ?? 'home');
   }
 }

@@ -170,5 +170,152 @@ void main() {
       final timeline = await db.timelineDao.watchTimeline('home').first;
       expect(timeline, hasLength(1));
     });
+
+    test('fetchAndCacheTimeline with feedUri uses getFeed endpoint', () async {
+      const feedUri = 'at://did:plc:abc/app.bsky.feed.generator/custom';
+      const mockResponse = {
+        'cursor': 'next_cursor',
+        'feed': [
+          {
+            'post': {
+              'uri': 'at://did:1/app.bsky.feed.post/1',
+              'cid': 'cid1',
+              'author': {
+                'did': 'did:1',
+                'handle': 'alice',
+                'displayName': 'Alice',
+                'description': 'Bio',
+                'avatar': 'avatar.jpg',
+              },
+              'record': {'text': 'Hello world', 'createdAt': '2024-01-01T00:00:00Z'},
+              'indexedAt': '2024-01-01T00:00:00Z',
+              'likeCount': 0,
+              'replyCount': 0,
+              'repostCount': 0,
+            },
+            'reason': null,
+          },
+        ],
+      };
+
+      when(
+        () => mockApi.call(any(), params: any(named: 'params')),
+      ).thenAnswer((_) async => mockResponse);
+
+      await repository.fetchAndCacheTimeline(feedUri: feedUri);
+
+      verify(
+        () => mockApi.call('app.bsky.feed.getFeed', params: {'feed': feedUri, 'limit': 50}),
+      ).called(1);
+
+      final timeline = await db.timelineDao.watchTimeline(feedUri).first;
+      expect(timeline, hasLength(1));
+      expect(timeline.first.post.uri, 'at://did:1/app.bsky.feed.post/1');
+    });
+
+    test('fetchAndCacheTimeline with feedUri uses getFeed even when authenticated', () async {
+      when(() => mockApi.isAuthenticated).thenReturn(true);
+
+      const feedUri = 'at://did:plc:abc/app.bsky.feed.generator/custom';
+      const mockResponse = {'cursor': null, 'feed': []};
+
+      when(
+        () => mockApi.call(any(), params: any(named: 'params')),
+      ).thenAnswer((_) async => mockResponse);
+
+      await repository.fetchAndCacheTimeline(feedUri: feedUri);
+
+      verify(
+        () => mockApi.call('app.bsky.feed.getFeed', params: {'feed': feedUri, 'limit': 50}),
+      ).called(1);
+
+      verifyNever(() => mockApi.call('app.bsky.feed.getTimeline', params: any(named: 'params')));
+    });
+
+    test('fetchAndCacheTimeline unauthenticated uses Discover feed by default', () async {
+      when(() => mockApi.isAuthenticated).thenReturn(false);
+
+      const mockResponse = {'cursor': null, 'feed': []};
+
+      when(
+        () => mockApi.call(any(), params: any(named: 'params')),
+      ).thenAnswer((_) async => mockResponse);
+
+      await repository.fetchAndCacheTimeline();
+
+      verify(
+        () => mockApi.call(
+          'app.bsky.feed.getFeed',
+          params: {'feed': TimelineRepository.kDiscoverFeedUri, 'limit': 50},
+        ),
+      ).called(1);
+    });
+
+    test('fetchAndCacheTimeline stores items with correct feedKey', () async {
+      const feedUri = 'at://did:plc:abc/app.bsky.feed.generator/custom';
+      const mockResponse = {
+        'cursor': null,
+        'feed': [
+          {
+            'post': {
+              'uri': 'at://did:1/app.bsky.feed.post/1',
+              'cid': 'cid1',
+              'author': {
+                'did': 'did:1',
+                'handle': 'alice',
+                'displayName': 'Alice',
+                'description': 'Bio',
+                'avatar': 'avatar.jpg',
+              },
+              'record': {'text': 'Hello world', 'createdAt': '2024-01-01T00:00:00Z'},
+              'indexedAt': '2024-01-01T00:00:00Z',
+              'likeCount': 0,
+              'replyCount': 0,
+              'repostCount': 0,
+            },
+            'reason': null,
+          },
+        ],
+      };
+
+      when(
+        () => mockApi.call(any(), params: any(named: 'params')),
+      ).thenAnswer((_) async => mockResponse);
+
+      await repository.fetchAndCacheTimeline(feedUri: feedUri);
+
+      final homeFeed = await db.timelineDao.watchTimeline('home').first;
+      expect(homeFeed, isEmpty);
+
+      final customFeed = await db.timelineDao.watchTimeline(feedUri).first;
+      expect(customFeed, hasLength(1));
+    });
+
+    test('watchTimeline with custom feedKey returns stream from DAO', () async {
+      const customFeedKey = 'at://did:plc:abc/app.bsky.feed.generator/custom';
+
+      await db.timelineDao.insertTimelineBatch(
+        feedKey: customFeedKey,
+        newPosts: [
+          PostsCompanion.insert(
+            uri: 'at://did:1/app.bsky.feed.post/1',
+            cid: 'cid1',
+            authorDid: 'did:1',
+            record: '{}',
+          ),
+        ],
+        newProfiles: [ProfilesCompanion.insert(did: 'did:1', handle: 'alice')],
+        newItems: [
+          TimelineItemsCompanion.insert(
+            feedKey: customFeedKey,
+            postUri: 'at://did:1/app.bsky.feed.post/1',
+            sortKey: '999',
+          ),
+        ],
+      );
+
+      final stream = repository.watchTimeline(feedKey: customFeedKey);
+      expect(stream, emits(hasLength(1)));
+    });
   });
 }
