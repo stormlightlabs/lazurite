@@ -39,14 +39,27 @@ class TimelineRepository {
     );
   }
 
+  /// The official Discover feed for unauthenticated users
+  static const kDiscoverFeedUri =
+      'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
+
   /// Fetch remote timeline and cache it
   Future<void> fetchAndCacheTimeline({String? cursor}) async {
-    _logger.info('Fetching timeline', {'cursor': cursor});
+    _logger.info('Fetching timeline', {'cursor': cursor, 'authenticated': _api.isAuthenticated});
     try {
-      final response = await _api.call(
-        'app.bsky.feed.getTimeline',
-        params: {'limit': 50, if (cursor != null) 'cursor': cursor},
-      );
+      final Map<String, dynamic> response;
+
+      if (_api.isAuthenticated) {
+        response = await _api.call(
+          'app.bsky.feed.getTimeline',
+          params: {'limit': 50, if (cursor != null) 'cursor': cursor},
+        );
+      } else {
+        response = await _api.call(
+          'app.bsky.feed.getFeed',
+          params: {'feed': kDiscoverFeedUri, 'limit': 50, if (cursor != null) 'cursor': cursor},
+        );
+      }
 
       final feed = response['feed'] as List;
       final nextCursor = response['cursor'] as String?;

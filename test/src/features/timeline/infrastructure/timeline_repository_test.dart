@@ -21,6 +21,8 @@ void main() {
     db = AppDatabase(NativeDatabase.memory());
     mockLogger = MockLogger();
     repository = TimelineRepository(mockApi, db.timelineDao, mockLogger);
+
+    when(() => mockApi.isAuthenticated).thenReturn(true);
   });
 
   tearDown(() async {

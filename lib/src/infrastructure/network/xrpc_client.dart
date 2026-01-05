@@ -24,6 +24,9 @@ class XrpcClient {
   final Dio? _pdsDio;
   final EndpointRegistry _registry;
 
+  /// Whether the client has a PDS configured for authenticated requests.
+  bool get isAuthenticated => _pdsDio != null;
+
   /// Makes an XRPC request.
   ///
   /// The [nsid] is used to look up routing information from the registry.
