@@ -120,5 +120,50 @@ void main() {
       expect(thread.replies.first.post.placeholderReason, 'Post blocked');
       expect(thread.replies.last.post.placeholderReason, 'Post not found');
     });
+
+    test('parses viewer state from thread response', () async {
+      final mockResponse = {
+        'thread': {
+          r'$type': 'app.bsky.feed.defs#threadViewPost',
+          'post': {
+            'uri': 'at://did:1/app.bsky.feed.post/1',
+            'cid': 'cid1',
+            'author': {'did': 'did:1', 'handle': 'alice', 'displayName': 'Alice'},
+            'record': {'text': 'Post with viewer state', 'createdAt': '2024-01-01T00:00:00Z'},
+            'indexedAt': '2024-01-01T00:00:00Z',
+            'likeCount': 5,
+            'repostCount': 2,
+            'replyCount': 1,
+            'quoteCount': 3,
+            'bookmarkCount': 1,
+            'labels': [
+              {'val': 'sensitive', 'src': 'did:labeler'},
+            ],
+            'viewer': {
+              'like': 'at://did:viewer/app.bsky.feed.like/abc',
+              'repost': 'at://did:viewer/app.bsky.feed.repost/def',
+              'bookmarked': true,
+              'threadMuted': false,
+              'replyDisabled': false,
+            },
+          },
+        },
+      };
+
+      when(
+        () => mockApi.call(any(), params: any(named: 'params')),
+      ).thenAnswer((_) async => mockResponse);
+
+      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1');
+
+      expect(thread.post.viewerLikeUri, 'at://did:viewer/app.bsky.feed.like/abc');
+      expect(thread.post.viewerRepostUri, 'at://did:viewer/app.bsky.feed.repost/def');
+      expect(thread.post.viewerBookmarked, true);
+      expect(thread.post.viewerThreadMuted, false);
+      expect(thread.post.viewerReplyDisabled, false);
+      expect(thread.post.quoteCount, 3);
+      expect(thread.post.bookmarkCount, 1);
+      expect(thread.post.labels, contains('"val":"sensitive"'));
+    });
   });
 }

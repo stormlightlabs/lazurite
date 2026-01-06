@@ -155,11 +155,22 @@ class ThreadPost {
     this.replyCount = 0,
     this.repostCount = 0,
     this.likeCount = 0,
+    this.quoteCount = 0,
+    this.bookmarkCount = 0,
+    this.labels,
+    this.viewerLikeUri,
+    this.viewerRepostUri,
+    this.viewerBookmarked = false,
+    this.viewerThreadMuted = false,
+    this.viewerReplyDisabled = false,
     this.placeholderReason,
   });
 
   factory ThreadPost.fromJson(Map<String, dynamic> json) {
     final author = ThreadAuthor.fromJson(json['author'] as Map<String, dynamic>);
+    final viewer = json['viewer'] as Map<String, dynamic>?;
+    final labelsJson = json['labels'] as List?;
+
     return ThreadPost(
       uri: json['uri'] as String,
       cid: json['cid'] as String? ?? json['uri'] as String,
@@ -170,6 +181,14 @@ class ThreadPost {
       replyCount: json['replyCount'] as int? ?? 0,
       repostCount: json['repostCount'] as int? ?? 0,
       likeCount: json['likeCount'] as int? ?? 0,
+      quoteCount: json['quoteCount'] as int? ?? 0,
+      bookmarkCount: json['bookmarkCount'] as int? ?? 0,
+      labels: labelsJson != null ? jsonEncode(labelsJson) : null,
+      viewerLikeUri: viewer?['like'] as String?,
+      viewerRepostUri: viewer?['repost'] as String?,
+      viewerBookmarked: viewer?['bookmarked'] as bool? ?? false,
+      viewerThreadMuted: viewer?['threadMuted'] as bool? ?? false,
+      viewerReplyDisabled: viewer?['replyDisabled'] as bool? ?? false,
     );
   }
 
@@ -193,6 +212,14 @@ class ThreadPost {
   final int replyCount;
   final int repostCount;
   final int likeCount;
+  final int quoteCount;
+  final int bookmarkCount;
+  final String? labels;
+  final String? viewerLikeUri;
+  final String? viewerRepostUri;
+  final bool viewerBookmarked;
+  final bool viewerThreadMuted;
+  final bool viewerReplyDisabled;
   final String? placeholderReason;
 
   PostsCompanion toPostsCompanion() {
@@ -206,6 +233,14 @@ class ThreadPost {
       replyCount: Value(replyCount),
       repostCount: Value(repostCount),
       likeCount: Value(likeCount),
+      quoteCount: Value(quoteCount),
+      bookmarkCount: Value(bookmarkCount),
+      labels: Value(labels),
+      viewerLikeUri: Value(viewerLikeUri),
+      viewerRepostUri: Value(viewerRepostUri),
+      viewerBookmarked: Value(viewerBookmarked),
+      viewerThreadMuted: Value(viewerThreadMuted),
+      viewerReplyDisabled: Value(viewerReplyDisabled),
     );
   }
 
@@ -250,6 +285,14 @@ class ThreadPost {
       replyCount: replyCount,
       repostCount: repostCount,
       likeCount: likeCount,
+      quoteCount: quoteCount,
+      bookmarkCount: bookmarkCount,
+      labels: labels,
+      viewerLikeUri: viewerLikeUri,
+      viewerRepostUri: viewerRepostUri,
+      viewerBookmarked: viewerBookmarked,
+      viewerThreadMuted: viewerThreadMuted,
+      viewerReplyDisabled: viewerReplyDisabled,
     );
   }
 

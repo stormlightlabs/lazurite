@@ -10,12 +10,48 @@ class Posts extends Table {
   IntColumn get replyCount => integer().withDefault(const Constant(0))();
   IntColumn get repostCount => integer().withDefault(const Constant(0))();
   IntColumn get likeCount => integer().withDefault(const Constant(0))();
+  IntColumn get quoteCount => integer().withDefault(const Constant(0))();
+  IntColumn get bookmarkCount => integer().withDefault(const Constant(0))();
+  TextColumn get labels => text().nullable()(); // JSON array
+  TextColumn get viewerLikeUri => text().nullable()();
+  TextColumn get viewerRepostUri => text().nullable()();
+  BoolColumn get viewerBookmarked => boolean().withDefault(const Constant(false))();
+  BoolColumn get viewerThreadMuted => boolean().withDefault(const Constant(false))();
+  BoolColumn get viewerReplyDisabled => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {uri};
 
   @override
   List<String> get customConstraints => [];
+}
+
+/// Normalized viewer interactions with posts.
+///
+/// Tracks likes, reposts, bookmarks, and thread mutes separately from post
+/// content. This enables efficient querying of user engagement and prevents
+/// duplication when the same post appears in multiple feeds.
+class PostInteractions extends Table {
+  /// Reference to the post this interaction applies to.
+  TextColumn get postUri => text().references(Posts, #uri)();
+
+  /// AT URI of the like record (if liked).
+  TextColumn get likeUri => text().nullable()();
+
+  /// AT URI of the repost record (if reposted).
+  TextColumn get repostUri => text().nullable()();
+
+  /// Whether the post is bookmarked.
+  BoolColumn get bookmarked => boolean().withDefault(const Constant(false))();
+
+  /// Whether the thread is muted.
+  BoolColumn get threadMuted => boolean().withDefault(const Constant(false))();
+
+  /// When this interaction was last updated.
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {postUri};
 }
 
 class Profiles extends Table {

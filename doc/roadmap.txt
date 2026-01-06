@@ -29,15 +29,15 @@ Tasks:
             - account creation date
             - pinned post at top of profile feed
             - full viewer state indicators (muted/blocked states)
-- [ ] Post/Thread Data Model (HIGH):
-      - [ ] Add viewer interaction state to Posts table:
+- [x] Post/Thread Data Model (HIGH):
+      - [x] Add viewer interaction state to Posts table:
             - viewerLikeUri, viewerRepostUri
             - viewerBookmarked, viewerThreadMuted
             - quoteCount, bookmarkCount
-      - [ ] Add content labels support:
+      - [x] Add content labels support:
             - labels column (JSON array)
             - parse and store from API responses
-      - [ ] Create PostInteractions table:
+      - [x] Create PostInteractions table:
             - normalized viewer state tracking
             - separate from post content
             - efficient querying of user engagement
@@ -102,7 +102,7 @@ Tests:
 - [ ] Content label warning: labeled content shows blur/warning
 - [ ] Thread parent chain: parent posts render in order
 - [ ] Thread reply tree: replies nest correctly
-- [ ] Viewer interaction state: like/repost state persists and displays
+- [x] Viewer interaction state: like/repost state persists and displays
 - [ ] Pinned post: appears at top of profile feed
 
 Deliverables:

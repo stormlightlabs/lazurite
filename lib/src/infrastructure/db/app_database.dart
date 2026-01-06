@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'daos/drafts_dao.dart';
 import 'daos/feed_content_dao.dart';
 import 'daos/follows_dao.dart';
+import 'daos/post_interactions_dao.dart';
 import 'daos/preference_sync_queue_dao.dart';
 import 'daos/profile_dao.dart';
 import 'daos/profile_relationship_dao.dart';
@@ -34,6 +35,7 @@ part 'app_database.g.dart';
     Drafts,
     DraftMedia,
     ProfileRelationships,
+    PostInteractions,
   ],
   daos: [
     FeedContentDao,
@@ -45,13 +47,14 @@ part 'app_database.g.dart';
     SavedFeedsDao,
     PreferenceSyncQueueDao,
     DraftsDao,
+    PostInteractionsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -107,6 +110,17 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(profiles, profiles.labels);
         await m.addColumn(profiles, profiles.pinnedPostUri);
         await m.createTable(profileRelationships);
+      }
+      if (from < 12) {
+        await m.addColumn(posts, posts.quoteCount);
+        await m.addColumn(posts, posts.bookmarkCount);
+        await m.addColumn(posts, posts.labels);
+        await m.addColumn(posts, posts.viewerLikeUri);
+        await m.addColumn(posts, posts.viewerRepostUri);
+        await m.addColumn(posts, posts.viewerBookmarked);
+        await m.addColumn(posts, posts.viewerThreadMuted);
+        await m.addColumn(posts, posts.viewerReplyDisabled);
+        await m.createTable(postInteractions);
       }
     },
   );

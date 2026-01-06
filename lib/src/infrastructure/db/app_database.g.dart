@@ -798,6 +798,96 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _quoteCountMeta = const VerificationMeta('quoteCount');
+  @override
+  late final GeneratedColumn<int> quoteCount = GeneratedColumn<int>(
+    'quote_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _bookmarkCountMeta = const VerificationMeta('bookmarkCount');
+  @override
+  late final GeneratedColumn<int> bookmarkCount = GeneratedColumn<int>(
+    'bookmark_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _labelsMeta = const VerificationMeta('labels');
+  @override
+  late final GeneratedColumn<String> labels = GeneratedColumn<String>(
+    'labels',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _viewerLikeUriMeta = const VerificationMeta('viewerLikeUri');
+  @override
+  late final GeneratedColumn<String> viewerLikeUri = GeneratedColumn<String>(
+    'viewer_like_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _viewerRepostUriMeta = const VerificationMeta('viewerRepostUri');
+  @override
+  late final GeneratedColumn<String> viewerRepostUri = GeneratedColumn<String>(
+    'viewer_repost_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _viewerBookmarkedMeta = const VerificationMeta('viewerBookmarked');
+  @override
+  late final GeneratedColumn<bool> viewerBookmarked = GeneratedColumn<bool>(
+    'viewer_bookmarked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("viewer_bookmarked" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _viewerThreadMutedMeta = const VerificationMeta(
+    'viewerThreadMuted',
+  );
+  @override
+  late final GeneratedColumn<bool> viewerThreadMuted = GeneratedColumn<bool>(
+    'viewer_thread_muted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("viewer_thread_muted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _viewerReplyDisabledMeta = const VerificationMeta(
+    'viewerReplyDisabled',
+  );
+  @override
+  late final GeneratedColumn<bool> viewerReplyDisabled = GeneratedColumn<bool>(
+    'viewer_reply_disabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("viewer_reply_disabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     uri,
@@ -809,6 +899,14 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
     replyCount,
     repostCount,
     likeCount,
+    quoteCount,
+    bookmarkCount,
+    labels,
+    viewerLikeUri,
+    viewerRepostUri,
+    viewerBookmarked,
+    viewerThreadMuted,
+    viewerReplyDisabled,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -869,6 +967,57 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
         likeCount.isAcceptableOrUnknown(data['like_count']!, _likeCountMeta),
       );
     }
+    if (data.containsKey('quote_count')) {
+      context.handle(
+        _quoteCountMeta,
+        quoteCount.isAcceptableOrUnknown(data['quote_count']!, _quoteCountMeta),
+      );
+    }
+    if (data.containsKey('bookmark_count')) {
+      context.handle(
+        _bookmarkCountMeta,
+        bookmarkCount.isAcceptableOrUnknown(data['bookmark_count']!, _bookmarkCountMeta),
+      );
+    }
+    if (data.containsKey('labels')) {
+      context.handle(_labelsMeta, labels.isAcceptableOrUnknown(data['labels']!, _labelsMeta));
+    }
+    if (data.containsKey('viewer_like_uri')) {
+      context.handle(
+        _viewerLikeUriMeta,
+        viewerLikeUri.isAcceptableOrUnknown(data['viewer_like_uri']!, _viewerLikeUriMeta),
+      );
+    }
+    if (data.containsKey('viewer_repost_uri')) {
+      context.handle(
+        _viewerRepostUriMeta,
+        viewerRepostUri.isAcceptableOrUnknown(data['viewer_repost_uri']!, _viewerRepostUriMeta),
+      );
+    }
+    if (data.containsKey('viewer_bookmarked')) {
+      context.handle(
+        _viewerBookmarkedMeta,
+        viewerBookmarked.isAcceptableOrUnknown(data['viewer_bookmarked']!, _viewerBookmarkedMeta),
+      );
+    }
+    if (data.containsKey('viewer_thread_muted')) {
+      context.handle(
+        _viewerThreadMutedMeta,
+        viewerThreadMuted.isAcceptableOrUnknown(
+          data['viewer_thread_muted']!,
+          _viewerThreadMutedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('viewer_reply_disabled')) {
+      context.handle(
+        _viewerReplyDisabledMeta,
+        viewerReplyDisabled.isAcceptableOrUnknown(
+          data['viewer_reply_disabled']!,
+          _viewerReplyDisabledMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -908,6 +1057,38 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
         DriftSqlType.int,
         data['${effectivePrefix}like_count'],
       )!,
+      quoteCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quote_count'],
+      )!,
+      bookmarkCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bookmark_count'],
+      )!,
+      labels: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}labels'],
+      ),
+      viewerLikeUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}viewer_like_uri'],
+      ),
+      viewerRepostUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}viewer_repost_uri'],
+      ),
+      viewerBookmarked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}viewer_bookmarked'],
+      )!,
+      viewerThreadMuted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}viewer_thread_muted'],
+      )!,
+      viewerReplyDisabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}viewer_reply_disabled'],
+      )!,
     );
   }
 
@@ -927,6 +1108,14 @@ class Post extends DataClass implements Insertable<Post> {
   final int replyCount;
   final int repostCount;
   final int likeCount;
+  final int quoteCount;
+  final int bookmarkCount;
+  final String? labels;
+  final String? viewerLikeUri;
+  final String? viewerRepostUri;
+  final bool viewerBookmarked;
+  final bool viewerThreadMuted;
+  final bool viewerReplyDisabled;
   const Post({
     required this.uri,
     required this.cid,
@@ -937,6 +1126,14 @@ class Post extends DataClass implements Insertable<Post> {
     required this.replyCount,
     required this.repostCount,
     required this.likeCount,
+    required this.quoteCount,
+    required this.bookmarkCount,
+    this.labels,
+    this.viewerLikeUri,
+    this.viewerRepostUri,
+    required this.viewerBookmarked,
+    required this.viewerThreadMuted,
+    required this.viewerReplyDisabled,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -954,6 +1151,20 @@ class Post extends DataClass implements Insertable<Post> {
     map['reply_count'] = Variable<int>(replyCount);
     map['repost_count'] = Variable<int>(repostCount);
     map['like_count'] = Variable<int>(likeCount);
+    map['quote_count'] = Variable<int>(quoteCount);
+    map['bookmark_count'] = Variable<int>(bookmarkCount);
+    if (!nullToAbsent || labels != null) {
+      map['labels'] = Variable<String>(labels);
+    }
+    if (!nullToAbsent || viewerLikeUri != null) {
+      map['viewer_like_uri'] = Variable<String>(viewerLikeUri);
+    }
+    if (!nullToAbsent || viewerRepostUri != null) {
+      map['viewer_repost_uri'] = Variable<String>(viewerRepostUri);
+    }
+    map['viewer_bookmarked'] = Variable<bool>(viewerBookmarked);
+    map['viewer_thread_muted'] = Variable<bool>(viewerThreadMuted);
+    map['viewer_reply_disabled'] = Variable<bool>(viewerReplyDisabled);
     return map;
   }
 
@@ -968,6 +1179,18 @@ class Post extends DataClass implements Insertable<Post> {
       replyCount: Value(replyCount),
       repostCount: Value(repostCount),
       likeCount: Value(likeCount),
+      quoteCount: Value(quoteCount),
+      bookmarkCount: Value(bookmarkCount),
+      labels: labels == null && nullToAbsent ? const Value.absent() : Value(labels),
+      viewerLikeUri: viewerLikeUri == null && nullToAbsent
+          ? const Value.absent()
+          : Value(viewerLikeUri),
+      viewerRepostUri: viewerRepostUri == null && nullToAbsent
+          ? const Value.absent()
+          : Value(viewerRepostUri),
+      viewerBookmarked: Value(viewerBookmarked),
+      viewerThreadMuted: Value(viewerThreadMuted),
+      viewerReplyDisabled: Value(viewerReplyDisabled),
     );
   }
 
@@ -983,6 +1206,14 @@ class Post extends DataClass implements Insertable<Post> {
       replyCount: serializer.fromJson<int>(json['replyCount']),
       repostCount: serializer.fromJson<int>(json['repostCount']),
       likeCount: serializer.fromJson<int>(json['likeCount']),
+      quoteCount: serializer.fromJson<int>(json['quoteCount']),
+      bookmarkCount: serializer.fromJson<int>(json['bookmarkCount']),
+      labels: serializer.fromJson<String?>(json['labels']),
+      viewerLikeUri: serializer.fromJson<String?>(json['viewerLikeUri']),
+      viewerRepostUri: serializer.fromJson<String?>(json['viewerRepostUri']),
+      viewerBookmarked: serializer.fromJson<bool>(json['viewerBookmarked']),
+      viewerThreadMuted: serializer.fromJson<bool>(json['viewerThreadMuted']),
+      viewerReplyDisabled: serializer.fromJson<bool>(json['viewerReplyDisabled']),
     );
   }
   @override
@@ -998,6 +1229,14 @@ class Post extends DataClass implements Insertable<Post> {
       'replyCount': serializer.toJson<int>(replyCount),
       'repostCount': serializer.toJson<int>(repostCount),
       'likeCount': serializer.toJson<int>(likeCount),
+      'quoteCount': serializer.toJson<int>(quoteCount),
+      'bookmarkCount': serializer.toJson<int>(bookmarkCount),
+      'labels': serializer.toJson<String?>(labels),
+      'viewerLikeUri': serializer.toJson<String?>(viewerLikeUri),
+      'viewerRepostUri': serializer.toJson<String?>(viewerRepostUri),
+      'viewerBookmarked': serializer.toJson<bool>(viewerBookmarked),
+      'viewerThreadMuted': serializer.toJson<bool>(viewerThreadMuted),
+      'viewerReplyDisabled': serializer.toJson<bool>(viewerReplyDisabled),
     };
   }
 
@@ -1011,6 +1250,14 @@ class Post extends DataClass implements Insertable<Post> {
     int? replyCount,
     int? repostCount,
     int? likeCount,
+    int? quoteCount,
+    int? bookmarkCount,
+    Value<String?> labels = const Value.absent(),
+    Value<String?> viewerLikeUri = const Value.absent(),
+    Value<String?> viewerRepostUri = const Value.absent(),
+    bool? viewerBookmarked,
+    bool? viewerThreadMuted,
+    bool? viewerReplyDisabled,
   }) => Post(
     uri: uri ?? this.uri,
     cid: cid ?? this.cid,
@@ -1021,6 +1268,14 @@ class Post extends DataClass implements Insertable<Post> {
     replyCount: replyCount ?? this.replyCount,
     repostCount: repostCount ?? this.repostCount,
     likeCount: likeCount ?? this.likeCount,
+    quoteCount: quoteCount ?? this.quoteCount,
+    bookmarkCount: bookmarkCount ?? this.bookmarkCount,
+    labels: labels.present ? labels.value : this.labels,
+    viewerLikeUri: viewerLikeUri.present ? viewerLikeUri.value : this.viewerLikeUri,
+    viewerRepostUri: viewerRepostUri.present ? viewerRepostUri.value : this.viewerRepostUri,
+    viewerBookmarked: viewerBookmarked ?? this.viewerBookmarked,
+    viewerThreadMuted: viewerThreadMuted ?? this.viewerThreadMuted,
+    viewerReplyDisabled: viewerReplyDisabled ?? this.viewerReplyDisabled,
   );
   Post copyWithCompanion(PostsCompanion data) {
     return Post(
@@ -1033,6 +1288,22 @@ class Post extends DataClass implements Insertable<Post> {
       replyCount: data.replyCount.present ? data.replyCount.value : this.replyCount,
       repostCount: data.repostCount.present ? data.repostCount.value : this.repostCount,
       likeCount: data.likeCount.present ? data.likeCount.value : this.likeCount,
+      quoteCount: data.quoteCount.present ? data.quoteCount.value : this.quoteCount,
+      bookmarkCount: data.bookmarkCount.present ? data.bookmarkCount.value : this.bookmarkCount,
+      labels: data.labels.present ? data.labels.value : this.labels,
+      viewerLikeUri: data.viewerLikeUri.present ? data.viewerLikeUri.value : this.viewerLikeUri,
+      viewerRepostUri: data.viewerRepostUri.present
+          ? data.viewerRepostUri.value
+          : this.viewerRepostUri,
+      viewerBookmarked: data.viewerBookmarked.present
+          ? data.viewerBookmarked.value
+          : this.viewerBookmarked,
+      viewerThreadMuted: data.viewerThreadMuted.present
+          ? data.viewerThreadMuted.value
+          : this.viewerThreadMuted,
+      viewerReplyDisabled: data.viewerReplyDisabled.present
+          ? data.viewerReplyDisabled.value
+          : this.viewerReplyDisabled,
     );
   }
 
@@ -1047,7 +1318,15 @@ class Post extends DataClass implements Insertable<Post> {
           ..write('indexedAt: $indexedAt, ')
           ..write('replyCount: $replyCount, ')
           ..write('repostCount: $repostCount, ')
-          ..write('likeCount: $likeCount')
+          ..write('likeCount: $likeCount, ')
+          ..write('quoteCount: $quoteCount, ')
+          ..write('bookmarkCount: $bookmarkCount, ')
+          ..write('labels: $labels, ')
+          ..write('viewerLikeUri: $viewerLikeUri, ')
+          ..write('viewerRepostUri: $viewerRepostUri, ')
+          ..write('viewerBookmarked: $viewerBookmarked, ')
+          ..write('viewerThreadMuted: $viewerThreadMuted, ')
+          ..write('viewerReplyDisabled: $viewerReplyDisabled')
           ..write(')'))
         .toString();
   }
@@ -1063,6 +1342,14 @@ class Post extends DataClass implements Insertable<Post> {
     replyCount,
     repostCount,
     likeCount,
+    quoteCount,
+    bookmarkCount,
+    labels,
+    viewerLikeUri,
+    viewerRepostUri,
+    viewerBookmarked,
+    viewerThreadMuted,
+    viewerReplyDisabled,
   );
   @override
   bool operator ==(Object other) =>
@@ -1076,7 +1363,15 @@ class Post extends DataClass implements Insertable<Post> {
           other.indexedAt == this.indexedAt &&
           other.replyCount == this.replyCount &&
           other.repostCount == this.repostCount &&
-          other.likeCount == this.likeCount);
+          other.likeCount == this.likeCount &&
+          other.quoteCount == this.quoteCount &&
+          other.bookmarkCount == this.bookmarkCount &&
+          other.labels == this.labels &&
+          other.viewerLikeUri == this.viewerLikeUri &&
+          other.viewerRepostUri == this.viewerRepostUri &&
+          other.viewerBookmarked == this.viewerBookmarked &&
+          other.viewerThreadMuted == this.viewerThreadMuted &&
+          other.viewerReplyDisabled == this.viewerReplyDisabled);
 }
 
 class PostsCompanion extends UpdateCompanion<Post> {
@@ -1089,6 +1384,14 @@ class PostsCompanion extends UpdateCompanion<Post> {
   final Value<int> replyCount;
   final Value<int> repostCount;
   final Value<int> likeCount;
+  final Value<int> quoteCount;
+  final Value<int> bookmarkCount;
+  final Value<String?> labels;
+  final Value<String?> viewerLikeUri;
+  final Value<String?> viewerRepostUri;
+  final Value<bool> viewerBookmarked;
+  final Value<bool> viewerThreadMuted;
+  final Value<bool> viewerReplyDisabled;
   final Value<int> rowid;
   const PostsCompanion({
     this.uri = const Value.absent(),
@@ -1100,6 +1403,14 @@ class PostsCompanion extends UpdateCompanion<Post> {
     this.replyCount = const Value.absent(),
     this.repostCount = const Value.absent(),
     this.likeCount = const Value.absent(),
+    this.quoteCount = const Value.absent(),
+    this.bookmarkCount = const Value.absent(),
+    this.labels = const Value.absent(),
+    this.viewerLikeUri = const Value.absent(),
+    this.viewerRepostUri = const Value.absent(),
+    this.viewerBookmarked = const Value.absent(),
+    this.viewerThreadMuted = const Value.absent(),
+    this.viewerReplyDisabled = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PostsCompanion.insert({
@@ -1112,6 +1423,14 @@ class PostsCompanion extends UpdateCompanion<Post> {
     this.replyCount = const Value.absent(),
     this.repostCount = const Value.absent(),
     this.likeCount = const Value.absent(),
+    this.quoteCount = const Value.absent(),
+    this.bookmarkCount = const Value.absent(),
+    this.labels = const Value.absent(),
+    this.viewerLikeUri = const Value.absent(),
+    this.viewerRepostUri = const Value.absent(),
+    this.viewerBookmarked = const Value.absent(),
+    this.viewerThreadMuted = const Value.absent(),
+    this.viewerReplyDisabled = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : uri = Value(uri),
        cid = Value(cid),
@@ -1127,6 +1446,14 @@ class PostsCompanion extends UpdateCompanion<Post> {
     Expression<int>? replyCount,
     Expression<int>? repostCount,
     Expression<int>? likeCount,
+    Expression<int>? quoteCount,
+    Expression<int>? bookmarkCount,
+    Expression<String>? labels,
+    Expression<String>? viewerLikeUri,
+    Expression<String>? viewerRepostUri,
+    Expression<bool>? viewerBookmarked,
+    Expression<bool>? viewerThreadMuted,
+    Expression<bool>? viewerReplyDisabled,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1139,6 +1466,14 @@ class PostsCompanion extends UpdateCompanion<Post> {
       if (replyCount != null) 'reply_count': replyCount,
       if (repostCount != null) 'repost_count': repostCount,
       if (likeCount != null) 'like_count': likeCount,
+      if (quoteCount != null) 'quote_count': quoteCount,
+      if (bookmarkCount != null) 'bookmark_count': bookmarkCount,
+      if (labels != null) 'labels': labels,
+      if (viewerLikeUri != null) 'viewer_like_uri': viewerLikeUri,
+      if (viewerRepostUri != null) 'viewer_repost_uri': viewerRepostUri,
+      if (viewerBookmarked != null) 'viewer_bookmarked': viewerBookmarked,
+      if (viewerThreadMuted != null) 'viewer_thread_muted': viewerThreadMuted,
+      if (viewerReplyDisabled != null) 'viewer_reply_disabled': viewerReplyDisabled,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1153,6 +1488,14 @@ class PostsCompanion extends UpdateCompanion<Post> {
     Value<int>? replyCount,
     Value<int>? repostCount,
     Value<int>? likeCount,
+    Value<int>? quoteCount,
+    Value<int>? bookmarkCount,
+    Value<String?>? labels,
+    Value<String?>? viewerLikeUri,
+    Value<String?>? viewerRepostUri,
+    Value<bool>? viewerBookmarked,
+    Value<bool>? viewerThreadMuted,
+    Value<bool>? viewerReplyDisabled,
     Value<int>? rowid,
   }) {
     return PostsCompanion(
@@ -1165,6 +1508,14 @@ class PostsCompanion extends UpdateCompanion<Post> {
       replyCount: replyCount ?? this.replyCount,
       repostCount: repostCount ?? this.repostCount,
       likeCount: likeCount ?? this.likeCount,
+      quoteCount: quoteCount ?? this.quoteCount,
+      bookmarkCount: bookmarkCount ?? this.bookmarkCount,
+      labels: labels ?? this.labels,
+      viewerLikeUri: viewerLikeUri ?? this.viewerLikeUri,
+      viewerRepostUri: viewerRepostUri ?? this.viewerRepostUri,
+      viewerBookmarked: viewerBookmarked ?? this.viewerBookmarked,
+      viewerThreadMuted: viewerThreadMuted ?? this.viewerThreadMuted,
+      viewerReplyDisabled: viewerReplyDisabled ?? this.viewerReplyDisabled,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1199,6 +1550,30 @@ class PostsCompanion extends UpdateCompanion<Post> {
     if (likeCount.present) {
       map['like_count'] = Variable<int>(likeCount.value);
     }
+    if (quoteCount.present) {
+      map['quote_count'] = Variable<int>(quoteCount.value);
+    }
+    if (bookmarkCount.present) {
+      map['bookmark_count'] = Variable<int>(bookmarkCount.value);
+    }
+    if (labels.present) {
+      map['labels'] = Variable<String>(labels.value);
+    }
+    if (viewerLikeUri.present) {
+      map['viewer_like_uri'] = Variable<String>(viewerLikeUri.value);
+    }
+    if (viewerRepostUri.present) {
+      map['viewer_repost_uri'] = Variable<String>(viewerRepostUri.value);
+    }
+    if (viewerBookmarked.present) {
+      map['viewer_bookmarked'] = Variable<bool>(viewerBookmarked.value);
+    }
+    if (viewerThreadMuted.present) {
+      map['viewer_thread_muted'] = Variable<bool>(viewerThreadMuted.value);
+    }
+    if (viewerReplyDisabled.present) {
+      map['viewer_reply_disabled'] = Variable<bool>(viewerReplyDisabled.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1217,6 +1592,14 @@ class PostsCompanion extends UpdateCompanion<Post> {
           ..write('replyCount: $replyCount, ')
           ..write('repostCount: $repostCount, ')
           ..write('likeCount: $likeCount, ')
+          ..write('quoteCount: $quoteCount, ')
+          ..write('bookmarkCount: $bookmarkCount, ')
+          ..write('labels: $labels, ')
+          ..write('viewerLikeUri: $viewerLikeUri, ')
+          ..write('viewerRepostUri: $viewerRepostUri, ')
+          ..write('viewerBookmarked: $viewerBookmarked, ')
+          ..write('viewerThreadMuted: $viewerThreadMuted, ')
+          ..write('viewerReplyDisabled: $viewerReplyDisabled, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5891,6 +6274,407 @@ class ProfileRelationshipsCompanion extends UpdateCompanion<ProfileRelationship>
   }
 }
 
+class $PostInteractionsTable extends PostInteractions
+    with TableInfo<$PostInteractionsTable, PostInteraction> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PostInteractionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _postUriMeta = const VerificationMeta('postUri');
+  @override
+  late final GeneratedColumn<String> postUri = GeneratedColumn<String>(
+    'post_uri',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES posts (uri)'),
+  );
+  static const VerificationMeta _likeUriMeta = const VerificationMeta('likeUri');
+  @override
+  late final GeneratedColumn<String> likeUri = GeneratedColumn<String>(
+    'like_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _repostUriMeta = const VerificationMeta('repostUri');
+  @override
+  late final GeneratedColumn<String> repostUri = GeneratedColumn<String>(
+    'repost_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bookmarkedMeta = const VerificationMeta('bookmarked');
+  @override
+  late final GeneratedColumn<bool> bookmarked = GeneratedColumn<bool>(
+    'bookmarked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("bookmarked" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _threadMutedMeta = const VerificationMeta('threadMuted');
+  @override
+  late final GeneratedColumn<bool> threadMuted = GeneratedColumn<bool>(
+    'thread_muted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("thread_muted" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    postUri,
+    likeUri,
+    repostUri,
+    bookmarked,
+    threadMuted,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'post_interactions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PostInteraction> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('post_uri')) {
+      context.handle(_postUriMeta, postUri.isAcceptableOrUnknown(data['post_uri']!, _postUriMeta));
+    } else if (isInserting) {
+      context.missing(_postUriMeta);
+    }
+    if (data.containsKey('like_uri')) {
+      context.handle(_likeUriMeta, likeUri.isAcceptableOrUnknown(data['like_uri']!, _likeUriMeta));
+    }
+    if (data.containsKey('repost_uri')) {
+      context.handle(
+        _repostUriMeta,
+        repostUri.isAcceptableOrUnknown(data['repost_uri']!, _repostUriMeta),
+      );
+    }
+    if (data.containsKey('bookmarked')) {
+      context.handle(
+        _bookmarkedMeta,
+        bookmarked.isAcceptableOrUnknown(data['bookmarked']!, _bookmarkedMeta),
+      );
+    }
+    if (data.containsKey('thread_muted')) {
+      context.handle(
+        _threadMutedMeta,
+        threadMuted.isAcceptableOrUnknown(data['thread_muted']!, _threadMutedMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {postUri};
+  @override
+  PostInteraction map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PostInteraction(
+      postUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}post_uri'],
+      )!,
+      likeUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}like_uri'],
+      ),
+      repostUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}repost_uri'],
+      ),
+      bookmarked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}bookmarked'],
+      )!,
+      threadMuted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}thread_muted'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PostInteractionsTable createAlias(String alias) {
+    return $PostInteractionsTable(attachedDatabase, alias);
+  }
+}
+
+class PostInteraction extends DataClass implements Insertable<PostInteraction> {
+  /// Reference to the post this interaction applies to.
+  final String postUri;
+
+  /// AT URI of the like record (if liked).
+  final String? likeUri;
+
+  /// AT URI of the repost record (if reposted).
+  final String? repostUri;
+
+  /// Whether the post is bookmarked.
+  final bool bookmarked;
+
+  /// Whether the thread is muted.
+  final bool threadMuted;
+
+  /// When this interaction was last updated.
+  final DateTime updatedAt;
+  const PostInteraction({
+    required this.postUri,
+    this.likeUri,
+    this.repostUri,
+    required this.bookmarked,
+    required this.threadMuted,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['post_uri'] = Variable<String>(postUri);
+    if (!nullToAbsent || likeUri != null) {
+      map['like_uri'] = Variable<String>(likeUri);
+    }
+    if (!nullToAbsent || repostUri != null) {
+      map['repost_uri'] = Variable<String>(repostUri);
+    }
+    map['bookmarked'] = Variable<bool>(bookmarked);
+    map['thread_muted'] = Variable<bool>(threadMuted);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PostInteractionsCompanion toCompanion(bool nullToAbsent) {
+    return PostInteractionsCompanion(
+      postUri: Value(postUri),
+      likeUri: likeUri == null && nullToAbsent ? const Value.absent() : Value(likeUri),
+      repostUri: repostUri == null && nullToAbsent ? const Value.absent() : Value(repostUri),
+      bookmarked: Value(bookmarked),
+      threadMuted: Value(threadMuted),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PostInteraction.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PostInteraction(
+      postUri: serializer.fromJson<String>(json['postUri']),
+      likeUri: serializer.fromJson<String?>(json['likeUri']),
+      repostUri: serializer.fromJson<String?>(json['repostUri']),
+      bookmarked: serializer.fromJson<bool>(json['bookmarked']),
+      threadMuted: serializer.fromJson<bool>(json['threadMuted']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'postUri': serializer.toJson<String>(postUri),
+      'likeUri': serializer.toJson<String?>(likeUri),
+      'repostUri': serializer.toJson<String?>(repostUri),
+      'bookmarked': serializer.toJson<bool>(bookmarked),
+      'threadMuted': serializer.toJson<bool>(threadMuted),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PostInteraction copyWith({
+    String? postUri,
+    Value<String?> likeUri = const Value.absent(),
+    Value<String?> repostUri = const Value.absent(),
+    bool? bookmarked,
+    bool? threadMuted,
+    DateTime? updatedAt,
+  }) => PostInteraction(
+    postUri: postUri ?? this.postUri,
+    likeUri: likeUri.present ? likeUri.value : this.likeUri,
+    repostUri: repostUri.present ? repostUri.value : this.repostUri,
+    bookmarked: bookmarked ?? this.bookmarked,
+    threadMuted: threadMuted ?? this.threadMuted,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  PostInteraction copyWithCompanion(PostInteractionsCompanion data) {
+    return PostInteraction(
+      postUri: data.postUri.present ? data.postUri.value : this.postUri,
+      likeUri: data.likeUri.present ? data.likeUri.value : this.likeUri,
+      repostUri: data.repostUri.present ? data.repostUri.value : this.repostUri,
+      bookmarked: data.bookmarked.present ? data.bookmarked.value : this.bookmarked,
+      threadMuted: data.threadMuted.present ? data.threadMuted.value : this.threadMuted,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PostInteraction(')
+          ..write('postUri: $postUri, ')
+          ..write('likeUri: $likeUri, ')
+          ..write('repostUri: $repostUri, ')
+          ..write('bookmarked: $bookmarked, ')
+          ..write('threadMuted: $threadMuted, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(postUri, likeUri, repostUri, bookmarked, threadMuted, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PostInteraction &&
+          other.postUri == this.postUri &&
+          other.likeUri == this.likeUri &&
+          other.repostUri == this.repostUri &&
+          other.bookmarked == this.bookmarked &&
+          other.threadMuted == this.threadMuted &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
+  final Value<String> postUri;
+  final Value<String?> likeUri;
+  final Value<String?> repostUri;
+  final Value<bool> bookmarked;
+  final Value<bool> threadMuted;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PostInteractionsCompanion({
+    this.postUri = const Value.absent(),
+    this.likeUri = const Value.absent(),
+    this.repostUri = const Value.absent(),
+    this.bookmarked = const Value.absent(),
+    this.threadMuted = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PostInteractionsCompanion.insert({
+    required String postUri,
+    this.likeUri = const Value.absent(),
+    this.repostUri = const Value.absent(),
+    this.bookmarked = const Value.absent(),
+    this.threadMuted = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : postUri = Value(postUri),
+       updatedAt = Value(updatedAt);
+  static Insertable<PostInteraction> custom({
+    Expression<String>? postUri,
+    Expression<String>? likeUri,
+    Expression<String>? repostUri,
+    Expression<bool>? bookmarked,
+    Expression<bool>? threadMuted,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (postUri != null) 'post_uri': postUri,
+      if (likeUri != null) 'like_uri': likeUri,
+      if (repostUri != null) 'repost_uri': repostUri,
+      if (bookmarked != null) 'bookmarked': bookmarked,
+      if (threadMuted != null) 'thread_muted': threadMuted,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PostInteractionsCompanion copyWith({
+    Value<String>? postUri,
+    Value<String?>? likeUri,
+    Value<String?>? repostUri,
+    Value<bool>? bookmarked,
+    Value<bool>? threadMuted,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return PostInteractionsCompanion(
+      postUri: postUri ?? this.postUri,
+      likeUri: likeUri ?? this.likeUri,
+      repostUri: repostUri ?? this.repostUri,
+      bookmarked: bookmarked ?? this.bookmarked,
+      threadMuted: threadMuted ?? this.threadMuted,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (postUri.present) {
+      map['post_uri'] = Variable<String>(postUri.value);
+    }
+    if (likeUri.present) {
+      map['like_uri'] = Variable<String>(likeUri.value);
+    }
+    if (repostUri.present) {
+      map['repost_uri'] = Variable<String>(repostUri.value);
+    }
+    if (bookmarked.present) {
+      map['bookmarked'] = Variable<bool>(bookmarked.value);
+    }
+    if (threadMuted.present) {
+      map['thread_muted'] = Variable<bool>(threadMuted.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PostInteractionsCompanion(')
+          ..write('postUri: $postUri, ')
+          ..write('likeUri: $likeUri, ')
+          ..write('repostUri: $repostUri, ')
+          ..write('bookmarked: $bookmarked, ')
+          ..write('threadMuted: $threadMuted, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5908,6 +6692,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DraftsTable drafts = $DraftsTable(this);
   late final $DraftMediaTable draftMedia = $DraftMediaTable(this);
   late final $ProfileRelationshipsTable profileRelationships = $ProfileRelationshipsTable(this);
+  late final $PostInteractionsTable postInteractions = $PostInteractionsTable(this);
   late final Index feedContentSortIdx = Index(
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
@@ -5929,6 +6714,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this as AppDatabase,
   );
   late final DraftsDao draftsDao = DraftsDao(this as AppDatabase);
+  late final PostInteractionsDao postInteractionsDao = PostInteractionsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5948,6 +6734,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     drafts,
     draftMedia,
     profileRelationships,
+    postInteractions,
     feedContentSortIdx,
     searchCacheSortIdx,
   ];
@@ -6485,6 +7272,14 @@ typedef $$PostsTableCreateCompanionBuilder =
       Value<int> replyCount,
       Value<int> repostCount,
       Value<int> likeCount,
+      Value<int> quoteCount,
+      Value<int> bookmarkCount,
+      Value<String?> labels,
+      Value<String?> viewerLikeUri,
+      Value<String?> viewerRepostUri,
+      Value<bool> viewerBookmarked,
+      Value<bool> viewerThreadMuted,
+      Value<bool> viewerReplyDisabled,
       Value<int> rowid,
     });
 typedef $$PostsTableUpdateCompanionBuilder =
@@ -6498,6 +7293,14 @@ typedef $$PostsTableUpdateCompanionBuilder =
       Value<int> replyCount,
       Value<int> repostCount,
       Value<int> likeCount,
+      Value<int> quoteCount,
+      Value<int> bookmarkCount,
+      Value<String?> labels,
+      Value<String?> viewerLikeUri,
+      Value<String?> viewerRepostUri,
+      Value<bool> viewerBookmarked,
+      Value<bool> viewerThreadMuted,
+      Value<bool> viewerReplyDisabled,
       Value<int> rowid,
     });
 
@@ -6550,6 +7353,22 @@ final class $$PostsTableReferences extends BaseReferences<_$AppDatabase, $PostsT
     final cache = $_typedResult.readTableOrNull(_searchCacheItemsRefsTable($_db));
     return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$PostInteractionsTable, List<PostInteraction>>
+  _postInteractionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.postInteractions,
+    aliasName: $_aliasNameGenerator(db.posts.uri, db.postInteractions.postUri),
+  );
+
+  $$PostInteractionsTableProcessedTableManager get postInteractionsRefs {
+    final manager = $$PostInteractionsTableTableManager(
+      $_db,
+      $_db.postInteractions,
+    ).filter((f) => f.postUri.uri.sqlEquals($_itemColumn<String>('uri')!));
+
+    final cache = $_typedResult.readTableOrNull(_postInteractionsRefsTable($_db));
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$PostsTableFilterComposer extends Composer<_$AppDatabase, $PostsTable> {
@@ -6583,6 +7402,38 @@ class $$PostsTableFilterComposer extends Composer<_$AppDatabase, $PostsTable> {
 
   ColumnFilters<int> get likeCount =>
       $composableBuilder(column: $table.likeCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get quoteCount =>
+      $composableBuilder(column: $table.quoteCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get bookmarkCount =>
+      $composableBuilder(column: $table.bookmarkCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get labels =>
+      $composableBuilder(column: $table.labels, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get viewerLikeUri =>
+      $composableBuilder(column: $table.viewerLikeUri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get viewerRepostUri => $composableBuilder(
+    column: $table.viewerRepostUri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get viewerBookmarked => $composableBuilder(
+    column: $table.viewerBookmarked,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get viewerThreadMuted => $composableBuilder(
+    column: $table.viewerThreadMuted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get viewerReplyDisabled => $composableBuilder(
+    column: $table.viewerReplyDisabled,
+    builder: (column) => ColumnFilters(column),
+  );
 
   $$ProfilesTableFilterComposer get authorDid {
     final $$ProfilesTableFilterComposer composer = $composerBuilder(
@@ -6644,6 +7495,27 @@ class $$PostsTableFilterComposer extends Composer<_$AppDatabase, $PostsTable> {
     );
     return f(composer);
   }
+
+  Expression<bool> postInteractionsRefs(
+    Expression<bool> Function($$PostInteractionsTableFilterComposer f) f,
+  ) {
+    final $$PostInteractionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.uri,
+      referencedTable: $db.postInteractions,
+      getReferencedColumn: (t) => t.postUri,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$PostInteractionsTableFilterComposer(
+                $db: $db,
+                $table: $db.postInteractions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PostsTableOrderingComposer extends Composer<_$AppDatabase, $PostsTable> {
@@ -6677,6 +7549,42 @@ class $$PostsTableOrderingComposer extends Composer<_$AppDatabase, $PostsTable> 
 
   ColumnOrderings<int> get likeCount =>
       $composableBuilder(column: $table.likeCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get quoteCount =>
+      $composableBuilder(column: $table.quoteCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get bookmarkCount => $composableBuilder(
+    column: $table.bookmarkCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get labels =>
+      $composableBuilder(column: $table.labels, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get viewerLikeUri => $composableBuilder(
+    column: $table.viewerLikeUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get viewerRepostUri => $composableBuilder(
+    column: $table.viewerRepostUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get viewerBookmarked => $composableBuilder(
+    column: $table.viewerBookmarked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get viewerThreadMuted => $composableBuilder(
+    column: $table.viewerThreadMuted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get viewerReplyDisabled => $composableBuilder(
+    column: $table.viewerReplyDisabled,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   $$ProfilesTableOrderingComposer get authorDid {
     final $$ProfilesTableOrderingComposer composer = $composerBuilder(
@@ -6729,6 +7637,30 @@ class $$PostsTableAnnotationComposer extends Composer<_$AppDatabase, $PostsTable
 
   GeneratedColumn<int> get likeCount =>
       $composableBuilder(column: $table.likeCount, builder: (column) => column);
+
+  GeneratedColumn<int> get quoteCount =>
+      $composableBuilder(column: $table.quoteCount, builder: (column) => column);
+
+  GeneratedColumn<int> get bookmarkCount =>
+      $composableBuilder(column: $table.bookmarkCount, builder: (column) => column);
+
+  GeneratedColumn<String> get labels =>
+      $composableBuilder(column: $table.labels, builder: (column) => column);
+
+  GeneratedColumn<String> get viewerLikeUri =>
+      $composableBuilder(column: $table.viewerLikeUri, builder: (column) => column);
+
+  GeneratedColumn<String> get viewerRepostUri =>
+      $composableBuilder(column: $table.viewerRepostUri, builder: (column) => column);
+
+  GeneratedColumn<bool> get viewerBookmarked =>
+      $composableBuilder(column: $table.viewerBookmarked, builder: (column) => column);
+
+  GeneratedColumn<bool> get viewerThreadMuted =>
+      $composableBuilder(column: $table.viewerThreadMuted, builder: (column) => column);
+
+  GeneratedColumn<bool> get viewerReplyDisabled =>
+      $composableBuilder(column: $table.viewerReplyDisabled, builder: (column) => column);
 
   $$ProfilesTableAnnotationComposer get authorDid {
     final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
@@ -6790,6 +7722,27 @@ class $$PostsTableAnnotationComposer extends Composer<_$AppDatabase, $PostsTable
     );
     return f(composer);
   }
+
+  Expression<T> postInteractionsRefs<T extends Object>(
+    Expression<T> Function($$PostInteractionsTableAnnotationComposer a) f,
+  ) {
+    final $$PostInteractionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.uri,
+      referencedTable: $db.postInteractions,
+      getReferencedColumn: (t) => t.postUri,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$PostInteractionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.postInteractions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PostsTableTableManager
@@ -6809,6 +7762,7 @@ class $$PostsTableTableManager
             bool authorDid,
             bool feedContentItemsRefs,
             bool searchCacheItemsRefs,
+            bool postInteractionsRefs,
           })
         > {
   $$PostsTableTableManager(_$AppDatabase db, $PostsTable table)
@@ -6831,6 +7785,14 @@ class $$PostsTableTableManager
                 Value<int> replyCount = const Value.absent(),
                 Value<int> repostCount = const Value.absent(),
                 Value<int> likeCount = const Value.absent(),
+                Value<int> quoteCount = const Value.absent(),
+                Value<int> bookmarkCount = const Value.absent(),
+                Value<String?> labels = const Value.absent(),
+                Value<String?> viewerLikeUri = const Value.absent(),
+                Value<String?> viewerRepostUri = const Value.absent(),
+                Value<bool> viewerBookmarked = const Value.absent(),
+                Value<bool> viewerThreadMuted = const Value.absent(),
+                Value<bool> viewerReplyDisabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PostsCompanion(
                 uri: uri,
@@ -6842,6 +7804,14 @@ class $$PostsTableTableManager
                 replyCount: replyCount,
                 repostCount: repostCount,
                 likeCount: likeCount,
+                quoteCount: quoteCount,
+                bookmarkCount: bookmarkCount,
+                labels: labels,
+                viewerLikeUri: viewerLikeUri,
+                viewerRepostUri: viewerRepostUri,
+                viewerBookmarked: viewerBookmarked,
+                viewerThreadMuted: viewerThreadMuted,
+                viewerReplyDisabled: viewerReplyDisabled,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6855,6 +7825,14 @@ class $$PostsTableTableManager
                 Value<int> replyCount = const Value.absent(),
                 Value<int> repostCount = const Value.absent(),
                 Value<int> likeCount = const Value.absent(),
+                Value<int> quoteCount = const Value.absent(),
+                Value<int> bookmarkCount = const Value.absent(),
+                Value<String?> labels = const Value.absent(),
+                Value<String?> viewerLikeUri = const Value.absent(),
+                Value<String?> viewerRepostUri = const Value.absent(),
+                Value<bool> viewerBookmarked = const Value.absent(),
+                Value<bool> viewerThreadMuted = const Value.absent(),
+                Value<bool> viewerReplyDisabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PostsCompanion.insert(
                 uri: uri,
@@ -6866,17 +7844,31 @@ class $$PostsTableTableManager
                 replyCount: replyCount,
                 repostCount: repostCount,
                 likeCount: likeCount,
+                quoteCount: quoteCount,
+                bookmarkCount: bookmarkCount,
+                labels: labels,
+                viewerLikeUri: viewerLikeUri,
+                viewerRepostUri: viewerRepostUri,
+                viewerBookmarked: viewerBookmarked,
+                viewerThreadMuted: viewerThreadMuted,
+                viewerReplyDisabled: viewerReplyDisabled,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) =>
               p0.map((e) => (e.readTable(table), $$PostsTableReferences(db, table, e))).toList(),
           prefetchHooksCallback:
-              ({authorDid = false, feedContentItemsRefs = false, searchCacheItemsRefs = false}) {
+              ({
+                authorDid = false,
+                feedContentItemsRefs = false,
+                searchCacheItemsRefs = false,
+                postInteractionsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (feedContentItemsRefs) db.feedContentItems,
                     if (searchCacheItemsRefs) db.searchCacheItems,
+                    if (postInteractionsRefs) db.postInteractions,
                   ],
                   addJoins:
                       <
@@ -6931,6 +7923,16 @@ class $$PostsTableTableManager
                               referencedItems.where((e) => e.postUri == item.uri),
                           typedResults: items,
                         ),
+                      if (postInteractionsRefs)
+                        await $_getPrefetchedData<Post, $PostsTable, PostInteraction>(
+                          currentTable: table,
+                          referencedTable: $$PostsTableReferences._postInteractionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PostsTableReferences(db, table, p0).postInteractionsRefs,
+                          referencedItemsForCurrentItem: (item, referencedItems) =>
+                              referencedItems.where((e) => e.postUri == item.uri),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -6955,6 +7957,7 @@ typedef $$PostsTableProcessedTableManager =
         bool authorDid,
         bool feedContentItemsRefs,
         bool searchCacheItemsRefs,
+        bool postInteractionsRefs,
       })
     >;
 typedef $$FeedContentItemsTableCreateCompanionBuilder =
@@ -9809,6 +10812,304 @@ typedef $$ProfileRelationshipsTableProcessedTableManager =
       ProfileRelationship,
       PrefetchHooks Function({bool profileDid})
     >;
+typedef $$PostInteractionsTableCreateCompanionBuilder =
+    PostInteractionsCompanion Function({
+      required String postUri,
+      Value<String?> likeUri,
+      Value<String?> repostUri,
+      Value<bool> bookmarked,
+      Value<bool> threadMuted,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$PostInteractionsTableUpdateCompanionBuilder =
+    PostInteractionsCompanion Function({
+      Value<String> postUri,
+      Value<String?> likeUri,
+      Value<String?> repostUri,
+      Value<bool> bookmarked,
+      Value<bool> threadMuted,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$PostInteractionsTableReferences
+    extends BaseReferences<_$AppDatabase, $PostInteractionsTable, PostInteraction> {
+  $$PostInteractionsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $PostsTable _postUriTable(_$AppDatabase db) =>
+      db.posts.createAlias($_aliasNameGenerator(db.postInteractions.postUri, db.posts.uri));
+
+  $$PostsTableProcessedTableManager get postUri {
+    final $_column = $_itemColumn<String>('post_uri')!;
+
+    final manager = $$PostsTableTableManager(
+      $_db,
+      $_db.posts,
+    ).filter((f) => f.uri.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_postUriTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$PostInteractionsTableFilterComposer
+    extends Composer<_$AppDatabase, $PostInteractionsTable> {
+  $$PostInteractionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get likeUri =>
+      $composableBuilder(column: $table.likeUri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get repostUri =>
+      $composableBuilder(column: $table.repostUri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get bookmarked =>
+      $composableBuilder(column: $table.bookmarked, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get threadMuted =>
+      $composableBuilder(column: $table.threadMuted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  $$PostsTableFilterComposer get postUri {
+    final $$PostsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.postUri,
+      referencedTable: $db.posts,
+      getReferencedColumn: (t) => t.uri,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$PostsTableFilterComposer(
+                $db: $db,
+                $table: $db.posts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$PostInteractionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PostInteractionsTable> {
+  $$PostInteractionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get likeUri =>
+      $composableBuilder(column: $table.likeUri, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get repostUri =>
+      $composableBuilder(column: $table.repostUri, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get bookmarked =>
+      $composableBuilder(column: $table.bookmarked, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get threadMuted =>
+      $composableBuilder(column: $table.threadMuted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  $$PostsTableOrderingComposer get postUri {
+    final $$PostsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.postUri,
+      referencedTable: $db.posts,
+      getReferencedColumn: (t) => t.uri,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$PostsTableOrderingComposer(
+                $db: $db,
+                $table: $db.posts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$PostInteractionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PostInteractionsTable> {
+  $$PostInteractionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get likeUri =>
+      $composableBuilder(column: $table.likeUri, builder: (column) => column);
+
+  GeneratedColumn<String> get repostUri =>
+      $composableBuilder(column: $table.repostUri, builder: (column) => column);
+
+  GeneratedColumn<bool> get bookmarked =>
+      $composableBuilder(column: $table.bookmarked, builder: (column) => column);
+
+  GeneratedColumn<bool> get threadMuted =>
+      $composableBuilder(column: $table.threadMuted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$PostsTableAnnotationComposer get postUri {
+    final $$PostsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.postUri,
+      referencedTable: $db.posts,
+      getReferencedColumn: (t) => t.uri,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$PostsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.posts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$PostInteractionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PostInteractionsTable,
+          PostInteraction,
+          $$PostInteractionsTableFilterComposer,
+          $$PostInteractionsTableOrderingComposer,
+          $$PostInteractionsTableAnnotationComposer,
+          $$PostInteractionsTableCreateCompanionBuilder,
+          $$PostInteractionsTableUpdateCompanionBuilder,
+          (PostInteraction, $$PostInteractionsTableReferences),
+          PostInteraction,
+          PrefetchHooks Function({bool postUri})
+        > {
+  $$PostInteractionsTableTableManager(_$AppDatabase db, $PostInteractionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PostInteractionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PostInteractionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PostInteractionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> postUri = const Value.absent(),
+                Value<String?> likeUri = const Value.absent(),
+                Value<String?> repostUri = const Value.absent(),
+                Value<bool> bookmarked = const Value.absent(),
+                Value<bool> threadMuted = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PostInteractionsCompanion(
+                postUri: postUri,
+                likeUri: likeUri,
+                repostUri: repostUri,
+                bookmarked: bookmarked,
+                threadMuted: threadMuted,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String postUri,
+                Value<String?> likeUri = const Value.absent(),
+                Value<String?> repostUri = const Value.absent(),
+                Value<bool> bookmarked = const Value.absent(),
+                Value<bool> threadMuted = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => PostInteractionsCompanion.insert(
+                postUri: postUri,
+                likeUri: likeUri,
+                repostUri: repostUri,
+                bookmarked: bookmarked,
+                threadMuted: threadMuted,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), $$PostInteractionsTableReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: ({postUri = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (postUri) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.postUri,
+                                referencedTable: $$PostInteractionsTableReferences._postUriTable(
+                                  db,
+                                ),
+                                referencedColumn: $$PostInteractionsTableReferences
+                                    ._postUriTable(db)
+                                    .uri,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PostInteractionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PostInteractionsTable,
+      PostInteraction,
+      $$PostInteractionsTableFilterComposer,
+      $$PostInteractionsTableOrderingComposer,
+      $$PostInteractionsTableAnnotationComposer,
+      $$PostInteractionsTableCreateCompanionBuilder,
+      $$PostInteractionsTableUpdateCompanionBuilder,
+      (PostInteraction, $$PostInteractionsTableReferences),
+      PostInteraction,
+      PrefetchHooks Function({bool postUri})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9836,4 +11137,6 @@ class $AppDatabaseManager {
       $$DraftMediaTableTableManager(_db, _db.draftMedia);
   $$ProfileRelationshipsTableTableManager get profileRelationships =>
       $$ProfileRelationshipsTableTableManager(_db, _db.profileRelationships);
+  $$PostInteractionsTableTableManager get postInteractions =>
+      $$PostInteractionsTableTableManager(_db, _db.postInteractions);
 }
