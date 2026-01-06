@@ -45,7 +45,7 @@ Tasks:
       - [x] External link embeds (app.bsky.embed.external#view):
             - link preview cards with title, description, thumbnail
             - clickable to open external URL
-      - [ ] Record embeds (app.bsky.embed.record#view):
+      - [x] Record embeds (app.bsky.embed.record#view):
             - quoted posts as embedded cards
             - handle notFound/blocked states
             - support feed generators, lists, starter packs
@@ -98,7 +98,7 @@ Tests:
 - [ ] Verification badge display: verified accounts show badge
 - [ ] Viewer state accuracy: follow/block/mute buttons reflect state
 - [x] External link embed: preview card renders correctly
-- [ ] Quoted post embed: nested post displays properly
+- [x] Quoted post embed: nested post displays properly
 - [ ] Content label warning: labeled content shows blur/warning
 - [ ] Thread parent chain: parent posts render in order
 - [ ] Thread reply tree: replies nest correctly

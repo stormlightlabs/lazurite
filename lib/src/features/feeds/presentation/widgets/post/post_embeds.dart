@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'embeds/embed_external.dart';
 import 'embeds/embed_images.dart';
+import 'embeds/embed_record.dart';
 import 'embeds/embed_video.dart';
 
 class PostEmbeds extends StatelessWidget {
@@ -48,14 +49,31 @@ class PostEmbeds extends StatelessWidget {
       }
     }
 
-    if (type == 'app.bsky.embed.recordWithMedia#view') {
-      final media = embed['media'] as Map<String, dynamic>?;
-      if (media != null) {
-        return PostEmbeds(embed: media, authorDid: authorDid, record: record);
+    if (type == 'app.bsky.embed.record#view') {
+      final recordData = embed['record'] as Map<String, dynamic>?;
+      if (recordData != null) {
+        return EmbedRecord(record: recordData);
       }
     }
 
-    //TODO: other embeds (Record)
+    if (type == 'app.bsky.embed.recordWithMedia#view') {
+      final media = embed['media'] as Map<String, dynamic>?;
+      final recordData = embed['record'] as Map<String, dynamic>?;
+      final nestedRecord = recordData?['record'] as Map<String, dynamic>?;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (media != null) PostEmbeds(embed: media, authorDid: authorDid, record: record),
+          if (nestedRecord != null) ...[
+            const SizedBox(height: 8),
+            EmbedRecord(record: nestedRecord),
+          ],
+        ],
+      );
+    }
+
     return const SizedBox.shrink();
   }
 }
