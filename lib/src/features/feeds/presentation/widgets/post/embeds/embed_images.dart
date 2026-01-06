@@ -93,55 +93,84 @@ class _SingleImage extends StatelessWidget {
     }
   }
 
+  void _showAltTextDialog(BuildContext context, String altText) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Image Description'),
+        content: SingleChildScrollView(child: Text(altText)),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final thumb = image['thumb'] as String? ?? '';
     final fullsize = image['fullsize'] as String? ?? thumb;
     final alt = image['alt'] as String? ?? '';
 
-    return Stack(
-      children: [
-        AspectRatio(
-          aspectRatio: 16 / 9,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              image: DecorationImage(image: NetworkImage(thumb), fit: BoxFit.cover),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 8,
-          right: 8,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.5),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.download, color: Colors.white, size: 20),
-              onPressed: () => _downloadImage(context, fullsize),
-              tooltip: 'Download',
-            ),
-          ),
-        ),
-        if (alt.isNotEmpty)
-          Positioned(
-            bottom: 8,
-            left: 8,
+    final aspectRatioData = image['aspectRatio'] as Map<String, dynamic>?;
+    final width = (aspectRatioData?['width'] as num?)?.toDouble();
+    final height = (aspectRatioData?['height'] as num?)?.toDouble();
+    final aspectRatio = (width != null && height != null && height > 0) ? width / height : 16 / 9;
+
+    return Semantics(
+      label: alt.isNotEmpty ? alt : 'Image',
+      image: true,
+      child: Stack(
+        children: [
+          AspectRatio(
+            aspectRatio: aspectRatio,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Text(
-                'ALT',
-                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(image: NetworkImage(thumb), fit: BoxFit.cover),
               ),
             ),
           ),
-      ],
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.download, color: Colors.white, size: 20),
+                onPressed: () => _downloadImage(context, fullsize),
+                tooltip: 'Download',
+              ),
+            ),
+          ),
+          if (alt.isNotEmpty)
+            Positioned(
+              bottom: 8,
+              left: 8,
+              child: GestureDetector(
+                onTap: () => _showAltTextDialog(context, alt),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'ALT',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -135,6 +135,136 @@ void main() {
       expect(find.text('Nested quoted post'), findsOneWidget);
     });
 
+    testWidgets('handles recordWithMedia with video + record', (tester) async {
+      await mockNetworkImages(() async {
+        await tester.pumpWidget(
+          const ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: PostEmbeds(
+                  authorDid: 'did:example:123',
+                  embed: {
+                    r'$type': 'app.bsky.embed.recordWithMedia#view',
+                    'media': {
+                      r'$type': 'app.bsky.embed.video#view',
+                      'playlist': 'https://example.com/playlist.m3u8',
+                      'thumbnail': 'https://example.com/thumb.jpg',
+                    },
+                    'record': {
+                      r'$type': 'app.bsky.embed.record#view',
+                      'record': {
+                        r'$type': 'app.bsky.embed.record#viewRecord',
+                        'uri': 'at://did:plc:test/app.bsky.feed.post/789',
+                        'author': {'handle': 'video.bsky.social'},
+                        'value': {'text': 'Quote with video'},
+                      },
+                    },
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+      });
+
+      expect(find.byType(EmbedVideo), findsOneWidget);
+      expect(find.byType(EmbedRecord), findsOneWidget);
+      expect(find.text('Quote with video'), findsOneWidget);
+    });
+
+    testWidgets('handles recordWithMedia with external link + record', (tester) async {
+      await mockNetworkImages(() async {
+        await tester.pumpWidget(
+          const ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: PostEmbeds(
+                  authorDid: 'did:example:123',
+                  embed: {
+                    r'$type': 'app.bsky.embed.recordWithMedia#view',
+                    'media': {
+                      r'$type': 'app.bsky.embed.external#view',
+                      'external': {
+                        'uri': 'https://example.com/article',
+                        'title': 'Link Preview',
+                        'description': 'Article description',
+                      },
+                    },
+                    'record': {
+                      r'$type': 'app.bsky.embed.record#view',
+                      'record': {
+                        r'$type': 'app.bsky.embed.record#viewRecord',
+                        'uri': 'at://did:plc:test/app.bsky.feed.post/101',
+                        'author': {'handle': 'link.bsky.social'},
+                        'value': {'text': 'Quote with link'},
+                      },
+                    },
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+      });
+
+      expect(find.byType(EmbedExternal), findsOneWidget);
+      expect(find.text('Link Preview'), findsOneWidget);
+      expect(find.byType(EmbedRecord), findsOneWidget);
+      expect(find.text('Quote with link'), findsOneWidget);
+    });
+
+    testWidgets('handles recordWithMedia with missing media gracefully', (tester) async {
+      await mockNetworkImages(() async {
+        await tester.pumpWidget(
+          const ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: PostEmbeds(
+                  authorDid: 'did:example:123',
+                  embed: {
+                    r'$type': 'app.bsky.embed.recordWithMedia#view',
+                    'record': {
+                      r'$type': 'app.bsky.embed.record#view',
+                      'record': {
+                        r'$type': 'app.bsky.embed.record#viewRecord',
+                        'uri': 'at://did:plc:test/app.bsky.feed.post/102',
+                        'author': {'handle': 'nomedia.bsky.social'},
+                        'value': {'text': 'No media quote'},
+                      },
+                    },
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+      });
+
+      expect(find.byType(EmbedRecord), findsOneWidget);
+      expect(find.text('No media quote'), findsOneWidget);
+    });
+
+    testWidgets('handles recordWithMedia with missing record gracefully', (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PostEmbeds(
+                authorDid: 'did:example:123',
+                embed: {
+                  r'$type': 'app.bsky.embed.recordWithMedia#view',
+                  'media': {r'$type': 'app.bsky.embed.images#view', 'images': []},
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(EmbedImages), findsOneWidget);
+      expect(find.byType(EmbedRecord), findsNothing);
+    });
+
     testWidgets('returns empty for unknown types', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(

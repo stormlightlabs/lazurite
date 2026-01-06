@@ -33,12 +33,16 @@ class PostEmbeds extends StatelessWidget {
         }
       }
 
+      final aspectRatioData = embed['aspectRatio'] as Map<String, dynamic>?;
+
       return EmbedVideo(
         playlist: embed['playlist'] as String? ?? '',
         thumbnail: embed['thumbnail'] as String?,
         alt: embed['alt'] as String?,
         cid: cid,
         authorDid: authorDid,
+        aspectRatio: aspectRatioData,
+        durationSeconds: (embed['durationSeconds'] as num?)?.toInt(),
       );
     }
 
