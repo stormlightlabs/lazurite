@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_embeds.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
 import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/features/search/presentation/widgets/recent_search_chips.dart';
@@ -303,6 +304,10 @@ class _SearchResultCard extends StatelessWidget {
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
             ),
+            if (post.embed != null) ...[
+              const SizedBox(height: 8),
+              PostEmbeds(embed: post.embed!, authorDid: post.authorDid, record: post.record),
+            ],
             const SizedBox(height: 8),
             Row(
               children: [

@@ -65,7 +65,7 @@ Tasks:
             - similar to feed content caching strategy
             - 7-day retention policy
 - [ ] Search Feature Completion (MEDIUM):
-      - [ ] Add embed support to SearchPostItem:
+      - [x] Add embed support to SearchPostItem:
             - include embed field in model
             - render images/videos in search results
             - reuse post embed widgets from feeds

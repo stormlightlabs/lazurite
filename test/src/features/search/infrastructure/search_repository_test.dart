@@ -43,6 +43,23 @@ void main() {
         expect(result.posts.first.text, 'Flutter is awesome');
       });
 
+      test('parses embed data from search results', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockSearchResponse());
+
+        final result = await repository.searchPosts('flutter');
+
+        final postWithEmbed = result.posts.first;
+        expect(postWithEmbed.embed != null, isTrue);
+        expect(postWithEmbed.embed![r'$type'], 'app.bsky.embed.images#view');
+        expect(postWithEmbed.record != null, isTrue);
+        expect(postWithEmbed.record!['text'], 'Flutter is awesome');
+
+        final postWithoutEmbed = result.posts.last;
+        expect(postWithoutEmbed.embed == null, isTrue);
+      });
+
       test('passes cursor for pagination', () async {
         when(
           () => mockApi.call(any(), params: any(named: 'params')),
@@ -261,6 +278,16 @@ Map<String, dynamic> _mockSearchResponse({String? cursor = 'next_page'}) => {
         'avatar': 'https://example.com/avatar1.jpg',
       },
       'record': {'text': 'Flutter is awesome'},
+      'embed': {
+        r'$type': 'app.bsky.embed.images#view',
+        'images': [
+          {
+            'thumb': 'https://example.com/thumb1.jpg',
+            'fullsize': 'https://example.com/full1.jpg',
+            'alt': 'Test image',
+          },
+        ],
+      },
       'indexedAt': '2024-01-01T12:00:00.000Z',
       'replyCount': 10,
       'repostCount': 5,

@@ -188,6 +188,7 @@ class SearchPostItem {
   factory SearchPostItem.fromJson(Map<String, dynamic> json) {
     final author = json['author'] as Map<String, dynamic>;
     final record = json['record'] as Map<String, dynamic>;
+    final embed = json['embed'] as Map<String, dynamic>?;
 
     return SearchPostItem(
       uri: json['uri'] as String,
@@ -201,6 +202,8 @@ class SearchPostItem {
       replyCount: json['replyCount'] as int? ?? 0,
       repostCount: json['repostCount'] as int? ?? 0,
       likeCount: json['likeCount'] as int? ?? 0,
+      embed: embed,
+      record: record,
     );
   }
 
@@ -216,6 +219,8 @@ class SearchPostItem {
     this.replyCount = 0,
     this.repostCount = 0,
     this.likeCount = 0,
+    this.embed,
+    this.record,
   });
 
   final String uri;
@@ -229,4 +234,6 @@ class SearchPostItem {
   final int replyCount;
   final int repostCount;
   final int likeCount;
+  final Map<String, dynamic>? embed;
+  final Map<String, dynamic>? record;
 }
