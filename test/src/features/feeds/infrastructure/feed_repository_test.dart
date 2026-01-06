@@ -874,6 +874,170 @@ void main() {
       expect(feeds, hasLength(1));
       expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
     });
+
+    test('migrates pinned deprecated feed preserving pin status', () async {
+      when(() => mockApi.isAuthenticated).thenReturn(false);
+
+      const deprecatedUri =
+          'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
+
+      // Insert deprecated feed with pin status = true
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: deprecatedUri,
+          displayName: 'Old Discover',
+          creatorDid: 'did:plc:test',
+          sortOrder: 3,
+          isPinned: const Value(true),
+          lastSynced: DateTime.now(),
+        ),
+      );
+
+      final mockMetadata = {
+        'view': {
+          'displayName': 'What\'s Hot',
+          'description': 'Trending posts',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur'},
+          'likeCount': 1000,
+        },
+      };
+
+      when(
+        () => mockApi.call(
+          'app.bsky.feed.getFeedGenerator',
+          params: {'feed': FeedRepository.kDiscoverFeedUri},
+        ),
+      ).thenAnswer((_) async => mockMetadata);
+
+      await repository.seedDefaultFeeds();
+
+      final feeds = await db.savedFeedsDao.getAllFeeds();
+      expect(feeds, hasLength(1));
+      expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
+      expect(feeds[0].isPinned, true, reason: 'Pin status should be preserved');
+      expect(feeds[0].sortOrder, 3, reason: 'Sort order should be preserved');
+    });
+
+    test('migrates unpinned deprecated feed preserving unpinned status', () async {
+      when(() => mockApi.isAuthenticated).thenReturn(false);
+
+      const deprecatedUri =
+          'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
+
+      // Insert deprecated feed with pin status = false
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: deprecatedUri,
+          displayName: 'Old Discover',
+          creatorDid: 'did:plc:test',
+          sortOrder: 5,
+          isPinned: const Value(false),
+          lastSynced: DateTime.now(),
+        ),
+      );
+
+      final mockMetadata = {
+        'view': {
+          'displayName': 'What\'s Hot',
+          'description': 'Trending posts',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur'},
+          'likeCount': 1000,
+        },
+      };
+
+      when(
+        () => mockApi.call(
+          'app.bsky.feed.getFeedGenerator',
+          params: {'feed': FeedRepository.kDiscoverFeedUri},
+        ),
+      ).thenAnswer((_) async => mockMetadata);
+
+      await repository.seedDefaultFeeds();
+
+      final feeds = await db.savedFeedsDao.getAllFeeds();
+      expect(feeds, hasLength(1));
+      expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
+      expect(feeds[0].isPinned, false, reason: 'Unpinned status should be preserved');
+      expect(feeds[0].sortOrder, 5, reason: 'Sort order should be preserved');
+    });
+
+    test('does not apply migration properties if new feed already exists', () async {
+      when(() => mockApi.isAuthenticated).thenReturn(false);
+
+      const deprecatedUri =
+          'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
+
+      // Insert deprecated feed with sortOrder=5, pinned=true
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: deprecatedUri,
+          displayName: 'Old Discover',
+          creatorDid: 'did:plc:test',
+          sortOrder: 5,
+          isPinned: const Value(true),
+          lastSynced: DateTime.now(),
+        ),
+      );
+
+      // Insert new feed with different sortOrder and unpinned
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: FeedRepository.kDiscoverFeedUri,
+          displayName: 'Existing Discover',
+          creatorDid: 'did:plc:test',
+          sortOrder: 0,
+          isPinned: const Value(false),
+          lastSynced: DateTime.now(),
+        ),
+      );
+
+      await repository.seedDefaultFeeds();
+
+      // Deprecated feed should be deleted
+      final deprecatedFeed = await db.savedFeedsDao.getFeed(deprecatedUri);
+      expect(deprecatedFeed, isNull);
+
+      // New feed should keep its original properties
+      final feeds = await db.savedFeedsDao.getAllFeeds();
+      expect(feeds, hasLength(1));
+      expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
+      expect(feeds[0].displayName, 'Existing Discover');
+      expect(feeds[0].isPinned, false, reason: 'New feed properties should not change');
+      expect(feeds[0].sortOrder, 0, reason: 'New feed properties should not change');
+    });
+
+    test('handles missing deprecated feed gracefully', () async {
+      when(() => mockApi.isAuthenticated).thenReturn(false);
+
+      final mockMetadata = {
+        'view': {
+          'displayName': 'What\'s Hot',
+          'description': 'Trending posts',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur'},
+          'likeCount': 1000,
+        },
+      };
+
+      when(
+        () => mockApi.call(
+          'app.bsky.feed.getFeedGenerator',
+          params: {'feed': FeedRepository.kDiscoverFeedUri},
+        ),
+      ).thenAnswer((_) async => mockMetadata);
+
+      // No deprecated feed exists, just seed default
+      await repository.seedDefaultFeeds();
+
+      final feeds = await db.savedFeedsDao.getAllFeeds();
+      expect(feeds, hasLength(1));
+      expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
+      // With no migration, should use defaults
+      expect(feeds[0].isPinned, true);
+      expect(feeds[0].sortOrder, 0);
+    });
   });
 
   group('Feed URI Validation', () {

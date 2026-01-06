@@ -620,15 +620,54 @@ class FeedRepository {
   static const _kDeprecatedDiscoverUri =
       'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
 
+  /// Migrates users from the deprecated discover feed URI to the new one.
+  ///
+  /// Preserves pin status and sortOrder when migrating. Returns the migrated
+  /// feed's properties if migration occurred, null otherwise.
+  Future<_MigrationResult?> _migrateDeprecatedFeed() async {
+    final deprecatedFeed = await _dao.getFeed(_kDeprecatedDiscoverUri);
+    if (deprecatedFeed == null) {
+      return null;
+    }
+
+    // Check if the new feed already exists
+    final newFeedExists = await _dao.getFeed(kDiscoverFeedUri) != null;
+
+    // Capture the deprecated feed's properties before deletion
+    final result = _MigrationResult(
+      isPinned: deprecatedFeed.isPinned,
+      sortOrder: deprecatedFeed.sortOrder,
+    );
+
+    // Delete the deprecated feed
+    await _dao.deleteFeed(_kDeprecatedDiscoverUri);
+    _logger.info('Migrated deprecated discover feed', {
+      'isPinned': result.isPinned,
+      'sortOrder': result.sortOrder,
+      'newFeedExists': newFeedExists,
+    });
+
+    // If new feed already exists, don't apply migration properties
+    if (newFeedExists) {
+      return null;
+    }
+
+    return result;
+  }
+
   /// Seeds default feeds if they don't already exist.
   ///
   /// For unauthenticated users, ensures the Discover feed is available.
   /// For authenticated users, removes all seeded feeds since they should only see feeds
   /// from their preferences.
+  ///
+  /// If a deprecated feed URI exists, migrates the user to the new URI while
+  /// preserving their pin status and sortOrder.
   Future<void> seedDefaultFeeds() async {
     _logger.debug('Seeding default feeds');
 
-    await _dao.deleteFeed(_kDeprecatedDiscoverUri);
+    // Migrate deprecated feed first, preserving user preferences
+    final migration = await _migrateDeprecatedFeed();
 
     if (_api.isAuthenticated) {
       await _dao.deleteFeed(kHomeFeedUri);
@@ -645,8 +684,8 @@ class FeedRepository {
       uri: kDiscoverFeedUri,
       fallbackName: 'Discover',
       fallbackDescription: 'Explore trending posts',
-      sortOrder: 0,
-      shouldPin: true,
+      sortOrder: migration?.sortOrder ?? 0,
+      shouldPin: migration?.isPinned ?? true,
       now: now,
       feeds: defaultFeeds,
     );
@@ -717,4 +756,12 @@ class _FeedUpdate {
   final bool isPinned;
   final DateTime lastSynced;
   final bool clearLocalUpdatedAt;
+}
+
+/// Helper class for storing deprecated feed migration properties.
+class _MigrationResult {
+  const _MigrationResult({required this.isPinned, required this.sortOrder});
+
+  final bool isPinned;
+  final int sortOrder;
 }

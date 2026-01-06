@@ -29,7 +29,7 @@ Tasks:
       - [x] Fix optimistic update race condition:
             - wrap saveFeed/removeFeed in database transaction
             - ensure atomicity of local update + queue insert
-- [ ] Feed Sync Improvements (HIGH):
+- [x] Feed Sync Improvements (HIGH):
       - [x] Add sync queue retry limits:
             - add retryCount to PreferenceSyncQueue table
             - max 5 retries, then mark as permanently failed
@@ -37,7 +37,7 @@ Tasks:
       - [x] Add conflict resolution for multi-device sync:
             - timestamp-based merge strategy
             - preserve user intent (pins, order) on conflict
-      - [ ] Improve deprecated feed migration:
+      - [x] Improve deprecated feed migration:
             - migrate users from _kDeprecatedDiscoverUri
             - preserve pin status and sortOrder
 - [ ] Feed UX Enhancements (MEDIUM):
