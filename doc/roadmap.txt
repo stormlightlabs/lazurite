@@ -56,7 +56,7 @@ Tasks:
             - persist alt text for images
             - video duration and metadata
 - [ ] Content Labels & Moderation (MEDIUM):
-      - [ ] Label parsing and storage:
+      - [x] Label parsing and storage:
             - parse labels from posts and profiles
             - store label source (which labeler)
       - [ ] Label UI:

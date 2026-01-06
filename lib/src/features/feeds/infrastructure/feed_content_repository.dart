@@ -55,6 +55,7 @@ class FeedContentRepository {
       replyCount: Value(json['replyCount'] as int? ?? 0),
       repostCount: Value(json['repostCount'] as int? ?? 0),
       likeCount: Value(json['likeCount'] as int? ?? 0),
+      labels: Value(json['labels'] != null ? jsonEncode(json['labels']) : null),
     );
   }
 

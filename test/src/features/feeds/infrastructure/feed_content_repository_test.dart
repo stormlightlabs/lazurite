@@ -239,6 +239,102 @@ void main() {
       });
     });
 
+    group('label parsing', () {
+      test('parses and stores labels from post response', () async {
+        when(() => mockApi.isAuthenticated).thenReturn(true);
+        when(() => mockApi.call(any(), params: any(named: 'params'))).thenAnswer(
+          (_) async => {
+            'feed': [
+              {
+                'post': {
+                  'uri': 'at://did:example:123/app.bsky.feed.post/labeled',
+                  'cid': 'cid123',
+                  'author': {'did': 'did:example:123', 'handle': 'user.test'},
+                  'record': {'text': 'labeled post'},
+                  'indexedAt': '2024-01-01T00:00:00Z',
+                  'labels': [
+                    {
+                      'src': 'did:plc:labeler',
+                      'uri': 'at://did:example:123/app.bsky.feed.post/labeled',
+                      'val': 'spam',
+                      'cts': '2024-01-01T00:00:00.000Z',
+                    },
+                  ],
+                },
+              },
+            ],
+            'cursor': null,
+          },
+        );
+
+        List? capturedPosts;
+        when(
+          () => mockDao.insertFeedContentBatch(
+            feedKey: any(named: 'feedKey'),
+            newPosts: any(named: 'newPosts'),
+            newProfiles: any(named: 'newProfiles'),
+            newRelationships: any(named: 'newRelationships'),
+            newItems: any(named: 'newItems'),
+            newCursor: any(named: 'newCursor'),
+          ),
+        ).thenAnswer((invocation) async {
+          capturedPosts = invocation.namedArguments[#newPosts] as List;
+        });
+
+        await repository.fetchAndCacheFeed();
+
+        expect(capturedPosts, isNotNull);
+        expect(capturedPosts, hasLength(1));
+
+        final postCompanion = capturedPosts!.first;
+        final labelsValue = (postCompanion.labels as dynamic).value as String?;
+        expect(labelsValue, isNotNull);
+        expect(labelsValue, contains('"val":"spam"'));
+        expect(labelsValue, contains('"src":"did:plc:labeler"'));
+      });
+
+      test('stores null labels when post has no labels', () async {
+        when(() => mockApi.isAuthenticated).thenReturn(true);
+        when(() => mockApi.call(any(), params: any(named: 'params'))).thenAnswer(
+          (_) async => {
+            'feed': [
+              {
+                'post': {
+                  'uri': 'at://did:example:123/app.bsky.feed.post/nolabels',
+                  'cid': 'cid123',
+                  'author': {'did': 'did:example:123', 'handle': 'user.test'},
+                  'record': {'text': 'no labels'},
+                  'indexedAt': '2024-01-01T00:00:00Z',
+                },
+              },
+            ],
+            'cursor': null,
+          },
+        );
+
+        List? capturedPosts;
+        when(
+          () => mockDao.insertFeedContentBatch(
+            feedKey: any(named: 'feedKey'),
+            newPosts: any(named: 'newPosts'),
+            newProfiles: any(named: 'newProfiles'),
+            newRelationships: any(named: 'newRelationships'),
+            newItems: any(named: 'newItems'),
+            newCursor: any(named: 'newCursor'),
+          ),
+        ).thenAnswer((invocation) async {
+          capturedPosts = invocation.namedArguments[#newPosts] as List;
+        });
+
+        await repository.fetchAndCacheFeed();
+
+        expect(capturedPosts, isNotNull);
+        final postCompanion = capturedPosts!.first;
+        final labelsValue = (postCompanion.labels as dynamic).value as String?;
+        expect(labelsValue, isNull);
+      });
+    });
+
     group('sortKey uniqueness', () {
       test('generates unique sortKeys using microseconds and compound format', () async {
         when(() => mockApi.isAuthenticated).thenReturn(true);
