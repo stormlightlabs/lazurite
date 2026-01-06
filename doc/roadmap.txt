@@ -40,7 +40,7 @@ Tasks:
       - [x] Improve deprecated feed migration:
             - migrate users from _kDeprecatedDiscoverUri
             - preserve pin status and sortOrder
-- [ ] Feed UX Enhancements (MEDIUM):
+- [x] Feed UX Enhancements (MEDIUM):
       - [x] Feed reordering UI:
             - drag-to-reorder in FeedManagementScreen
             - update sortOrder on drag complete
@@ -49,14 +49,14 @@ Tasks:
             - preview feed content before saving
             - show 10-20 posts in modal/sheet
             - "Save Feed" button from preview
-      - [ ] Feed discovery improvements:
+      - [x] Feed discovery improvements:
             - search feeds by name/creator
             - category filters (if API supports)
 - [ ] Search Auth & Caching (HIGH):
       - [ ] Fix search auth requirement mismatch:
-            - handle unauthenticated users gracefully
-            - show "Sign in to search" state
-            - or make searchPosts use publicApi (verify with spec)
+            - We only want search for authenticated users
+                  - handle unauthenticated users gracefully (i.e. hide from UI
+                    for unauthenticated users)
       - [ ] Implement recent search saving:
             - call saveRecentSearch() after successful query
             - wire up in SearchNotifier._search()
@@ -92,6 +92,7 @@ Tasks:
       - [ ] Profile deduplication:
             - profiles table as single source of truth
             - reference by DID across all features
+      - [ ] Replace debugPrint calls with appropriately leveled logging calls
 
 Tests:
 - [ ] Feed key collision test: ensure '__internal:home' never collides
@@ -114,7 +115,122 @@ Deliverables:
 - [ ] Code quality: unified models, shared utilities
 
 ================================================================================
-I. Composer + local drafts + publish pipeline                           *bsky-I*
+I. Profile + Thread Completion                                          *bsky-I*
+================================================================================
+
+Context:
+- Current profile and post rendering handles basics but lacks critical features.
+- Missing verification badges, content labels, viewer interaction states.
+- Incomplete embed support (no external links, quoted posts).
+- Profile and post data models need expansion for full AT Protocol surface.
+
+Endpoints (already registered):
+- app.bsky.actor.getProfile (GET)
+- app.bsky.feed.getPostThread (GET)
+
+Tasks:
+- [ ] Profile Data Model & Display (HIGH):
+      - [ ] Add profileViewDetailed fields to database:
+            - pronouns, website, createdAt, verificationStatus
+            - labels (JSON array), pinnedPostUri
+      - [ ] Expand viewer relationship tracking:
+            - viewerMuted, viewerBlocked, viewerBlockedBy
+            - viewerFollowedBy, mutedByList, blockingByList
+      - [ ] Profile UI enhancements:
+            - verification badge display
+            - pronouns next to display name
+            - website as clickable link
+            - account creation date
+            - pinned post at top of profile feed
+            - full viewer state indicators (muted/blocked states)
+- [ ] Post/Thread Data Model (HIGH):
+      - [ ] Add viewer interaction state to Posts table:
+            - viewerLikeUri, viewerRepostUri
+            - viewerBookmarked, viewerThreadMuted
+            - quoteCount, bookmarkCount
+      - [ ] Add content labels support:
+            - labels column (JSON array)
+            - parse and store from API responses
+      - [ ] Create PostInteractions table:
+            - normalized viewer state tracking
+            - separate from post content
+            - efficient querying of user engagement
+- [ ] Embed Type Completion (MEDIUM):
+      - [ ] External link embeds (app.bsky.embed.external#view):
+            - link preview cards with title, description, thumbnail
+            - clickable to open external URL
+      - [ ] Record embeds (app.bsky.embed.record#view):
+            - quoted posts as embedded cards
+            - handle notFound/blocked states
+            - support feed generators, lists, starter packs
+      - [ ] Record with media embeds:
+            - combine media above quoted post
+            - support all media types
+      - [ ] Improve existing embeds:
+            - persist alt text for images
+            - video duration and metadata
+- [ ] Content Labels & Moderation (MEDIUM):
+      - [ ] Label parsing and storage:
+            - parse labels from posts and profiles
+            - store label source (which labeler)
+      - [ ] Label UI:
+            - content warnings for labeled posts
+            - blur/hide with click-to-reveal
+            - display label types (spam, scam, etc.)
+            - respect user moderation preferences
+      - [ ] System labels:
+            - handle ! prefixed behavioral labels
+            - appropriate UI for directives vs descriptors
+- [ ] Thread Structure (MEDIUM):
+      - [ ] Complete thread navigation:
+            - parent chain with configurable depth
+            - reply tree with nesting
+            - handle notFoundPost and blockedPost states
+      - [ ] Thread context:
+            - thread lines connecting related posts
+            - highlight focal post
+            - threadgate indicators for reply restrictions
+- [ ] UI Components (MEDIUM):
+      - [ ] New profile widgets:
+            - VerificationBadge (icon + tooltip)
+            - ProfileLabels (account label display)
+            - PinnedPostCard (highlighted pinned post)
+            - ProfileRelationshipIndicator (muted/blocked states)
+      - [ ] New post widgets:
+            - ExternalLinkCard (link preview renderer)
+            - QuotedPostCard (embedded quoted posts)
+            - ContentWarning (blur overlay for labels)
+            - ThreadgateIndicator (reply restriction display)
+            - VideoEmbed (video player with controls)
+      - [ ] Update existing post cards:
+            - reflect viewer interaction states in buttons
+            - author verification badges
+            - all embed types
+
+Tests:
+- [ ] Profile data persistence: verify all profileViewDetailed fields stored
+- [ ] Verification badge display: verified accounts show badge
+- [ ] Viewer state accuracy: follow/block/mute buttons reflect state
+- [ ] External link embed: preview card renders correctly
+- [ ] Quoted post embed: nested post displays properly
+- [ ] Content label warning: labeled content shows blur/warning
+- [ ] Thread parent chain: parent posts render in order
+- [ ] Thread reply tree: replies nest correctly
+- [ ] Viewer interaction state: like/repost state persists and displays
+- [ ] Pinned post: appears at top of profile feed
+
+Deliverables:
+- [ ] All profileViewDetailed fields stored and displayed
+- [ ] Verification badges on verified accounts
+- [ ] Full viewer relationship state (follow/block/mute) working
+- [ ] All embed types render (images, video, external, record, recordWithMedia)
+- [ ] Content labels show warnings and respect preferences
+- [ ] Thread structure preserves parent/reply relationships
+- [ ] Viewer interactions (likes, reposts, bookmarks) tracked and displayed
+- [ ] Pinned posts display prominently on profiles
+
+================================================================================
+J. Composer + local drafts + publish pipeline                           *bsky-J*
 ================================================================================
 
 Endpoints (write):
@@ -168,7 +284,7 @@ Deliverables:
 - [ ] Publish failures never destroy a draft (user trust)
 
 ================================================================================
-J. Notifications                                                        *bsky-J*
+K. Notifications                                                        *bsky-K*
 ================================================================================
 
 Endpoints:
@@ -200,7 +316,7 @@ Deliverables:
 - Badge integration
 
 ================================================================================
-K. DMs (read + write) + outbox + read-state                             *bsky-K*
+L. DMs (read + write) + outbox + read-state                             *bsky-L*
 ================================================================================
 
 DM fundamentals:
@@ -240,7 +356,7 @@ Deliverables:
 - DMs usable end-to-end: read, accept, send, read-state, robust retries.
 
 ================================================================================
-L. Hardening (mobile)                                                   *bsky-L*
+M. Hardening (mobile)                                                   *bsky-M*
 ================================================================================
 
 Tasks:
@@ -263,7 +379,7 @@ Deliverables:
 - Mobile app feels stable and responsive for daily use.
 
 ================================================================================
-M. Smart folders (local-only saved views)                               *bsky-M*
+N. Smart folders (local-only saved views)                               *bsky-N*
 ================================================================================
 
 Definition:
@@ -293,7 +409,7 @@ Deliverables:
 - "Saved views" that feel like feeds, entirely local and fast.
 
 ================================================================================
-N. Desktop pass                                                         *bsky-N*
+O. Desktop pass                                                         *bsky-O*
 ================================================================================
 
 Tasks:

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
@@ -210,5 +212,130 @@ class ActiveFeed extends _$ActiveFeed {
   void switchToDiscover() {
     _hasUserSwitched = true;
     state = FeedRepository.kDiscoverFeedUri;
+  }
+}
+
+enum FeedSortOption { popularity, name }
+
+class FeedSearchState {
+  const FeedSearchState({
+    this.query = '',
+    this.results = const [],
+    this.isLoading = false,
+    this.error,
+    this.localFilter = '',
+    this.sortBy = FeedSortOption.popularity,
+  });
+
+  final String query;
+  final List<Map<String, dynamic>> results;
+  final bool isLoading;
+  final String? error;
+  final String localFilter;
+  final FeedSortOption sortBy;
+
+  FeedSearchState copyWith({
+    String? query,
+    List<Map<String, dynamic>>? results,
+    bool? isLoading,
+    String? error,
+    String? localFilter,
+    FeedSortOption? sortBy,
+  }) {
+    return FeedSearchState(
+      query: query ?? this.query,
+      results: results ?? this.results,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+      localFilter: localFilter ?? this.localFilter,
+      sortBy: sortBy ?? this.sortBy,
+    );
+  }
+
+  List<Map<String, dynamic>> get filteredResults {
+    var filtered = List<Map<String, dynamic>>.from(results);
+
+    if (localFilter.isNotEmpty) {
+      final filter = localFilter.toLowerCase();
+      filtered = filtered.where((feed) {
+        final name = (feed['displayName'] as String? ?? '').toLowerCase();
+        final description = (feed['description'] as String? ?? '').toLowerCase();
+        return name.contains(filter) || description.contains(filter);
+      }).toList();
+    }
+
+    if (sortBy == FeedSortOption.name) {
+      filtered.sort((a, b) {
+        final nameA = (a['displayName'] as String? ?? '').toLowerCase();
+        final nameB = (b['displayName'] as String? ?? '').toLowerCase();
+        return nameA.compareTo(nameB);
+      });
+    } else {
+      filtered.sort((a, b) {
+        final likesA = (a['likeCount'] as int? ?? 0);
+        final likesB = (b['likeCount'] as int? ?? 0);
+        return likesB.compareTo(likesA);
+      });
+    }
+    return filtered;
+  }
+}
+
+@riverpod
+class FeedSearch extends _$FeedSearch {
+  Timer? _debounceTimer;
+
+  @override
+  FeedSearchState build() {
+    ref.onDispose(() {
+      _debounceTimer?.cancel();
+    });
+
+    Future.microtask(() => _search());
+    return const FeedSearchState();
+  }
+
+  void setQuery(String query) {
+    if (query == state.query) return;
+
+    _debounceTimer?.cancel();
+    state = state.copyWith(query: query, error: null);
+
+    if (query.isEmpty) {
+      _search();
+    } else {
+      _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+        state = state.copyWith(isLoading: true);
+        _search();
+      });
+    }
+  }
+
+  void setLocalFilter(String filter) {
+    state = state.copyWith(localFilter: filter);
+  }
+
+  void setSortOption(FeedSortOption option) {
+    state = state.copyWith(sortBy: option);
+  }
+
+  Future<void> _search() async {
+    try {
+      if (!state.isLoading) {
+        state = state.copyWith(isLoading: true, error: null);
+      }
+
+      final repository = ref.read(feedRepositoryProvider);
+      final results = await repository.discoverFeeds(
+        query: state.query.isEmpty ? null : state.query,
+      );
+      state = state.copyWith(results: results, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  void refresh() {
+    _search();
   }
 }

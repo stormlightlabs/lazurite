@@ -408,3 +408,54 @@ abstract class _$ActiveFeed extends $Notifier<String> {
     element.handleCreate(ref, build);
   }
 }
+
+@ProviderFor(FeedSearch)
+final feedSearchProvider = FeedSearchProvider._();
+
+final class FeedSearchProvider extends $NotifierProvider<FeedSearch, FeedSearchState> {
+  FeedSearchProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'feedSearchProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$feedSearchHash();
+
+  @$internal
+  @override
+  FeedSearch create() => FeedSearch();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FeedSearchState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FeedSearchState>(value),
+    );
+  }
+}
+
+String _$feedSearchHash() => r'0210fcdcb3337bc2d33ba918e280acdea5caf5d2';
+
+abstract class _$FeedSearch extends $Notifier<FeedSearchState> {
+  FeedSearchState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<FeedSearchState, FeedSearchState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<FeedSearchState, FeedSearchState>,
+              FeedSearchState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

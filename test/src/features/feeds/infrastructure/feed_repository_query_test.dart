@@ -69,6 +69,26 @@ void main() {
         () => mockApi.call('app.bsky.unspecced.getPopularFeedGenerators', params: {'limit': 10}),
       ).called(1);
     });
+
+    test('fetches search results when query is provided', () async {
+      final mockResponse = {'feeds': []};
+
+      when(
+        () => mockApi.call(
+          'app.bsky.unspecced.getPopularFeedGenerators',
+          params: {'limit': 50, 'query': 'test'},
+        ),
+      ).thenAnswer((_) async => mockResponse);
+
+      await repository.discoverFeeds(query: 'test');
+
+      verify(
+        () => mockApi.call(
+          'app.bsky.unspecced.getPopularFeedGenerators',
+          params: {'limit': 50, 'query': 'test'},
+        ),
+      ).called(1);
+    });
   });
 
   group('getFeedMetadata', () {
@@ -223,7 +243,6 @@ void main() {
     test('removes all seeded feeds for authenticated users', () async {
       when(() => mockApi.isAuthenticated).thenReturn(true);
 
-      // Insert seeded feeds to verify they get removed
       await db.savedFeedsDao.upsertFeeds([
         SavedFeedsCompanion.insert(
           uri: FeedRepository.kHomeFeedUri,
@@ -379,7 +398,6 @@ void main() {
       const deprecatedUri =
           'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
 
-      // Insert deprecated feed with pin status = true
       await db.savedFeedsDao.upsertFeed(
         SavedFeedsCompanion.insert(
           uri: deprecatedUri,
@@ -423,7 +441,6 @@ void main() {
       const deprecatedUri =
           'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
 
-      // Insert deprecated feed with pin status = false
       await db.savedFeedsDao.upsertFeed(
         SavedFeedsCompanion.insert(
           uri: deprecatedUri,
@@ -467,7 +484,6 @@ void main() {
       const deprecatedUri =
           'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/discover';
 
-      // Insert deprecated feed with sortOrder=5, pinned=true
       await db.savedFeedsDao.upsertFeed(
         SavedFeedsCompanion.insert(
           uri: deprecatedUri,
@@ -479,7 +495,6 @@ void main() {
         ),
       );
 
-      // Insert new feed with different sortOrder and unpinned
       await db.savedFeedsDao.upsertFeed(
         SavedFeedsCompanion.insert(
           uri: FeedRepository.kDiscoverFeedUri,
@@ -493,11 +508,9 @@ void main() {
 
       await repository.seedDefaultFeeds();
 
-      // Deprecated feed should be deleted
       final deprecatedFeed = await db.savedFeedsDao.getFeed(deprecatedUri);
       expect(deprecatedFeed, isNull);
 
-      // New feed should keep its original properties
       final feeds = await db.savedFeedsDao.getAllFeeds();
       expect(feeds, hasLength(1));
       expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
@@ -526,13 +539,11 @@ void main() {
         ),
       ).thenAnswer((_) async => mockMetadata);
 
-      // No deprecated feed exists, just seed default
       await repository.seedDefaultFeeds();
 
       final feeds = await db.savedFeedsDao.getAllFeeds();
       expect(feeds, hasLength(1));
       expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
-      // With no migration, should use defaults
       expect(feeds[0].isPinned, true);
       expect(feeds[0].sortOrder, 0);
     });

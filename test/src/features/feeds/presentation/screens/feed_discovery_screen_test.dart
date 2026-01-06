@@ -42,7 +42,10 @@ void main() {
     ];
 
     when(
-      () => mockRepository.discoverFeeds(limit: any(named: 'limit')),
+      () => mockRepository.discoverFeeds(
+        limit: any(named: 'limit'),
+        query: any(named: 'query'),
+      ),
     ).thenAnswer((_) async => kTrendingFeeds);
 
     when(() => mockRepository.saveFeed(any(), pin: any(named: 'pin'))).thenAnswer((_) async => {});
@@ -74,7 +77,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text('Trending 1'), findsOneWidget);
-    expect(find.text('@user1'), findsOneWidget);
+    expect(find.textContaining('@user1'), findsOneWidget);
     expect(find.text('Trending 2'), findsOneWidget);
 
     await tester.tap(find.text('Trending 1'));

@@ -592,21 +592,26 @@ class FeedRepository {
     await _api.call('app.bsky.actor.putPreferences', body: {'preferences': prefs});
   }
 
-  /// Discovers trending feed generators.
+  /// Discovers trending feed generators or searches for them if a query is provided.
   ///
   /// Calls app.bsky.unspecced.getPopularFeedGenerators to fetch popular feeds.
   /// Returns a list of feed generator metadata.
-  Future<List<Map<String, dynamic>>> discoverFeeds({int limit = 50}) async {
-    _logger.info('Discovering trending feeds', {'limit': limit});
+  Future<List<Map<String, dynamic>>> discoverFeeds({int limit = 50, String? query}) async {
+    _logger.info('Discovering feeds', {'limit': limit, 'query': query});
 
     try {
+      final params = <String, dynamic>{'limit': limit};
+      if (query != null && query.isNotEmpty) {
+        params['query'] = query;
+      }
+
       final response = await _api.call(
         'app.bsky.unspecced.getPopularFeedGenerators',
-        params: {'limit': limit},
+        params: params,
       );
 
       final feeds = response['feeds'] as List;
-      _logger.debug('Discovered ${feeds.length} trending feeds');
+      _logger.debug('Discovered ${feeds.length} feeds');
 
       return feeds.cast<Map<String, dynamic>>();
     } catch (e) {
