@@ -4,55 +4,230 @@
 J. Composer + local drafts + publish pipeline                           *bsky-J*
 ================================================================================
 
-Endpoints (write):
-- com.atproto.repo.uploadBlob (POST)
-- com.atproto.repo.createRecord (POST)
+Status: Foundation complete, screens and navigation needed
 
-Tasks:
-- Routes to add:
-      - [ ] /compose (modal over root navigator)
-      - [ ] /drafts (DraftListPage)
-      - [ ] /drafts/:draftId (DraftEditorPage)
-- Widgets to add:
-      - [x] ComposerTextField (supports mentions/links)
-      - [x] MediaPickerRow
-      - [x] DraftStatusChip
-      - [x] PublishButton (disabled + spinner)
-      - [x] UploadProgressTile (per media)
-- Screens to add:
-      - [ ] ComposePage (Draft-first)
-            - [ ] always editing a local draft (even "new post")
-            - [ ] attach media (images first)
-            - [ ] alt text editor (v1 quality bar)
-      - [ ] DraftListPage
-            - [ ] list drafts by updatedAt
-            - [ ] status badges: Draft / Failed / Publishing
-      - [ ] DraftEditorPage
-      - [ ] DraftRecoverySheet (if crash/interruption on publish)
-- [ ] Drafts stored locally (Drift):
-      - drafts table (text, reply/quote refs, facets, status)
-      - draft_media table (local path, mime, alt text, uploadCid/blob ref)
-- [ ] Draft UX:
-      - autosave and recover
-      - "publish later" is a first-class state
-- [ ] Publish pipeline:
-      (1) upload blobs (if any)
-      (2) build post record payload
-      (3) createRecord (collection app.bsky.feed.post)
-      (4) mark draft posted (or archive)
-- [ ] Failure handling:
-      - partial upload failures -> retry UI
-      - publish failure -> draft remains editable
+Endpoints (write):
+- com.atproto.repo.uploadBlob (POST) - registered
+- com.atproto.repo.createRecord (POST) - registered
+
+Foundation:
+- [x] Database schema (Drafts + DraftMedia tables)
+- [x] Data access layer (DraftsDao with full CRUD)
+- [x] Domain models (Draft, DraftMediaAttachment, statuses)
+- [x] Repository (DraftRepository with complete publish pipeline)
+- [x] Riverpod providers (draftRepository, drafts, draft)
+- [x] Core widgets:
+      - [x] ComposerTextField (multi-line with character counter)
+      - [x] MediaPickerRow (horizontal media list)
+      - [x] DraftStatusChip (status badges)
+      - [x] PublishButton (loading + disabled states)
+      - [x] UploadProgressTile (per media progress)
+      - [x] InlineComposerLauncher (inline trigger widget)
+- [x] Routes defined (/compose, /drafts, /drafts/:draftId)
+
+Phase 1 - Core Composer Screen (HIGH):
+- [ ] Create ComposerScreen widget:
+      - [ ] Modal route presentation (full screen)
+      - [ ] Accept draftId parameter (new vs edit)
+      - [ ] Create new draft on init (if draftId null)
+      - [ ] Load existing draft (if draftId provided)
+      - [ ] Integrate ComposerTextField widget
+      - [ ] Integrate MediaPickerRow widget
+      - [ ] Integrate PublishButton widget
+      - [ ] Character counter with grapheme clusters (characters package)
+      - [ ] Character limit enforcement (300 graphemes)
+      - [ ] Visual warning near limit (20 remaining)
+      - [ ] Error state over limit (disable publish)
+- [ ] Implement autosave:
+      - [ ] Debounce text changes (500ms)
+      - [ ] Update draft on text change
+      - [ ] Immediate save on media add/remove
+      - [ ] Save on app backgrounding
+      - [ ] Cancel pending saves on dispose
+- [ ] Image picker integration:
+      - [ ] Gallery selection (image_picker)
+      - [ ] Camera capture
+      - [ ] Max 4 images limit
+      - [ ] JPEG/PNG/WebP support
+      - [ ] Add media to draft
+      - [ ] Remove media from draft
+- [ ] Publish flow:
+      - [ ] Call DraftRepository.publishDraft()
+      - [ ] Show loading state
+      - [ ] Handle success (pop modal)
+      - [ ] Handle errors (show message, preserve draft)
+      - [ ] Update draft status during publish
+- [ ] Cancel flow:
+      - [ ] Save draft on cancel button
+      - [ ] Pop modal
+      - [ ] Confirm if unsaved changes (future)
+- [ ] Router configuration:
+      - [ ] Add /compose route to router
+      - [ ] Configure as modal route
+      - [ ] Accept query params (draftId, replyTo, quoteTo)
+
+Phase 2 - Draft List and Management (HIGH):
+- [ ] Create DraftListScreen widget:
+      - [ ] Load drafts from draftsProvider
+      - [ ] Sort by updatedAt (most recent first)
+      - [ ] Display draft preview cards:
+            - [ ] Text preview (first 2 lines)
+            - [ ] Media count badge if present
+            - [ ] Reply/quote indicator icons
+            - [ ] Status chip (draft/publishing/failed/posted)
+            - [ ] Timestamp (relative time)
+            - [ ] Error message for failed drafts
+      - [ ] Empty state when no drafts
+      - [ ] Pull to refresh (cleanup old posted)
+- [ ] Draft list interactions:
+      - [ ] Tap card to edit (navigate to /compose?draftId=xxx)
+      - [ ] Swipe to delete draft
+      - [ ] Retry button for failed drafts
+      - [ ] Delete confirmation dialog
+- [ ] Create DraftRecoverySheet:
+      - [ ] Detect crashed publishes on app start
+      - [ ] Show modal with failed draft
+      - [ ] Retry or delete options
+      - [ ] Auto-dismiss if successful
+- [ ] Router configuration:
+      - [ ] Add /drafts route to router
+      - [ ] Add /drafts/:draftId route
+      - [ ] Configure navigation to composer with params
+
+Phase 3 - Alt Text and Media Polish (MEDIUM):
+- [ ] Create AltTextEditorSheet modal:
+      - [ ] Text field for alt text
+      - [ ] Character limit (1000 chars)
+      - [ ] Save button
+      - [ ] Cancel button
+      - [ ] Accessibility guidance text
+- [ ] Integrate alt text editor:
+      - [ ] Tap media thumbnail to open sheet
+      - [ ] Pass media ID to sheet
+      - [ ] Update draft media alt text
+      - [ ] Display alt text indicator on thumbnails
+- [ ] Image compression:
+      - [ ] Compress before upload (flutter_image_compress)
+      - [ ] Target max dimension: 2000px
+      - [ ] Quality: 85% JPEG
+      - [ ] Background isolate compression
+      - [ ] Show compression progress
+- [ ] Upload progress improvements:
+      - [ ] Per-image upload progress
+      - [ ] Retry failed uploads
+      - [ ] Cancel in-progress uploads
+      - [ ] Update UploadProgressTile with retry
+
+Phase 4 - Reply and Quote Posts (MEDIUM):
+- [ ] Create ReplyContextCard widget:
+      - [ ] Display parent post author
+      - [ ] Display parent post text (truncated)
+      - [ ] Show thread indicator line
+      - [ ] Compact card layout
+- [ ] Create QuotePostCard widget:
+      - [ ] Display quoted post author
+      - [ ] Display quoted post text
+      - [ ] Show quoted post media (if any)
+      - [ ] Card border styling
+- [ ] Composer reply support:
+      - [ ] Accept replyTo parameter (post URI)
+      - [ ] Fetch parent post data
+      - [ ] Extract reply references (parent/root URI+CID)
+      - [ ] Create draft with reply refs
+      - [ ] Display ReplyContextCard
+      - [ ] Include reply in post record
+- [ ] Composer quote support:
+      - [ ] Accept quoteTo parameter (post URI)
+      - [ ] Fetch quoted post data
+      - [ ] Extract quote reference (URI+CID)
+      - [ ] Create draft with quote ref
+      - [ ] Display QuotePostCard
+      - [ ] Include quote embed in post record
+      - [ ] Support recordWithMedia (quote + images)
+
+Phase 5 - Rich Text (Mentions and Links) (MEDIUM):
+- [ ] Create FacetParser utility:
+      - [ ] Detect @mentions in text
+      - [ ] Resolve handles to DIDs (lookup via API)
+      - [ ] Detect URLs in text
+      - [ ] Calculate byte offsets (UTF-8 encoding)
+      - [ ] Build facet array
+      - [ ] Handle unicode and emoji correctly
+- [ ] Integrate facet parsing:
+      - [ ] Parse text on publish
+      - [ ] Store facets in facetsJson
+      - [ ] Include facets in post record
+      - [ ] Visual styling for mentions (future)
+      - [ ] Visual styling for links (future)
+- [ ] Link card preview (future):
+      - [ ] Detect URLs in text
+      - [ ] Fetch link metadata (unfurling)
+      - [ ] Display link card preview
+      - [ ] Include external embed
+
+Phase 6 - Global FAB and Polish (HIGH):
+- [ ] Create global FAB widget:
+      - [ ] Extended FAB with "Post" label
+      - [ ] Pen/edit icon
+      - [ ] Primary color styling
+      - [ ] Elevation shadow
+- [ ] Integrate FAB in app scaffold:
+      - [ ] Show on: Home, Feeds, Search, Profile
+      - [ ] Hide on: Composer, Login, Drafts, Settings
+      - [ ] Fixed bottom-right position
+      - [ ] Smooth show/hide animation
+      - [ ] Tap navigates to /compose
+      - [ ] Create new draft automatically
+- [ ] Keyboard shortcuts:
+      - [ ] Ctrl/Cmd+N to open composer
+      - [ ] Esc to cancel composer
+      - [ ] Ctrl/Cmd+Enter to publish
+- [ ] Performance optimization:
+      - [ ] Ensure text input <16ms render
+      - [ ] Optimize autosave debouncing
+      - [ ] Async database writes
+      - [ ] Image thumbnail caching
+      - [ ] Smooth modal transitions
+- [ ] Analytics events:
+      - [ ] Composer opened
+      - [ ] Draft saved
+      - [ ] Post published
+      - [ ] Media attached
+      - [ ] Publish failed
 
 Tests:
-- [ ] Draft persistence tests (save, load, migrate).
-- [ ] Publish pipeline unit tests (uploads then createRecord).
-- [ ] "airplane mode" test: drafts still editable and safe.
+- [ ] Unit tests:
+      - [ ] Draft creation and updates
+      - [ ] Media attachment operations
+      - [ ] Publish pipeline (mock API)
+      - [ ] Post record building
+      - [ ] Error handling and retries
+      - [ ] Facet parsing and byte offsets
+      - [ ] Character counting (grapheme clusters)
+- [ ] Widget tests:
+      - [ ] ComposerScreen interactions
+      - [ ] DraftListScreen rendering
+      - [ ] AltTextEditorSheet input
+      - [ ] ReplyContextCard display
+      - [ ] QuotePostCard display
+      - [ ] Character counter states
+      - [ ] Maintain existing widget tests
 
 Deliverables:
-- [ ] Offline drafts + reliable posting with media upload support.
-- [ ] Airplane mode: drafts still editable
-- [ ] Publish failures never destroy a draft (user trust)
+- [ ] Global FAB visible on main screens
+- [ ] Composer screen with text input and media
+- [ ] Character limit enforcement (300 graphemes)
+- [ ] Image attachments (up to 4) with alt text
+- [ ] Draft autosave and persistence
+- [ ] Draft list with status indicators
+- [ ] Retry failed publishes
+- [ ] Reply posts with parent context
+- [ ] Quote posts with embed preview
+- [ ] Rich text (mentions and links)
+- [ ] Offline drafts remain editable
+- [ ] Publish failures preserve drafts
+- [ ] Test coverage >95%
+- [ ] Smooth performance (<16ms text input)
 
 ================================================================================
 K. Settings & Preferences                                               *bsky-K*
