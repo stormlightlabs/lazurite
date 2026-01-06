@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'embeds/embed_external.dart';
 import 'embeds/embed_images.dart';
 import 'embeds/embed_video.dart';
 
@@ -40,6 +41,13 @@ class PostEmbeds extends StatelessWidget {
       );
     }
 
+    if (type == 'app.bsky.embed.external#view') {
+      final external = embed['external'] as Map<String, dynamic>?;
+      if (external != null) {
+        return EmbedExternal(external: external);
+      }
+    }
+
     if (type == 'app.bsky.embed.recordWithMedia#view') {
       final media = embed['media'] as Map<String, dynamic>?;
       if (media != null) {
@@ -47,7 +55,7 @@ class PostEmbeds extends StatelessWidget {
       }
     }
 
-    //TODO: other embeds (External, Record)
+    //TODO: other embeds (Record)
     return const SizedBox.shrink();
   }
 }

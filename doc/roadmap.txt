@@ -42,7 +42,7 @@ Tasks:
             - separate from post content
             - efficient querying of user engagement
 - [ ] Embed Type Completion (MEDIUM):
-      - [ ] External link embeds (app.bsky.embed.external#view):
+      - [x] External link embeds (app.bsky.embed.external#view):
             - link preview cards with title, description, thumbnail
             - clickable to open external URL
       - [ ] Record embeds (app.bsky.embed.record#view):
@@ -97,7 +97,7 @@ Tests:
 - [ ] Profile data persistence: verify all profileViewDetailed fields stored
 - [ ] Verification badge display: verified accounts show badge
 - [ ] Viewer state accuracy: follow/block/mute buttons reflect state
-- [ ] External link embed: preview card renders correctly
+- [x] External link embed: preview card renders correctly
 - [ ] Quoted post embed: nested post displays properly
 - [ ] Content label warning: labeled content shows blur/warning
 - [ ] Thread parent chain: parent posts render in order
