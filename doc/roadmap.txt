@@ -76,40 +76,40 @@ Tasks:
             - thread lines connecting related posts
             - highlight focal post
             - threadgate indicators for reply restrictions
-- [ ] UI Components (MEDIUM):
-      - [ ] New profile widgets:
+- [x] UI Components (MEDIUM):
+      - [x] New profile widgets:
             - VerificationBadge (icon + tooltip)
             - ProfileLabels (account label display)
             - PinnedPostCard (highlighted pinned post)
             - ProfileRelationshipIndicator (muted/blocked states)
-      - [ ] New post widgets:
+      - [x] New post widgets:
             - ExternalLinkCard (link preview renderer)
             - QuotedPostCard (embedded quoted posts)
             - ContentWarning (blur overlay for labels)
             - ThreadgateIndicator (reply restriction display)
             - VideoEmbed (video player with controls)
-      - [ ] Update existing post cards:
+      - [x] Update existing post cards:
             - reflect viewer interaction states in buttons
             - author verification badges
             - all embed types
 
 Tests:
-- [ ] Profile data persistence: verify all profileViewDetailed fields stored
-- [ ] Verification badge display: verified accounts show badge
-- [ ] Viewer state accuracy: follow/block/mute buttons reflect state
+- [x] Profile data persistence: verify all profileViewDetailed fields stored
+- [x] Verification badge display: verified accounts show badge
+- [x] Viewer state accuracy: follow/block/mute buttons reflect state
 - [x] External link embed: preview card renders correctly
 - [x] Quoted post embed: nested post displays properly
-- [ ] Content label warning: labeled content shows blur/warning
+- [x] Content label warning: labeled content shows blur/warning
 - [x] Thread parent chain: parent posts render in order
 - [x] Thread reply tree: replies nest correctly
 - [x] Viewer interaction state: like/repost state persists and displays
-- [ ] Pinned post: appears at top of profile feed
+- [x] Pinned post: appears at top of profile feed
 
 Deliverables:
-- [ ] All profileViewDetailed fields stored and displayed
-- [ ] Verification badges on verified accounts
-- [ ] Full viewer relationship state (follow/block/mute) working
-- [ ] All embed types render (images, video, external, record, recordWithMedia)
+- [x] All profileViewDetailed fields stored and displayed
+- [x] Verification badges on verified accounts
+- [x] Full viewer relationship state (follow/block/mute) working
+- [x] All embed types render (images, video, external, record, recordWithMedia)
 - [ ] Content labels show warnings and respect preferences
 - [x] Thread structure preserves parent/reply relationships
 - [ ] Viewer interactions (likes, reposts, bookmarks) tracked and displayed

@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:lazurite/src/app/theme.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
+import 'package:lazurite/src/features/profile/presentation/widgets/verification_badge.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 
 class PostHeader extends StatelessWidget {
-  const PostHeader({required this.author, required this.indexedAt, this.onAvatarTap, super.key});
+  const PostHeader({
+    required this.author,
+    required this.indexedAt,
+    this.onAvatarTap,
+    this.verificationStatus,
+    super.key,
+  });
 
   final Profile author;
   final DateTime? indexedAt;
   final VoidCallback? onAvatarTap;
+
+  /// Optional verification status to display badge next to author name.
+  final String? verificationStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +39,10 @@ class PostHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (verificationStatus != null) ...[
+                const SizedBox(width: 4),
+                VerificationBadge(verificationStatus: verificationStatus, size: 14),
+              ],
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
