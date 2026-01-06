@@ -86,4 +86,54 @@ void main() {
 
     verify(() => mockRepository.removeFeed('at://did:1/feed/saved2')).called(1);
   });
+
+  testWidgets('FeedManagementScreen renders drag handles for reordering', (tester) async {
+    final mockRepository = MockFeedRepository();
+    final mockDatabase = MockAppDatabase();
+
+    final kFeeds = [
+      SavedFeedData(
+        uri: 'at://did:1/feed/saved1',
+        displayName: 'Feed 1',
+        creatorDid: 'did:1',
+        likeCount: 0,
+        sortOrder: 0,
+        isPinned: false,
+        lastSynced: DateTime.now(),
+      ),
+      SavedFeedData(
+        uri: 'at://did:1/feed/saved2',
+        displayName: 'Feed 2',
+        creatorDid: 'did:1',
+        likeCount: 0,
+        sortOrder: 1,
+        isPinned: false,
+        lastSynced: DateTime.now(),
+      ),
+    ];
+
+    when(() => mockRepository.saveFeed(any(), pin: any(named: 'pin'))).thenAnswer((_) async => {});
+    when(() => mockRepository.removeFeed(any())).thenAnswer((_) async => {});
+    when(() => mockRepository.reorderFeeds(any())).thenAnswer((_) async => {});
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          allFeedsProvider.overrideWith(() => MockAllFeedsNotifier(kFeeds)),
+          feedRepositoryProvider.overrideWithValue(mockRepository),
+          appDatabaseProvider.overrideWithValue(mockDatabase),
+          feedSyncControllerProvider.overrideWith((ref) {}),
+          feedContentCleanupControllerProvider.overrideWith((ref) {}),
+          hasPendingSyncProvider.overrideWith((ref) => Stream.value(false)),
+        ],
+        child: const MaterialApp(home: FeedManagementScreen()),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byIcon(Icons.drag_handle), findsNWidgets(2));
+    expect(find.byType(ListTile), findsNWidgets(2));
+  });
 }

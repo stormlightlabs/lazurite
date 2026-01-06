@@ -82,11 +82,11 @@ class SavedFeedsDao extends DatabaseAccessor<AppDatabase> with _$SavedFeedsDaoMi
     return (select(savedFeeds)..where((t) => t.lastSynced.isSmallerThanValue(threshold))).get();
   }
 
-  /// Updates the sortOrder for a feed.
+  /// Updates the sortOrder for a feed and marks it as locally modified.
   Future<int> updateSortOrder(String uri, int sortOrder) {
-    return (update(
-      savedFeeds,
-    )..where((t) => t.uri.equals(uri))).write(SavedFeedsCompanion(sortOrder: Value(sortOrder)));
+    return (update(savedFeeds)..where((t) => t.uri.equals(uri))).write(
+      SavedFeedsCompanion(sortOrder: Value(sortOrder), localUpdatedAt: Value(DateTime.now())),
+    );
   }
 
   /// Updates the isPinned status for a feed.

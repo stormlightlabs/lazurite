@@ -131,6 +131,15 @@ class FeedMutationNotifier extends _$FeedMutationNotifier {
       await repository.removeFeed(feedUri);
     });
   }
+
+  /// Reorders feeds according to the provided URI list.
+  Future<void> reorder(List<String> orderedUris) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final repository = ref.read(feedRepositoryProvider);
+      await repository.reorderFeeds(orderedUris);
+    });
+  }
 }
 
 /// Notifier for discovering trending feeds.

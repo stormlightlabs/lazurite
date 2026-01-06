@@ -41,7 +41,7 @@ Tasks:
             - migrate users from _kDeprecatedDiscoverUri
             - preserve pin status and sortOrder
 - [ ] Feed UX Enhancements (MEDIUM):
-      - [ ] Feed reordering UI:
+      - [x] Feed reordering UI:
             - drag-to-reorder in FeedManagementScreen
             - update sortOrder on drag complete
             - sync to remote preferences

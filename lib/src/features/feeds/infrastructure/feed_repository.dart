@@ -450,6 +450,99 @@ class FeedRepository {
     }
   }
 
+  /// Reorders feeds according to the provided URI list.
+  ///
+  /// Updates local sortOrder for each feed and syncs to remote preferences.
+  /// Uses a fail-safe transaction pattern similar to saveFeed/removeFeed.
+  Future<void> reorderFeeds(List<String> orderedUris) async {
+    if (!_api.isAuthenticated) {
+      throw Exception('Cannot reorder feeds: user not authenticated');
+    }
+
+    _logger.info('Reordering feeds', {'count': orderedUris.length});
+
+    int? queueId;
+    try {
+      queueId = await _dao.db.transaction(() async {
+        for (var i = 0; i < orderedUris.length; i++) {
+          await _dao.updateSortOrder(orderedUris[i], i);
+        }
+
+        return await _syncQueueDao.enqueue(
+          PreferenceSyncQueueCompanion.insert(
+            type: 'reorder',
+            feedUri: orderedUris.join(','),
+            createdAt: DateTime.now(),
+          ),
+        );
+      });
+    } catch (e) {
+      _logger.error('Failed to perform atomic reorder update + queue', {'error': e});
+      rethrow;
+    }
+
+    try {
+      await _executeRemoteReorderFeeds(orderedUris);
+      _logger.info('Feeds reordered on remote successfully');
+      if (queueId != null) {
+        await _syncQueueDao.deleteItem(queueId);
+      }
+    } catch (e) {
+      _logger.warning('Network failed during reorderFeeds, operation queued for retry', {
+        'error': e,
+        'queueId': queueId,
+      });
+    }
+  }
+
+  Future<void> _executeRemoteReorderFeeds(List<String> orderedUris) async {
+    final currentPrefsResponse = await _api.call('app.bsky.actor.getPreferences');
+    final prefs = List<Map<String, dynamic>>.from(
+      (currentPrefsResponse['preferences'] as List).map(
+        (p) => Map<String, dynamic>.from(p as Map),
+      ),
+    );
+
+    var savedFeedsPref = prefs.cast<Map<String, dynamic>>().firstWhere(
+      (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref',
+      orElse: () => <String, dynamic>{},
+    );
+
+    if (savedFeedsPref.isEmpty) {
+      return;
+    }
+
+    savedFeedsPref = Map<String, dynamic>.from(savedFeedsPref);
+    final index = prefs.indexWhere((p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref');
+    prefs[index] = savedFeedsPref;
+
+    final currentSaved = List<String>.from(savedFeedsPref['saved'] ?? []);
+    final currentPinned = List<String>.from(savedFeedsPref['pinned'] ?? []);
+
+    final reorderedSaved = <String>[];
+    final reorderedPinned = <String>[];
+
+    for (final uri in orderedUris) {
+      if (currentSaved.contains(uri)) {
+        reorderedSaved.add(uri);
+        if (currentPinned.contains(uri)) {
+          reorderedPinned.add(uri);
+        }
+      }
+    }
+
+    for (final uri in currentSaved) {
+      if (!reorderedSaved.contains(uri)) {
+        reorderedSaved.add(uri);
+      }
+    }
+
+    savedFeedsPref['saved'] = reorderedSaved;
+    savedFeedsPref['pinned'] = reorderedPinned;
+
+    await _api.call('app.bsky.actor.putPreferences', body: {'preferences': prefs});
+  }
+
   /// Discovers trending feed generators.
   ///
   /// Calls app.bsky.unspecced.getPopularFeedGenerators to fetch popular feeds.
@@ -557,6 +650,9 @@ class FeedRepository {
           await _executeRemoteSaveFeed(item.feedUri, shouldPin);
         } else if (item.type == 'remove') {
           await _executeRemoteRemoveFeed(item.feedUri);
+        } else if (item.type == 'reorder') {
+          final orderedUris = item.feedUri.split(',');
+          await _executeRemoteReorderFeeds(orderedUris);
         }
 
         await _syncQueueDao.deleteItem(item.id);

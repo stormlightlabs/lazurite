@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -56,12 +58,29 @@ class FeedManagementScreen extends ConsumerWidget {
             );
           }
 
-          return ListView.separated(
+          return ReorderableListView.builder(
             itemCount: feeds.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
+            onReorder: (oldIndex, newIndex) {
+              if (newIndex > oldIndex) {
+                newIndex -= 1;
+              }
+              final reorderedUris = feeds.map((f) => f.uri).toList();
+              final item = reorderedUris.removeAt(oldIndex);
+              reorderedUris.insert(newIndex, item);
+              ref.read(feedMutationProvider.notifier).reorder(reorderedUris);
+            },
+            proxyDecorator: (child, index, animation) => AnimatedBuilder(
+              animation: animation,
+              builder: (context, child) {
+                final elevation = lerpDouble(0, 8, animation.value)!;
+                return Material(elevation: elevation, shadowColor: Colors.black26, child: child);
+              },
+              child: child,
+            ),
             itemBuilder: (context, index) {
               final feed = feeds[index];
               return ListTile(
+                key: ValueKey(feed.uri),
                 leading: CircleAvatar(
                   backgroundImage: feed.avatar != null ? NetworkImage(feed.avatar!) : null,
                   child: feed.avatar == null ? const Icon(Icons.rss_feed) : null,
@@ -82,6 +101,10 @@ class FeedManagementScreen extends ConsumerWidget {
                       onPressed: () =>
                           ref.read(feedMutationProvider.notifier).removeFeed(feed.uri),
                     ),
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: const Icon(Icons.drag_handle),
+                    ),
                   ],
                 ),
               );
@@ -92,9 +115,7 @@ class FeedManagementScreen extends ConsumerWidget {
         error: (err, stack) => ErrorView(
           title: 'Failed to load feeds',
           message: err.toString(),
-          onRetry: () {
-            ref.invalidate(allFeedsProvider);
-          },
+          onRetry: () => ref.invalidate(allFeedsProvider),
         ),
       ),
     );
