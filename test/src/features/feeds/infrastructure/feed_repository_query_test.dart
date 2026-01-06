@@ -98,10 +98,12 @@ void main() {
       final mockResponse = {
         'view': {
           'uri': feedUri,
+          'cid': 'bafytest123',
+          'did': 'did:web:feedgen.test',
           'displayName': 'Test Feed',
           'description': 'A test feed',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:abc'},
+          'creator': {'did': 'did:plc:abc', 'handle': 'creator.test'},
           'likeCount': 100,
         },
       };
@@ -112,8 +114,8 @@ void main() {
 
       final metadata = await repository.getFeedMetadata(feedUri);
 
-      expect(metadata['displayName'], 'Test Feed');
-      expect(metadata['likeCount'], 100);
+      expect(metadata.displayName, 'Test Feed');
+      expect(metadata.likeCount, 100);
     });
   });
 
@@ -134,10 +136,13 @@ void main() {
 
       final updatedMetadata = {
         'view': {
+          'uri': feedUri,
+          'cid': 'bafyupdated',
+          'did': 'did:web:feedgen.test',
           'displayName': 'Updated Name',
           'description': 'Updated description',
           'avatar': 'new-avatar.jpg',
-          'creator': {'did': 'did:plc:abc'},
+          'creator': {'did': 'did:plc:abc', 'handle': 'creator.test'},
           'likeCount': 200,
         },
       };
@@ -281,10 +286,13 @@ void main() {
 
       final mockMetadata = {
         'view': {
+          'uri': FeedRepository.kDiscoverFeedUri,
+          'cid': 'bafydiscover',
+          'did': 'did:web:feedgen.bsky.app',
           'displayName': 'What\'s Hot',
           'description': 'Trending posts',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur'},
+          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur', 'handle': 'bsky.app'},
           'likeCount': 1000,
         },
       };
@@ -367,10 +375,13 @@ void main() {
 
       final mockMetadata = {
         'view': {
+          'uri': FeedRepository.kDiscoverFeedUri,
+          'cid': 'bafydiscover',
+          'did': 'did:web:feedgen.bsky.app',
           'displayName': 'What\'s Hot',
           'description': 'Trending posts',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur'},
+          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur', 'handle': 'bsky.app'},
           'likeCount': 1000,
         },
       };
@@ -411,10 +422,13 @@ void main() {
 
       final mockMetadata = {
         'view': {
+          'uri': FeedRepository.kDiscoverFeedUri,
+          'cid': 'bafydiscover',
+          'did': 'did:web:feedgen.bsky.app',
           'displayName': 'What\'s Hot',
           'description': 'Trending posts',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur'},
+          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur', 'handle': 'bsky.app'},
           'likeCount': 1000,
         },
       };
@@ -454,10 +468,13 @@ void main() {
 
       final mockMetadata = {
         'view': {
+          'uri': FeedRepository.kDiscoverFeedUri,
+          'cid': 'bafydiscover',
+          'did': 'did:web:feedgen.bsky.app',
           'displayName': 'What\'s Hot',
           'description': 'Trending posts',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur'},
+          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur', 'handle': 'bsky.app'},
           'likeCount': 1000,
         },
       };
@@ -524,10 +541,13 @@ void main() {
 
       final mockMetadata = {
         'view': {
+          'uri': FeedRepository.kDiscoverFeedUri,
+          'cid': 'bafydiscover',
+          'did': 'did:web:feedgen.bsky.app',
           'displayName': 'What\'s Hot',
           'description': 'Trending posts',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur'},
+          'creator': {'did': 'did:plc:z72i7hdynmk6r22z27h6tvur', 'handle': 'bsky.app'},
           'likeCount': 1000,
         },
       };

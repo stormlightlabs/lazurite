@@ -22,29 +22,62 @@ class FeedContentRepository {
   /// Uses a namespaced prefix to prevent collisions with actual AT URIs.
   static const String kInternalHomeFeedKey = '__internal:home';
 
-  /// Helper to map API Post to DB Companion
+  /// Helper to map API Post to DB Companion with validation.
+  ///
+  /// Throws [FormatException] if required fields are missing or invalid.
   PostsCompanion _mapPost(Map<String, dynamic> json) {
+    final authorJson = json['author'];
+    if (authorJson is! Map<String, dynamic>) {
+      throw FormatException('Post author must be a Map', json);
+    }
+
+    final authorDid = authorJson['did'];
+    if (authorDid is! String || authorDid.isEmpty) {
+      throw FormatException('Post author.did must be a non-empty string', json);
+    }
+
+    final uri = json['uri'];
+    final cid = json['cid'];
+    if (uri is! String || uri.isEmpty) {
+      throw FormatException('Post uri must be a non-empty string', json);
+    }
+    if (cid is! String || cid.isEmpty) {
+      throw FormatException('Post cid must be a non-empty string', json);
+    }
+
     return PostsCompanion.insert(
-      uri: json['uri'],
-      cid: json['cid'],
-      authorDid: json['author']['did'],
+      uri: uri,
+      cid: cid,
+      authorDid: authorDid,
       record: jsonEncode(json['record']),
       embed: Value(json['embed'] != null ? jsonEncode(json['embed']) : null),
-      indexedAt: Value(DateTime.tryParse(json['indexedAt'] ?? '')),
-      replyCount: Value(json['replyCount'] ?? 0),
-      repostCount: Value(json['repostCount'] ?? 0),
-      likeCount: Value(json['likeCount'] ?? 0),
+      indexedAt: Value(DateTime.tryParse(json['indexedAt'] as String? ?? '')),
+      replyCount: Value(json['replyCount'] as int? ?? 0),
+      repostCount: Value(json['repostCount'] as int? ?? 0),
+      likeCount: Value(json['likeCount'] as int? ?? 0),
     );
   }
 
-  /// Helper to map API Author to DB Companion
+  /// Helper to map API Author to DB Companion with validation.
+  ///
+  /// Throws [FormatException] if required fields are missing or invalid.
   ProfilesCompanion _mapProfile(Map<String, dynamic> json) {
+    final did = json['did'];
+    final handle = json['handle'];
+
+    if (did is! String || did.isEmpty) {
+      throw FormatException('Profile did must be a non-empty string', json);
+    }
+    if (handle is! String || handle.isEmpty) {
+      throw FormatException('Profile handle must be a non-empty string', json);
+    }
+
     return ProfilesCompanion.insert(
-      did: json['did'],
-      handle: json['handle'],
-      displayName: Value(json['displayName']),
-      description: Value(json['description']),
-      avatar: Value(json['avatar']),
+      did: did,
+      handle: handle,
+      displayName: Value(json['displayName'] as String?),
+      description: Value(json['description'] as String?),
+      avatar: Value(json['avatar'] as String?),
     );
   }
 
@@ -108,9 +141,12 @@ class FeedContentRepository {
         );
       }
 
-      final feed = response['feed'] as List;
+      final feedJson = response['feed'];
+      if (feedJson is! List) {
+        throw FormatException('feed must be a List', response);
+      }
       final nextCursor = response['cursor'] as String?;
-      _logger.debug('Fetched ${feed.length} items', {'nextCursor': nextCursor});
+      _logger.debug('Fetched ${feedJson.length} items', {'nextCursor': nextCursor});
 
       final posts = <PostsCompanion>[];
       final profiles = <ProfilesCompanion>[];
@@ -118,18 +154,36 @@ class FeedContentRepository {
 
       final baseTime = DateTime.now().microsecondsSinceEpoch;
 
-      for (var i = 0; i < feed.length; i++) {
-        final item = feed[i] as Map<String, dynamic>;
-        final post = item['post'] as Map<String, dynamic>;
-        final author = post['author'] as Map<String, dynamic>;
-        final reason = item['reason'];
-        final postUri = post['uri'] as String;
+      for (var i = 0; i < feedJson.length; i++) {
+        final itemJson = feedJson[i];
+        if (itemJson is! Map<String, dynamic>) {
+          throw FormatException('Feed item must be a Map', itemJson);
+        }
 
-        posts.add(_mapPost(post));
-        profiles.add(_mapProfile(author));
+        final postJson = itemJson['post'];
+        if (postJson is! Map<String, dynamic>) {
+          throw FormatException('Feed item post must be a Map', itemJson);
+        }
 
-        if (reason != null && reason['by'] != null) {
-          profiles.add(_mapProfile(reason['by']));
+        final authorJson = postJson['author'];
+        if (authorJson is! Map<String, dynamic>) {
+          throw FormatException('Post author must be a Map', postJson);
+        }
+
+        final postUri = postJson['uri'];
+        if (postUri is! String || postUri.isEmpty) {
+          throw FormatException('Post uri must be a non-empty string', postJson);
+        }
+
+        posts.add(_mapPost(postJson));
+        profiles.add(_mapProfile(authorJson));
+
+        final reasonJson = itemJson['reason'];
+        if (reasonJson is Map<String, dynamic>) {
+          final byJson = reasonJson['by'];
+          if (byJson is Map<String, dynamic>) {
+            profiles.add(_mapProfile(byJson));
+          }
         }
 
         final sortKey = '${baseTime - i}-$i-${postUri.hashCode.abs()}';
@@ -138,7 +192,7 @@ class FeedContentRepository {
           FeedContentItemsCompanion.insert(
             feedKey: feedKey,
             postUri: postUri,
-            reason: Value(reason != null ? jsonEncode(reason) : null),
+            reason: Value(reasonJson != null ? jsonEncode(reasonJson) : null),
             sortKey: sortKey,
           ),
         );
@@ -151,7 +205,7 @@ class FeedContentRepository {
         newItems: items,
         newCursor: nextCursor,
       );
-      _logger.info('Cached ${feed.length} feed items');
+      _logger.info('Cached ${feedJson.length} feed items');
     } catch (e, stack) {
       _logger.error('Failed to fetch/cache feed content', e, stack);
       rethrow;

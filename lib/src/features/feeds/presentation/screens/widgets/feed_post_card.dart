@@ -21,16 +21,41 @@ class FeedPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final record = jsonDecode(item.post.record) as Map<String, dynamic>;
-    final text = record['text'] as String? ?? '';
+    Map<String, dynamic>? record;
+    try {
+      final decoded = jsonDecode(item.post.record);
+      if (decoded is Map<String, dynamic>) {
+        record = decoded;
+      }
+    } catch (_) {
+      // Invalid JSON, use empty record
+    }
+    final text = record?['text'] as String? ?? '';
     final createdAt = DateTime.tryParse(item.post.indexedAt?.toIso8601String() ?? '');
 
-    final reasonJson = item.reason != null
-        ? jsonDecode(item.reason!) as Map<String, dynamic>
-        : null;
+    Map<String, dynamic>? reasonJson;
+    if (item.reason != null) {
+      try {
+        final decoded = jsonDecode(item.reason!);
+        if (decoded is Map<String, dynamic>) {
+          reasonJson = decoded;
+        }
+      } catch (_) {
+        // Invalid JSON, skip reason
+      }
+    }
+
     final isRepost =
         reasonJson != null && reasonJson[r'$type'] == 'app.bsky.feed.defs#reasonRepost';
-    final reposter = isRepost ? reasonJson['by'] as Map<String, dynamic>? : null;
+
+    Map<String, dynamic>? reposter;
+    if (isRepost) {
+      // isRepost is only true when reasonJson != null, so it's safe to access
+      final byJson = reasonJson['by'];
+      if (byJson is Map<String, dynamic>) {
+        reposter = byJson;
+      }
+    }
 
     return InkWell(
       onTap:
@@ -52,7 +77,7 @@ class FeedPostCard extends StatelessWidget {
                     const Icon(Icons.repeat, size: 12, color: AppColors.textSecondary),
                     const SizedBox(width: 4),
                     Text(
-                      'Reposted by ${reposter['displayName'] ?? reposter['handle']}',
+                      'Reposted by ${reposter['displayName'] as String? ?? reposter['handle'] as String? ?? 'someone'}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.bold,

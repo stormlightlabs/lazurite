@@ -85,14 +85,14 @@ Tasks:
             - extract pagination logic to utility class
             - consistent cursor + hasMore pattern
             - reuse in search and feeds
-      - [ ] Improve null safety:
+      - [x] Improve null safety:
             - typed models for API responses
             - safe navigation for nested JSON
             - reduce fragile metadata?['creator'] patterns
       - [ ] Profile deduplication:
             - profiles table as single source of truth
             - reference by DID across all features
-      - [ ] Replace debugPrint calls with appropriately leveled logging calls
+      - [x] Replace debugPrint calls with appropriately leveled logging calls
 
 Tests:
 - [ ] Feed key collision test: ensure '__internal:home' never collides

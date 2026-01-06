@@ -106,6 +106,12 @@ class FeedDiscoveryScreen extends ConsumerWidget {
                     final feedData = feeds[index];
                     final creatorData = feedData['creator'] as Map<String, dynamic>?;
 
+                    final uri = feedData['uri'];
+                    if (uri is! String || uri.isEmpty) {
+                      // Skip feeds with invalid URIs
+                      return const SizedBox.shrink();
+                    }
+
                     return _buildFeedListTile(
                       context,
                       ref,
@@ -115,7 +121,7 @@ class FeedDiscoveryScreen extends ConsumerWidget {
                         avatar: feedData['avatar'] as String?,
                         creatorHandle: creatorData?['handle'] as String? ?? 'unknown',
                         likeCount: feedData['likeCount'] as int? ?? 0,
-                        uri: feedData['uri'] as String,
+                        uri: uri,
                       ),
                     );
                   },

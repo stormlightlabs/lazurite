@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
+import 'package:lazurite/src/features/feeds/domain/feed_generator.dart';
+import 'package:lazurite/src/features/feeds/domain/saved_feeds_pref.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/preference_sync_queue_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/saved_feeds_dao.dart';
@@ -100,41 +102,33 @@ class FeedRepository {
       final response = await _api.call('app.bsky.actor.getPreferences');
       _logger.debug('Got preferences response: ${response.keys}');
 
-      final prefs = response['preferences'] as List;
-      _logger.debug('Preferences list has ${prefs.length} items');
+      final prefsJson = response['preferences'];
+      if (prefsJson is! List) {
+        throw FormatException('preferences must be a List', response);
+      }
+      _logger.debug('Preferences list has ${prefsJson.length} items');
 
-      final savedFeedsPrefV2 = prefs.cast<Map<String, dynamic>>().firstWhere(
-        (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPrefV2',
-        orElse: () => <String, dynamic>{},
-      );
+      final parsed = SavedFeedsPreferenceParser.parse(prefsJson);
 
       List<String> remoteSavedUris;
       List<String> remotePinnedUris;
 
-      if (savedFeedsPrefV2.isNotEmpty) {
-        _logger.debug('Found V2 preferences');
-        final items = (savedFeedsPrefV2['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-        _logger.debug('V2 has ${items.length} items');
-
-        remoteSavedUris = items.map((item) => item['value'] as String).toList();
-        remotePinnedUris = items
-            .where((item) => item['pinned'] == true)
-            .map((item) => item['value'] as String)
-            .toList();
-
+      if (parsed.v2 != null) {
+        _logger.debug('Found V2 preferences with ${parsed.v2!.items.length} items');
+        remoteSavedUris = parsed.v2!.savedUris;
+        remotePinnedUris = parsed.v2!.pinnedUris;
         _logger.debug('V2 saved URIs: $remoteSavedUris');
         _logger.debug('V2 pinned URIs: $remotePinnedUris');
+      } else if (parsed.v1 != null) {
+        _logger.debug('Found V1 preferences');
+        remoteSavedUris = parsed.v1!.saved;
+        remotePinnedUris = parsed.v1!.pinned;
+        _logger.debug('V1 saved URIs: $remoteSavedUris');
+        _logger.debug('V1 pinned URIs: $remotePinnedUris');
       } else {
-        _logger.debug('V2 not found, trying V1 format');
-        final savedFeedsPref = prefs.cast<Map<String, dynamic>>().firstWhere(
-          (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref',
-          orElse: () => <String, dynamic>{},
-        );
-
-        _logger.debug('V1 savedFeedsPref keys: ${savedFeedsPref.keys}');
-
-        remoteSavedUris = (savedFeedsPref['saved'] as List?)?.cast<String>() ?? [];
-        remotePinnedUris = (savedFeedsPref['pinned'] as List?)?.cast<String>() ?? [];
+        _logger.debug('No saved feeds preference found, using empty lists');
+        remoteSavedUris = [];
+        remotePinnedUris = [];
       }
 
       _logger.info(
@@ -198,11 +192,11 @@ class FeedRepository {
           feedsToInsert.add(
             SavedFeedsCompanion.insert(
               uri: remoteUri,
-              displayName: metadata['displayName'] ?? 'Unknown Feed',
-              description: Value(metadata['description']),
-              avatar: Value(metadata['avatar']),
-              creatorDid: metadata['creator']['did'] ?? '',
-              likeCount: Value(metadata['likeCount'] ?? 0),
+              displayName: metadata.displayName,
+              description: Value(metadata.description),
+              avatar: Value(metadata.avatar),
+              creatorDid: metadata.creator.did,
+              likeCount: Value(metadata.likeCount ?? 0),
               sortOrder: i,
               isPinned: Value(remoteIsPinned),
               lastSynced: now,
@@ -309,25 +303,30 @@ class FeedRepository {
 
     _logger.info('Saving feed', {'uri': feedUri, 'pin': pin});
 
-    Map<String, dynamic> metadata = {};
+    FeedGenerator? metadata;
+    String displayName = 'Saved Feed';
+    String? description;
+    String? avatar;
+    String creatorDid = '';
+    int? likeCount;
+
     try {
       metadata = await getFeedMetadata(feedUri);
+      displayName = metadata.displayName;
+      description = metadata.description;
+      avatar = metadata.avatar;
+      creatorDid = metadata.creator.did;
+      likeCount = metadata.likeCount;
     } catch (e) {
       final existing = await _dao.getFeed(feedUri);
       if (existing != null) {
-        metadata = {
-          'displayName': existing.displayName,
-          'description': existing.description,
-          'avatar': existing.avatar,
-          'creator': {'did': existing.creatorDid},
-          'likeCount': existing.likeCount,
-        };
+        displayName = existing.displayName;
+        description = existing.description;
+        avatar = existing.avatar;
+        creatorDid = existing.creatorDid;
+        likeCount = existing.likeCount;
       } else {
         _logger.warning('Could not fetch metadata for feed save, proceeding with defaults');
-        metadata = {
-          'displayName': 'Saved Feed',
-          'creator': {'did': ''},
-        };
       }
     }
 
@@ -339,11 +338,11 @@ class FeedRepository {
         await _dao.upsertFeed(
           SavedFeedsCompanion.insert(
             uri: feedUri,
-            displayName: metadata['displayName'] ?? 'Unknown Feed',
-            description: Value(metadata['description']),
-            avatar: Value(metadata['avatar']),
-            creatorDid: metadata['creator']['did'] ?? '',
-            likeCount: Value(metadata['likeCount'] ?? 0),
+            displayName: displayName,
+            description: Value(description),
+            avatar: Value(avatar),
+            creatorDid: creatorDid,
+            likeCount: Value(likeCount ?? 0),
             sortOrder: allFeeds.length,
             isPinned: Value(pin),
             lastSynced: DateTime.now(),
@@ -625,7 +624,9 @@ class FeedRepository {
   /// Calls app.bsky.feed.getFeedGenerator with the feed URI.
   /// Returns the feed generator metadata including displayName, description, avatar, creator,
   /// and likeCount.
-  Future<Map<String, dynamic>> getFeedMetadata(String feedUri) async {
+  ///
+  /// Throws [FormatException] if the API response has an invalid structure.
+  Future<FeedGenerator> getFeedMetadata(String feedUri) async {
     _logger.debug('Fetching feed metadata', {'uri': feedUri});
 
     try {
@@ -634,7 +635,12 @@ class FeedRepository {
         params: {'feed': feedUri},
       );
 
-      return response['view'] as Map<String, dynamic>;
+      final viewJson = response['view'];
+      if (viewJson is! Map<String, dynamic>) {
+        throw FormatException('Invalid feed metadata response: view must be a Map', response);
+      }
+
+      return FeedGenerator.fromJson(viewJson);
     } catch (e) {
       _logger.error('Failed to fetch feed metadata', {'uri': feedUri, 'error': e});
       rethrow;
@@ -664,11 +670,11 @@ class FeedRepository {
         await _dao.upsertFeed(
           SavedFeedsCompanion.insert(
             uri: feed.uri,
-            displayName: metadata['displayName'] ?? feed.displayName,
-            description: Value(metadata['description']),
-            avatar: Value(metadata['avatar']),
-            creatorDid: metadata['creator']['did'] ?? feed.creatorDid,
-            likeCount: Value(metadata['likeCount'] ?? 0),
+            displayName: metadata.displayName,
+            description: Value(metadata.description),
+            avatar: Value(metadata.avatar),
+            creatorDid: metadata.creator.did,
+            likeCount: Value(metadata.likeCount ?? 0),
             sortOrder: feed.sortOrder,
             isPinned: Value(feed.isPinned),
             lastSynced: DateTime.now(),
@@ -858,26 +864,21 @@ class FeedRepository {
       return;
     }
 
-    Map<String, dynamic>? metadata;
+    FeedGenerator? metadata;
     try {
       metadata = await getFeedMetadata(uri);
     } catch (e) {
       _logger.error('Failed to fetch metadata for feed $uri, using defaults', {'error': e});
     }
 
-    String creatorDid = '';
-    if (metadata?['creator'] is Map<String, dynamic>) {
-      creatorDid = (metadata!['creator'] as Map<String, dynamic>)['did'] ?? '';
-    }
-
     feeds.add(
       SavedFeedsCompanion.insert(
         uri: uri,
-        displayName: metadata?['displayName'] ?? fallbackName,
-        description: Value(metadata?['description'] ?? fallbackDescription),
-        avatar: Value(metadata?['avatar']),
-        creatorDid: creatorDid,
-        likeCount: Value(metadata?['likeCount'] ?? 0),
+        displayName: metadata?.displayName ?? fallbackName,
+        description: Value(metadata?.description ?? fallbackDescription),
+        avatar: Value(metadata?.avatar),
+        creatorDid: metadata?.creator.did ?? '',
+        likeCount: Value(metadata?.likeCount ?? 0),
         sortOrder: sortOrder,
         isPinned: Value(shouldPin),
         lastSynced: now,

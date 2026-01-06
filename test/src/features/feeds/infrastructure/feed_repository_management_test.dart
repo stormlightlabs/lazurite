@@ -41,10 +41,13 @@ void main() {
 
       final feedMetadata = {
         'view': {
+          'uri': feedUri,
+          'cid': 'bafynew',
+          'did': 'did:web:feedgen.test',
           'displayName': 'New Feed',
           'description': 'A new feed',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:abc'},
+          'creator': {'did': 'did:plc:abc', 'handle': 'creator.test'},
           'likeCount': 10,
         },
       };
@@ -147,10 +150,13 @@ void main() {
 
       final feedMetadata = {
         'view': {
+          'uri': feedUri,
+          'cid': 'bafynew',
+          'did': 'did:web:feedgen.test',
           'displayName': 'New Feed',
           'description': 'A new feed',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:abc'},
+          'creator': {'did': 'did:plc:abc', 'handle': 'creator.test'},
           'likeCount': 10,
         },
       };
@@ -199,10 +205,13 @@ void main() {
 
       final feedMetadata = {
         'view': {
+          'uri': feedUri,
+          'cid': 'bafynew',
+          'did': 'did:web:feedgen.test',
           'displayName': 'New Feed',
           'description': 'A new feed',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:abc'},
+          'creator': {'did': 'did:plc:abc', 'handle': 'creator.test'},
           'likeCount': 10,
         },
       };
@@ -250,10 +259,13 @@ void main() {
 
       final feedMetadata = {
         'view': {
+          'uri': feedUri,
+          'cid': 'bafynew',
+          'did': 'did:web:feedgen.test',
           'displayName': 'New Feed',
           'description': 'A new feed',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:abc'},
+          'creator': {'did': 'did:plc:abc', 'handle': 'creator.test'},
           'likeCount': 10,
         },
       };
@@ -614,10 +626,13 @@ void main() {
 
       final feedMetadata = {
         'view': {
+          'uri': validUri,
+          'cid': 'bafyvalid',
+          'did': 'did:web:feedgen.test',
           'displayName': 'Valid Feed',
           'description': 'A valid feed',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:abc123xyz'},
+          'creator': {'did': 'did:plc:abc123xyz', 'handle': 'creator.test'},
           'likeCount': 5,
         },
       };

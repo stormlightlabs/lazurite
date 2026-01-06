@@ -47,20 +47,26 @@ void main() {
 
       final feed1Metadata = {
         'view': {
+          'uri': 'at://did:plc:abc/app.bsky.feed.generator/test1',
+          'cid': 'bafytest1',
+          'did': 'did:web:feedgen.test1',
           'displayName': 'Test Feed 1',
           'description': 'Description 1',
           'avatar': 'avatar1.jpg',
-          'creator': {'did': 'did:plc:abc'},
+          'creator': {'did': 'did:plc:abc', 'handle': 'creator1.test'},
           'likeCount': 100,
         },
       };
 
       final feed2Metadata = {
         'view': {
+          'uri': 'at://did:plc:def/app.bsky.feed.generator/test2',
+          'cid': 'bafytest2',
+          'did': 'did:web:feedgen.test2',
           'displayName': 'Test Feed 2',
           'description': 'Description 2',
           'avatar': 'avatar2.jpg',
-          'creator': {'did': 'did:plc:def'},
+          'creator': {'did': 'did:plc:def', 'handle': 'creator2.test'},
           'likeCount': 50,
         },
       };
@@ -155,10 +161,13 @@ void main() {
 
       final feed2Metadata = {
         'view': {
+          'uri': 'at://did:plc:def/app.bsky.feed.generator/test2',
+          'cid': 'bafytest2',
+          'did': 'did:web:feedgen.test2',
           'displayName': 'Test Feed 2',
           'description': 'Description 2',
           'avatar': 'avatar2.jpg',
-          'creator': {'did': 'did:plc:def'},
+          'creator': {'did': 'did:plc:def', 'handle': 'creator2.test'},
           'likeCount': 50,
         },
       };
@@ -195,10 +204,13 @@ void main() {
 
       final feedMetadata = {
         'view': {
+          'uri': feedUri,
+          'cid': 'bafyatomic',
+          'did': 'did:web:feedgen.test',
           'displayName': 'Atomic Feed',
           'description': 'Test atomic operations',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:test'},
+          'creator': {'did': 'did:plc:test', 'handle': 'test.user'},
           'likeCount': 42,
         },
       };
@@ -229,10 +241,13 @@ void main() {
 
       final feedMetadata = {
         'view': {
+          'uri': feedUri,
+          'cid': 'bafysuccess',
+          'did': 'did:web:feedgen.test',
           'displayName': 'Success Feed',
           'description': 'Successful sync test',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:success'},
+          'creator': {'did': 'did:plc:success', 'handle': 'success.user'},
           'likeCount': 10,
         },
       };
@@ -555,10 +570,13 @@ void main() {
 
       final feedMetadata = {
         'view': {
+          'uri': newFeedUri,
+          'cid': 'bafynew',
+          'did': 'did:web:feedgen.test',
           'displayName': 'New Remote Feed',
           'description': 'Added on another device',
           'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:new'},
+          'creator': {'did': 'did:plc:new', 'handle': 'new.user'},
           'likeCount': 42,
         },
       };

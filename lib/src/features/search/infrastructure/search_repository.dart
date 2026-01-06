@@ -34,8 +34,18 @@ class SearchRepository {
         params: {'q': query, 'limit': 25, if (cursor != null) 'cursor': cursor},
       );
 
-      final rawPosts = response['posts'] as List? ?? [];
-      final posts = rawPosts.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
+      final postsJson = response['posts'];
+      if (postsJson is! List?) {
+        throw FormatException('posts must be a List', response);
+      }
+      final rawPosts = postsJson ?? [];
+      final posts = <Post>[];
+      for (final postJson in rawPosts) {
+        if (postJson is! Map<String, dynamic>) {
+          throw FormatException('Each post must be a Map', postJson);
+        }
+        posts.add(Post.fromJson(postJson));
+      }
       final nextCursor = response['cursor'] as String?;
 
       _logger.debug('Found ${posts.length} posts');
@@ -67,40 +77,61 @@ class SearchRepository {
     }
 
     for (var i = 0; i < rawPosts.length; i++) {
-      final json = rawPosts[i] as Map<String, dynamic>;
-      final author = json['author'] as Map<String, dynamic>;
+      final postJson = rawPosts[i];
+      if (postJson is! Map<String, dynamic>) {
+        throw FormatException('Each post must be a Map', postJson);
+      }
+
+      final authorJson = postJson['author'];
+      if (authorJson is! Map<String, dynamic>) {
+        throw FormatException('Post author must be a Map', postJson);
+      }
+
+      final uri = postJson['uri'];
+      final cid = postJson['cid'];
+      final authorDid = authorJson['did'];
+      final authorHandle = authorJson['handle'];
+
+      if (uri is! String || uri.isEmpty) {
+        throw FormatException('Post uri must be a non-empty string', postJson);
+      }
+      if (cid is! String || cid.isEmpty) {
+        throw FormatException('Post cid must be a non-empty string', postJson);
+      }
+      if (authorDid is! String || authorDid.isEmpty) {
+        throw FormatException('Author did must be a non-empty string', authorJson);
+      }
+      if (authorHandle is! String || authorHandle.isEmpty) {
+        throw FormatException('Author handle must be a non-empty string', authorJson);
+      }
 
       postsCompanions.add(
         PostsCompanion.insert(
-          uri: json['uri'] as String,
-          cid: json['cid'] as String,
-          authorDid: author['did'] as String,
-          record: jsonEncode(json['record']),
-          embed: Value(json['embed'] != null ? jsonEncode(json['embed']) : null),
-          indexedAt: Value(DateTime.tryParse(json['indexedAt'] as String? ?? '')),
-          replyCount: Value(json['replyCount'] as int? ?? 0),
-          repostCount: Value(json['repostCount'] as int? ?? 0),
-          likeCount: Value(json['likeCount'] as int? ?? 0),
+          uri: uri,
+          cid: cid,
+          authorDid: authorDid,
+          record: jsonEncode(postJson['record']),
+          embed: Value(postJson['embed'] != null ? jsonEncode(postJson['embed']) : null),
+          indexedAt: Value(DateTime.tryParse(postJson['indexedAt'] as String? ?? '')),
+          replyCount: Value(postJson['replyCount'] as int? ?? 0),
+          repostCount: Value(postJson['repostCount'] as int? ?? 0),
+          likeCount: Value(postJson['likeCount'] as int? ?? 0),
         ),
       );
 
       profilesCompanions.add(
         ProfilesCompanion.insert(
-          did: author['did'] as String,
-          handle: author['handle'] as String,
-          displayName: Value(author['displayName'] as String?),
-          description: Value(author['description'] as String?),
-          avatar: Value(author['avatar'] as String?),
+          did: authorDid,
+          handle: authorHandle,
+          displayName: Value(authorJson['displayName'] as String?),
+          description: Value(authorJson['description'] as String?),
+          avatar: Value(authorJson['avatar'] as String?),
         ),
       );
 
       final sortKey = (startIndex + i).toString().padLeft(10, '0');
       cacheItems.add(
-        SearchCacheItemsCompanion.insert(
-          queryKey: queryKey,
-          postUri: json['uri'] as String,
-          sortKey: sortKey,
-        ),
+        SearchCacheItemsCompanion.insert(queryKey: queryKey, postUri: uri, sortKey: sortKey),
       );
     }
 
@@ -182,10 +213,18 @@ class SearchRepository {
         params: {'q': query, 'limit': 25, if (cursor != null) 'cursor': cursor},
       );
 
-      final rawActors = response['actors'] as List? ?? [];
-      final actors = rawActors
-          .map((e) => SearchActorItem.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final actorsJson = response['actors'];
+      if (actorsJson is! List?) {
+        throw FormatException('actors must be a List', response);
+      }
+      final rawActors = actorsJson ?? [];
+      final actors = <SearchActorItem>[];
+      for (final actorJson in rawActors) {
+        if (actorJson is! Map<String, dynamic>) {
+          throw FormatException('Each actor must be a Map', actorJson);
+        }
+        actors.add(SearchActorItem.fromJson(actorJson));
+      }
       final nextCursor = response['cursor'] as String?;
 
       _logger.debug('Found ${actors.length} actors');
@@ -201,9 +240,19 @@ class SearchRepository {
 /// An actor (user) from search results.
 class SearchActorItem {
   factory SearchActorItem.fromJson(Map<String, dynamic> json) {
+    final did = json['did'];
+    final handle = json['handle'];
+
+    if (did is! String || did.isEmpty) {
+      throw FormatException('SearchActorItem.did must be a non-empty string', json);
+    }
+    if (handle is! String || handle.isEmpty) {
+      throw FormatException('SearchActorItem.handle must be a non-empty string', json);
+    }
+
     return SearchActorItem(
-      did: json['did'] as String,
-      handle: json['handle'] as String,
+      did: did,
+      handle: handle,
       displayName: json['displayName'] as String?,
       description: json['description'] as String?,
       avatar: json['avatar'] as String?,
