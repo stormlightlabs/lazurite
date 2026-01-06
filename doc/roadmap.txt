@@ -52,15 +52,15 @@ Tasks:
       - [x] Feed discovery improvements:
             - search feeds by name/creator
             - category filters (if API supports)
-- [ ] Search Auth & Caching (HIGH):
+- [x] Search Auth & Caching (HIGH):
       - [x] Fix search auth requirement mismatch:
             - We only want search for authenticated users
                   - handle unauthenticated users gracefully (i.e. hide from UI
                     for unauthenticated users)
-      - [ ] Implement recent search saving:
+      - [x] Implement recent search saving:
             - call saveRecentSearch() after successful query
             - wire up in SearchNotifier._search()
-      - [ ] Add search results caching:
+      - [x] Add search results caching:
             - cache SearchPostItems in database
             - similar to feed content caching strategy
             - 7-day retention policy
@@ -100,8 +100,8 @@ Tests:
 - [ ] Sync queue retry test: verify max retries + cleanup
 - [ ] Optimistic update transaction test: rollback on queue failure
 - [x] Search auth test: unauthenticated user sees sign-in prompt
-- [ ] Recent search persistence test: verify saveRecentSearch() called
-- [ ] Search cache test: second query serves from cache
+- [x] Recent search persistence test: verify saveRecentSearch() called
+- [x] Search cache test: second query serves from cache
 - [ ] Offline search test: cached results available offline
 - [x] Feed sync conflict test: multi-device pin resolution
 - [ ] Feed URI validation test: reject malformed URIs

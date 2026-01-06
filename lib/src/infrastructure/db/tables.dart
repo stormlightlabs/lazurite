@@ -66,6 +66,39 @@ class RecentSearches extends Table {
   DateTimeColumn get searchedAt => dateTime()();
 }
 
+/// Stores cached search result items.
+///
+/// Links search queries to Posts for offline access and performance.
+@TableIndex(name: 'search_cache_sort_idx', columns: {#queryKey, #sortKey})
+class SearchCacheItems extends Table {
+  /// Normalized search query as cache key.
+  TextColumn get queryKey => text()();
+
+  /// Reference to cached post.
+  TextColumn get postUri => text().references(Posts, #uri)();
+
+  /// Ordering within results (index-based).
+  TextColumn get sortKey => text()();
+
+  @override
+  Set<Column> get primaryKey => {queryKey, postUri};
+}
+
+/// Stores pagination cursors for cached search queries.
+class SearchCacheCursors extends Table {
+  /// Normalized search query as cache key.
+  TextColumn get queryKey => text()();
+
+  /// Pagination cursor from API.
+  TextColumn get cursor => text()();
+
+  /// When the cache was last updated (for 7-day retention).
+  DateTimeColumn get lastUpdated => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {queryKey};
+}
+
 /// Stores follow relationships for caching viewer state.
 class Follows extends Table {
   /// The DID of the user doing the following.

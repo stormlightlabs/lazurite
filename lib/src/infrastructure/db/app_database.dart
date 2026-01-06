@@ -11,6 +11,7 @@ import 'daos/follows_dao.dart';
 import 'daos/preference_sync_queue_dao.dart';
 import 'daos/profile_dao.dart';
 import 'daos/saved_feeds_dao.dart';
+import 'daos/search_cache_dao.dart';
 import 'daos/search_dao.dart';
 import 'tables.dart';
 
@@ -24,6 +25,8 @@ part 'app_database.g.dart';
     Accounts,
     FeedCursors,
     RecentSearches,
+    SearchCacheItems,
+    SearchCacheCursors,
     Follows,
     SavedFeeds,
     PreferenceSyncQueue,
@@ -34,6 +37,7 @@ part 'app_database.g.dart';
     FeedContentDao,
     ProfileDao,
     SearchDao,
+    SearchCacheDao,
     FollowsDao,
     SavedFeedsDao,
     PreferenceSyncQueueDao,
@@ -44,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -68,6 +72,10 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 8) {
         await customStatement('ALTER TABLE saved_feeds ADD COLUMN local_updated_at INTEGER');
+      }
+      if (from < 9) {
+        await m.createTable(searchCacheItems);
+        await m.createTable(searchCacheCursors);
       }
     },
   );

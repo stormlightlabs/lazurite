@@ -1939,6 +1939,516 @@ class RecentSearchesCompanion extends UpdateCompanion<RecentSearche> {
   }
 }
 
+class $SearchCacheItemsTable extends SearchCacheItems
+    with TableInfo<$SearchCacheItemsTable, SearchCacheItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SearchCacheItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _queryKeyMeta = const VerificationMeta('queryKey');
+  @override
+  late final GeneratedColumn<String> queryKey = GeneratedColumn<String>(
+    'query_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _postUriMeta = const VerificationMeta('postUri');
+  @override
+  late final GeneratedColumn<String> postUri = GeneratedColumn<String>(
+    'post_uri',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES posts (uri)'),
+  );
+  static const VerificationMeta _sortKeyMeta = const VerificationMeta('sortKey');
+  @override
+  late final GeneratedColumn<String> sortKey = GeneratedColumn<String>(
+    'sort_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [queryKey, postUri, sortKey];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'search_cache_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SearchCacheItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('query_key')) {
+      context.handle(
+        _queryKeyMeta,
+        queryKey.isAcceptableOrUnknown(data['query_key']!, _queryKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_queryKeyMeta);
+    }
+    if (data.containsKey('post_uri')) {
+      context.handle(_postUriMeta, postUri.isAcceptableOrUnknown(data['post_uri']!, _postUriMeta));
+    } else if (isInserting) {
+      context.missing(_postUriMeta);
+    }
+    if (data.containsKey('sort_key')) {
+      context.handle(_sortKeyMeta, sortKey.isAcceptableOrUnknown(data['sort_key']!, _sortKeyMeta));
+    } else if (isInserting) {
+      context.missing(_sortKeyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {queryKey, postUri};
+  @override
+  SearchCacheItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SearchCacheItem(
+      queryKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}query_key'],
+      )!,
+      postUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}post_uri'],
+      )!,
+      sortKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sort_key'],
+      )!,
+    );
+  }
+
+  @override
+  $SearchCacheItemsTable createAlias(String alias) {
+    return $SearchCacheItemsTable(attachedDatabase, alias);
+  }
+}
+
+class SearchCacheItem extends DataClass implements Insertable<SearchCacheItem> {
+  /// Normalized search query as cache key.
+  final String queryKey;
+
+  /// Reference to cached post.
+  final String postUri;
+
+  /// Ordering within results (index-based).
+  final String sortKey;
+  const SearchCacheItem({required this.queryKey, required this.postUri, required this.sortKey});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['query_key'] = Variable<String>(queryKey);
+    map['post_uri'] = Variable<String>(postUri);
+    map['sort_key'] = Variable<String>(sortKey);
+    return map;
+  }
+
+  SearchCacheItemsCompanion toCompanion(bool nullToAbsent) {
+    return SearchCacheItemsCompanion(
+      queryKey: Value(queryKey),
+      postUri: Value(postUri),
+      sortKey: Value(sortKey),
+    );
+  }
+
+  factory SearchCacheItem.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SearchCacheItem(
+      queryKey: serializer.fromJson<String>(json['queryKey']),
+      postUri: serializer.fromJson<String>(json['postUri']),
+      sortKey: serializer.fromJson<String>(json['sortKey']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'queryKey': serializer.toJson<String>(queryKey),
+      'postUri': serializer.toJson<String>(postUri),
+      'sortKey': serializer.toJson<String>(sortKey),
+    };
+  }
+
+  SearchCacheItem copyWith({String? queryKey, String? postUri, String? sortKey}) =>
+      SearchCacheItem(
+        queryKey: queryKey ?? this.queryKey,
+        postUri: postUri ?? this.postUri,
+        sortKey: sortKey ?? this.sortKey,
+      );
+  SearchCacheItem copyWithCompanion(SearchCacheItemsCompanion data) {
+    return SearchCacheItem(
+      queryKey: data.queryKey.present ? data.queryKey.value : this.queryKey,
+      postUri: data.postUri.present ? data.postUri.value : this.postUri,
+      sortKey: data.sortKey.present ? data.sortKey.value : this.sortKey,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SearchCacheItem(')
+          ..write('queryKey: $queryKey, ')
+          ..write('postUri: $postUri, ')
+          ..write('sortKey: $sortKey')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(queryKey, postUri, sortKey);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SearchCacheItem &&
+          other.queryKey == this.queryKey &&
+          other.postUri == this.postUri &&
+          other.sortKey == this.sortKey);
+}
+
+class SearchCacheItemsCompanion extends UpdateCompanion<SearchCacheItem> {
+  final Value<String> queryKey;
+  final Value<String> postUri;
+  final Value<String> sortKey;
+  final Value<int> rowid;
+  const SearchCacheItemsCompanion({
+    this.queryKey = const Value.absent(),
+    this.postUri = const Value.absent(),
+    this.sortKey = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SearchCacheItemsCompanion.insert({
+    required String queryKey,
+    required String postUri,
+    required String sortKey,
+    this.rowid = const Value.absent(),
+  }) : queryKey = Value(queryKey),
+       postUri = Value(postUri),
+       sortKey = Value(sortKey);
+  static Insertable<SearchCacheItem> custom({
+    Expression<String>? queryKey,
+    Expression<String>? postUri,
+    Expression<String>? sortKey,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (queryKey != null) 'query_key': queryKey,
+      if (postUri != null) 'post_uri': postUri,
+      if (sortKey != null) 'sort_key': sortKey,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SearchCacheItemsCompanion copyWith({
+    Value<String>? queryKey,
+    Value<String>? postUri,
+    Value<String>? sortKey,
+    Value<int>? rowid,
+  }) {
+    return SearchCacheItemsCompanion(
+      queryKey: queryKey ?? this.queryKey,
+      postUri: postUri ?? this.postUri,
+      sortKey: sortKey ?? this.sortKey,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (queryKey.present) {
+      map['query_key'] = Variable<String>(queryKey.value);
+    }
+    if (postUri.present) {
+      map['post_uri'] = Variable<String>(postUri.value);
+    }
+    if (sortKey.present) {
+      map['sort_key'] = Variable<String>(sortKey.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SearchCacheItemsCompanion(')
+          ..write('queryKey: $queryKey, ')
+          ..write('postUri: $postUri, ')
+          ..write('sortKey: $sortKey, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SearchCacheCursorsTable extends SearchCacheCursors
+    with TableInfo<$SearchCacheCursorsTable, SearchCacheCursor> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SearchCacheCursorsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _queryKeyMeta = const VerificationMeta('queryKey');
+  @override
+  late final GeneratedColumn<String> queryKey = GeneratedColumn<String>(
+    'query_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cursorMeta = const VerificationMeta('cursor');
+  @override
+  late final GeneratedColumn<String> cursor = GeneratedColumn<String>(
+    'cursor',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastUpdatedMeta = const VerificationMeta('lastUpdated');
+  @override
+  late final GeneratedColumn<DateTime> lastUpdated = GeneratedColumn<DateTime>(
+    'last_updated',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [queryKey, cursor, lastUpdated];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'search_cache_cursors';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SearchCacheCursor> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('query_key')) {
+      context.handle(
+        _queryKeyMeta,
+        queryKey.isAcceptableOrUnknown(data['query_key']!, _queryKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_queryKeyMeta);
+    }
+    if (data.containsKey('cursor')) {
+      context.handle(_cursorMeta, cursor.isAcceptableOrUnknown(data['cursor']!, _cursorMeta));
+    } else if (isInserting) {
+      context.missing(_cursorMeta);
+    }
+    if (data.containsKey('last_updated')) {
+      context.handle(
+        _lastUpdatedMeta,
+        lastUpdated.isAcceptableOrUnknown(data['last_updated']!, _lastUpdatedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {queryKey};
+  @override
+  SearchCacheCursor map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SearchCacheCursor(
+      queryKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}query_key'],
+      )!,
+      cursor: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cursor'],
+      )!,
+      lastUpdated: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_updated'],
+      ),
+    );
+  }
+
+  @override
+  $SearchCacheCursorsTable createAlias(String alias) {
+    return $SearchCacheCursorsTable(attachedDatabase, alias);
+  }
+}
+
+class SearchCacheCursor extends DataClass implements Insertable<SearchCacheCursor> {
+  /// Normalized search query as cache key.
+  final String queryKey;
+
+  /// Pagination cursor from API.
+  final String cursor;
+
+  /// When the cache was last updated (for 7-day retention).
+  final DateTime? lastUpdated;
+  const SearchCacheCursor({required this.queryKey, required this.cursor, this.lastUpdated});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['query_key'] = Variable<String>(queryKey);
+    map['cursor'] = Variable<String>(cursor);
+    if (!nullToAbsent || lastUpdated != null) {
+      map['last_updated'] = Variable<DateTime>(lastUpdated);
+    }
+    return map;
+  }
+
+  SearchCacheCursorsCompanion toCompanion(bool nullToAbsent) {
+    return SearchCacheCursorsCompanion(
+      queryKey: Value(queryKey),
+      cursor: Value(cursor),
+      lastUpdated: lastUpdated == null && nullToAbsent ? const Value.absent() : Value(lastUpdated),
+    );
+  }
+
+  factory SearchCacheCursor.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SearchCacheCursor(
+      queryKey: serializer.fromJson<String>(json['queryKey']),
+      cursor: serializer.fromJson<String>(json['cursor']),
+      lastUpdated: serializer.fromJson<DateTime?>(json['lastUpdated']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'queryKey': serializer.toJson<String>(queryKey),
+      'cursor': serializer.toJson<String>(cursor),
+      'lastUpdated': serializer.toJson<DateTime?>(lastUpdated),
+    };
+  }
+
+  SearchCacheCursor copyWith({
+    String? queryKey,
+    String? cursor,
+    Value<DateTime?> lastUpdated = const Value.absent(),
+  }) => SearchCacheCursor(
+    queryKey: queryKey ?? this.queryKey,
+    cursor: cursor ?? this.cursor,
+    lastUpdated: lastUpdated.present ? lastUpdated.value : this.lastUpdated,
+  );
+  SearchCacheCursor copyWithCompanion(SearchCacheCursorsCompanion data) {
+    return SearchCacheCursor(
+      queryKey: data.queryKey.present ? data.queryKey.value : this.queryKey,
+      cursor: data.cursor.present ? data.cursor.value : this.cursor,
+      lastUpdated: data.lastUpdated.present ? data.lastUpdated.value : this.lastUpdated,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SearchCacheCursor(')
+          ..write('queryKey: $queryKey, ')
+          ..write('cursor: $cursor, ')
+          ..write('lastUpdated: $lastUpdated')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(queryKey, cursor, lastUpdated);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SearchCacheCursor &&
+          other.queryKey == this.queryKey &&
+          other.cursor == this.cursor &&
+          other.lastUpdated == this.lastUpdated);
+}
+
+class SearchCacheCursorsCompanion extends UpdateCompanion<SearchCacheCursor> {
+  final Value<String> queryKey;
+  final Value<String> cursor;
+  final Value<DateTime?> lastUpdated;
+  final Value<int> rowid;
+  const SearchCacheCursorsCompanion({
+    this.queryKey = const Value.absent(),
+    this.cursor = const Value.absent(),
+    this.lastUpdated = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SearchCacheCursorsCompanion.insert({
+    required String queryKey,
+    required String cursor,
+    this.lastUpdated = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : queryKey = Value(queryKey),
+       cursor = Value(cursor);
+  static Insertable<SearchCacheCursor> custom({
+    Expression<String>? queryKey,
+    Expression<String>? cursor,
+    Expression<DateTime>? lastUpdated,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (queryKey != null) 'query_key': queryKey,
+      if (cursor != null) 'cursor': cursor,
+      if (lastUpdated != null) 'last_updated': lastUpdated,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SearchCacheCursorsCompanion copyWith({
+    Value<String>? queryKey,
+    Value<String>? cursor,
+    Value<DateTime?>? lastUpdated,
+    Value<int>? rowid,
+  }) {
+    return SearchCacheCursorsCompanion(
+      queryKey: queryKey ?? this.queryKey,
+      cursor: cursor ?? this.cursor,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (queryKey.present) {
+      map['query_key'] = Variable<String>(queryKey.value);
+    }
+    if (cursor.present) {
+      map['cursor'] = Variable<String>(cursor.value);
+    }
+    if (lastUpdated.present) {
+      map['last_updated'] = Variable<DateTime>(lastUpdated.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SearchCacheCursorsCompanion(')
+          ..write('queryKey: $queryKey, ')
+          ..write('cursor: $cursor, ')
+          ..write('lastUpdated: $lastUpdated, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $FollowsTable extends Follows with TableInfo<$FollowsTable, Follow> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -4455,6 +4965,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AccountsTable accounts = $AccountsTable(this);
   late final $FeedCursorsTable feedCursors = $FeedCursorsTable(this);
   late final $RecentSearchesTable recentSearches = $RecentSearchesTable(this);
+  late final $SearchCacheItemsTable searchCacheItems = $SearchCacheItemsTable(this);
+  late final $SearchCacheCursorsTable searchCacheCursors = $SearchCacheCursorsTable(this);
   late final $FollowsTable follows = $FollowsTable(this);
   late final $SavedFeedsTable savedFeeds = $SavedFeedsTable(this);
   late final $PreferenceSyncQueueTable preferenceSyncQueue = $PreferenceSyncQueueTable(this);
@@ -4464,9 +4976,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
   );
+  late final Index searchCacheSortIdx = Index(
+    'search_cache_sort_idx',
+    'CREATE INDEX search_cache_sort_idx ON search_cache_items (query_key, sort_key)',
+  );
   late final FeedContentDao feedContentDao = FeedContentDao(this as AppDatabase);
   late final ProfileDao profileDao = ProfileDao(this as AppDatabase);
   late final SearchDao searchDao = SearchDao(this as AppDatabase);
+  late final SearchCacheDao searchCacheDao = SearchCacheDao(this as AppDatabase);
   late final FollowsDao followsDao = FollowsDao(this as AppDatabase);
   late final SavedFeedsDao savedFeedsDao = SavedFeedsDao(this as AppDatabase);
   late final PreferenceSyncQueueDao preferenceSyncQueueDao = PreferenceSyncQueueDao(
@@ -4484,12 +5001,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     accounts,
     feedCursors,
     recentSearches,
+    searchCacheItems,
+    searchCacheCursors,
     follows,
     savedFeeds,
     preferenceSyncQueue,
     drafts,
     draftMedia,
     feedContentSortIdx,
+    searchCacheSortIdx,
   ];
 }
 
@@ -4536,6 +5056,22 @@ final class $$PostsTableReferences extends BaseReferences<_$AppDatabase, $PostsT
     ).filter((f) => f.postUri.uri.sqlEquals($_itemColumn<String>('uri')!));
 
     final cache = $_typedResult.readTableOrNull(_feedContentItemsRefsTable($_db));
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$SearchCacheItemsTable, List<SearchCacheItem>>
+  _searchCacheItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.searchCacheItems,
+    aliasName: $_aliasNameGenerator(db.posts.uri, db.searchCacheItems.postUri),
+  );
+
+  $$SearchCacheItemsTableProcessedTableManager get searchCacheItemsRefs {
+    final manager = $$SearchCacheItemsTableTableManager(
+      $_db,
+      $_db.searchCacheItems,
+    ).filter((f) => f.postUri.uri.sqlEquals($_itemColumn<String>('uri')!));
+
+    final cache = $_typedResult.readTableOrNull(_searchCacheItemsRefsTable($_db));
     return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
   }
 }
@@ -4588,6 +5124,27 @@ class $$PostsTableFilterComposer extends Composer<_$AppDatabase, $PostsTable> {
               $$FeedContentItemsTableFilterComposer(
                 $db: $db,
                 $table: $db.feedContentItems,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> searchCacheItemsRefs(
+    Expression<bool> Function($$SearchCacheItemsTableFilterComposer f) f,
+  ) {
+    final $$SearchCacheItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.uri,
+      referencedTable: $db.searchCacheItems,
+      getReferencedColumn: (t) => t.postUri,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$SearchCacheItemsTableFilterComposer(
+                $db: $db,
+                $table: $db.searchCacheItems,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
@@ -4688,6 +5245,27 @@ class $$PostsTableAnnotationComposer extends Composer<_$AppDatabase, $PostsTable
     );
     return f(composer);
   }
+
+  Expression<T> searchCacheItemsRefs<T extends Object>(
+    Expression<T> Function($$SearchCacheItemsTableAnnotationComposer a) f,
+  ) {
+    final $$SearchCacheItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.uri,
+      referencedTable: $db.searchCacheItems,
+      getReferencedColumn: (t) => t.postUri,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$SearchCacheItemsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.searchCacheItems,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PostsTableTableManager
@@ -4703,7 +5281,7 @@ class $$PostsTableTableManager
           $$PostsTableUpdateCompanionBuilder,
           (Post, $$PostsTableReferences),
           Post,
-          PrefetchHooks Function({bool feedContentItemsRefs})
+          PrefetchHooks Function({bool feedContentItemsRefs, bool searchCacheItemsRefs})
         > {
   $$PostsTableTableManager(_$AppDatabase db, $PostsTable table)
     : super(
@@ -4764,10 +5342,13 @@ class $$PostsTableTableManager
               ),
           withReferenceMapper: (p0) =>
               p0.map((e) => (e.readTable(table), $$PostsTableReferences(db, table, e))).toList(),
-          prefetchHooksCallback: ({feedContentItemsRefs = false}) {
+          prefetchHooksCallback: ({feedContentItemsRefs = false, searchCacheItemsRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (feedContentItemsRefs) db.feedContentItems],
+              explicitlyWatchedTables: [
+                if (feedContentItemsRefs) db.feedContentItems,
+                if (searchCacheItemsRefs) db.searchCacheItems,
+              ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
@@ -4777,6 +5358,16 @@ class $$PostsTableTableManager
                       referencedTable: $$PostsTableReferences._feedContentItemsRefsTable(db),
                       managerFromTypedResult: (p0) =>
                           $$PostsTableReferences(db, table, p0).feedContentItemsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.postUri == item.uri),
+                      typedResults: items,
+                    ),
+                  if (searchCacheItemsRefs)
+                    await $_getPrefetchedData<Post, $PostsTable, SearchCacheItem>(
+                      currentTable: table,
+                      referencedTable: $$PostsTableReferences._searchCacheItemsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$PostsTableReferences(db, table, p0).searchCacheItemsRefs,
                       referencedItemsForCurrentItem: (item, referencedItems) =>
                           referencedItems.where((e) => e.postUri == item.uri),
                       typedResults: items,
@@ -4801,7 +5392,7 @@ typedef $$PostsTableProcessedTableManager =
       $$PostsTableUpdateCompanionBuilder,
       (Post, $$PostsTableReferences),
       Post,
-      PrefetchHooks Function({bool feedContentItemsRefs})
+      PrefetchHooks Function({bool feedContentItemsRefs, bool searchCacheItemsRefs})
     >;
 typedef $$ProfilesTableCreateCompanionBuilder =
     ProfilesCompanion Function({
@@ -5661,6 +6252,408 @@ typedef $$RecentSearchesTableProcessedTableManager =
       $$RecentSearchesTableUpdateCompanionBuilder,
       (RecentSearche, BaseReferences<_$AppDatabase, $RecentSearchesTable, RecentSearche>),
       RecentSearche,
+      PrefetchHooks Function()
+    >;
+typedef $$SearchCacheItemsTableCreateCompanionBuilder =
+    SearchCacheItemsCompanion Function({
+      required String queryKey,
+      required String postUri,
+      required String sortKey,
+      Value<int> rowid,
+    });
+typedef $$SearchCacheItemsTableUpdateCompanionBuilder =
+    SearchCacheItemsCompanion Function({
+      Value<String> queryKey,
+      Value<String> postUri,
+      Value<String> sortKey,
+      Value<int> rowid,
+    });
+
+final class $$SearchCacheItemsTableReferences
+    extends BaseReferences<_$AppDatabase, $SearchCacheItemsTable, SearchCacheItem> {
+  $$SearchCacheItemsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $PostsTable _postUriTable(_$AppDatabase db) =>
+      db.posts.createAlias($_aliasNameGenerator(db.searchCacheItems.postUri, db.posts.uri));
+
+  $$PostsTableProcessedTableManager get postUri {
+    final $_column = $_itemColumn<String>('post_uri')!;
+
+    final manager = $$PostsTableTableManager(
+      $_db,
+      $_db.posts,
+    ).filter((f) => f.uri.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_postUriTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$SearchCacheItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $SearchCacheItemsTable> {
+  $$SearchCacheItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get queryKey =>
+      $composableBuilder(column: $table.queryKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sortKey =>
+      $composableBuilder(column: $table.sortKey, builder: (column) => ColumnFilters(column));
+
+  $$PostsTableFilterComposer get postUri {
+    final $$PostsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.postUri,
+      referencedTable: $db.posts,
+      getReferencedColumn: (t) => t.uri,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$PostsTableFilterComposer(
+                $db: $db,
+                $table: $db.posts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$SearchCacheItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SearchCacheItemsTable> {
+  $$SearchCacheItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get queryKey =>
+      $composableBuilder(column: $table.queryKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sortKey =>
+      $composableBuilder(column: $table.sortKey, builder: (column) => ColumnOrderings(column));
+
+  $$PostsTableOrderingComposer get postUri {
+    final $$PostsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.postUri,
+      referencedTable: $db.posts,
+      getReferencedColumn: (t) => t.uri,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$PostsTableOrderingComposer(
+                $db: $db,
+                $table: $db.posts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$SearchCacheItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SearchCacheItemsTable> {
+  $$SearchCacheItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get queryKey =>
+      $composableBuilder(column: $table.queryKey, builder: (column) => column);
+
+  GeneratedColumn<String> get sortKey =>
+      $composableBuilder(column: $table.sortKey, builder: (column) => column);
+
+  $$PostsTableAnnotationComposer get postUri {
+    final $$PostsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.postUri,
+      referencedTable: $db.posts,
+      getReferencedColumn: (t) => t.uri,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$PostsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.posts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$SearchCacheItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SearchCacheItemsTable,
+          SearchCacheItem,
+          $$SearchCacheItemsTableFilterComposer,
+          $$SearchCacheItemsTableOrderingComposer,
+          $$SearchCacheItemsTableAnnotationComposer,
+          $$SearchCacheItemsTableCreateCompanionBuilder,
+          $$SearchCacheItemsTableUpdateCompanionBuilder,
+          (SearchCacheItem, $$SearchCacheItemsTableReferences),
+          SearchCacheItem,
+          PrefetchHooks Function({bool postUri})
+        > {
+  $$SearchCacheItemsTableTableManager(_$AppDatabase db, $SearchCacheItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SearchCacheItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SearchCacheItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SearchCacheItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> queryKey = const Value.absent(),
+                Value<String> postUri = const Value.absent(),
+                Value<String> sortKey = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SearchCacheItemsCompanion(
+                queryKey: queryKey,
+                postUri: postUri,
+                sortKey: sortKey,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String queryKey,
+                required String postUri,
+                required String sortKey,
+                Value<int> rowid = const Value.absent(),
+              }) => SearchCacheItemsCompanion.insert(
+                queryKey: queryKey,
+                postUri: postUri,
+                sortKey: sortKey,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), $$SearchCacheItemsTableReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: ({postUri = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (postUri) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.postUri,
+                                referencedTable: $$SearchCacheItemsTableReferences._postUriTable(
+                                  db,
+                                ),
+                                referencedColumn: $$SearchCacheItemsTableReferences
+                                    ._postUriTable(db)
+                                    .uri,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SearchCacheItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SearchCacheItemsTable,
+      SearchCacheItem,
+      $$SearchCacheItemsTableFilterComposer,
+      $$SearchCacheItemsTableOrderingComposer,
+      $$SearchCacheItemsTableAnnotationComposer,
+      $$SearchCacheItemsTableCreateCompanionBuilder,
+      $$SearchCacheItemsTableUpdateCompanionBuilder,
+      (SearchCacheItem, $$SearchCacheItemsTableReferences),
+      SearchCacheItem,
+      PrefetchHooks Function({bool postUri})
+    >;
+typedef $$SearchCacheCursorsTableCreateCompanionBuilder =
+    SearchCacheCursorsCompanion Function({
+      required String queryKey,
+      required String cursor,
+      Value<DateTime?> lastUpdated,
+      Value<int> rowid,
+    });
+typedef $$SearchCacheCursorsTableUpdateCompanionBuilder =
+    SearchCacheCursorsCompanion Function({
+      Value<String> queryKey,
+      Value<String> cursor,
+      Value<DateTime?> lastUpdated,
+      Value<int> rowid,
+    });
+
+class $$SearchCacheCursorsTableFilterComposer
+    extends Composer<_$AppDatabase, $SearchCacheCursorsTable> {
+  $$SearchCacheCursorsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get queryKey =>
+      $composableBuilder(column: $table.queryKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get cursor =>
+      $composableBuilder(column: $table.cursor, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastUpdated =>
+      $composableBuilder(column: $table.lastUpdated, builder: (column) => ColumnFilters(column));
+}
+
+class $$SearchCacheCursorsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SearchCacheCursorsTable> {
+  $$SearchCacheCursorsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get queryKey =>
+      $composableBuilder(column: $table.queryKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get cursor =>
+      $composableBuilder(column: $table.cursor, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastUpdated =>
+      $composableBuilder(column: $table.lastUpdated, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SearchCacheCursorsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SearchCacheCursorsTable> {
+  $$SearchCacheCursorsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get queryKey =>
+      $composableBuilder(column: $table.queryKey, builder: (column) => column);
+
+  GeneratedColumn<String> get cursor =>
+      $composableBuilder(column: $table.cursor, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastUpdated =>
+      $composableBuilder(column: $table.lastUpdated, builder: (column) => column);
+}
+
+class $$SearchCacheCursorsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SearchCacheCursorsTable,
+          SearchCacheCursor,
+          $$SearchCacheCursorsTableFilterComposer,
+          $$SearchCacheCursorsTableOrderingComposer,
+          $$SearchCacheCursorsTableAnnotationComposer,
+          $$SearchCacheCursorsTableCreateCompanionBuilder,
+          $$SearchCacheCursorsTableUpdateCompanionBuilder,
+          (
+            SearchCacheCursor,
+            BaseReferences<_$AppDatabase, $SearchCacheCursorsTable, SearchCacheCursor>,
+          ),
+          SearchCacheCursor,
+          PrefetchHooks Function()
+        > {
+  $$SearchCacheCursorsTableTableManager(_$AppDatabase db, $SearchCacheCursorsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SearchCacheCursorsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SearchCacheCursorsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SearchCacheCursorsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> queryKey = const Value.absent(),
+                Value<String> cursor = const Value.absent(),
+                Value<DateTime?> lastUpdated = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SearchCacheCursorsCompanion(
+                queryKey: queryKey,
+                cursor: cursor,
+                lastUpdated: lastUpdated,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String queryKey,
+                required String cursor,
+                Value<DateTime?> lastUpdated = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SearchCacheCursorsCompanion.insert(
+                queryKey: queryKey,
+                cursor: cursor,
+                lastUpdated: lastUpdated,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SearchCacheCursorsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SearchCacheCursorsTable,
+      SearchCacheCursor,
+      $$SearchCacheCursorsTableFilterComposer,
+      $$SearchCacheCursorsTableOrderingComposer,
+      $$SearchCacheCursorsTableAnnotationComposer,
+      $$SearchCacheCursorsTableCreateCompanionBuilder,
+      $$SearchCacheCursorsTableUpdateCompanionBuilder,
+      (
+        SearchCacheCursor,
+        BaseReferences<_$AppDatabase, $SearchCacheCursorsTable, SearchCacheCursor>,
+      ),
+      SearchCacheCursor,
       PrefetchHooks Function()
     >;
 typedef $$FollowsTableCreateCompanionBuilder =
@@ -6975,6 +7968,10 @@ class $AppDatabaseManager {
       $$FeedCursorsTableTableManager(_db, _db.feedCursors);
   $$RecentSearchesTableTableManager get recentSearches =>
       $$RecentSearchesTableTableManager(_db, _db.recentSearches);
+  $$SearchCacheItemsTableTableManager get searchCacheItems =>
+      $$SearchCacheItemsTableTableManager(_db, _db.searchCacheItems);
+  $$SearchCacheCursorsTableTableManager get searchCacheCursors =>
+      $$SearchCacheCursorsTableTableManager(_db, _db.searchCacheCursors);
   $$FollowsTableTableManager get follows => $$FollowsTableTableManager(_db, _db.follows);
   $$SavedFeedsTableTableManager get savedFeeds =>
       $$SavedFeedsTableTableManager(_db, _db.savedFeeds);

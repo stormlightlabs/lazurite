@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
@@ -20,7 +21,7 @@ void main() {
     mockApi = MockXrpcClient();
     db = AppDatabase(NativeDatabase.memory());
     mockLogger = MockLogger();
-    repository = SearchRepository(mockApi, db.searchDao, mockLogger);
+    repository = SearchRepository(mockApi, db.searchDao, db.searchCacheDao, mockLogger);
   });
 
   tearDown(() async {
@@ -75,6 +76,108 @@ void main() {
         expect(() => repository.searchPosts('error'), throwsA(isA<Exception>()));
 
         verify(() => mockLogger.error(any(), exception, any())).called(1);
+      });
+
+      test('caches results after successful search', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockSearchResponse());
+
+        await repository.searchPosts('flutter');
+
+        final cached = await repository.getCachedResults('flutter');
+        expect(cached, hasLength(2));
+        expect(cached.first.post.uri, 'at://did:plc:user1/app.bsky.feed.post/1');
+      });
+
+      test('caches cursor after successful search', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockSearchResponse(cursor: 'test_cursor'));
+
+        await repository.searchPosts('flutter');
+
+        final cursor = await repository.getCachedCursor('flutter');
+        expect(cursor, 'test_cursor');
+      });
+
+      test('normalizes query for caching', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockSearchResponse());
+
+        await repository.searchPosts('  FLUTTER  ');
+
+        final cached = await repository.getCachedResults('flutter');
+        expect(cached, hasLength(2));
+      });
+    });
+
+    group('normalizeQuery', () {
+      test('trims whitespace and lowercases', () {
+        expect(SearchRepository.normalizeQuery('  Flutter  '), 'flutter');
+        expect(SearchRepository.normalizeQuery('DART'), 'dart');
+        expect(SearchRepository.normalizeQuery('MixedCase'), 'mixedcase');
+      });
+    });
+
+    group('getCachedResults', () {
+      test('returns cached results', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockSearchResponse());
+
+        await repository.searchPosts('dart');
+
+        final cached = await repository.getCachedResults('dart');
+        expect(cached, hasLength(2));
+      });
+
+      test('returns empty list for uncached query', () async {
+        final cached = await repository.getCachedResults('nonexistent');
+        expect(cached, isEmpty);
+      });
+    });
+
+    group('cleanupSearchCache', () {
+      test('removes stale cache entries', () async {
+        final old = DateTime.now().subtract(const Duration(days: 10));
+        await db
+            .into(db.searchCacheCursors)
+            .insert(
+              SearchCacheCursorsCompanion.insert(
+                queryKey: 'old_query',
+                cursor: 'old_cursor',
+                lastUpdated: Value(old),
+              ),
+            );
+        await db
+            .into(db.posts)
+            .insert(
+              PostsCompanion.insert(
+                uri: 'at://did:plc:old/app.bsky.feed.post/old',
+                cid: 'old_cid',
+                authorDid: 'did:plc:old',
+                record: '{"text": "Old"}',
+              ),
+            );
+        await db
+            .into(db.profiles)
+            .insert(ProfilesCompanion.insert(did: 'did:plc:old', handle: 'old.bsky'));
+        await db
+            .into(db.searchCacheItems)
+            .insert(
+              SearchCacheItemsCompanion.insert(
+                queryKey: 'old_query',
+                postUri: 'at://did:plc:old/app.bsky.feed.post/old',
+                sortKey: '0000000000',
+              ),
+            );
+
+        await repository.cleanupSearchCache();
+
+        final cached = await repository.getCachedResults('old_query');
+        expect(cached, isEmpty);
       });
     });
 

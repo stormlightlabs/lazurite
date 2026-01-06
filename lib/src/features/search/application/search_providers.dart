@@ -11,7 +11,7 @@ SearchRepository searchRepository(Ref ref) {
   final api = ref.watch(xrpcClientProvider);
   final db = ref.watch(appDatabaseProvider);
   final logger = ref.watch(loggerProvider('SearchRepository'));
-  return SearchRepository(api, db.searchDao, logger);
+  return SearchRepository(api, db.searchDao, db.searchCacheDao, logger);
 }
 
 @riverpod
