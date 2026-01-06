@@ -47,16 +47,16 @@ Goal:
   palette to Material 3 ColorScheme roles.
 
 Tasks:
-- [ ] Create domain types:
+- [x] Create domain types:
       - ThemePack(id, name, author, variants[])
       - ThemeVariant(id, brightness, palette, derivedScheme)
       - ThemeSpec(seed?, surfaces?, accents?, typography?, shapes?)
-- [ ] Build ColorScheme by roles (NOT by arbitrary hex):
+- [x] Build ColorScheme by roles (NOT by arbitrary hex):
       - Provide full set of M3 surfaces/containers where available:
         surfaceDim/bright + surfaceContainerLowest/Low/Default/High/Highest
       - Provide outline + outlineVariant, onSurfaceVariant
       (These roles are core to M3’s "tone-based surfaces" model.)
-- [ ] Implement ThemeFactory.buildThemeData(ThemeVariant):
+- [x] Implement ThemeFactory.buildThemeData(ThemeVariant):
       - ThemeData(useMaterial3: true, colorScheme: ...)
       - Centralize component themes (NavBar, Chips, Cards, ListTiles, Dividers,
         Inputs)
@@ -97,7 +97,7 @@ Text emphasis:
 - [ ] Ensure secondary metadata (handle, timestamp) uses onSurfaceVariant.
 - [ ] Keep body text on onSurface (highest legibility).
 
-Inputs / dialogs / sheets (for later screens):
+Inputs / dialogs / sheets:
 - [ ] TextField, Dialog, BottomSheet should use container roles and consistent
       scrims.
 

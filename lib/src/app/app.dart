@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/app/providers.dart';
-import 'package:lazurite/src/app/theme.dart';
 import 'package:lazurite/src/app/theme_mode_controller.dart';
+import 'package:lazurite/src/app/theming/packs/oxocarbon_theme_pack.dart';
+import 'package:lazurite/src/app/theming/theme_factory.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
 
 /// The main application widget.
@@ -19,8 +20,8 @@ class App extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'Lazurite',
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      theme: ThemeFactory.buildThemeData(oxocarbonLightVariant),
+      darkTheme: ThemeFactory.buildThemeData(oxocarbonDarkVariant),
       themeMode: themeMode,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
