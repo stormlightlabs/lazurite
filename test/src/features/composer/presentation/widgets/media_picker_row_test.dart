@@ -21,11 +21,9 @@ void main() {
     });
 
     testWidgets('shows thumbnails for provided paths', (tester) async {
-      // Since Image.file won't work in tests, we just verify container is rendered
       await tester.pumpApp(
         const MediaPickerRow(mediaPaths: ['/fake/path1.jpg', '/fake/path2.jpg']),
       );
-      // Find the broken image icons (since files don't exist)
       await tester.pump();
       expect(find.byIcon(Icons.broken_image), findsNWidgets(2));
     });
@@ -47,7 +45,6 @@ void main() {
         ),
       );
       await tester.pump();
-      // Tap the first remove button
       await tester.tap(find.byIcon(Icons.close).first);
       expect(removedIndex, 0);
     });

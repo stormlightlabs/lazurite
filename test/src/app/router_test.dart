@@ -73,7 +73,6 @@ void main() {
       ),
     );
 
-    // FeedContentRepository mocks
     when(
       () => mockFeedContentRepository.watchFeedContent(feedKey: any(named: 'feedKey')),
     ).thenAnswer((_) => Stream.value([]));

@@ -15,7 +15,6 @@ class App extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(goRouterProvider);
     final themeMode = ref.watch(themeModeControllerProvider);
-    // Initialize feed sync controller to handle background sync
     ref.watch(feedSyncControllerProvider);
 
     return MaterialApp.router(

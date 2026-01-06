@@ -164,7 +164,7 @@ void main() {
         try {
           await dio.get('/test', options: Options(extra: {AuthInterceptor.requiresAuthKey: true}));
         } catch (e) {
-          // Expect error since mock adapter can't handle retry properly
+          /* Expect error since mock adapter can't handle retry properly */
         }
 
         expect(refreshCalled, isTrue);
@@ -247,7 +247,7 @@ void main() {
         try {
           await Future.wait(futures);
         } catch (e) {
-          // Expected to fail since mock adapter can't handle retries properly
+          /* Expected to fail since mock adapter can't handle retries properly */
         }
 
         expect(refreshCount, equals(1));

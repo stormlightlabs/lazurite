@@ -156,7 +156,6 @@ void main() {
 
         await repository.fetchAndCacheFeed();
 
-        // Verify the internal home feed key is used
         verify(
           () => mockDao.insertFeedContentBatch(
             feedKey: FeedContentRepository.kInternalHomeFeedKey,
@@ -167,7 +166,6 @@ void main() {
           ),
         ).called(1);
 
-        // Ensure it uses the namespaced prefix
         expect(FeedContentRepository.kInternalHomeFeedKey, startsWith('__internal:'));
       });
 
@@ -190,7 +188,6 @@ void main() {
           },
         );
 
-        // Attempt to fetch a feed with the reserved prefix
         expect(
           () => repository.fetchAndCacheFeed(feedUri: '__internal:malicious'),
           throwsA(
@@ -286,37 +283,30 @@ void main() {
 
         await repository.fetchAndCacheFeed();
 
-        // Extract sortKeys from captured items (they are Companion objects)
         expect(capturedItems, isNotNull);
         final sortKeys = capturedItems!
             .map((item) => (item.sortKey as dynamic).value as String)
             .toList();
 
-        // Verify we have 3 unique sortKeys
         expect(sortKeys.length, 3);
         expect(sortKeys.toSet().length, 3, reason: 'All sortKeys should be unique');
 
-        // Verify sortKey format: {timestamp}-{index}-{hash}
         for (var i = 0; i < sortKeys.length; i++) {
           final parts = sortKeys[i].split('-');
           expect(parts.length, 3, reason: 'sortKey should have 3 parts');
 
-          // First part should be a valid microsecond timestamp
           final timestamp = int.tryParse(parts[0]);
           expect(timestamp, isNotNull);
           expect(timestamp! > 0, isTrue);
 
-          // Second part should be the index
           final index = int.tryParse(parts[1]);
           expect(index, equals(i));
 
-          // Third part should be a hash (positive integer)
           final hash = int.tryParse(parts[2]);
           expect(hash, isNotNull);
           expect(hash! >= 0, isTrue);
         }
 
-        // Verify sortKeys are in descending order (newest first)
         for (var i = 0; i < sortKeys.length - 1; i++) {
           final current = int.parse(sortKeys[i].split('-')[0]);
           final next = int.parse(sortKeys[i + 1].split('-')[0]);
@@ -325,8 +315,6 @@ void main() {
       });
 
       test('sortKeys remain unique even with rapid consecutive fetches', () async {
-        // This test simulates rapid fetches by calling fetchAndCacheFeed twice
-        // in quick succession to verify no collisions occur
         when(() => mockApi.isAuthenticated).thenReturn(true);
         when(() => mockApi.call(any(), params: any(named: 'params'))).thenAnswer(
           (_) async => {
@@ -359,17 +347,14 @@ void main() {
           allCapturedItems.add(items);
         });
 
-        // Execute two rapid fetches
         await repository.fetchAndCacheFeed();
         await repository.fetchAndCacheFeed();
 
-        // Extract all sortKeys from both fetches (they are Companion objects)
         final allSortKeys = allCapturedItems
             .expand((items) => items)
             .map((item) => (item.sortKey as dynamic).value as String)
             .toList();
 
-        // Verify all sortKeys are unique (no collisions)
         expect(
           allSortKeys.toSet().length,
           equals(allSortKeys.length),

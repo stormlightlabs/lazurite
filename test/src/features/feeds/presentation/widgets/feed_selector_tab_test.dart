@@ -128,11 +128,8 @@ void main() {
 
     await tester.pump();
 
-    // Unauthenticated view shows only Discover chip
     expect(find.text('Discover'), findsOneWidget);
     expect(find.text('Home'), findsNothing);
-
-    // No manage feeds button for unauthenticated users
     expect(find.byIcon(Icons.tune), findsNothing);
   });
 }

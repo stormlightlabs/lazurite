@@ -88,7 +88,6 @@ class _TestAuthNotifier extends AuthNotifier {
 
   void updateState(AuthState newState) {
     _currentState = newState;
-    // Use state setter from parent Notifier class to trigger rebuild
     state = newState;
   }
 }
@@ -158,16 +157,13 @@ void main() {
           overrides: [authProvider.overrideWith(() => authNotifier)],
         );
 
-        // Verify unauthenticated state
         expect(find.byType(NavigationDestination), findsNWidgets(2));
         expect(find.text('Home'), findsOneWidget);
         expect(find.text('Login'), findsOneWidget);
 
-        // Transition to authenticated - this should not throw GlobalKey errors
         authNotifier.updateState(AuthState.authenticated(_testSession()));
         await tester.pumpAndSettle();
 
-        // Verify authenticated state
         expect(find.byType(NavigationDestination), findsNWidgets(5));
         expect(find.text('Home'), findsOneWidget);
         expect(find.text('Search'), findsOneWidget);
@@ -185,16 +181,13 @@ void main() {
           overrides: [authProvider.overrideWith(() => authNotifier)],
         );
 
-        // Verify authenticated state
         expect(find.byType(NavigationDestination), findsNWidgets(5));
         expect(find.text('Home'), findsOneWidget);
         expect(find.text('Search'), findsOneWidget);
 
-        // Transition to unauthenticated - should not result in GlobalKey errors
         authNotifier.updateState(const AuthState.unauthenticated());
         await tester.pumpAndSettle();
 
-        // Verify unauthenticated state
         expect(find.byType(NavigationDestination), findsNWidgets(2));
         expect(find.text('Home'), findsOneWidget);
         expect(find.text('Login'), findsOneWidget);
@@ -212,12 +205,10 @@ void main() {
           overrides: [authProvider.overrideWith(() => authNotifier)],
         );
 
-        // Switch away from the Home branch while authenticated.
         await tester.tap(find.text('Messages'));
         await tester.pumpAndSettle();
         expect(find.text('DMs Content'), findsOneWidget);
 
-        // Transition to unauthenticated - content should snap back to Home.
         authNotifier.updateState(const AuthState.unauthenticated());
         await tester.pumpAndSettle();
 

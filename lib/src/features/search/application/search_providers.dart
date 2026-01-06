@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
+import 'package:lazurite/src/core/utils/pagination.dart';
 import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -17,46 +19,37 @@ SearchRepository searchRepository(Ref ref) {
 }
 
 @riverpod
-class SearchNotifier extends _$SearchNotifier {
-  String? _cursor;
-  bool _hasMore = true;
-
+class SearchNotifier extends _$SearchNotifier with CursorPaginationMixin<Post> {
   @override
-  Future<List<SearchPostItem>> build(String query) async {
+  Future<List<Post>> build(String query) async {
     if (query.isEmpty) return [];
     return _search(query);
   }
 
-  Future<List<SearchPostItem>> _search(String query, {bool loadMore = false}) async {
+  Future<List<Post>> _search(String query, {bool loadMore = false}) async {
     final repository = ref.read(searchRepositoryProvider);
 
     if (!loadMore) {
       await repository.saveRecentSearch(query);
     }
 
-    final result = await repository.searchPosts(query, cursor: loadMore ? _cursor : null);
-
-    _cursor = result.cursor;
-    _hasMore = result.hasMore;
+    final result = await repository.searchPosts(query, cursor: loadMore ? cursor : null);
+    updatePagination(result);
 
     if (loadMore) {
       final current = state.value ?? [];
-      return [...current, ...result.posts];
+      return [...current, ...result.items];
     }
-    return result.posts;
+    return result.items;
   }
 
-  bool get hasMore => _hasMore;
-
   Future<void> loadMore() async {
-    if (!_hasMore || state.isLoading) return;
-
+    if (!canLoadMore || state.isLoading) return;
     state = AsyncData(await _search(query, loadMore: true));
   }
 
   Future<void> refresh() async {
-    _cursor = null;
-    _hasMore = true;
+    resetPagination();
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => _search(query));
   }
@@ -94,9 +87,8 @@ class RecentSearchesNotifier extends _$RecentSearchesNotifier {
 
 /// Notifier for searching actors with pagination.
 @riverpod
-class ActorSearchNotifier extends _$ActorSearchNotifier {
-  String? _cursor;
-  bool _hasMore = true;
+class ActorSearchNotifier extends _$ActorSearchNotifier
+    with CursorPaginationMixin<SearchActorItem> {
   Timer? _debounceTimer;
 
   @override
@@ -113,29 +105,23 @@ class ActorSearchNotifier extends _$ActorSearchNotifier {
       await repository.saveRecentSearch(query);
     }
 
-    final result = await repository.searchActors(query, cursor: loadMore ? _cursor : null);
-
-    _cursor = result.cursor;
-    _hasMore = result.hasMore;
+    final result = await repository.searchActors(query, cursor: loadMore ? cursor : null);
+    updatePagination(result);
 
     if (loadMore) {
       final current = state.value ?? [];
-      return [...current, ...result.actors];
+      return [...current, ...result.items];
     }
-    return result.actors;
+    return result.items;
   }
 
-  bool get hasMore => _hasMore;
-
   Future<void> loadMore() async {
-    if (!_hasMore || state.isLoading) return;
-
+    if (!canLoadMore || state.isLoading) return;
     state = AsyncData(await _search(query, loadMore: true));
   }
 
   Future<void> refresh() async {
-    _cursor = null;
-    _hasMore = true;
+    resetPagination();
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => _search(query));
   }

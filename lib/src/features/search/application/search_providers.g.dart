@@ -53,8 +53,7 @@ String _$searchRepositoryHash() => r'29255e3b3504388c42730a5d7af777347b983e90';
 @ProviderFor(SearchNotifier)
 final searchProvider = SearchNotifierFamily._();
 
-final class SearchNotifierProvider
-    extends $AsyncNotifierProvider<SearchNotifier, List<SearchPostItem>> {
+final class SearchNotifierProvider extends $AsyncNotifierProvider<SearchNotifier, List<Post>> {
   SearchNotifierProvider._({
     required SearchNotifierFamily super.from,
     required String super.argument,
@@ -91,15 +90,15 @@ final class SearchNotifierProvider
   }
 }
 
-String _$searchNotifierHash() => r'fae1ada9ad3fa7cb3b48ea549a570f132f718126';
+String _$searchNotifierHash() => r'18366eda9b4eac038393bdc7c3842b62f3c77127';
 
 final class SearchNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
           SearchNotifier,
-          AsyncValue<List<SearchPostItem>>,
-          List<SearchPostItem>,
-          FutureOr<List<SearchPostItem>>,
+          AsyncValue<List<Post>>,
+          List<Post>,
+          FutureOr<List<Post>>,
           String
         > {
   SearchNotifierFamily._()
@@ -118,20 +117,20 @@ final class SearchNotifierFamily extends $Family
   String toString() => r'searchProvider';
 }
 
-abstract class _$SearchNotifier extends $AsyncNotifier<List<SearchPostItem>> {
+abstract class _$SearchNotifier extends $AsyncNotifier<List<Post>> {
   late final _$args = ref.$arg as String;
   String get query => _$args;
 
-  FutureOr<List<SearchPostItem>> build(String query);
+  FutureOr<List<Post>> build(String query);
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<List<SearchPostItem>>, List<SearchPostItem>>;
+    final ref = this.ref as $Ref<AsyncValue<List<Post>>, List<Post>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<List<SearchPostItem>>, List<SearchPostItem>>,
-              AsyncValue<List<SearchPostItem>>,
+              AnyNotifier<AsyncValue<List<Post>>, List<Post>>,
+              AsyncValue<List<Post>>,
               Object?,
               Object?
             >;
@@ -228,7 +227,7 @@ final class ActorSearchNotifierProvider
   }
 }
 
-String _$actorSearchNotifierHash() => r'dfeef83484f52fde100ccf5425fb5450211bfba2';
+String _$actorSearchNotifierHash() => r'4207c0368af736d8fc187c101a2c53d2cb8d81c2';
 
 /// Notifier for searching actors with pagination.
 

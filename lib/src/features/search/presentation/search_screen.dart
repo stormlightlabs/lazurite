@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_embeds.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
@@ -386,7 +387,7 @@ class _ErrorView extends StatelessWidget {
 class _SearchResultCard extends StatelessWidget {
   const _SearchResultCard({required this.post});
 
-  final SearchPostItem post;
+  final Post post;
 
   @override
   Widget build(BuildContext context) {
@@ -406,10 +407,10 @@ class _SearchResultCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundImage: post.authorAvatar != null
-                      ? NetworkImage(post.authorAvatar!)
+                  backgroundImage: post.author.avatar != null
+                      ? NetworkImage(post.author.avatar!)
                       : null,
-                  child: post.authorAvatar == null ? const Icon(Icons.person, size: 16) : null,
+                  child: post.author.avatar == null ? const Icon(Icons.person, size: 16) : null,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -417,13 +418,13 @@ class _SearchResultCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        post.authorDisplayName ?? post.authorHandle,
+                        post.author.displayName ?? post.author.handle,
                         style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        '@${post.authorHandle}',
+                        '@${post.author.handle}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface.withAlpha(153),
                         ),
@@ -444,7 +445,7 @@ class _SearchResultCard extends StatelessWidget {
             ),
             if (post.embed != null) ...[
               const SizedBox(height: 8),
-              PostEmbeds(embed: post.embed!, authorDid: post.authorDid, record: post.record),
+              PostEmbeds(embed: post.embed!, authorDid: post.author.did, record: post.record),
             ],
             const SizedBox(height: 8),
             Row(

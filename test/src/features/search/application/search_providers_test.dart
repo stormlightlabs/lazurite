@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/post.dart';
+import 'package:lazurite/src/core/utils/pagination.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
 import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:mocktail/mocktail.dart';
@@ -30,7 +32,7 @@ void main() {
 
     test('build performs search for non-empty query', () async {
       const query = 'test query';
-      final expectedResult = SearchPostsResult(posts: <SearchPostItem>[], cursor: 'next_cursor');
+      const expectedResult = PaginatedResult<Post>(items: <Post>[], cursor: 'next_cursor');
 
       when(() => mockRepository.saveRecentSearch(query)).thenAnswer((_) async {});
       when(
@@ -45,27 +47,25 @@ void main() {
 
     test('loadMore fetches next page', () async {
       const query = 'test query';
-      final firstPage = SearchPostsResult(
-        posts: [
-          SearchPostItem(
+      final firstPage = PaginatedResult<Post>(
+        items: [
+          Post(
             uri: 'uri1',
             cid: 'cid1',
             text: 'text1',
-            authorDid: 'did1',
-            authorHandle: 'handle1',
+            author: const Author(did: 'did1', handle: 'handle1'),
             indexedAt: DateTime.now(),
           ),
         ],
         cursor: 'next_cursor',
       );
-      final secondPage = SearchPostsResult(
-        posts: [
-          SearchPostItem(
+      final secondPage = PaginatedResult<Post>(
+        items: [
+          Post(
             uri: 'uri2',
             cid: 'cid2',
             text: 'text2',
-            authorDid: 'did2',
-            authorHandle: 'handle2',
+            author: const Author(did: 'did2', handle: 'handle2'),
             indexedAt: DateTime.now(),
           ),
         ],
@@ -93,10 +93,7 @@ void main() {
 
     test('loadMore does nothing if hasMore is false', () async {
       const query = 'test query';
-      final singlePage = SearchPostsResult(
-        posts: [],
-        cursor: null,
-      ); // Null cursor means no more results
+      const singlePage = PaginatedResult<Post>(items: [], cursor: null);
 
       when(() => mockRepository.saveRecentSearch(query)).thenAnswer((_) async {});
       when(
@@ -108,13 +105,13 @@ void main() {
 
       await notifier.loadMore();
 
-      verify(() => mockRepository.searchPosts(query, cursor: null)).called(1); // Initial call only
+      verify(() => mockRepository.searchPosts(query, cursor: null)).called(1);
       verifyNever(() => mockRepository.searchPosts(query, cursor: any(named: 'cursor')));
     });
 
     test('refresh resets cursor and re-searches', () async {
       const query = 'test query';
-      final result = SearchPostsResult(posts: [], cursor: 'new_cursor');
+      const result = PaginatedResult<Post>(items: [], cursor: 'new_cursor');
 
       when(() => mockRepository.saveRecentSearch(query)).thenAnswer((_) async {});
       when(() => mockRepository.searchPosts(query, cursor: null)).thenAnswer((_) async => result);
@@ -124,7 +121,7 @@ void main() {
 
       await notifier.refresh();
 
-      verify(() => mockRepository.searchPosts(query, cursor: null)).called(2); // Initial + Refresh
+      verify(() => mockRepository.searchPosts(query, cursor: null)).called(2);
     });
   });
 }

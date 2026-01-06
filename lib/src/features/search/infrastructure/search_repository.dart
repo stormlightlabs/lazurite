@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
+import 'package:lazurite/src/core/utils/pagination.dart';
+import 'package:lazurite/src/infrastructure/db/app_database.dart' hide Post;
 import 'package:lazurite/src/infrastructure/db/daos/search_cache_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/search_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
@@ -22,7 +24,7 @@ class SearchRepository {
   }
 
   /// Searches posts with cursor pagination and caches results.
-  Future<SearchPostsResult> searchPosts(String query, {String? cursor}) async {
+  Future<PaginatedResult<Post>> searchPosts(String query, {String? cursor}) async {
     final queryKey = normalizeQuery(query);
     _logger.info('Searching posts', {'query': query, 'queryKey': queryKey, 'cursor': cursor});
 
@@ -33,16 +35,14 @@ class SearchRepository {
       );
 
       final rawPosts = response['posts'] as List? ?? [];
-      final posts = rawPosts
-          .map((e) => SearchPostItem.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final posts = rawPosts.map((e) => Post.fromJson(e as Map<String, dynamic>)).toList();
       final nextCursor = response['cursor'] as String?;
 
       _logger.debug('Found ${posts.length} posts');
 
       await _cacheSearchResults(queryKey, rawPosts, nextCursor, isLoadMore: cursor != null);
 
-      return SearchPostsResult(posts: posts, cursor: nextCursor);
+      return PaginatedResult(items: posts, cursor: nextCursor);
     } catch (e, stack) {
       _logger.error('Search failed', e, stack);
       rethrow;
@@ -173,7 +173,7 @@ class SearchRepository {
   }
 
   /// Searches actors (users) with cursor pagination.
-  Future<SearchActorsResult> searchActors(String query, {String? cursor}) async {
+  Future<PaginatedResult<SearchActorItem>> searchActors(String query, {String? cursor}) async {
     _logger.info('Searching actors', {'query': query, 'cursor': cursor});
 
     try {
@@ -190,87 +190,12 @@ class SearchRepository {
 
       _logger.debug('Found ${actors.length} actors');
 
-      return SearchActorsResult(actors: actors, cursor: nextCursor);
+      return PaginatedResult(items: actors, cursor: nextCursor);
     } catch (e, stack) {
       _logger.error('Actor search failed', e, stack);
       rethrow;
     }
   }
-}
-
-/// Result of searching posts.
-class SearchPostsResult {
-  SearchPostsResult({required this.posts, this.cursor});
-
-  final List<SearchPostItem> posts;
-  final String? cursor;
-
-  bool get hasMore => cursor != null;
-}
-
-/// A post from search results.
-class SearchPostItem {
-  factory SearchPostItem.fromJson(Map<String, dynamic> json) {
-    final author = json['author'] as Map<String, dynamic>;
-    final record = json['record'] as Map<String, dynamic>;
-    final embed = json['embed'] as Map<String, dynamic>?;
-
-    return SearchPostItem(
-      uri: json['uri'] as String,
-      cid: json['cid'] as String,
-      authorDid: author['did'] as String,
-      authorHandle: author['handle'] as String,
-      authorDisplayName: author['displayName'] as String?,
-      authorAvatar: author['avatar'] as String?,
-      text: record['text'] as String? ?? '',
-      indexedAt: DateTime.tryParse(json['indexedAt'] as String? ?? ''),
-      replyCount: json['replyCount'] as int? ?? 0,
-      repostCount: json['repostCount'] as int? ?? 0,
-      likeCount: json['likeCount'] as int? ?? 0,
-      embed: embed,
-      record: record,
-    );
-  }
-
-  SearchPostItem({
-    required this.uri,
-    required this.cid,
-    required this.authorDid,
-    required this.authorHandle,
-    this.authorDisplayName,
-    this.authorAvatar,
-    required this.text,
-    this.indexedAt,
-    this.replyCount = 0,
-    this.repostCount = 0,
-    this.likeCount = 0,
-    this.embed,
-    this.record,
-  });
-
-  final String uri;
-  final String cid;
-  final String authorDid;
-  final String authorHandle;
-  final String? authorDisplayName;
-  final String? authorAvatar;
-  final String text;
-  final DateTime? indexedAt;
-  final int replyCount;
-  final int repostCount;
-  final int likeCount;
-  final Map<String, dynamic>? embed;
-  final Map<String, dynamic>? record;
-}
-
-/// Result of searching actors.
-class SearchActorsResult {
-  SearchActorsResult({required this.actors, this.cursor});
-
-  final List<SearchActorItem> actors;
-  final String? cursor;
-
-  bool get hasMore => cursor != null;
 }
 
 /// An actor (user) from search results.

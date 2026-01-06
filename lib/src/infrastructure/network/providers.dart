@@ -41,7 +41,7 @@ Dio? dioPds(Ref ref) {
         final db = ref.read(appDatabaseProvider);
         db.feedContentDao.clearFeedContent('home');
       } catch (e) {
-        // Ignore if database not available
+        /* Ignore if database not available */
       }
 
       ref.read(authProvider.notifier).logout();

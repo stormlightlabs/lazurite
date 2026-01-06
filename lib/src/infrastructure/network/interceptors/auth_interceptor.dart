@@ -67,7 +67,6 @@ class AuthInterceptor extends Interceptor {
     ErrorInterceptorHandler handler,
   ) async {
     final options = err.requestOptions;
-    // Use DPoP scheme for Authorization header as per RFC 9449
     options.headers['Authorization'] = 'DPoP ${newSession.accessJwt}';
 
     try {
@@ -138,7 +137,6 @@ class AuthInterceptor extends Interceptor {
     if (requiresAuth) {
       var session = await getSession();
 
-      // Proactively refresh if token is near expiration
       if (session != null && session.isNearExpiration && !session.isExpired) {
         _logger.debug('Token near expiration, proactively refreshing');
         final refreshed = await _performRefresh();
@@ -151,7 +149,6 @@ class AuthInterceptor extends Interceptor {
 
       if (session != null) {
         final token = session.accessJwt;
-        // Use DPoP scheme for Authorization header as per RFC 9449
         options.headers['Authorization'] = 'DPoP $token';
 
         try {

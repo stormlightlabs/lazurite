@@ -37,10 +37,10 @@ void main() {
 
         final result = await repository.searchPosts('flutter');
 
-        expect(result.posts, hasLength(2));
+        expect(result.items, hasLength(2));
         expect(result.cursor, 'next_page');
         expect(result.hasMore, isTrue);
-        expect(result.posts.first.text, 'Flutter is awesome');
+        expect(result.items.first.text, 'Flutter is awesome');
       });
 
       test('parses embed data from search results', () async {
@@ -50,13 +50,13 @@ void main() {
 
         final result = await repository.searchPosts('flutter');
 
-        final postWithEmbed = result.posts.first;
+        final postWithEmbed = result.items.first;
         expect(postWithEmbed.embed != null, isTrue);
         expect(postWithEmbed.embed![r'$type'], 'app.bsky.embed.images#view');
         expect(postWithEmbed.record != null, isTrue);
         expect(postWithEmbed.record!['text'], 'Flutter is awesome');
 
-        final postWithoutEmbed = result.posts.last;
+        final postWithoutEmbed = result.items.last;
         expect(postWithoutEmbed.embed == null, isTrue);
       });
 
@@ -82,7 +82,7 @@ void main() {
 
         final result = await repository.searchPosts('nonexistent_query');
 
-        expect(result.posts, isEmpty);
+        expect(result.items, isEmpty);
         expect(result.hasMore, isFalse);
       });
 
@@ -272,11 +272,11 @@ void main() {
 
         final result = await repository.searchActors('flutter');
 
-        expect(result.actors, hasLength(2));
+        expect(result.items, hasLength(2));
         expect(result.cursor, 'next_actor_page');
         expect(result.hasMore, isTrue);
-        expect(result.actors.first.handle, 'flutterdev.bsky.social');
-        expect(result.actors.first.displayName, 'Flutter Developer');
+        expect(result.items.first.handle, 'flutterdev.bsky.social');
+        expect(result.items.first.displayName, 'Flutter Developer');
       });
 
       test('passes cursor for pagination', () async {
@@ -301,7 +301,7 @@ void main() {
 
         final result = await repository.searchActors('nonexistent');
 
-        expect(result.actors, isEmpty);
+        expect(result.items, isEmpty);
         expect(result.hasMore, isFalse);
       });
 
@@ -312,8 +312,8 @@ void main() {
 
         final result = await repository.searchActors('flutter');
 
-        expect(result.actors.first.followersCount, 1000);
-        expect(result.actors.first.followsCount, 500);
+        expect(result.items.first.followersCount, 1000);
+        expect(result.items.first.followsCount, 500);
       });
 
       test('logs error and rethrows on failure', () async {

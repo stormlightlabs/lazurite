@@ -77,11 +77,11 @@ Tasks:
             - 300ms debounce on text input
             - cancel in-flight requests on new input
 - [ ] Architecture & Code Quality (MEDIUM):
-      - [ ] Create unified post domain model:
+      - [x] Create unified post domain model:
             - consolidate SearchPostItem and FeedPost
             - shared Post model with adapters
             - reduce duplication in repository layer
-      - [ ] Shared pagination utilities:
+      - [x] Shared pagination utilities:
             - extract pagination logic to utility class
             - consistent cursor + hasMore pattern
             - reuse in search and feeds

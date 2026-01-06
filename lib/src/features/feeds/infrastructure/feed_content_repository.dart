@@ -59,7 +59,6 @@ class FeedContentRepository {
       return kInternalHomeFeedKey;
     }
 
-    // Validate that the feed URI doesn't start with internal prefix
     if (feedUri.startsWith('__internal:')) {
       throw ArgumentError.value(
         feedUri,
@@ -133,9 +132,6 @@ class FeedContentRepository {
           profiles.add(_mapProfile(reason['by']));
         }
 
-        // Use compound sortKey with microsecond precision to prevent collisions:
-        // Format: {timestamp}-{index}-{postUriHash}
-        // This ensures uniqueness even on rapid fetches
         final sortKey = '${baseTime - i}-$i-${postUri.hashCode.abs()}';
 
         items.add(

@@ -38,12 +38,9 @@ class MediaPickerRow extends StatelessWidget {
         itemCount: mediaPaths.length + (canAddMore ? 1 : 0),
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          // Add button at the end
           if (index == mediaPaths.length) {
             return _AddMediaButton(onTap: onAddMedia, colorScheme: colorScheme);
           }
-
-          // Media thumbnail
           return _MediaThumbnail(
             path: mediaPaths[index],
             onRemove: onRemoveMedia != null ? () => onRemoveMedia!(index) : null,

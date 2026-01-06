@@ -73,8 +73,7 @@ void main() {
     });
 
     testWidgets('computes negative count for over-limit text', (tester) async {
-      // Test counter calculation logic directly via the Text widget
-      controller.text = 'Hello World!!'; // 13 chars with maxLength: 10 = -3
+      controller.text = 'Hello World!!';
       await tester.pumpApp(
         SingleChildScrollView(child: ComposerTextField(controller: controller, maxLength: 10)),
       );

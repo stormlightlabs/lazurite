@@ -39,7 +39,6 @@ class UploadProgressTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // Thumbnail
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: SizedBox(
@@ -55,8 +54,6 @@ class UploadProgressTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-
-          // Filename and progress
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,10 +77,7 @@ class UploadProgressTile extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(width: 8),
-
-          // Status icon or retry button
           _StatusAction(status: status, colorScheme: colorScheme, onRetry: onRetry),
         ],
       ),
