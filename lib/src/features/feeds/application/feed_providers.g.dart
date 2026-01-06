@@ -244,7 +244,7 @@ final class FeedMutationNotifierProvider
   }
 }
 
-String _$feedMutationNotifierHash() => r'ad6870f92cbb804ff2abc617a59d1face16ad19e';
+String _$feedMutationNotifierHash() => r'0461e118b7eb62385b9cdaf729671538d4936df7';
 
 /// Notifier for feed mutations (save, remove, pin).
 
@@ -337,7 +337,8 @@ abstract class _$DiscoverFeedsNotifier extends $Notifier<AsyncValue<List<Map<Str
 /// This notifier maintains the URI of the currently selected feed and allows
 /// switching between feeds. The feed content will reactively update based on this value.
 ///
-/// For authenticated users, defaults to 'home' feed.
+/// For authenticated users, defaults to their top pinned feed (by sort order).
+/// Falls back to home feed if no pinned feeds exist.
 /// For unauthenticated users, defaults to the Discover (What's Hot) feed.
 
 @ProviderFor(ActiveFeed)
@@ -348,7 +349,8 @@ final activeFeedProvider = ActiveFeedProvider._();
 /// This notifier maintains the URI of the currently selected feed and allows
 /// switching between feeds. The feed content will reactively update based on this value.
 ///
-/// For authenticated users, defaults to 'home' feed.
+/// For authenticated users, defaults to their top pinned feed (by sort order).
+/// Falls back to home feed if no pinned feeds exist.
 /// For unauthenticated users, defaults to the Discover (What's Hot) feed.
 final class ActiveFeedProvider extends $NotifierProvider<ActiveFeed, String> {
   /// Notifier for tracking the currently active feed.
@@ -356,7 +358,8 @@ final class ActiveFeedProvider extends $NotifierProvider<ActiveFeed, String> {
   /// This notifier maintains the URI of the currently selected feed and allows
   /// switching between feeds. The feed content will reactively update based on this value.
   ///
-  /// For authenticated users, defaults to 'home' feed.
+  /// For authenticated users, defaults to their top pinned feed (by sort order).
+  /// Falls back to home feed if no pinned feeds exist.
   /// For unauthenticated users, defaults to the Discover (What's Hot) feed.
   ActiveFeedProvider._()
     : super(
@@ -382,14 +385,15 @@ final class ActiveFeedProvider extends $NotifierProvider<ActiveFeed, String> {
   }
 }
 
-String _$activeFeedHash() => r'55ee07ebf8d7f2100eb6822a0a4f968f7c039c43';
+String _$activeFeedHash() => r'b9ed5333846f3c60e39d025ad528618be03002b2';
 
 /// Notifier for tracking the currently active feed.
 ///
 /// This notifier maintains the URI of the currently selected feed and allows
 /// switching between feeds. The feed content will reactively update based on this value.
 ///
-/// For authenticated users, defaults to 'home' feed.
+/// For authenticated users, defaults to their top pinned feed (by sort order).
+/// Falls back to home feed if no pinned feeds exist.
 /// For unauthenticated users, defaults to the Discover (What's Hot) feed.
 
 abstract class _$ActiveFeed extends $Notifier<String> {

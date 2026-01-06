@@ -10,23 +10,23 @@ part of 'feed_sync_controller.dart';
 // ignore_for_file: type=lint, type=warning
 /// Controller that manages automatic background synchronization of feeds.
 ///
-/// Listens to app lifecycle changes and triggers [FeedRepository.syncOnResume]
-/// when the app is resumed.
+/// Listens to app lifecycle changes and triggers [FeedRepository.syncOnResume] when the
+/// app is resumed.
 
 @ProviderFor(feedSyncController)
 final feedSyncControllerProvider = FeedSyncControllerProvider._();
 
 /// Controller that manages automatic background synchronization of feeds.
 ///
-/// Listens to app lifecycle changes and triggers [FeedRepository.syncOnResume]
-/// when the app is resumed.
+/// Listens to app lifecycle changes and triggers [FeedRepository.syncOnResume] when the
+/// app is resumed.
 
 final class FeedSyncControllerProvider extends $FunctionalProvider<void, void, void>
     with $Provider<void> {
   /// Controller that manages automatic background synchronization of feeds.
   ///
-  /// Listens to app lifecycle changes and triggers [FeedRepository.syncOnResume]
-  /// when the app is resumed.
+  /// Listens to app lifecycle changes and triggers [FeedRepository.syncOnResume] when the
+  /// app is resumed.
   FeedSyncControllerProvider._()
     : super(
         from: null,
@@ -56,4 +56,4 @@ final class FeedSyncControllerProvider extends $FunctionalProvider<void, void, v
   }
 }
 
-String _$feedSyncControllerHash() => r'7d38314fa642349f48e8bf5f242cc8f95be23bca';
+String _$feedSyncControllerHash() => r'30ac2890d467fa4e386dbf7244d9b1a842039e0b';

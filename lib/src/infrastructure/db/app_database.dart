@@ -44,7 +44,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -65,6 +65,9 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
         );
+      }
+      if (from < 8) {
+        await customStatement('ALTER TABLE saved_feeds ADD COLUMN local_updated_at INTEGER');
       }
     },
   );

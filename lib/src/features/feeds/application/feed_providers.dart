@@ -165,15 +165,28 @@ class DiscoverFeedsNotifier extends _$DiscoverFeedsNotifier {
 /// This notifier maintains the URI of the currently selected feed and allows
 /// switching between feeds. The feed content will reactively update based on this value.
 ///
-/// For authenticated users, defaults to 'home' feed.
+/// For authenticated users, defaults to their top pinned feed (by sort order).
+/// Falls back to home feed if no pinned feeds exist.
 /// For unauthenticated users, defaults to the Discover (What's Hot) feed.
 @riverpod
 class ActiveFeed extends _$ActiveFeed {
+  bool _hasUserSwitched = false;
+
   @override
   String build() {
     final authState = ref.watch(authProvider);
 
     if (authState is AuthStateAuthenticated) {
+      ref.listen(pinnedFeedsProvider, (previous, next) {
+        if (_hasUserSwitched) return;
+
+        next.whenData((feeds) {
+          if (feeds.isNotEmpty && state == FeedRepository.kHomeFeedUri) {
+            state = feeds.first.uri;
+          }
+        });
+      });
+
       return FeedRepository.kHomeFeedUri;
     }
     return FeedRepository.kDiscoverFeedUri;
@@ -183,16 +196,19 @@ class ActiveFeed extends _$ActiveFeed {
   ///
   /// Updates the active feed URI, which will trigger feed content reload in FeedContentNotifier.
   void switchFeed(String feedUri) {
+    _hasUserSwitched = true;
     state = feedUri;
   }
 
   /// Switches to the home feed.
   void switchToHome() {
+    _hasUserSwitched = true;
     state = FeedRepository.kHomeFeedUri;
   }
 
   /// Switches to the discover feed.
   void switchToDiscover() {
+    _hasUserSwitched = true;
     state = FeedRepository.kDiscoverFeedUri;
   }
 }

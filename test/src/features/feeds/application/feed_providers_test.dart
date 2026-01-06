@@ -128,8 +128,48 @@ void main() {
   });
 
   group('ActiveFeed', () {
-    test('initial state is home feed when authenticated', () {
+    test('updates to top pinned feed when authenticated with pinned feeds', () async {
+      final pinnedFeed = SavedFeed(
+        uri: 'at://did:plc:test/app.bsky.feed.generator/top-feed',
+        displayName: 'Top Feed',
+        description: null,
+        avatar: null,
+        creatorDid: 'did:plc:creator',
+        likeCount: 10,
+        sortOrder: 0,
+        isPinned: true,
+        lastSynced: DateTime.now(),
+      );
+
+      when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value([pinnedFeed]));
+
       final container = createContainer(authenticated: true);
+
+      expect(container.read(activeFeedProvider), FeedRepository.kHomeFeedUri);
+
+      final states = <String>[];
+      final subscription = container.listen(activeFeedProvider, (_, next) {
+        states.add(next);
+      });
+      addTearDown(subscription.close);
+
+      await container.read(pinnedFeedsProvider.future);
+      await Future.delayed(Duration.zero);
+
+      expect(
+        container.read(activeFeedProvider),
+        'at://did:plc:test/app.bsky.feed.generator/top-feed',
+      );
+    });
+
+    test('initial state is home feed when authenticated with no pinned feeds', () async {
+      when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value([]));
+
+      final container = createContainer(authenticated: true);
+
+      final subscription = container.listen(pinnedFeedsProvider, (_, _) {});
+      addTearDown(subscription.close);
+      await container.read(pinnedFeedsProvider.future);
 
       expect(container.read(activeFeedProvider), FeedRepository.kHomeFeedUri);
     });

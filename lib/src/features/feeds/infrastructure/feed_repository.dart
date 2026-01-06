@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/material.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/preference_sync_queue_dao.dart';
@@ -59,11 +60,11 @@ class FeedRepository {
       );
     }
 
-    if (collection != 'app.bsky.feed.generator') {
+    if (collection != 'app.bsky.feed.generator' && collection != 'app.bsky.graph.list') {
       throw ArgumentError.value(
         feedUri,
         'feedUri',
-        'Feed URI collection must be "app.bsky.feed.generator"',
+        'Feed URI collection must be "app.bsky.feed.generator" or "app.bsky.graph.list"',
       );
     }
 
@@ -86,6 +87,8 @@ class FeedRepository {
   ///
   /// For unauthenticated users, this is a no-op.
   Future<void> syncPreferences() async {
+    _logger.debug('syncPreferences() called, isAuthenticated=${_api.isAuthenticated}');
+
     if (!_api.isAuthenticated) {
       _logger.debug('Skipping preference sync for unauthenticated user');
       return;
@@ -94,25 +97,67 @@ class FeedRepository {
     _logger.info('Syncing feed preferences with conflict resolution');
 
     try {
+      _logger.debug('Calling app.bsky.actor.getPreferences API');
       final response = await _api.call('app.bsky.actor.getPreferences');
-      final prefs = response['preferences'] as List;
+      _logger.debug('Got preferences response: ${response.keys}');
 
-      final savedFeedsPref = prefs.cast<Map<String, dynamic>>().firstWhere(
-        (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref',
+      final prefs = response['preferences'] as List;
+      _logger.debug('Preferences list has ${prefs.length} items');
+
+      // Try V2 format first (newer)
+      final savedFeedsPrefV2 = prefs.cast<Map<String, dynamic>>().firstWhere(
+        (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPrefV2',
         orElse: () => <String, dynamic>{},
       );
 
-      final remoteSavedUris = (savedFeedsPref['saved'] as List?)?.cast<String>() ?? [];
-      final remotePinnedUris = (savedFeedsPref['pinned'] as List?)?.cast<String>() ?? [];
+      List<String> remoteSavedUris;
+      List<String> remotePinnedUris;
 
-      _logger.debug(
+      if (savedFeedsPrefV2.isNotEmpty) {
+        _logger.debug('Found V2 preferences');
+        final items = (savedFeedsPrefV2['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        _logger.debug('V2 has ${items.length} items');
+
+        // Extract URIs from V2 format
+        remoteSavedUris = items.map((item) => item['value'] as String).toList();
+        remotePinnedUris = items
+            .where((item) => item['pinned'] == true)
+            .map((item) => item['value'] as String)
+            .toList();
+
+        _logger.debug('V2 saved URIs: $remoteSavedUris');
+        _logger.debug('V2 pinned URIs: $remotePinnedUris');
+      } else {
+        // Fall back to V1 format
+        _logger.debug('V2 not found, trying V1 format');
+        final savedFeedsPref = prefs.cast<Map<String, dynamic>>().firstWhere(
+          (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref',
+          orElse: () => <String, dynamic>{},
+        );
+
+        _logger.debug('V1 savedFeedsPref keys: ${savedFeedsPref.keys}');
+
+        remoteSavedUris = (savedFeedsPref['saved'] as List?)?.cast<String>() ?? [];
+        remotePinnedUris = (savedFeedsPref['pinned'] as List?)?.cast<String>() ?? [];
+      }
+
+      _logger.info(
         'Remote state: ${remoteSavedUris.length} saved, ${remotePinnedUris.length} pinned',
       );
+      _logger.debug('Saved URIs: $remoteSavedUris');
+      _logger.debug('Pinned URIs: $remotePinnedUris');
 
       // Perform timestamp-based merge
       await _mergeWithRemotePreferences(remoteSavedUris, remotePinnedUris);
-    } catch (e) {
-      _logger.error('Failed to sync feed preferences', {'error': e});
+      _logger.info('syncPreferences() completed successfully');
+    } catch (e, stack) {
+      _logger.error('Failed to sync feed preferences', {
+        'error': e.toString(),
+        'stack': stack.toString(),
+      });
+      // Log to console for debugging
+      debugPrint('[FeedRepository] Sync error: $e');
+      debugPrint('[FeedRepository] Stack: $stack');
       rethrow;
     }
   }
@@ -135,10 +180,21 @@ class FeedRepository {
     final feedsToRemove = <String>[];
     final feedsToSyncToRemote = <String>[];
 
-    // Step 1: Process feeds that exist in remote
     for (var i = 0; i < remoteSavedUris.length; i++) {
       final remoteUri = remoteSavedUris[i];
       final remoteIsPinned = remotePinnedUris.contains(remoteUri);
+
+      // TODO: implement special feeds like "following" and unsupported types
+      if (!remoteUri.startsWith('at://')) {
+        _logger.debug('Skipping non-at-uri feed: $remoteUri');
+        continue;
+      }
+
+      // TODO: implement lists for (they need different API endpoint)
+      if (remoteUri.contains('/app.bsky.graph.list/')) {
+        _logger.debug('Skipping list (not yet supported): $remoteUri');
+        continue;
+      }
 
       final local = localFeeds.where((f) => f.uri == remoteUri).firstOrNull;
 
@@ -726,16 +782,13 @@ class FeedRepository {
       return null;
     }
 
-    // Check if the new feed already exists
     final newFeedExists = await _dao.getFeed(kDiscoverFeedUri) != null;
 
-    // Capture the deprecated feed's properties before deletion
     final result = _MigrationResult(
       isPinned: deprecatedFeed.isPinned,
       sortOrder: deprecatedFeed.sortOrder,
     );
 
-    // Delete the deprecated feed
     await _dao.deleteFeed(_kDeprecatedDiscoverUri);
     _logger.info('Migrated deprecated discover feed', {
       'isPinned': result.isPinned,
@@ -743,7 +796,6 @@ class FeedRepository {
       'newFeedExists': newFeedExists,
     });
 
-    // If new feed already exists, don't apply migration properties
     if (newFeedExists) {
       return null;
     }
@@ -754,15 +806,14 @@ class FeedRepository {
   /// Seeds default feeds if they don't already exist.
   ///
   /// For unauthenticated users, ensures the Discover feed is available.
-  /// For authenticated users, removes all seeded feeds since they should only see feeds
-  /// from their preferences.
+  /// For authenticated users, removes all seeded feeds since they should only see feeds from their
+  /// preferences.
   ///
-  /// If a deprecated feed URI exists, migrates the user to the new URI while
-  /// preserving their pin status and sortOrder.
+  /// If a deprecated feed URI exists, migrates the user to the new URI while preserving their
+  /// pin status and sortOrder.
   Future<void> seedDefaultFeeds() async {
     _logger.debug('Seeding default feeds');
 
-    // Migrate deprecated feed first, preserving user preferences
     final migration = await _migrateDeprecatedFeed();
 
     if (_api.isAuthenticated) {
