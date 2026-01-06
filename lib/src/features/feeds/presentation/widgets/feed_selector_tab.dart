@@ -36,11 +36,11 @@ class FeedSelectorTab extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            ChoiceChip(
+            FilterChip(
               showCheckmark: false,
               label: const Text('Discover'),
               selected: true,
-              onSelected: (_) => (),
+              onSelected: (_) {},
             ),
           ],
         ),
@@ -117,7 +117,7 @@ class FeedSelectorTab extends ConsumerWidget {
               final feed = displayFeeds[index];
               final isActive = feed.uri == activeFeedUri;
 
-              return ChoiceChip(
+              return FilterChip(
                 showCheckmark: false,
                 label: Text(feed.displayName),
                 avatar: feed.avatar != null

@@ -70,14 +70,14 @@ Deliverables:
 ================================================================================
 
 Navigation (bottom):
-- [ ] Theme NavigationBar to match M3 guidance:
+- [x] Theme NavigationBar to match M3 guidance:
       - active indicator is a container color role (NOT primary tint overlay)
       - selected/unselected icon/label colors align with
         onSurface/onSurfaceVariant
   M3 nav bar uses an active indicator and clear active state.
 
 Chips (feed selector row):
-- [ ] Convert "feed pills" to FilterChips and theme them per spec:
+- [x] Convert "feed pills" to FilterChips and theme them per spec:
       - unselected: outline + onSurfaceVariant
       - selected: container role + onContainer
   M3 chip spec explicitly calls out these roles.

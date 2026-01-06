@@ -95,21 +95,21 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Discover'), findsOneWidget);
 
-    final homeChip = tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Home'));
+    final homeChip = tester.widget<FilterChip>(find.widgetWithText(FilterChip, 'Home'));
     expect(homeChip.selected, isTrue);
 
-    final discoverChip = tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Discover'));
+    final discoverChip = tester.widget<FilterChip>(find.widgetWithText(FilterChip, 'Discover'));
     expect(discoverChip.selected, isFalse);
 
     await tester.tap(find.text('Discover'));
     await tester.pump();
 
-    final discoverChipAfter = tester.widget<ChoiceChip>(
-      find.widgetWithText(ChoiceChip, 'Discover'),
+    final discoverChipAfter = tester.widget<FilterChip>(
+      find.widgetWithText(FilterChip, 'Discover'),
     );
     expect(discoverChipAfter.selected, isTrue);
 
-    final homeChipAfter = tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Home'));
+    final homeChipAfter = tester.widget<FilterChip>(find.widgetWithText(FilterChip, 'Home'));
     expect(homeChipAfter.selected, isFalse);
   });
 

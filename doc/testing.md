@@ -87,3 +87,31 @@ All tests in `test/src/` with helpers in `test/helpers/`.
   Ensure any streams created in `setUp` are properly closed or are mocked using `Stream.value([])` which completes immediately.
 - **Dispose Containers**:
   If manually creating a `ProviderContainer`, always call `dispose()` in `tearDown`.
+
+## Google Fonts in Tests
+
+The app uses `google_fonts` for custom typography in `ThemeFactory`. Since
+`flutter_test_config.dart` sets `GoogleFonts.config.allowRuntimeFetching = false`, tests
+cannot fetch fonts over HTTP.
+
+**Current state**: Fonts are NOT bundled as assets yet. Tests that call
+`ThemeFactory.buildThemeData()` will fail.
+
+**Workaround**: Test theming via `ColorScheme` roles directly without calling
+`ThemeFactory.buildThemeData()`. The `theme_factory_test.dart` and
+`component_theming_test.dart` use `oxocarbonDarkVariant.derivedScheme` to verify theme
+roles without triggering font loading.
+
+**Reference**: `test/src/app/theming/component_theming_test.dart`
+
+```dart
+// DO: Test ColorScheme roles directly
+final darkCs = oxocarbonDarkVariant.derivedScheme;
+expect(darkCs.secondaryContainer, const Color(0xFF0A4A79));
+
+// DON'T: Call ThemeFactory.buildThemeData() - triggers font loading
+final theme = ThemeFactory.buildThemeData(oxocarbonDarkVariant); // Fails!
+```
+
+**FIXME**: Bundle Crimson Pro, Atkinson Hyperlegible, and Fira Code as assets to enable
+full `ThemeData` testing. See `flutter_test_config.dart`.
