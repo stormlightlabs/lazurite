@@ -4,6 +4,10 @@
 
 ### Added
 
+#### [2026-01-06]
+
+- Safe syncing, cached search, and feed discovery flow polish.
+
 #### [2026-01-05]
 
 - Multi-feed support with discovery, switching, caching, & offline resilience.

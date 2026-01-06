@@ -5,6 +5,7 @@ import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/core/utils/pagination.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart' hide Post;
+import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/search_cache_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/search_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
@@ -55,6 +56,17 @@ class SearchRepository {
       return PaginatedResult(items: posts, cursor: nextCursor);
     } catch (e, stack) {
       _logger.error('Search failed', e, stack);
+      if (cursor == null) {
+        final cachedResults = await _cacheDao.getSearchResults(queryKey);
+        if (cachedResults.isNotEmpty) {
+          final cachedPosts = _mapCachedResults(cachedResults);
+          _logger.warning('Serving cached search results due to offline failure', {
+            'query': queryKey,
+            'count': cachedPosts.length,
+          });
+          return PaginatedResult(items: cachedPosts, cursor: null);
+        }
+      }
       rethrow;
     }
   }
@@ -144,6 +156,12 @@ class SearchRepository {
     );
 
     _logger.debug('Cached ${rawPosts.length} search results', {'queryKey': queryKey});
+  }
+
+  List<Post> _mapCachedResults(List<SearchPost> cachedResults) {
+    return cachedResults
+        .map((cached) => Post.fromFeedPost(FeedPost(post: cached.post, author: cached.author)))
+        .toList();
   }
 
   /// Gets cached search results for a query.

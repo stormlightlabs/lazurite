@@ -118,6 +118,24 @@ void main() {
         expect(cursor, 'test_cursor');
       });
 
+      test('returns cached results when offline', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockSearchResponse());
+
+        await repository.searchPosts('flutter');
+
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenThrow(Exception('offline'));
+
+        final result = await repository.searchPosts('flutter');
+
+        expect(result.items, hasLength(2));
+        expect(result.items.first.uri, 'at://did:plc:user1/app.bsky.feed.post/1');
+        verify(() => mockLogger.error(any(), any(), any())).called(1);
+      });
+
       test('normalizes query for caching', () async {
         when(
           () => mockApi.call(any(), params: any(named: 'params')),

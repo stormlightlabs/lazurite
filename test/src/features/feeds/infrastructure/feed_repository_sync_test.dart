@@ -4,12 +4,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
+import 'package:lazurite/src/infrastructure/db/daos/preference_sync_queue_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockXrpcClient extends Mock implements XrpcClient {}
 
 class MockLogger extends Mock implements Logger {}
+
+class _FailingPreferenceSyncQueueDao extends PreferenceSyncQueueDao {
+  _FailingPreferenceSyncQueueDao(AppDatabase db) : super(db);
+
+  @override
+  Future<int> enqueue(PreferenceSyncQueueCompanion item) {
+    throw Exception('Simulated queue enqueue failure');
+  }
+}
 
 void main() {
   late MockXrpcClient mockApi;
@@ -345,6 +355,43 @@ void main() {
 
       final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
       expect(queueItems, isEmpty, reason: 'Queue should be empty after successful sync');
+    });
+
+    test('rolls back local save when queue enqueue fails', () async {
+      const feedUri = 'at://did:plc:fail/app.bsky.feed.generator/rollback';
+
+      final failingRepo = FeedRepository(
+        mockApi,
+        db.savedFeedsDao,
+        _FailingPreferenceSyncQueueDao(db),
+        db.profileDao,
+        mockLogger,
+      );
+
+      final feedMetadata = {
+        'view': {
+          'uri': feedUri,
+          'cid': 'bafyrollback',
+          'did': 'did:web:feedgen.rollback',
+          'displayName': 'Rollback Feed',
+          'description': 'Should not persist when queue fails',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:fail', 'handle': 'rollback.user'},
+          'likeCount': 1,
+        },
+      };
+
+      when(
+        () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
+      ).thenAnswer((_) async => feedMetadata);
+
+      expect(() => failingRepo.saveFeed(feedUri), throwsA(isA<Exception>()));
+
+      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      expect(feed, isNull, reason: 'Local insert should be rolled back');
+
+      final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queueItems, isEmpty, reason: 'Queue should remain empty on failure');
     });
   });
 
