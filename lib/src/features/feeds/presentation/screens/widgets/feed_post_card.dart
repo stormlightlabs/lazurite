@@ -78,6 +78,9 @@ class FeedPostCard extends StatelessWidget {
           replyCount: item.post.replyCount,
           repostCount: item.post.repostCount,
           likeCount: item.post.likeCount,
+          viewerLikeUri: item.post.viewerLikeUri,
+          viewerRepostUri: item.post.viewerRepostUri,
+          viewerBookmarked: item.post.viewerBookmarked,
         ),
       ],
     );

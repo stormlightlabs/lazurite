@@ -560,6 +560,7 @@ class FeedItem {
         embedType == 'app.bsky.embed.recordWithMedia#view' &&
             (embed?['media'] as Map<String, dynamic>?)?[r'$type'] == 'app.bsky.embed.images#view';
     final hasVideo = embedType == 'app.bsky.embed.video#view';
+    final viewer = post['viewer'] as Map<String, dynamic>?;
 
     return FeedItem(
       uri: post['uri'] as String,
@@ -579,6 +580,9 @@ class FeedItem {
       embedType: embedType,
       record: record,
       embed: embed,
+      viewerLikeUri: viewer?['like'] as String?,
+      viewerRepostUri: viewer?['repost'] as String?,
+      viewerBookmarked: viewer?['bookmarked'] as bool? ?? false,
     );
   }
 
@@ -600,6 +604,9 @@ class FeedItem {
     this.embedType,
     this.record,
     this.embed,
+    this.viewerLikeUri,
+    this.viewerRepostUri,
+    this.viewerBookmarked = false,
   });
 
   final String uri;
@@ -631,6 +638,15 @@ class FeedItem {
 
   /// The raw embed map.
   final Map<String, dynamic>? embed;
+
+  /// URI if viewer has liked this post (non-null = liked).
+  final String? viewerLikeUri;
+
+  /// URI if viewer has reposted this post (non-null = reposted).
+  final String? viewerRepostUri;
+
+  /// Whether viewer has bookmarked this post.
+  final bool viewerBookmarked;
 
   /// Whether this post has any media (images or video).
   bool get hasMedia => hasImages || hasVideo;

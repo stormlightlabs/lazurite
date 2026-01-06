@@ -45,6 +45,8 @@ class FeedContentRepository {
       throw FormatException('Post cid must be a non-empty string', json);
     }
 
+    final viewer = json['viewer'] as Map<String, dynamic>?;
+
     return PostsCompanion.insert(
       uri: uri,
       cid: cid,
@@ -55,7 +57,14 @@ class FeedContentRepository {
       replyCount: Value(json['replyCount'] as int? ?? 0),
       repostCount: Value(json['repostCount'] as int? ?? 0),
       likeCount: Value(json['likeCount'] as int? ?? 0),
+      quoteCount: Value(json['quoteCount'] as int? ?? 0),
+      bookmarkCount: Value(json['bookmarkCount'] as int? ?? 0),
       labels: Value(json['labels'] != null ? jsonEncode(json['labels']) : null),
+      viewerLikeUri: Value(viewer?['like'] as String?),
+      viewerRepostUri: Value(viewer?['repost'] as String?),
+      viewerBookmarked: Value(viewer?['bookmarked'] as bool? ?? false),
+      viewerThreadMuted: Value(viewer?['threadMuted'] as bool? ?? false),
+      viewerReplyDisabled: Value(viewer?['replyDisabled'] as bool? ?? false),
     );
   }
 

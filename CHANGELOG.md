@@ -6,6 +6,10 @@
 
 #### [2026-01-06]
 
+- Complete profile and thread rendering with verification badges, viewer relationship &
+  interaction states, all embed types (images/video/external/record/recordWithMedia),
+  content labels with warnings, thread structure with parent/reply chains, and pinned
+  posts.
 - Safe syncing, cached search, and feed discovery flow polish.
 
 #### [2026-01-05]
