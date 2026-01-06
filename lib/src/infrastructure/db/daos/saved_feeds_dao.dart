@@ -91,8 +91,44 @@ class SavedFeedsDao extends DatabaseAccessor<AppDatabase> with _$SavedFeedsDaoMi
 
   /// Updates the isPinned status for a feed.
   Future<int> updatePinnedStatus(String uri, bool isPinned) {
-    return (update(
-      savedFeeds,
-    )..where((t) => t.uri.equals(uri))).write(SavedFeedsCompanion(isPinned: Value(isPinned)));
+    return (update(savedFeeds)..where((t) => t.uri.equals(uri))).write(
+      SavedFeedsCompanion(isPinned: Value(isPinned), localUpdatedAt: Value(DateTime.now())),
+    );
+  }
+
+  /// Clears the localUpdatedAt timestamp after successful remote sync.
+  ///
+  /// This marks the feed as "in sync" with the remote state.
+  Future<int> clearLocalModification(String uri) {
+    return (update(savedFeeds)..where((t) => t.uri.equals(uri))).write(
+      const SavedFeedsCompanion(localUpdatedAt: Value(null)),
+    );
+  }
+
+  /// Updates sync-related fields for an existing feed.
+  ///
+  /// Used during sync merge operations to update sort order, pin status, and
+  /// sync timestamps without requiring all fields. This only affects existing
+  /// records - it will not insert a new record if the feed doesn't exist.
+  Future<int> updateSyncState({
+    required String uri,
+    required int sortOrder,
+    required bool isPinned,
+    required DateTime lastSynced,
+    bool clearLocalModification = false,
+  }) {
+    return (update(savedFeeds)..where((t) => t.uri.equals(uri))).write(
+      SavedFeedsCompanion(
+        sortOrder: Value(sortOrder),
+        isPinned: Value(isPinned),
+        lastSynced: Value(lastSynced),
+        localUpdatedAt: clearLocalModification ? const Value(null) : const Value.absent(),
+      ),
+    );
+  }
+
+  /// Gets feeds with pending local modifications (localUpdatedAt != null).
+  Future<List<SavedFeed>> getLocallyModifiedFeeds() {
+    return (select(savedFeeds)..where((t) => t.localUpdatedAt.isNotNull())).get();
   }
 }

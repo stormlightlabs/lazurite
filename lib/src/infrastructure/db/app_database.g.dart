@@ -2328,6 +2328,15 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta('localUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt = GeneratedColumn<DateTime>(
+    'local_updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     uri,
@@ -2339,6 +2348,7 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
     sortOrder,
     isPinned,
     lastSynced,
+    localUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2410,6 +2420,12 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
     } else if (isInserting) {
       context.missing(_lastSyncedMeta);
     }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(data['local_updated_at']!, _localUpdatedAtMeta),
+      );
+    }
     return context;
   }
 
@@ -2452,6 +2468,10 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_synced'],
       )!,
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
     );
   }
 
@@ -2488,6 +2508,10 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
 
   /// When the feed metadata was last synced from remote.
   final DateTime lastSynced;
+
+  /// When this feed was last modified locally (save, pin, reorder).
+  /// Null means no local modifications since the last remote sync.
+  final DateTime? localUpdatedAt;
   const SavedFeed({
     required this.uri,
     required this.displayName,
@@ -2498,6 +2522,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
     required this.sortOrder,
     required this.isPinned,
     required this.lastSynced,
+    this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2515,6 +2540,9 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
     map['sort_order'] = Variable<int>(sortOrder);
     map['is_pinned'] = Variable<bool>(isPinned);
     map['last_synced'] = Variable<DateTime>(lastSynced);
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
     return map;
   }
 
@@ -2529,6 +2557,9 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
       sortOrder: Value(sortOrder),
       isPinned: Value(isPinned),
       lastSynced: Value(lastSynced),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
     );
   }
 
@@ -2544,6 +2575,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       isPinned: serializer.fromJson<bool>(json['isPinned']),
       lastSynced: serializer.fromJson<DateTime>(json['lastSynced']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
     );
   }
   @override
@@ -2559,6 +2591,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
       'sortOrder': serializer.toJson<int>(sortOrder),
       'isPinned': serializer.toJson<bool>(isPinned),
       'lastSynced': serializer.toJson<DateTime>(lastSynced),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
     };
   }
 
@@ -2572,6 +2605,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
     int? sortOrder,
     bool? isPinned,
     DateTime? lastSynced,
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => SavedFeed(
     uri: uri ?? this.uri,
     displayName: displayName ?? this.displayName,
@@ -2582,6 +2616,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
     sortOrder: sortOrder ?? this.sortOrder,
     isPinned: isPinned ?? this.isPinned,
     lastSynced: lastSynced ?? this.lastSynced,
+    localUpdatedAt: localUpdatedAt.present ? localUpdatedAt.value : this.localUpdatedAt,
   );
   SavedFeed copyWithCompanion(SavedFeedsCompanion data) {
     return SavedFeed(
@@ -2594,6 +2629,9 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
       lastSynced: data.lastSynced.present ? data.lastSynced.value : this.lastSynced,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
     );
   }
 
@@ -2608,7 +2646,8 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
           ..write('likeCount: $likeCount, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('isPinned: $isPinned, ')
-          ..write('lastSynced: $lastSynced')
+          ..write('lastSynced: $lastSynced, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -2624,6 +2663,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
     sortOrder,
     isPinned,
     lastSynced,
+    localUpdatedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -2637,7 +2677,8 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
           other.likeCount == this.likeCount &&
           other.sortOrder == this.sortOrder &&
           other.isPinned == this.isPinned &&
-          other.lastSynced == this.lastSynced);
+          other.lastSynced == this.lastSynced &&
+          other.localUpdatedAt == this.localUpdatedAt);
 }
 
 class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
@@ -2650,6 +2691,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
   final Value<int> sortOrder;
   final Value<bool> isPinned;
   final Value<DateTime> lastSynced;
+  final Value<DateTime?> localUpdatedAt;
   final Value<int> rowid;
   const SavedFeedsCompanion({
     this.uri = const Value.absent(),
@@ -2661,6 +2703,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
     this.sortOrder = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.lastSynced = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SavedFeedsCompanion.insert({
@@ -2673,6 +2716,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
     required int sortOrder,
     this.isPinned = const Value.absent(),
     required DateTime lastSynced,
+    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : uri = Value(uri),
        displayName = Value(displayName),
@@ -2689,6 +2733,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
     Expression<int>? sortOrder,
     Expression<bool>? isPinned,
     Expression<DateTime>? lastSynced,
+    Expression<DateTime>? localUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2701,6 +2746,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
       if (sortOrder != null) 'sort_order': sortOrder,
       if (isPinned != null) 'is_pinned': isPinned,
       if (lastSynced != null) 'last_synced': lastSynced,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2715,6 +2761,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
     Value<int>? sortOrder,
     Value<bool>? isPinned,
     Value<DateTime>? lastSynced,
+    Value<DateTime?>? localUpdatedAt,
     Value<int>? rowid,
   }) {
     return SavedFeedsCompanion(
@@ -2727,6 +2774,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
       sortOrder: sortOrder ?? this.sortOrder,
       isPinned: isPinned ?? this.isPinned,
       lastSynced: lastSynced ?? this.lastSynced,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2761,6 +2809,9 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
     if (lastSynced.present) {
       map['last_synced'] = Variable<DateTime>(lastSynced.value);
     }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2779,6 +2830,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
           ..write('sortOrder: $sortOrder, ')
           ..write('isPinned: $isPinned, ')
           ..write('lastSynced: $lastSynced, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5775,6 +5827,7 @@ typedef $$SavedFeedsTableCreateCompanionBuilder =
       required int sortOrder,
       Value<bool> isPinned,
       required DateTime lastSynced,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 typedef $$SavedFeedsTableUpdateCompanionBuilder =
@@ -5788,6 +5841,7 @@ typedef $$SavedFeedsTableUpdateCompanionBuilder =
       Value<int> sortOrder,
       Value<bool> isPinned,
       Value<DateTime> lastSynced,
+      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 
@@ -5825,6 +5879,11 @@ class $$SavedFeedsTableFilterComposer extends Composer<_$AppDatabase, $SavedFeed
 
   ColumnFilters<DateTime> get lastSynced =>
       $composableBuilder(column: $table.lastSynced, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$SavedFeedsTableOrderingComposer extends Composer<_$AppDatabase, $SavedFeedsTable> {
@@ -5861,6 +5920,11 @@ class $$SavedFeedsTableOrderingComposer extends Composer<_$AppDatabase, $SavedFe
 
   ColumnOrderings<DateTime> get lastSynced =>
       $composableBuilder(column: $table.lastSynced, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SavedFeedsTableAnnotationComposer extends Composer<_$AppDatabase, $SavedFeedsTable> {
@@ -5897,6 +5961,9 @@ class $$SavedFeedsTableAnnotationComposer extends Composer<_$AppDatabase, $Saved
 
   GeneratedColumn<DateTime> get lastSynced =>
       $composableBuilder(column: $table.lastSynced, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get localUpdatedAt =>
+      $composableBuilder(column: $table.localUpdatedAt, builder: (column) => column);
 }
 
 class $$SavedFeedsTableTableManager
@@ -5934,6 +6001,7 @@ class $$SavedFeedsTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<DateTime> lastSynced = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SavedFeedsCompanion(
                 uri: uri,
@@ -5945,6 +6013,7 @@ class $$SavedFeedsTableTableManager
                 sortOrder: sortOrder,
                 isPinned: isPinned,
                 lastSynced: lastSynced,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5958,6 +6027,7 @@ class $$SavedFeedsTableTableManager
                 required int sortOrder,
                 Value<bool> isPinned = const Value.absent(),
                 required DateTime lastSynced,
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SavedFeedsCompanion.insert(
                 uri: uri,
@@ -5969,6 +6039,7 @@ class $$SavedFeedsTableTableManager
                 sortOrder: sortOrder,
                 isPinned: isPinned,
                 lastSynced: lastSynced,
+                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) =>

@@ -34,7 +34,7 @@ Tasks:
             - add retryCount to PreferenceSyncQueue table
             - max 5 retries, then mark as permanently failed
             - cleanup failed items older than 30 days
-      - [ ] Add conflict resolution for multi-device sync:
+      - [x] Add conflict resolution for multi-device sync:
             - timestamp-based merge strategy
             - preserve user intent (pins, order) on conflict
       - [ ] Improve deprecated feed migration:
@@ -102,7 +102,7 @@ Tests:
 - [ ] Recent search persistence test: verify saveRecentSearch() called
 - [ ] Search cache test: second query serves from cache
 - [ ] Offline search test: cached results available offline
-- [ ] Feed sync conflict test: multi-device pin resolution
+- [x] Feed sync conflict test: multi-device pin resolution
 - [ ] Feed URI validation test: reject malformed URIs
 
 Deliverables:

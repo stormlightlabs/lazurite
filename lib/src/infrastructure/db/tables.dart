@@ -116,6 +116,10 @@ class SavedFeeds extends Table {
   /// When the feed metadata was last synced from remote.
   DateTimeColumn get lastSynced => dateTime()();
 
+  /// When this feed was last modified locally (save, pin, reorder).
+  /// Null means no local modifications since the last remote sync.
+  DateTimeColumn get localUpdatedAt => dateTime().nullable()();
+
   @override
   Set<Column> get primaryKey => {uri};
 }

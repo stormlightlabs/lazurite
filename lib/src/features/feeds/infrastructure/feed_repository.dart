@@ -78,9 +78,11 @@ class FeedRepository {
 
   /// Syncs saved feeds from user preferences and hydrates with metadata.
   ///
-  /// Fetches the savedFeedsPref array from app.bsky.actor.getPreferences,
-  /// enriches each feed URI with metadata from app.bsky.feed.getFeedGenerator,
-  /// and updates the local cache.
+  /// Uses a timestamp-based merge strategy to handle multi-device conflicts:
+  /// - Feeds with newer local modifications keep their local state
+  /// - Feeds with newer remote state are updated from remote
+  /// - Feeds removed remotely (but not modified locally) are removed locally
+  /// - Feeds added locally but not yet synced are queued for sync
   ///
   /// For unauthenticated users, this is a no-op.
   Future<void> syncPreferences() async {
@@ -89,7 +91,7 @@ class FeedRepository {
       return;
     }
 
-    _logger.info('Syncing feed preferences');
+    _logger.info('Syncing feed preferences with conflict resolution');
 
     try {
       final response = await _api.call('app.bsky.actor.getPreferences');
@@ -100,51 +102,142 @@ class FeedRepository {
         orElse: () => <String, dynamic>{},
       );
 
-      if (savedFeedsPref.isEmpty) {
-        _logger.debug('No savedFeedsPref found in preferences');
-        return;
-      }
+      final remoteSavedUris = (savedFeedsPref['saved'] as List?)?.cast<String>() ?? [];
+      final remotePinnedUris = (savedFeedsPref['pinned'] as List?)?.cast<String>() ?? [];
 
-      final savedFeeds = savedFeedsPref['saved'] as List? ?? [];
-      final pinnedFeeds = savedFeedsPref['pinned'] as List? ?? [];
+      _logger.debug(
+        'Remote state: ${remoteSavedUris.length} saved, ${remotePinnedUris.length} pinned',
+      );
 
-      _logger.debug('Found ${savedFeeds.length} saved feeds, ${pinnedFeeds.length} pinned');
+      // Perform timestamp-based merge
+      await _mergeWithRemotePreferences(remoteSavedUris, remotePinnedUris);
+    } catch (e) {
+      _logger.error('Failed to sync feed preferences', {'error': e});
+      rethrow;
+    }
+  }
 
-      final feedCompanions = <SavedFeedsCompanion>[];
-      final now = DateTime.now();
+  /// Merges local and remote feed preferences using timestamp-based resolution.
+  ///
+  /// For each feed:
+  /// - If local has newer modification → keep local, queue for remote sync
+  /// - If remote is newer (or no local modification) → accept remote
+  /// - Feeds in local but not remote: if locally modified → queue sync, else → remove
+  Future<void> _mergeWithRemotePreferences(
+    List<String> remoteSavedUris,
+    List<String> remotePinnedUris,
+  ) async {
+    final localFeeds = await _dao.getAllFeeds();
+    final now = DateTime.now();
+    final remoteSavedSet = remoteSavedUris.toSet();
+    final feedsToInsert = <SavedFeedsCompanion>[];
+    final feedsToUpdate = <_FeedUpdate>[];
+    final feedsToRemove = <String>[];
+    final feedsToSyncToRemote = <String>[];
 
-      for (var i = 0; i < savedFeeds.length; i++) {
-        final feedUri = savedFeeds[i] as String;
-        final isPinned = pinnedFeeds.contains(feedUri);
+    // Step 1: Process feeds that exist in remote
+    for (var i = 0; i < remoteSavedUris.length; i++) {
+      final remoteUri = remoteSavedUris[i];
+      final remoteIsPinned = remotePinnedUris.contains(remoteUri);
 
+      final local = localFeeds.where((f) => f.uri == remoteUri).firstOrNull;
+
+      if (local == null) {
+        _logger.debug('Adding new remote feed: $remoteUri');
         try {
-          final metadata = await getFeedMetadata(feedUri);
-
-          feedCompanions.add(
+          final metadata = await getFeedMetadata(remoteUri);
+          feedsToInsert.add(
             SavedFeedsCompanion.insert(
-              uri: feedUri,
+              uri: remoteUri,
               displayName: metadata['displayName'] ?? 'Unknown Feed',
               description: Value(metadata['description']),
               avatar: Value(metadata['avatar']),
               creatorDid: metadata['creator']['did'] ?? '',
               likeCount: Value(metadata['likeCount'] ?? 0),
               sortOrder: i,
-              isPinned: Value(isPinned),
+              isPinned: Value(remoteIsPinned),
               lastSynced: now,
+              localUpdatedAt: const Value(null),
             ),
           );
         } catch (e) {
-          _logger.error('Failed to fetch metadata for feed $feedUri', {'error': e});
+          _logger.error('Failed to fetch metadata for $remoteUri', {'error': e});
+        }
+      } else if (local.localUpdatedAt == null) {
+        _logger.debug('Accepting remote state for: $remoteUri');
+        feedsToUpdate.add(
+          _FeedUpdate(
+            uri: remoteUri,
+            sortOrder: i,
+            isPinned: remoteIsPinned,
+            lastSynced: now,
+            clearLocalUpdatedAt: true,
+          ),
+        );
+      } else if (local.localUpdatedAt!.isAfter(local.lastSynced)) {
+        _logger.debug('Local is newer, keeping local state for: $remoteUri');
+        feedsToSyncToRemote.add(remoteUri);
+      } else {
+        _logger.debug('Remote is newer for: $remoteUri');
+        feedsToUpdate.add(
+          _FeedUpdate(
+            uri: remoteUri,
+            sortOrder: i,
+            isPinned: remoteIsPinned,
+            lastSynced: now,
+            clearLocalUpdatedAt: true,
+          ),
+        );
+      }
+    }
+
+    for (final local in localFeeds) {
+      if (!remoteSavedSet.contains(local.uri)) {
+        if (local.localUpdatedAt != null && local.localUpdatedAt!.isAfter(local.lastSynced)) {
+          _logger.debug('Queueing local-only feed for sync: ${local.uri}');
+          feedsToSyncToRemote.add(local.uri);
+        } else {
+          _logger.debug('Removing remotely-deleted feed: ${local.uri}');
+          feedsToRemove.add(local.uri);
         }
       }
+    }
 
-      if (feedCompanions.isNotEmpty) {
-        await _dao.upsertFeeds(feedCompanions);
-        _logger.info('Synced ${feedCompanions.length} feeds to local cache');
+    if (feedsToInsert.isNotEmpty) {
+      await _dao.upsertFeeds(feedsToInsert);
+      _logger.info('Added ${feedsToInsert.length} new feeds from remote');
+    }
+
+    for (final update in feedsToUpdate) {
+      await _dao.updateSyncState(
+        uri: update.uri,
+        sortOrder: update.sortOrder,
+        isPinned: update.isPinned,
+        lastSynced: update.lastSynced,
+        clearLocalModification: update.clearLocalUpdatedAt,
+      );
+    }
+    if (feedsToUpdate.isNotEmpty) {
+      _logger.info('Updated ${feedsToUpdate.length} feeds from remote');
+    }
+
+    for (final uri in feedsToRemove) {
+      await _dao.deleteFeed(uri);
+    }
+    if (feedsToRemove.isNotEmpty) {
+      _logger.info('Removed ${feedsToRemove.length} remotely-deleted feeds');
+    }
+
+    for (final uri in feedsToSyncToRemote) {
+      final existing = await _syncQueueDao.getPendingItems();
+      if (!existing.any((e) => e.feedUri == uri && e.type == 'save')) {
+        await _syncQueueDao.enqueue(
+          PreferenceSyncQueueCompanion.insert(type: 'save', feedUri: uri, createdAt: now),
+        );
       }
-    } catch (e) {
-      _logger.error('Failed to sync feed preferences', {'error': e});
-      rethrow;
+    }
+    if (feedsToSyncToRemote.isNotEmpty) {
+      _logger.info('Queued ${feedsToSyncToRemote.length} local feeds for remote sync');
     }
   }
 
@@ -205,6 +298,7 @@ class FeedRepository {
             sortOrder: allFeeds.length,
             isPinned: Value(pin),
             lastSynced: DateTime.now(),
+            localUpdatedAt: Value(DateTime.now()),
           ),
         );
 
@@ -606,4 +700,21 @@ class FeedRepository {
       ),
     );
   }
+}
+
+/// Helper class for representing a partial feed update during merge.
+class _FeedUpdate {
+  const _FeedUpdate({
+    required this.uri,
+    required this.sortOrder,
+    required this.isPinned,
+    required this.lastSynced,
+    required this.clearLocalUpdatedAt,
+  });
+
+  final String uri;
+  final int sortOrder;
+  final bool isPinned;
+  final DateTime lastSynced;
+  final bool clearLocalUpdatedAt;
 }

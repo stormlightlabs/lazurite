@@ -1254,4 +1254,233 @@ void main() {
       expect(items.first.feedUri, 'at://did:plc:fail/app.bsky.feed.generator/maxed');
     });
   });
+
+  group('Multi-Device Sync Conflict Resolution', () {
+    test('local changes win when localUpdatedAt is newer than lastSynced', () async {
+      const feedUri = 'at://did:plc:test/app.bsky.feed.generator/conflict';
+      final baseTime = DateTime.now().subtract(const Duration(hours: 2));
+
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: feedUri,
+          displayName: 'Local Name',
+          creatorDid: 'did:plc:test',
+          sortOrder: 0,
+          isPinned: const Value(true),
+          lastSynced: baseTime,
+          localUpdatedAt: Value(baseTime.add(const Duration(hours: 1))),
+        ),
+      );
+
+      const remotePrefs = {
+        'preferences': [
+          {
+            '\$type': 'app.bsky.actor.defs#savedFeedsPref',
+            'saved': [feedUri],
+            'pinned': [],
+          },
+        ],
+      };
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => remotePrefs);
+
+      await repository.syncPreferences();
+
+      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      expect(feed, isNotNull);
+      expect(feed!.isPinned, true, reason: 'Local pin status should win');
+      expect(feed.displayName, 'Local Name', reason: 'Local display name should be preserved');
+      final queue = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queue.any((q) => q.feedUri == feedUri && q.type == 'save'), true);
+    });
+
+    test('remote changes win when no local modifications', () async {
+      const feedUri = 'at://did:plc:test/app.bsky.feed.generator/remote-wins';
+      final baseTime = DateTime.now().subtract(const Duration(hours: 2));
+
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: feedUri,
+          displayName: 'Old Name',
+          creatorDid: 'did:plc:test',
+          sortOrder: 5,
+          isPinned: const Value(false),
+          lastSynced: baseTime,
+        ),
+      );
+
+      const remotePrefs = {
+        'preferences': [
+          {
+            '\$type': 'app.bsky.actor.defs#savedFeedsPref',
+            'saved': [feedUri],
+            'pinned': [feedUri],
+          },
+        ],
+      };
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => remotePrefs);
+
+      await repository.syncPreferences();
+
+      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      expect(feed, isNotNull);
+      expect(feed!.isPinned, true, reason: 'Remote pin status should win');
+      expect(feed.sortOrder, 0, reason: 'Should use remote sort order');
+    });
+
+    test('new remote feeds are added locally', () async {
+      const newFeedUri = 'at://did:plc:new/app.bsky.feed.generator/remote-only';
+
+      const remotePrefs = {
+        'preferences': [
+          {
+            '\$type': 'app.bsky.actor.defs#savedFeedsPref',
+            'saved': [newFeedUri],
+            'pinned': [newFeedUri],
+          },
+        ],
+      };
+
+      final feedMetadata = {
+        'view': {
+          'displayName': 'New Remote Feed',
+          'description': 'Added on another device',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:new'},
+          'likeCount': 42,
+        },
+      };
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => remotePrefs);
+
+      when(
+        () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': newFeedUri}),
+      ).thenAnswer((_) async => feedMetadata);
+
+      await repository.syncPreferences();
+
+      final feed = await db.savedFeedsDao.getFeed(newFeedUri);
+      expect(feed, isNotNull);
+      expect(feed!.displayName, 'New Remote Feed');
+      expect(feed.isPinned, true);
+      expect(
+        feed.localUpdatedAt,
+        isNull,
+        reason: 'New remote feed should have no local modification',
+      );
+    });
+
+    test('remotely deleted feeds are removed locally when no local modifications', () async {
+      const deletedFeedUri = 'at://did:plc:test/app.bsky.feed.generator/to-delete';
+      final baseTime = DateTime.now().subtract(const Duration(hours: 2));
+
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: deletedFeedUri,
+          displayName: 'To Be Deleted',
+          creatorDid: 'did:plc:test',
+          sortOrder: 0,
+          lastSynced: baseTime,
+        ),
+      );
+
+      const remotePrefs = {
+        'preferences': [
+          {'\$type': 'app.bsky.actor.defs#savedFeedsPref', 'saved': [], 'pinned': []},
+        ],
+      };
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => remotePrefs);
+
+      await repository.syncPreferences();
+
+      final feed = await db.savedFeedsDao.getFeed(deletedFeedUri);
+      expect(feed, isNull, reason: 'Remotely deleted feed should be removed locally');
+    });
+
+    test('local-only feeds with modifications are queued for remote sync', () async {
+      const localOnlyFeedUri = 'at://did:plc:local/app.bsky.feed.generator/local-only';
+      final baseTime = DateTime.now().subtract(const Duration(hours: 2));
+
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: localOnlyFeedUri,
+          displayName: 'Local Only Feed',
+          creatorDid: 'did:plc:local',
+          sortOrder: 0,
+          isPinned: const Value(true),
+          lastSynced: baseTime,
+          localUpdatedAt: Value(baseTime.add(const Duration(hours: 1))),
+        ),
+      );
+
+      const remotePrefs = {
+        'preferences': [
+          {'\$type': 'app.bsky.actor.defs#savedFeedsPref', 'saved': [], 'pinned': []},
+        ],
+      };
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => remotePrefs);
+
+      await repository.syncPreferences();
+
+      final feed = await db.savedFeedsDao.getFeed(localOnlyFeedUri);
+      expect(feed, isNotNull, reason: 'Local-only feed with modifications should be kept');
+
+      final queue = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(
+        queue.any((q) => q.feedUri == localOnlyFeedUri && q.type == 'save'),
+        true,
+        reason: 'Local-only feed should be queued for remote sync',
+      );
+    });
+
+    test('concurrent modifications resolve correctly based on timestamps', () async {
+      const feedUri = 'at://did:plc:test/app.bsky.feed.generator/concurrent';
+      final baseTime = DateTime.now().subtract(const Duration(hours: 3));
+
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: feedUri,
+          displayName: 'Concurrent Feed',
+          creatorDid: 'did:plc:test',
+          sortOrder: 5,
+          isPinned: const Value(true),
+          lastSynced: baseTime,
+          localUpdatedAt: Value(baseTime.add(const Duration(hours: 1))),
+        ),
+      );
+
+      const remotePrefs = {
+        'preferences': [
+          {
+            '\$type': 'app.bsky.actor.defs#savedFeedsPref',
+            'saved': [feedUri],
+            'pinned': [],
+          },
+        ],
+      };
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => remotePrefs);
+
+      await repository.syncPreferences();
+
+      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      expect(feed, isNotNull);
+      expect(feed!.isPinned, true, reason: 'Local pin status should be preserved (newer)');
+    });
+  });
 }
