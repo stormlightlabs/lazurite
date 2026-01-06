@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/feed_preview_modal.dart';
 
 class FeedDiscoveryScreen extends ConsumerStatefulWidget {
   const FeedDiscoveryScreen({super.key});
@@ -67,9 +68,18 @@ class _FeedDiscoveryScreenState extends ConsumerState<FeedDiscoveryScreen> {
                   },
                 ),
                 onTap: () {
-                  // TODO: Preview feed
-                  // ref.read(activeFeedProvider.notifier).switchFeed(uri);
-                  // Navigator.pop(context); // Optional: go back to home
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => FeedPreviewModal(
+                      feedUri: uri,
+                      displayName: displayName,
+                      avatar: avatar,
+                      description: description,
+                      creatorHandle: creatorHandle,
+                    ),
+                  );
                 },
               );
             },

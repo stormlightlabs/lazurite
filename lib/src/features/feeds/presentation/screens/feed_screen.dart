@@ -39,15 +39,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      ref.read(feedContentProvider.notifier).loadMore();
+      final activeFeedUri = ref.read(activeFeedProvider);
+      ref.read(feedContentProvider(activeFeedUri).notifier).loadMore();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     ref.watch(feedContentCleanupControllerProvider);
-    final feedContentState = ref.watch(feedContentProvider);
     final activeFeedUri = ref.watch(activeFeedProvider);
+    final feedContentState = ref.watch(feedContentProvider(activeFeedUri));
     _ensureFeedLoaded(activeFeedUri);
 
     return Scaffold(
@@ -55,7 +56,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         data: (items) {
           return PullToRefreshWrapper(
             onRefresh: () async {
-              await ref.read(feedContentProvider.notifier).refresh();
+              await ref.read(feedContentProvider(activeFeedUri).notifier).refresh();
             },
             child: CustomScrollView(
               controller: _scrollController,
@@ -96,7 +97,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         error: (err, stack) => ErrorView(
           title: 'Failed to load feed',
           message: err.toString(),
-          onRetry: () => ref.read(feedContentProvider.notifier).refresh(),
+          onRetry: () => ref.read(feedContentProvider(activeFeedUri).notifier).refresh(),
         ),
       ),
     );
@@ -109,7 +110,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     _lastRequestedFeed = feedUri;
     Future.microtask(() {
       if (!mounted) return;
-      ref.read(feedContentProvider.notifier).refresh();
+      ref.read(feedContentProvider(feedUri).notifier).refresh();
     });
   }
 }

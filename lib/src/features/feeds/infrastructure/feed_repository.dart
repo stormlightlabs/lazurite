@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:flutter/material.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/preference_sync_queue_dao.dart';
@@ -104,7 +103,6 @@ class FeedRepository {
       final prefs = response['preferences'] as List;
       _logger.debug('Preferences list has ${prefs.length} items');
 
-      // Try V2 format first (newer)
       final savedFeedsPrefV2 = prefs.cast<Map<String, dynamic>>().firstWhere(
         (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPrefV2',
         orElse: () => <String, dynamic>{},
@@ -118,7 +116,6 @@ class FeedRepository {
         final items = (savedFeedsPrefV2['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
         _logger.debug('V2 has ${items.length} items');
 
-        // Extract URIs from V2 format
         remoteSavedUris = items.map((item) => item['value'] as String).toList();
         remotePinnedUris = items
             .where((item) => item['pinned'] == true)
@@ -128,7 +125,6 @@ class FeedRepository {
         _logger.debug('V2 saved URIs: $remoteSavedUris');
         _logger.debug('V2 pinned URIs: $remotePinnedUris');
       } else {
-        // Fall back to V1 format
         _logger.debug('V2 not found, trying V1 format');
         final savedFeedsPref = prefs.cast<Map<String, dynamic>>().firstWhere(
           (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref',
@@ -147,7 +143,6 @@ class FeedRepository {
       _logger.debug('Saved URIs: $remoteSavedUris');
       _logger.debug('Pinned URIs: $remotePinnedUris');
 
-      // Perform timestamp-based merge
       await _mergeWithRemotePreferences(remoteSavedUris, remotePinnedUris);
       _logger.info('syncPreferences() completed successfully');
     } catch (e, stack) {
@@ -155,9 +150,7 @@ class FeedRepository {
         'error': e.toString(),
         'stack': stack.toString(),
       });
-      // Log to console for debugging
-      debugPrint('[FeedRepository] Sync error: $e');
-      debugPrint('[FeedRepository] Stack: $stack');
+
       rethrow;
     }
   }

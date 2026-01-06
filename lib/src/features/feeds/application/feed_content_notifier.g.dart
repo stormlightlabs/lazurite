@@ -14,7 +14,7 @@ part of 'feed_content_notifier.dart';
 /// Supports refresh, load more, and clear operations.
 
 @ProviderFor(FeedContentNotifier)
-final feedContentProvider = FeedContentNotifierProvider._();
+final feedContentProvider = FeedContentNotifierFamily._();
 
 /// Notifier for managing feed content (posts from the active feed).
 ///
@@ -26,26 +26,78 @@ final class FeedContentNotifierProvider
   ///
   /// Watches the active feed and provides a stream of posts from that feed.
   /// Supports refresh, load more, and clear operations.
-  FeedContentNotifierProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'feedContentProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  FeedContentNotifierProvider._({
+    required FeedContentNotifierFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'feedContentProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$feedContentNotifierHash();
 
+  @override
+  String toString() {
+    return r'feedContentProvider'
+        ''
+        '($argument)';
+  }
+
   @$internal
   @override
   FeedContentNotifier create() => FeedContentNotifier();
+
+  @override
+  bool operator ==(Object other) {
+    return other is FeedContentNotifierProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
-String _$feedContentNotifierHash() => r'4e01a294bfcec416d3540a5b4a7bfd4412f636a2';
+String _$feedContentNotifierHash() => r'b2fce5768ba51011fe41c6eed7791659d1bfd7dd';
+
+/// Notifier for managing feed content (posts from the active feed).
+///
+/// Watches the active feed and provides a stream of posts from that feed.
+/// Supports refresh, load more, and clear operations.
+
+final class FeedContentNotifierFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          FeedContentNotifier,
+          AsyncValue<List<FeedPost>>,
+          List<FeedPost>,
+          Stream<List<FeedPost>>,
+          String
+        > {
+  FeedContentNotifierFamily._()
+    : super(
+        retry: null,
+        name: r'feedContentProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Notifier for managing feed content (posts from the active feed).
+  ///
+  /// Watches the active feed and provides a stream of posts from that feed.
+  /// Supports refresh, load more, and clear operations.
+
+  FeedContentNotifierProvider call(String feedUri) =>
+      FeedContentNotifierProvider._(argument: feedUri, from: this);
+
+  @override
+  String toString() => r'feedContentProvider';
+}
 
 /// Notifier for managing feed content (posts from the active feed).
 ///
@@ -53,7 +105,10 @@ String _$feedContentNotifierHash() => r'4e01a294bfcec416d3540a5b4a7bfd4412f636a2
 /// Supports refresh, load more, and clear operations.
 
 abstract class _$FeedContentNotifier extends $StreamNotifier<List<FeedPost>> {
-  Stream<List<FeedPost>> build();
+  late final _$args = ref.$arg as String;
+  String get feedUri => _$args;
+
+  Stream<List<FeedPost>> build(String feedUri);
   @$mustCallSuper
   @override
   void runBuild() {
@@ -66,6 +121,6 @@ abstract class _$FeedContentNotifier extends $StreamNotifier<List<FeedPost>> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    element.handleCreate(ref, () => build(_$args));
   }
 }

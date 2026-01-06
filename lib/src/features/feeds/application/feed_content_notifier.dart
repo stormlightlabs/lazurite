@@ -1,11 +1,10 @@
+import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/utils/logger_provider.dart';
 import '../../../infrastructure/db/daos/feed_content_dao.dart';
 import '../infrastructure/feed_content_repository.dart';
 import '../infrastructure/feed_repository.dart';
-import 'feed_content_providers.dart';
-import 'feed_providers.dart';
 
 part 'feed_content_notifier.g.dart';
 
@@ -16,16 +15,12 @@ part 'feed_content_notifier.g.dart';
 @riverpod
 class FeedContentNotifier extends _$FeedContentNotifier {
   @override
-  Stream<List<FeedPost>> build() {
-    final activeFeedUri = ref.watch(activeFeedProvider);
+  Stream<List<FeedPost>> build(String feedUri) {
     final repository = ref.watch(feedContentRepositoryProvider);
     final logger = ref.watch(loggerProvider('FeedContentNotifier'));
 
-    final feedKey = _feedKeyFromUri(activeFeedUri);
-    logger.debug('Watching feed content stream', {
-      'feedKey': feedKey,
-      'activeFeedUri': activeFeedUri,
-    });
+    final feedKey = _feedKeyFromUri(feedUri);
+    logger.debug('Watching feed content stream', {'feedKey': feedKey, 'feedUri': feedUri});
 
     return repository.watchFeedContent(feedKey: feedKey).map((items) {
       logger.debug('Stream emitted', {'itemCount': items.length, 'feedKey': feedKey});
@@ -46,26 +41,24 @@ class FeedContentNotifier extends _$FeedContentNotifier {
   ///
   /// Fetches the latest posts from the active feed and caches them locally.
   Future<void> refresh() async {
-    final activeFeedUri = ref.read(activeFeedProvider);
     final repository = ref.read(feedContentRepositoryProvider);
 
-    final feedUri = activeFeedUri == FeedRepository.kHomeFeedUri ? null : activeFeedUri;
-    await repository.fetchAndCacheFeed(feedUri: feedUri);
+    final actualFeedUri = feedUri == FeedRepository.kHomeFeedUri ? null : feedUri;
+    await repository.fetchAndCacheFeed(feedUri: actualFeedUri);
   }
 
   /// Loads more posts for the current feed.
   ///
   /// Fetches the next page using the stored cursor for the active feed.
   Future<void> loadMore() async {
-    final activeFeedUri = ref.read(activeFeedProvider);
     final repository = ref.read(feedContentRepositoryProvider);
 
-    final feedKey = _feedKeyFromUri(activeFeedUri);
+    final feedKey = _feedKeyFromUri(feedUri);
     final cursor = await repository.getCursor(feedKey);
 
     if (cursor != null) {
-      final feedUri = activeFeedUri == FeedRepository.kHomeFeedUri ? null : activeFeedUri;
-      await repository.fetchAndCacheFeed(cursor: cursor, feedUri: feedUri);
+      final actualFeedUri = feedUri == FeedRepository.kHomeFeedUri ? null : feedUri;
+      await repository.fetchAndCacheFeed(cursor: cursor, feedUri: actualFeedUri);
     }
   }
 
@@ -73,10 +66,9 @@ class FeedContentNotifier extends _$FeedContentNotifier {
   ///
   /// Removes all cached items and cursor for the active feed.
   Future<void> clearFeedContent() async {
-    final activeFeedUri = ref.read(activeFeedProvider);
     final repository = ref.read(feedContentRepositoryProvider);
 
-    final feedKey = _feedKeyFromUri(activeFeedUri);
+    final feedKey = _feedKeyFromUri(feedUri);
     await repository.clearFeedContent(feedKey);
   }
 }

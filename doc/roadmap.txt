@@ -45,7 +45,7 @@ Tasks:
             - drag-to-reorder in FeedManagementScreen
             - update sortOrder on drag complete
             - sync to remote preferences
-      - [ ] Feed preview:
+      - [x] Feed preview:
             - preview feed content before saving
             - show 10-20 posts in modal/sheet
             - "Save Feed" button from preview
