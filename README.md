@@ -359,3 +359,9 @@ lib/src/features/<feature>/domain/usecases/
 - [Bluesky API Documentation](https://docs.bsky.app/)
 - [AT Protocol Specification](https://atproto.com/)
 - [Flutter Documentation](https://flutter.dev/docs)
+
+## Credits
+
+Typography inspiration from [Anisota](https://anisota.net/) by [Dame.is](https://dame.is) ([@dame.is](https://bsky.app/profile/dame.is)).
+
+[Witchsky](https://witchsky.app/) ([code](https://tangled.org/jollywhoppers.com/witchsky.app/))

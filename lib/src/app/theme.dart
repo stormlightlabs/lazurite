@@ -106,16 +106,16 @@ abstract final class AppTheme {
   }
 
   /// Builds the text theme with custom fonts.
-  /// - Lora for display styles
-  /// - Public Sans for body/label styles
-  /// - JetBrains Mono for code (available via bodySmall)
+  /// - Crimson Pro for display styles
+  /// - Atkinson Hyperlegible for body/label styles
+  /// - Fira Code for code (available via bodySmall)
   static TextTheme _buildTextTheme(Color color) {
-    final displayStyle = GoogleFonts.lora(color: color);
-    final bodyStyle = GoogleFonts.publicSans(color: color);
-    final monoStyle = GoogleFonts.jetBrainsMono(color: color);
+    final displayStyle = GoogleFonts.crimsonPro(color: color);
+    final bodyStyle = GoogleFonts.atkinsonHyperlegible(color: color);
+    final monoStyle = GoogleFonts.firaCode(color: color);
 
     return TextTheme(
-      // Display styles - Lora
+      // Display styles - Crimson Pro
       displayLarge: displayStyle.copyWith(
         fontSize: 57,
         fontWeight: FontWeight.w400,
