@@ -1,10 +1,30 @@
 import 'dart:convert';
 
+/// Behavioral directives for how labeled content should be handled.
+///
+/// System labels (prefixed with `!`) map to specific behaviors, while
+/// regular descriptive labels default to [inform].
+enum LabelBehavior {
+  /// Content should be hidden behind a warning (click-to-reveal).
+  warn,
+
+  /// Content should be completely hidden (no reveal option).
+  hide,
+
+  /// Content should be blurred (similar to warn but less severe).
+  blur,
+
+  /// Label is informational only (e.g., "spam", "scam" indicators).
+  inform,
+
+  /// Label triggers an alert (severe moderation action).
+  alert,
+}
+
 /// Represents an AT Protocol content label (com.atproto.label.defs#label).
 ///
-/// Labels are metadata tags applied to posts and profiles by labelers
-/// (moderation services). They're used for content moderation, identity
-/// verification, and other purposes.
+/// Labels are metadata tags applied to posts and profiles by labelers (moderation services).
+/// They're used for content moderation, identity verification, and other purposes.
 class ContentLabel {
   const ContentLabel({
     required this.src,
@@ -44,6 +64,32 @@ class ContentLabel {
     }
   }
 
+  /// Known system labels and their behaviors.
+  ///
+  /// System labels are prefixed with `!` and define expected behaviors.
+  /// See: https://atproto.com/specs/label
+  static const Map<String, LabelBehavior> systemLabelBehaviors = {
+    '!warn': LabelBehavior.warn,
+    '!hide': LabelBehavior.hide,
+    '!no-promote': LabelBehavior.inform,
+    '!no-unauthenticated': LabelBehavior.inform,
+    '!takedown': LabelBehavior.hide,
+    '!suspend': LabelBehavior.hide,
+  };
+
+  /// Known descriptive labels and their default behaviors.
+  static const Map<String, LabelBehavior> descriptiveLabelBehaviors = {
+    'porn': LabelBehavior.warn,
+    'sexual': LabelBehavior.warn,
+    'nudity': LabelBehavior.blur,
+    'nsfl': LabelBehavior.warn,
+    'gore': LabelBehavior.warn,
+    'spam': LabelBehavior.inform,
+    'scam': LabelBehavior.alert,
+    'impersonation': LabelBehavior.alert,
+    'misinformation': LabelBehavior.warn,
+  };
+
   /// DID of the labeler that created this label.
   final String src;
 
@@ -73,6 +119,26 @@ class ContentLabel {
 
   /// Whether this is a system label (prefixed with !).
   bool get isSystemLabel => val.startsWith('!');
+
+  /// Display-friendly value (strips `!` prefix from system labels).
+  String get displayValue => isSystemLabel ? val.substring(1) : val;
+
+  /// The expected behavior for this label.
+  ///
+  /// System labels have predefined behaviors. Descriptive labels use known
+  /// mappings or default to [LabelBehavior.inform].
+  LabelBehavior get behavior {
+    if (isSystemLabel) {
+      return systemLabelBehaviors[val] ?? LabelBehavior.warn;
+    }
+    return descriptiveLabelBehaviors[val.toLowerCase()] ?? LabelBehavior.inform;
+  }
+
+  /// Whether this label should trigger a content warning overlay.
+  bool get shouldWarn => behavior == LabelBehavior.warn || behavior == LabelBehavior.blur;
+
+  /// Whether this label should completely hide content.
+  bool get shouldHide => behavior == LabelBehavior.hide;
 
   /// Converts to JSON map for serialization.
   Map<String, dynamic> toJson() => {

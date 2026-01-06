@@ -71,7 +71,6 @@ void main() {
         );
       });
 
-      // Should render without errors even with minimal data
       expect(find.byType(EmbedExternal), findsOneWidget);
       expect(find.text('example.com'), findsOneWidget);
     });

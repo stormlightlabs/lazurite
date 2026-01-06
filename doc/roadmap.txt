@@ -55,16 +55,16 @@ Tasks:
       - [x] Improve existing embeds:
             - persist alt text for images
             - video duration and metadata
-- [ ] Content Labels & Moderation (MEDIUM):
+- [x] Content Labels & Moderation (MEDIUM):
       - [x] Label parsing and storage:
             - parse labels from posts and profiles
             - store label source (which labeler)
-      - [ ] Label UI:
+      - [x] Label UI:
             - content warnings for labeled posts
             - blur/hide with click-to-reveal
             - display label types (spam, scam, etc.)
             - respect user moderation preferences
-      - [ ] System labels:
+      - [x] System labels:
             - handle ! prefixed behavioral labels
             - appropriate UI for directives vs descriptors
 - [ ] Thread Structure (MEDIUM):

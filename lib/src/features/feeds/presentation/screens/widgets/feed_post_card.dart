@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/theme.dart';
+import 'package:lazurite/src/core/domain/content_label.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/content_warning.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_actions_row.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_body.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_embeds.dart';
@@ -33,6 +35,9 @@ class FeedPostCard extends StatelessWidget {
     final text = record?['text'] as String? ?? '';
     final createdAt = DateTime.tryParse(item.post.indexedAt?.toIso8601String() ?? '');
 
+    final labels = ContentLabel.parseFromJsonString(item.post.labels);
+    final hasWarningLabels = labels.any((l) => l.shouldWarn || l.shouldHide);
+
     Map<String, dynamic>? reasonJson;
     if (item.reason != null) {
       try {
@@ -54,6 +59,40 @@ class FeedPostCard extends StatelessWidget {
       if (byJson is Map<String, dynamic>) {
         reposter = byJson;
       }
+    }
+
+    Widget postContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        PostBody(text: text),
+        if (item.post.embed != null) ...[
+          const SizedBox(height: 8),
+          PostEmbeds(
+            embed: jsonDecode(item.post.embed!) as Map<String, dynamic>,
+            authorDid: item.author.did,
+            record: jsonDecode(item.post.record) as Map<String, dynamic>,
+          ),
+        ],
+        const SizedBox(height: 12),
+        PostActionsRow(
+          replyCount: item.post.replyCount,
+          repostCount: item.post.repostCount,
+          likeCount: item.post.likeCount,
+        ),
+      ],
+    );
+
+    if (hasWarningLabels) {
+      postContent = ContentWarning(labels: labels, child: postContent);
+    } else if (labels.isNotEmpty) {
+      postContent = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LabelChips(labels: labels),
+          const SizedBox(height: 8),
+          postContent,
+        ],
+      );
     }
 
     return InkWell(
@@ -93,29 +132,7 @@ class FeedPostCard extends StatelessWidget {
                 GoRouter.of(context).push('/home/u/$encodedDid');
               },
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 52.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  PostBody(text: text),
-                  if (item.post.embed != null) ...[
-                    const SizedBox(height: 8),
-                    PostEmbeds(
-                      embed: jsonDecode(item.post.embed!) as Map<String, dynamic>,
-                      authorDid: item.author.did,
-                      record: jsonDecode(item.post.record) as Map<String, dynamic>,
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  PostActionsRow(
-                    replyCount: item.post.replyCount,
-                    repostCount: item.post.repostCount,
-                    likeCount: item.post.likeCount,
-                  ),
-                ],
-              ),
-            ),
+            Padding(padding: const EdgeInsets.only(left: 52.0), child: postContent),
           ],
         ),
       ),

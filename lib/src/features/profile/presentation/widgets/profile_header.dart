@@ -166,7 +166,7 @@ class ProfileHeader extends StatelessWidget {
         if (profile.labels != null && profile.labels!.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ProfileLabels(labels: profile.labels),
+            child: ProfileLabels(rawLabels: profile.labels),
           ),
 
         if (profile.description != null && profile.description!.isNotEmpty) ...[

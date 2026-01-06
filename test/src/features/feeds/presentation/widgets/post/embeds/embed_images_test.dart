@@ -146,7 +146,6 @@ void main() {
       expect(find.text('A beautiful sunset over the ocean'), findsOneWidget);
       expect(find.text('Close'), findsOneWidget);
 
-      // Close the dialog
       await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
 

@@ -162,6 +162,65 @@ void main() {
         expect(systemLabel.isSystemLabel, true);
         expect(regularLabel.isSystemLabel, false);
       });
+
+      test('displayValue strips ! prefix from system labels', () {
+        final systemLabel = ContentLabel(
+          src: 'did:plc:mod',
+          uri: 'at://did:plc:user/post/1',
+          val: '!warn',
+          cts: DateTime.now(),
+        );
+
+        final regularLabel = ContentLabel(
+          src: 'did:plc:mod',
+          uri: 'at://did:plc:user/post/1',
+          val: 'spam',
+          cts: DateTime.now(),
+        );
+
+        expect(systemLabel.displayValue, 'warn');
+        expect(regularLabel.displayValue, 'spam');
+      });
+
+      test('behavior returns correct value for system labels', () {
+        expect(_createLabel('!warn').behavior, LabelBehavior.warn);
+        expect(_createLabel('!hide').behavior, LabelBehavior.hide);
+        expect(_createLabel('!takedown').behavior, LabelBehavior.hide);
+        expect(_createLabel('!suspend').behavior, LabelBehavior.hide);
+        expect(_createLabel('!no-promote').behavior, LabelBehavior.inform);
+        expect(
+          _createLabel('!unknown').behavior,
+          LabelBehavior.warn,
+        ); // default for unknown system
+      });
+
+      test('behavior returns correct value for descriptive labels', () {
+        expect(_createLabel('porn').behavior, LabelBehavior.warn);
+        expect(_createLabel('nudity').behavior, LabelBehavior.blur);
+        expect(_createLabel('spam').behavior, LabelBehavior.inform);
+        expect(_createLabel('scam').behavior, LabelBehavior.alert);
+        expect(_createLabel('unknown').behavior, LabelBehavior.inform); // default
+      });
+
+      test('behavior is case insensitive for descriptive labels', () {
+        expect(_createLabel('SPAM').behavior, LabelBehavior.inform);
+        expect(_createLabel('Porn').behavior, LabelBehavior.warn);
+      });
+
+      test('shouldWarn returns true for warn and blur behaviors', () {
+        expect(_createLabel('!warn').shouldWarn, true);
+        expect(_createLabel('porn').shouldWarn, true);
+        expect(_createLabel('nudity').shouldWarn, true);
+        expect(_createLabel('spam').shouldWarn, false);
+        expect(_createLabel('!hide').shouldWarn, false);
+      });
+
+      test('shouldHide returns true for hide behavior', () {
+        expect(_createLabel('!hide').shouldHide, true);
+        expect(_createLabel('!takedown').shouldHide, true);
+        expect(_createLabel('!warn').shouldHide, false);
+        expect(_createLabel('spam').shouldHide, false);
+      });
     });
 
     group('toJson', () {
@@ -242,4 +301,13 @@ void main() {
       });
     });
   });
+}
+
+ContentLabel _createLabel(String val) {
+  return ContentLabel(
+    src: 'did:plc:test-labeler',
+    uri: 'at://did:plc:user/app.bsky.feed.post/test',
+    val: val,
+    cts: DateTime.utc(2024),
+  );
 }
