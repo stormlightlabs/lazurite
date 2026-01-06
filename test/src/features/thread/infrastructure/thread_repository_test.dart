@@ -165,5 +165,104 @@ void main() {
       expect(thread.post.bookmarkCount, 1);
       expect(thread.post.labels, contains('"val":"sensitive"'));
     });
+
+    test('parses threadgate from thread response', () async {
+      final mockResponse = {
+        'thread': {
+          r'$type': 'app.bsky.feed.defs#threadViewPost',
+          'post': {
+            'uri': 'at://did:1/app.bsky.feed.post/1',
+            'cid': 'cid1',
+            'author': {'did': 'did:1', 'handle': 'alice', 'displayName': 'Alice'},
+            'record': {'text': 'Gated post', 'createdAt': '2024-01-01T00:00:00Z'},
+            'indexedAt': '2024-01-01T00:00:00Z',
+          },
+          'threadgate': {
+            'uri': 'at://did:1/app.bsky.feed.threadgate/1',
+            'cid': 'gateCid',
+            'record': {
+              'post': 'at://did:1/app.bsky.feed.post/1',
+              'allow': [
+                {r'$type': 'app.bsky.feed.threadgate#mentionRule'},
+                {r'$type': 'app.bsky.feed.threadgate#followingRule'},
+              ],
+              'createdAt': '2024-01-01T00:00:00Z',
+            },
+          },
+        },
+      };
+
+      when(
+        () => mockApi.call(any(), params: any(named: 'params')),
+      ).thenAnswer((_) async => mockResponse);
+
+      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1');
+
+      expect(thread.threadgate, isNotNull);
+      expect(thread.threadgate!.uri, 'at://did:1/app.bsky.feed.threadgate/1');
+      expect(thread.threadgate!.cid, 'gateCid');
+      expect(thread.threadgate!.record, isNotNull);
+      expect(thread.threadgate!.record!.allow.length, 2);
+      expect(
+        thread.threadgate!.restrictionDescription,
+        'Replies limited to mentioned users, accounts the author follows',
+      );
+    });
+
+    test('sets isBlocked flag for blocked posts', () async {
+      final mockResponse = {
+        'thread': {
+          r'$type': 'app.bsky.feed.defs#threadViewPost',
+          'post': {
+            'uri': 'at://did:1/app.bsky.feed.post/1',
+            'cid': 'cid1',
+            'author': {'did': 'did:1', 'handle': 'alice'},
+            'record': {'text': 'Root', 'createdAt': '2024-01-01T00:00:00Z'},
+            'indexedAt': '2024-01-01T00:00:00Z',
+          },
+          'replies': [
+            {r'$type': 'app.bsky.feed.defs#blockedPost', 'uri': 'at://blocked/post'},
+          ],
+        },
+      };
+
+      when(
+        () => mockApi.call(any(), params: any(named: 'params')),
+      ).thenAnswer((_) async => mockResponse);
+
+      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1');
+
+      expect(thread.replies.first.isBlocked, true);
+      expect(thread.replies.first.post.isBlocked, true);
+      expect(thread.replies.first.isNotFound, false);
+    });
+
+    test('sets isNotFound flag for not found posts', () async {
+      final mockResponse = {
+        'thread': {
+          r'$type': 'app.bsky.feed.defs#threadViewPost',
+          'post': {
+            'uri': 'at://did:1/app.bsky.feed.post/1',
+            'cid': 'cid1',
+            'author': {'did': 'did:1', 'handle': 'alice'},
+            'record': {'text': 'Root', 'createdAt': '2024-01-01T00:00:00Z'},
+            'indexedAt': '2024-01-01T00:00:00Z',
+          },
+          'replies': [
+            {r'$type': 'app.bsky.feed.defs#notFoundPost', 'uri': 'at://notfound/post'},
+          ],
+        },
+      };
+
+      when(
+        () => mockApi.call(any(), params: any(named: 'params')),
+      ).thenAnswer((_) async => mockResponse);
+
+      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1');
+
+      expect(thread.replies.first.isNotFound, true);
+      expect(thread.replies.first.post.isNotFound, true);
+      expect(thread.replies.first.isBlocked, false);
+    });
   });
 }

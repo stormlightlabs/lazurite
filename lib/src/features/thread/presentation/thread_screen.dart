@@ -6,6 +6,10 @@ import 'package:lazurite/src/features/feeds/presentation/screens/widgets/feed_po
 import 'package:lazurite/src/features/thread/application/thread_notifier.dart';
 import 'package:lazurite/src/features/thread/application/thread_providers.dart';
 import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
+import 'package:lazurite/src/features/thread/presentation/widgets/blocked_post_card.dart';
+import 'package:lazurite/src/features/thread/presentation/widgets/not_found_post_card.dart';
+import 'package:lazurite/src/features/thread/presentation/widgets/thread_line_connector.dart';
+import 'package:lazurite/src/features/thread/presentation/widgets/threadgate_indicator.dart';
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 
 class ThreadScreen extends ConsumerStatefulWidget {
@@ -48,41 +52,126 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
             return _buildFlattenedView(threadCacheAsync, thread);
           }
 
-          final parents = thread.parent != null ? _getParents(thread.parent!) : <ThreadViewPost>[];
-          final replies = thread.replies;
-
-          return CustomScrollView(
-            slivers: [
-              if (parents.isNotEmpty)
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => FeedPostCard(item: _mapToFeedPost(parents[index])),
-                    childCount: parents.length,
-                  ),
-                ),
-
-              SliverToBoxAdapter(
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Theme.of(context).dividerColor, width: 4),
-                    ),
-                  ),
-                  child: FeedPostCard(item: _mapToFeedPost(thread)),
-                ),
-              ),
-
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => FeedPostCard(item: _mapToFeedPost(replies[index])),
-                  childCount: replies.length,
-                ),
-              ),
-            ],
-          );
+          return _buildTreeView(thread);
         },
       ),
     );
+  }
+
+  Widget _buildTreeView(ThreadViewPost thread) {
+    final parents = thread.parent != null ? _getParents(thread.parent!) : <ThreadViewPost>[];
+    final replies = thread.replies;
+
+    return CustomScrollView(
+      slivers: [
+        if (parents.isNotEmpty)
+          SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final parent = parents[index];
+              final position = _getThreadLinePosition(
+                index: index,
+                total: parents.length,
+                isParentChain: true,
+              );
+              return _buildThreadPost(parent, position: position);
+            }, childCount: parents.length),
+          ),
+
+        SliverToBoxAdapter(child: _buildFocalPost(thread)),
+
+        SliverList(
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final reply = replies[index];
+            final position = _getThreadLinePosition(
+              index: index,
+              total: replies.length,
+              isParentChain: false,
+            );
+            return _buildThreadPost(reply, position: position, isReply: true);
+          }, childCount: replies.length),
+        ),
+      ],
+    );
+  }
+
+  /// Builds a single thread post with appropriate state handling
+  Widget _buildThreadPost(
+    ThreadViewPost view, {
+    ThreadLinePosition position = ThreadLinePosition.none,
+    bool isReply = false,
+  }) {
+    if (view.isBlocked) {
+      return Stack(
+        children: [
+          if (position != ThreadLinePosition.none) ThreadLineConnector(position: position),
+          const BlockedPostCard(),
+        ],
+      );
+    }
+
+    if (view.isNotFound) {
+      return Stack(
+        children: [
+          if (position != ThreadLinePosition.none) ThreadLineConnector(position: position),
+          const NotFoundPostCard(),
+        ],
+      );
+    }
+
+    return Stack(
+      children: [
+        if (position != ThreadLinePosition.none) ThreadLineConnector(position: position),
+        Padding(
+          padding: isReply ? const EdgeInsets.only(left: 24) : EdgeInsets.zero,
+          child: FeedPostCard(item: _mapToFeedPost(view)),
+        ),
+      ],
+    );
+  }
+
+  /// Builds the focal post with visual distinction
+  Widget _buildFocalPost(ThreadViewPost thread) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer.withValues(alpha: 0.1),
+        border: Border(
+          left: BorderSide(color: colorScheme.primary, width: 3),
+          bottom: BorderSide(color: theme.dividerColor, width: 4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FeedPostCard(item: _mapToFeedPost(thread)),
+          if (thread.threadgate != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 68, bottom: 12),
+              child: ThreadgateIndicator(threadgate: thread.threadgate!),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Determines thread line position based on index and context
+  ThreadLinePosition _getThreadLinePosition({
+    required int index,
+    required int total,
+    required bool isParentChain,
+  }) {
+    if (total == 0) return ThreadLinePosition.none;
+    if (total == 1) return isParentChain ? ThreadLinePosition.bottom : ThreadLinePosition.top;
+
+    if (index == 0) {
+      return isParentChain ? ThreadLinePosition.top : ThreadLinePosition.top;
+    } else if (index == total - 1) {
+      return isParentChain ? ThreadLinePosition.bottom : ThreadLinePosition.bottom;
+    } else {
+      return ThreadLinePosition.middle;
+    }
   }
 
   /// Helper to walk up ancestors

@@ -67,12 +67,12 @@ Tasks:
       - [x] System labels:
             - handle ! prefixed behavioral labels
             - appropriate UI for directives vs descriptors
-- [ ] Thread Structure (MEDIUM):
-      - [ ] Complete thread navigation:
+- [x] Thread Structure (MEDIUM):
+      - [x] Complete thread navigation:
             - parent chain with configurable depth
             - reply tree with nesting
             - handle notFoundPost and blockedPost states
-      - [ ] Thread context:
+      - [x] Thread context:
             - thread lines connecting related posts
             - highlight focal post
             - threadgate indicators for reply restrictions
@@ -100,8 +100,8 @@ Tests:
 - [x] External link embed: preview card renders correctly
 - [x] Quoted post embed: nested post displays properly
 - [ ] Content label warning: labeled content shows blur/warning
-- [ ] Thread parent chain: parent posts render in order
-- [ ] Thread reply tree: replies nest correctly
+- [x] Thread parent chain: parent posts render in order
+- [x] Thread reply tree: replies nest correctly
 - [x] Viewer interaction state: like/repost state persists and displays
 - [ ] Pinned post: appears at top of profile feed
 
@@ -111,7 +111,7 @@ Deliverables:
 - [ ] Full viewer relationship state (follow/block/mute) working
 - [ ] All embed types render (images, video, external, record, recordWithMedia)
 - [ ] Content labels show warnings and respect preferences
-- [ ] Thread structure preserves parent/reply relationships
+- [x] Thread structure preserves parent/reply relationships
 - [ ] Viewer interactions (likes, reposts, bookmarks) tracked and displayed
 - [ ] Pinned posts display prominently on profiles
 
