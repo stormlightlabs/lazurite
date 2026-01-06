@@ -63,6 +63,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 const SliverAppBar(
+                  // TODO: update to use display text style from theme
                   title: Text('Lazurite'),
                   floating: true,
                   snap: true,

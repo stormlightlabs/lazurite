@@ -53,7 +53,7 @@ Tasks:
             - search feeds by name/creator
             - category filters (if API supports)
 - [ ] Search Auth & Caching (HIGH):
-      - [ ] Fix search auth requirement mismatch:
+      - [x] Fix search auth requirement mismatch:
             - We only want search for authenticated users
                   - handle unauthenticated users gracefully (i.e. hide from UI
                     for unauthenticated users)
@@ -99,7 +99,7 @@ Tests:
 - [ ] sortKey uniqueness test: verify no duplicates on rapid pagination
 - [ ] Sync queue retry test: verify max retries + cleanup
 - [ ] Optimistic update transaction test: rollback on queue failure
-- [ ] Search auth test: unauthenticated user sees sign-in prompt
+- [x] Search auth test: unauthenticated user sees sign-in prompt
 - [ ] Recent search persistence test: verify saveRecentSearch() called
 - [ ] Search cache test: second query serves from cache
 - [ ] Offline search test: cached results available offline

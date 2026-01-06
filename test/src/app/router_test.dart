@@ -223,6 +223,39 @@ void main() {
 
       expect(find.text('Profile'), findsWidgets);
     });
+
+    testWidgets('redirects unauthenticated user from search to login', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          ...getTestOverrides(),
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(testSession, initialState: const AuthState.unauthenticated()),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: Consumer(
+            builder: (context, ref, _) {
+              final appRouter = ref.watch(goRouterProvider);
+              return MaterialApp.router(theme: AppTheme.dark, routerConfig: appRouter);
+            },
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      expect(find.text('Sign in to Bluesky'), findsOneWidget);
+
+      final router = container.read(goRouterProvider);
+      router.go('/search');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sign in to Bluesky'), findsOneWidget);
+      expect(find.text('Search posts...'), findsNothing);
+    });
   });
 
   group('AppRoutes', () {

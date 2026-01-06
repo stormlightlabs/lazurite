@@ -61,8 +61,7 @@ GoRouter createRouter(Ref ref) {
       final isLoggingIn =
           location == AppRoutes.login || location == '${AppRoutes.login}/app-password';
       final isCallback = location == AppRoutes.callback;
-      final isPublic =
-          location.startsWith(AppRoutes.home) || location.startsWith(AppRoutes.search);
+      final isPublic = location.startsWith(AppRoutes.home);
 
       if (auth is! AuthStateAuthenticated) {
         if (isLoggingIn || isCallback || isPublic) return null;
