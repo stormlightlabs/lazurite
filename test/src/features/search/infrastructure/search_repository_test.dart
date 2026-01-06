@@ -263,6 +263,68 @@ void main() {
         expect(searches, isEmpty);
       });
     });
+
+    group('searchActors', () {
+      test('searches actors and returns results', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockActorsResponse());
+
+        final result = await repository.searchActors('flutter');
+
+        expect(result.actors, hasLength(2));
+        expect(result.cursor, 'next_actor_page');
+        expect(result.hasMore, isTrue);
+        expect(result.actors.first.handle, 'flutterdev.bsky.social');
+        expect(result.actors.first.displayName, 'Flutter Developer');
+      });
+
+      test('passes cursor for pagination', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockActorsResponse(cursor: null));
+
+        await repository.searchActors('flutter', cursor: 'prev_cursor');
+
+        verify(
+          () => mockApi.call(
+            'app.bsky.actor.searchActors',
+            params: {'q': 'flutter', 'limit': 25, 'cursor': 'prev_cursor'},
+          ),
+        ).called(1);
+      });
+
+      test('handles empty results', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => {'actors': <dynamic>[]});
+
+        final result = await repository.searchActors('nonexistent');
+
+        expect(result.actors, isEmpty);
+        expect(result.hasMore, isFalse);
+      });
+
+      test('parses follower and following counts', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockActorsResponse());
+
+        final result = await repository.searchActors('flutter');
+
+        expect(result.actors.first.followersCount, 1000);
+        expect(result.actors.first.followsCount, 500);
+      });
+
+      test('logs error and rethrows on failure', () async {
+        final exception = Exception('Actor search API error');
+        when(() => mockApi.call(any(), params: any(named: 'params'))).thenThrow(exception);
+
+        expect(() => repository.searchActors('error'), throwsA(isA<Exception>()));
+
+        verify(() => mockLogger.error(any(), exception, any())).called(1);
+      });
+    });
   });
 }
 
@@ -298,6 +360,28 @@ Map<String, dynamic> _mockSearchResponse({String? cursor = 'next_page'}) => {
       'cid': 'cid2',
       'author': {'did': 'did:plc:user2', 'handle': 'dartlang.bsky.social'},
       'record': {'text': 'Dart programming'},
+      'indexedAt': '2024-01-02T12:00:00.000Z',
+    },
+  ],
+  if (cursor != null) 'cursor': cursor,
+};
+
+Map<String, dynamic> _mockActorsResponse({String? cursor = 'next_actor_page'}) => {
+  'actors': [
+    {
+      'did': 'did:plc:user1',
+      'handle': 'flutterdev.bsky.social',
+      'displayName': 'Flutter Developer',
+      'description': 'Building awesome Flutter apps!',
+      'avatar': 'https://example.com/avatar1.jpg',
+      'followersCount': 1000,
+      'followsCount': 500,
+      'indexedAt': '2024-01-01T12:00:00.000Z',
+    },
+    {
+      'did': 'did:plc:user2',
+      'handle': 'dartlang.bsky.social',
+      'displayName': 'Dart Lang',
       'indexedAt': '2024-01-02T12:00:00.000Z',
     },
   ],

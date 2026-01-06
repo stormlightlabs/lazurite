@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,42 +22,87 @@ class SearchScreen extends ConsumerStatefulWidget {
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends ConsumerState<SearchScreen> {
+class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerProviderStateMixin {
   String _currentQuery = '';
-  final _scrollController = ScrollController();
+  String _debouncedQuery = '';
+  final _postsScrollController = ScrollController();
+  final _peopleScrollController = ScrollController();
+  late final TabController _tabController;
+  Timer? _debounceTimer;
+
+  /// Debounce duration for search input.
+  static const _debounceDuration = Duration(milliseconds: 300);
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     if (widget.initialQuery != null) {
       _currentQuery = widget.initialQuery!;
+      _debouncedQuery = widget.initialQuery!;
     }
-    _scrollController.addListener(_onScroll);
+    _postsScrollController.addListener(_onPostsScroll);
+    _peopleScrollController.addListener(_onPeopleScroll);
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _debounceTimer?.cancel();
+    _tabController.dispose();
+    _postsScrollController.dispose();
+    _peopleScrollController.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      if (_currentQuery.isNotEmpty) {
-        ref.read(searchProvider(_currentQuery).notifier).loadMore();
+  void _onPostsScroll() {
+    if (_postsScrollController.position.pixels >=
+        _postsScrollController.position.maxScrollExtent - 200) {
+      if (_debouncedQuery.isNotEmpty) {
+        ref.read(searchProvider(_debouncedQuery).notifier).loadMore();
       }
     }
   }
 
-  void _onSearch(String query) {
+  void _onPeopleScroll() {
+    if (_peopleScrollController.position.pixels >=
+        _peopleScrollController.position.maxScrollExtent - 200) {
+      if (_debouncedQuery.isNotEmpty) {
+        ref.read(actorSearchProvider(_debouncedQuery).notifier).loadMore();
+      }
+    }
+  }
+
+  void _onQueryChanged(String query) {
     setState(() {
       _currentQuery = query;
+    });
+    _debounceTimer?.cancel();
+    if (query.isEmpty) {
+      setState(() {
+        _debouncedQuery = '';
+      });
+    } else {
+      _debounceTimer = Timer(_debounceDuration, () {
+        setState(() {
+          _debouncedQuery = query;
+        });
+      });
+    }
+  }
+
+  void _onSearch(String query) {
+    _debounceTimer?.cancel();
+    setState(() {
+      _currentQuery = query;
+      _debouncedQuery = query;
     });
   }
 
   void _onClear() {
+    _debounceTimer?.cancel();
     setState(() {
       _currentQuery = '';
+      _debouncedQuery = '';
     });
   }
 
@@ -69,16 +116,37 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               padding: const EdgeInsets.all(16),
               child: SearchBarWidget(
                 initialQuery: _currentQuery,
-                hintText: 'Search posts...',
+                hintText: 'Search...',
                 onSubmitted: _onSearch,
+                onChanged: _onQueryChanged,
                 onClear: _onClear,
               ),
             ),
-            Expanded(
-              child: _currentQuery.isEmpty
-                  ? _RecentSearchesView(onSearch: _onSearch)
-                  : _SearchResultsView(query: _currentQuery, scrollController: _scrollController),
-            ),
+            if (_debouncedQuery.isNotEmpty) ...[
+              TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(text: 'Posts'),
+                  Tab(text: 'People'),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _PostResultsView(
+                      query: _debouncedQuery,
+                      scrollController: _postsScrollController,
+                    ),
+                    _ActorResultsView(
+                      query: _debouncedQuery,
+                      scrollController: _peopleScrollController,
+                    ),
+                  ],
+                ),
+              ),
+            ] else
+              Expanded(child: _RecentSearchesView(onSearch: _onSearch)),
           ],
         ),
       ),
@@ -149,10 +217,10 @@ class _EmptySearchState extends StatelessWidget {
         children: [
           Icon(Icons.search_outlined, size: 64, color: theme.colorScheme.primary.withAlpha(127)),
           const SizedBox(height: 16),
-          Text('Search for posts', style: theme.textTheme.headlineSmall),
+          Text('Search for posts and people', style: theme.textTheme.headlineSmall),
           const SizedBox(height: 8),
           Text(
-            'Type a query to find posts',
+            'Type a query to find posts or people',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withAlpha(153),
             ),
@@ -163,8 +231,8 @@ class _EmptySearchState extends StatelessWidget {
   }
 }
 
-class _SearchResultsView extends ConsumerWidget {
-  const _SearchResultsView({required this.query, required this.scrollController});
+class _PostResultsView extends ConsumerWidget {
+  const _PostResultsView({required this.query, required this.scrollController});
 
   final String query;
   final ScrollController scrollController;
@@ -177,27 +245,7 @@ class _SearchResultsView extends ConsumerWidget {
     return resultsAsync.when(
       data: (posts) {
         if (posts.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.search_off_outlined,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.onSurface.withAlpha(127),
-                ),
-                const SizedBox(height: 16),
-                Text('No results found', style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 8),
-                Text(
-                  'Try a different search term',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withAlpha(153),
-                  ),
-                ),
-              ],
-            ),
-          );
+          return const _NoResultsView(message: 'No posts found');
         }
 
         return RefreshIndicator(
@@ -224,22 +272,112 @@ class _SearchResultsView extends ConsumerWidget {
         );
       },
       loading: () => const LoadingView(),
-      error: (error, _) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48),
-            const SizedBox(height: 16),
-            Text('Error: $error'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                ref.read(searchProvider(query).notifier).refresh();
-              },
-              child: const Text('Retry'),
+      error: (error, _) => _ErrorView(
+        error: error,
+        onRetry: () => ref.read(searchProvider(query).notifier).refresh(),
+      ),
+    );
+  }
+}
+
+class _ActorResultsView extends ConsumerWidget {
+  const _ActorResultsView({required this.query, required this.scrollController});
+
+  final String query;
+  final ScrollController scrollController;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final resultsAsync = ref.watch(actorSearchProvider(query));
+    final hasMore = ref.read(actorSearchProvider(query).notifier).hasMore;
+
+    return resultsAsync.when(
+      data: (actors) {
+        if (actors.isEmpty) {
+          return const _NoResultsView(message: 'No people found');
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            await ref.read(actorSearchProvider(query).notifier).refresh();
+          },
+          child: ListView.separated(
+            controller: scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: actors.length + (hasMore ? 1 : 0),
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              if (index >= actors.length) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              final actor = actors[index];
+              return _ActorSearchResultCard(actor: actor);
+            },
+          ),
+        );
+      },
+      loading: () => const LoadingView(),
+      error: (error, _) => _ErrorView(
+        error: error,
+        onRetry: () => ref.read(actorSearchProvider(query).notifier).refresh(),
+      ),
+    );
+  }
+}
+
+class _NoResultsView extends StatelessWidget {
+  const _NoResultsView({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off_outlined,
+            size: 64,
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(127),
+          ),
+          const SizedBox(height: 16),
+          Text(message, style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          Text(
+            'Try a different search term',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(153),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.error, required this.onRetry});
+
+  final Object error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48),
+          const SizedBox(height: 16),
+          Text('Error: $error'),
+          const SizedBox(height: 16),
+          ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
       ),
     );
   }
@@ -322,6 +460,93 @@ class _SearchResultCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _ActorSearchResultCard extends StatelessWidget {
+  const _ActorSearchResultCard({required this.actor});
+
+  final SearchActorItem actor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: () {
+        GoRouter.of(context).push('/profile/${actor.did}');
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundImage: actor.avatar != null ? NetworkImage(actor.avatar!) : null,
+              child: actor.avatar == null ? const Icon(Icons.person, size: 24) : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    actor.displayName ?? actor.handle,
+                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    '@${actor.handle}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withAlpha(153),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (actor.description != null && actor.description!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      actor.description!,
+                      style: theme.textTheme.bodySmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        '${_formatCount(actor.followersCount)} followers',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withAlpha(153),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${_formatCount(actor.followsCount)} following',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withAlpha(153),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatCount(int count) {
+    if (count >= 1000000) {
+      return '${(count / 1000000).toStringAsFixed(1)}M';
+    } else if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}K';
+    }
+    return count.toString();
   }
 }
 

@@ -64,16 +64,16 @@ Tasks:
             - cache SearchPostItems in database
             - similar to feed content caching strategy
             - 7-day retention policy
-- [ ] Search Feature Completion (MEDIUM):
+- [x] Search Feature Completion (MEDIUM):
       - [x] Add embed support to SearchPostItem:
             - include embed field in model
             - render images/videos in search results
             - reuse post embed widgets from feeds
-      - [ ] Implement actor search:
+      - [x] Implement actor search:
             - use app.bsky.actor.searchActors endpoint
             - tab switcher: Posts / People
             - actor search results with follow button
-      - [ ] Add search input debouncing:
+      - [x] Add search input debouncing:
             - 300ms debounce on text input
             - cancel in-flight requests on new input
 - [ ] Architecture & Code Quality (MEDIUM):

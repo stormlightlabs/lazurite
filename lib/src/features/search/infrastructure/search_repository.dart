@@ -171,6 +171,31 @@ class SearchRepository {
     await _dao.clearAllRecentSearches();
     _logger.debug('Cleared all recent searches');
   }
+
+  /// Searches actors (users) with cursor pagination.
+  Future<SearchActorsResult> searchActors(String query, {String? cursor}) async {
+    _logger.info('Searching actors', {'query': query, 'cursor': cursor});
+
+    try {
+      final response = await _api.call(
+        'app.bsky.actor.searchActors',
+        params: {'q': query, 'limit': 25, if (cursor != null) 'cursor': cursor},
+      );
+
+      final rawActors = response['actors'] as List? ?? [];
+      final actors = rawActors
+          .map((e) => SearchActorItem.fromJson(e as Map<String, dynamic>))
+          .toList();
+      final nextCursor = response['cursor'] as String?;
+
+      _logger.debug('Found ${actors.length} actors');
+
+      return SearchActorsResult(actors: actors, cursor: nextCursor);
+    } catch (e, stack) {
+      _logger.error('Actor search failed', e, stack);
+      rethrow;
+    }
+  }
 }
 
 /// Result of searching posts.
@@ -236,4 +261,50 @@ class SearchPostItem {
   final int likeCount;
   final Map<String, dynamic>? embed;
   final Map<String, dynamic>? record;
+}
+
+/// Result of searching actors.
+class SearchActorsResult {
+  SearchActorsResult({required this.actors, this.cursor});
+
+  final List<SearchActorItem> actors;
+  final String? cursor;
+
+  bool get hasMore => cursor != null;
+}
+
+/// An actor (user) from search results.
+class SearchActorItem {
+  factory SearchActorItem.fromJson(Map<String, dynamic> json) {
+    return SearchActorItem(
+      did: json['did'] as String,
+      handle: json['handle'] as String,
+      displayName: json['displayName'] as String?,
+      description: json['description'] as String?,
+      avatar: json['avatar'] as String?,
+      followersCount: json['followersCount'] as int? ?? 0,
+      followsCount: json['followsCount'] as int? ?? 0,
+      indexedAt: DateTime.tryParse(json['indexedAt'] as String? ?? ''),
+    );
+  }
+
+  SearchActorItem({
+    required this.did,
+    required this.handle,
+    this.displayName,
+    this.description,
+    this.avatar,
+    this.followersCount = 0,
+    this.followsCount = 0,
+    this.indexedAt,
+  });
+
+  final String did;
+  final String handle;
+  final String? displayName;
+  final String? description;
+  final String? avatar;
+  final int followersCount;
+  final int followsCount;
+  final DateTime? indexedAt;
 }
