@@ -81,6 +81,31 @@ class FeedContentRepository {
     );
   }
 
+  /// Helper to map API Author to DB Companion with validation.
+  ///
+  /// Extracts viewer relationship data if present.
+  ProfileRelationshipsCompanion? _mapRelationship(Map<String, dynamic> json) {
+    final did = json['did'];
+    if (did is! String || did.isEmpty) return null;
+
+    final viewer = json['viewer'] as Map<String, dynamic>?;
+    if (viewer == null) return null;
+
+    return ProfileRelationshipsCompanion.insert(
+      profileDid: did,
+      following: Value(viewer['following'] != null),
+      followingUri: Value(viewer['following'] as String?),
+      followedBy: Value(viewer['followedBy'] != null),
+      muted: Value(viewer['muted'] as bool? ?? false),
+      blocked: Value(viewer['blocking'] != null),
+      blockingUri: Value(viewer['blocking'] as String?),
+      blockedBy: Value(viewer['blockedBy'] as bool? ?? false),
+      mutedByList: Value(viewer['mutedByList']?['uri'] as String?),
+      blockingByList: Value(viewer['blockingByList']?['uri'] as String?),
+      updatedAt: DateTime.now(),
+    );
+  }
+
   /// Derives a feedKey from a feed URI.
   ///
   /// Uses the full URI as the feedKey to ensure uniqueness.
@@ -150,6 +175,7 @@ class FeedContentRepository {
 
       final posts = <PostsCompanion>[];
       final profiles = <ProfilesCompanion>[];
+      final relationships = <ProfileRelationshipsCompanion>[];
       final items = <FeedContentItemsCompanion>[];
 
       final baseTime = DateTime.now().microsecondsSinceEpoch;
@@ -177,12 +203,20 @@ class FeedContentRepository {
 
         posts.add(_mapPost(postJson));
         profiles.add(_mapProfile(authorJson));
+        final authorRel = _mapRelationship(authorJson);
+        if (authorRel != null) {
+          relationships.add(authorRel);
+        }
 
         final reasonJson = itemJson['reason'];
         if (reasonJson is Map<String, dynamic>) {
           final byJson = reasonJson['by'];
           if (byJson is Map<String, dynamic>) {
             profiles.add(_mapProfile(byJson));
+            final byRel = _mapRelationship(byJson);
+            if (byRel != null) {
+              relationships.add(byRel);
+            }
           }
         }
 
@@ -202,6 +236,7 @@ class FeedContentRepository {
         feedKey: feedKey,
         newPosts: posts,
         newProfiles: profiles,
+        newRelationships: relationships,
         newItems: items,
         newCursor: nextCursor,
       );

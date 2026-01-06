@@ -34,6 +34,7 @@ class ThreadRepository {
   Future<void> _cacheThread(ThreadViewPost thread) async {
     final posts = <PostsCompanion>[];
     final profiles = <ProfilesCompanion>[];
+    final relationships = <ProfileRelationshipsCompanion>[];
     final feedContentItems = <FeedContentItemsCompanion>[];
     final seenPosts = <String>{};
     final seenProfiles = <String>{};
@@ -44,12 +45,16 @@ class ThreadRepository {
     void visit(ThreadViewPost node) {
       final postCompanion = node.post.toPostsCompanion();
       final profileCompanion = node.post.toProfilesCompanion();
+      final relationshipCompanion = node.post.toRelationshipCompanion();
 
       if (seenPosts.add(node.post.uri)) {
         posts.add(postCompanion);
       }
       if (seenProfiles.add(node.post.author.did)) {
         profiles.add(profileCompanion);
+        if (relationshipCompanion != null) {
+          relationships.add(relationshipCompanion);
+        }
       }
 
       feedContentItems.add(
@@ -76,6 +81,7 @@ class ThreadRepository {
         feedKey: feedKey,
         newPosts: posts,
         newProfiles: profiles,
+        newRelationships: relationships,
         newItems: feedContentItems,
       );
     }
@@ -214,6 +220,25 @@ class ThreadPost {
     );
   }
 
+  ProfileRelationshipsCompanion? toRelationshipCompanion() {
+    final viewer = author.viewer;
+    if (viewer == null) return null;
+
+    return ProfileRelationshipsCompanion.insert(
+      profileDid: author.did,
+      following: Value(viewer['following'] != null),
+      followingUri: Value(viewer['following'] as String?),
+      followedBy: Value(viewer['followedBy'] != null),
+      muted: Value(viewer['muted'] as bool? ?? false),
+      blocked: Value(viewer['blocking'] != null),
+      blockingUri: Value(viewer['blocking'] as String?),
+      blockedBy: Value(viewer['blockedBy'] as bool? ?? false),
+      mutedByList: Value(viewer['mutedByList']?['uri'] as String?),
+      blockingByList: Value(viewer['blockingByList']?['uri'] as String?),
+      updatedAt: DateTime.now(),
+    );
+  }
+
   Post toPostModel() {
     return Post(
       uri: uri,
@@ -251,6 +276,7 @@ class ThreadAuthor {
     this.displayName,
     this.description,
     this.avatar,
+    this.viewer,
   });
 
   factory ThreadAuthor.fromJson(Map<String, dynamic> json) {
@@ -260,6 +286,7 @@ class ThreadAuthor {
       displayName: json['displayName'] as String?,
       description: json['description'] as String?,
       avatar: json['avatar'] as String?,
+      viewer: json['viewer'] as Map<String, dynamic>?,
     );
   }
 
@@ -268,4 +295,5 @@ class ThreadAuthor {
   final String? displayName;
   final String? description;
   final String? avatar;
+  final Map<String, dynamic>? viewer;
 }

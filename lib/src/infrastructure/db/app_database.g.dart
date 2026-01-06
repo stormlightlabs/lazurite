@@ -71,6 +71,62 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _pronounsMeta = const VerificationMeta('pronouns');
+  @override
+  late final GeneratedColumn<String> pronouns = GeneratedColumn<String>(
+    'pronouns',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _websiteMeta = const VerificationMeta('website');
+  @override
+  late final GeneratedColumn<String> website = GeneratedColumn<String>(
+    'website',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _verificationStatusMeta = const VerificationMeta(
+    'verificationStatus',
+  );
+  @override
+  late final GeneratedColumn<String> verificationStatus = GeneratedColumn<String>(
+    'verification_status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _labelsMeta = const VerificationMeta('labels');
+  @override
+  late final GeneratedColumn<String> labels = GeneratedColumn<String>(
+    'labels',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pinnedPostUriMeta = const VerificationMeta('pinnedPostUri');
+  @override
+  late final GeneratedColumn<String> pinnedPostUri = GeneratedColumn<String>(
+    'pinned_post_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     did,
@@ -80,6 +136,12 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
     avatar,
     banner,
     indexedAt,
+    pronouns,
+    website,
+    createdAt,
+    verificationStatus,
+    labels,
+    pinnedPostUri,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -124,6 +186,39 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         indexedAt.isAcceptableOrUnknown(data['indexed_at']!, _indexedAtMeta),
       );
     }
+    if (data.containsKey('pronouns')) {
+      context.handle(
+        _pronounsMeta,
+        pronouns.isAcceptableOrUnknown(data['pronouns']!, _pronounsMeta),
+      );
+    }
+    if (data.containsKey('website')) {
+      context.handle(_websiteMeta, website.isAcceptableOrUnknown(data['website']!, _websiteMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('verification_status')) {
+      context.handle(
+        _verificationStatusMeta,
+        verificationStatus.isAcceptableOrUnknown(
+          data['verification_status']!,
+          _verificationStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('labels')) {
+      context.handle(_labelsMeta, labels.isAcceptableOrUnknown(data['labels']!, _labelsMeta));
+    }
+    if (data.containsKey('pinned_post_uri')) {
+      context.handle(
+        _pinnedPostUriMeta,
+        pinnedPostUri.isAcceptableOrUnknown(data['pinned_post_uri']!, _pinnedPostUriMeta),
+      );
+    }
     return context;
   }
 
@@ -158,6 +253,30 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}indexed_at'],
       ),
+      pronouns: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pronouns'],
+      ),
+      website: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}website'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      ),
+      verificationStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}verification_status'],
+      ),
+      labels: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}labels'],
+      ),
+      pinnedPostUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pinned_post_uri'],
+      ),
     );
   }
 
@@ -175,6 +294,12 @@ class Profile extends DataClass implements Insertable<Profile> {
   final String? avatar;
   final String? banner;
   final DateTime? indexedAt;
+  final String? pronouns;
+  final String? website;
+  final DateTime? createdAt;
+  final String? verificationStatus;
+  final String? labels;
+  final String? pinnedPostUri;
   const Profile({
     required this.did,
     required this.handle,
@@ -183,6 +308,12 @@ class Profile extends DataClass implements Insertable<Profile> {
     this.avatar,
     this.banner,
     this.indexedAt,
+    this.pronouns,
+    this.website,
+    this.createdAt,
+    this.verificationStatus,
+    this.labels,
+    this.pinnedPostUri,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -204,6 +335,24 @@ class Profile extends DataClass implements Insertable<Profile> {
     if (!nullToAbsent || indexedAt != null) {
       map['indexed_at'] = Variable<DateTime>(indexedAt);
     }
+    if (!nullToAbsent || pronouns != null) {
+      map['pronouns'] = Variable<String>(pronouns);
+    }
+    if (!nullToAbsent || website != null) {
+      map['website'] = Variable<String>(website);
+    }
+    if (!nullToAbsent || createdAt != null) {
+      map['created_at'] = Variable<DateTime>(createdAt);
+    }
+    if (!nullToAbsent || verificationStatus != null) {
+      map['verification_status'] = Variable<String>(verificationStatus);
+    }
+    if (!nullToAbsent || labels != null) {
+      map['labels'] = Variable<String>(labels);
+    }
+    if (!nullToAbsent || pinnedPostUri != null) {
+      map['pinned_post_uri'] = Variable<String>(pinnedPostUri);
+    }
     return map;
   }
 
@@ -216,6 +365,16 @@ class Profile extends DataClass implements Insertable<Profile> {
       avatar: avatar == null && nullToAbsent ? const Value.absent() : Value(avatar),
       banner: banner == null && nullToAbsent ? const Value.absent() : Value(banner),
       indexedAt: indexedAt == null && nullToAbsent ? const Value.absent() : Value(indexedAt),
+      pronouns: pronouns == null && nullToAbsent ? const Value.absent() : Value(pronouns),
+      website: website == null && nullToAbsent ? const Value.absent() : Value(website),
+      createdAt: createdAt == null && nullToAbsent ? const Value.absent() : Value(createdAt),
+      verificationStatus: verificationStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(verificationStatus),
+      labels: labels == null && nullToAbsent ? const Value.absent() : Value(labels),
+      pinnedPostUri: pinnedPostUri == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pinnedPostUri),
     );
   }
 
@@ -229,6 +388,12 @@ class Profile extends DataClass implements Insertable<Profile> {
       avatar: serializer.fromJson<String?>(json['avatar']),
       banner: serializer.fromJson<String?>(json['banner']),
       indexedAt: serializer.fromJson<DateTime?>(json['indexedAt']),
+      pronouns: serializer.fromJson<String?>(json['pronouns']),
+      website: serializer.fromJson<String?>(json['website']),
+      createdAt: serializer.fromJson<DateTime?>(json['createdAt']),
+      verificationStatus: serializer.fromJson<String?>(json['verificationStatus']),
+      labels: serializer.fromJson<String?>(json['labels']),
+      pinnedPostUri: serializer.fromJson<String?>(json['pinnedPostUri']),
     );
   }
   @override
@@ -242,6 +407,12 @@ class Profile extends DataClass implements Insertable<Profile> {
       'avatar': serializer.toJson<String?>(avatar),
       'banner': serializer.toJson<String?>(banner),
       'indexedAt': serializer.toJson<DateTime?>(indexedAt),
+      'pronouns': serializer.toJson<String?>(pronouns),
+      'website': serializer.toJson<String?>(website),
+      'createdAt': serializer.toJson<DateTime?>(createdAt),
+      'verificationStatus': serializer.toJson<String?>(verificationStatus),
+      'labels': serializer.toJson<String?>(labels),
+      'pinnedPostUri': serializer.toJson<String?>(pinnedPostUri),
     };
   }
 
@@ -253,6 +424,12 @@ class Profile extends DataClass implements Insertable<Profile> {
     Value<String?> avatar = const Value.absent(),
     Value<String?> banner = const Value.absent(),
     Value<DateTime?> indexedAt = const Value.absent(),
+    Value<String?> pronouns = const Value.absent(),
+    Value<String?> website = const Value.absent(),
+    Value<DateTime?> createdAt = const Value.absent(),
+    Value<String?> verificationStatus = const Value.absent(),
+    Value<String?> labels = const Value.absent(),
+    Value<String?> pinnedPostUri = const Value.absent(),
   }) => Profile(
     did: did ?? this.did,
     handle: handle ?? this.handle,
@@ -261,6 +438,14 @@ class Profile extends DataClass implements Insertable<Profile> {
     avatar: avatar.present ? avatar.value : this.avatar,
     banner: banner.present ? banner.value : this.banner,
     indexedAt: indexedAt.present ? indexedAt.value : this.indexedAt,
+    pronouns: pronouns.present ? pronouns.value : this.pronouns,
+    website: website.present ? website.value : this.website,
+    createdAt: createdAt.present ? createdAt.value : this.createdAt,
+    verificationStatus: verificationStatus.present
+        ? verificationStatus.value
+        : this.verificationStatus,
+    labels: labels.present ? labels.value : this.labels,
+    pinnedPostUri: pinnedPostUri.present ? pinnedPostUri.value : this.pinnedPostUri,
   );
   Profile copyWithCompanion(ProfilesCompanion data) {
     return Profile(
@@ -271,6 +456,14 @@ class Profile extends DataClass implements Insertable<Profile> {
       avatar: data.avatar.present ? data.avatar.value : this.avatar,
       banner: data.banner.present ? data.banner.value : this.banner,
       indexedAt: data.indexedAt.present ? data.indexedAt.value : this.indexedAt,
+      pronouns: data.pronouns.present ? data.pronouns.value : this.pronouns,
+      website: data.website.present ? data.website.value : this.website,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      verificationStatus: data.verificationStatus.present
+          ? data.verificationStatus.value
+          : this.verificationStatus,
+      labels: data.labels.present ? data.labels.value : this.labels,
+      pinnedPostUri: data.pinnedPostUri.present ? data.pinnedPostUri.value : this.pinnedPostUri,
     );
   }
 
@@ -283,14 +476,33 @@ class Profile extends DataClass implements Insertable<Profile> {
           ..write('description: $description, ')
           ..write('avatar: $avatar, ')
           ..write('banner: $banner, ')
-          ..write('indexedAt: $indexedAt')
+          ..write('indexedAt: $indexedAt, ')
+          ..write('pronouns: $pronouns, ')
+          ..write('website: $website, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('verificationStatus: $verificationStatus, ')
+          ..write('labels: $labels, ')
+          ..write('pinnedPostUri: $pinnedPostUri')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(did, handle, displayName, description, avatar, banner, indexedAt);
+  int get hashCode => Object.hash(
+    did,
+    handle,
+    displayName,
+    description,
+    avatar,
+    banner,
+    indexedAt,
+    pronouns,
+    website,
+    createdAt,
+    verificationStatus,
+    labels,
+    pinnedPostUri,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -301,7 +513,13 @@ class Profile extends DataClass implements Insertable<Profile> {
           other.description == this.description &&
           other.avatar == this.avatar &&
           other.banner == this.banner &&
-          other.indexedAt == this.indexedAt);
+          other.indexedAt == this.indexedAt &&
+          other.pronouns == this.pronouns &&
+          other.website == this.website &&
+          other.createdAt == this.createdAt &&
+          other.verificationStatus == this.verificationStatus &&
+          other.labels == this.labels &&
+          other.pinnedPostUri == this.pinnedPostUri);
 }
 
 class ProfilesCompanion extends UpdateCompanion<Profile> {
@@ -312,6 +530,12 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
   final Value<String?> avatar;
   final Value<String?> banner;
   final Value<DateTime?> indexedAt;
+  final Value<String?> pronouns;
+  final Value<String?> website;
+  final Value<DateTime?> createdAt;
+  final Value<String?> verificationStatus;
+  final Value<String?> labels;
+  final Value<String?> pinnedPostUri;
   final Value<int> rowid;
   const ProfilesCompanion({
     this.did = const Value.absent(),
@@ -321,6 +545,12 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     this.avatar = const Value.absent(),
     this.banner = const Value.absent(),
     this.indexedAt = const Value.absent(),
+    this.pronouns = const Value.absent(),
+    this.website = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.verificationStatus = const Value.absent(),
+    this.labels = const Value.absent(),
+    this.pinnedPostUri = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProfilesCompanion.insert({
@@ -331,6 +561,12 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     this.avatar = const Value.absent(),
     this.banner = const Value.absent(),
     this.indexedAt = const Value.absent(),
+    this.pronouns = const Value.absent(),
+    this.website = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.verificationStatus = const Value.absent(),
+    this.labels = const Value.absent(),
+    this.pinnedPostUri = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : did = Value(did),
        handle = Value(handle);
@@ -342,6 +578,12 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Expression<String>? avatar,
     Expression<String>? banner,
     Expression<DateTime>? indexedAt,
+    Expression<String>? pronouns,
+    Expression<String>? website,
+    Expression<DateTime>? createdAt,
+    Expression<String>? verificationStatus,
+    Expression<String>? labels,
+    Expression<String>? pinnedPostUri,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -352,6 +594,12 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       if (avatar != null) 'avatar': avatar,
       if (banner != null) 'banner': banner,
       if (indexedAt != null) 'indexed_at': indexedAt,
+      if (pronouns != null) 'pronouns': pronouns,
+      if (website != null) 'website': website,
+      if (createdAt != null) 'created_at': createdAt,
+      if (verificationStatus != null) 'verification_status': verificationStatus,
+      if (labels != null) 'labels': labels,
+      if (pinnedPostUri != null) 'pinned_post_uri': pinnedPostUri,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -364,6 +612,12 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Value<String?>? avatar,
     Value<String?>? banner,
     Value<DateTime?>? indexedAt,
+    Value<String?>? pronouns,
+    Value<String?>? website,
+    Value<DateTime?>? createdAt,
+    Value<String?>? verificationStatus,
+    Value<String?>? labels,
+    Value<String?>? pinnedPostUri,
     Value<int>? rowid,
   }) {
     return ProfilesCompanion(
@@ -374,6 +628,12 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       avatar: avatar ?? this.avatar,
       banner: banner ?? this.banner,
       indexedAt: indexedAt ?? this.indexedAt,
+      pronouns: pronouns ?? this.pronouns,
+      website: website ?? this.website,
+      createdAt: createdAt ?? this.createdAt,
+      verificationStatus: verificationStatus ?? this.verificationStatus,
+      labels: labels ?? this.labels,
+      pinnedPostUri: pinnedPostUri ?? this.pinnedPostUri,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -402,6 +662,24 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     if (indexedAt.present) {
       map['indexed_at'] = Variable<DateTime>(indexedAt.value);
     }
+    if (pronouns.present) {
+      map['pronouns'] = Variable<String>(pronouns.value);
+    }
+    if (website.present) {
+      map['website'] = Variable<String>(website.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (verificationStatus.present) {
+      map['verification_status'] = Variable<String>(verificationStatus.value);
+    }
+    if (labels.present) {
+      map['labels'] = Variable<String>(labels.value);
+    }
+    if (pinnedPostUri.present) {
+      map['pinned_post_uri'] = Variable<String>(pinnedPostUri.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -418,6 +696,12 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
           ..write('avatar: $avatar, ')
           ..write('banner: $banner, ')
           ..write('indexedAt: $indexedAt, ')
+          ..write('pronouns: $pronouns, ')
+          ..write('website: $website, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('verificationStatus: $verificationStatus, ')
+          ..write('labels: $labels, ')
+          ..write('pinnedPostUri: $pinnedPostUri, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4958,6 +5242,655 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
   }
 }
 
+class $ProfileRelationshipsTable extends ProfileRelationships
+    with TableInfo<$ProfileRelationshipsTable, ProfileRelationship> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProfileRelationshipsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _profileDidMeta = const VerificationMeta('profileDid');
+  @override
+  late final GeneratedColumn<String> profileDid = GeneratedColumn<String>(
+    'profile_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES profiles (did)'),
+  );
+  static const VerificationMeta _followingMeta = const VerificationMeta('following');
+  @override
+  late final GeneratedColumn<bool> following = GeneratedColumn<bool>(
+    'following',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("following" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _followingUriMeta = const VerificationMeta('followingUri');
+  @override
+  late final GeneratedColumn<String> followingUri = GeneratedColumn<String>(
+    'following_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _followedByMeta = const VerificationMeta('followedBy');
+  @override
+  late final GeneratedColumn<bool> followedBy = GeneratedColumn<bool>(
+    'followed_by',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("followed_by" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _mutedMeta = const VerificationMeta('muted');
+  @override
+  late final GeneratedColumn<bool> muted = GeneratedColumn<bool>(
+    'muted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("muted" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _blockedMeta = const VerificationMeta('blocked');
+  @override
+  late final GeneratedColumn<bool> blocked = GeneratedColumn<bool>(
+    'blocked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("blocked" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _blockedByMeta = const VerificationMeta('blockedBy');
+  @override
+  late final GeneratedColumn<bool> blockedBy = GeneratedColumn<bool>(
+    'blocked_by',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("blocked_by" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _blockingUriMeta = const VerificationMeta('blockingUri');
+  @override
+  late final GeneratedColumn<String> blockingUri = GeneratedColumn<String>(
+    'blocking_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mutedByListMeta = const VerificationMeta('mutedByList');
+  @override
+  late final GeneratedColumn<String> mutedByList = GeneratedColumn<String>(
+    'muted_by_list',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _blockingByListMeta = const VerificationMeta('blockingByList');
+  @override
+  late final GeneratedColumn<String> blockingByList = GeneratedColumn<String>(
+    'blocking_by_list',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    profileDid,
+    following,
+    followingUri,
+    followedBy,
+    muted,
+    blocked,
+    blockedBy,
+    blockingUri,
+    mutedByList,
+    blockingByList,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'profile_relationships';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProfileRelationship> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('profile_did')) {
+      context.handle(
+        _profileDidMeta,
+        profileDid.isAcceptableOrUnknown(data['profile_did']!, _profileDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileDidMeta);
+    }
+    if (data.containsKey('following')) {
+      context.handle(
+        _followingMeta,
+        following.isAcceptableOrUnknown(data['following']!, _followingMeta),
+      );
+    }
+    if (data.containsKey('following_uri')) {
+      context.handle(
+        _followingUriMeta,
+        followingUri.isAcceptableOrUnknown(data['following_uri']!, _followingUriMeta),
+      );
+    }
+    if (data.containsKey('followed_by')) {
+      context.handle(
+        _followedByMeta,
+        followedBy.isAcceptableOrUnknown(data['followed_by']!, _followedByMeta),
+      );
+    }
+    if (data.containsKey('muted')) {
+      context.handle(_mutedMeta, muted.isAcceptableOrUnknown(data['muted']!, _mutedMeta));
+    }
+    if (data.containsKey('blocked')) {
+      context.handle(_blockedMeta, blocked.isAcceptableOrUnknown(data['blocked']!, _blockedMeta));
+    }
+    if (data.containsKey('blocked_by')) {
+      context.handle(
+        _blockedByMeta,
+        blockedBy.isAcceptableOrUnknown(data['blocked_by']!, _blockedByMeta),
+      );
+    }
+    if (data.containsKey('blocking_uri')) {
+      context.handle(
+        _blockingUriMeta,
+        blockingUri.isAcceptableOrUnknown(data['blocking_uri']!, _blockingUriMeta),
+      );
+    }
+    if (data.containsKey('muted_by_list')) {
+      context.handle(
+        _mutedByListMeta,
+        mutedByList.isAcceptableOrUnknown(data['muted_by_list']!, _mutedByListMeta),
+      );
+    }
+    if (data.containsKey('blocking_by_list')) {
+      context.handle(
+        _blockingByListMeta,
+        blockingByList.isAcceptableOrUnknown(data['blocking_by_list']!, _blockingByListMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {profileDid};
+  @override
+  ProfileRelationship map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProfileRelationship(
+      profileDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_did'],
+      )!,
+      following: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}following'],
+      )!,
+      followingUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}following_uri'],
+      ),
+      followedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}followed_by'],
+      )!,
+      muted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}muted'],
+      )!,
+      blocked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}blocked'],
+      )!,
+      blockedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}blocked_by'],
+      )!,
+      blockingUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}blocking_uri'],
+      ),
+      mutedByList: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}muted_by_list'],
+      ),
+      blockingByList: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}blocking_by_list'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ProfileRelationshipsTable createAlias(String alias) {
+    return $ProfileRelationshipsTable(attachedDatabase, alias);
+  }
+}
+
+class ProfileRelationship extends DataClass implements Insertable<ProfileRelationship> {
+  /// The DID of the profile this relationship applies to (subject).
+  final String profileDid;
+
+  /// Whether the viewer is following this profile.
+  final bool following;
+
+  /// The URI of the follow record (if following).
+  final String? followingUri;
+
+  /// Whether this profile follows the viewer.
+  final bool followedBy;
+
+  /// Whether the viewer has muted this profile.
+  final bool muted;
+
+  /// Whether the viewer has blocked this profile.
+  final bool blocked;
+
+  /// Whether this profile has blocked the viewer.
+  final bool blockedBy;
+
+  /// The URI of the block record (if blocking).
+  final String? blockingUri;
+
+  /// Reference to the list that muted this profile (if applicable).
+  final String? mutedByList;
+
+  /// Reference to the list that blocked this profile (if applicable).
+  final String? blockingByList;
+
+  /// When this relationship was last updated.
+  final DateTime updatedAt;
+  const ProfileRelationship({
+    required this.profileDid,
+    required this.following,
+    this.followingUri,
+    required this.followedBy,
+    required this.muted,
+    required this.blocked,
+    required this.blockedBy,
+    this.blockingUri,
+    this.mutedByList,
+    this.blockingByList,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['profile_did'] = Variable<String>(profileDid);
+    map['following'] = Variable<bool>(following);
+    if (!nullToAbsent || followingUri != null) {
+      map['following_uri'] = Variable<String>(followingUri);
+    }
+    map['followed_by'] = Variable<bool>(followedBy);
+    map['muted'] = Variable<bool>(muted);
+    map['blocked'] = Variable<bool>(blocked);
+    map['blocked_by'] = Variable<bool>(blockedBy);
+    if (!nullToAbsent || blockingUri != null) {
+      map['blocking_uri'] = Variable<String>(blockingUri);
+    }
+    if (!nullToAbsent || mutedByList != null) {
+      map['muted_by_list'] = Variable<String>(mutedByList);
+    }
+    if (!nullToAbsent || blockingByList != null) {
+      map['blocking_by_list'] = Variable<String>(blockingByList);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ProfileRelationshipsCompanion toCompanion(bool nullToAbsent) {
+    return ProfileRelationshipsCompanion(
+      profileDid: Value(profileDid),
+      following: Value(following),
+      followingUri: followingUri == null && nullToAbsent
+          ? const Value.absent()
+          : Value(followingUri),
+      followedBy: Value(followedBy),
+      muted: Value(muted),
+      blocked: Value(blocked),
+      blockedBy: Value(blockedBy),
+      blockingUri: blockingUri == null && nullToAbsent ? const Value.absent() : Value(blockingUri),
+      mutedByList: mutedByList == null && nullToAbsent ? const Value.absent() : Value(mutedByList),
+      blockingByList: blockingByList == null && nullToAbsent
+          ? const Value.absent()
+          : Value(blockingByList),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ProfileRelationship.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProfileRelationship(
+      profileDid: serializer.fromJson<String>(json['profileDid']),
+      following: serializer.fromJson<bool>(json['following']),
+      followingUri: serializer.fromJson<String?>(json['followingUri']),
+      followedBy: serializer.fromJson<bool>(json['followedBy']),
+      muted: serializer.fromJson<bool>(json['muted']),
+      blocked: serializer.fromJson<bool>(json['blocked']),
+      blockedBy: serializer.fromJson<bool>(json['blockedBy']),
+      blockingUri: serializer.fromJson<String?>(json['blockingUri']),
+      mutedByList: serializer.fromJson<String?>(json['mutedByList']),
+      blockingByList: serializer.fromJson<String?>(json['blockingByList']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'profileDid': serializer.toJson<String>(profileDid),
+      'following': serializer.toJson<bool>(following),
+      'followingUri': serializer.toJson<String?>(followingUri),
+      'followedBy': serializer.toJson<bool>(followedBy),
+      'muted': serializer.toJson<bool>(muted),
+      'blocked': serializer.toJson<bool>(blocked),
+      'blockedBy': serializer.toJson<bool>(blockedBy),
+      'blockingUri': serializer.toJson<String?>(blockingUri),
+      'mutedByList': serializer.toJson<String?>(mutedByList),
+      'blockingByList': serializer.toJson<String?>(blockingByList),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ProfileRelationship copyWith({
+    String? profileDid,
+    bool? following,
+    Value<String?> followingUri = const Value.absent(),
+    bool? followedBy,
+    bool? muted,
+    bool? blocked,
+    bool? blockedBy,
+    Value<String?> blockingUri = const Value.absent(),
+    Value<String?> mutedByList = const Value.absent(),
+    Value<String?> blockingByList = const Value.absent(),
+    DateTime? updatedAt,
+  }) => ProfileRelationship(
+    profileDid: profileDid ?? this.profileDid,
+    following: following ?? this.following,
+    followingUri: followingUri.present ? followingUri.value : this.followingUri,
+    followedBy: followedBy ?? this.followedBy,
+    muted: muted ?? this.muted,
+    blocked: blocked ?? this.blocked,
+    blockedBy: blockedBy ?? this.blockedBy,
+    blockingUri: blockingUri.present ? blockingUri.value : this.blockingUri,
+    mutedByList: mutedByList.present ? mutedByList.value : this.mutedByList,
+    blockingByList: blockingByList.present ? blockingByList.value : this.blockingByList,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ProfileRelationship copyWithCompanion(ProfileRelationshipsCompanion data) {
+    return ProfileRelationship(
+      profileDid: data.profileDid.present ? data.profileDid.value : this.profileDid,
+      following: data.following.present ? data.following.value : this.following,
+      followingUri: data.followingUri.present ? data.followingUri.value : this.followingUri,
+      followedBy: data.followedBy.present ? data.followedBy.value : this.followedBy,
+      muted: data.muted.present ? data.muted.value : this.muted,
+      blocked: data.blocked.present ? data.blocked.value : this.blocked,
+      blockedBy: data.blockedBy.present ? data.blockedBy.value : this.blockedBy,
+      blockingUri: data.blockingUri.present ? data.blockingUri.value : this.blockingUri,
+      mutedByList: data.mutedByList.present ? data.mutedByList.value : this.mutedByList,
+      blockingByList: data.blockingByList.present
+          ? data.blockingByList.value
+          : this.blockingByList,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfileRelationship(')
+          ..write('profileDid: $profileDid, ')
+          ..write('following: $following, ')
+          ..write('followingUri: $followingUri, ')
+          ..write('followedBy: $followedBy, ')
+          ..write('muted: $muted, ')
+          ..write('blocked: $blocked, ')
+          ..write('blockedBy: $blockedBy, ')
+          ..write('blockingUri: $blockingUri, ')
+          ..write('mutedByList: $mutedByList, ')
+          ..write('blockingByList: $blockingByList, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    profileDid,
+    following,
+    followingUri,
+    followedBy,
+    muted,
+    blocked,
+    blockedBy,
+    blockingUri,
+    mutedByList,
+    blockingByList,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProfileRelationship &&
+          other.profileDid == this.profileDid &&
+          other.following == this.following &&
+          other.followingUri == this.followingUri &&
+          other.followedBy == this.followedBy &&
+          other.muted == this.muted &&
+          other.blocked == this.blocked &&
+          other.blockedBy == this.blockedBy &&
+          other.blockingUri == this.blockingUri &&
+          other.mutedByList == this.mutedByList &&
+          other.blockingByList == this.blockingByList &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ProfileRelationshipsCompanion extends UpdateCompanion<ProfileRelationship> {
+  final Value<String> profileDid;
+  final Value<bool> following;
+  final Value<String?> followingUri;
+  final Value<bool> followedBy;
+  final Value<bool> muted;
+  final Value<bool> blocked;
+  final Value<bool> blockedBy;
+  final Value<String?> blockingUri;
+  final Value<String?> mutedByList;
+  final Value<String?> blockingByList;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ProfileRelationshipsCompanion({
+    this.profileDid = const Value.absent(),
+    this.following = const Value.absent(),
+    this.followingUri = const Value.absent(),
+    this.followedBy = const Value.absent(),
+    this.muted = const Value.absent(),
+    this.blocked = const Value.absent(),
+    this.blockedBy = const Value.absent(),
+    this.blockingUri = const Value.absent(),
+    this.mutedByList = const Value.absent(),
+    this.blockingByList = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProfileRelationshipsCompanion.insert({
+    required String profileDid,
+    this.following = const Value.absent(),
+    this.followingUri = const Value.absent(),
+    this.followedBy = const Value.absent(),
+    this.muted = const Value.absent(),
+    this.blocked = const Value.absent(),
+    this.blockedBy = const Value.absent(),
+    this.blockingUri = const Value.absent(),
+    this.mutedByList = const Value.absent(),
+    this.blockingByList = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : profileDid = Value(profileDid),
+       updatedAt = Value(updatedAt);
+  static Insertable<ProfileRelationship> custom({
+    Expression<String>? profileDid,
+    Expression<bool>? following,
+    Expression<String>? followingUri,
+    Expression<bool>? followedBy,
+    Expression<bool>? muted,
+    Expression<bool>? blocked,
+    Expression<bool>? blockedBy,
+    Expression<String>? blockingUri,
+    Expression<String>? mutedByList,
+    Expression<String>? blockingByList,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (profileDid != null) 'profile_did': profileDid,
+      if (following != null) 'following': following,
+      if (followingUri != null) 'following_uri': followingUri,
+      if (followedBy != null) 'followed_by': followedBy,
+      if (muted != null) 'muted': muted,
+      if (blocked != null) 'blocked': blocked,
+      if (blockedBy != null) 'blocked_by': blockedBy,
+      if (blockingUri != null) 'blocking_uri': blockingUri,
+      if (mutedByList != null) 'muted_by_list': mutedByList,
+      if (blockingByList != null) 'blocking_by_list': blockingByList,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProfileRelationshipsCompanion copyWith({
+    Value<String>? profileDid,
+    Value<bool>? following,
+    Value<String?>? followingUri,
+    Value<bool>? followedBy,
+    Value<bool>? muted,
+    Value<bool>? blocked,
+    Value<bool>? blockedBy,
+    Value<String?>? blockingUri,
+    Value<String?>? mutedByList,
+    Value<String?>? blockingByList,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ProfileRelationshipsCompanion(
+      profileDid: profileDid ?? this.profileDid,
+      following: following ?? this.following,
+      followingUri: followingUri ?? this.followingUri,
+      followedBy: followedBy ?? this.followedBy,
+      muted: muted ?? this.muted,
+      blocked: blocked ?? this.blocked,
+      blockedBy: blockedBy ?? this.blockedBy,
+      blockingUri: blockingUri ?? this.blockingUri,
+      mutedByList: mutedByList ?? this.mutedByList,
+      blockingByList: blockingByList ?? this.blockingByList,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (profileDid.present) {
+      map['profile_did'] = Variable<String>(profileDid.value);
+    }
+    if (following.present) {
+      map['following'] = Variable<bool>(following.value);
+    }
+    if (followingUri.present) {
+      map['following_uri'] = Variable<String>(followingUri.value);
+    }
+    if (followedBy.present) {
+      map['followed_by'] = Variable<bool>(followedBy.value);
+    }
+    if (muted.present) {
+      map['muted'] = Variable<bool>(muted.value);
+    }
+    if (blocked.present) {
+      map['blocked'] = Variable<bool>(blocked.value);
+    }
+    if (blockedBy.present) {
+      map['blocked_by'] = Variable<bool>(blockedBy.value);
+    }
+    if (blockingUri.present) {
+      map['blocking_uri'] = Variable<String>(blockingUri.value);
+    }
+    if (mutedByList.present) {
+      map['muted_by_list'] = Variable<String>(mutedByList.value);
+    }
+    if (blockingByList.present) {
+      map['blocking_by_list'] = Variable<String>(blockingByList.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfileRelationshipsCompanion(')
+          ..write('profileDid: $profileDid, ')
+          ..write('following: $following, ')
+          ..write('followingUri: $followingUri, ')
+          ..write('followedBy: $followedBy, ')
+          ..write('muted: $muted, ')
+          ..write('blocked: $blocked, ')
+          ..write('blockedBy: $blockedBy, ')
+          ..write('blockingUri: $blockingUri, ')
+          ..write('mutedByList: $mutedByList, ')
+          ..write('blockingByList: $blockingByList, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4974,6 +5907,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PreferenceSyncQueueTable preferenceSyncQueue = $PreferenceSyncQueueTable(this);
   late final $DraftsTable drafts = $DraftsTable(this);
   late final $DraftMediaTable draftMedia = $DraftMediaTable(this);
+  late final $ProfileRelationshipsTable profileRelationships = $ProfileRelationshipsTable(this);
   late final Index feedContentSortIdx = Index(
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
@@ -4984,6 +5918,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final FeedContentDao feedContentDao = FeedContentDao(this as AppDatabase);
   late final ProfileDao profileDao = ProfileDao(this as AppDatabase);
+  late final ProfileRelationshipDao profileRelationshipDao = ProfileRelationshipDao(
+    this as AppDatabase,
+  );
   late final SearchDao searchDao = SearchDao(this as AppDatabase);
   late final SearchCacheDao searchCacheDao = SearchCacheDao(this as AppDatabase);
   late final FollowsDao followsDao = FollowsDao(this as AppDatabase);
@@ -5010,6 +5947,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     preferenceSyncQueue,
     drafts,
     draftMedia,
+    profileRelationships,
     feedContentSortIdx,
     searchCacheSortIdx,
   ];
@@ -5024,6 +5962,12 @@ typedef $$ProfilesTableCreateCompanionBuilder =
       Value<String?> avatar,
       Value<String?> banner,
       Value<DateTime?> indexedAt,
+      Value<String?> pronouns,
+      Value<String?> website,
+      Value<DateTime?> createdAt,
+      Value<String?> verificationStatus,
+      Value<String?> labels,
+      Value<String?> pinnedPostUri,
       Value<int> rowid,
     });
 typedef $$ProfilesTableUpdateCompanionBuilder =
@@ -5035,6 +5979,12 @@ typedef $$ProfilesTableUpdateCompanionBuilder =
       Value<String?> avatar,
       Value<String?> banner,
       Value<DateTime?> indexedAt,
+      Value<String?> pronouns,
+      Value<String?> website,
+      Value<DateTime?> createdAt,
+      Value<String?> verificationStatus,
+      Value<String?> labels,
+      Value<String?> pinnedPostUri,
       Value<int> rowid,
     });
 
@@ -5074,6 +6024,22 @@ final class $$ProfilesTableReferences
     final cache = $_typedResult.readTableOrNull(_savedFeedsRefsTable($_db));
     return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$ProfileRelationshipsTable, List<ProfileRelationship>>
+  _profileRelationshipsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.profileRelationships,
+    aliasName: $_aliasNameGenerator(db.profiles.did, db.profileRelationships.profileDid),
+  );
+
+  $$ProfileRelationshipsTableProcessedTableManager get profileRelationshipsRefs {
+    final manager = $$ProfileRelationshipsTableTableManager(
+      $_db,
+      $_db.profileRelationships,
+    ).filter((f) => f.profileDid.did.sqlEquals($_itemColumn<String>('did')!));
+
+    final cache = $_typedResult.readTableOrNull(_profileRelationshipsRefsTable($_db));
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -5104,6 +6070,26 @@ class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTab
 
   ColumnFilters<DateTime> get indexedAt =>
       $composableBuilder(column: $table.indexedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get pronouns =>
+      $composableBuilder(column: $table.pronouns, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get website =>
+      $composableBuilder(column: $table.website, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get verificationStatus => $composableBuilder(
+    column: $table.verificationStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get labels =>
+      $composableBuilder(column: $table.labels, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get pinnedPostUri =>
+      $composableBuilder(column: $table.pinnedPostUri, builder: (column) => ColumnFilters(column));
 
   Expression<bool> postsRefs(Expression<bool> Function($$PostsTableFilterComposer f) f) {
     final $$PostsTableFilterComposer composer = $composerBuilder(
@@ -5142,6 +6128,27 @@ class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTab
     );
     return f(composer);
   }
+
+  Expression<bool> profileRelationshipsRefs(
+    Expression<bool> Function($$ProfileRelationshipsTableFilterComposer f) f,
+  ) {
+    final $$ProfileRelationshipsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.did,
+      referencedTable: $db.profileRelationships,
+      getReferencedColumn: (t) => t.profileDid,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$ProfileRelationshipsTableFilterComposer(
+                $db: $db,
+                $table: $db.profileRelationships,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProfilesTableOrderingComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -5172,6 +6179,28 @@ class $$ProfilesTableOrderingComposer extends Composer<_$AppDatabase, $ProfilesT
 
   ColumnOrderings<DateTime> get indexedAt =>
       $composableBuilder(column: $table.indexedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get pronouns =>
+      $composableBuilder(column: $table.pronouns, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get website =>
+      $composableBuilder(column: $table.website, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get verificationStatus => $composableBuilder(
+    column: $table.verificationStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get labels =>
+      $composableBuilder(column: $table.labels, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get pinnedPostUri => $composableBuilder(
+    column: $table.pinnedPostUri,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -5202,6 +6231,24 @@ class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $Profile
 
   GeneratedColumn<DateTime> get indexedAt =>
       $composableBuilder(column: $table.indexedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get pronouns =>
+      $composableBuilder(column: $table.pronouns, builder: (column) => column);
+
+  GeneratedColumn<String> get website =>
+      $composableBuilder(column: $table.website, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get verificationStatus =>
+      $composableBuilder(column: $table.verificationStatus, builder: (column) => column);
+
+  GeneratedColumn<String> get labels =>
+      $composableBuilder(column: $table.labels, builder: (column) => column);
+
+  GeneratedColumn<String> get pinnedPostUri =>
+      $composableBuilder(column: $table.pinnedPostUri, builder: (column) => column);
 
   Expression<T> postsRefs<T extends Object>(
     Expression<T> Function($$PostsTableAnnotationComposer a) f,
@@ -5244,6 +6291,27 @@ class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $Profile
     );
     return f(composer);
   }
+
+  Expression<T> profileRelationshipsRefs<T extends Object>(
+    Expression<T> Function($$ProfileRelationshipsTableAnnotationComposer a) f,
+  ) {
+    final $$ProfileRelationshipsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.did,
+      referencedTable: $db.profileRelationships,
+      getReferencedColumn: (t) => t.profileDid,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$ProfileRelationshipsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.profileRelationships,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProfilesTableTableManager
@@ -5259,7 +6327,11 @@ class $$ProfilesTableTableManager
           $$ProfilesTableUpdateCompanionBuilder,
           (Profile, $$ProfilesTableReferences),
           Profile,
-          PrefetchHooks Function({bool postsRefs, bool savedFeedsRefs})
+          PrefetchHooks Function({
+            bool postsRefs,
+            bool savedFeedsRefs,
+            bool profileRelationshipsRefs,
+          })
         > {
   $$ProfilesTableTableManager(_$AppDatabase db, $ProfilesTable table)
     : super(
@@ -5279,6 +6351,12 @@ class $$ProfilesTableTableManager
                 Value<String?> avatar = const Value.absent(),
                 Value<String?> banner = const Value.absent(),
                 Value<DateTime?> indexedAt = const Value.absent(),
+                Value<String?> pronouns = const Value.absent(),
+                Value<String?> website = const Value.absent(),
+                Value<DateTime?> createdAt = const Value.absent(),
+                Value<String?> verificationStatus = const Value.absent(),
+                Value<String?> labels = const Value.absent(),
+                Value<String?> pinnedPostUri = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProfilesCompanion(
                 did: did,
@@ -5288,6 +6366,12 @@ class $$ProfilesTableTableManager
                 avatar: avatar,
                 banner: banner,
                 indexedAt: indexedAt,
+                pronouns: pronouns,
+                website: website,
+                createdAt: createdAt,
+                verificationStatus: verificationStatus,
+                labels: labels,
+                pinnedPostUri: pinnedPostUri,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5299,6 +6383,12 @@ class $$ProfilesTableTableManager
                 Value<String?> avatar = const Value.absent(),
                 Value<String?> banner = const Value.absent(),
                 Value<DateTime?> indexedAt = const Value.absent(),
+                Value<String?> pronouns = const Value.absent(),
+                Value<String?> website = const Value.absent(),
+                Value<DateTime?> createdAt = const Value.absent(),
+                Value<String?> verificationStatus = const Value.absent(),
+                Value<String?> labels = const Value.absent(),
+                Value<String?> pinnedPostUri = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProfilesCompanion.insert(
                 did: did,
@@ -5308,45 +6398,64 @@ class $$ProfilesTableTableManager
                 avatar: avatar,
                 banner: banner,
                 indexedAt: indexedAt,
+                pronouns: pronouns,
+                website: website,
+                createdAt: createdAt,
+                verificationStatus: verificationStatus,
+                labels: labels,
+                pinnedPostUri: pinnedPostUri,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), $$ProfilesTableReferences(db, table, e)))
               .toList(),
-          prefetchHooksCallback: ({postsRefs = false, savedFeedsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (postsRefs) db.posts,
-                if (savedFeedsRefs) db.savedFeeds,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (postsRefs)
-                    await $_getPrefetchedData<Profile, $ProfilesTable, Post>(
-                      currentTable: table,
-                      referencedTable: $$ProfilesTableReferences._postsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$ProfilesTableReferences(db, table, p0).postsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.authorDid == item.did),
-                      typedResults: items,
-                    ),
-                  if (savedFeedsRefs)
-                    await $_getPrefetchedData<Profile, $ProfilesTable, SavedFeed>(
-                      currentTable: table,
-                      referencedTable: $$ProfilesTableReferences._savedFeedsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$ProfilesTableReferences(db, table, p0).savedFeedsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.creatorDid == item.did),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({postsRefs = false, savedFeedsRefs = false, profileRelationshipsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (postsRefs) db.posts,
+                    if (savedFeedsRefs) db.savedFeeds,
+                    if (profileRelationshipsRefs) db.profileRelationships,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (postsRefs)
+                        await $_getPrefetchedData<Profile, $ProfilesTable, Post>(
+                          currentTable: table,
+                          referencedTable: $$ProfilesTableReferences._postsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProfilesTableReferences(db, table, p0).postsRefs,
+                          referencedItemsForCurrentItem: (item, referencedItems) =>
+                              referencedItems.where((e) => e.authorDid == item.did),
+                          typedResults: items,
+                        ),
+                      if (savedFeedsRefs)
+                        await $_getPrefetchedData<Profile, $ProfilesTable, SavedFeed>(
+                          currentTable: table,
+                          referencedTable: $$ProfilesTableReferences._savedFeedsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProfilesTableReferences(db, table, p0).savedFeedsRefs,
+                          referencedItemsForCurrentItem: (item, referencedItems) =>
+                              referencedItems.where((e) => e.creatorDid == item.did),
+                          typedResults: items,
+                        ),
+                      if (profileRelationshipsRefs)
+                        await $_getPrefetchedData<Profile, $ProfilesTable, ProfileRelationship>(
+                          currentTable: table,
+                          referencedTable: $$ProfilesTableReferences
+                              ._profileRelationshipsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProfilesTableReferences(db, table, p0).profileRelationshipsRefs,
+                          referencedItemsForCurrentItem: (item, referencedItems) =>
+                              referencedItems.where((e) => e.profileDid == item.did),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -5363,7 +6472,7 @@ typedef $$ProfilesTableProcessedTableManager =
       $$ProfilesTableUpdateCompanionBuilder,
       (Profile, $$ProfilesTableReferences),
       Profile,
-      PrefetchHooks Function({bool postsRefs, bool savedFeedsRefs})
+      PrefetchHooks Function({bool postsRefs, bool savedFeedsRefs, bool profileRelationshipsRefs})
     >;
 typedef $$PostsTableCreateCompanionBuilder =
     PostsCompanion Function({
@@ -8319,6 +9428,387 @@ typedef $$DraftMediaTableProcessedTableManager =
       DraftMediaData,
       PrefetchHooks Function({bool draftId})
     >;
+typedef $$ProfileRelationshipsTableCreateCompanionBuilder =
+    ProfileRelationshipsCompanion Function({
+      required String profileDid,
+      Value<bool> following,
+      Value<String?> followingUri,
+      Value<bool> followedBy,
+      Value<bool> muted,
+      Value<bool> blocked,
+      Value<bool> blockedBy,
+      Value<String?> blockingUri,
+      Value<String?> mutedByList,
+      Value<String?> blockingByList,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ProfileRelationshipsTableUpdateCompanionBuilder =
+    ProfileRelationshipsCompanion Function({
+      Value<String> profileDid,
+      Value<bool> following,
+      Value<String?> followingUri,
+      Value<bool> followedBy,
+      Value<bool> muted,
+      Value<bool> blocked,
+      Value<bool> blockedBy,
+      Value<String?> blockingUri,
+      Value<String?> mutedByList,
+      Value<String?> blockingByList,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$ProfileRelationshipsTableReferences
+    extends BaseReferences<_$AppDatabase, $ProfileRelationshipsTable, ProfileRelationship> {
+  $$ProfileRelationshipsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ProfilesTable _profileDidTable(_$AppDatabase db) => db.profiles.createAlias(
+    $_aliasNameGenerator(db.profileRelationships.profileDid, db.profiles.did),
+  );
+
+  $$ProfilesTableProcessedTableManager get profileDid {
+    final $_column = $_itemColumn<String>('profile_did')!;
+
+    final manager = $$ProfilesTableTableManager(
+      $_db,
+      $_db.profiles,
+    ).filter((f) => f.did.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileDidTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$ProfileRelationshipsTableFilterComposer
+    extends Composer<_$AppDatabase, $ProfileRelationshipsTable> {
+  $$ProfileRelationshipsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<bool> get following =>
+      $composableBuilder(column: $table.following, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get followingUri =>
+      $composableBuilder(column: $table.followingUri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get followedBy =>
+      $composableBuilder(column: $table.followedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get muted =>
+      $composableBuilder(column: $table.muted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get blocked =>
+      $composableBuilder(column: $table.blocked, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get blockedBy =>
+      $composableBuilder(column: $table.blockedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get blockingUri =>
+      $composableBuilder(column: $table.blockingUri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get mutedByList =>
+      $composableBuilder(column: $table.mutedByList, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get blockingByList => $composableBuilder(
+    column: $table.blockingByList,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  $$ProfilesTableFilterComposer get profileDid {
+    final $$ProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileDid,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.did,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$ProfilesTableFilterComposer(
+                $db: $db,
+                $table: $db.profiles,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$ProfileRelationshipsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProfileRelationshipsTable> {
+  $$ProfileRelationshipsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<bool> get following =>
+      $composableBuilder(column: $table.following, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get followingUri => $composableBuilder(
+    column: $table.followingUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get followedBy =>
+      $composableBuilder(column: $table.followedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get muted =>
+      $composableBuilder(column: $table.muted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get blocked =>
+      $composableBuilder(column: $table.blocked, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get blockedBy =>
+      $composableBuilder(column: $table.blockedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get blockingUri =>
+      $composableBuilder(column: $table.blockingUri, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get mutedByList =>
+      $composableBuilder(column: $table.mutedByList, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get blockingByList => $composableBuilder(
+    column: $table.blockingByList,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  $$ProfilesTableOrderingComposer get profileDid {
+    final $$ProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileDid,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.did,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$ProfilesTableOrderingComposer(
+                $db: $db,
+                $table: $db.profiles,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$ProfileRelationshipsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProfileRelationshipsTable> {
+  $$ProfileRelationshipsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<bool> get following =>
+      $composableBuilder(column: $table.following, builder: (column) => column);
+
+  GeneratedColumn<String> get followingUri =>
+      $composableBuilder(column: $table.followingUri, builder: (column) => column);
+
+  GeneratedColumn<bool> get followedBy =>
+      $composableBuilder(column: $table.followedBy, builder: (column) => column);
+
+  GeneratedColumn<bool> get muted =>
+      $composableBuilder(column: $table.muted, builder: (column) => column);
+
+  GeneratedColumn<bool> get blocked =>
+      $composableBuilder(column: $table.blocked, builder: (column) => column);
+
+  GeneratedColumn<bool> get blockedBy =>
+      $composableBuilder(column: $table.blockedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get blockingUri =>
+      $composableBuilder(column: $table.blockingUri, builder: (column) => column);
+
+  GeneratedColumn<String> get mutedByList =>
+      $composableBuilder(column: $table.mutedByList, builder: (column) => column);
+
+  GeneratedColumn<String> get blockingByList =>
+      $composableBuilder(column: $table.blockingByList, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$ProfilesTableAnnotationComposer get profileDid {
+    final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileDid,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.did,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$ProfilesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.profiles,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$ProfileRelationshipsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProfileRelationshipsTable,
+          ProfileRelationship,
+          $$ProfileRelationshipsTableFilterComposer,
+          $$ProfileRelationshipsTableOrderingComposer,
+          $$ProfileRelationshipsTableAnnotationComposer,
+          $$ProfileRelationshipsTableCreateCompanionBuilder,
+          $$ProfileRelationshipsTableUpdateCompanionBuilder,
+          (ProfileRelationship, $$ProfileRelationshipsTableReferences),
+          ProfileRelationship,
+          PrefetchHooks Function({bool profileDid})
+        > {
+  $$ProfileRelationshipsTableTableManager(_$AppDatabase db, $ProfileRelationshipsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProfileRelationshipsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProfileRelationshipsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProfileRelationshipsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> profileDid = const Value.absent(),
+                Value<bool> following = const Value.absent(),
+                Value<String?> followingUri = const Value.absent(),
+                Value<bool> followedBy = const Value.absent(),
+                Value<bool> muted = const Value.absent(),
+                Value<bool> blocked = const Value.absent(),
+                Value<bool> blockedBy = const Value.absent(),
+                Value<String?> blockingUri = const Value.absent(),
+                Value<String?> mutedByList = const Value.absent(),
+                Value<String?> blockingByList = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProfileRelationshipsCompanion(
+                profileDid: profileDid,
+                following: following,
+                followingUri: followingUri,
+                followedBy: followedBy,
+                muted: muted,
+                blocked: blocked,
+                blockedBy: blockedBy,
+                blockingUri: blockingUri,
+                mutedByList: mutedByList,
+                blockingByList: blockingByList,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String profileDid,
+                Value<bool> following = const Value.absent(),
+                Value<String?> followingUri = const Value.absent(),
+                Value<bool> followedBy = const Value.absent(),
+                Value<bool> muted = const Value.absent(),
+                Value<bool> blocked = const Value.absent(),
+                Value<bool> blockedBy = const Value.absent(),
+                Value<String?> blockingUri = const Value.absent(),
+                Value<String?> mutedByList = const Value.absent(),
+                Value<String?> blockingByList = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ProfileRelationshipsCompanion.insert(
+                profileDid: profileDid,
+                following: following,
+                followingUri: followingUri,
+                followedBy: followedBy,
+                muted: muted,
+                blocked: blocked,
+                blockedBy: blockedBy,
+                blockingUri: blockingUri,
+                mutedByList: mutedByList,
+                blockingByList: blockingByList,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (e.readTable(table), $$ProfileRelationshipsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback: ({profileDid = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (profileDid) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.profileDid,
+                                referencedTable: $$ProfileRelationshipsTableReferences
+                                    ._profileDidTable(db),
+                                referencedColumn: $$ProfileRelationshipsTableReferences
+                                    ._profileDidTable(db)
+                                    .did,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ProfileRelationshipsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProfileRelationshipsTable,
+      ProfileRelationship,
+      $$ProfileRelationshipsTableFilterComposer,
+      $$ProfileRelationshipsTableOrderingComposer,
+      $$ProfileRelationshipsTableAnnotationComposer,
+      $$ProfileRelationshipsTableCreateCompanionBuilder,
+      $$ProfileRelationshipsTableUpdateCompanionBuilder,
+      (ProfileRelationship, $$ProfileRelationshipsTableReferences),
+      ProfileRelationship,
+      PrefetchHooks Function({bool profileDid})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8344,4 +9834,6 @@ class $AppDatabaseManager {
   $$DraftsTableTableManager get drafts => $$DraftsTableTableManager(_db, _db.drafts);
   $$DraftMediaTableTableManager get draftMedia =>
       $$DraftMediaTableTableManager(_db, _db.draftMedia);
+  $$ProfileRelationshipsTableTableManager get profileRelationships =>
+      $$ProfileRelationshipsTableTableManager(_db, _db.profileRelationships);
 }

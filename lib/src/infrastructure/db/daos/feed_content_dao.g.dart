@@ -6,6 +6,7 @@ part of 'feed_content_dao.dart';
 mixin _$FeedContentDaoMixin on DatabaseAccessor<AppDatabase> {
   $ProfilesTable get profiles => attachedDatabase.profiles;
   $PostsTable get posts => attachedDatabase.posts;
+  $ProfileRelationshipsTable get profileRelationships => attachedDatabase.profileRelationships;
   $FeedContentItemsTable get feedContentItems => attachedDatabase.feedContentItems;
   $FeedCursorsTable get feedCursors => attachedDatabase.feedCursors;
 }

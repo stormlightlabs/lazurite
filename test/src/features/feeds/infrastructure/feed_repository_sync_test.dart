@@ -13,7 +13,7 @@ class MockXrpcClient extends Mock implements XrpcClient {}
 class MockLogger extends Mock implements Logger {}
 
 class _FailingPreferenceSyncQueueDao extends PreferenceSyncQueueDao {
-  _FailingPreferenceSyncQueueDao(AppDatabase db) : super(db);
+  _FailingPreferenceSyncQueueDao(super.db);
 
   @override
   Future<int> enqueue(PreferenceSyncQueueCompanion item) {

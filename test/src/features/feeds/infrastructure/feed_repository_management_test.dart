@@ -438,7 +438,6 @@ void main() {
         () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
       ).thenAnswer((_) async => {});
 
-      // Reorder: C, A, B
       await repository.reorderFeeds([feed3, feed1, feed2]);
 
       final feeds = await db.savedFeedsDao.getAllFeeds();

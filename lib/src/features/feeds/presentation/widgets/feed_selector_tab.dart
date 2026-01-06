@@ -40,9 +40,7 @@ class FeedSelectorTab extends ConsumerWidget {
               showCheckmark: false,
               label: const Text('Discover'),
               selected: true,
-              onSelected: (_) {
-                // Already on discover, no-op
-              },
+              onSelected: (_) => (),
             ),
           ],
         ),

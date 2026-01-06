@@ -1,17 +1,21 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/follows_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/profile_dao.dart';
+import 'package:lazurite/src/infrastructure/db/daos/profile_relationship_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
 /// Repository for profile data with cache-first reads.
 class ProfileRepository {
-  ProfileRepository(this._api, this._dao, this._followsDao, this._logger);
+  ProfileRepository(this._api, this._dao, this._followsDao, this._relationshipsDao, this._logger);
 
   final XrpcClient _api;
   final ProfileDao _dao;
   final FollowsDao _followsDao;
+  final ProfileRelationshipDao _relationshipsDao;
   final Logger _logger;
 
   /// Fetches a profile from the API and caches it.
@@ -32,9 +36,32 @@ class ProfileRepository {
           avatar: Value(profile.avatar),
           banner: Value(profile.banner),
           indexedAt: Value(profile.indexedAt),
+          pronouns: Value(profile.pronouns),
+          website: Value(profile.website),
+          createdAt: Value(profile.createdAt),
+          verificationStatus: Value(profile.verificationStatus),
+          labels: Value(profile.labels != null ? jsonEncode(profile.labels) : null),
+          pinnedPostUri: Value(profile.pinnedPostUri),
         ),
       );
-      _logger.debug('Cached profile', {'did': profile.did});
+
+      await _relationshipsDao.upsertRelationship(
+        ProfileRelationshipsCompanion.insert(
+          profileDid: profile.did,
+          following: Value(profile.viewerFollowing),
+          followingUri: Value(profile.viewerFollowUri),
+          followedBy: Value(profile.viewerFollowedBy),
+          muted: Value(profile.viewerMuted),
+          blocked: Value(profile.viewerBlockingUri != null),
+          blockedBy: Value(profile.viewerBlockedBy),
+          blockingUri: Value(profile.viewerBlockingUri),
+          mutedByList: Value(profile.viewerMutedByList),
+          blockingByList: Value(profile.viewerBlockingByList),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      _logger.debug('Cached profile and relationships', {'did': profile.did});
 
       return profile;
     } catch (e, stack) {
@@ -196,10 +223,11 @@ class ProfileRepository {
   }
 }
 
-/// Domain model for profile data from API.
 class ProfileData {
   factory ProfileData.fromJson(Map<String, dynamic> json) {
     final viewer = json['viewer'] as Map<String, dynamic>?;
+    final labels = json['labels'] as List?;
+
     return ProfileData(
       did: json['did'] as String,
       handle: json['handle'] as String,
@@ -211,8 +239,20 @@ class ProfileData {
       followsCount: json['followsCount'] as int? ?? 0,
       postsCount: json['postsCount'] as int? ?? 0,
       indexedAt: json['indexedAt'] != null ? DateTime.tryParse(json['indexedAt'] as String) : null,
+      pronouns: json['pronouns'] as String?,
+      website: json['website'] as String?,
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : null,
+      verificationStatus: json['verification']?['type'] as String?, // Assuming structure
+      labels: labels?.cast<Map<String, dynamic>>(),
+      pinnedPostUri: json['pinnedPost']?['uri'] as String?,
       viewerFollowing: viewer?['following'] != null,
       viewerFollowUri: viewer?['following'] as String?,
+      viewerMuted: viewer?['muted'] as bool? ?? false,
+      viewerBlockedBy: viewer?['blockedBy'] as bool? ?? false,
+      viewerBlockingUri: viewer?['blocking'] as String?,
+      viewerFollowedBy: viewer?['followedBy'] != null,
+      viewerMutedByList: viewer?['mutedByList']?['uri'] as String?,
+      viewerBlockingByList: viewer?['blockingByList']?['uri'] as String?,
     );
   }
 
@@ -227,8 +267,20 @@ class ProfileData {
     this.followsCount = 0,
     this.postsCount = 0,
     this.indexedAt,
+    this.pronouns,
+    this.website,
+    this.createdAt,
+    this.verificationStatus,
+    this.labels,
+    this.pinnedPostUri,
     this.viewerFollowing = false,
     this.viewerFollowUri,
+    this.viewerMuted = false,
+    this.viewerBlockedBy = false,
+    this.viewerBlockingUri,
+    this.viewerFollowedBy = false,
+    this.viewerMutedByList,
+    this.viewerBlockingByList,
   });
 
   final String did;
@@ -241,18 +293,31 @@ class ProfileData {
   final int followsCount;
   final int postsCount;
   final DateTime? indexedAt;
+  final String? pronouns;
+  final String? website;
+  final DateTime? createdAt;
+  final String? verificationStatus;
+  final List<Map<String, dynamic>>? labels;
+  final String? pinnedPostUri;
 
-  /// Whether the current viewer is following this profile.
   final bool viewerFollowing;
-
-  /// The URI of the follow record (needed for unfollow).
   final String? viewerFollowUri;
+  final bool viewerMuted;
+  final bool viewerBlockedBy;
+  final String? viewerBlockingUri;
+  final bool viewerFollowedBy;
+  final String? viewerMutedByList;
+  final String? viewerBlockingByList;
 
-  /// Returns display name or handle.
   String get displayNameOrHandle => displayName ?? handle;
 
-  /// Creates a copy with updated viewer following state.
-  ProfileData copyWith({bool? viewerFollowing, String? viewerFollowUri}) {
+  ProfileData copyWith({
+    bool? viewerFollowing,
+    String? viewerFollowUri,
+    bool? viewerMuted,
+    bool? viewerBlockedBy,
+    String? viewerBlockingUri,
+  }) {
     return ProfileData(
       did: did,
       handle: handle,
@@ -264,8 +329,20 @@ class ProfileData {
       followsCount: followsCount,
       postsCount: postsCount,
       indexedAt: indexedAt,
+      pronouns: pronouns,
+      website: website,
+      createdAt: createdAt,
+      verificationStatus: verificationStatus,
+      labels: labels,
+      pinnedPostUri: pinnedPostUri,
       viewerFollowing: viewerFollowing ?? this.viewerFollowing,
       viewerFollowUri: viewerFollowUri ?? this.viewerFollowUri,
+      viewerMuted: viewerMuted ?? this.viewerMuted,
+      viewerBlockedBy: viewerBlockedBy ?? this.viewerBlockedBy,
+      viewerBlockingUri: viewerBlockingUri ?? this.viewerBlockingUri,
+      viewerFollowedBy: viewerFollowedBy,
+      viewerMutedByList: viewerMutedByList,
+      viewerBlockingByList: viewerBlockingByList,
     );
   }
 }

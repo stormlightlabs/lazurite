@@ -28,7 +28,7 @@ class FeedPostCard extends StatelessWidget {
         record = decoded;
       }
     } catch (_) {
-      // Invalid JSON, use empty record
+      /* Invalid JSON, use empty record */
     }
     final text = record?['text'] as String? ?? '';
     final createdAt = DateTime.tryParse(item.post.indexedAt?.toIso8601String() ?? '');
@@ -41,7 +41,7 @@ class FeedPostCard extends StatelessWidget {
           reasonJson = decoded;
         }
       } catch (_) {
-        // Invalid JSON, skip reason
+        /* Invalid JSON, skip reason */
       }
     }
 
@@ -50,7 +50,6 @@ class FeedPostCard extends StatelessWidget {
 
     Map<String, dynamic>? reposter;
     if (isRepost) {
-      // isRepost is only true when reasonJson != null, so it's safe to access
       final byJson = reasonJson['by'];
       if (byJson is Map<String, dynamic>) {
         reposter = byJson;

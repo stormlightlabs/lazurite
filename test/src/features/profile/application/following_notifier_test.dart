@@ -5,6 +5,7 @@ import 'package:lazurite/src/features/profile/application/profile_providers.dart
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/infrastructure/db/daos/follows_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/profile_dao.dart';
+import 'package:lazurite/src/infrastructure/db/daos/profile_relationship_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -14,12 +15,15 @@ class MockProfileDao extends Mock implements ProfileDao {}
 
 class MockFollowsDao extends Mock implements FollowsDao {}
 
+class MockProfileRelationshipDao extends Mock implements ProfileRelationshipDao {}
+
 class MockLogger extends Mock implements Logger {}
 
 void main() {
   late MockXrpcClient mockApi;
   late MockProfileDao mockProfileDao;
   late MockFollowsDao mockFollowsDao;
+  late MockProfileRelationshipDao mockRelationshipsDao;
   late MockLogger mockLogger;
   late ProfileRepository repository;
 
@@ -27,8 +31,15 @@ void main() {
     mockApi = MockXrpcClient();
     mockProfileDao = MockProfileDao();
     mockFollowsDao = MockFollowsDao();
+    mockRelationshipsDao = MockProfileRelationshipDao();
     mockLogger = MockLogger();
-    repository = ProfileRepository(mockApi, mockProfileDao, mockFollowsDao, mockLogger);
+    repository = ProfileRepository(
+      mockApi,
+      mockProfileDao,
+      mockFollowsDao,
+      mockRelationshipsDao,
+      mockLogger,
+    );
   });
 
   ProviderContainer createContainer() {

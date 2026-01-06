@@ -13,7 +13,7 @@ ProfileRepository profileRepository(Ref ref) {
   final api = ref.watch(xrpcClientProvider);
   final db = ref.watch(appDatabaseProvider);
   final logger = ref.watch(loggerProvider('ProfileRepository'));
-  return ProfileRepository(api, db.profileDao, db.followsDao, logger);
+  return ProfileRepository(api, db.profileDao, db.followsDao, db.profileRelationshipDao, logger);
 }
 
 @riverpod

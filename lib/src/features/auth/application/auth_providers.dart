@@ -173,7 +173,7 @@ class AuthNotifier extends _$AuthNotifier {
         try {
           await ref.read(authRepositoryProvider).revokeSession(session);
         } catch (_) {
-          // Ignore revocation errors during logout
+          /* Ignore revocation errors during logout */
         }
       }
 

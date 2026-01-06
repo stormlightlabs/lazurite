@@ -20,7 +20,13 @@ void main() {
     mockApi = MockXrpcClient();
     db = AppDatabase(NativeDatabase.memory());
     mockLogger = MockLogger();
-    repository = ProfileRepository(mockApi, db.profileDao, db.followsDao, mockLogger);
+    repository = ProfileRepository(
+      mockApi,
+      db.profileDao,
+      db.followsDao,
+      db.profileRelationshipDao,
+      mockLogger,
+    );
   });
 
   tearDown(() async {
@@ -32,7 +38,7 @@ void main() {
       test('fetches profile from API and caches it', () async {
         when(
           () => mockApi.call(any(), params: any(named: 'params')),
-        ).thenAnswer((_) async => _mockProfileResponse());
+        ).thenAnswer((_) async => _mockProfileResponse(withViewer: true));
 
         final profile = await repository.getProfile('testuser.bsky.social');
 
@@ -41,7 +47,12 @@ void main() {
         expect(profile.displayName, 'Test User');
         expect(profile.followersCount, 100);
         expect(profile.followsCount, 50);
+        expect(profile.followsCount, 50);
         expect(profile.postsCount, 25);
+        expect(profile.pronouns, 'they/them');
+        expect(profile.website, 'https://example.com');
+        expect(profile.verificationStatus, 'verified');
+        expect(profile.viewerFollowing, true);
 
         verify(
           () =>
@@ -51,6 +62,11 @@ void main() {
         final cached = await db.profileDao.getProfile('did:plc:test123');
         expect(cached, isNotNull);
         expect(cached!.handle, 'testuser.bsky.social');
+
+        final relationship = await db.profileRelationshipDao.getRelationship('did:plc:test123');
+        expect(relationship, isNotNull);
+        expect(relationship!.following, true);
+        expect(relationship.followingUri, 'at://did:plc:viewer/app.bsky.graph.follow/abc123');
       });
 
       test('handles profile without optional fields', () async {
@@ -307,7 +323,15 @@ Map<String, dynamic> _mockProfileResponse({bool withViewer = false}) => {
   'followsCount': 50,
   'postsCount': 25,
   'indexedAt': '2024-01-01T12:00:00.000Z',
-  if (withViewer) 'viewer': {'following': 'at://did:plc:viewer/app.bsky.graph.follow/abc123'},
+  'pronouns': 'they/them',
+  'website': 'https://example.com',
+  'verification': {'type': 'verified'},
+  if (withViewer)
+    'viewer': {
+      'following': 'at://did:plc:viewer/app.bsky.graph.follow/abc123',
+      'muted': false,
+      'blockedBy': false,
+    },
 };
 
 Map<String, dynamic> _mockAuthorFeedResponse({String? cursor = 'next_cursor'}) => {

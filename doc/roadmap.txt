@@ -16,10 +16,10 @@ Endpoints (already registered):
 
 Tasks:
 - [ ] Profile Data Model & Display (HIGH):
-      - [ ] Add profileViewDetailed fields to database:
+      - [x] Add profileViewDetailed fields to database:
             - pronouns, website, createdAt, verificationStatus
             - labels (JSON array), pinnedPostUri
-      - [ ] Expand viewer relationship tracking:
+      - [x] Expand viewer relationship tracking:
             - viewerMuted, viewerBlocked, viewerBlockedBy
             - viewerFollowedBy, mutedByList, blockingByList
       - [ ] Profile UI enhancements:

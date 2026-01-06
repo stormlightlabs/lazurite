@@ -26,6 +26,12 @@ class Profiles extends Table {
   TextColumn get avatar => text().nullable()();
   TextColumn get banner => text().nullable()();
   DateTimeColumn get indexedAt => dateTime().nullable()();
+  TextColumn get pronouns => text().nullable()();
+  TextColumn get website => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().nullable()();
+  TextColumn get verificationStatus => text().nullable()();
+  TextColumn get labels => text().nullable()(); // JSON array
+  TextColumn get pinnedPostUri => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {did};
@@ -115,6 +121,45 @@ class Follows extends Table {
 
   @override
   Set<Column> get primaryKey => {actorDid, subjectDid};
+}
+
+/// Stores normalized viewer relationships for profiles.
+class ProfileRelationships extends Table {
+  /// The DID of the profile this relationship applies to (subject).
+  TextColumn get profileDid => text().references(Profiles, #did)();
+
+  /// Whether the viewer is following this profile.
+  BoolColumn get following => boolean().withDefault(const Constant(false))();
+
+  /// The URI of the follow record (if following).
+  TextColumn get followingUri => text().nullable()();
+
+  /// Whether this profile follows the viewer.
+  BoolColumn get followedBy => boolean().withDefault(const Constant(false))();
+
+  /// Whether the viewer has muted this profile.
+  BoolColumn get muted => boolean().withDefault(const Constant(false))();
+
+  /// Whether the viewer has blocked this profile.
+  BoolColumn get blocked => boolean().withDefault(const Constant(false))();
+
+  /// Whether this profile has blocked the viewer.
+  BoolColumn get blockedBy => boolean().withDefault(const Constant(false))();
+
+  /// The URI of the block record (if blocking).
+  TextColumn get blockingUri => text().nullable()();
+
+  /// Reference to the list that muted this profile (if applicable).
+  TextColumn get mutedByList => text().nullable()();
+
+  /// Reference to the list that blocked this profile (if applicable).
+  TextColumn get blockingByList => text().nullable()();
+
+  /// When this relationship was last updated.
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {profileDid};
 }
 
 /// Stores saved feed generators with metadata.

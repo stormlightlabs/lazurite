@@ -17,7 +17,6 @@ void main() {
         extra: {ProxyInterceptor.proxyKindKey: ProxyKind.chat},
       );
 
-      // var nextCalled = false;
       final handler = RequestInterceptorHandler();
 
       interceptor.onRequest(options, handler);

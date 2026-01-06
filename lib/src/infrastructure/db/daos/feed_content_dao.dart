@@ -10,7 +10,7 @@ part 'feed_content_dao.g.dart';
 /// This replaces TimelineDao with clearer naming that aligns with BlueSky's
 /// feed-based architecture. Uses the same underlying tables (Posts, Profiles,
 /// FeedContentItems, FeedCursors).
-@DriftAccessor(tables: [Posts, Profiles, FeedContentItems, FeedCursors])
+@DriftAccessor(tables: [Posts, Profiles, ProfileRelationships, FeedContentItems, FeedCursors])
 class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDaoMixin {
   FeedContentDao(super.db);
 
@@ -19,6 +19,7 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
   Future<void> insertFeedContentBatch({
     required List<PostsCompanion> newPosts,
     required List<ProfilesCompanion> newProfiles,
+    required List<ProfileRelationshipsCompanion> newRelationships,
     required List<FeedContentItemsCompanion> newItems,
     required String feedKey,
     String? newCursor,
@@ -26,6 +27,7 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
     return transaction(() async {
       await batch((batch) {
         batch.insertAll(profiles, newProfiles, mode: InsertMode.insertOrReplace);
+        batch.insertAll(profileRelationships, newRelationships, mode: InsertMode.insertOrReplace);
         batch.insertAll(posts, newPosts, mode: InsertMode.insertOrReplace);
         batch.insertAll(
           feedContentItems,
@@ -58,6 +60,7 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
     final query = select(feedContentItems).join([
       innerJoin(posts, posts.uri.equalsExp(feedContentItems.postUri)),
       innerJoin(profiles, profiles.did.equalsExp(posts.authorDid)),
+      leftOuterJoin(profileRelationships, profileRelationships.profileDid.equalsExp(profiles.did)),
     ]);
 
     query.where(feedContentItems.feedKey.equals(feedKey));
@@ -69,6 +72,7 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
         return FeedPost(
           post: row.readTable(posts),
           author: row.readTable(profiles),
+          relationship: row.readTableOrNull(profileRelationships),
           reason: feedItem.reason,
         );
       }).toList();
@@ -113,10 +117,11 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
 ///
 /// Combines post content, author profile, and feed-specific data like repost reason.
 class FeedPost {
-  FeedPost({required this.post, required this.author, this.reason});
+  FeedPost({required this.post, required this.author, this.relationship, this.reason});
 
   final Post post;
   final Profile author;
+  final ProfileRelationship? relationship;
 
   /// Feed-specific reason (e.g., repost information as JSON).
   final String? reason;

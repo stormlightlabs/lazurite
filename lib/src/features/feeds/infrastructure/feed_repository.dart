@@ -192,13 +192,8 @@ class FeedRepository {
         try {
           final metadata = await getFeedMetadata(remoteUri);
 
-          // Upsert creator profile first due to FK constraint
           await _profileDao.upsertProfile(
-            ProfilesCompanion.insert(
-              did: metadata.creator.did,
-              handle: metadata.creator.handle,
-              // Add other profile fields if available from metadata.creator
-            ),
+            ProfilesCompanion.insert(did: metadata.creator.did, handle: metadata.creator.handle),
           );
 
           feedsToInsert.add(
@@ -330,7 +325,6 @@ class FeedRepository {
       creatorDid = metadata.creator.did;
       likeCount = metadata.likeCount;
 
-      // Upsert creator profile first due to FK constraint
       await _profileDao.upsertProfile(
         ProfilesCompanion.insert(did: creatorDid, handle: metadata.creator.handle),
       );

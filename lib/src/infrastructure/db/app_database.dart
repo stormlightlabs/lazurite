@@ -10,6 +10,7 @@ import 'daos/feed_content_dao.dart';
 import 'daos/follows_dao.dart';
 import 'daos/preference_sync_queue_dao.dart';
 import 'daos/profile_dao.dart';
+import 'daos/profile_relationship_dao.dart';
 import 'daos/saved_feeds_dao.dart';
 import 'daos/search_cache_dao.dart';
 import 'daos/search_dao.dart';
@@ -32,10 +33,12 @@ part 'app_database.g.dart';
     PreferenceSyncQueue,
     Drafts,
     DraftMedia,
+    ProfileRelationships,
   ],
   daos: [
     FeedContentDao,
     ProfileDao,
+    ProfileRelationshipDao,
     SearchDao,
     SearchCacheDao,
     FollowsDao,
@@ -48,7 +51,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -95,6 +98,15 @@ class AppDatabase extends _$AppDatabase {
         );
         await customStatement('DROP TABLE saved_feeds_old');
         await customStatement('PRAGMA foreign_keys = ON');
+      }
+      if (from < 11) {
+        await m.addColumn(profiles, profiles.pronouns);
+        await m.addColumn(profiles, profiles.website);
+        await m.addColumn(profiles, profiles.createdAt);
+        await m.addColumn(profiles, profiles.verificationStatus);
+        await m.addColumn(profiles, profiles.labels);
+        await m.addColumn(profiles, profiles.pinnedPostUri);
+        await m.createTable(profileRelationships);
       }
     },
   );

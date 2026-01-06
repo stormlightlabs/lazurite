@@ -48,7 +48,7 @@ final class ProfileRepositoryProvider
   }
 }
 
-String _$profileRepositoryHash() => r'50dea0ace0390282f36fddb6c1282c58a38c914e';
+String _$profileRepositoryHash() => r'ec881f45142b9ecac2a527877fc40c33cf59193d';
 
 @ProviderFor(ProfileNotifier)
 final profileProvider = ProfileNotifierFamily._();
