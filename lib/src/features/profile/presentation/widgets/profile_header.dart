@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
+import 'package:lazurite/src/features/profile/presentation/widgets/profile_labels.dart';
+import 'package:lazurite/src/features/profile/presentation/widgets/verification_badge.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 /// Profile header widget displaying user info, stats, and actions.
 class ProfileHeader extends StatelessWidget {
@@ -27,6 +31,9 @@ class ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final joinedDate = profile.createdAt != null
+        ? DateFormat.yMMMd().format(profile.createdAt!)
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,26 +73,87 @@ class ProfileHeader extends StatelessWidget {
           ],
         ),
 
+        if (profile.viewerMuted || (profile.viewerBlockingUri != null))
+          Padding(
+            padding: const EdgeInsets.only(top: 8, right: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (profile.viewerMuted)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text('Muted', style: TextStyle(fontSize: 12)),
+                  ),
+                if (profile.viewerBlockingUri != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Blocked',
+                      style: TextStyle(fontSize: 12, color: colorScheme.onErrorContainer),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
         const SizedBox(height: 48),
 
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      profile.displayNameOrHandle,
-                      style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            profile.displayNameOrHandle,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        if (profile.verificationStatus != null) ...[
+                          const SizedBox(width: 4),
+                          VerificationBadge(verificationStatus: profile.verificationStatus),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      '@${profile.handle}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurface.withAlpha(153),
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          '@${profile.handle}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurface.withAlpha(153),
+                          ),
+                        ),
+                        if (profile.pronouns != null && profile.pronouns!.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(profile.pronouns!, style: theme.textTheme.labelSmall),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
@@ -95,11 +163,45 @@ class ProfileHeader extends StatelessWidget {
           ),
         ),
 
+        if (profile.labels != null && profile.labels!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ProfileLabels(labels: profile.labels),
+          ),
+
         if (profile.description != null && profile.description!.isNotEmpty) ...[
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(profile.description!, style: theme.textTheme.bodyMedium),
+          ),
+        ],
+
+        if (profile.website != null || joinedDate != null) ...[
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                if (profile.website != null) ...[
+                  const Icon(Icons.link, size: 16),
+                  const SizedBox(width: 4),
+                  InkWell(
+                    onTap: () => launchUrlString(profile.website!),
+                    child: Text(
+                      profile.website!,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                ],
+                if (joinedDate != null) ...[
+                  const Icon(Icons.calendar_today, size: 16),
+                  const SizedBox(width: 4),
+                  Text('Joined $joinedDate', style: theme.textTheme.bodyMedium),
+                ],
+              ],
+            ),
           ),
         ],
 

@@ -50,6 +50,72 @@ final class ProfileRepositoryProvider
 
 String _$profileRepositoryHash() => r'ec881f45142b9ecac2a527877fc40c33cf59193d';
 
+@ProviderFor(pinnedPost)
+final pinnedPostProvider = PinnedPostFamily._();
+
+final class PinnedPostProvider
+    extends $FunctionalProvider<AsyncValue<FeedItem?>, FeedItem?, FutureOr<FeedItem?>>
+    with $FutureModifier<FeedItem?>, $FutureProvider<FeedItem?> {
+  PinnedPostProvider._({required PinnedPostFamily super.from, required String super.argument})
+    : super(
+        retry: null,
+        name: r'pinnedPostProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$pinnedPostHash();
+
+  @override
+  String toString() {
+    return r'pinnedPostProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<FeedItem?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<FeedItem?> create(Ref ref) {
+    final argument = this.argument as String;
+    return pinnedPost(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PinnedPostProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$pinnedPostHash() => r'65082b94fb3fdbd13cfd9b0cf97f5f1c714831ec';
+
+final class PinnedPostFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<FeedItem?>, String> {
+  PinnedPostFamily._()
+    : super(
+        retry: null,
+        name: r'pinnedPostProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  PinnedPostProvider call(String uri) => PinnedPostProvider._(argument: uri, from: this);
+
+  @override
+  String toString() => r'pinnedPostProvider';
+}
+
 @ProviderFor(ProfileNotifier)
 final profileProvider = ProfileNotifierFamily._();
 
@@ -90,7 +156,7 @@ final class ProfileNotifierProvider extends $AsyncNotifierProvider<ProfileNotifi
   }
 }
 
-String _$profileNotifierHash() => r'00ebf266582ea6e4165ddcca5d07080030e65f02';
+String _$profileNotifierHash() => r'8427c3f560281abad899f53fb5b2c4e3f59c33fa';
 
 final class ProfileNotifierFamily extends $Family
     with

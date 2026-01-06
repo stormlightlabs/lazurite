@@ -11,6 +11,7 @@ import 'package:lazurite/src/features/profile/application/profile_providers.dart
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/follow_button.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/media_tab.dart';
+import 'package:lazurite/src/features/profile/presentation/widgets/pinned_post_card.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_actions_sheet.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_header.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/replies_tab.dart';
@@ -136,7 +137,7 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
     return showModalBottomSheet(
       context: context,
       showDragHandle: true,
-      builder: (_) => ProfileActionsSheet(isCurrentUser: widget.isCurrentUser),
+      builder: (_) => ProfileActionsSheet(did: widget.did, isCurrentUser: widget.isCurrentUser),
     );
   }
 
@@ -198,6 +199,7 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
                   children: [
                     _PostsTab(
                       items: items.where((item) => !item.isReply).toList(),
+                      pinnedPostUri: profile.pinnedPostUri,
                       hasMore: hasMore,
                       isLoading: false,
                       onLoadMore: () =>
@@ -258,6 +260,7 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
 class _PostsTab extends StatefulWidget {
   const _PostsTab({
     required this.items,
+    this.pinnedPostUri,
     required this.hasMore,
     required this.isLoading,
     required this.onLoadMore,
@@ -265,6 +268,7 @@ class _PostsTab extends StatefulWidget {
   });
 
   final List<FeedItem> items;
+  final String? pinnedPostUri;
   final bool hasMore;
   final bool isLoading;
   final VoidCallback onLoadMore;
@@ -282,7 +286,7 @@ class _PostsTabState extends State<_PostsTab> with AutomaticKeepAliveClientMixin
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (widget.items.isEmpty && !widget.isLoading) {
+    if (widget.items.isEmpty && !widget.isLoading && widget.pinnedPostUri == null) {
       return const Center(child: Text('No posts yet'));
     }
 
@@ -290,9 +294,21 @@ class _PostsTabState extends State<_PostsTab> with AutomaticKeepAliveClientMixin
       onRefresh: widget.onRefresh,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: widget.items.length + (widget.hasMore ? 1 : 0),
+        itemCount:
+            widget.items.length +
+            (widget.hasMore ? 1 : 0) +
+            (widget.pinnedPostUri != null ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index >= widget.items.length) {
+          int itemIndex = index;
+
+          if (widget.pinnedPostUri != null) {
+            if (index == 0) {
+              return PinnedPostCard(widget.pinnedPostUri!);
+            }
+            itemIndex--;
+          }
+
+          if (itemIndex >= widget.items.length) {
             widget.onLoadMore();
             return const Padding(
               padding: EdgeInsets.all(16),
@@ -300,7 +316,7 @@ class _PostsTabState extends State<_PostsTab> with AutomaticKeepAliveClientMixin
             );
           }
 
-          final item = widget.items[index];
+          final item = widget.items[itemIndex];
           return FeedPostCard(
             uri: item.uri,
             authorDid: item.authorDid,

@@ -108,7 +108,6 @@ class FeedDiscoveryScreen extends ConsumerWidget {
 
                     final uri = feedData['uri'];
                     if (uri is! String || uri.isEmpty) {
-                      // Skip feeds with invalid URIs
                       return const SizedBox.shrink();
                     }
 

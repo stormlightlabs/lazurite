@@ -17,6 +17,12 @@ ProfileRepository profileRepository(Ref ref) {
 }
 
 @riverpod
+Future<FeedItem?> pinnedPost(Ref ref, String uri) async {
+  final repository = ref.watch(profileRepositoryProvider);
+  return repository.getPost(uri);
+}
+
+@riverpod
 class ProfileNotifier extends _$ProfileNotifier {
   @override
   Future<ProfileData> build(String actor) async {
@@ -39,6 +45,68 @@ class ProfileNotifier extends _$ProfileNotifier {
     if (current == null) return;
 
     state = AsyncData(current.copyWith(viewerFollowing: isFollowing, viewerFollowUri: followUri));
+  }
+
+  /// Toggles the mute status of the profile.
+  Future<void> toggleMute() async {
+    final current = state.value;
+    if (current == null) return;
+
+    final wasMuted = current.viewerMuted;
+    state = AsyncData(current.copyWith(viewerMuted: !wasMuted));
+
+    try {
+      final repo = ref.read(profileRepositoryProvider);
+      if (wasMuted) {
+        await repo.unmuteActor(authState.session.did, current.did);
+      } else {
+        await repo.muteActor(authState.session.did, current.did);
+      }
+    } catch (e) {
+      if (state.hasValue) {
+        state = AsyncData(current);
+      }
+      rethrow;
+    }
+  }
+
+  /// Toggles the block status of the profile.
+  Future<void> toggleBlock() async {
+    final current = state.value;
+    if (current == null) return;
+
+    final wasBlocked = current.viewerBlockingUri != null;
+    final originalUri = current.viewerBlockingUri;
+
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(profileRepositoryProvider);
+      if (wasBlocked) {
+        await repo.unblockActor(authState.session.did, originalUri!, subjectDid: current.did);
+        return current.copyWith(viewerBlockingUri: null);
+      } else {
+        final uri = await repo.blockActor(authState.session.did, current.did);
+        return current.copyWith(viewerBlockingUri: uri);
+      }
+    });
+  }
+
+  /// Reports the profile.
+  Future<void> report({required String reasonType, String? reason}) async {
+    final current = state.value;
+    if (current == null) return;
+
+    await ref
+        .read(profileRepositoryProvider)
+        .createReport(reasonType: reasonType, subjectDid: current.did, reason: reason);
+  }
+
+  AuthStateAuthenticated get authState {
+    final auth = ref.read(authProvider);
+    if (auth is! AuthStateAuthenticated) {
+      throw StateError('Must be authenticated');
+    }
+    return auth;
   }
 }
 

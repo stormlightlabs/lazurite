@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
@@ -307,6 +308,92 @@ void main() {
           () => repository.unfollow('did:plc:actor', 'invalid-uri'),
           throwsA(isA<ArgumentError>()),
         );
+      });
+    });
+
+    group('blockActor', () {
+      test('creates block record and updates local cache', () async {
+        await db.profileRelationshipDao.upsertRelationship(
+          ProfileRelationshipsCompanion.insert(
+            profileDid: 'did:plc:subject',
+            updatedAt: DateTime.now(),
+          ),
+        );
+
+        when(() => mockApi.call(any(), body: any(named: 'body'))).thenAnswer(
+          (_) async => {'uri': 'at://did:plc:actor/app.bsky.graph.block/rkey123', 'cid': 'cid123'},
+        );
+
+        final uri = await repository.blockActor('did:plc:actor', 'did:plc:subject');
+        expect(uri, 'at://did:plc:actor/app.bsky.graph.block/rkey123');
+
+        final rel = await db.profileRelationshipDao.getRelationship('did:plc:subject');
+        expect(rel, isNotNull);
+        expect(rel!.blocked, isTrue);
+        expect(rel.blockingUri, uri);
+      });
+    });
+
+    group('unblockActor', () {
+      test('deletes block record and updates local cache if subjectDid provided', () async {
+        await db.profileRelationshipDao.upsertRelationship(
+          ProfileRelationshipsCompanion.insert(
+            profileDid: 'did:plc:subject',
+            blocked: const Value(true),
+            blockingUri: const Value('at://did:plc:actor/app.bsky.graph.block/rkey123'),
+            updatedAt: DateTime.now(),
+          ),
+        );
+
+        when(
+          () => mockApi.call('com.atproto.repo.deleteRecord', body: any(named: 'body')),
+        ).thenAnswer((_) async => <String, dynamic>{});
+
+        await repository.unblockActor(
+          'did:plc:actor',
+          'at://did:plc:actor/app.bsky.graph.block/rkey123',
+          subjectDid: 'did:plc:subject',
+        );
+
+        verify(
+          () => mockApi.call(
+            'com.atproto.repo.deleteRecord',
+            body: {
+              'repo': 'did:plc:actor',
+              'collection': 'app.bsky.graph.block',
+              'rkey': 'rkey123',
+            },
+          ),
+        ).called(1);
+
+        final rel = await db.profileRelationshipDao.getRelationship('did:plc:subject');
+        expect(rel, isNotNull);
+        expect(rel!.blocked, isFalse);
+        expect(rel.blockingUri, isNull);
+      });
+
+      test('does not update local cache if subjectDid is null', () async {
+        await db.profileRelationshipDao.upsertRelationship(
+          ProfileRelationshipsCompanion.insert(
+            profileDid: 'did:plc:subject',
+            blocked: const Value(true),
+            blockingUri: const Value('at://did:plc:actor/app.bsky.graph.block/rkey123'),
+            updatedAt: DateTime.now(),
+          ),
+        );
+
+        when(
+          () => mockApi.call('com.atproto.repo.deleteRecord', body: any(named: 'body')),
+        ).thenAnswer((_) async => <String, dynamic>{});
+
+        await repository.unblockActor(
+          'did:plc:actor',
+          'at://did:plc:actor/app.bsky.graph.block/rkey123',
+        );
+
+        final rel = await db.profileRelationshipDao.getRelationship('did:plc:subject');
+        expect(rel, isNotNull);
+        expect(rel!.blocked, isTrue);
       });
     });
   });

@@ -5,7 +5,12 @@ import 'package:lazurite/src/app/theme_mode_controller.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/profile/application/profile_providers.dart';
+import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_actions_sheet.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockProfileRepository extends Mock implements ProfileRepository {}
 
 class RecordingAuthNotifier extends AuthNotifier {
   RecordingAuthNotifier();
@@ -44,6 +49,23 @@ class TestThemeModeNotifier extends ThemeModeController {
 }
 
 void main() {
+  late MockProfileRepository mockProfileRepository;
+
+  setUp(() {
+    mockProfileRepository = MockProfileRepository();
+    when(
+      () => mockProfileRepository.getProfile(any()),
+    ).thenAnswer((_) async => ProfileData(did: 'did:plc:test', handle: 'test.bsky.social'));
+    when(() => mockProfileRepository.watchProfile(any())).thenAnswer((_) => Stream.value(null));
+    when(
+      () => mockProfileRepository.createReport(
+        reasonType: any(named: 'reasonType'),
+        subjectDid: any(named: 'subjectDid'),
+        reason: any(named: 'reason'),
+      ),
+    ).thenAnswer((_) async {});
+  });
+
   Widget buildSheet({
     required bool isCurrentUser,
     ThemeMode initialTheme = ThemeMode.dark,
@@ -55,9 +77,12 @@ void main() {
         themeModeControllerProvider.overrideWith(
           () => TestThemeModeNotifier(initial: initialTheme),
         ),
+        profileRepositoryProvider.overrideWithValue(mockProfileRepository),
       ],
       child: MaterialApp(
-        home: Scaffold(body: ProfileActionsSheet(isCurrentUser: isCurrentUser)),
+        home: Scaffold(
+          body: ProfileActionsSheet(did: 'did:plc:test', isCurrentUser: isCurrentUser),
+        ),
       ),
     );
   }
@@ -96,9 +121,32 @@ void main() {
     expect(switchTile.value, isFalse);
 
     await tester.tap(find.byType(SwitchListTile));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     switchTile = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
     expect(switchTile.value, isTrue);
+  });
+
+  testWidgets('submitting report triggers repository call', (tester) async {
+    await tester.pumpWidget(buildSheet(isCurrentUser: false));
+    await tester.pump();
+
+    await tester.tap(find.text('Report account'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Spam'));
+    await tester.pump();
+    await tester.tap(find.text('Report'));
+    await tester.pumpAndSettle();
+
+    verify(
+      () => mockProfileRepository.createReport(
+        reasonType: 'com.atproto.moderation.defs#reasonSpam',
+        subjectDid: 'did:plc:test',
+        reason: any(named: 'reason'),
+      ),
+    ).called(1);
+
+    expect(find.text('Report submitted successfully'), findsOneWidget);
   });
 }

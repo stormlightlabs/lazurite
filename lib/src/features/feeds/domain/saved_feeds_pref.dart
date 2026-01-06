@@ -174,14 +174,12 @@ class SavedFeedsPreferenceParser {
         try {
           v2 = SavedFeedsPrefV2.fromJson(pref);
         } catch (e) {
-          // Invalid structure, skip
           continue;
         }
       } else if (type == 'app.bsky.actor.defs#savedFeedsPref') {
         try {
           v1 = SavedFeedsPref.fromJson(pref);
         } catch (e) {
-          // Invalid structure, skip
           continue;
         }
       }

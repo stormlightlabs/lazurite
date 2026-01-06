@@ -28,4 +28,22 @@ class ProfileRelationshipDao extends DatabaseAccessor<AppDatabase>
       profileRelationships,
     )..where((t) => t.profileDid.equals(profileDid))).watchSingleOrNull();
   }
+
+  /// Updates the mute status for a profile.
+  Future<void> updateMuteStatus(String profileDid, bool muted) {
+    return (update(profileRelationships)..where((t) => t.profileDid.equals(profileDid))).write(
+      ProfileRelationshipsCompanion(muted: Value(muted), updatedAt: Value(DateTime.now())),
+    );
+  }
+
+  /// Updates the block status for a profile.
+  Future<void> updateBlockStatus(String profileDid, bool blocked, {String? blockingUri}) {
+    return (update(profileRelationships)..where((t) => t.profileDid.equals(profileDid))).write(
+      ProfileRelationshipsCompanion(
+        blocked: Value(blocked),
+        blockingUri: Value(blockingUri),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
 }

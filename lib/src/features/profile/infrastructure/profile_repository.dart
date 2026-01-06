@@ -221,6 +221,143 @@ class ProfileRepository {
   Stream<Follow?> watchFollow(String actorDid, String subjectDid) {
     return _followsDao.watchFollow(actorDid, subjectDid);
   }
+
+  /// Mutes a user.
+  ///
+  /// This is a graph operation but is included here for profile management context.
+  Future<void> muteActor(String actorDid, String subjectDid) async {
+    _logger.info('Muting user', {'subject': subjectDid});
+    try {
+      await _api.call('app.bsky.graph.muteActor', body: {'actor': subjectDid});
+
+      await _relationshipsDao.updateMuteStatus(subjectDid, true);
+      _logger.debug('Muted user', {'subject': subjectDid});
+    } catch (e, stack) {
+      _logger.error('Failed to mute user', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Unmutes a user.
+  ///
+  /// This is a graph operation but is included here for profile management context.
+  Future<void> unmuteActor(String actorDid, String subjectDid) async {
+    _logger.info('Unmuting user', {'subject': subjectDid});
+    try {
+      await _api.call('app.bsky.graph.unmuteActor', body: {'actor': subjectDid});
+
+      await _relationshipsDao.updateMuteStatus(subjectDid, false);
+      _logger.debug('Unmuted user', {'subject': subjectDid});
+    } catch (e, stack) {
+      _logger.error('Failed to unmute user', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Blocks a user.
+  ///
+  /// This is a graph operation but is included here for profile management context.
+  Future<String> blockActor(String actorDid, String subjectDid) async {
+    _logger.info('Blocking user', {'subject': subjectDid});
+    try {
+      final response = await _api.call(
+        'com.atproto.repo.createRecord',
+        body: {
+          'repo': actorDid,
+          'collection': 'app.bsky.graph.block',
+          'record': {
+            r'$type': 'app.bsky.graph.block',
+            'subject': subjectDid,
+            'createdAt': DateTime.now().toUtc().toIso8601String(),
+          },
+        },
+      );
+
+      final uri = response['uri'] as String;
+
+      await _relationshipsDao.updateBlockStatus(subjectDid, true, blockingUri: uri);
+      _logger.debug('Blocked user', {'subject': subjectDid, 'uri': uri});
+      return uri;
+    } catch (e, stack) {
+      _logger.error('Failed to block user', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Unblocks a user.
+  ///
+  /// This is a graph operation but is included here for profile management context.
+  /// [subjectDid] is optional but recommended to allow immediate local state update.
+  Future<void> unblockActor(String actorDid, String blockUri, {String? subjectDid}) async {
+    _logger.info('Unblocking user', {'uri': blockUri, 'subject': subjectDid});
+    try {
+      final parts = blockUri.split('/');
+      if (parts.length < 2) {
+        throw ArgumentError('Invalid block URI: $blockUri');
+      }
+      final rkey = parts.last;
+
+      await _api.call(
+        'com.atproto.repo.deleteRecord',
+        body: {'repo': actorDid, 'collection': 'app.bsky.graph.block', 'rkey': rkey},
+      );
+
+      if (subjectDid != null) {
+        await _relationshipsDao.updateBlockStatus(subjectDid, false);
+      }
+
+      _logger.debug('Deleted block record', {'uri': blockUri});
+    } catch (e, stack) {
+      _logger.error('Failed to unblock user', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Reports a user or content.
+  ///
+  /// [reasonType] should be one of the supported AT Protocol report reasons.
+  Future<void> createReport({
+    required String reasonType,
+    required String subjectDid,
+    String? reason,
+  }) async {
+    _logger.info('Reporting user', {'subject': subjectDid, 'reasonType': reasonType});
+    try {
+      await _api.call(
+        'com.atproto.moderation.createReport',
+        body: {
+          'reasonType': reasonType,
+          'subject': {r'$type': 'com.atproto.admin.defs#repoRef', 'did': subjectDid},
+          if (reason != null) 'reason': reason,
+        },
+      );
+      _logger.debug('Reported user', {'subject': subjectDid});
+    } catch (e, stack) {
+      _logger.error('Failed to report user', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Fetches a single post by URI.
+  Future<FeedItem?> getPost(String uri) async {
+    _logger.info('Fetching post', {'uri': uri});
+    try {
+      final response = await _api.call(
+        'app.bsky.feed.getPosts',
+        params: {
+          'uris': [uri],
+        },
+      );
+
+      final posts = response['posts'] as List?;
+      if (posts == null || posts.isEmpty) return null;
+
+      return FeedItem.fromJson(posts.first as Map<String, dynamic>);
+    } catch (e, stack) {
+      _logger.error('Failed to fetch post', e, stack);
+      rethrow;
+    }
+  }
 }
 
 class ProfileData {
@@ -312,11 +449,16 @@ class ProfileData {
   String get displayNameOrHandle => displayName ?? handle;
 
   ProfileData copyWith({
+    String? pronouns,
+    String? website,
+    DateTime? createdAt,
+    String? verificationStatus,
+    String? pinnedPostUri,
     bool? viewerFollowing,
     String? viewerFollowUri,
     bool? viewerMuted,
     bool? viewerBlockedBy,
-    String? viewerBlockingUri,
+    dynamic viewerBlockingUri = _sentinel, // Use dynamic to detect sentinel
   }) {
     return ProfileData(
       did: did,
@@ -329,23 +471,27 @@ class ProfileData {
       followsCount: followsCount,
       postsCount: postsCount,
       indexedAt: indexedAt,
-      pronouns: pronouns,
-      website: website,
-      createdAt: createdAt,
-      verificationStatus: verificationStatus,
+      pronouns: pronouns ?? this.pronouns,
+      website: website ?? this.website,
+      createdAt: createdAt ?? this.createdAt,
+      verificationStatus: verificationStatus ?? this.verificationStatus,
       labels: labels,
-      pinnedPostUri: pinnedPostUri,
+      pinnedPostUri: pinnedPostUri ?? this.pinnedPostUri,
       viewerFollowing: viewerFollowing ?? this.viewerFollowing,
       viewerFollowUri: viewerFollowUri ?? this.viewerFollowUri,
       viewerMuted: viewerMuted ?? this.viewerMuted,
       viewerBlockedBy: viewerBlockedBy ?? this.viewerBlockedBy,
-      viewerBlockingUri: viewerBlockingUri ?? this.viewerBlockingUri,
+      viewerBlockingUri: viewerBlockingUri == _sentinel
+          ? this.viewerBlockingUri
+          : viewerBlockingUri as String?,
       viewerFollowedBy: viewerFollowedBy,
       viewerMutedByList: viewerMutedByList,
       viewerBlockingByList: viewerBlockingByList,
     );
   }
 }
+
+const _sentinel = Object();
 
 /// Result of fetching author feed.
 class AuthorFeedResult {
@@ -431,6 +577,8 @@ class FeedItem {
       hasImages: hasImages,
       hasVideo: hasVideo,
       embedType: embedType,
+      record: record,
+      embed: embed,
     );
   }
 
@@ -450,6 +598,8 @@ class FeedItem {
     this.hasImages = false,
     this.hasVideo = false,
     this.embedType,
+    this.record,
+    this.embed,
   });
 
   final String uri;
@@ -475,6 +625,12 @@ class FeedItem {
 
   /// The embed type string (e.g., 'app.bsky.embed.images#view').
   final String? embedType;
+
+  /// The raw record map.
+  final Map<String, dynamic>? record;
+
+  /// The raw embed map.
+  final Map<String, dynamic>? embed;
 
   /// Whether this post has any media (images or video).
   bool get hasMedia => hasImages || hasVideo;

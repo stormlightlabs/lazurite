@@ -137,5 +137,37 @@ void main() {
 
       expect(find.byIcon(Icons.person), findsOneWidget);
     });
+
+    testWidgets('renders pronouns when provided', (tester) async {
+      final profileWithPronouns = testProfile.copyWith(pronouns: 'they/them');
+      await tester.pumpApp(Material(child: ProfileHeader(profile: profileWithPronouns)));
+      expect(find.text('they/them'), findsOneWidget);
+    });
+
+    testWidgets('renders website link when provided', (tester) async {
+      final profileWithWebsite = testProfile.copyWith(website: 'https://example.com');
+      await tester.pumpApp(Material(child: ProfileHeader(profile: profileWithWebsite)));
+      expect(find.text('https://example.com'), findsOneWidget);
+      expect(find.byIcon(Icons.link), findsOneWidget);
+    });
+
+    testWidgets('renders joined date', (tester) async {
+      final now = DateTime.now();
+      final profileWithDate = testProfile.copyWith(createdAt: now);
+      await tester.pumpApp(Material(child: ProfileHeader(profile: profileWithDate)));
+      expect(find.textContaining('Joined'), findsOneWidget);
+    });
+
+    testWidgets('renders muted indicator', (tester) async {
+      final mutedProfile = testProfile.copyWith(viewerMuted: true);
+      await tester.pumpApp(Material(child: ProfileHeader(profile: mutedProfile)));
+      expect(find.text('Muted'), findsOneWidget);
+    });
+
+    testWidgets('renders blocked indicator', (tester) async {
+      final blockedProfile = testProfile.copyWith(viewerBlockingUri: 'at://...');
+      await tester.pumpApp(Material(child: ProfileHeader(profile: blockedProfile)));
+      expect(find.text('Blocked'), findsOneWidget);
+    });
   });
 }
