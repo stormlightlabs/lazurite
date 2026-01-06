@@ -5,6 +5,9 @@ import 'package:lazurite/src/infrastructure/db/daos/preference_sync_queue_dao.da
 import 'package:lazurite/src/infrastructure/db/daos/saved_feeds_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
+/// Duration after which permanently failed sync items are cleaned up.
+const Duration kSyncQueueCleanupAge = Duration(days: 30);
+
 /// Repository for managing feed generators.
 ///
 /// Handles syncing saved feeds from user preferences
@@ -439,17 +442,19 @@ class FeedRepository {
   /// Processes the offline preference sync queue.
   ///
   /// Attempts to re-apply any queued save/remove operations.
+  /// Items that have reached the maximum retry count ([kMaxSyncRetries]) are
+  /// skipped and left for cleanup.
   Future<void> processSyncQueue() async {
     if (!_api.isAuthenticated) return;
 
-    final pending = await _syncQueueDao.getPendingItems();
-    if (pending.isEmpty) {
+    final retryable = await _syncQueueDao.getRetryableItems();
+    if (retryable.isEmpty) {
       return;
     }
 
-    _logger.info('Processing ${pending.length} pending sync items');
+    _logger.info('Processing ${retryable.length} retryable sync items');
 
-    for (final item in pending) {
+    for (final item in retryable) {
       try {
         if (item.type == 'save') {
           final localFeed = await _dao.getFeed(item.feedUri);
@@ -462,15 +467,27 @@ class FeedRepository {
 
         await _syncQueueDao.deleteItem(item.id);
       } catch (e) {
-        _logger.error('Failed to process sync item ${item.id}', {'error': e});
+        _logger.error('Failed to process sync item ${item.id}', {
+          'error': e,
+          'retryCount': item.retryCount + 1,
+        });
+        await _syncQueueDao.incrementRetryCount(item.id);
       }
     }
   }
 
   /// Syncs everything on app resume or network restoration.
+  ///
+  /// Also cleans up permanently failed sync items older than 30 days.
   Future<void> syncOnResume() async {
     _logger.info('Performing resume sync');
     try {
+      final cleanupThreshold = DateTime.now().subtract(kSyncQueueCleanupAge);
+      final cleaned = await _syncQueueDao.cleanupOldFailedItems(cleanupThreshold);
+      if (cleaned > 0) {
+        _logger.info('Cleaned up $cleaned old failed sync items');
+      }
+
       await processSyncQueue();
       await syncPreferences();
       await refreshStaleMetadata();

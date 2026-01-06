@@ -30,7 +30,7 @@ Tasks:
             - wrap saveFeed/removeFeed in database transaction
             - ensure atomicity of local update + queue insert
 - [ ] Feed Sync Improvements (HIGH):
-      - [ ] Add sync queue retry limits:
+      - [x] Add sync queue retry limits:
             - add retryCount to PreferenceSyncQueue table
             - max 5 retries, then mark as permanently failed
             - cleanup failed items older than 30 days

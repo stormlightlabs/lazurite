@@ -1119,4 +1119,139 @@ void main() {
       expect(queueItems, isEmpty, reason: 'Queue should be empty after successful sync');
     });
   });
+
+  group('Sync Queue Retry Limits', () {
+    test('processSyncQueue increments retry count on failure', () async {
+      const feedUri = 'at://did:plc:test/app.bsky.feed.generator/retry-test';
+      final now = DateTime.now();
+
+      await db.preferenceSyncQueueDao.enqueue(
+        PreferenceSyncQueueCompanion.insert(type: 'save', feedUri: feedUri, createdAt: now),
+      );
+
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: feedUri,
+          displayName: 'Test Feed',
+          creatorDid: 'did:plc:test',
+          sortOrder: 0,
+          lastSynced: now,
+        ),
+      );
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenThrow(Exception('Network error'));
+
+      await repository.processSyncQueue();
+
+      final items = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(items.length, 1);
+      expect(items.first.retryCount, 1, reason: 'Retry count should be incremented');
+    });
+
+    test('processSyncQueue skips items at max retries', () async {
+      const feedUri = 'at://did:plc:test/app.bsky.feed.generator/maxed-out';
+      final now = DateTime.now();
+
+      await db
+          .into(db.preferenceSyncQueue)
+          .insert(
+            PreferenceSyncQueueCompanion.insert(
+              type: 'save',
+              feedUri: feedUri,
+              createdAt: now,
+              retryCount: const Value(5),
+            ),
+          );
+
+      await repository.processSyncQueue();
+
+      verifyNever(() => mockApi.call('app.bsky.actor.getPreferences'));
+
+      final items = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(items.length, 1);
+      expect(items.first.retryCount, 5, reason: 'Retry count should not change');
+    });
+
+    test('syncOnResume cleans up old failed items', () async {
+      final now = DateTime.now();
+
+      await db
+          .into(db.preferenceSyncQueue)
+          .insert(
+            PreferenceSyncQueueCompanion.insert(
+              type: 'save',
+              feedUri: 'at://did:plc:test/app.bsky.feed.generator/old-failed',
+              createdAt: now.subtract(const Duration(days: 45)),
+              retryCount: const Value(5),
+            ),
+          );
+
+      await db.preferenceSyncQueueDao.enqueue(
+        PreferenceSyncQueueCompanion.insert(
+          type: 'save',
+          feedUri: 'at://did:plc:test/app.bsky.feed.generator/recent',
+          createdAt: now,
+        ),
+      );
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenThrow(Exception('Network error'));
+
+      await repository.syncOnResume();
+
+      final items = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(items.length, 1);
+      expect(items.first.feedUri, 'at://did:plc:test/app.bsky.feed.generator/recent');
+    });
+
+    test('processSyncQueue processes only retryable items', () async {
+      final now = DateTime.now();
+
+      await db.preferenceSyncQueueDao.enqueue(
+        PreferenceSyncQueueCompanion.insert(
+          type: 'save',
+          feedUri: 'at://did:plc:ok/app.bsky.feed.generator/retryable',
+          createdAt: now,
+        ),
+      );
+
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: 'at://did:plc:ok/app.bsky.feed.generator/retryable',
+          displayName: 'Retryable Feed',
+          creatorDid: 'did:plc:ok',
+          sortOrder: 0,
+          lastSynced: now,
+        ),
+      );
+
+      await db
+          .into(db.preferenceSyncQueue)
+          .insert(
+            PreferenceSyncQueueCompanion.insert(
+              type: 'save',
+              feedUri: 'at://did:plc:fail/app.bsky.feed.generator/maxed',
+              createdAt: now,
+              retryCount: const Value(5),
+            ),
+          );
+
+      final currentPrefs = {'preferences': <Map<String, dynamic>>[]};
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => currentPrefs);
+      when(
+        () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
+      ).thenAnswer((_) async => {});
+
+      await repository.processSyncQueue();
+
+      final items = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(items.length, 1, reason: 'Only the maxed-out item should remain');
+      expect(items.first.feedUri, 'at://did:plc:fail/app.bsky.feed.generator/maxed');
+    });
+  });
 }
