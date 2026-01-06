@@ -20,7 +20,13 @@ void main() {
     mockApi = MockXrpcClient();
     db = AppDatabase(NativeDatabase.memory());
     mockLogger = MockLogger();
-    repository = FeedRepository(mockApi, db.savedFeedsDao, db.preferenceSyncQueueDao, mockLogger);
+    repository = FeedRepository(
+      mockApi,
+      db.savedFeedsDao,
+      db.preferenceSyncQueueDao,
+      db.profileDao,
+      mockLogger,
+    );
 
     when(() => mockApi.isAuthenticated).thenReturn(true);
   });

@@ -76,7 +76,7 @@ Tasks:
       - [x] Add search input debouncing:
             - 300ms debounce on text input
             - cancel in-flight requests on new input
-- [ ] Architecture & Code Quality (MEDIUM):
+- [x] Architecture & Code Quality (MEDIUM):
       - [x] Create unified post domain model:
             - consolidate SearchPostItem and FeedPost
             - shared Post model with adapters
@@ -89,7 +89,7 @@ Tasks:
             - typed models for API responses
             - safe navigation for nested JSON
             - reduce fragile metadata?['creator'] patterns
-      - [ ] Profile deduplication:
+      - [x] Profile deduplication:
             - profiles table as single source of truth
             - reference by DID across all features
       - [x] Replace debugPrint calls with appropriately leveled logging calls

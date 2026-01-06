@@ -48,7 +48,7 @@ final class FeedRepositoryProvider
   }
 }
 
-String _$feedRepositoryHash() => r'928fcbd50a2f3acebea59b6733d14a8fd28bf72f';
+String _$feedRepositoryHash() => r'2203b996ff1bcfe004d6e4f661090bf4f53bda1c';
 
 /// Notifier for watching all saved feeds reactively.
 

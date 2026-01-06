@@ -48,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -76,6 +76,25 @@ class AppDatabase extends _$AppDatabase {
       if (from < 9) {
         await m.createTable(searchCacheItems);
         await m.createTable(searchCacheCursors);
+      }
+      if (from < 10) {
+        await customStatement('PRAGMA foreign_keys = OFF');
+        await customStatement('ALTER TABLE posts RENAME TO posts_old');
+        await m.createTable(posts);
+        await customStatement(
+          'INSERT INTO posts (uri, cid, author_did, record, embed, indexed_at, reply_count, repost_count, like_count) '
+          'SELECT uri, cid, author_did, record, embed, indexed_at, reply_count, repost_count, like_count FROM posts_old',
+        );
+        await customStatement('DROP TABLE posts_old');
+
+        await customStatement('ALTER TABLE saved_feeds RENAME TO saved_feeds_old');
+        await m.createTable(savedFeeds);
+        await customStatement(
+          'INSERT INTO saved_feeds (uri, display_name, description, avatar, creator_did, like_count, sort_order, is_pinned, last_synced, local_updated_at) '
+          'SELECT uri, display_name, description, avatar, creator_did, like_count, sort_order, is_pinned, last_synced, local_updated_at FROM saved_feeds_old',
+        );
+        await customStatement('DROP TABLE saved_feeds_old');
+        await customStatement('PRAGMA foreign_keys = ON');
       }
     },
   );

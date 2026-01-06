@@ -4,8 +4,8 @@ part of 'search_cache_dao.dart';
 
 // ignore_for_file: type=lint
 mixin _$SearchCacheDaoMixin on DatabaseAccessor<AppDatabase> {
-  $PostsTable get posts => attachedDatabase.posts;
   $ProfilesTable get profiles => attachedDatabase.profiles;
+  $PostsTable get posts => attachedDatabase.posts;
   $SearchCacheItemsTable get searchCacheItems => attachedDatabase.searchCacheItems;
   $SearchCacheCursorsTable get searchCacheCursors => attachedDatabase.searchCacheCursors;
 }

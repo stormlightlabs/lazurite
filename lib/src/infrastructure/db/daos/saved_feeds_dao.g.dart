@@ -4,5 +4,6 @@ part of 'saved_feeds_dao.dart';
 
 // ignore_for_file: type=lint
 mixin _$SavedFeedsDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProfilesTable get profiles => attachedDatabase.profiles;
   $SavedFeedsTable get savedFeeds => attachedDatabase.savedFeeds;
 }

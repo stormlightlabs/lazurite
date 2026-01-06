@@ -3,7 +3,7 @@ import 'package:drift/drift.dart';
 class Posts extends Table {
   TextColumn get uri => text()();
   TextColumn get cid => text()();
-  TextColumn get authorDid => text()();
+  TextColumn get authorDid => text().references(Profiles, #did)();
   TextColumn get record => text()();
   TextColumn get embed => text().nullable()();
   DateTimeColumn get indexedAt => dateTime().nullable()();
@@ -135,7 +135,7 @@ class SavedFeeds extends Table {
   TextColumn get avatar => text().nullable()();
 
   /// DID of the feed creator.
-  TextColumn get creatorDid => text()();
+  TextColumn get creatorDid => text().references(Profiles, #did)();
 
   /// Number of likes the feed has received.
   IntColumn get likeCount => integer().withDefault(const Constant(0))();

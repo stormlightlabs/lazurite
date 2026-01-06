@@ -4,6 +4,7 @@ import 'package:lazurite/src/features/feeds/domain/feed_generator.dart';
 import 'package:lazurite/src/features/feeds/domain/saved_feeds_pref.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/preference_sync_queue_dao.dart';
+import 'package:lazurite/src/infrastructure/db/daos/profile_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/saved_feeds_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
@@ -16,11 +17,12 @@ const Duration kSyncQueueCleanupAge = Duration(days: 30);
 /// (app.bsky.actor.getPreferences) and enriching them with metadata
 /// from app.bsky.feed.getFeedGenerator.
 class FeedRepository {
-  FeedRepository(this._api, this._dao, this._syncQueueDao, this._logger);
+  FeedRepository(this._api, this._dao, this._syncQueueDao, this._profileDao, this._logger);
 
   final XrpcClient _api;
   final SavedFeedsDao _dao;
   final PreferenceSyncQueueDao _syncQueueDao;
+  final ProfileDao _profileDao;
   final Logger _logger;
 
   /// Validates that a feed URI follows the AT Protocol URI format.
@@ -189,6 +191,16 @@ class FeedRepository {
         _logger.debug('Adding new remote feed: $remoteUri');
         try {
           final metadata = await getFeedMetadata(remoteUri);
+
+          // Upsert creator profile first due to FK constraint
+          await _profileDao.upsertProfile(
+            ProfilesCompanion.insert(
+              did: metadata.creator.did,
+              handle: metadata.creator.handle,
+              // Add other profile fields if available from metadata.creator
+            ),
+          );
+
           feedsToInsert.add(
             SavedFeedsCompanion.insert(
               uri: remoteUri,
@@ -317,6 +329,11 @@ class FeedRepository {
       avatar = metadata.avatar;
       creatorDid = metadata.creator.did;
       likeCount = metadata.likeCount;
+
+      // Upsert creator profile first due to FK constraint
+      await _profileDao.upsertProfile(
+        ProfilesCompanion.insert(did: creatorDid, handle: metadata.creator.handle),
+      );
     } catch (e) {
       final existing = await _dao.getFeed(feedUri);
       if (existing != null) {
@@ -667,6 +684,11 @@ class FeedRepository {
     for (final feed in staleFeeds) {
       try {
         final metadata = await getFeedMetadata(feed.uri);
+
+        await _profileDao.upsertProfile(
+          ProfilesCompanion.insert(did: metadata.creator.did, handle: metadata.creator.handle),
+        );
+
         await _dao.upsertFeed(
           SavedFeedsCompanion.insert(
             uri: feed.uri,
@@ -689,8 +711,8 @@ class FeedRepository {
   /// Processes the offline preference sync queue.
   ///
   /// Attempts to re-apply any queued save/remove operations.
-  /// Items that have reached the maximum retry count ([kMaxSyncRetries]) are
-  /// skipped and left for cleanup.
+  /// Items that have reached the maximum retry count ([kMaxSyncRetries]) are skipped and left
+  /// for cleanup.
   Future<void> processSyncQueue() async {
     if (!_api.isAuthenticated) return;
 
