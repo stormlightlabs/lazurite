@@ -6922,6 +6922,258 @@ class LocalSettingsCompanion extends UpdateCompanion<LocalSetting> {
   }
 }
 
+class $BlueskyPreferencesTable extends BlueskyPreferences
+    with TableInfo<$BlueskyPreferencesTable, BlueskyPreference> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BlueskyPreferencesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataMeta = const VerificationMeta('data');
+  @override
+  late final GeneratedColumn<String> data = GeneratedColumn<String>(
+    'data',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastSyncedMeta = const VerificationMeta('lastSynced');
+  @override
+  late final GeneratedColumn<DateTime> lastSynced = GeneratedColumn<DateTime>(
+    'last_synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [type, data, lastSynced];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'bluesky_preferences';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BlueskyPreference> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('type')) {
+      context.handle(_typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('data')) {
+      context.handle(_dataMeta, this.data.isAcceptableOrUnknown(data['data']!, _dataMeta));
+    } else if (isInserting) {
+      context.missing(_dataMeta);
+    }
+    if (data.containsKey('last_synced')) {
+      context.handle(
+        _lastSyncedMeta,
+        lastSynced.isAcceptableOrUnknown(data['last_synced']!, _lastSyncedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lastSyncedMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {type};
+  @override
+  BlueskyPreference map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BlueskyPreference(
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      data: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data'],
+      )!,
+      lastSynced: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_synced'],
+      )!,
+    );
+  }
+
+  @override
+  $BlueskyPreferencesTable createAlias(String alias) {
+    return $BlueskyPreferencesTable(attachedDatabase, alias);
+  }
+}
+
+class BlueskyPreference extends DataClass implements Insertable<BlueskyPreference> {
+  /// The preference type identifier (e.g., 'contentLabel', 'adultContent').
+  final String type;
+
+  /// The preference data serialized as JSON.
+  final String data;
+
+  /// When this preference was last synced from the remote server.
+  final DateTime lastSynced;
+  const BlueskyPreference({required this.type, required this.data, required this.lastSynced});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['type'] = Variable<String>(type);
+    map['data'] = Variable<String>(data);
+    map['last_synced'] = Variable<DateTime>(lastSynced);
+    return map;
+  }
+
+  BlueskyPreferencesCompanion toCompanion(bool nullToAbsent) {
+    return BlueskyPreferencesCompanion(
+      type: Value(type),
+      data: Value(data),
+      lastSynced: Value(lastSynced),
+    );
+  }
+
+  factory BlueskyPreference.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BlueskyPreference(
+      type: serializer.fromJson<String>(json['type']),
+      data: serializer.fromJson<String>(json['data']),
+      lastSynced: serializer.fromJson<DateTime>(json['lastSynced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'type': serializer.toJson<String>(type),
+      'data': serializer.toJson<String>(data),
+      'lastSynced': serializer.toJson<DateTime>(lastSynced),
+    };
+  }
+
+  BlueskyPreference copyWith({String? type, String? data, DateTime? lastSynced}) =>
+      BlueskyPreference(
+        type: type ?? this.type,
+        data: data ?? this.data,
+        lastSynced: lastSynced ?? this.lastSynced,
+      );
+  BlueskyPreference copyWithCompanion(BlueskyPreferencesCompanion data) {
+    return BlueskyPreference(
+      type: data.type.present ? data.type.value : this.type,
+      data: data.data.present ? data.data.value : this.data,
+      lastSynced: data.lastSynced.present ? data.lastSynced.value : this.lastSynced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BlueskyPreference(')
+          ..write('type: $type, ')
+          ..write('data: $data, ')
+          ..write('lastSynced: $lastSynced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(type, data, lastSynced);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BlueskyPreference &&
+          other.type == this.type &&
+          other.data == this.data &&
+          other.lastSynced == this.lastSynced);
+}
+
+class BlueskyPreferencesCompanion extends UpdateCompanion<BlueskyPreference> {
+  final Value<String> type;
+  final Value<String> data;
+  final Value<DateTime> lastSynced;
+  final Value<int> rowid;
+  const BlueskyPreferencesCompanion({
+    this.type = const Value.absent(),
+    this.data = const Value.absent(),
+    this.lastSynced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BlueskyPreferencesCompanion.insert({
+    required String type,
+    required String data,
+    required DateTime lastSynced,
+    this.rowid = const Value.absent(),
+  }) : type = Value(type),
+       data = Value(data),
+       lastSynced = Value(lastSynced);
+  static Insertable<BlueskyPreference> custom({
+    Expression<String>? type,
+    Expression<String>? data,
+    Expression<DateTime>? lastSynced,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (type != null) 'type': type,
+      if (data != null) 'data': data,
+      if (lastSynced != null) 'last_synced': lastSynced,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BlueskyPreferencesCompanion copyWith({
+    Value<String>? type,
+    Value<String>? data,
+    Value<DateTime>? lastSynced,
+    Value<int>? rowid,
+  }) {
+    return BlueskyPreferencesCompanion(
+      type: type ?? this.type,
+      data: data ?? this.data,
+      lastSynced: lastSynced ?? this.lastSynced,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (data.present) {
+      map['data'] = Variable<String>(data.value);
+    }
+    if (lastSynced.present) {
+      map['last_synced'] = Variable<DateTime>(lastSynced.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BlueskyPreferencesCompanion(')
+          ..write('type: $type, ')
+          ..write('data: $data, ')
+          ..write('lastSynced: $lastSynced, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6941,6 +7193,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProfileRelationshipsTable profileRelationships = $ProfileRelationshipsTable(this);
   late final $PostInteractionsTable postInteractions = $PostInteractionsTable(this);
   late final $LocalSettingsTable localSettings = $LocalSettingsTable(this);
+  late final $BlueskyPreferencesTable blueskyPreferences = $BlueskyPreferencesTable(this);
   late final Index feedContentSortIdx = Index(
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
@@ -6964,6 +7217,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final DraftsDao draftsDao = DraftsDao(this as AppDatabase);
   late final PostInteractionsDao postInteractionsDao = PostInteractionsDao(this as AppDatabase);
   late final LocalSettingsDao localSettingsDao = LocalSettingsDao(this as AppDatabase);
+  late final BlueskyPreferencesDao blueskyPreferencesDao = BlueskyPreferencesDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6985,6 +7241,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     profileRelationships,
     postInteractions,
     localSettings,
+    blueskyPreferences,
     feedContentSortIdx,
     searchCacheSortIdx,
   ];
@@ -11500,6 +11757,155 @@ typedef $$LocalSettingsTableProcessedTableManager =
       LocalSetting,
       PrefetchHooks Function()
     >;
+typedef $$BlueskyPreferencesTableCreateCompanionBuilder =
+    BlueskyPreferencesCompanion Function({
+      required String type,
+      required String data,
+      required DateTime lastSynced,
+      Value<int> rowid,
+    });
+typedef $$BlueskyPreferencesTableUpdateCompanionBuilder =
+    BlueskyPreferencesCompanion Function({
+      Value<String> type,
+      Value<String> data,
+      Value<DateTime> lastSynced,
+      Value<int> rowid,
+    });
+
+class $$BlueskyPreferencesTableFilterComposer
+    extends Composer<_$AppDatabase, $BlueskyPreferencesTable> {
+  $$BlueskyPreferencesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastSynced =>
+      $composableBuilder(column: $table.lastSynced, builder: (column) => ColumnFilters(column));
+}
+
+class $$BlueskyPreferencesTableOrderingComposer
+    extends Composer<_$AppDatabase, $BlueskyPreferencesTable> {
+  $$BlueskyPreferencesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastSynced =>
+      $composableBuilder(column: $table.lastSynced, builder: (column) => ColumnOrderings(column));
+}
+
+class $$BlueskyPreferencesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BlueskyPreferencesTable> {
+  $$BlueskyPreferencesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastSynced =>
+      $composableBuilder(column: $table.lastSynced, builder: (column) => column);
+}
+
+class $$BlueskyPreferencesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BlueskyPreferencesTable,
+          BlueskyPreference,
+          $$BlueskyPreferencesTableFilterComposer,
+          $$BlueskyPreferencesTableOrderingComposer,
+          $$BlueskyPreferencesTableAnnotationComposer,
+          $$BlueskyPreferencesTableCreateCompanionBuilder,
+          $$BlueskyPreferencesTableUpdateCompanionBuilder,
+          (
+            BlueskyPreference,
+            BaseReferences<_$AppDatabase, $BlueskyPreferencesTable, BlueskyPreference>,
+          ),
+          BlueskyPreference,
+          PrefetchHooks Function()
+        > {
+  $$BlueskyPreferencesTableTableManager(_$AppDatabase db, $BlueskyPreferencesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BlueskyPreferencesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BlueskyPreferencesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BlueskyPreferencesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> type = const Value.absent(),
+                Value<String> data = const Value.absent(),
+                Value<DateTime> lastSynced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BlueskyPreferencesCompanion(
+                type: type,
+                data: data,
+                lastSynced: lastSynced,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String type,
+                required String data,
+                required DateTime lastSynced,
+                Value<int> rowid = const Value.absent(),
+              }) => BlueskyPreferencesCompanion.insert(
+                type: type,
+                data: data,
+                lastSynced: lastSynced,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BlueskyPreferencesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BlueskyPreferencesTable,
+      BlueskyPreference,
+      $$BlueskyPreferencesTableFilterComposer,
+      $$BlueskyPreferencesTableOrderingComposer,
+      $$BlueskyPreferencesTableAnnotationComposer,
+      $$BlueskyPreferencesTableCreateCompanionBuilder,
+      $$BlueskyPreferencesTableUpdateCompanionBuilder,
+      (
+        BlueskyPreference,
+        BaseReferences<_$AppDatabase, $BlueskyPreferencesTable, BlueskyPreference>,
+      ),
+      BlueskyPreference,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11531,4 +11937,6 @@ class $AppDatabaseManager {
       $$PostInteractionsTableTableManager(_db, _db.postInteractions);
   $$LocalSettingsTableTableManager get localSettings =>
       $$LocalSettingsTableTableManager(_db, _db.localSettings);
+  $$BlueskyPreferencesTableTableManager get blueskyPreferences =>
+      $$BlueskyPreferencesTableTableManager(_db, _db.blueskyPreferences);
 }

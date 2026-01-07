@@ -52,14 +52,16 @@ class _ReportDialogState extends State<ReportDialog> {
                 });
               },
               child: Column(
-                children: ReportReason.values.map(
-                  (reason) => RadioListTile<ReportReason>(
-                    title: Text(reason.label),
-                    value: reason,
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                  ),
-                ).toList(),
+                children: ReportReason.values
+                    .map(
+                      (reason) => RadioListTile<ReportReason>(
+                        title: Text(reason.label),
+                        value: reason,
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                      ),
+                    )
+                    .toList(),
               ),
             ),
             const SizedBox(height: 16),

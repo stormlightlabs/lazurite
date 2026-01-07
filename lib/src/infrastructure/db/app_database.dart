@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'daos/bluesky_preferences_dao.dart';
 import 'daos/drafts_dao.dart';
 import 'daos/feed_content_dao.dart';
 import 'daos/follows_dao.dart';
@@ -38,6 +39,7 @@ part 'app_database.g.dart';
     ProfileRelationships,
     PostInteractions,
     LocalSettings,
+    BlueskyPreferences,
   ],
   daos: [
     FeedContentDao,
@@ -51,6 +53,7 @@ part 'app_database.g.dart';
     DraftsDao,
     PostInteractionsDao,
     LocalSettingsDao,
+    BlueskyPreferencesDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {

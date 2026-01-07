@@ -1,0 +1,310 @@
+import '../../core/utils/logger.dart';
+import '../../features/settings/domain/bluesky_preferences.dart';
+import '../db/daos/bluesky_preferences_dao.dart';
+import '../network/xrpc_client.dart';
+
+/// Repository for managing Bluesky account preferences.
+///
+/// Handles syncing preferences from the remote server and provides
+/// typed access to content moderation, feed/thread view, and muted
+/// word settings.
+class BlueskyPreferencesRepository {
+  BlueskyPreferencesRepository(this._api, this._dao, this._logger);
+
+  final XrpcClient _api;
+  final BlueskyPreferencesDao _dao;
+  final Logger _logger;
+
+  // ----- Sync Operations -----
+
+  /// Syncs all preferences from the remote Bluesky server.
+  ///
+  /// Fetches via app.bsky.actor.getPreferences, parses each preference
+  /// by its $type, and stores in the local database.
+  ///
+  /// For unauthenticated users, this is a no-op.
+  Future<void> syncPreferencesFromRemote() async {
+    if (!_api.isAuthenticated) {
+      _logger.debug('Skipping preference sync for unauthenticated user');
+      return;
+    }
+
+    _logger.info('Syncing Bluesky preferences from remote');
+
+    try {
+      final response = await _api.call('app.bsky.actor.getPreferences');
+      final prefsJson = response['preferences'] as List<dynamic>?;
+
+      if (prefsJson == null) {
+        _logger.warning('Preferences response missing preferences array');
+        return;
+      }
+
+      final now = DateTime.now();
+
+      // Parse and store each preference type
+      final contentLabels = <Map<String, dynamic>>[];
+      AdultContentPref? adultContent;
+      LabelersPref? labelers;
+      FeedViewPref? feedView;
+      ThreadViewPref? threadView;
+      MutedWordsPref? mutedWords;
+
+      for (final pref in prefsJson) {
+        if (pref is! Map<String, dynamic>) continue;
+
+        final type = pref[r'$type'] as String?;
+        if (type == null) continue;
+
+        try {
+          switch (type) {
+            case BlueskyPreferenceTypes.adultContent:
+              adultContent = AdultContentPref.fromJson(pref);
+            case BlueskyPreferenceTypes.contentLabel:
+              contentLabels.add(pref);
+            case BlueskyPreferenceTypes.labelers:
+              labelers = LabelersPref.fromJson(pref);
+            case BlueskyPreferenceTypes.feedView:
+              feedView = FeedViewPref.fromJson(pref);
+            case BlueskyPreferenceTypes.threadView:
+              threadView = ThreadViewPref.fromJson(pref);
+            case BlueskyPreferenceTypes.mutedWords:
+              mutedWords = MutedWordsPref.fromJson(pref);
+          }
+        } catch (e) {
+          _logger.warning('Failed to parse preference type $type', {'error': e.toString()});
+        }
+      }
+
+      // Store parsed preferences
+      if (adultContent != null) {
+        await _dao.upsertPreference(
+          type: 'adultContent',
+          data: adultContent.toStoredJson(),
+          lastSynced: now,
+        );
+      }
+
+      if (contentLabels.isNotEmpty) {
+        final prefs = ContentLabelPrefs.fromJsonList(contentLabels);
+        await _dao.upsertPreference(
+          type: 'contentLabels',
+          data: prefs.toStoredJson(),
+          lastSynced: now,
+        );
+      }
+
+      if (labelers != null) {
+        await _dao.upsertPreference(
+          type: 'labelers',
+          data: labelers.toStoredJson(),
+          lastSynced: now,
+        );
+      }
+
+      if (feedView != null) {
+        await _dao.upsertPreference(
+          type: 'feedView',
+          data: feedView.toStoredJson(),
+          lastSynced: now,
+        );
+      }
+
+      if (threadView != null) {
+        await _dao.upsertPreference(
+          type: 'threadView',
+          data: threadView.toStoredJson(),
+          lastSynced: now,
+        );
+      }
+
+      if (mutedWords != null) {
+        await _dao.upsertPreference(
+          type: 'mutedWords',
+          data: mutedWords.toStoredJson(),
+          lastSynced: now,
+        );
+      }
+
+      _logger.info('Successfully synced Bluesky preferences');
+    } catch (e, stack) {
+      _logger.error('Failed to sync preferences', {
+        'error': e.toString(),
+        'stack': stack.toString(),
+      });
+      rethrow;
+    }
+  }
+
+  // ----- Adult Content -----
+
+  /// Gets the adult content preference.
+  Future<AdultContentPref> getAdultContentPref() async {
+    final row = await _dao.getPreferenceByType('adultContent');
+    if (row == null) return const AdultContentPref(enabled: false);
+    try {
+      return AdultContentPref.fromStoredJson(row.data);
+    } catch (e) {
+      _logger.warning('Failed to parse adult content pref', {'error': e});
+      return const AdultContentPref(enabled: false);
+    }
+  }
+
+  /// Watches the adult content preference for changes.
+  Stream<AdultContentPref> watchAdultContentPref() {
+    return _dao.watchPreferenceByType('adultContent').map((row) {
+      if (row == null) return const AdultContentPref(enabled: false);
+      try {
+        return AdultContentPref.fromStoredJson(row.data);
+      } catch (e) {
+        _logger.warning('Failed to parse adult content pref', {'error': e});
+        return const AdultContentPref(enabled: false);
+      }
+    });
+  }
+
+  // ----- Content Labels -----
+
+  /// Gets all content label preferences.
+  Future<ContentLabelPrefs> getContentLabelPrefs() async {
+    final row = await _dao.getPreferenceByType('contentLabels');
+    if (row == null) return ContentLabelPrefs.empty;
+    try {
+      return ContentLabelPrefs.fromStoredJson(row.data);
+    } catch (e) {
+      _logger.warning('Failed to parse content label prefs', {'error': e});
+      return ContentLabelPrefs.empty;
+    }
+  }
+
+  /// Watches content label preferences for changes.
+  Stream<ContentLabelPrefs> watchContentLabelPrefs() {
+    return _dao.watchPreferenceByType('contentLabels').map((row) {
+      if (row == null) return ContentLabelPrefs.empty;
+      try {
+        return ContentLabelPrefs.fromStoredJson(row.data);
+      } catch (e) {
+        _logger.warning('Failed to parse content label prefs', {'error': e});
+        return ContentLabelPrefs.empty;
+      }
+    });
+  }
+
+  // ----- Labelers -----
+
+  /// Gets the labelers preference.
+  Future<LabelersPref> getLabelersPref() async {
+    final row = await _dao.getPreferenceByType('labelers');
+    if (row == null) return LabelersPref.empty;
+    try {
+      return LabelersPref.fromStoredJson(row.data);
+    } catch (e) {
+      _logger.warning('Failed to parse labelers pref', {'error': e});
+      return LabelersPref.empty;
+    }
+  }
+
+  /// Watches the labelers preference for changes.
+  Stream<LabelersPref> watchLabelersPref() {
+    return _dao.watchPreferenceByType('labelers').map((row) {
+      if (row == null) return LabelersPref.empty;
+      try {
+        return LabelersPref.fromStoredJson(row.data);
+      } catch (e) {
+        _logger.warning('Failed to parse labelers pref', {'error': e});
+        return LabelersPref.empty;
+      }
+    });
+  }
+
+  // ----- Feed View -----
+
+  /// Gets the feed view preference.
+  Future<FeedViewPref> getFeedViewPref() async {
+    final row = await _dao.getPreferenceByType('feedView');
+    if (row == null) return FeedViewPref.defaultPref;
+    try {
+      return FeedViewPref.fromStoredJson(row.data);
+    } catch (e) {
+      _logger.warning('Failed to parse feed view pref', {'error': e});
+      return FeedViewPref.defaultPref;
+    }
+  }
+
+  /// Watches the feed view preference for changes.
+  Stream<FeedViewPref> watchFeedViewPref() {
+    return _dao.watchPreferenceByType('feedView').map((row) {
+      if (row == null) return FeedViewPref.defaultPref;
+      try {
+        return FeedViewPref.fromStoredJson(row.data);
+      } catch (e) {
+        _logger.warning('Failed to parse feed view pref', {'error': e});
+        return FeedViewPref.defaultPref;
+      }
+    });
+  }
+
+  // ----- Thread View -----
+
+  /// Gets the thread view preference.
+  Future<ThreadViewPref> getThreadViewPref() async {
+    final row = await _dao.getPreferenceByType('threadView');
+    if (row == null) return ThreadViewPref.defaultPref;
+    try {
+      return ThreadViewPref.fromStoredJson(row.data);
+    } catch (e) {
+      _logger.warning('Failed to parse thread view pref', {'error': e});
+      return ThreadViewPref.defaultPref;
+    }
+  }
+
+  /// Watches the thread view preference for changes.
+  Stream<ThreadViewPref> watchThreadViewPref() {
+    return _dao.watchPreferenceByType('threadView').map((row) {
+      if (row == null) return ThreadViewPref.defaultPref;
+      try {
+        return ThreadViewPref.fromStoredJson(row.data);
+      } catch (e) {
+        _logger.warning('Failed to parse thread view pref', {'error': e});
+        return ThreadViewPref.defaultPref;
+      }
+    });
+  }
+
+  // ----- Muted Words -----
+
+  /// Gets the muted words preference.
+  Future<MutedWordsPref> getMutedWordsPref() async {
+    final row = await _dao.getPreferenceByType('mutedWords');
+    if (row == null) return MutedWordsPref.empty;
+    try {
+      return MutedWordsPref.fromStoredJson(row.data);
+    } catch (e) {
+      _logger.warning('Failed to parse muted words pref', {'error': e});
+      return MutedWordsPref.empty;
+    }
+  }
+
+  /// Watches the muted words preference for changes.
+  Stream<MutedWordsPref> watchMutedWordsPref() {
+    return _dao.watchPreferenceByType('mutedWords').map((row) {
+      if (row == null) return MutedWordsPref.empty;
+      try {
+        return MutedWordsPref.fromStoredJson(row.data);
+      } catch (e) {
+        _logger.warning('Failed to parse muted words pref', {'error': e});
+        return MutedWordsPref.empty;
+      }
+    });
+  }
+
+  // ----- Utility -----
+
+  /// Clears all cached preferences.
+  ///
+  /// Useful when signing out.
+  Future<void> clearAll() async {
+    _logger.info('Clearing all Bluesky preferences');
+    await _dao.clearAll();
+  }
+}

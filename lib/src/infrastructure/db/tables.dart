@@ -304,3 +304,22 @@ class LocalSettings extends Table {
   @override
   Set<Column> get primaryKey => {key};
 }
+
+/// Stores Bluesky account preferences synced from the remote server.
+///
+/// Each preference type is stored as a JSON blob, keyed by its AT Protocol
+/// $type identifier. This enables caching content moderation, labeler, feed
+/// view, thread view, and muted word preferences locally.
+class BlueskyPreferences extends Table {
+  /// The preference type identifier (e.g., 'contentLabel', 'adultContent').
+  TextColumn get type => text()();
+
+  /// The preference data serialized as JSON.
+  TextColumn get data => text()();
+
+  /// When this preference was last synced from the remote server.
+  DateTimeColumn get lastSynced => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {type};
+}

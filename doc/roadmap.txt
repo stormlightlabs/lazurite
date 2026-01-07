@@ -265,17 +265,24 @@ Tasks:
             - export theme JSON button
       - [ ] Build AboutScreen:
             - app info (name, version, build number)
-            - links (website, GitHub, bug reports, features)
+            - links (website, GitHub, Tangled, bug reports)
+                  - https://lazurite.stormlightlabs.org
+                  - https://github.com/stormlightlabs/lazurite
+                  - https://tangled.org/desertthunder.dev/lazurite
+                  - https://tangled.org/desertthunder.dev/lazurite/issues
             - credits and attributions
-            - legal (licenses, privacy, terms)
+                  - Bluesky
+                  - Flutter
+                  - Attributions in README.md
+            - legal (licenses, privacy, terms) - leave stubs
             - tap version to copy
 - [ ] Phase 2 - Bluesky Preferences Infrastructure (HIGH):
-      - [ ] Create BlueskyPreferences table and DAO:
+      - [x] Create BlueskyPreferences table and DAO:
             - generic table with type + data (JSON) + lastSynced
-      - [ ] Create domain models for preference types:
+      - [x] Create domain models for preference types:
             - ContentLabelPref, LabelersPref, AdultContentPref
             - FeedViewPref, ThreadViewPref, MutedWordsPref
-      - [ ] Create BlueskyPreferencesRepository:
+      - [x] Create BlueskyPreferencesRepository:
             - fetch via getPreferences, parse by $type
             - update via putPreferences (send complete pref array)
             - queue failed updates in PreferenceSyncQueue
