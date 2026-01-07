@@ -75,8 +75,8 @@ Tasks:
 - [ ] Build preview widgets:
       - ThemePreviewCard: mini Home feed + nav bar rendering
       - Shows visual hierarchy at a glance
-- [ ] Add "Export theme JSON" button (prepare for T6 import/export)
-- [ ] Optional: Desktop-only ThemeInspectorPane with role inspector
+- [ ] Add "Export theme JSON" button (prepare for import/export)
+- [ ] Desktop-only ThemeInspectorPane with role inspector
 
 Deliverables:
 - User can see theme differences before applying

@@ -89,3 +89,63 @@ final class GoRouterProvider extends $FunctionalProvider<GoRouter, GoRouter, GoR
 }
 
 String _$goRouterHash() => r'0f11f06525444b252219f9683a0bddc514a3daa3';
+
+/// Provides the local preferences repository for managing on-device settings.
+///
+/// This repository handles local app preferences that don't sync with Bluesky,
+/// such as theme mode, font scale, and other UI preferences.
+
+@ProviderFor(localPreferencesRepository)
+final localPreferencesRepositoryProvider = LocalPreferencesRepositoryProvider._();
+
+/// Provides the local preferences repository for managing on-device settings.
+///
+/// This repository handles local app preferences that don't sync with Bluesky,
+/// such as theme mode, font scale, and other UI preferences.
+
+final class LocalPreferencesRepositoryProvider
+    extends
+        $FunctionalProvider<
+          LocalPreferencesRepository,
+          LocalPreferencesRepository,
+          LocalPreferencesRepository
+        >
+    with $Provider<LocalPreferencesRepository> {
+  /// Provides the local preferences repository for managing on-device settings.
+  ///
+  /// This repository handles local app preferences that don't sync with Bluesky,
+  /// such as theme mode, font scale, and other UI preferences.
+  LocalPreferencesRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'localPreferencesRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$localPreferencesRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<LocalPreferencesRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  LocalPreferencesRepository create(Ref ref) {
+    return localPreferencesRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(LocalPreferencesRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<LocalPreferencesRepository>(value),
+    );
+  }
+}
+
+String _$localPreferencesRepositoryHash() => r'22a9fb73d3a0501795ddaf0165efa12512fac8a7';

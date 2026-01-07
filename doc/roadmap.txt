@@ -253,8 +253,8 @@ Tasks:
             - load persisted theme on app start
             - support system theme option with brightness detection
             - save changes to database
-      - [ ] Create LocalPreferencesRepository
-      - [ ] Build main SettingsScreen:
+      - [x] Create LocalPreferencesRepository
+      - [x] Build main SettingsScreen:
             - Account section (authenticated only)
             - Appearance section
             - App section
