@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/feeds/domain/feed_generator.dart';
+import 'package:lazurite/src/features/feeds/domain/list_view.dart';
 import 'package:lazurite/src/features/feeds/domain/saved_feeds_pref.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/preference_sync_queue_dao.dart';
@@ -173,15 +174,52 @@ class FeedRepository {
       final remoteUri = remoteSavedUris[i];
       final remoteIsPinned = remotePinnedUris.contains(remoteUri);
 
-      // TODO: implement special feeds like "following" and unsupported types
       if (!remoteUri.startsWith('at://')) {
-        _logger.debug('Skipping non-at-uri feed: $remoteUri');
-        continue;
-      }
+        _logger.debug('Processing special feed: $remoteUri');
+        final local = localFeeds.where((f) => f.uri == remoteUri).firstOrNull;
 
-      // TODO: implement lists for (they need different API endpoint)
-      if (remoteUri.contains('/app.bsky.graph.list/')) {
-        _logger.debug('Skipping list (not yet supported): $remoteUri');
+        if (local == null) {
+          _logger.debug('Adding new special feed: $remoteUri');
+          feedsToInsert.add(
+            SavedFeedsCompanion.insert(
+              uri: remoteUri,
+              displayName: _getSpecialFeedDisplayName(remoteUri),
+              description: Value(_getSpecialFeedDescription(remoteUri)),
+              avatar: const Value(null),
+              creatorDid: '',
+              likeCount: const Value(0),
+              sortOrder: i,
+              isPinned: Value(remoteIsPinned),
+              lastSynced: now,
+              localUpdatedAt: const Value(null),
+            ),
+          );
+        } else if (local.localUpdatedAt == null) {
+          _logger.debug('Accepting remote state for special feed: $remoteUri');
+          feedsToUpdate.add(
+            _FeedUpdate(
+              uri: remoteUri,
+              sortOrder: i,
+              isPinned: remoteIsPinned,
+              lastSynced: now,
+              clearLocalUpdatedAt: true,
+            ),
+          );
+        } else if (local.localUpdatedAt!.isAfter(local.lastSynced)) {
+          _logger.debug('Local is newer for special feed: $remoteUri');
+          feedsToSyncToRemote.add(remoteUri);
+        } else {
+          _logger.debug('Remote is newer for special feed: $remoteUri');
+          feedsToUpdate.add(
+            _FeedUpdate(
+              uri: remoteUri,
+              sortOrder: i,
+              isPinned: remoteIsPinned,
+              lastSynced: now,
+              clearLocalUpdatedAt: true,
+            ),
+          );
+        }
         continue;
       }
 
@@ -190,26 +228,52 @@ class FeedRepository {
       if (local == null) {
         _logger.debug('Adding new remote feed: $remoteUri');
         try {
-          final metadata = await getFeedMetadata(remoteUri);
+          if (remoteUri.contains('/app.bsky.graph.list/')) {
+            final listMetadata = await getListMetadata(remoteUri);
 
-          await _profileDao.upsertProfile(
-            ProfilesCompanion.insert(did: metadata.creator.did, handle: metadata.creator.handle),
-          );
+            await _profileDao.upsertProfile(
+              ProfilesCompanion.insert(
+                did: listMetadata.creator.did,
+                handle: listMetadata.creator.handle,
+              ),
+            );
 
-          feedsToInsert.add(
-            SavedFeedsCompanion.insert(
-              uri: remoteUri,
-              displayName: metadata.displayName,
-              description: Value(metadata.description),
-              avatar: Value(metadata.avatar),
-              creatorDid: metadata.creator.did,
-              likeCount: Value(metadata.likeCount ?? 0),
-              sortOrder: i,
-              isPinned: Value(remoteIsPinned),
-              lastSynced: now,
-              localUpdatedAt: const Value(null),
-            ),
-          );
+            feedsToInsert.add(
+              SavedFeedsCompanion.insert(
+                uri: remoteUri,
+                displayName: listMetadata.name,
+                description: Value(listMetadata.description),
+                avatar: Value(listMetadata.avatar),
+                creatorDid: listMetadata.creator.did,
+                likeCount: Value(listMetadata.listItemCount ?? 0),
+                sortOrder: i,
+                isPinned: Value(remoteIsPinned),
+                lastSynced: now,
+                localUpdatedAt: const Value(null),
+              ),
+            );
+          } else {
+            final metadata = await getFeedMetadata(remoteUri);
+
+            await _profileDao.upsertProfile(
+              ProfilesCompanion.insert(did: metadata.creator.did, handle: metadata.creator.handle),
+            );
+
+            feedsToInsert.add(
+              SavedFeedsCompanion.insert(
+                uri: remoteUri,
+                displayName: metadata.displayName,
+                description: Value(metadata.description),
+                avatar: Value(metadata.avatar),
+                creatorDid: metadata.creator.did,
+                likeCount: Value(metadata.likeCount ?? 0),
+                sortOrder: i,
+                isPinned: Value(remoteIsPinned),
+                lastSynced: now,
+                localUpdatedAt: const Value(null),
+              ),
+            );
+          }
         } catch (e) {
           _logger.error('Failed to fetch metadata for $remoteUri', {'error': e});
         }
@@ -666,10 +730,60 @@ class FeedRepository {
     }
   }
 
+  /// Gets metadata for a specific list.
+  ///
+  /// Calls app.bsky.graph.getList with the list URI.
+  /// Returns the list metadata including name, description, avatar, creator,
+  /// and listItemCount.
+  ///
+  /// Throws [FormatException] if the API response has an invalid structure.
+  Future<ListView> getListMetadata(String listUri) async {
+    _logger.debug('Fetching list metadata', {'uri': listUri});
+
+    try {
+      final response = await _api.call('app.bsky.graph.getList', params: {'list': listUri});
+
+      final listJson = response['list'];
+      if (listJson is! Map<String, dynamic>) {
+        throw FormatException('Invalid list metadata response: list must be a Map', response);
+      }
+
+      return ListView.fromJson(listJson);
+    } catch (e) {
+      _logger.error('Failed to fetch list metadata', {'uri': listUri, 'error': e});
+      rethrow;
+    }
+  }
+
+  /// Returns display name for special feeds (non-at:// URIs).
+  String _getSpecialFeedDisplayName(String feedUri) {
+    switch (feedUri) {
+      case 'following':
+        return 'Following';
+      case 'timeline':
+        return 'Home';
+      default:
+        return feedUri;
+    }
+  }
+
+  /// Returns description for special feeds (non-at:// URIs).
+  String _getSpecialFeedDescription(String feedUri) {
+    switch (feedUri) {
+      case 'following':
+        return 'Posts from people you follow';
+      case 'timeline':
+        return 'Your home timeline';
+      default:
+        return 'Special feed: $feedUri';
+    }
+  }
+
   /// Refreshes stale feed metadata.
   ///
   /// Finds feeds with lastSynced older than 24 hours and updates their
-  /// metadata from app.bsky.feed.getFeedGenerator.
+  /// metadata from appropriate API endpoints (getFeedGenerator for feed generators,
+  /// getList for lists). Special feeds (non-at:// URIs) are skipped.
   Future<void> refreshStaleMetadata() async {
     if (!_api.isAuthenticated) return;
 
@@ -685,25 +799,55 @@ class FeedRepository {
 
     for (final feed in staleFeeds) {
       try {
-        final metadata = await getFeedMetadata(feed.uri);
+        if (!feed.uri.startsWith('at://')) {
+          _logger.debug('Skipping special feed refresh: ${feed.uri}');
+          continue;
+        }
 
-        await _profileDao.upsertProfile(
-          ProfilesCompanion.insert(did: metadata.creator.did, handle: metadata.creator.handle),
-        );
+        if (feed.uri.contains('/app.bsky.graph.list/')) {
+          final listMetadata = await getListMetadata(feed.uri);
 
-        await _dao.upsertFeed(
-          SavedFeedsCompanion.insert(
-            uri: feed.uri,
-            displayName: metadata.displayName,
-            description: Value(metadata.description),
-            avatar: Value(metadata.avatar),
-            creatorDid: metadata.creator.did,
-            likeCount: Value(metadata.likeCount ?? 0),
-            sortOrder: feed.sortOrder,
-            isPinned: Value(feed.isPinned),
-            lastSynced: DateTime.now(),
-          ),
-        );
+          await _profileDao.upsertProfile(
+            ProfilesCompanion.insert(
+              did: listMetadata.creator.did,
+              handle: listMetadata.creator.handle,
+            ),
+          );
+
+          await _dao.upsertFeed(
+            SavedFeedsCompanion.insert(
+              uri: feed.uri,
+              displayName: listMetadata.name,
+              description: Value(listMetadata.description),
+              avatar: Value(listMetadata.avatar),
+              creatorDid: listMetadata.creator.did,
+              likeCount: Value(listMetadata.listItemCount ?? 0),
+              sortOrder: feed.sortOrder,
+              isPinned: Value(feed.isPinned),
+              lastSynced: DateTime.now(),
+            ),
+          );
+        } else {
+          final metadata = await getFeedMetadata(feed.uri);
+
+          await _profileDao.upsertProfile(
+            ProfilesCompanion.insert(did: metadata.creator.did, handle: metadata.creator.handle),
+          );
+
+          await _dao.upsertFeed(
+            SavedFeedsCompanion.insert(
+              uri: feed.uri,
+              displayName: metadata.displayName,
+              description: Value(metadata.description),
+              avatar: Value(metadata.avatar),
+              creatorDid: metadata.creator.did,
+              likeCount: Value(metadata.likeCount ?? 0),
+              sortOrder: feed.sortOrder,
+              isPinned: Value(feed.isPinned),
+              lastSynced: DateTime.now(),
+            ),
+          );
+        }
       } catch (e) {
         _logger.error('Failed to refresh metadata for feed ${feed.uri}', {'error': e});
       }
