@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_notifier.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
@@ -8,9 +7,7 @@ import 'package:lazurite/src/features/feeds/infrastructure/feed_content_reposito
 import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockFeedContentRepository extends Mock implements FeedContentRepository {}
-
-class MockLogger extends Mock implements Logger {}
+import '../../../../helpers/mocks.dart';
 
 void main() {
   late MockFeedContentRepository mockRepository;

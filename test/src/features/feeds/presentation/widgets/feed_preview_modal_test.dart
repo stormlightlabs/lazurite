@@ -3,16 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
-import 'package:lazurite/src/features/feeds/infrastructure/feed_content_repository.dart';
-import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/feed_preview_modal.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart'; // For Post, Profile classes
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockFeedRepository extends Mock implements FeedRepository {}
-
-class MockFeedContentRepository extends Mock implements FeedContentRepository {}
+import '../../../../../helpers/mocks.dart';
 
 void main() {
   late MockFeedRepository mockFeedRepository;

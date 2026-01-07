@@ -3,10 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
-import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockSessionStorage extends Mock implements SessionStorage {}
+import '../../../helpers/mocks.dart';
 
 void main() {
   late MockSessionStorage mockSessionStorage;

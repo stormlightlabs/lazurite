@@ -8,7 +8,7 @@ import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart'
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockFeedRepository extends Mock implements FeedRepository {}
+import '../../../../helpers/mocks.dart';
 
 void main() {
   late MockFeedRepository mockRepository;

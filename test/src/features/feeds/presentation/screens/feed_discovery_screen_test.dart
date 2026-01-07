@@ -3,20 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
-import 'package:lazurite/src/features/feeds/infrastructure/feed_content_repository.dart';
-import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/feed_preview_modal.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockFeedRepository extends Mock implements FeedRepository {}
-
-class MockFeedContentRepository extends Mock implements FeedContentRepository {}
-
-class MockPinnedFeedsNotifier extends Mock implements PinnedFeedsNotifier {
-  @override
-  Stream<List<SavedFeedData>> build() => Stream.value([]);
-}
+import '../../../../../helpers/mocks.dart';
 
 void main() {
   testWidgets('FeedDiscoveryScreen displays trending feeds and allows saving', (tester) async {

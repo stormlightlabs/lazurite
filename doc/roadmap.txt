@@ -276,7 +276,7 @@ Tasks:
                   - Attributions in README.md
             - legal (licenses, privacy, terms) - leave stubs
             - tap version to copy
-- [ ] Phase 2 - Bluesky Preferences Infrastructure (HIGH):
+- [x] Phase 2 - Bluesky Preferences Infrastructure (HIGH):
       - [x] Create BlueskyPreferences table and DAO:
             - generic table with type + data (JSON) + lastSynced
       - [x] Create domain models for preference types:

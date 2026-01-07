@@ -2,43 +2,17 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jose/jose.dart';
-import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/core/identity/did_document.dart';
-import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/auth/auth_repository.dart';
 import 'package:lazurite/src/infrastructure/auth/dpop_utils.dart';
 import 'package:lazurite/src/infrastructure/auth/oauth_client.dart';
 import 'package:lazurite/src/infrastructure/auth/server_metadata.dart';
-import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/identity/identity_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockLogger extends Mock implements Logger {}
-
-class MockDio extends Mock implements Dio {}
-
-class MockFlutterSecureStorage extends Mock implements FlutterSecureStorage {}
-
-class MockSessionStorage extends Mock implements SessionStorage {}
-
-class MockOAuthClient extends Mock implements OAuthClient {}
-
-class MockIdentityRepository extends Mock implements IdentityRepository {}
-
-class MockServerMetadataRepository extends Mock implements ServerMetadataRepository {}
-
-/// Fake JsonWebKey for testing
-class FakeJsonWebKey extends Fake implements JsonWebKey {
-  @override
-  Map<String, dynamic> toJson() => {'kty': 'EC', 'crv': 'P-256', 'x': 'x', 'y': 'y', 'd': 'd'};
-}
-
-class FakeSession extends Fake implements Session {}
-
-class FakeServerMetadata extends Fake implements ServerMetadata {}
+import '../../../helpers/mocks.dart';
 
 void main() {
   setUpAll(() {

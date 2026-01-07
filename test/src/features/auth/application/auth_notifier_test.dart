@@ -3,13 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
-import 'package:lazurite/src/infrastructure/auth/auth_repository.dart';
-import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockAuthRepository extends Mock implements AuthRepository {}
-
-class MockSessionStorage extends Mock implements SessionStorage {}
+import '../../../../helpers/mocks.dart';
 
 void main() {
   late MockAuthRepository mockAuthRepository;

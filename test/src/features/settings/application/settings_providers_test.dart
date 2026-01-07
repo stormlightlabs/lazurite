@@ -2,10 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/settings/application/settings_providers.dart';
 import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
-import 'package:lazurite/src/infrastructure/preferences/bluesky_preferences_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockBlueskyPreferencesRepository extends Mock implements BlueskyPreferencesRepository {}
+import '../../../../helpers/mocks.dart';
 
 void main() {
   late MockBlueskyPreferencesRepository mockRepository;

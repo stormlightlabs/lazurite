@@ -1,17 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
-import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockProfileRepository extends Mock implements ProfileRepository {}
-
-class MockAuthStateAuthenticated extends Mock implements AuthStateAuthenticated {}
-
-class MockSession extends Mock implements Session {}
+import '../../../../helpers/mocks.dart';
 
 void main() {
   late MockProfileRepository mockRepository;

@@ -5,7 +5,7 @@ import 'package:lazurite/src/features/thread/application/thread_providers.dart';
 import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockThreadRepository extends Mock implements ThreadRepository {}
+import '../../../../helpers/mocks.dart';
 
 void main() {
   late MockThreadRepository mockRepository;

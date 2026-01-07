@@ -1,17 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
-import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/network/endpoint_registry.dart';
 import 'package:lazurite/src/infrastructure/network/host_kind.dart';
 import 'package:lazurite/src/infrastructure/network/network_failure.dart';
 import 'package:lazurite/src/infrastructure/network/proxy_kind.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
-import 'package:mocktail/mocktail.dart';
 
-class MockDio extends Mock implements Dio {}
-
-class MockLogger extends Mock implements Logger {}
+import '../../../helpers/mocks.dart';
 
 void main() {
   late Dio publicDio;

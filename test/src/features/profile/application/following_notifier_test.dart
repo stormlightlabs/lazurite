@@ -1,23 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/infrastructure/db/daos/follows_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/profile_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/profile_relationship_dao.dart';
-import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockXrpcClient extends Mock implements XrpcClient {}
+import '../../../../helpers/mocks.dart';
 
 class MockProfileDao extends Mock implements ProfileDao {}
 
 class MockFollowsDao extends Mock implements FollowsDao {}
 
 class MockProfileRelationshipDao extends Mock implements ProfileRelationshipDao {}
-
-class MockLogger extends Mock implements Logger {}
 
 void main() {
   late MockXrpcClient mockApi;

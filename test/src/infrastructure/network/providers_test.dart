@@ -4,16 +4,12 @@ import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
-import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:lazurite/src/infrastructure/network/interceptors/auth_interceptor.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockSessionStorage extends Mock implements SessionStorage {}
-
-class MockAppDatabase extends Mock implements AppDatabase {}
+import '../../../helpers/mocks.dart';
 
 class MockFeedContentDao extends Mock implements FeedContentDao {}
 

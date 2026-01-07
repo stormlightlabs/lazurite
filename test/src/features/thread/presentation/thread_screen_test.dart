@@ -9,7 +9,7 @@ import 'package:lazurite/src/features/thread/presentation/widgets/not_found_post
 import 'package:lazurite/src/features/thread/presentation/widgets/threadgate_indicator.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockThreadRepository extends Mock implements ThreadRepository {}
+import '../../../../helpers/mocks.dart';
 
 void main() {
   late MockThreadRepository mockRepo;

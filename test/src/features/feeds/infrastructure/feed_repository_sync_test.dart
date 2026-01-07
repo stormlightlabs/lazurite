@@ -1,16 +1,12 @@
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/preference_sync_queue_dao.dart';
-import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockXrpcClient extends Mock implements XrpcClient {}
-
-class MockLogger extends Mock implements Logger {}
+import '../../../../helpers/mocks.dart';
 
 class _FailingPreferenceSyncQueueDao extends PreferenceSyncQueueDao {
   _FailingPreferenceSyncQueueDao(super.db);

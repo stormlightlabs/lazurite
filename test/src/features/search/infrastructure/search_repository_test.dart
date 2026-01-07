@@ -1,15 +1,11 @@
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
-import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockXrpcClient extends Mock implements XrpcClient {}
-
-class MockLogger extends Mock implements Logger {}
+import '../../../../helpers/mocks.dart';
 
 void main() {
   late MockXrpcClient mockApi;

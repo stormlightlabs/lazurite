@@ -1,10 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
-import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockFeedRepository extends Mock implements FeedRepository {}
+import '../../../../helpers/mocks.dart';
 
 void main() {
   late MockFeedRepository mockRepository;

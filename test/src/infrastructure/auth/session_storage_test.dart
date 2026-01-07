@@ -1,10 +1,9 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockFlutterSecureStorage extends Mock implements FlutterSecureStorage {}
+import '../../../helpers/mocks.dart';
 
 void main() {
   late MockFlutterSecureStorage mockStorage;

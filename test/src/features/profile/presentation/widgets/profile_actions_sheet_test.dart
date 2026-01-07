@@ -10,7 +10,7 @@ import 'package:lazurite/src/features/profile/infrastructure/profile_repository.
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_actions_sheet.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockProfileRepository extends Mock implements ProfileRepository {}
+import '../../../../../helpers/mocks.dart';
 
 class RecordingAuthNotifier extends AuthNotifier {
   RecordingAuthNotifier();

@@ -6,14 +6,10 @@ import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_con
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
 import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
-import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockFeedRepository extends Mock implements FeedRepository {}
-
-class MockAppDatabase extends Mock implements AppDatabase {}
+import '../../../../../helpers/mocks.dart';
 
 class MockAllFeedsNotifier extends AllFeedsNotifier {
   MockAllFeedsNotifier(this._initialData);

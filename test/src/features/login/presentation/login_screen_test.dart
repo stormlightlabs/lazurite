@@ -3,19 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/login/presentation/login_screen.dart';
-import 'package:lazurite/src/infrastructure/auth/auth_repository.dart';
 import 'package:lazurite/src/infrastructure/auth/handle_storage.dart';
-import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../helpers/mocks.dart';
 import '../../../../helpers/pump_app.dart';
-
-class MockAuthRepository extends Mock implements AuthRepository {}
-
-class MockSessionStorage extends Mock implements SessionStorage {}
-
-class MockHandleStorage extends Mock implements HandleStorage {}
 
 void main() {
   late MockAuthRepository mockAuthRepository;

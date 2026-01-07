@@ -10,10 +10,8 @@ import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
 import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/feed_selector_tab.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
-import 'package:mocktail/mocktail.dart';
 
-class MockAppDatabase extends Mock implements AppDatabase {}
+import '../../../../../helpers/mocks.dart';
 
 class MockPinnedFeedsNotifier extends PinnedFeedsNotifier {
   MockPinnedFeedsNotifier(this._initialData);

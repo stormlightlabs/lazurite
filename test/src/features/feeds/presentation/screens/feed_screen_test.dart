@@ -3,16 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
-import 'package:lazurite/src/features/feeds/infrastructure/feed_content_repository.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_screen.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockFeedContentRepository extends Mock implements FeedContentRepository {}
-
-class MockPinnedFeedsNotifier extends Mock implements PinnedFeedsNotifier {
-  @override
-  Stream<List<SavedFeedData>> build() => Stream.value([]);
-}
+import '../../../../../helpers/mocks.dart';
 
 void main() {
   late MockFeedContentRepository mockContentRepository;

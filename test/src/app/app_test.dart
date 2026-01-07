@@ -11,26 +11,14 @@ import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_con
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
-import 'package:lazurite/src/features/feeds/infrastructure/feed_content_repository.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
-import 'package:lazurite/src/features/settings/application/preference_sync_controller.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
-import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
-import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
+import 'package:lazurite/src/features/settings/application/preference_sync_controller.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class MockSessionStorage extends Mock implements SessionStorage {}
-
-class MockSearchRepository extends Mock implements SearchRepository {}
-
-class MockAppDatabase extends Mock implements AppDatabase {}
-
-class MockProfileRepository extends Mock implements ProfileRepository {}
-
-class MockFeedContentRepository extends Mock implements FeedContentRepository {}
+import '../../helpers/mocks.dart';
 
 void main() {
   late MockSessionStorage mockSessionStorage;

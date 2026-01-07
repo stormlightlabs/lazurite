@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
-import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockSearchRepository extends Mock implements SearchRepository {}
+import '../../../helpers/mocks.dart';
 
 void main() {
   late MockSearchRepository mockRepository;

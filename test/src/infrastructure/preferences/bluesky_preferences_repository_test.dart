@@ -3,11 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
-import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 import 'package:lazurite/src/infrastructure/preferences/bluesky_preferences_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockXrpcClient extends Mock implements XrpcClient {}
+import '../../../helpers/mocks.dart';
 
 void main() {
   late AppDatabase db;
