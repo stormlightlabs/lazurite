@@ -7,6 +7,7 @@ import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/draft_list_screen.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/draft_recovery_listener.dart';
 import 'package:lazurite/src/features/dms/presentation/dms_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
@@ -85,7 +86,7 @@ GoRouter createRouter(Ref ref) {
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          return TabScaffold(navigationShell: navigationShell);
+          return DraftRecoveryListener(child: TabScaffold(navigationShell: navigationShell));
         },
         branches: [
           StatefulShellBranch(

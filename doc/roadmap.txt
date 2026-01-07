@@ -84,11 +84,11 @@ Phase 2 - Draft List and Management (HIGH):
       - [x] Swipe to delete draft
       - [ ] Retry button for failed drafts
       - [x] Delete confirmation dialog
-- [ ] Create DraftRecoverySheet:
-      - [ ] Detect crashed publishes on app start
-      - [ ] Show modal with failed draft
-      - [ ] Retry or delete options
-      - [ ] Auto-dismiss if successful
+- [x] Create DraftRecoverySheet:
+      - [x] Detect crashed publishes on app start
+      - [x] Show modal with failed draft
+      - [x] Retry or delete options
+      - [x] Auto-dismiss if successful
 - [ ] Router configuration:
       - [x] Add /drafts route to router
       - [ ] Add /drafts/:draftId route

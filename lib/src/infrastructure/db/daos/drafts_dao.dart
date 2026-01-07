@@ -81,6 +81,16 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
     return records.first;
   }
 
+  Future<List<DraftRecord>> getDraftsByStatus(String status) async {
+    final join =
+        select(drafts).join([leftOuterJoin(draftMedia, draftMedia.draftId.equalsExp(drafts.id))])
+          ..where(drafts.status.equals(status))
+          ..orderBy([OrderingTerm.desc(drafts.updatedAt), OrderingTerm.asc(draftMedia.sortOrder)]);
+
+    final rows = await join.get();
+    return _mapRowsToRecords(rows);
+  }
+
   List<DraftRecord> _mapRowsToRecords(List<TypedResult> rows) {
     final map = <String, DraftRecord>{};
 

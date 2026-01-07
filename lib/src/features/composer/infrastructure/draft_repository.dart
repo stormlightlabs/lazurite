@@ -208,6 +208,22 @@ class DraftRepository {
     }
   }
 
+  Future<List<composer.Draft>> getCrashedDrafts() async {
+    final records = await _dao.getDraftsByStatus(composer.DraftStatus.publishing.name);
+    return records.map(_toDomain).toList();
+  }
+
+  Future<void> markAsFailed(String id, String reason) async {
+    await _dao.updateDraftFields(
+      id,
+      DraftsCompanion(
+        status: Value(composer.DraftStatus.failed.name),
+        errorMessage: Value(reason),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   composer.Draft _toDomain(DraftRecord record) {
     return composer.Draft(
       id: record.draft.id,
