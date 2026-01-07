@@ -198,7 +198,14 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
                   controller: _tabController,
                   children: [
                     _PostsTab(
-                      items: items.where((item) => !item.isReply).toList(),
+                      items: items
+                          .where(
+                            (item) =>
+                                !item.isReply &&
+                                (profile.pinnedPostUri == null ||
+                                    item.uri != profile.pinnedPostUri),
+                          )
+                          .toList(),
                       pinnedPostUri: profile.pinnedPostUri,
                       hasMore: hasMore,
                       isLoading: false,
