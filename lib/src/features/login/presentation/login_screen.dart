@@ -7,6 +7,7 @@ import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/login/presentation/account_switcher_sheet.dart';
 import 'package:lazurite/src/features/login/presentation/auth_button.dart';
 import 'package:lazurite/src/features/login/presentation/auth_progress_view.dart';
+import 'package:lazurite/src/infrastructure/auth/handle_storage.dart';
 
 /// Login screen for user authentication.
 class LoginScreen extends ConsumerStatefulWidget {
@@ -21,6 +22,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _handleController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _loadLastHandle();
+  }
+
+  Future<void> _loadLastHandle() async {
+    final handleStorage = await ref.read(handleStorageProvider.future);
+    final lastHandle = handleStorage.getLastHandle();
+    if (lastHandle != null && mounted) {
+      _handleController.text = lastHandle;
+    }
+  }
+
+  @override
   void dispose() {
     _handleController.dispose();
     super.dispose();
@@ -30,6 +45,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final handle = _handleController.text.trim();
     if (handle.isEmpty) return;
 
+    final handleStorage = await ref.read(handleStorageProvider.future);
+    await handleStorage.saveHandle(handle);
     await ref.read(authProvider.notifier).login(handle);
   }
 
@@ -93,6 +110,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   keyboardType: TextInputType.text,
                   textInputAction: TextInputAction.done,
+                  autocorrect: false,
+                  enableSuggestions: false,
                   onSubmitted: (_) => _handleLogin(),
                 ),
                 const SizedBox(height: 24),

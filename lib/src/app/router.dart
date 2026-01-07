@@ -9,6 +9,7 @@ import 'package:lazurite/src/features/dms/presentation/dms_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_screen.dart';
+import 'package:lazurite/src/features/landing/presentation/landing_screen.dart';
 import 'package:lazurite/src/features/login/presentation/app_password_login_screen.dart';
 import 'package:lazurite/src/features/login/presentation/auth_progress_view.dart';
 import 'package:lazurite/src/features/login/presentation/login_screen.dart';
@@ -55,20 +56,21 @@ GoRouter createRouter(Ref ref) {
         if (auth is AuthStateAuthenticated) {
           return AppRoutes.home;
         }
-        return AppRoutes.login;
+        return AppRoutes.landing;
       }
 
       final isLoggingIn =
           location == AppRoutes.login || location == '${AppRoutes.login}/app-password';
       final isCallback = location == AppRoutes.callback;
-      final isPublic = location.startsWith(AppRoutes.home);
+      final isLanding = location == AppRoutes.landing;
+      final isPublicRoute = location.startsWith(AppRoutes.home);
 
       if (auth is! AuthStateAuthenticated) {
-        if (isLoggingIn || isCallback || isPublic) return null;
-        return AppRoutes.login;
+        if (isLoggingIn || isCallback || isLanding || isPublicRoute) return null;
+        return AppRoutes.landing;
       }
 
-      if (isLoggingIn || isCallback) return AppRoutes.home;
+      if (isLoggingIn || isCallback || isLanding) return AppRoutes.home;
 
       return null;
     },
@@ -223,6 +225,11 @@ GoRouter createRouter(Ref ref) {
         path: AppRoutes.splash,
         name: AppRouteNames.splash,
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.landing,
+        name: AppRouteNames.landing,
+        builder: (context, state) => const LandingScreen(),
       ),
       GoRoute(
         path: AppRoutes.feeds,

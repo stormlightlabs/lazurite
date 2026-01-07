@@ -26,6 +26,7 @@ Use `just` targets:
 - `just format` runs `dart format lib test`.
 - `just lint` proxies `flutter analyze`.
 - `just test` executes the full `flutter test` suite.
+    - To pinpoint errors, use `just test-quiet` for cleaner output.
 - `just gen` invokes `dart run build_runner build --delete-conflicting-outputs`.
 - `just check` performs format + lint + test before commits.
 
@@ -54,6 +55,8 @@ We prefer fake data builders from `test/helpers` and avoid real network calls.
 The infrastructure layer already exposes abstraction seams for mocking.
 
 We aim for > 95% coverage targets.
+
+Common pitfalls are documented in a dedicated [testing](./doc/testing.md) document.
 
 ## Commits
 

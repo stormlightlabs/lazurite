@@ -9,6 +9,7 @@ abstract final class AppRoutes {
   static const String dms = '/dms';
   static const String profile = '/profile';
   static const String splash = '/splash';
+  static const String landing = '/landing';
 
   static const String login = '/login';
   static const String callback = '/callback';
@@ -34,6 +35,7 @@ abstract final class AppRouteNames {
   static const String dms = 'dms';
   static const String profile = 'profile';
   static const String splash = 'splash';
+  static const String landing = 'landing';
 
   static const String login = 'login';
   static const String callback = 'callback';

@@ -223,7 +223,7 @@ void main() {
       expect(find.text('Profile'), findsWidgets);
     });
 
-    testWidgets('redirects unauthenticated user from search to login', (tester) async {
+    testWidgets('redirects unauthenticated user from search to landing', (tester) async {
       final container = ProviderContainer(
         overrides: [
           ...getTestOverrides(),
@@ -246,14 +246,15 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      expect(find.text('Sign in to Bluesky'), findsOneWidget);
+      expect(find.text('Lazurite'), findsOneWidget);
+      expect(find.text('A beautiful Bluesky client'), findsOneWidget);
 
       final router = container.read(goRouterProvider);
       router.go('/search');
       await tester.pumpAndSettle();
 
-      expect(find.text('Sign in to Bluesky'), findsOneWidget);
-      expect(find.text('Search posts...'), findsNothing);
+      expect(router.routerDelegate.currentConfiguration.uri.path, equals('/landing'));
+      expect(find.text('Lazurite'), findsOneWidget);
     });
   });
 

@@ -5,6 +5,7 @@ import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/login/presentation/auth_button.dart';
 import 'package:lazurite/src/features/login/presentation/auth_progress_view.dart';
+import 'package:lazurite/src/infrastructure/auth/handle_storage.dart';
 
 class AppPasswordLoginScreen extends ConsumerStatefulWidget {
   const AppPasswordLoginScreen({super.key});
@@ -19,6 +20,20 @@ class _AppPasswordLoginScreenState extends ConsumerState<AppPasswordLoginScreen>
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _loadLastHandle();
+  }
+
+  Future<void> _loadLastHandle() async {
+    final handleStorage = await ref.read(handleStorageProvider.future);
+    final lastHandle = handleStorage.getLastHandle();
+    if (lastHandle != null && mounted) {
+      _handleController.text = lastHandle;
+    }
+  }
+
+  @override
   void dispose() {
     _handleController.dispose();
     _passwordController.dispose();
@@ -31,6 +46,8 @@ class _AppPasswordLoginScreenState extends ConsumerState<AppPasswordLoginScreen>
 
     if (handle.isEmpty || password.isEmpty) return;
 
+    final handleStorage = await ref.read(handleStorageProvider.future);
+    await handleStorage.saveHandle(handle);
     await ref.read(authProvider.notifier).loginWithAppPassword(handle, password);
   }
 
@@ -82,6 +99,8 @@ class _AppPasswordLoginScreenState extends ConsumerState<AppPasswordLoginScreen>
                   ),
                   keyboardType: TextInputType.text,
                   textInputAction: TextInputAction.next,
+                  autocorrect: false,
+                  enableSuggestions: false,
                 ),
                 const SizedBox(height: 16),
                 TextField(
