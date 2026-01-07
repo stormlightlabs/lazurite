@@ -6,10 +6,13 @@
 
 #### [2026-01-06]
 
+- Migrated NavigationBar, FilterChips, Cards, and text emphasis to M3 role-based theming
+  with surfaceContainer hierarchy and outlineVariant dividers.
+- Created ThemePack/ThemeVariant/ThemeSpec domain types with ThemeFactory centralizing
+  component themes using full M3 ColorScheme roles.
 - Complete profile and thread rendering with verification badges, viewer relationship &
-  interaction states, all embed types (images/video/external/record/recordWithMedia),
-  content labels with warnings, thread structure with parent/reply chains, and pinned
-  posts.
+  interaction states, all embed types, content labels with warnings, thread structure
+  with parent/reply chains, and pinned posts.
 - Safe syncing, cached search, and feed discovery flow polish.
 
 #### [2026-01-05]

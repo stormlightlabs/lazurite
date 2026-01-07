@@ -1,35 +1,14 @@
 *theming.txt*              Theming (Material + Theme Packs + User Customization)
 
 ================================================================================
-Theming 2.0 (why we’re changing it)                               *theme-intro*
+Design Principles + Success Criteria                          *theme-principles*
 ================================================================================
-
-- Many Material 3 components rely on the broader set of tone-based
-  surfaces/containers and "onSurfaceVariant/outlineVariant" emphasis roles.
-- Material 3 is explicitly designed around *color roles* applied consistently
-  across UI.
-- Flutter has been expanding Material 3 ColorScheme roles (tone surfaces +
-  containers, and more accent roles), and some older roles are deprecated (e.g.,
-  background/onBackground, surfaceVariant).
 
 Outcome:
 - The app looks "correct" (hierarchy, emphasis, states) while preserving your
   Oxocarbon vibe.
 - Users can pick built-in themes (Oxocarbon, Catppuccin, Nord, Rosé Pine,
   Atom/One Dark) with light/dark variants, and optionally customize.
-
-================================================================================
-Design Principles + Success Criteria                          *theme-principles*
-================================================================================
-
-Principles (Material 3):
-- Use semantic color roles (surface containers, outlineVariant,
-  onSurfaceVariant) rather than raw hex values sprinkled through widgets.
-- Create hierarchy with tone-based surfaces/containers rather than heavy
-  dividers.
-- Navigation components must have a clear active indicator (selected state).
-- Chips have specific color roles in spec (filter chip uses onSurfaceVariant +
-  outline and optionally surfaceContainerLow).
 
 Success criteria:
 - Squint test: cards/posts/chips/nav remain visually separable without relying
@@ -39,218 +18,181 @@ Success criteria:
 - Theme packs are swappable instantly; selection persists.
 
 ================================================================================
-1. Refactor theme into role-first "ThemeSpec"                          *theme-1*
+Roadmap                                                          *theme-roadmap*
 ================================================================================
+3. Theme controller + persistence + runtime switching                  *theme-3*
 
 Goal:
-- Replace "AppColors + ThemeData" with a data-driven theme system that maps each
-  palette to Material 3 ColorScheme roles.
+- User can switch theme packs + variant (light/dark) at runtime with persisted
+  selection.
+
+Current state:
+- ThemeModeController exists but only toggles light/dark mode (no pack selection)
+- No persistence layer
 
 Tasks:
-- [x] Create domain types:
-      - ThemePack(id, name, author, variants[])
-      - ThemeVariant(id, brightness, palette, derivedScheme)
-      - ThemeSpec(seed?, surfaces?, accents?, typography?, shapes?)
-- [x] Build ColorScheme by roles (NOT by arbitrary hex):
-      - Provide full set of M3 surfaces/containers where available:
-        surfaceDim/bright + surfaceContainerLowest/Low/Default/High/Highest
-      - Provide outline + outlineVariant, onSurfaceVariant
-      (These roles are core to M3’s "tone-based surfaces" model.)
-- [x] Implement ThemeFactory.buildThemeData(ThemeVariant):
-      - ThemeData(useMaterial3: true, colorScheme: ...)
-      - Centralize component themes (NavBar, Chips, Cards, ListTiles, Dividers,
-        Inputs)
+- [ ] Extend ThemeController (Riverpod) with:
+      - currentThemePackId: String
+      - currentVariantId: String?
+      - setThemePack(packId, [variantId]): switches active pack/variant
+      - getActiveThemeData(): ThemeData (via ThemeFactory)
+      - optional: dynamicColorEnabled for Android 12+ Material You
+- [ ] Add persistence:
+      - Drift table to keep settings in the central DB
+      - Store: current pack ID, current variant ID (or brightness preference)
+- [ ] Wire MaterialApp(theme, darkTheme, themeMode) from controller
+- [ ] Migrate existing ThemeModeController to new ThemeController
 
 Deliverables:
-- A single file/function constructs ThemeData for *any* theme pack variant.
-- No widget outside the theme layer uses hard-coded palette colors.
+- Theme pack + variant switch updates UI without restart
+- Selection persists across app restarts
+- System brightness preference ("auto") supported
 
-================================================================================
-2. Component theming                                                   *theme-2*
-================================================================================
-
-Navigation (bottom):
-- [x] Theme NavigationBar to match M3 guidance:
-      - active indicator is a container color role (NOT primary tint overlay)
-      - selected/unselected icon/label colors align with
-        onSurface/onSurfaceVariant
-  M3 nav bar uses an active indicator and clear active state.
-
-Chips (feed selector row):
-- [x] Convert "feed pills" to FilterChips and theme them per spec:
-      - unselected: outline + onSurfaceVariant
-      - selected: container role + onContainer
-  M3 chip spec explicitly calls out these roles.
-
-Cards (posts + embeds):
-- [x] Move post rows to Card/Surface using surfaceContainerLow
-      (or surfaceContainer)
-- [x] Give embeds a slightly higher container role than the parent post container
-      ("contained area against surface" guidance).
-
-Dividers and outlines:
-- [x] Default dividers should use outlineVariant (subtle), not strong contrast
-      lines.
-- [x] Reserve outline for boundaries that truly need emphasis.
-
-Text emphasis:
-- [x] Ensure secondary metadata (handle, timestamp) uses onSurfaceVariant.
-- [x] Keep body text on onSurface (highest legibility).
-
-Inputs / dialogs / sheets:
-- [x] TextField, Dialog, BottomSheet should use container roles and consistent
-      scrims.
-
-Deliverables:
-- Home timeline screen reads with clear hierarchy:
-  background < cards < embeds < selected chip/nav.
-
-================================================================================
-3. Theme manager + persistence + runtime switching                     *theme-3*
-================================================================================
+--------------------------------------------------------------------------------
+4. Theme Picker UI                                                     *theme-4*
 
 Goal:
-- User can switch theme packs + variant (light/dark) at runtime.
+- User can browse, preview, and select theme packs from settings.
+
+Current state:
+- No settings UI for theme selection
+- No preview widgets
+
+Design:
+- Settings → Appearance page
+  - Theme pack list/dropdown (shows all available packs)
+  - Variant selector: System / Light / Dark / (pack-specific variants)
+  - Live preview cards showing Home feed, Post card, Chip row, Nav bar
+- Desktop enhancements (optional):
+  - Split pane theme inspector showing multiple components
+  - Computed role display (surfaceContainerLow, outlineVariant values)
 
 Tasks:
-- [ ] Create ThemeController (Riverpod):
-      - currentThemePackId
-      - currentVariant (system / light / dark / explicit variant)
-      - optional dynamicColorEnabled (Android 12+)
-- [ ] Persist selection:
-      - lightweight: shared_preferences
-      - and/or Drift table if we prefer central DB
-- [ ] Wire MaterialApp(theme, darkTheme, themeMode) from controller.
-  Flutter theming pattern is to supply ThemeData through MaterialApp.
+- [ ] Create AppearancePage (Settings section)
+      - Pack selector widget (list or dropdown)
+      - Variant selector (segmented control or radio buttons)
+      - Wire to ThemeController
+- [ ] Build preview widgets:
+      - ThemePreviewCard: mini Home feed + nav bar rendering
+      - Shows visual hierarchy at a glance
+- [ ] Add "Export theme JSON" button (prepare for T6 import/export)
+- [ ] Optional: Desktop-only ThemeInspectorPane with role inspector
 
 Deliverables:
-- Theme switch updates UI without restart.
-- Theme selection is remembered.
+- User can see theme differences before applying
+- Mobile flow: 2-3 taps to switch theme
+- Desktop: richer preview pane with computed role details
 
-================================================================================
-4. Theme Picker UI (mobile usable, desktop powerful)                   *theme-4*
-================================================================================
-
-Screens (delta):
-- + Settings → AppearancePage
-  - Theme pack dropdown/list
-  - Variant selector: System / Light / Dark / (pack variants)
-  - Preview cards for Home, Post, Chip row, Nav bar
-
-Desktop enhancements:
-- + ThemeInspectorPane (split view)
-  - live preview of multiple components at once
-  - show computed roles (surfaceContainerLow, outlineVariant, etc.)
-
-Widgets (delta):
-- + ThemePackTile (name + small palette swatches)
-- + VariantSegmentedControl
-- + ThemePreviewCard (renders mini home feed + nav)
-- + "Copy theme JSON" (export) + "Import theme JSON" (later T6)
-
-Deliverables:
-- A user can understand theme differences before applying.
-- Mobile flow is 2–3 taps; desktop is one pane with richer info.
-
-================================================================================
-5. Built-in theme "packs"                                              *theme-5*
-================================================================================
+--------------------------------------------------------------------------------
+5. Built-in theme packs                                                *theme-5*
 
 Goal:
-- Ship a curated set with light/dark variants.
+- Ship curated theme packs with light/dark variants.
+
+Current state:
+- Only Oxocarbon pack exists (light + dark variants in
+  lib/src/app/theming/packs/oxocarbon_theme_pack.dart)
+- No Catppuccin, Nord, Rosé Pine, or One Dark packs
 
 Theme sources:
-- Catppuccin has 4 "flavors" (Latte/Frappé/Macchiato/Mocha) with defined
-  palettes.
-- Nord documents its palette and intended usage across UI contexts.
-- Rosé Pine defines base/surface roles and variants (main/moon/dawn).
-- One Dark provides canonical hex values used widely.
+- Catppuccin: 4 flavors (Latte/Frappé/Macchiato/Mocha) with documented palettes
+- Nord: documented palette for UI contexts
+- Rosé Pine: base/surface roles + variants (main/moon/dawn)
+- One Dark: canonical hex values from Atom editor
 
 Tasks:
-- [ ] Define ThemePack JSON (or Dart constants) for each:
-      - oxocarbon_dark + oxocarbon_light (yours, refined into roles)
-      - catppuccin: latte (light), frappe/macchiato/mocha (dark variants)
-      - nord: light + dark variant mapping (or one pack w/ both)
+- [ ] Define ThemePacks for each (Dart constants or JSON):
+      - catppuccin: latte (light), frappé/macchiato/mocha (dark variants)
+      - nord: light + dark variant
       - rose-pine: dawn (light), main/moon (dark)
-      - one-dark + one-light (atom)
-- [ ] For each pack, map palette → roles:
+      - one-dark + one-light
+- [ ] Map each palette → M3 roles:
       - base/background → surfaceDim/surface
       - panel/card → surfaceContainerLow/Default/High
       - borders → outlineVariant/outline
       - text → onSurface/onSurfaceVariant
       - accent(s) → primary/secondary/tertiary (+ containers)
-- [ ] Provide per-pack "accent strategy":
-      - high-contrast themes (oxocarbon/one-dark) can use vivid primary
-      - pastel themes (catppuccin/rose-pine/nord) should keep accents
-        restrained, use secondary for chips and tertiary for highlights
-        (Material guidance on roles).
+- [ ] Apply accent strategy per theme type:
+      - High-contrast (oxocarbon, one-dark): vivid primary
+      - Pastel (catppuccin, rose-pine, nord): restrained accents, use
+        secondary for chips, tertiary for highlights
+- [ ] Extend role lint tests for all new packs
 
 Deliverables:
-- All packs ship with both brightness variants (where applicable).
-- Each pack passes golden tests and doesn’t break component contrast.
+- All packs ship with both brightness variants (where applicable)
+- Each pack passes role lint tests and maintains visual hierarchy
+- Export all packs from lib/src/app/theming/theming.dart
 
-================================================================================
-6. Customizable themes (user edits + import/export)                    *theme-6*
-================================================================================
+--------------------------------------------------------------------------------
+6. Customizable themes (user edits + import/export)                   *theme-6*
 
 Goal:
-- Allow users to tune themes without turning your app into an untestable mess.
+- Allow users to tune themes without breaking visual consistency.
 
-Opinionated customization scope (v1):
+Scope (v1):
 - Let users adjust:
   - primary/secondary/tertiary
   - surface + surfaceContainerLow/High
   - outlineVariant
   - typography scale (small/normal/large)
-- Keep everything else derived to protect visual consistency (role system).
+- Keep everything else derived to protect role system integrity
 
 Tasks:
 - [ ] Add CustomThemeDraft model persisted in DB/prefs
+      - Based on a base pack with role overrides
+      - Validated on load (fallback to base pack if invalid)
 - [ ] Editor UI:
-      - sliders for brightness/tone (or color pickers)
-      - live preview (same as T4)
-      - reset-to-pack defaults
-- [ ] Export/Import:
-      - JSON schema: ThemeSpec { id, base palette, role overrides }
-      - validate on import and fall back safely
+      - Color pickers or brightness/tone sliders for adjustable roles
+      - Live preview (reuse ThemePreviewCard from T4)
+      - Reset-to-pack defaults button
+- [ ] Export/Import JSON:
+      - Schema: { id, basePack, roleOverrides, typography }
+      - Validate on import and reject/warn if roles are missing or conflicting
+      - Allow sharing custom themes as JSON files
 
 Deliverables:
-- Users can create a custom variant without breaking the app’s hierarchy.
+- Users can create custom variants without flattening hierarchy
+- Custom themes are validated and safe
+- Export/import enables theme sharing
 
-================================================================================
-7. Quality gates: tests + role linting + accessibility checks          *theme-7*
-================================================================================
+--------------------------------------------------------------------------------
+7. Quality gates: expanded role linting + accessibility               *theme-7*
+
+Goal:
+- Ensure all theme packs (built-in + custom) maintain M3 role integrity and
+  accessibility standards.
+
+Current state:
+- Role lint tests exist (test/src/app/theming/theme_role_lint_test.dart)
+- Validates required roles, hierarchy integrity, container ladder ordering
+- Only covers Oxocarbon pack
 
 Tasks:
-- [ ] "Role lint" checks (unit tests) for ThemeVariant:
-      - required roles present (surface containers, onSurfaceVariant,
-        outlineVariant)
-      - no role equals another in ways that flatten hierarchy
-        (e.g., surface == surfaceContainerLow)
+- [ ] Extend role lint tests for all packs (automated with pack registry)
+- [ ] Add accessibility checks:
+      - Contrast ratio tests (WCAG AA minimum for onSurface/onSurfaceVariant)
+      - Ensure primary/secondary accents meet contrast requirements
+- [ ] Golden tests (optional):
+      - Visual regression tests for Home screen, Post card, Chip row, Nav bar
+      - Compare against baseline screenshots per pack
+- [ ] Pre-release validation:
+      - CI step runs all role lint + accessibility tests
+      - Fails build if any pack violates constraints
 
 Deliverables:
-- Adding a new theme pack is safe: drop in palette → mapping → tests.
-- Visual regressions are caught before release.
+- Adding a new pack is safe: drop in palette → mapping → tests pass
+- Visual regressions and accessibility issues caught before release
+- Confidence that all packs maintain design principles
 
 ================================================================================
 Definition of Done                                                   *theme-dod*
 ================================================================================
 
-- Home screen hierarchy is improved using M3 surface/container roles.
-- Nav bar and chip row follow M3 selection/indicator specs.
-- Theme switching works at runtime and persists.
-- Theme packs ship: Oxocarbon (refined), Catppuccin, Nord, Rosé Pine,
-  One Dark/Light.
-
-================================================================================
-Implementation Notes                                               *theme-notes*
-================================================================================
-
-Current file highlights to address:
-- We only set surface + surfaceContainerHighest; introduce the full
-  surfaceContainer ladder so posts/embeds can sit on different planes.
-- NavigationBar indicator uses primary alpha; shift to container roles for
-  "active indicator" semantics.
-- CardTheme elevation=0 is fine if we lean on container roles; otherwise
-  everything flattens. Use surfaceContainerLow/Default and keep elevation
-  minimal.
+- [x] Home screen hierarchy uses M3 surface/container roles
+- [x] Nav bar and chip row follow M3 selection/indicator specs
+- [ ] Theme switching works at runtime and persists
+- [ ] Theme packs ship: Oxocarbon (refined), Catppuccin, Nord, Rosé Pine,
+      One Dark/Light
+- [ ] Theme picker UI in settings
+- [ ] Users can optionally customize themes
+- [ ] All packs pass role lint + accessibility tests
