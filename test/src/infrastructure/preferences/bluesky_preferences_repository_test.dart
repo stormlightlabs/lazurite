@@ -336,4 +336,82 @@ void main() {
       expect(queued[0].type, 'threadView');
     });
   });
+
+  group('updateAdultContentPref', () {
+    test('persists preference to database', () async {
+      const pref = AdultContentPref(enabled: true);
+
+      await repository.updateAdultContentPref(pref);
+
+      final stored = await repository.getAdultContentPref();
+      expect(stored.enabled, isTrue);
+    });
+
+    test('queues sync item', () async {
+      const pref = AdultContentPref(enabled: true);
+
+      await repository.updateAdultContentPref(pref);
+
+      final queued = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queued, hasLength(1));
+      expect(queued[0].type, 'adultContent');
+    });
+
+    test('updates from enabled to disabled', () async {
+      await repository.updateAdultContentPref(const AdultContentPref(enabled: true));
+      expect((await repository.getAdultContentPref()).enabled, isTrue);
+
+      await repository.updateAdultContentPref(const AdultContentPref(enabled: false));
+      expect((await repository.getAdultContentPref()).enabled, isFalse);
+    });
+  });
+
+  group('updateContentLabelPrefs', () {
+    test('persists preferences to database', () async {
+      const prefs = ContentLabelPrefs(
+        items: [
+          ContentLabelPref(label: 'sexual', visibility: LabelVisibility.hide),
+          ContentLabelPref(label: 'gore', visibility: LabelVisibility.warn),
+        ],
+      );
+
+      await repository.updateContentLabelPrefs(prefs);
+
+      final stored = await repository.getContentLabelPrefs();
+      expect(stored.items, hasLength(2));
+      expect(stored.getVisibility('sexual'), LabelVisibility.hide);
+      expect(stored.getVisibility('gore'), LabelVisibility.warn);
+    });
+
+    test('queues sync item', () async {
+      const prefs = ContentLabelPrefs(
+        items: [ContentLabelPref(label: 'spam', visibility: LabelVisibility.hide)],
+      );
+
+      await repository.updateContentLabelPrefs(prefs);
+
+      final queued = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queued, hasLength(1));
+      expect(queued[0].type, 'contentLabels');
+    });
+
+    test('overwrites existing preferences', () async {
+      await repository.updateContentLabelPrefs(
+        const ContentLabelPrefs(
+          items: [ContentLabelPref(label: 'sexual', visibility: LabelVisibility.hide)],
+        ),
+      );
+
+      await repository.updateContentLabelPrefs(
+        const ContentLabelPrefs(
+          items: [ContentLabelPref(label: 'gore', visibility: LabelVisibility.warn)],
+        ),
+      );
+
+      final stored = await repository.getContentLabelPrefs();
+      expect(stored.items, hasLength(1));
+      expect(stored.getVisibility('gore'), LabelVisibility.warn);
+      expect(stored.getVisibility('sexual'), isNull);
+    });
+  });
 }

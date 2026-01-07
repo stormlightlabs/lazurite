@@ -19,6 +19,7 @@ import 'package:lazurite/src/features/profile/presentation/following_page.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/about_screen.dart';
+import 'package:lazurite/src/features/settings/presentation/screens/content_moderation_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/feed_preferences_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/settings_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/theme_settings_screen.dart';
@@ -238,6 +239,11 @@ GoRouter createRouter(Ref ref) {
             path: 'feeds',
             name: AppRouteNames.feedPreferences,
             builder: (context, state) => const FeedPreferencesScreen(),
+          ),
+          GoRoute(
+            path: 'moderation',
+            name: AppRouteNames.contentModeration,
+            builder: (context, state) => const ContentModerationScreen(),
           ),
         ],
       ),

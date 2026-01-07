@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/feed_preview_modal.dart';
+import 'package:lazurite/src/features/settings/application/label_filter_provider.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart'; // For Post, Profile classes
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:mocktail/mocktail.dart';
@@ -59,6 +60,7 @@ void main() {
         overrides: [
           feedRepositoryProvider.overrideWithValue(mockFeedRepository),
           feedContentRepositoryProvider.overrideWithValue(mockFeedContentRepository),
+          labelFilterServiceProvider.overrideWith((ref) => null),
         ],
         child: const MaterialApp(
           home: Scaffold(
@@ -101,6 +103,7 @@ void main() {
         overrides: [
           feedRepositoryProvider.overrideWithValue(mockFeedRepository),
           feedContentRepositoryProvider.overrideWithValue(mockFeedContentRepository),
+          labelFilterServiceProvider.overrideWith((ref) => null),
         ],
         child: const MaterialApp(
           home: Scaffold(

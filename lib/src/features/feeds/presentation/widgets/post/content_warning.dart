@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:lazurite/src/core/domain/content_label.dart';
+import 'package:lazurite/src/features/settings/domain/label_filter_service.dart';
 
 /// A widget that displays a content warning overlay for labeled content.
 ///
@@ -11,11 +12,17 @@ import 'package:lazurite/src/core/domain/content_label.dart';
 ///
 /// For labels with [LabelBehavior.hide] (e.g., `!takedown`), the content
 /// remains hidden with no reveal option.
+///
+/// If [filterService] is provided, uses user preferences to determine behavior.
+/// Otherwise falls back to default label behaviors.
 class ContentWarning extends StatefulWidget {
-  const ContentWarning({required this.labels, required this.child, super.key});
+  const ContentWarning({required this.labels, required this.child, this.filterService, super.key});
 
   /// The labels applied to this content.
   final List<ContentLabel> labels;
+
+  /// Optional filter service for user preference-based behavior.
+  final LabelFilterService? filterService;
 
   /// The content to potentially hide behind a warning.
   final Widget child;
@@ -27,13 +34,21 @@ class ContentWarning extends StatefulWidget {
 class _ContentWarningState extends State<ContentWarning> {
   bool _revealed = false;
 
+  /// Gets the effective behavior for a label, using filter service if available.
+  LabelBehavior _getBehavior(ContentLabel label) {
+    if (widget.filterService != null) {
+      return widget.filterService!.getEffectiveBehavior(label);
+    }
+    return label.behavior;
+  }
+
   /// Determines the most restrictive behavior from all labels.
   LabelBehavior get _behavior {
     var mostRestrictive = LabelBehavior.inform;
     for (final label in widget.labels) {
       if (label.isNegation) continue;
 
-      final behavior = label.behavior;
+      final behavior = _getBehavior(label);
       if (behavior == LabelBehavior.hide) {
         return LabelBehavior.hide;
       }

@@ -290,15 +290,15 @@ Tasks:
       - [x] Extend PreferenceSyncQueue to handle all pref types
       - [x] Implement preference sync on app start (authenticated)
       - [x] Create Riverpod providers for each preference type
-- [ ] Phase 3 - Content Moderation UI (MEDIUM):
-      - [ ] Build ContentModerationScreen:
+- [x] Phase 3 - Content Moderation UI (MEDIUM):
+      - [x] Build ContentModerationScreen:
             - grouped content labels by category
             - adult content toggle at top
             - label visibility selectors (ignore/show/warn/hide)
             - custom labelers section (add/remove)
-      - [ ] Build LabelVisibilitySelector widget
-      - [ ] Implement label visibility changes with sync
-      - [ ] Wire content labels to post filtering logic
+      - [x] Build LabelVisibilitySelector widget
+      - [x] Implement label visibility changes with sync
+      - [x] Wire content labels to post filtering logic
 - [x] Phase 4 - Feed & Thread Preferences UI (MEDIUM):
       - [x] Build FeedPreferencesScreen:
             - feed view toggles (hide replies, reposts, quotes)

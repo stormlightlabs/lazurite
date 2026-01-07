@@ -20,6 +20,7 @@ abstract final class AppRoutes {
   static const String appearance = '/settings/appearance';
   static const String about = '/settings/about';
   static const String feedPreferences = '/settings/feeds';
+  static const String contentModeration = '/settings/moderation';
 
   static const String thread = 't/:uri';
   static const String profileDetail = 'u/:did';
@@ -48,6 +49,7 @@ abstract final class AppRouteNames {
   static const String appearance = 'appearance';
   static const String about = 'about';
   static const String feedPreferences = 'feedPreferences';
+  static const String contentModeration = 'contentModeration';
   static const String drafts = 'drafts';
   static const String thread = 'thread';
   static const String profileDetail = 'profileDetail';

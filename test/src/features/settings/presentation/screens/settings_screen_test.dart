@@ -114,11 +114,10 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Content Moderation'));
+      await tester.tap(find.text('Muted Words'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Content Moderation - Coming soon'), findsOneWidget);
+      expect(find.text('Muted Words - Coming soon'), findsOneWidget);
     });
 
     testWidgets('navigates to appearance screen when Theme is tapped', (tester) async {

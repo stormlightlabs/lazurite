@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/domain/content_label.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/content_warning.dart';
@@ -8,20 +9,23 @@ import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_actio
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_body.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_embeds.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_header.dart';
+import 'package:lazurite/src/features/settings/application/label_filter_provider.dart';
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 
 /// A post card widget for displaying feed content items.
 ///
 /// Adapts [FeedPost] data to display a rich post card with
 /// author info, post text, embeds, and action counts.
-class FeedPostCard extends StatelessWidget {
+class FeedPostCard extends ConsumerWidget {
   const FeedPostCard({required this.item, this.onTap, super.key});
 
   final FeedPost item;
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filterService = ref.watch(labelFilterServiceProvider);
+
     Map<String, dynamic>? record;
     try {
       final decoded = jsonDecode(item.post.record);
@@ -35,7 +39,10 @@ class FeedPostCard extends StatelessWidget {
     final createdAt = DateTime.tryParse(item.post.indexedAt?.toIso8601String() ?? '');
 
     final labels = ContentLabel.parseFromJsonString(item.post.labels);
-    final hasWarningLabels = labels.any((l) => l.shouldWarn || l.shouldHide);
+
+    final hasWarningLabels = filterService != null
+        ? filterService.anyLabelWarns(labels) || filterService.anyLabelHides(labels)
+        : labels.any((l) => l.shouldWarn || l.shouldHide);
 
     Map<String, dynamic>? reasonJson;
     if (item.reason != null) {
@@ -85,7 +92,11 @@ class FeedPostCard extends StatelessWidget {
     );
 
     if (hasWarningLabels) {
-      postContent = ContentWarning(labels: labels, child: postContent);
+      postContent = ContentWarning(
+        labels: labels,
+        filterService: filterService,
+        child: postContent,
+      );
     } else if (labels.isNotEmpty) {
       postContent = Column(
         crossAxisAlignment: CrossAxisAlignment.start,

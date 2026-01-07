@@ -291,6 +291,42 @@ class BlueskyPreferencesRepository {
     _logger.debug('Thread view preference updated and queued for sync');
   }
 
+  /// Updates the adult content preference.
+  ///
+  /// Persists locally and queues for sync to Bluesky.
+  Future<void> updateAdultContentPref(AdultContentPref pref) async {
+    _logger.info('Updating adult content preference');
+    final now = DateTime.now();
+    final data = pref.toStoredJson();
+
+    await _dao.upsertPreference(type: 'adultContent', data: data, lastSynced: now);
+
+    await _syncQueueDao.enqueueBlueskyPrefSync(
+      preferenceType: 'adultContent',
+      preferenceData: data,
+    );
+
+    _logger.debug('Adult content preference updated and queued for sync');
+  }
+
+  /// Updates content label preferences.
+  ///
+  /// Persists locally and queues for sync to Bluesky.
+  Future<void> updateContentLabelPrefs(ContentLabelPrefs prefs) async {
+    _logger.info('Updating content label preferences');
+    final now = DateTime.now();
+    final data = prefs.toStoredJson();
+
+    await _dao.upsertPreference(type: 'contentLabels', data: data, lastSynced: now);
+
+    await _syncQueueDao.enqueueBlueskyPrefSync(
+      preferenceType: 'contentLabels',
+      preferenceData: data,
+    );
+
+    _logger.debug('Content label preferences updated and queued for sync');
+  }
+
   /// Gets the muted words preference.
   Future<MutedWordsPref> getMutedWordsPref() async {
     final row = await _dao.getPreferenceByType('mutedWords');

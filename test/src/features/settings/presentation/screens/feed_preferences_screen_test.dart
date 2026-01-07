@@ -148,7 +148,6 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
-      // Scroll down to make the toggle visible
       await tester.drag(find.byType(ListView), const Offset(0, -200));
       await tester.pumpAndSettle();
 

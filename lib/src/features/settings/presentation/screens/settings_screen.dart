@@ -41,9 +41,7 @@ class SettingsScreen extends ConsumerWidget {
         title: 'Content Moderation',
         subtitle: 'Manage content warnings and filters',
         onTap: () {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Content Moderation - Coming soon')));
+          context.push('/settings/moderation');
         },
       ),
       SettingsTile(
