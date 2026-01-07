@@ -357,7 +357,6 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Reply context card
                     if (state.replyPost != null)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -394,7 +393,6 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                             [],
                       ),
 
-                    // Quote post card
                     if (state.quotePost != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

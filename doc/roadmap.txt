@@ -146,13 +146,13 @@ Phase 4 - Reply and Quote Posts (MEDIUM):
       - [x] Support recordWithMedia (quote + images, videos)
 
 Phase 5 - Rich Text (Mentions and Links) (MEDIUM):
-- [ ] Create FacetParser utility:
-      - [ ] Detect @mentions in text
-      - [ ] Resolve handles to DIDs (lookup via API)
-      - [ ] Detect URLs in text
-      - [ ] Calculate byte offsets (UTF-8 encoding)
-      - [ ] Build facet array
-      - [ ] Handle unicode and emoji correctly
+- [x] Create FacetParser utility:
+      - [x] Detect @mentions in text
+      - [x] Resolve handles to DIDs (lookup via API)
+      - [x] Detect URLs in text
+      - [x] Calculate byte offsets (UTF-8 encoding)
+      - [x] Build facet array
+      - [x] Handle unicode and emoji correctly
 - [ ] Integrate facet parsing:
       - [ ] Parse text on publish
       - [ ] Store facets in facetsJson
@@ -189,7 +189,7 @@ Tests:
       - [ ] Publish pipeline (mock API)
       - [ ] Post record building
       - [ ] Error handling and retries
-      - [ ] Facet parsing and byte offsets
+      - [x] Facet parsing and byte offsets
       - [ ] Character counting (grapheme clusters)
 - [ ] Widget tests:
       - [ ] ComposerScreen interactions

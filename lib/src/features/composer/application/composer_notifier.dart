@@ -75,10 +75,8 @@ class ComposerNotifier extends _$ComposerNotifier {
       _debounceTimer?.cancel();
     });
 
-    // Load existing draft
     if (args?.draftId case final id?) {
       final existing = await _repository.getDraft(id);
-      // For existing drafts with reply/quote refs, fetch the post data for UI
       FeedItem? replyPost;
       FeedItem? quotePost;
       if (existing.replyParentUri != null) {
@@ -90,7 +88,6 @@ class ComposerNotifier extends _$ComposerNotifier {
       return ComposerState(draft: existing, replyPost: replyPost, quotePost: quotePost);
     }
 
-    // Fetch parent post for reply and extract refs
     FeedItem? replyPost;
     String? replyParentUri;
     String? replyParentCid;
@@ -102,20 +99,19 @@ class ComposerNotifier extends _$ComposerNotifier {
       if (replyPost != null) {
         replyParentUri = replyPost.uri;
         replyParentCid = replyPost.cid;
-        // Extract root from parent post's reply record, or use parent as root
+
         final parentReply = replyPost.record?['reply'] as Map<String, dynamic>?;
         if (parentReply != null) {
           final root = parentReply['root'] as Map<String, dynamic>?;
           replyRootUri = root?['uri'] as String?;
           replyRootCid = root?['cid'] as String?;
         }
-        // If no root in parent (parent is a top-level post), use parent as root
+
         replyRootUri ??= replyParentUri;
         replyRootCid ??= replyParentCid;
       }
     }
 
-    // Fetch quoted post
     FeedItem? quotePost;
     String? quoteUri;
     String? quoteCid;
@@ -145,8 +141,6 @@ class ComposerNotifier extends _$ComposerNotifier {
       final repository = ref.read(profileRepositoryProvider);
       return await repository.getPost(uri);
     } catch (_) {
-      // If we can't fetch the post, we can still create the draft
-      // but won't have the context to display
       return null;
     }
   }
