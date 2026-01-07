@@ -119,16 +119,16 @@ Phase 3 - Alt Text and Media Polish (MEDIUM):
       - [x] Update UploadProgressTile with retry
 
 Phase 4 - Reply and Quote Posts (MEDIUM):
-- [ ] Create ReplyContextCard widget:
-      - [ ] Display parent post author
-      - [ ] Display parent post text (truncated)
-      - [ ] Show thread indicator line
-      - [ ] Compact card layout
-- [ ] Create QuotePostCard widget:
-      - [ ] Display quoted post author
-      - [ ] Display quoted post text
-      - [ ] Show quoted post media (if any)
-      - [ ] Card border styling
+- [x] Create ReplyContextCard widget:
+      - [x] Display parent post author
+      - [x] Display parent post text (truncated)
+      - [x] Show thread indicator line
+      - [x] Compact card layout
+- [x] Create QuotePostCard widget:
+      - [x] Display quoted post author
+      - [x] Display quoted post text
+      - [x] Show quoted post media (if any)
+      - [x] Card border styling
 - [ ] Composer reply support:
       - [ ] Accept replyTo parameter (post URI)
       - [ ] Fetch parent post data
@@ -196,8 +196,8 @@ Tests:
       - [ ] ComposerScreen interactions
       - [ ] DraftListScreen rendering
       - [x] AltTextEditorSheet input
-      - [ ] ReplyContextCard display
-      - [ ] QuotePostCard display
+      - [x] ReplyContextCard display
+      - [x] QuotePostCard display
       - [ ] Character counter states
       - [ ] Maintain existing widget tests
 
