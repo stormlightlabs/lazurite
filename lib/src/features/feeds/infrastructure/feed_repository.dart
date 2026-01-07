@@ -280,9 +280,14 @@ class FeedRepository {
 
     for (final uri in feedsToSyncToRemote) {
       final existing = await _syncQueueDao.getPendingItems();
-      if (!existing.any((e) => e.feedUri == uri && e.type == 'save')) {
+      if (!existing.any((e) => e.payload == uri && e.type == 'save')) {
         await _syncQueueDao.enqueue(
-          PreferenceSyncQueueCompanion.insert(type: 'save', feedUri: uri, createdAt: now),
+          PreferenceSyncQueueCompanion.insert(
+            category: const Value('feed'),
+            type: 'save',
+            payload: uri,
+            createdAt: now,
+          ),
         );
       }
     }
@@ -363,8 +368,9 @@ class FeedRepository {
 
         return await _syncQueueDao.enqueue(
           PreferenceSyncQueueCompanion.insert(
+            category: const Value('feed'),
             type: 'save',
-            feedUri: feedUri,
+            payload: feedUri,
             createdAt: DateTime.now(),
           ),
         );
@@ -453,8 +459,9 @@ class FeedRepository {
 
         return await _syncQueueDao.enqueue(
           PreferenceSyncQueueCompanion.insert(
+            category: const Value('feed'),
             type: 'remove',
-            feedUri: feedUri,
+            payload: feedUri,
             createdAt: DateTime.now(),
           ),
         );
@@ -529,8 +536,9 @@ class FeedRepository {
 
         return await _syncQueueDao.enqueue(
           PreferenceSyncQueueCompanion.insert(
+            category: const Value('feed'),
             type: 'reorder',
-            feedUri: orderedUris.join(','),
+            payload: orderedUris.join(','),
             createdAt: DateTime.now(),
           ),
         );
@@ -710,7 +718,7 @@ class FeedRepository {
   Future<void> processSyncQueue() async {
     if (!_api.isAuthenticated) return;
 
-    final retryable = await _syncQueueDao.getRetryableItems();
+    final retryable = await _syncQueueDao.getRetryableFeedItems();
     if (retryable.isEmpty) {
       return;
     }
@@ -720,14 +728,14 @@ class FeedRepository {
     for (final item in retryable) {
       try {
         if (item.type == 'save') {
-          final localFeed = await _dao.getFeed(item.feedUri);
+          final localFeed = await _dao.getFeed(item.payload);
           final shouldPin = localFeed?.isPinned ?? false;
 
-          await _executeRemoteSaveFeed(item.feedUri, shouldPin);
+          await _executeRemoteSaveFeed(item.payload, shouldPin);
         } else if (item.type == 'remove') {
-          await _executeRemoteRemoveFeed(item.feedUri);
+          await _executeRemoteRemoveFeed(item.payload);
         } else if (item.type == 'reorder') {
-          final orderedUris = item.feedUri.split(',');
+          final orderedUris = item.payload.split(',');
           await _executeRemoteReorderFeeds(orderedUris);
         }
 

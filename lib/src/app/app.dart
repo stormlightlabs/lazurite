@@ -5,6 +5,7 @@ import 'package:lazurite/src/app/theme_controller.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
+import 'package:lazurite/src/features/settings/application/preference_sync_controller.dart';
 
 /// The main application widget.
 ///
@@ -18,6 +19,7 @@ class App extends ConsumerWidget {
     final themeState = ref.watch(themeControllerProvider);
     final authState = ref.watch(authProvider);
     ref.watch(feedSyncControllerProvider);
+    ref.watch(preferenceSyncControllerProvider);
 
     return MaterialApp.router(
       key: ValueKey(authState is AuthStateAuthenticated),

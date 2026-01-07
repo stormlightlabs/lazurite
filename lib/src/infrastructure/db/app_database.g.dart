@@ -4033,6 +4033,16 @@ class $PreferenceSyncQueueTable extends PreferenceSyncQueue
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
   );
+  static const VerificationMeta _categoryMeta = const VerificationMeta('category');
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('feed'),
+  );
   static const VerificationMeta _typeMeta = const VerificationMeta('type');
   @override
   late final GeneratedColumn<String> type = GeneratedColumn<String>(
@@ -4042,10 +4052,10 @@ class $PreferenceSyncQueueTable extends PreferenceSyncQueue
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _feedUriMeta = const VerificationMeta('feedUri');
+  static const VerificationMeta _payloadMeta = const VerificationMeta('payload');
   @override
-  late final GeneratedColumn<String> feedUri = GeneratedColumn<String>(
-    'feed_uri',
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -4071,7 +4081,7 @@ class $PreferenceSyncQueueTable extends PreferenceSyncQueue
     defaultValue: const Constant(0),
   );
   @override
-  List<GeneratedColumn> get $columns => [id, type, feedUri, createdAt, retryCount];
+  List<GeneratedColumn> get $columns => [id, category, type, payload, createdAt, retryCount];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -4087,15 +4097,21 @@ class $PreferenceSyncQueueTable extends PreferenceSyncQueue
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    }
     if (data.containsKey('type')) {
       context.handle(_typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
     } else if (isInserting) {
       context.missing(_typeMeta);
     }
-    if (data.containsKey('feed_uri')) {
-      context.handle(_feedUriMeta, feedUri.isAcceptableOrUnknown(data['feed_uri']!, _feedUriMeta));
+    if (data.containsKey('payload')) {
+      context.handle(_payloadMeta, payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta));
     } else if (isInserting) {
-      context.missing(_feedUriMeta);
+      context.missing(_payloadMeta);
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -4121,13 +4137,17 @@ class $PreferenceSyncQueueTable extends PreferenceSyncQueue
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return PreferenceSyncQueueData(
       id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
       type: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}type'],
       )!,
-      feedUri: attachedDatabase.typeMapping.read(
+      payload: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}feed_uri'],
+        data['${effectivePrefix}payload'],
       )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
@@ -4149,11 +4169,20 @@ class $PreferenceSyncQueueTable extends PreferenceSyncQueue
 class PreferenceSyncQueueData extends DataClass implements Insertable<PreferenceSyncQueueData> {
   final int id;
 
-  /// Type of operation: 'save' or 'remove'.
+  /// Category of preference being synced: 'feed' or 'bluesky_pref'.
+  final String category;
+
+  /// Type of operation.
+  ///
+  /// For feeds: 'save', 'remove', or 'reorder'.
+  /// For bluesky preferences: 'update'.
   final String type;
 
-  /// The feed URI to sync.
-  final String feedUri;
+  /// Payload data for the sync operation.
+  ///
+  /// For feeds: the feed URI (or comma-separated URIs for reorder).
+  /// For bluesky preferences: JSON string of the preference data.
+  final String payload;
 
   /// When the item was queued.
   final DateTime createdAt;
@@ -4162,8 +4191,9 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
   final int retryCount;
   const PreferenceSyncQueueData({
     required this.id,
+    required this.category,
     required this.type,
-    required this.feedUri,
+    required this.payload,
     required this.createdAt,
     required this.retryCount,
   });
@@ -4171,8 +4201,9 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['category'] = Variable<String>(category);
     map['type'] = Variable<String>(type);
-    map['feed_uri'] = Variable<String>(feedUri);
+    map['payload'] = Variable<String>(payload);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['retry_count'] = Variable<int>(retryCount);
     return map;
@@ -4181,8 +4212,9 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
   PreferenceSyncQueueCompanion toCompanion(bool nullToAbsent) {
     return PreferenceSyncQueueCompanion(
       id: Value(id),
+      category: Value(category),
       type: Value(type),
-      feedUri: Value(feedUri),
+      payload: Value(payload),
       createdAt: Value(createdAt),
       retryCount: Value(retryCount),
     );
@@ -4195,8 +4227,9 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return PreferenceSyncQueueData(
       id: serializer.fromJson<int>(json['id']),
+      category: serializer.fromJson<String>(json['category']),
       type: serializer.fromJson<String>(json['type']),
-      feedUri: serializer.fromJson<String>(json['feedUri']),
+      payload: serializer.fromJson<String>(json['payload']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       retryCount: serializer.fromJson<int>(json['retryCount']),
     );
@@ -4206,8 +4239,9 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'category': serializer.toJson<String>(category),
       'type': serializer.toJson<String>(type),
-      'feedUri': serializer.toJson<String>(feedUri),
+      'payload': serializer.toJson<String>(payload),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'retryCount': serializer.toJson<int>(retryCount),
     };
@@ -4215,22 +4249,25 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
 
   PreferenceSyncQueueData copyWith({
     int? id,
+    String? category,
     String? type,
-    String? feedUri,
+    String? payload,
     DateTime? createdAt,
     int? retryCount,
   }) => PreferenceSyncQueueData(
     id: id ?? this.id,
+    category: category ?? this.category,
     type: type ?? this.type,
-    feedUri: feedUri ?? this.feedUri,
+    payload: payload ?? this.payload,
     createdAt: createdAt ?? this.createdAt,
     retryCount: retryCount ?? this.retryCount,
   );
   PreferenceSyncQueueData copyWithCompanion(PreferenceSyncQueueCompanion data) {
     return PreferenceSyncQueueData(
       id: data.id.present ? data.id.value : this.id,
+      category: data.category.present ? data.category.value : this.category,
       type: data.type.present ? data.type.value : this.type,
-      feedUri: data.feedUri.present ? data.feedUri.value : this.feedUri,
+      payload: data.payload.present ? data.payload.value : this.payload,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       retryCount: data.retryCount.present ? data.retryCount.value : this.retryCount,
     );
@@ -4240,8 +4277,9 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
   String toString() {
     return (StringBuffer('PreferenceSyncQueueData(')
           ..write('id: $id, ')
+          ..write('category: $category, ')
           ..write('type: $type, ')
-          ..write('feedUri: $feedUri, ')
+          ..write('payload: $payload, ')
           ..write('createdAt: $createdAt, ')
           ..write('retryCount: $retryCount')
           ..write(')'))
@@ -4249,51 +4287,57 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
   }
 
   @override
-  int get hashCode => Object.hash(id, type, feedUri, createdAt, retryCount);
+  int get hashCode => Object.hash(id, category, type, payload, createdAt, retryCount);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is PreferenceSyncQueueData &&
           other.id == this.id &&
+          other.category == this.category &&
           other.type == this.type &&
-          other.feedUri == this.feedUri &&
+          other.payload == this.payload &&
           other.createdAt == this.createdAt &&
           other.retryCount == this.retryCount);
 }
 
 class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueData> {
   final Value<int> id;
+  final Value<String> category;
   final Value<String> type;
-  final Value<String> feedUri;
+  final Value<String> payload;
   final Value<DateTime> createdAt;
   final Value<int> retryCount;
   const PreferenceSyncQueueCompanion({
     this.id = const Value.absent(),
+    this.category = const Value.absent(),
     this.type = const Value.absent(),
-    this.feedUri = const Value.absent(),
+    this.payload = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.retryCount = const Value.absent(),
   });
   PreferenceSyncQueueCompanion.insert({
     this.id = const Value.absent(),
+    this.category = const Value.absent(),
     required String type,
-    required String feedUri,
+    required String payload,
     required DateTime createdAt,
     this.retryCount = const Value.absent(),
   }) : type = Value(type),
-       feedUri = Value(feedUri),
+       payload = Value(payload),
        createdAt = Value(createdAt);
   static Insertable<PreferenceSyncQueueData> custom({
     Expression<int>? id,
+    Expression<String>? category,
     Expression<String>? type,
-    Expression<String>? feedUri,
+    Expression<String>? payload,
     Expression<DateTime>? createdAt,
     Expression<int>? retryCount,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (category != null) 'category': category,
       if (type != null) 'type': type,
-      if (feedUri != null) 'feed_uri': feedUri,
+      if (payload != null) 'payload': payload,
       if (createdAt != null) 'created_at': createdAt,
       if (retryCount != null) 'retry_count': retryCount,
     });
@@ -4301,15 +4345,17 @@ class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueDa
 
   PreferenceSyncQueueCompanion copyWith({
     Value<int>? id,
+    Value<String>? category,
     Value<String>? type,
-    Value<String>? feedUri,
+    Value<String>? payload,
     Value<DateTime>? createdAt,
     Value<int>? retryCount,
   }) {
     return PreferenceSyncQueueCompanion(
       id: id ?? this.id,
+      category: category ?? this.category,
       type: type ?? this.type,
-      feedUri: feedUri ?? this.feedUri,
+      payload: payload ?? this.payload,
       createdAt: createdAt ?? this.createdAt,
       retryCount: retryCount ?? this.retryCount,
     );
@@ -4321,11 +4367,14 @@ class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueDa
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
     if (type.present) {
       map['type'] = Variable<String>(type.value);
     }
-    if (feedUri.present) {
-      map['feed_uri'] = Variable<String>(feedUri.value);
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -4340,8 +4389,9 @@ class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueDa
   String toString() {
     return (StringBuffer('PreferenceSyncQueueCompanion(')
           ..write('id: $id, ')
+          ..write('category: $category, ')
           ..write('type: $type, ')
-          ..write('feedUri: $feedUri, ')
+          ..write('payload: $payload, ')
           ..write('createdAt: $createdAt, ')
           ..write('retryCount: $retryCount')
           ..write(')'))
@@ -10042,16 +10092,18 @@ typedef $$SavedFeedsTableProcessedTableManager =
 typedef $$PreferenceSyncQueueTableCreateCompanionBuilder =
     PreferenceSyncQueueCompanion Function({
       Value<int> id,
+      Value<String> category,
       required String type,
-      required String feedUri,
+      required String payload,
       required DateTime createdAt,
       Value<int> retryCount,
     });
 typedef $$PreferenceSyncQueueTableUpdateCompanionBuilder =
     PreferenceSyncQueueCompanion Function({
       Value<int> id,
+      Value<String> category,
       Value<String> type,
-      Value<String> feedUri,
+      Value<String> payload,
       Value<DateTime> createdAt,
       Value<int> retryCount,
     });
@@ -10068,11 +10120,14 @@ class $$PreferenceSyncQueueTableFilterComposer
   ColumnFilters<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get feedUri =>
-      $composableBuilder(column: $table.feedUri, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -10093,11 +10148,14 @@ class $$PreferenceSyncQueueTableOrderingComposer
   ColumnOrderings<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get feedUri =>
-      $composableBuilder(column: $table.feedUri, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
@@ -10118,11 +10176,14 @@ class $$PreferenceSyncQueueTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
   GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
 
-  GeneratedColumn<String> get feedUri =>
-      $composableBuilder(column: $table.feedUri, builder: (column) => column);
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -10163,28 +10224,32 @@ class $$PreferenceSyncQueueTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String> category = const Value.absent(),
                 Value<String> type = const Value.absent(),
-                Value<String> feedUri = const Value.absent(),
+                Value<String> payload = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> retryCount = const Value.absent(),
               }) => PreferenceSyncQueueCompanion(
                 id: id,
+                category: category,
                 type: type,
-                feedUri: feedUri,
+                payload: payload,
                 createdAt: createdAt,
                 retryCount: retryCount,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String> category = const Value.absent(),
                 required String type,
-                required String feedUri,
+                required String payload,
                 required DateTime createdAt,
                 Value<int> retryCount = const Value.absent(),
               }) => PreferenceSyncQueueCompanion.insert(
                 id: id,
+                category: category,
                 type: type,
-                feedUri: feedUri,
+                payload: payload,
                 createdAt: createdAt,
                 retryCount: retryCount,
               ),

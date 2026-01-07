@@ -1,18 +1,22 @@
+import 'dart:convert';
+
 import '../../core/utils/logger.dart';
 import '../../features/settings/domain/bluesky_preferences.dart';
 import '../db/daos/bluesky_preferences_dao.dart';
+import '../db/daos/preference_sync_queue_dao.dart';
 import '../network/xrpc_client.dart';
 
 /// Repository for managing Bluesky account preferences.
 ///
 /// Handles syncing preferences from the remote server and provides
 /// typed access to content moderation, feed/thread view, and muted
-/// word settings.
+/// word settings. Also manages the sync queue for offline updates.
 class BlueskyPreferencesRepository {
-  BlueskyPreferencesRepository(this._api, this._dao, this._logger);
+  BlueskyPreferencesRepository(this._api, this._dao, this._syncQueueDao, this._logger);
 
   final XrpcClient _api;
   final BlueskyPreferencesDao _dao;
+  final PreferenceSyncQueueDao _syncQueueDao;
   final Logger _logger;
 
   /// Syncs all preferences from the remote Bluesky server.
@@ -288,5 +292,93 @@ class BlueskyPreferencesRepository {
   Future<void> clearAll() async {
     _logger.info('Clearing all Bluesky preferences');
     await _dao.clearAll();
+  }
+
+  /// Processes the preference sync queue, retrying failed updates.
+  ///
+  /// For each queued preference update:
+  /// 1. Fetches ALL current preferences from remote
+  /// 2. Replaces the specific preference type with the queued data
+  /// 3. Sends the complete array back via putPreferences
+  /// 4. Deletes the queue item on success, or increments retry count on failure
+  ///
+  /// Also cleans up old permanently failed items (> 30 days).
+  Future<void> processSyncQueue() async {
+    if (!_api.isAuthenticated) return;
+
+    final threshold = DateTime.now().subtract(const Duration(days: 30));
+    await _syncQueueDao.cleanupOldFailedItems(threshold);
+
+    final retryable = await _syncQueueDao.getRetryableBlueskyPrefItems();
+    if (retryable.isEmpty) {
+      return;
+    }
+
+    _logger.info('Processing ${retryable.length} retryable preference sync items');
+
+    for (final item in retryable) {
+      try {
+        await _syncSinglePreference(item.type, item.payload);
+        await _syncQueueDao.deleteItem(item.id);
+        _logger.debug('Successfully synced preference ${item.type}');
+      } catch (e) {
+        _logger.error('Failed to sync preference ${item.type}', {
+          'error': e.toString(),
+          'retryCount': item.retryCount,
+        });
+        await _syncQueueDao.incrementRetryCount(item.id);
+      }
+    }
+  }
+
+  /// Syncs a single preference type to the remote server.
+  ///
+  /// Fetches all current preferences, replaces the specific type, and sends
+  /// the complete array back.
+  Future<void> _syncSinglePreference(String preferenceType, String preferenceData) async {
+    final response = await _api.call('app.bsky.actor.getPreferences');
+    final currentPrefs = (response['preferences'] as List<dynamic>?) ?? [];
+
+    final updatedPrefs = List<Map<String, dynamic>>.from(
+      currentPrefs.map((p) => p as Map<String, dynamic>),
+    );
+
+    final typeToRemove = _getPreferenceTypeIdentifier(preferenceType);
+    updatedPrefs.removeWhere((p) => p[r'$type'] == typeToRemove);
+
+    final parsedData = jsonDecode(preferenceData) as Map<String, dynamic>;
+    if (preferenceType == 'contentLabels') {
+      final labels = (parsedData['labels'] as List<dynamic>?) ?? [];
+      for (final label in labels) {
+        updatedPrefs.add({
+          r'$type': BlueskyPreferenceTypes.contentLabel,
+          ...label as Map<String, dynamic>,
+        });
+      }
+    } else {
+      updatedPrefs.add({r'$type': typeToRemove, ...parsedData});
+    }
+
+    await _api.call('app.bsky.actor.putPreferences', body: {'preferences': updatedPrefs});
+  }
+
+  /// Maps internal preference type names to AT Protocol type identifiers.
+  String _getPreferenceTypeIdentifier(String preferenceType) {
+    switch (preferenceType) {
+      case 'adultContent':
+        return BlueskyPreferenceTypes.adultContent;
+      case 'contentLabels':
+        return BlueskyPreferenceTypes.contentLabel;
+      case 'labelers':
+        return BlueskyPreferenceTypes.labelers;
+      case 'feedView':
+        return BlueskyPreferenceTypes.feedView;
+      case 'threadView':
+        return BlueskyPreferenceTypes.threadView;
+      case 'mutedWords':
+        return BlueskyPreferenceTypes.mutedWords;
+      default:
+        throw ArgumentError('Unknown preference type: $preferenceType');
+    }
   }
 }

@@ -13,6 +13,7 @@ import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_content_repository.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
+import 'package:lazurite/src/features/settings/application/preference_sync_controller.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
 import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
@@ -94,6 +95,7 @@ void main() {
       feedContentRepositoryProvider.overrideWithValue(mockFeedContentRepository),
       searchRepositoryProvider.overrideWithValue(mockSearchRepository),
       feedSyncControllerProvider.overrideWith((ref) {}),
+      preferenceSyncControllerProvider.overrideWith((ref) {}),
       feedContentCleanupControllerProvider.overrideWith((ref) {}),
       pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
       activeFeedProvider.overrideWith(() => MockActiveFeed()),

@@ -63,12 +63,40 @@ Pattern:
 - Test actual database operations, not mocks
 - Use `.first` on watch streams
 
+#### Stream Provider Tests
+
+**Reference:** `features/settings/application/settings_providers_test.dart`
+
+Pattern:
+
+- Use `container.listen()` instead of `await container.read(...).future`
+- Avoids "provider was disposed during loading state" errors
+- Verify repository method calls with mocktail
+
+Example:
+
+```dart
+test('provider calls repository watch method', () {
+  const expected = SomeData(...);
+  when(() => mockRepository.watchSomeData())
+      .thenAnswer((_) => Stream.value(expected));
+
+  container.listen(someDataProvider, (prev, next) {});
+
+  verify(() => mockRepository.watchSomeData()).called(1);
+});
+```
+
+Critical: Don't use `await container.read(provider.future)` in tests where the container
+is disposed in `tearDown()`, as the provider may be disposed before the future completes.
+
 ## Pitfalls
 
 1. **Forgetting to override providers** - Any screen with database streams needs mocked providers
 2. **Not closing databases** - Always close in `tearDown()` to prevent resource leaks
 3. **Using `Stream.empty()`** - Use `Stream.value([])` to emit an empty list
 4. **Missing navigation overrides** - Router tests must mock providers for all navigable screens
+5. **Testing stream providers with `.future`** - Use `container.listen()` to avoid disposal errors
 
 ## Organization
 

@@ -10,7 +10,8 @@ const int kMaxSyncRetries = 5;
 
 /// DAO for managing the preference synchronization queue.
 ///
-/// Stores failed preference updates (save/remove feed) for retrying when online.
+/// Stores failed preference updates for both feed preferences and Bluesky
+/// account preferences for retrying when online.
 @DriftAccessor(tables: [PreferenceSyncQueue])
 class PreferenceSyncQueueDao extends DatabaseAccessor<AppDatabase>
     with _$PreferenceSyncQueueDaoMixin {
@@ -19,6 +20,36 @@ class PreferenceSyncQueueDao extends DatabaseAccessor<AppDatabase>
   /// Adds an item to the queue.
   Future<int> enqueue(PreferenceSyncQueueCompanion item) {
     return into(preferenceSyncQueue).insert(item);
+  }
+
+  /// Enqueues a feed preference update.
+  Future<int> enqueueFeedSync({required String type, required String feedUri}) {
+    return enqueue(
+      PreferenceSyncQueueCompanion.insert(
+        category: const Value('feed'),
+        type: type,
+        payload: feedUri,
+        createdAt: DateTime.now(),
+      ),
+    );
+  }
+
+  /// Enqueues a Bluesky preference update.
+  ///
+  /// The [preferenceType] should be one of: 'adultContent', 'contentLabels',
+  /// 'labelers', 'feedView', 'threadView', 'mutedWords'.
+  Future<int> enqueueBlueskyPrefSync({
+    required String preferenceType,
+    required String preferenceData,
+  }) {
+    return enqueue(
+      PreferenceSyncQueueCompanion.insert(
+        category: const Value('bluesky_pref'),
+        type: preferenceType,
+        payload: preferenceData,
+        createdAt: DateTime.now(),
+      ),
+    );
   }
 
   /// Gets all pending items in the queue, ordered by creation time.
@@ -32,6 +63,28 @@ class PreferenceSyncQueueDao extends DatabaseAccessor<AppDatabase>
   Future<List<PreferenceSyncQueueData>> getRetryableItems() {
     return (select(preferenceSyncQueue)
           ..where((t) => t.retryCount.isSmallerThanValue(kMaxSyncRetries))
+          ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
+        .get();
+  }
+
+  /// Gets retryable feed preference items.
+  Future<List<PreferenceSyncQueueData>> getRetryableFeedItems() {
+    return (select(preferenceSyncQueue)
+          ..where(
+            (t) => t.category.equals('feed') & t.retryCount.isSmallerThanValue(kMaxSyncRetries),
+          )
+          ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
+        .get();
+  }
+
+  /// Gets retryable Bluesky preference items.
+  Future<List<PreferenceSyncQueueData>> getRetryableBlueskyPrefItems() {
+    return (select(preferenceSyncQueue)
+          ..where(
+            (t) =>
+                t.category.equals('bluesky_pref') &
+                t.retryCount.isSmallerThanValue(kMaxSyncRetries),
+          )
           ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
         .get();
   }

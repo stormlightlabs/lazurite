@@ -246,7 +246,7 @@ void main() {
 
       final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
       expect(queueItems, hasLength(1), reason: 'Should have queued sync operation');
-      expect(queueItems[0].feedUri, feedUri);
+      expect(queueItems[0].payload, feedUri);
       expect(queueItems[0].type, 'save');
     });
 
@@ -313,7 +313,7 @@ void main() {
 
       final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
       expect(queueItems, hasLength(1), reason: 'Should have queued sync operation');
-      expect(queueItems[0].feedUri, feedUri);
+      expect(queueItems[0].payload, feedUri);
       expect(queueItems[0].type, 'remove');
     });
 
@@ -401,7 +401,12 @@ void main() {
       final now = DateTime.now();
 
       await db.preferenceSyncQueueDao.enqueue(
-        PreferenceSyncQueueCompanion.insert(type: 'save', feedUri: feedUri, createdAt: now),
+        PreferenceSyncQueueCompanion.insert(
+          category: const Value('feed'),
+          type: 'save',
+          payload: feedUri,
+          createdAt: now,
+        ),
       );
 
       await db.savedFeedsDao.upsertFeed(
@@ -433,8 +438,9 @@ void main() {
           .into(db.preferenceSyncQueue)
           .insert(
             PreferenceSyncQueueCompanion.insert(
+              category: const Value('feed'),
               type: 'save',
-              feedUri: feedUri,
+              payload: feedUri,
               createdAt: now,
               retryCount: const Value(5),
             ),
@@ -456,8 +462,9 @@ void main() {
           .into(db.preferenceSyncQueue)
           .insert(
             PreferenceSyncQueueCompanion.insert(
+              category: const Value('feed'),
               type: 'save',
-              feedUri: 'at://did:plc:test/app.bsky.feed.generator/old-failed',
+              payload: 'at://did:plc:test/app.bsky.feed.generator/old-failed',
               createdAt: now.subtract(const Duration(days: 45)),
               retryCount: const Value(5),
             ),
@@ -465,8 +472,9 @@ void main() {
 
       await db.preferenceSyncQueueDao.enqueue(
         PreferenceSyncQueueCompanion.insert(
+          category: const Value('feed'),
           type: 'save',
-          feedUri: 'at://did:plc:test/app.bsky.feed.generator/recent',
+          payload: 'at://did:plc:test/app.bsky.feed.generator/recent',
           createdAt: now,
         ),
       );
@@ -479,7 +487,7 @@ void main() {
 
       final items = await db.preferenceSyncQueueDao.getPendingItems();
       expect(items.length, 1);
-      expect(items.first.feedUri, 'at://did:plc:test/app.bsky.feed.generator/recent');
+      expect(items.first.payload, 'at://did:plc:test/app.bsky.feed.generator/recent');
     });
 
     test('processSyncQueue processes only retryable items', () async {
@@ -487,8 +495,9 @@ void main() {
 
       await db.preferenceSyncQueueDao.enqueue(
         PreferenceSyncQueueCompanion.insert(
+          category: const Value('feed'),
           type: 'save',
-          feedUri: 'at://did:plc:ok/app.bsky.feed.generator/retryable',
+          payload: 'at://did:plc:ok/app.bsky.feed.generator/retryable',
           createdAt: now,
         ),
       );
@@ -507,8 +516,9 @@ void main() {
           .into(db.preferenceSyncQueue)
           .insert(
             PreferenceSyncQueueCompanion.insert(
+              category: const Value('feed'),
               type: 'save',
-              feedUri: 'at://did:plc:fail/app.bsky.feed.generator/maxed',
+              payload: 'at://did:plc:fail/app.bsky.feed.generator/maxed',
               createdAt: now,
               retryCount: const Value(5),
             ),
@@ -526,7 +536,7 @@ void main() {
 
       final items = await db.preferenceSyncQueueDao.getPendingItems();
       expect(items.length, 1, reason: 'Only the maxed-out item should remain');
-      expect(items.first.feedUri, 'at://did:plc:fail/app.bsky.feed.generator/maxed');
+      expect(items.first.payload, 'at://did:plc:fail/app.bsky.feed.generator/maxed');
     });
   });
 
@@ -568,7 +578,7 @@ void main() {
       expect(feed!.isPinned, true, reason: 'Local pin status should win');
       expect(feed.displayName, 'Local Name', reason: 'Local display name should be preserved');
       final queue = await db.preferenceSyncQueueDao.getPendingItems();
-      expect(queue.any((q) => q.feedUri == feedUri && q.type == 'save'), true);
+      expect(queue.any((q) => q.payload == feedUri && q.type == 'save'), true);
     });
 
     test('remote changes win when no local modifications', () async {
@@ -718,7 +728,7 @@ void main() {
 
       final queue = await db.preferenceSyncQueueDao.getPendingItems();
       expect(
-        queue.any((q) => q.feedUri == localOnlyFeedUri && q.type == 'save'),
+        queue.any((q) => q.payload == localOnlyFeedUri && q.type == 'save'),
         true,
         reason: 'Local-only feed should be queued for remote sync',
       );

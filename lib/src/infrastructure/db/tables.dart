@@ -239,14 +239,26 @@ class SavedFeeds extends Table {
 }
 
 /// Stores queued preference updates for offline synchronization.
+///
+/// Handles both feed preferences (save/remove/reorder) and Bluesky account
+/// preferences (content labels, muted words, etc.).
 class PreferenceSyncQueue extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  /// Type of operation: 'save' or 'remove'.
+  /// Category of preference being synced: 'feed' or 'bluesky_pref'.
+  TextColumn get category => text().withDefault(const Constant('feed'))();
+
+  /// Type of operation.
+  ///
+  /// For feeds: 'save', 'remove', or 'reorder'.
+  /// For bluesky preferences: 'update'.
   TextColumn get type => text()();
 
-  /// The feed URI to sync.
-  TextColumn get feedUri => text()();
+  /// Payload data for the sync operation.
+  ///
+  /// For feeds: the feed URI (or comma-separated URIs for reorder).
+  /// For bluesky preferences: JSON string of the preference data.
+  TextColumn get payload => text()();
 
   /// When the item was queued.
   DateTimeColumn get createdAt => dateTime()();

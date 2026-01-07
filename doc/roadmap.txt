@@ -287,9 +287,9 @@ Tasks:
             - update via putPreferences (send complete pref array)
             - queue failed updates in PreferenceSyncQueue
             - merge remote changes on sync
-      - [ ] Extend PreferenceSyncQueue to handle all pref types
-      - [ ] Implement preference sync on app start (authenticated)
-      - [ ] Create Riverpod providers for each preference type
+      - [x] Extend PreferenceSyncQueue to handle all pref types
+      - [x] Implement preference sync on app start (authenticated)
+      - [x] Create Riverpod providers for each preference type
 - [ ] Phase 3 - Content Moderation UI (MEDIUM):
       - [ ] Build ContentModerationScreen:
             - grouped content labels by category

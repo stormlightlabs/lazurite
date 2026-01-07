@@ -21,38 +21,78 @@ void main() {
     test('enqueue adds item to queue', () async {
       final now = DateTime.now();
       await dao.enqueue(
-        PreferenceSyncQueueCompanion.insert(type: 'save', feedUri: 'at://test', createdAt: now),
+        PreferenceSyncQueueCompanion.insert(
+          category: const Value('feed'),
+          type: 'save',
+          payload: 'at://test',
+          createdAt: now,
+        ),
       );
 
       final pending = await dao.getPendingItems();
       expect(pending.length, 1);
+      expect(pending.first.category, 'feed');
       expect(pending.first.type, 'save');
-      expect(pending.first.feedUri, 'at://test');
+      expect(pending.first.payload, 'at://test');
+    });
+
+    test('enqueueFeedSync adds feed item with correct category', () async {
+      await dao.enqueueFeedSync(type: 'save', feedUri: 'at://test-feed');
+
+      final pending = await dao.getPendingItems();
+      expect(pending.length, 1);
+      expect(pending.first.category, 'feed');
+      expect(pending.first.type, 'save');
+      expect(pending.first.payload, 'at://test-feed');
+    });
+
+    test('enqueueBlueskyPrefSync adds preference item with correct category', () async {
+      await dao.enqueueBlueskyPrefSync(
+        preferenceType: 'adultContent',
+        preferenceData: '{"enabled": true}',
+      );
+
+      final pending = await dao.getPendingItems();
+      expect(pending.length, 1);
+      expect(pending.first.category, 'bluesky_pref');
+      expect(pending.first.type, 'adultContent');
+      expect(pending.first.payload, '{"enabled": true}');
     });
 
     test('getPendingItems returns ordered items', () async {
       final now = DateTime.now();
       await dao.enqueue(
-        PreferenceSyncQueueCompanion.insert(type: 'save', feedUri: 'first', createdAt: now),
+        PreferenceSyncQueueCompanion.insert(
+          category: const Value('feed'),
+          type: 'save',
+          payload: 'first',
+          createdAt: now,
+        ),
       );
       await dao.enqueue(
         PreferenceSyncQueueCompanion.insert(
+          category: const Value('feed'),
           type: 'remove',
-          feedUri: 'second',
+          payload: 'second',
           createdAt: now.add(const Duration(seconds: 1)),
         ),
       );
 
       final pending = await dao.getPendingItems();
       expect(pending.length, 2);
-      expect(pending[0].feedUri, 'first');
-      expect(pending[1].feedUri, 'second');
+      expect(pending[0].payload, 'first');
+      expect(pending[1].payload, 'second');
     });
 
     test('deleteItem removes specific item', () async {
       final now = DateTime.now();
       await dao.enqueue(
-        PreferenceSyncQueueCompanion.insert(type: 'save', feedUri: 'at://test', createdAt: now),
+        PreferenceSyncQueueCompanion.insert(
+          category: const Value('feed'),
+          type: 'save',
+          payload: 'at://test',
+          createdAt: now,
+        ),
       );
 
       var pending = await dao.getPendingItems();
@@ -67,10 +107,20 @@ void main() {
     test('clearQueue removes all items', timeout: const Timeout(Duration(seconds: 5)), () async {
       final now = DateTime.now();
       await dao.enqueue(
-        PreferenceSyncQueueCompanion.insert(type: 'save', feedUri: '1', createdAt: now),
+        PreferenceSyncQueueCompanion.insert(
+          category: const Value('feed'),
+          type: 'save',
+          payload: '1',
+          createdAt: now,
+        ),
       );
       await dao.enqueue(
-        PreferenceSyncQueueCompanion.insert(type: 'save', feedUri: '2', createdAt: now),
+        PreferenceSyncQueueCompanion.insert(
+          category: const Value('feed'),
+          type: 'save',
+          payload: '2',
+          createdAt: now,
+        ),
       );
 
       await dao.clearQueue();
@@ -85,8 +135,9 @@ void main() {
 
         await dao.enqueue(
           PreferenceSyncQueueCompanion.insert(
+            category: const Value('feed'),
             type: 'save',
-            feedUri: 'at://retryable',
+            payload: 'at://retryable',
             createdAt: now,
           ),
         );
@@ -95,8 +146,9 @@ void main() {
             .into(db.preferenceSyncQueue)
             .insert(
               PreferenceSyncQueueCompanion.insert(
+                category: const Value('feed'),
                 type: 'save',
-                feedUri: 'at://almost-maxed',
+                payload: 'at://almost-maxed',
                 createdAt: now,
                 retryCount: const Value(4),
               ),
@@ -106,8 +158,9 @@ void main() {
             .into(db.preferenceSyncQueue)
             .insert(
               PreferenceSyncQueueCompanion.insert(
+                category: const Value('feed'),
                 type: 'save',
-                feedUri: 'at://maxed-out',
+                payload: 'at://maxed-out',
                 createdAt: now,
                 retryCount: const Value(5),
               ),
@@ -116,16 +169,49 @@ void main() {
         final retryable = await dao.getRetryableItems();
         expect(retryable.length, 2);
         expect(
-          retryable.map((r) => r.feedUri),
+          retryable.map((r) => r.payload),
           containsAll(['at://retryable', 'at://almost-maxed']),
         );
-        expect(retryable.map((r) => r.feedUri), isNot(contains('at://maxed-out')));
+        expect(retryable.map((r) => r.payload), isNot(contains('at://maxed-out')));
+      });
+
+      test('getRetryableFeedItems filters by feed category', () async {
+        await dao.enqueueFeedSync(type: 'save', feedUri: 'at://feed1');
+        await dao.enqueueFeedSync(type: 'remove', feedUri: 'at://feed2');
+        await dao.enqueueBlueskyPrefSync(
+          preferenceType: 'adultContent',
+          preferenceData: '{"enabled": true}',
+        );
+
+        final feedItems = await dao.getRetryableFeedItems();
+        expect(feedItems.length, 2);
+        expect(feedItems.every((item) => item.category == 'feed'), true);
+        expect(feedItems.map((r) => r.payload), containsAll(['at://feed1', 'at://feed2']));
+      });
+
+      test('getRetryableBlueskyPrefItems filters by bluesky_pref category', () async {
+        await dao.enqueueFeedSync(type: 'save', feedUri: 'at://feed1');
+        await dao.enqueueBlueskyPrefSync(
+          preferenceType: 'adultContent',
+          preferenceData: '{"enabled": true}',
+        );
+        await dao.enqueueBlueskyPrefSync(preferenceType: 'contentLabels', preferenceData: '[]');
+
+        final prefItems = await dao.getRetryableBlueskyPrefItems();
+        expect(prefItems.length, 2);
+        expect(prefItems.every((item) => item.category == 'bluesky_pref'), true);
+        expect(prefItems.map((r) => r.payload), containsAll(['{"enabled": true}', '[]']));
       });
 
       test('incrementRetryCount updates the retry count', () async {
         final now = DateTime.now();
         final id = await dao.enqueue(
-          PreferenceSyncQueueCompanion.insert(type: 'save', feedUri: 'at://test', createdAt: now),
+          PreferenceSyncQueueCompanion.insert(
+            category: const Value('feed'),
+            type: 'save',
+            payload: 'at://test',
+            createdAt: now,
+          ),
         );
 
         var items = await dao.getPendingItems();
@@ -151,8 +237,9 @@ void main() {
             .into(db.preferenceSyncQueue)
             .insert(
               PreferenceSyncQueueCompanion.insert(
+                category: const Value('feed'),
                 type: 'save',
-                feedUri: 'at://old-failed',
+                payload: 'at://old-failed',
                 createdAt: now.subtract(const Duration(days: 45)),
                 retryCount: const Value(5),
               ),
@@ -162,8 +249,9 @@ void main() {
             .into(db.preferenceSyncQueue)
             .insert(
               PreferenceSyncQueueCompanion.insert(
+                category: const Value('feed'),
                 type: 'save',
-                feedUri: 'at://old-retryable',
+                payload: 'at://old-retryable',
                 createdAt: now.subtract(const Duration(days: 45)),
                 retryCount: const Value(3),
               ),
@@ -173,8 +261,9 @@ void main() {
             .into(db.preferenceSyncQueue)
             .insert(
               PreferenceSyncQueueCompanion.insert(
+                category: const Value('feed'),
                 type: 'save',
-                feedUri: 'at://recent-failed',
+                payload: 'at://recent-failed',
                 createdAt: now.subtract(const Duration(days: 5)),
                 retryCount: const Value(5),
               ),
@@ -182,8 +271,9 @@ void main() {
 
         await dao.enqueue(
           PreferenceSyncQueueCompanion.insert(
+            category: const Value('feed'),
             type: 'save',
-            feedUri: 'at://new-item',
+            payload: 'at://new-item',
             createdAt: now,
           ),
         );
@@ -194,16 +284,21 @@ void main() {
         final remaining = await dao.getPendingItems();
         expect(remaining.length, 3);
         expect(
-          remaining.map((r) => r.feedUri),
+          remaining.map((r) => r.payload),
           containsAll(['at://old-retryable', 'at://recent-failed', 'at://new-item']),
         );
-        expect(remaining.map((r) => r.feedUri), isNot(contains('at://old-failed')));
+        expect(remaining.map((r) => r.payload), isNot(contains('at://old-failed')));
       });
 
       test('cleanupOldFailedItems returns 0 when nothing to clean', () async {
         final now = DateTime.now();
         await dao.enqueue(
-          PreferenceSyncQueueCompanion.insert(type: 'save', feedUri: 'at://test', createdAt: now),
+          PreferenceSyncQueueCompanion.insert(
+            category: const Value('feed'),
+            type: 'save',
+            payload: 'at://test',
+            createdAt: now,
+          ),
         );
 
         final deleted = await dao.cleanupOldFailedItems(now.subtract(const Duration(days: 30)));

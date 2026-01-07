@@ -140,7 +140,7 @@ void main() {
       final queue = await db.preferenceSyncQueueDao.getPendingItems();
       expect(queue, hasLength(1));
       expect(queue.first.type, 'save');
-      expect(queue.first.feedUri, feedUri);
+      expect(queue.first.payload, feedUri);
       final feed = await db.savedFeedsDao.getFeed(feedUri);
       expect(feed, isNotNull);
     });
@@ -540,7 +540,7 @@ void main() {
       final queue = await db.preferenceSyncQueueDao.getPendingItems();
       expect(queue, hasLength(1));
       expect(queue.first.type, 'reorder');
-      expect(queue.first.feedUri, '$feed2,$feed1');
+      expect(queue.first.payload, '$feed2,$feed1');
     });
 
     test('throws when unauthenticated', () async {

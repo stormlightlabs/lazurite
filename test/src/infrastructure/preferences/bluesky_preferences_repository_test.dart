@@ -19,7 +19,12 @@ void main() {
     db = AppDatabase(NativeDatabase.memory());
     mockApi = MockXrpcClient();
     logger = const Logger('BlueskyPreferencesRepositoryTest');
-    repository = BlueskyPreferencesRepository(mockApi, db.blueskyPreferencesDao, logger);
+    repository = BlueskyPreferencesRepository(
+      mockApi,
+      db.blueskyPreferencesDao,
+      db.preferenceSyncQueueDao,
+      logger,
+    );
   });
 
   tearDown(() async {
