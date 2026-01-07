@@ -286,3 +286,21 @@ class DraftMedia extends Table {
   IntColumn get sortOrder => integer()();
   DateTimeColumn get createdAt => dateTime()();
 }
+
+/// Stores local app settings as key-value pairs.
+///
+/// Used for theme mode, theme pack ID, font scale, and other user preferences.
+/// Key-value design allows adding new settings without schema migrations.
+class LocalSettings extends Table {
+  /// Setting key (e.g., 'themeMode', 'themePackId').
+  TextColumn get key => text()();
+
+  /// Setting value (serialized as string).
+  TextColumn get value => text()();
+
+  /// When this setting was last updated.
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}

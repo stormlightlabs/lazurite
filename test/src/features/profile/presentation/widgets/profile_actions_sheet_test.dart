@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/app/theme_mode_controller.dart';
+import 'package:lazurite/src/app/theme_controller.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
@@ -39,13 +39,19 @@ class RecordingAuthNotifier extends AuthNotifier {
   }
 }
 
-class TestThemeModeNotifier extends ThemeModeController {
-  TestThemeModeNotifier({required this.initial});
+/// Test ThemeController that avoids Google Fonts loading.
+class TestThemeController extends ThemeController {
+  TestThemeController({required this.initialMode});
 
-  final ThemeMode initial;
+  final ThemeMode initialMode;
 
   @override
-  ThemeMode build() => initial;
+  ThemeState build() => ThemeState(
+    themeMode: initialMode,
+    currentPackId: 'oxocarbon',
+    lightTheme: ThemeData.light(useMaterial3: true),
+    darkTheme: ThemeData.dark(useMaterial3: true),
+  );
 }
 
 void main() {
@@ -74,9 +80,7 @@ void main() {
     return ProviderScope(
       overrides: [
         if (authNotifier != null) authProvider.overrideWith(() => authNotifier),
-        themeModeControllerProvider.overrideWith(
-          () => TestThemeModeNotifier(initial: initialTheme),
-        ),
+        themeControllerProvider.overrideWith(() => TestThemeController(initialMode: initialTheme)),
         profileRepositoryProvider.overrideWithValue(mockProfileRepository),
       ],
       child: MaterialApp(

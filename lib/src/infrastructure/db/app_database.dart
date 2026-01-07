@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'daos/drafts_dao.dart';
 import 'daos/feed_content_dao.dart';
 import 'daos/follows_dao.dart';
+import 'daos/local_settings_dao.dart';
 import 'daos/post_interactions_dao.dart';
 import 'daos/preference_sync_queue_dao.dart';
 import 'daos/profile_dao.dart';
@@ -36,6 +37,7 @@ part 'app_database.g.dart';
     DraftMedia,
     ProfileRelationships,
     PostInteractions,
+    LocalSettings,
   ],
   daos: [
     FeedContentDao,
@@ -48,6 +50,7 @@ part 'app_database.g.dart';
     PreferenceSyncQueueDao,
     DraftsDao,
     PostInteractionsDao,
+    LocalSettingsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {

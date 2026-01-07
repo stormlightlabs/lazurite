@@ -115,7 +115,6 @@ abstract final class AppTheme {
     final monoStyle = GoogleFonts.firaCode(color: color);
 
     return TextTheme(
-      // Display styles - Crimson Pro
       displayLarge: displayStyle.copyWith(
         fontSize: 57,
         fontWeight: FontWeight.w400,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lazurite/src/app/theme_mode_controller.dart';
+import 'package:lazurite/src/app/theme_controller.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/report_dialog.dart';
@@ -16,8 +16,8 @@ class ProfileActionsSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeControllerProvider);
-    final isDarkMode = themeMode == ThemeMode.dark;
+    final themeState = ref.watch(themeControllerProvider);
+    final isDarkMode = themeState.themeMode == ThemeMode.dark;
     final profileState = ref.watch(profileProvider(did));
     final profile = profileState.value;
 
@@ -31,7 +31,7 @@ class ProfileActionsSheet extends ConsumerWidget {
             value: isDarkMode,
             onChanged: (enabled) {
               ref
-                  .read(themeModeControllerProvider.notifier)
+                  .read(themeControllerProvider.notifier)
                   .setThemeMode(enabled ? ThemeMode.dark : ThemeMode.light);
             },
           ),

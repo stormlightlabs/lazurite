@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/app/app.dart';
 import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/app/theme_controller.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
@@ -96,6 +97,7 @@ void main() {
       feedContentCleanupControllerProvider.overrideWith((ref) {}),
       pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
       activeFeedProvider.overrideWith(() => MockActiveFeed()),
+      themeControllerProvider.overrideWith(MockThemeController.new),
     ];
   }
 
@@ -170,4 +172,18 @@ class MockActiveFeed extends ActiveFeed {
 class MockPinnedFeedsNotifier extends PinnedFeedsNotifier {
   @override
   Stream<List<SavedFeedData>> build() => Stream.value([]);
+}
+
+/// Mock ThemeController that avoids ThemeFactory.buildThemeData()
+/// which triggers Google Fonts loading.
+class MockThemeController extends ThemeController {
+  @override
+  ThemeState build() {
+    return ThemeState(
+      themeMode: ThemeMode.dark,
+      currentPackId: 'oxocarbon',
+      lightTheme: ThemeData.light(useMaterial3: true),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+    );
+  }
 }

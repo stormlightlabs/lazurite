@@ -31,17 +31,17 @@ Current state:
 - No persistence layer
 
 Tasks:
-- [ ] Extend ThemeController (Riverpod) with:
+- [x] Extend/Create ThemeController (Riverpod) with:
       - currentThemePackId: String
       - currentVariantId: String?
       - setThemePack(packId, [variantId]): switches active pack/variant
       - getActiveThemeData(): ThemeData (via ThemeFactory)
       - optional: dynamicColorEnabled for Android 12+ Material You
-- [ ] Add persistence:
+- [x] Add persistence:
       - Drift table to keep settings in the central DB
       - Store: current pack ID, current variant ID (or brightness preference)
-- [ ] Wire MaterialApp(theme, darkTheme, themeMode) from controller
-- [ ] Migrate existing ThemeModeController to new ThemeController
+- [x] Wire MaterialApp(theme, darkTheme, themeMode) from controller
+- [x] Migrate existing ThemeModeController to new ThemeController
 
 Deliverables:
 - Theme pack + variant switch updates UI without restart
@@ -172,9 +172,6 @@ Tasks:
 - [ ] Add accessibility checks:
       - Contrast ratio tests (WCAG AA minimum for onSurface/onSurfaceVariant)
       - Ensure primary/secondary accents meet contrast requirements
-- [ ] Golden tests (optional):
-      - Visual regression tests for Home screen, Post card, Chip row, Nav bar
-      - Compare against baseline screenshots per pack
 - [ ] Pre-release validation:
       - CI step runs all role lint + accessibility tests
       - Fails build if any pack violates constraints

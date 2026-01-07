@@ -60,7 +60,7 @@ Phase 1 - Core Composer Screen (HIGH):
 - [ ] Cancel flow:
       - [ ] Save draft on cancel button
       - [ ] Pop modal
-      - [ ] Confirm if unsaved changes (future)
+      - [ ] Confirm if unsaved changes
 - [ ] Router configuration:
       - [ ] Add /compose route to router
       - [ ] Configure as modal route
@@ -157,9 +157,9 @@ Phase 5 - Rich Text (Mentions and Links) (MEDIUM):
       - [ ] Parse text on publish
       - [ ] Store facets in facetsJson
       - [ ] Include facets in post record
-      - [ ] Visual styling for mentions (future)
-      - [ ] Visual styling for links (future)
-- [ ] Link card preview (future):
+      - [ ] Visual styling for mentions
+      - [ ] Visual styling for links
+- [ ] Link card preview:
       - [ ] Detect URLs in text
       - [ ] Fetch link metadata (unfurling)
       - [ ] Display link card preview
@@ -245,15 +245,15 @@ Endpoints (already registered):
 - app.bsky.actor.putPreferences (POST, requires auth)
 
 Tasks:
-- [ ] Phase 1 - Local Settings Foundation (HIGH):
-      - [ ] Create settings feature folder structure (lib/src/features/settings/)
-      - [ ] Create LocalPreferences table and DAO:
-            - themeMode, accentColor, fontScale, updatedAt
-      - [ ] Create LocalPreferencesRepository
-      - [ ] Update ThemeModeController to persist theme:
+- [x] Phase 1 - Local Settings Foundation (HIGH) [partial]:
+      - [x] Create LocalSettings table and LocalSettingsDao:
+            - themeMode, themePackId (key-value store for extensibility)
+      - [x] Update ThemeModeController to persist theme:
+            - New ThemeController with ThemeState (themeMode, currentPackId, themes)
             - load persisted theme on app start
             - support system theme option with brightness detection
             - save changes to database
+      - [ ] Create LocalPreferencesRepository
       - [ ] Build main SettingsScreen:
             - Account section (authenticated only)
             - Appearance section
@@ -262,7 +262,7 @@ Tasks:
       - [ ] Build ThemeSettingsScreen:
             - theme mode selector (Light, Dark, System)
             - preview cards showing appearance
-            - accent color picker (future)
+            - accent color picker
       - [ ] Build AboutScreen:
             - app info (name, version, build number)
             - links (website, GitHub, bug reports, features)
@@ -313,7 +313,7 @@ Tasks:
       - [ ] Wire muted words to post filtering logic
 
 Tests:
-- [ ] Theme persistence: mode persists across app restarts
+- [x] Theme persistence: mode persists across app restarts (11 DAO tests + 13 controller tests)
 - [ ] System theme: follows OS brightness changes
 - [ ] About screen: version info copies to clipboard
 - [ ] Preference sync: Bluesky preferences sync on login
@@ -325,7 +325,7 @@ Tests:
 - [ ] Muted words: keywords filter content from feeds
 
 Deliverables:
-- [ ] Theme mode persists and supports system theme
+- [x] Theme mode persists and supports system theme
 - [ ] About screen with app info, credits, licenses, links
 - [ ] Content moderation settings sync with Bluesky
 - [ ] Content labels filter posts according to preferences
@@ -444,7 +444,7 @@ Tasks:
 - [ ] Drift tables:
       - smart_folders (name, sortMode)
       - smart_folder_rules (type, payloadJson)
-      - optional smart_folder_items materialization (later)
+      - smart_folder_items materialization
 - [ ] Rule engine (MVP rule types):
       - author allow/deny (DIDs)
       - keyword include/exclude (text)
