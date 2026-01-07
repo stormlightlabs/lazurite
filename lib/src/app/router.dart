@@ -6,6 +6,7 @@ import 'package:lazurite/src/core/widgets/tab_scaffold.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
+import 'package:lazurite/src/features/composer/presentation/screens/draft_list_screen.dart';
 import 'package:lazurite/src/features/dms/presentation/dms_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
@@ -224,6 +225,11 @@ GoRouter createRouter(Ref ref) {
           replyTo: state.uri.queryParameters['replyTo'],
           quoteTo: state.uri.queryParameters['quoteTo'],
         ),
+      ),
+      GoRoute(
+        path: '/drafts',
+        name: AppRouteNames.drafts, // We'll add this next
+        builder: (context, state) => const DraftListScreen(),
       ),
       GoRoute(
         path: AppRoutes.settings,

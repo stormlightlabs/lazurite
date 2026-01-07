@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/core/utils/date_formatter.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 
 /// Tab content showing author's posts with infinite scroll.
@@ -109,7 +110,7 @@ class _ProfilePostCard extends StatelessWidget {
                 const Spacer(),
                 if (item.indexedAt != null)
                   Text(
-                    _formatTime(item.indexedAt!),
+                    DateFormatter.formatRelative(item.indexedAt!),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withAlpha(127),
                     ),
@@ -120,20 +121,6 @@ class _ProfilePostCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final diff = now.difference(time);
-
-    if (diff.inDays > 0) {
-      return '${diff.inDays}d';
-    } else if (diff.inHours > 0) {
-      return '${diff.inHours}h';
-    } else if (diff.inMinutes > 0) {
-      return '${diff.inMinutes}m';
-    }
-    return 'now';
   }
 }
 

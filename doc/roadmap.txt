@@ -68,31 +68,31 @@ Phase 1 - Core Composer Screen (HIGH):
 
 Phase 2 - Draft List and Management (HIGH):
 - [ ] Create DraftListScreen widget:
-      - [ ] Load drafts from draftsProvider
-      - [ ] Sort by updatedAt (most recent first)
-      - [ ] Display draft preview cards:
-            - [ ] Text preview (first 2 lines)
-            - [ ] Media count badge if present
-            - [ ] Reply/quote indicator icons
-            - [ ] Status chip (draft/publishing/failed/posted)
-            - [ ] Timestamp (relative time)
-            - [ ] Error message for failed drafts
-      - [ ] Empty state when no drafts
+      - [x] Load drafts from draftsProvider
+      - [x] Sort by updatedAt (most recent first)
+      - [x] Display draft preview cards:
+            - [x] Text preview (first 2 lines)
+            - [x] Media count badge if present
+            - [x] Reply/quote indicator icons
+            - [x] Status chip (draft/publishing/failed/posted)
+            - [x] Timestamp (relative time)
+            - [x] Error message for failed drafts
+      - [x] Empty state when no drafts
       - [ ] Pull to refresh (cleanup old posted)
 - [ ] Draft list interactions:
-      - [ ] Tap card to edit (navigate to /compose?draftId=xxx)
-      - [ ] Swipe to delete draft
+      - [x] Tap card to edit (navigate to /compose?draftId=xxx)
+      - [x] Swipe to delete draft
       - [ ] Retry button for failed drafts
-      - [ ] Delete confirmation dialog
+      - [x] Delete confirmation dialog
 - [ ] Create DraftRecoverySheet:
       - [ ] Detect crashed publishes on app start
       - [ ] Show modal with failed draft
       - [ ] Retry or delete options
       - [ ] Auto-dismiss if successful
 - [ ] Router configuration:
-      - [ ] Add /drafts route to router
+      - [x] Add /drafts route to router
       - [ ] Add /drafts/:draftId route
-      - [ ] Configure navigation to composer with params
+      - [x] Configure navigation to composer with params
 
 Phase 3 - Alt Text and Media Polish (MEDIUM):
 - [ ] Create AltTextEditorSheet modal:

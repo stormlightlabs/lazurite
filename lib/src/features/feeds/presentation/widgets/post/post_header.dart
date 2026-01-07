@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/src/core/utils/date_formatter.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/verification_badge.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
@@ -58,7 +59,7 @@ class PostHeader extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                '• ${_formatTime(indexedAt)}',
+                '• ${indexedAt != null ? DateFormatter.formatRelative(indexedAt!) : ""}',
                 style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
             ],
@@ -66,15 +67,5 @@ class PostHeader extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  String _formatTime(DateTime? dt) {
-    if (dt == null) return '';
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    return '${diff.inDays}d';
   }
 }

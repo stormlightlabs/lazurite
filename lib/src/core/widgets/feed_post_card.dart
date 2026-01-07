@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/src/core/utils/date_formatter.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
 
 /// Shared post card widget used across profile feeds and search results.
@@ -89,7 +90,7 @@ class FeedPostCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   if (indexedAt != null)
                     Text(
-                      '• ${_formatTime(indexedAt!)}',
+                      '• ${DateFormatter.formatRelative(indexedAt!)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -130,16 +131,6 @@ class FeedPostCard extends StatelessWidget {
         _ActionItem(icon: Icons.favorite_outline, count: likeCount),
       ],
     );
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final diff = now.difference(time);
-
-    if (diff.inMinutes < 1) return 'now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    return '${diff.inDays}d';
   }
 }
 

@@ -15,6 +15,7 @@ import 'package:lazurite/src/features/composer/application/composer_providers.da
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
+import 'package:lazurite/src/features/composer/presentation/screens/draft_list_screen.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_controller.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
@@ -95,6 +96,7 @@ void main() {
       feedContentCleanupControllerProvider.overrideWith((ref) {}),
       pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
       activeFeedProvider.overrideWith(() => MockActiveFeed()),
+      draftsProvider.overrideWith((ref) => Stream.value([])),
     ];
   }
 
@@ -274,6 +276,23 @@ void main() {
       expect(screen.draftId, '123');
       expect(screen.replyTo, 'at://reply');
       expect(screen.quoteTo, 'at://quote');
+    });
+
+    testWidgets('navigates to drafts screen', (tester) async {
+      await tester.pumpRouterApp(
+        overrides: [
+          ...getTestOverrides(),
+          authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+        ],
+      );
+
+      final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      final router = app.routerConfig as GoRouter;
+
+      unawaited(router.push('/drafts'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DraftListScreen), findsOneWidget);
     });
   });
 
