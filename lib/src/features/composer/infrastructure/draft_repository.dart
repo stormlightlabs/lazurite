@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:lazurite/src/core/utils/image_compressor.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart' as composer;
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
@@ -17,17 +18,21 @@ class DraftRepository {
     required XrpcClient api,
     required SessionStorage sessionStorage,
     required Logger logger,
+    ImageCompressor? compressor,
   }) : _dao = dao,
        _api = api,
        _sessionStorage = sessionStorage,
        _logger = logger,
+       _compressor = compressor ?? const ImageCompressor(),
        _uuid = const Uuid();
 
   final DraftsDao _dao;
   final XrpcClient _api;
   final SessionStorage _sessionStorage;
   final Logger _logger;
+  final ImageCompressor _compressor;
   final Uuid _uuid;
+  final Map<int, CancelToken> _uploadCancelTokens = {};
 
   Stream<List<composer.Draft>> watchDrafts() {
     return _dao.watchDrafts().map((records) => records.map(_toDomain).toList());
@@ -112,11 +117,20 @@ class DraftRepository {
       throw StateError('Draft $draftId not found');
     }
 
+    String localPath = media.localPath;
+    if (_isImageMimeType(media.mimeType)) {
+      try {
+        localPath = await _compressor.compress(media.localPath);
+      } catch (e) {
+        _logger.warning('Image compression failed, using original: $e');
+      }
+    }
+
     final nextOrder = draft.media.length;
     await _dao.insertMedia([
       DraftMediaCompanion.insert(
         draftId: draftId,
-        localPath: media.localPath,
+        localPath: localPath,
         mimeType: media.mimeType,
         altText: Value(media.altText),
         uploadCid: const Value(null),
@@ -130,6 +144,10 @@ class DraftRepository {
     await _dao.updateDraftFields(draftId, DraftsCompanion(updatedAt: Value(DateTime.now())));
   }
 
+  bool _isImageMimeType(String mimeType) {
+    return mimeType.startsWith('image/');
+  }
+
   Future<void> removeMedia(String draftId, int mediaId) async {
     await _dao.deleteMedia(mediaId);
     await _dao.updateDraftFields(draftId, DraftsCompanion(updatedAt: Value(DateTime.now())));
@@ -140,7 +158,13 @@ class DraftRepository {
     await _dao.updateDraftFields(draftId, DraftsCompanion(updatedAt: Value(DateTime.now())));
   }
 
-  Future<({String uri, String cid})> publishDraft(String draftId) async {
+  /// Publishes a draft with optional progress tracking.
+  ///
+  /// [onMediaProgress] is called with (mediaId, progress) where progress is 0.0 to 1.0.
+  Future<({String uri, String cid})> publishDraft(
+    String draftId, {
+    void Function(int mediaId, double progress)? onMediaProgress,
+  }) async {
     final draft = await _dao.getDraft(draftId);
     if (draft == null) {
       throw StateError('Draft $draftId not found');
@@ -159,7 +183,10 @@ class DraftRepository {
       final domain = _toDomain(draft);
       for (final media in domain.media) {
         if (media.requiresUpload) {
-          final blob = await _uploadMedia(media);
+          final blob = await _uploadMedia(
+            media,
+            onProgress: (progress) => onMediaProgress?.call(media.id, progress),
+          );
           await _dao.updateMedia(
             media.id,
             DraftMediaCompanion(
@@ -168,6 +195,7 @@ class DraftRepository {
               status: Value(composer.DraftMediaStatus.uploaded.name),
             ),
           );
+          _uploadCancelTokens.remove(media.id);
         }
       }
 
@@ -200,6 +228,11 @@ class DraftRepository {
 
       return (uri: uri, cid: cid);
     } catch (e, stack) {
+      if (e is DioException && e.type == DioExceptionType.cancel) {
+        _logger.info('Upload cancelled for draft $draftId');
+        rethrow;
+      }
+
       _logger.error('Failed to publish draft $draftId', e, stack);
       await _dao.updateDraftFields(
         draftId,
@@ -211,6 +244,79 @@ class DraftRepository {
       );
       rethrow;
     }
+  }
+
+  /// Retries upload for a specific media attachment.
+  ///
+  /// Use this when a single media upload failed and the user wants to retry.
+  Future<void> retryMediaUpload(
+    String draftId,
+    int mediaId, {
+    void Function(double progress)? onProgress,
+  }) async {
+    await _dao.updateMedia(
+      mediaId,
+      DraftMediaCompanion(
+        status: Value(composer.DraftMediaStatus.pending.name),
+        uploadCid: const Value(null),
+        blobRefJson: const Value(null),
+      ),
+    );
+
+    final draft = await _dao.getDraft(draftId);
+    if (draft == null) {
+      throw StateError('Draft $draftId not found');
+    }
+
+    final domain = _toDomain(draft);
+    final media = domain.media.firstWhere(
+      (m) => m.id == mediaId,
+      orElse: () => throw StateError('Media $mediaId not found'),
+    );
+
+    await _dao.updateMedia(
+      mediaId,
+      DraftMediaCompanion(status: Value(composer.DraftMediaStatus.uploading.name)),
+    );
+
+    try {
+      final blob = await _uploadMedia(media, onProgress: onProgress);
+      await _dao.updateMedia(
+        mediaId,
+        DraftMediaCompanion(
+          uploadCid: Value(blob['ref']?['\$link'] as String?),
+          blobRefJson: Value(jsonEncode(blob)),
+          status: Value(composer.DraftMediaStatus.uploaded.name),
+        ),
+      );
+      _uploadCancelTokens.remove(mediaId);
+    } catch (e, stack) {
+      _logger.error('Retry upload failed for media $mediaId', e, stack);
+      await _dao.updateMedia(
+        mediaId,
+        DraftMediaCompanion(status: Value(composer.DraftMediaStatus.failed.name)),
+      );
+      rethrow;
+    }
+  }
+
+  /// Cancels an in-progress upload for a specific media attachment.
+  void cancelUpload(int mediaId) {
+    final cancelToken = _uploadCancelTokens[mediaId];
+    if (cancelToken != null && !cancelToken.isCancelled) {
+      cancelToken.cancel('User cancelled upload');
+      _uploadCancelTokens.remove(mediaId);
+    }
+  }
+
+  /// Cancels all in-progress uploads.
+  void cancelAllUploads() {
+    for (final token in _uploadCancelTokens.values) {
+      if (!token.isCancelled) {
+        token.cancel('User cancelled all uploads');
+      }
+    }
+    _uploadCancelTokens.clear();
   }
 
   Future<List<composer.Draft>> getCrashedDrafts() async {
@@ -282,17 +388,34 @@ class DraftRepository {
     );
   }
 
-  Future<Map<String, dynamic>> _uploadMedia(composer.DraftMediaAttachment media) async {
+  Future<Map<String, dynamic>> _uploadMedia(
+    composer.DraftMediaAttachment media, {
+    void Function(double progress)? onProgress,
+  }) async {
     final file = File(media.localPath);
     if (!file.existsSync()) {
       throw StateError('Media file missing at ${media.localPath}');
     }
+
+    await _dao.updateMedia(
+      media.id,
+      DraftMediaCompanion(status: Value(composer.DraftMediaStatus.uploading.name)),
+    );
+
+    final cancelToken = CancelToken();
+    _uploadCancelTokens[media.id] = cancelToken;
 
     final formData = FormData.fromMap({'file': await MultipartFile.fromFile(media.localPath)});
 
     final response = await _api.callRaw<Map<String, dynamic>>(
       'com.atproto.repo.uploadBlob',
       body: formData,
+      onSendProgress: (sent, total) {
+        if (total > 0) {
+          onProgress?.call(sent / total);
+        }
+      },
+      cancelToken: cancelToken,
     );
 
     final blob = response.data?['blob'] as Map<String, dynamic>?;

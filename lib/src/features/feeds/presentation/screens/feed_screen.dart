@@ -62,12 +62,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                const SliverAppBar(
-                  // TODO: update to use display text style from theme
-                  title: Text('Lazurite'),
+                SliverAppBar(
+                  title: Text('Lazurite', style: Theme.of(context).textTheme.displaySmall),
                   floating: true,
                   snap: true,
-                  bottom: PreferredSize(
+                  bottom: const PreferredSize(
                     preferredSize: Size.fromHeight(56),
                     child: Padding(
                       padding: EdgeInsets.only(bottom: 8.0),

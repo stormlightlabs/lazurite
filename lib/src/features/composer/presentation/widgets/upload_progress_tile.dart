@@ -12,6 +12,7 @@ class UploadProgressTile extends StatelessWidget {
     this.thumbnailPath,
     this.progress = 0.0,
     this.onRetry,
+    this.onCancel,
     super.key,
   });
 
@@ -29,6 +30,9 @@ class UploadProgressTile extends StatelessWidget {
 
   /// Callback for retry action on failed uploads.
   final VoidCallback? onRetry;
+
+  /// Callback for cancel action during uploads.
+  final VoidCallback? onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +82,12 @@ class UploadProgressTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          _StatusAction(status: status, colorScheme: colorScheme, onRetry: onRetry),
+          _StatusAction(
+            status: status,
+            colorScheme: colorScheme,
+            onRetry: onRetry,
+            onCancel: onCancel,
+          ),
         ],
       ),
     );
@@ -119,11 +128,17 @@ class _StatusLabel extends StatelessWidget {
 }
 
 class _StatusAction extends StatelessWidget {
-  const _StatusAction({required this.status, required this.colorScheme, this.onRetry});
+  const _StatusAction({
+    required this.status,
+    required this.colorScheme,
+    this.onRetry,
+    this.onCancel,
+  });
 
   final DraftMediaStatus status;
   final ColorScheme colorScheme;
   final VoidCallback? onRetry;
+  final VoidCallback? onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -133,10 +148,13 @@ class _StatusAction extends StatelessWidget {
         color: colorScheme.outline,
         size: 20,
       ),
-      DraftMediaStatus.uploading => SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary),
+      DraftMediaStatus.uploading => IconButton(
+        onPressed: onCancel,
+        icon: Icon(Icons.close, color: colorScheme.outline),
+        iconSize: 20,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        tooltip: 'Cancel upload',
       ),
       DraftMediaStatus.uploaded => const Icon(Icons.check_circle, color: Colors.green, size: 20),
       DraftMediaStatus.failed => IconButton(
@@ -145,6 +163,7 @@ class _StatusAction extends StatelessWidget {
         iconSize: 20,
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
+        tooltip: 'Retry upload',
       ),
     };
   }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jose/jose.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/core/utils/image_compressor.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
@@ -23,6 +24,8 @@ import 'package:lazurite/src/infrastructure/preferences/bluesky_preferences_repo
 import 'package:mocktail/mocktail.dart';
 
 class MockLogger extends Mock implements Logger {}
+
+class MockImageCompressor extends Mock implements ImageCompressor {}
 
 class MockXrpcClient extends Mock implements XrpcClient {}
 

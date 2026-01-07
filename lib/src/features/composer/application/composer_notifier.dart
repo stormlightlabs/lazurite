@@ -173,4 +173,37 @@ class ComposerNotifier extends _$ComposerNotifier {
   Future<void> cancel() async {
     _debounceTimer?.cancel();
   }
+
+  /// Retry a failed media upload.
+  Future<void> retryUpload(int mediaId) async {
+    final currentState = state.asData?.value;
+    final currentDraft = currentState?.draft;
+    if (currentDraft == null) return;
+
+    try {
+      await _repository.retryMediaUpload(currentDraft.id, mediaId);
+      final updated = await _repository.getDraft(currentDraft.id);
+      if (currentState != null) {
+        state = AsyncValue.data(currentState.copyWith(draft: updated));
+      }
+    } catch (e) {
+      final updated = await _repository.getDraft(currentDraft.id);
+      if (currentState != null) {
+        state = AsyncValue.data(currentState.copyWith(draft: updated));
+      }
+    }
+  }
+
+  /// Cancel an in-progress upload.
+  Future<void> cancelUpload(int mediaId) async {
+    final currentState = state.asData?.value;
+    final currentDraft = currentState?.draft;
+    if (currentDraft == null) return;
+
+    _repository.cancelUpload(mediaId);
+    final updated = await _repository.getDraft(currentDraft.id);
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(draft: updated));
+    }
+  }
 }

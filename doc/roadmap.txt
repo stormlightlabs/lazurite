@@ -94,7 +94,6 @@ Phase 2 - Draft List and Management (HIGH):
       - [x] Add /drafts/:draftId route
       - [x] Configure navigation to composer with params
 
-
 Phase 3 - Alt Text and Media Polish (MEDIUM):
 - [x] Create AltTextEditorSheet modal:
       - [x] Text field for alt text
@@ -107,17 +106,17 @@ Phase 3 - Alt Text and Media Polish (MEDIUM):
       - [x] Pass media ID to sheet
       - [x] Update draft media alt text
       - [x] Display alt text indicator on thumbnails
-- [ ] Image compression:
-      - [ ] Compress before upload (flutter_image_compress)
-      - [ ] Target max dimension: 2000px
-      - [ ] Quality: 85% JPEG
-      - [ ] Background isolate compression
-      - [ ] Show compression progress
-- [ ] Upload progress improvements:
-      - [ ] Per-image upload progress
-      - [ ] Retry failed uploads
-      - [ ] Cancel in-progress uploads
-      - [ ] Update UploadProgressTile with retry
+- [x] Image compression:
+      - [x] Compress before upload (flutter_image_compress)
+      - [x] Target max dimension: 2000px
+      - [x] Quality: 85% JPEG
+      - [x] Background isolate compression
+      - [x] Show compression progress
+- [x] Upload progress improvements:
+      - [x] Per-image upload progress
+      - [x] Retry failed uploads
+      - [x] Cancel in-progress uploads
+      - [x] Update UploadProgressTile with retry
 
 Phase 4 - Reply and Quote Posts (MEDIUM):
 - [ ] Create ReplyContextCard widget:
@@ -182,12 +181,7 @@ Phase 6 - Global FAB and Polish (HIGH):
 - [ ] Performance optimization:
       - [ ] Image thumbnail caching
       - [ ] Smooth, animated modal transitions
-- [ ] Analytics events:
-      - [ ] Composer opened
-      - [ ] Draft saved
-      - [ ] Post published
-      - [ ] Media attached
-      - [ ] Publish failed
+
 
 Tests:
 - [ ] Unit tests:
@@ -382,6 +376,13 @@ Deliverables:
 Parking Lot                                                          *bsky-plot*
 ================================================================================
 
+Tasks:
+- [ ] Composer Analytics events:
+      - [ ] Composer opened
+      - [ ] Draft saved
+      - [ ] Post published
+      - [ ] Media attached
+      - [ ] Publish failed
 Tests:
 - [ ] System theme: follows OS brightness changes
 - [ ] Multi-device: preference changes merge correctly

@@ -29,16 +29,21 @@ void main() {
       expect(find.byIcon(Icons.hourglass_empty), findsOneWidget);
     });
 
-    testWidgets('shows progress bar when uploading', (tester) async {
+    testWidgets('shows progress bar and cancel button when uploading', (tester) async {
+      var cancelCalled = false;
       await tester.pumpApp(
-        const UploadProgressTile(
+        UploadProgressTile(
           filename: 'test.jpg',
           status: DraftMediaStatus.uploading,
           progress: 0.5,
+          onCancel: () => cancelCalled = true,
         ),
       );
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.close));
+      expect(cancelCalled, isTrue);
     });
 
     testWidgets('shows uploaded status with check icon', (tester) async {

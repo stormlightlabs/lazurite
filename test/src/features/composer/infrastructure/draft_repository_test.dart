@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -111,6 +112,8 @@ void main() {
       () => mockApi.callRaw<Map<String, dynamic>>(
         'com.atproto.repo.uploadBlob',
         body: any(named: 'body'),
+        onSendProgress: any(named: 'onSendProgress'),
+        cancelToken: any(named: 'cancelToken'),
       ),
     ).thenAnswer(
       (_) async => Response<Map<String, dynamic>>(
@@ -152,6 +155,8 @@ void main() {
       () => mockApi.callRaw<Map<String, dynamic>>(
         'com.atproto.repo.uploadBlob',
         body: any(named: 'body'),
+        onSendProgress: any(named: 'onSendProgress'),
+        cancelToken: any(named: 'cancelToken'),
       ),
     ).thenAnswer(
       (_) async => Response<Map<String, dynamic>>(
@@ -208,5 +213,153 @@ void main() {
     final remaining = await repository.watchDrafts().first;
     expect(remaining, hasLength(2));
     expect(remaining.map((d) => d.id), containsAll([draft1.id, draft3.id]));
+  });
+
+  test('retryMediaUpload resets status and re-uploads', () async {
+    final draft = await repository.createDraft(text: 'Retry test');
+    final file = await createTempFile('retry.png');
+
+    await repository.addMedia(
+      draft.id,
+      composer.DraftMediaInput(localPath: file.path, mimeType: 'image/png'),
+    );
+
+    final draftWithMedia = await repository.getDraft(draft.id);
+    await db.draftsDao.updateMedia(
+      draftWithMedia.media.first.id,
+      DraftMediaCompanion(status: Value(composer.DraftMediaStatus.failed.name)),
+    );
+
+    when(() => mockSessionStorage.getSession()).thenAnswer((_) async => buildTestSession());
+    when(
+      () => mockApi.callRaw<Map<String, dynamic>>(
+        'com.atproto.repo.uploadBlob',
+        body: any(named: 'body'),
+        onSendProgress: any(named: 'onSendProgress'),
+        cancelToken: any(named: 'cancelToken'),
+      ),
+    ).thenAnswer(
+      (_) async => Response<Map<String, dynamic>>(
+        data: {
+          'blob': {
+            '\$type': 'blob',
+            'ref': {'\$link': 'cid-retry'},
+            'mimeType': 'image/png',
+            'size': 16,
+          },
+        },
+        requestOptions: RequestOptions(path: ''),
+      ),
+    );
+
+    await repository.retryMediaUpload(draft.id, draftWithMedia.media.first.id);
+
+    final updated = await repository.getDraft(draft.id);
+    expect(updated.media.single.status, composer.DraftMediaStatus.uploaded);
+    expect(updated.media.single.uploadCid, 'cid-retry');
+  });
+
+  test('cancelUpload calls cancel on the upload token', () async {
+    final draft = await repository.createDraft(text: 'Cancel test');
+    final file = await createTempFile('cancel.png');
+
+    await repository.addMedia(
+      draft.id,
+      composer.DraftMediaInput(localPath: file.path, mimeType: 'image/png'),
+    );
+
+    final draftWithMedia = await repository.getDraft(draft.id);
+    final mediaId = draftWithMedia.media.first.id;
+
+    CancelToken? capturedToken;
+    when(() => mockSessionStorage.getSession()).thenAnswer((_) async => buildTestSession());
+    when(
+      () => mockApi.callRaw<Map<String, dynamic>>(
+        'com.atproto.repo.uploadBlob',
+        body: any(named: 'body'),
+        onSendProgress: any(named: 'onSendProgress'),
+        cancelToken: any(named: 'cancelToken'),
+      ),
+    ).thenAnswer((invocation) async {
+      capturedToken = invocation.namedArguments[const Symbol('cancelToken')] as CancelToken?;
+
+      await Future<void>.delayed(const Duration(seconds: 5));
+      return Response<Map<String, dynamic>>(
+        data: {
+          'blob': {
+            '\$type': 'blob',
+            'ref': {'\$link': 'cid-test'},
+            'mimeType': 'image/png',
+            'size': 16,
+          },
+        },
+        requestOptions: RequestOptions(path: ''),
+      );
+    });
+
+    unawaited(
+      // ignore: body_might_complete_normally_catch_error
+      repository.publishDraft(draft.id).catchError((_) {}),
+    );
+
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    repository.cancelUpload(mediaId);
+
+    expect(capturedToken, isNotNull);
+    expect(capturedToken!.isCancelled, isTrue);
+  });
+
+  test('publishDraft calls progress callback during upload', () async {
+    final draft = await repository.createDraft(text: 'Progress test');
+    final file = await createTempFile('progress.png');
+
+    await repository.addMedia(
+      draft.id,
+      composer.DraftMediaInput(localPath: file.path, mimeType: 'image/png'),
+    );
+
+    final draftWithMedia = await repository.getDraft(draft.id);
+    final progressUpdates = <(int, double)>[];
+
+    when(() => mockSessionStorage.getSession()).thenAnswer((_) async => buildTestSession());
+    when(
+      () => mockApi.callRaw<Map<String, dynamic>>(
+        'com.atproto.repo.uploadBlob',
+        body: any(named: 'body'),
+        onSendProgress: any(named: 'onSendProgress'),
+        cancelToken: any(named: 'cancelToken'),
+      ),
+    ).thenAnswer((invocation) async {
+      final onProgress =
+          invocation.namedArguments[const Symbol('onSendProgress')] as void Function(int, int)?;
+      onProgress?.call(50, 100);
+      onProgress?.call(100, 100);
+
+      return Response<Map<String, dynamic>>(
+        data: {
+          'blob': {
+            '\$type': 'blob',
+            'ref': {'\$link': 'cid-progress'},
+            'mimeType': 'image/png',
+            'size': 16,
+          },
+        },
+        requestOptions: RequestOptions(path: ''),
+      );
+    });
+    when(() => mockApi.call('com.atproto.repo.createRecord', body: any(named: 'body'))).thenAnswer(
+      (_) async => {'uri': 'at://did:web:test/app.bsky.feed.post/123', 'cid': 'cid-123'},
+    );
+
+    await repository.publishDraft(
+      draft.id,
+      onMediaProgress: (mediaId, progress) => progressUpdates.add((mediaId, progress)),
+    );
+
+    expect(progressUpdates, hasLength(2));
+    expect(progressUpdates.first.$1, draftWithMedia.media.first.id);
+    expect(progressUpdates.first.$2, 0.5);
+    expect(progressUpdates.last.$2, 1.0);
   });
 }

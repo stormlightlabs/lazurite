@@ -80,11 +80,16 @@ class XrpcClient {
   /// Makes a raw request without parsing the response.
   ///
   /// Useful for endpoints that return non-JSON responses (e.g., blobs).
+  ///
+  /// [onSendProgress] is called during upload with (bytes sent, total bytes).
+  /// [cancelToken] can be used to cancel the request.
   Future<Response<T>> callRaw<T>(
     String nsid, {
     Map<String, dynamic>? params,
     Object? body,
     ResponseType? responseType,
+    void Function(int, int)? onSendProgress,
+    CancelToken? cancelToken,
   }) async {
     final meta = _registry.lookup(nsid);
     if (meta == null) {
@@ -100,13 +105,20 @@ class XrpcClient {
     try {
       switch (meta.method) {
         case HttpMethod.get:
-          return await dio.get<T>(meta.path, queryParameters: params, options: options);
+          return await dio.get<T>(
+            meta.path,
+            queryParameters: params,
+            options: options,
+            cancelToken: cancelToken,
+          );
         case HttpMethod.post:
           return await dio.post<T>(
             meta.path,
             data: body,
             queryParameters: params,
             options: options,
+            onSendProgress: onSendProgress,
+            cancelToken: cancelToken,
           );
       }
     } on DioException catch (e) {
