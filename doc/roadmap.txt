@@ -263,7 +263,7 @@ Tasks:
             - theme mode selector (Light, Dark, System)
             - preview cards showing appearance
             - export theme JSON button
-      - [ ] Build AboutScreen:
+      - [x] Build AboutScreen:
             - app info (name, version, build number)
             - links (website, GitHub, Tangled, bug reports)
                   - https://lazurite.stormlightlabs.org
@@ -438,6 +438,12 @@ Tests:
 
 Deliverables:
 - Mobile app feels stable and responsive for daily use.
+
+================================================================================
+Initial Release (Lazurite-0.1.0-alpha)
+================================================================================
+
+*todo*
 
 ================================================================================
 O. Smart folders (local-only saved views)                               *bsky-O*

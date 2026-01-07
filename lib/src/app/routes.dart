@@ -16,6 +16,7 @@ abstract final class AppRoutes {
   static const String compose = '/compose';
   static const String settings = '/settings';
   static const String appearance = '/settings/appearance';
+  static const String about = '/settings/about';
   static const String drafts = '/drafts';
 
   static const String thread = 't/:uri';
@@ -43,6 +44,7 @@ abstract final class AppRouteNames {
   static const String compose = 'compose';
   static const String settings = 'settings';
   static const String appearance = 'appearance';
+  static const String about = 'about';
   static const String drafts = 'drafts';
   static const String thread = 'thread';
   static const String profileDetail = 'profileDetail';

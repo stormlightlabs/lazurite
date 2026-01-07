@@ -43,6 +43,11 @@ void main() {
                     builder: (ctx, state) =>
                         const Scaffold(body: Center(child: Text('Appearance Screen'))),
                   ),
+                  GoRoute(
+                    path: 'about',
+                    builder: (ctx, state) =>
+                        const Scaffold(body: Center(child: Text('About Screen'))),
+                  ),
                 ],
               ),
               GoRoute(
@@ -127,6 +132,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Appearance Screen'), findsOneWidget);
+    });
+
+    testWidgets('navigates to about screen when About is tapped', (tester) async {
+      await tester.pumpWidget(
+        buildTestApp([authProvider.overrideWith(() => _TestAuthNotifier.unauthenticated())]),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('About'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('About Screen'), findsOneWidget);
     });
 
     testWidgets('shows sign out confirmation dialog', (tester) async {

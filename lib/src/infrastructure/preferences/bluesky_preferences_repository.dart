@@ -15,8 +15,6 @@ class BlueskyPreferencesRepository {
   final BlueskyPreferencesDao _dao;
   final Logger _logger;
 
-  // ----- Sync Operations -----
-
   /// Syncs all preferences from the remote Bluesky server.
   ///
   /// Fetches via app.bsky.actor.getPreferences, parses each preference
@@ -42,7 +40,6 @@ class BlueskyPreferencesRepository {
 
       final now = DateTime.now();
 
-      // Parse and store each preference type
       final contentLabels = <Map<String, dynamic>>[];
       AdultContentPref? adultContent;
       LabelersPref? labelers;
@@ -76,7 +73,6 @@ class BlueskyPreferencesRepository {
         }
       }
 
-      // Store parsed preferences
       if (adultContent != null) {
         await _dao.upsertPreference(
           type: 'adultContent',
@@ -136,8 +132,6 @@ class BlueskyPreferencesRepository {
     }
   }
 
-  // ----- Adult Content -----
-
   /// Gets the adult content preference.
   Future<AdultContentPref> getAdultContentPref() async {
     final row = await _dao.getPreferenceByType('adultContent');
@@ -162,8 +156,6 @@ class BlueskyPreferencesRepository {
       }
     });
   }
-
-  // ----- Content Labels -----
 
   /// Gets all content label preferences.
   Future<ContentLabelPrefs> getContentLabelPrefs() async {
@@ -190,8 +182,6 @@ class BlueskyPreferencesRepository {
     });
   }
 
-  // ----- Labelers -----
-
   /// Gets the labelers preference.
   Future<LabelersPref> getLabelersPref() async {
     final row = await _dao.getPreferenceByType('labelers');
@@ -216,8 +206,6 @@ class BlueskyPreferencesRepository {
       }
     });
   }
-
-  // ----- Feed View -----
 
   /// Gets the feed view preference.
   Future<FeedViewPref> getFeedViewPref() async {
@@ -244,8 +232,6 @@ class BlueskyPreferencesRepository {
     });
   }
 
-  // ----- Thread View -----
-
   /// Gets the thread view preference.
   Future<ThreadViewPref> getThreadViewPref() async {
     final row = await _dao.getPreferenceByType('threadView');
@@ -271,8 +257,6 @@ class BlueskyPreferencesRepository {
     });
   }
 
-  // ----- Muted Words -----
-
   /// Gets the muted words preference.
   Future<MutedWordsPref> getMutedWordsPref() async {
     final row = await _dao.getPreferenceByType('mutedWords');
@@ -297,8 +281,6 @@ class BlueskyPreferencesRepository {
       }
     });
   }
-
-  // ----- Utility -----
 
   /// Clears all cached preferences.
   ///

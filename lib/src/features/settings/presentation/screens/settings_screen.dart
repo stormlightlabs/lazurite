@@ -99,9 +99,7 @@ class SettingsScreen extends ConsumerWidget {
         title: 'About',
         subtitle: 'App version and information',
         onTap: () {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('About - Coming soon')));
+          context.push('/settings/about');
         },
       ),
     ];

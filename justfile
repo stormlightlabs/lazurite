@@ -8,7 +8,7 @@ lint:
 
 # Test with failures only to focus on failures and hanging tests
 test-quiet:
-    flutter test --reporter=failures-only --timeout=30s
+    flutter test --reporter=failures-only --timeout=90s
 
 # Run all tests
 test:

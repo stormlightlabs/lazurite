@@ -18,6 +18,7 @@ import 'package:lazurite/src/features/profile/presentation/followers_page.dart';
 import 'package:lazurite/src/features/profile/presentation/following_page.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
+import 'package:lazurite/src/features/settings/presentation/screens/about_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/settings_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/theme_settings_screen.dart';
 import 'package:lazurite/src/features/splash/presentation/splash_screen.dart';
@@ -226,6 +227,11 @@ GoRouter createRouter(Ref ref) {
             path: 'appearance',
             name: AppRouteNames.appearance,
             builder: (context, state) => const ThemeSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'about',
+            name: AppRouteNames.about,
+            builder: (context, state) => const AboutScreen(),
           ),
         ],
       ),
