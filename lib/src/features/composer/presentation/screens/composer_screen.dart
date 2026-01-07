@@ -25,7 +25,7 @@ class ComposerScreen extends ConsumerStatefulWidget {
   ConsumerState<ComposerScreen> createState() => _ComposerScreenState();
 }
 
-class _ComposerScreenState extends ConsumerState<ComposerScreen> {
+class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBindingObserver {
   late TextEditingController _textController;
   int _characterCount = 0;
   String? _pendingThreadText;
@@ -35,13 +35,24 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
     super.initState();
     _textController = TextEditingController();
     _textController.addListener(_onTextChanged);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _textController.removeListener(_onTextChanged);
     _textController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      if (_textController.text.isNotEmpty) {
+        ref.read(composerProvider(widget.draftId).notifier).forceSave(_textController.text);
+      }
+    }
   }
 
   void _onTextChanged() {

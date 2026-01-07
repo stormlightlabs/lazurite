@@ -37,11 +37,11 @@ Phase 1 - Core Composer Screen (HIGH):
       - [x] Visual warning near limit (20 remaining)
       - [x] Error state over limit -> disable publish and let user split into
             multiple posts
-- [/] Implement autosave:
+- [x] Implement autosave:
       - [x] Debounce text changes (500ms)
       - [x] Update draft on text change
       - [x] Immediate save on media add/remove
-      - [ ] Save on app backgrounding
+      - [x] Save on app backgrounding
       - [x] Cancel pending saves on dispose
 - [/] Image picker integration:
       - [x] Gallery selection (image_picker)

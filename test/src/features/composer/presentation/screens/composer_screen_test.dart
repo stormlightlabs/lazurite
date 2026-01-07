@@ -56,8 +56,9 @@ void main() {
       ),
     ).thenAnswer((_) async {});
 
+    final location = draftId != null ? '/compose?draftId=$draftId' : '/compose';
     final router = GoRouter(
-      initialLocation: '/compose?draftId=$draftId',
+      initialLocation: location,
       routes: [
         GoRoute(
           path: '/compose',
@@ -70,7 +71,7 @@ void main() {
     return ProviderScope(
       overrides: [
         draftRepositoryProvider.overrideWithValue(mockRepository),
-        composerProvider.overrideWith(() => _MockComposerNotifier(draft)),
+        composerProvider.overrideWith(() => MockComposerNotifierWrapper(draft)),
       ],
       child: MaterialApp.router(routerConfig: router),
     );
@@ -297,6 +298,24 @@ void main() {
       final textField = tester.widget<TextField>(find.byType(TextField));
       expect(textField.controller?.text, 'Existing draft content');
     });
+
+    testWidgets('calls forceSave when app is paused', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'Saving on pause');
+      await tester.pump();
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+
+      final element = tester.element(find.byType(ComposerScreen));
+      final container = ProviderScope.containerOf(element);
+      final notifier =
+          container.read(composerProvider(null).notifier) as MockComposerNotifierWrapper;
+
+      verify(() => notifier.mockForceSaveObj('Saving on pause')).called(1);
+    });
   });
 }
 
@@ -323,4 +342,28 @@ class _MockComposerNotifier extends ComposerNotifier {
 
   @override
   Future<void> cancel() async {}
+
+  @override
+  Future<void> forceSave(String text) async {
+    mockForceSave(text);
+  }
+
+  void mockForceSave(String text) {}
 }
+
+class MockComposerNotifierWrapper extends _MockComposerNotifier {
+  MockComposerNotifierWrapper(super.draft);
+
+  final _mockForceSave = MockForceSave();
+
+  @override
+  void mockForceSave(String text) => _mockForceSave(text);
+
+  MockForceSave get mockForceSaveObj => _mockForceSave;
+}
+
+abstract class ForceSaveHandler {
+  void call(String text);
+}
+
+class MockForceSave extends Mock implements ForceSaveHandler {}

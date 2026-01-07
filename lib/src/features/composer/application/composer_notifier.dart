@@ -116,6 +116,20 @@ class ComposerNotifier extends _$ComposerNotifier {
     }
   }
 
+  /// Force save the current text immediately (cancels debounce).
+  Future<void> forceSave(String text) async {
+    _debounceTimer?.cancel();
+    final currentState = state.asData?.value;
+    final currentDraft = currentState?.draft;
+    if (currentDraft == null) return;
+
+    await _repository.updateDraftContent(currentDraft.id, text: text);
+    final updated = await _repository.getDraft(currentDraft.id);
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(draft: updated));
+    }
+  }
+
   /// Cancel composing (saves draft if needed).
   Future<void> cancel() async {
     _debounceTimer?.cancel();
