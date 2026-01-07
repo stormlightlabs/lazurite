@@ -56,15 +56,15 @@ Phase 1 - Core Composer Screen (HIGH):
       - [x] Handle success (pop modal)
       - [x] Handle errors (show message, preserve draft)
       - [x] Update draft status during publish
-- [/] Cancel flow:
+- [x] Cancel flow:
       - [x] Save draft on cancel button
       - [x] Pop modal
-      - [ ] Confirm if unsaved changes
-- [/] Router configuration:
+      - [x] Confirm if unsaved changes
+- [x] Router configuration:
       - [x] Add /compose route to router
       - [x] Configure as modal route
       - [x] Accept query params (draftId)
-      - [ ] Accept query params (replyTo, quoteTo)
+      - [x] Accept query params (replyTo, quoteTo)
 
 Phase 2 - Draft List and Management (HIGH):
 - [ ] Create DraftListScreen widget:
@@ -187,7 +187,7 @@ Phase 6 - Global FAB and Polish (HIGH):
       - [ ] Optimize autosave debouncing
       - [ ] Async database writes
       - [ ] Image thumbnail caching
-      - [ ] Smooth modal transitions
+      - [ ] Smooth, animated modal transitions
 - [ ] Analytics events:
       - [ ] Composer opened
       - [ ] Draft saved

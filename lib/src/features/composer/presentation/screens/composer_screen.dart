@@ -16,10 +16,16 @@ const int kWarningThreshold = 20;
 
 /// Full-screen composer for creating or editing posts.
 class ComposerScreen extends ConsumerStatefulWidget {
-  const ComposerScreen({this.draftId, super.key});
+  const ComposerScreen({this.draftId, this.replyTo, this.quoteTo, super.key});
 
   /// Optional draft ID for editing an existing draft.
   final String? draftId;
+
+  /// Optional URI of the post being replied to.
+  final String? replyTo;
+
+  /// Optional URI of the post being quoted.
+  final String? quoteTo;
 
   @override
   ConsumerState<ComposerScreen> createState() => _ComposerScreenState();
@@ -29,6 +35,9 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
   late TextEditingController _textController;
   int _characterCount = 0;
   String? _pendingThreadText;
+
+  ComposerArgs get _args =>
+      ComposerArgs(draftId: widget.draftId, replyTo: widget.replyTo, quoteTo: widget.quoteTo);
 
   @override
   void initState() {
@@ -50,7 +59,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       if (_textController.text.isNotEmpty) {
-        ref.read(composerProvider(widget.draftId).notifier).forceSave(_textController.text);
+        ref.read(composerProvider(_args).notifier).forceSave(_textController.text);
       }
     }
   }
@@ -63,7 +72,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
       });
     }
 
-    ref.read(composerProvider(widget.draftId).notifier).updateText(_textController.text);
+    ref.read(composerProvider(_args).notifier).updateText(_textController.text);
   }
 
   bool get _canPublish {
@@ -111,12 +120,12 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
       _pendingThreadText = secondPart;
     });
 
-    ref.read(composerProvider(widget.draftId).notifier).updateText(firstPart);
+    ref.read(composerProvider(_args).notifier).updateText(firstPart);
   }
 
   Future<void> _publish() async {
-    final notifier = ref.read(composerProvider(widget.draftId).notifier);
-    final currentDraft = ref.read(composerProvider(widget.draftId)).asData?.value.draft;
+    final notifier = ref.read(composerProvider(_args).notifier);
+    final currentDraft = ref.read(composerProvider(_args)).asData?.value.draft;
     final result = await notifier.publish();
 
     if (result != null && mounted) {
@@ -146,21 +155,63 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
   }
 
   Future<void> _cancel() async {
-    final notifier = ref.read(composerProvider(widget.draftId).notifier);
-    await notifier.cancel();
+    final notifier = ref.read(composerProvider(_args).notifier);
+    final state = ref.read(composerProvider(_args)).asData?.value;
+    final hasContent =
+        _textController.text.isNotEmpty || (state?.draft?.media.isNotEmpty ?? false);
 
-    if (mounted) {
-      context.pop();
+    if (!hasContent) {
+      await notifier.deleteDraft();
+      if (mounted) context.pop();
+      return;
+    }
+
+    if (!mounted) return;
+
+    final shouldSave = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Save this draft?'),
+        content: const Text(
+          'You can save this to your drafts to finish later, or discard it entirely.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false), // Discard
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+            child: const Text('Discard'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, null), // Cancel
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true), // Save
+            child: const Text('Save Draft'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSave == null) {
+      return;
+    }
+
+    if (shouldSave) {
+      await notifier.forceSave(_textController.text);
+      if (mounted) context.pop();
+    } else {
+      await notifier.deleteDraft();
+      if (mounted) context.pop();
     }
   }
 
   Future<void> _pickMedia() async {
-    final composerState = ref.read(composerProvider(widget.draftId)).asData?.value;
+    final composerState = ref.read(composerProvider(_args)).asData?.value;
     final currentCount = composerState?.draft?.media.length ?? 0;
 
     if (currentCount >= 4) return;
 
-    // Show modal sheet to choose between Camera and Gallery
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       showDragHandle: true,
@@ -188,7 +239,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
     if (!mounted) return;
 
     final picker = ImagePicker();
-    final notifier = ref.read(composerProvider(widget.draftId).notifier);
+    final notifier = ref.read(composerProvider(_args).notifier);
 
     if (source == ImageSource.camera) {
       final image = await picker.pickImage(source: ImageSource.camera);
@@ -197,7 +248,6 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
         await notifier.addMedia(image.path, mimeType);
       }
     } else {
-      // Gallery allows multiple selection
       final images = await picker.pickMultiImage(limit: 4 - currentCount);
       if (images.isNotEmpty) {
         for (final image in images) {
@@ -215,17 +265,17 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
   }
 
   void _removeMedia(int index) {
-    final composerState = ref.read(composerProvider(widget.draftId)).asData?.value;
+    final composerState = ref.read(composerProvider(_args)).asData?.value;
     if (composerState?.draft?.media case final media?) {
       if (index < media.length) {
-        ref.read(composerProvider(widget.draftId).notifier).removeMedia(media[index].id);
+        ref.read(composerProvider(_args).notifier).removeMedia(media[index].id);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final composerAsync = ref.watch(composerProvider(widget.draftId));
+    final composerAsync = ref.watch(composerProvider(_args));
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 

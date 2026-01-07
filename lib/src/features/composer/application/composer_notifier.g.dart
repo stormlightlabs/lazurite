@@ -25,7 +25,7 @@ final class ComposerNotifierProvider
   /// Handles draft creation, autosave, media management, and publishing.
   ComposerNotifierProvider._({
     required ComposerNotifierFamily super.from,
-    required String? super.argument,
+    required ComposerArgs? super.argument,
   }) : super(
          retry: null,
          name: r'composerProvider',
@@ -59,7 +59,7 @@ final class ComposerNotifierProvider
   }
 }
 
-String _$composerNotifierHash() => r'aca53cddac5ed10dd55d4f2ea29b49a89b99a908';
+String _$composerNotifierHash() => r'66064b46010be508eb84af639ab8ef61ccb61dd9';
 
 /// Notifier for managing composer screen state.
 ///
@@ -72,7 +72,7 @@ final class ComposerNotifierFamily extends $Family
           AsyncValue<ComposerState>,
           ComposerState,
           FutureOr<ComposerState>,
-          String?
+          ComposerArgs?
         > {
   ComposerNotifierFamily._()
     : super(
@@ -87,8 +87,8 @@ final class ComposerNotifierFamily extends $Family
   ///
   /// Handles draft creation, autosave, media management, and publishing.
 
-  ComposerNotifierProvider call(String? draftId) =>
-      ComposerNotifierProvider._(argument: draftId, from: this);
+  ComposerNotifierProvider call(ComposerArgs? args) =>
+      ComposerNotifierProvider._(argument: args, from: this);
 
   @override
   String toString() => r'composerProvider';
@@ -99,10 +99,10 @@ final class ComposerNotifierFamily extends $Family
 /// Handles draft creation, autosave, media management, and publishing.
 
 abstract class _$ComposerNotifier extends $AsyncNotifier<ComposerState> {
-  late final _$args = ref.$arg as String?;
-  String? get draftId => _$args;
+  late final _$args = ref.$arg as ComposerArgs?;
+  ComposerArgs? get args => _$args;
 
-  FutureOr<ComposerState> build(String? draftId);
+  FutureOr<ComposerState> build(ComposerArgs? args);
   @$mustCallSuper
   @override
   void runBuild() {

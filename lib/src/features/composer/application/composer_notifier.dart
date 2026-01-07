@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:equatable/equatable.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -7,6 +8,18 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'composer_providers.dart';
 
 part 'composer_notifier.g.dart';
+
+/// Arguments for initializing the composer.
+class ComposerArgs extends Equatable {
+  const ComposerArgs({this.draftId, this.replyTo, this.quoteTo});
+
+  final String? draftId;
+  final String? replyTo;
+  final String? quoteTo;
+
+  @override
+  List<Object?> get props => [draftId, replyTo, quoteTo];
+}
 
 /// State for the composer screen.
 class ComposerState {
@@ -35,17 +48,20 @@ class ComposerNotifier extends _$ComposerNotifier {
   DraftRepository get _repository => ref.read(draftRepositoryProvider);
 
   @override
-  Future<ComposerState> build(String? draftId) async {
+  Future<ComposerState> build(ComposerArgs? args) async {
     ref.onDispose(() {
       _debounceTimer?.cancel();
     });
 
-    if (draftId case final id?) {
+    if (args?.draftId case final id?) {
       final existing = await _repository.getDraft(id);
       return ComposerState(draft: existing);
     }
 
-    final newDraft = await _repository.createDraft();
+    final newDraft = await _repository.createDraft(
+      replyParentUri: args?.replyTo,
+      quoteUri: args?.quoteTo,
+    );
     return ComposerState(draft: newDraft);
   }
 
@@ -128,6 +144,16 @@ class ComposerNotifier extends _$ComposerNotifier {
     if (currentState != null) {
       state = AsyncValue.data(currentState.copyWith(draft: updated));
     }
+  }
+
+  /// Delete the current draft.
+  Future<void> deleteDraft() async {
+    _debounceTimer?.cancel();
+    final currentState = state.asData?.value;
+    final currentDraft = currentState?.draft;
+    if (currentDraft == null) return;
+
+    await _repository.deleteDraft(currentDraft.id);
   }
 
   /// Cancel composing (saves draft if needed).

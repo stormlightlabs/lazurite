@@ -219,7 +219,11 @@ GoRouter createRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.compose,
         name: AppRouteNames.compose,
-        builder: (context, state) => ComposerScreen(draftId: state.uri.queryParameters['draftId']),
+        builder: (context, state) => ComposerScreen(
+          draftId: state.uri.queryParameters['draftId'],
+          replyTo: state.uri.queryParameters['replyTo'],
+          quoteTo: state.uri.queryParameters['quoteTo'],
+        ),
       ),
       GoRoute(
         path: AppRoutes.settings,

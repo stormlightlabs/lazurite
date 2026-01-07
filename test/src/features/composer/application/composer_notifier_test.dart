@@ -29,6 +29,7 @@ void main() {
       () => mockRepository.updateDraftContent(any(), text: any(named: 'text')),
     ).thenAnswer((_) async {});
     when(() => mockRepository.createDraft()).thenAnswer((_) async => mockDraft);
+    when(() => mockRepository.deleteDraft(any())).thenAnswer((_) => Future.value());
   });
 
   ProviderContainer createContainer() {
@@ -100,6 +101,44 @@ void main() {
 
         verify(
           () => mockRepository.updateDraftContent(mockDraft.id, text: 'Immediate Save'),
+        ).called(1);
+      });
+    });
+    test('deleteDraft calls repository deleteDraft', () {
+      fakeAsync((async) {
+        final container = createContainer();
+
+        container.listen(composerProvider(null), (previous, next) {}, fireImmediately: true);
+        final notifier = container.read(composerProvider(null).notifier);
+
+        async.flushMicrotasks();
+
+        notifier.deleteDraft();
+        async.flushMicrotasks();
+
+        verify(() => mockRepository.deleteDraft(mockDraft.id)).called(1);
+      });
+    });
+
+    test('initializes with replyTo/quoteTo args', () {
+      fakeAsync((async) {
+        final container = createContainer();
+        const args = ComposerArgs(replyTo: 'at://reply', quoteTo: 'at://quote');
+
+        when(
+          () => mockRepository.createDraft(
+            replyParentUri: any(named: 'replyParentUri'),
+            quoteUri: any(named: 'quoteUri'),
+          ),
+        ).thenAnswer((_) async => mockDraft);
+
+        container.listen(composerProvider(args), (previous, next) {}, fireImmediately: true);
+        container.read(composerProvider(args).notifier); // Force build
+
+        async.flushMicrotasks();
+
+        verify(
+          () => mockRepository.createDraft(replyParentUri: 'at://reply', quoteUri: 'at://quote'),
         ).called(1);
       });
     });

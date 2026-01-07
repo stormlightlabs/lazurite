@@ -1,12 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/app/theme.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/composer/application/composer_notifier.dart';
+import 'package:lazurite/src/features/composer/application/composer_providers.dart';
+import 'package:lazurite/src/features/composer/domain/draft.dart';
+import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
+import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_controller.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
@@ -82,6 +90,7 @@ void main() {
       profileRepositoryProvider.overrideWithValue(mockProfileRepository),
       feedContentRepositoryProvider.overrideWithValue(mockFeedContentRepository),
       searchRepositoryProvider.overrideWithValue(mockSearchRepository),
+      draftRepositoryProvider.overrideWithValue(MockDraftRepository()),
       feedSyncControllerProvider.overrideWith((ref) {}),
       feedContentCleanupControllerProvider.overrideWith((ref) {}),
       pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
@@ -243,6 +252,29 @@ void main() {
       expect(router.routerDelegate.currentConfiguration.uri.path, equals('/landing'));
       expect(find.text('Lazurite'), findsOneWidget);
     });
+
+    testWidgets('navigates to compose with parameters', (tester) async {
+      await tester.pumpRouterApp(
+        overrides: [
+          ...getTestOverrides(),
+          authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+          composerProvider.overrideWith(MockComposerNotifier.new),
+        ],
+        theme: ThemeData.dark(),
+      );
+
+      final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      final router = app.routerConfig as GoRouter;
+
+      unawaited(router.push('/compose?draftId=123&replyTo=at://reply&quoteTo=at://quote'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ComposerScreen), findsOneWidget);
+      final screen = tester.widget<ComposerScreen>(find.byType(ComposerScreen));
+      expect(screen.draftId, '123');
+      expect(screen.replyTo, 'at://reply');
+      expect(screen.quoteTo, 'at://quote');
+    });
   });
 
   group('AppRoutes', () {
@@ -321,4 +353,53 @@ class MockActiveFeed extends ActiveFeed {
 class MockPinnedFeedsNotifier extends PinnedFeedsNotifier {
   @override
   Stream<List<SavedFeedData>> build() => Stream.value([]);
+}
+
+class MockDraftRepository extends Mock implements DraftRepository {
+  MockDraftRepository() {
+    when(
+      () => createDraft(
+        replyParentUri: any(named: 'replyParentUri'),
+        quoteUri: any(named: 'quoteUri'),
+      ),
+    ).thenAnswer(
+      (_) async => Draft(
+        id: '123',
+        text: '',
+        status: DraftStatus.draft,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        media: [],
+      ),
+    );
+
+    when(() => getDraft(any())).thenAnswer(
+      (_) async => Draft(
+        id: '123',
+        text: '',
+        status: DraftStatus.draft,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        media: [],
+      ),
+    );
+  }
+}
+
+class MockComposerNotifier extends ComposerNotifier {
+  @override
+  Future<ComposerState> build(ComposerArgs? args) async {
+    return ComposerState(
+      draft: Draft(
+        id: args?.draftId ?? '123',
+        text: '',
+        status: DraftStatus.draft,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        media: [],
+        replyParentUri: args?.replyTo,
+        quoteUri: args?.quoteTo,
+      ),
+    );
+  }
 }

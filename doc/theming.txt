@@ -26,10 +26,6 @@ Goal:
 - User can switch theme packs + variant (light/dark) at runtime with persisted
   selection.
 
-Current state:
-- ThemeModeController exists but only toggles light/dark mode (no pack selection)
-- No persistence layer
-
 Tasks:
 - [x] Extend/Create ThemeController (Riverpod) with:
       - currentThemePackId: String
@@ -53,10 +49,6 @@ Deliverables:
 
 Goal:
 - User can browse, preview, and select theme packs from settings.
-
-Current state:
-- No settings UI for theme selection
-- No preview widgets
 
 Design:
 - Settings → Appearance page
@@ -86,11 +78,6 @@ Deliverables:
 
 Goal:
 - Ship curated theme packs with light/dark variants.
-
-Current state:
-- Only Oxocarbon pack exists (light + dark variants in
-  lib/src/app/theming/packs/oxocarbon_theme_pack.dart)
-- No Catppuccin, Nord, Rosé Pine, or One Dark packs
 
 Theme sources:
 - Catppuccin: 4 flavors (Latte/Frappé/Macchiato/Mocha) with documented palettes
@@ -154,30 +141,48 @@ Deliverables:
 - Export/import enables theme sharing
 
 --------------------------------------------------------------------------------
-7. Quality gates: expanded role linting + accessibility               *theme-7*
+7. Animation system (Material 3 motion + accessibility)                *theme-7*
 
 Goal:
-- Ensure all theme packs (built-in + custom) maintain M3 role integrity and
-  accessibility standards.
+- Implement Material Design 3 motion patterns with comprehensive accessibility
+  controls for motion-sensitive users.
 
-Current state:
-- Role lint tests exist (test/src/app/theming/theme_role_lint_test.dart)
-- Validates required roles, hierarchy integrity, container ladder ordering
-- Only covers Oxocarbon pack
+Design:
+- Material Design 3 transitions (container transform, shared axis, fade through)
+- AnimationController service (Riverpod) with mode + speed controls
+- Accessibility settings: full/reduced/minimal/system animation modes
+- Speed multiplier adjustment (0.5x to 2.0x)
+- Respect platform accessibility (disableAnimations, reduceMotion)
 
 Tasks:
-- [ ] Extend role lint tests for all packs (automated with pack registry)
-- [ ] Add accessibility checks:
-      - Contrast ratio tests (WCAG AA minimum for onSurface/onSurfaceVariant)
-      - Ensure primary/secondary accents meet contrast requirements
-- [ ] Pre-release validation:
-      - CI step runs all role lint + accessibility tests
-      - Fails build if any pack violates constraints
+- [ ] Add animations package dependency
+- [ ] Create AnimationController service with Riverpod
+      - Animation mode enum: full/reduced/minimal/system
+      - Speed multiplier setting
+      - Helper methods for duration calculation and mode resolution
+- [ ] Add Drift table for animation preferences persistence
+- [ ] Build Settings → Accessibility page for animation controls
+      - Mode selector (full/reduced/minimal/system)
+      - Speed multiplier slider with preview
+      - Wire to AnimationController
+- [ ] Implement core navigation transitions
+      - Home feed scroll animations
+      - Post detail expansion (container transform)
+      - Tab navigation (shared axis)
+      - Composer screen transitions
+- [ ] Add secondary polish animations
+      - List item entrance
+      - Pull-to-refresh
+      - Loading states
+      - Button feedback
 
 Deliverables:
-- Adding a new pack is safe: drop in palette → mapping → tests pass
-- Visual regressions and accessibility issues caught before release
-- Confidence that all packs maintain design principles
+- Material Design 3 motion patterns applied consistently
+- Users can control animation intensity from settings
+- Platform accessibility settings (reduce motion, disable animations) respected
+- Animations perform at 60 FPS on target devices
+- No loss of functionality when animations disabled
+- Animation preferences persist across restarts
 
 ================================================================================
 Definition of Done                                                   *theme-dod*
@@ -190,4 +195,6 @@ Definition of Done                                                   *theme-dod*
       One Dark/Light
 - [x] Theme picker UI in settings
 - [ ] Users can optionally customize themes
-- [ ] All packs pass role lint + accessibility tests
+- [ ] Material Design 3 motion patterns implemented
+- [ ] Animation accessibility controls available in settings
+- [ ] Animations respect platform reduce motion preferences

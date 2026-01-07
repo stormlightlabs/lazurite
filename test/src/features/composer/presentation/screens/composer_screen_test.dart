@@ -40,7 +40,11 @@ void main() {
     media: media,
   );
 
-  Widget buildTestWidget({String? draftId, Draft? existingDraft}) {
+  Widget buildTestWidget({
+    String? draftId,
+    Draft? existingDraft,
+    MockComposerNotifierWrapper? notifier,
+  }) {
     final draft = existingDraft ?? createMockDraft();
 
     when(
@@ -63,14 +67,30 @@ void main() {
       ),
     ).thenAnswer((_) async {});
 
+    final mockNotifier = notifier ?? MockComposerNotifierWrapper(draft);
+
     final location = draftId != null ? '/compose?draftId=$draftId' : '/compose';
     final router = GoRouter(
-      initialLocation: location,
+      initialLocation: '/',
       routes: [
         GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => context.push(location),
+                child: const Text('Go to Compose'),
+              ),
+            ),
+          ),
+        ),
+        GoRoute(
           path: '/compose',
-          builder: (context, state) =>
-              ComposerScreen(draftId: state.uri.queryParameters['draftId']),
+          builder: (context, state) => ComposerScreen(
+            draftId: state.uri.queryParameters['draftId'],
+            replyTo: state.uri.queryParameters['replyTo'],
+            quoteTo: state.uri.queryParameters['quoteTo'],
+          ),
         ),
       ],
     );
@@ -78,16 +98,21 @@ void main() {
     return ProviderScope(
       overrides: [
         draftRepositoryProvider.overrideWithValue(mockRepository),
-        composerProvider.overrideWith(() => MockComposerNotifierWrapper(draft)),
+        composerProvider.overrideWith(() => mockNotifier),
       ],
       child: MaterialApp.router(routerConfig: router),
     );
   }
 
+  Future<void> navigateToCompose(WidgetTester tester) async {
+    await tester.tap(find.text('Go to Compose'));
+    await tester.pumpAndSettle();
+  }
+
   group('ComposerScreen', () {
     testWidgets('renders text field and publish button', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       expect(find.byType(TextField), findsOneWidget);
       expect(find.byType(PublishButton), findsOneWidget);
@@ -95,21 +120,21 @@ void main() {
 
     testWidgets('renders close button in app bar', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       expect(find.byIcon(Icons.close), findsOneWidget);
     });
 
     testWidgets('renders Compose title', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       expect(find.text('Compose'), findsOneWidget);
     });
 
     testWidgets('publish button is disabled when text is empty', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       final publishButton = tester.widget<PublishButton>(find.byType(PublishButton));
       expect(publishButton.isDisabled, isTrue);
@@ -117,14 +142,14 @@ void main() {
 
     testWidgets('character counter shows 300 when empty', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       expect(find.text('300'), findsWidgets);
     });
 
     testWidgets('character counter updates as user types', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       await tester.enterText(find.byType(TextField), 'Hello');
       await tester.pump();
@@ -134,7 +159,7 @@ void main() {
 
     testWidgets('publish button enabled when text is entered', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       await tester.enterText(find.byType(TextField), 'Hello world');
       await tester.pump();
@@ -145,7 +170,7 @@ void main() {
 
     testWidgets('shows negative count when over limit', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       final longText = 'a' * 305;
       await tester.enterText(find.byType(TextField), longText);
@@ -156,7 +181,7 @@ void main() {
 
     testWidgets('publish button disabled when over limit', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       final longText = 'a' * 305;
       await tester.enterText(find.byType(TextField), longText);
@@ -168,7 +193,7 @@ void main() {
 
     testWidgets('shows Split button when over limit', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       final longText = 'a' * 305;
       await tester.enterText(find.byType(TextField), longText);
@@ -179,7 +204,7 @@ void main() {
 
     testWidgets('Split button splits text and updates UI', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       final longText = 'a' * 305;
       await tester.enterText(find.byType(TextField), longText);
@@ -198,7 +223,7 @@ void main() {
 
     testWidgets('splits text at nearest whitespace', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       final text = '${'a' * 290} ${'b' * 15}';
       await tester.enterText(find.byType(TextField), text);
@@ -214,7 +239,7 @@ void main() {
 
     testWidgets('force splits huge words if no whitespace', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       final text = 'a' * 305;
       await tester.enterText(find.byType(TextField), text);
@@ -242,7 +267,7 @@ void main() {
       );
 
       await tester.pumpWidget(buildTestWidget(existingDraft: replyDraft));
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       final longText = 'a' * 305;
       await tester.enterText(find.byType(TextField), longText);
@@ -268,7 +293,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       final longText = 'a' * 305;
       await tester.enterText(find.byType(TextField), longText);
@@ -292,7 +317,7 @@ void main() {
 
     testWidgets('shows hint text', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       expect(find.text("What's on your mind?"), findsOneWidget);
     });
@@ -300,15 +325,16 @@ void main() {
     testWidgets('loads existing draft text', (tester) async {
       final draft = createMockDraft(text: 'Existing draft content');
       await tester.pumpWidget(buildTestWidget(existingDraft: draft));
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       final textField = tester.widget<TextField>(find.byType(TextField));
       expect(textField.controller?.text, 'Existing draft content');
     });
 
     testWidgets('calls forceSave when app is paused', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      final mockNotifier = MockComposerNotifierWrapper(createMockDraft());
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
 
       await tester.enterText(find.byType(TextField), 'Saving on pause');
       await tester.pump();
@@ -316,17 +342,12 @@ void main() {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       await tester.pump();
 
-      final element = tester.element(find.byType(ComposerScreen));
-      final container = ProviderScope.containerOf(element);
-      final notifier =
-          container.read(composerProvider(null).notifier) as MockComposerNotifierWrapper;
-
-      verify(() => notifier.mockForceSaveObj('Saving on pause')).called(1);
+      verify(() => mockNotifier.mockForceSaveObj('Saving on pause')).called(1);
     });
 
     testWidgets('shows image source selection sheet when adding media', (tester) async {
       await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      await navigateToCompose(tester);
 
       await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
       await tester.pumpAndSettle();
@@ -344,8 +365,9 @@ void main() {
         ),
       ).thenAnswer((_) async => file);
 
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      final mockNotifier = MockComposerNotifierWrapper(createMockDraft());
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
 
       await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
       await tester.pumpAndSettle();
@@ -353,12 +375,7 @@ void main() {
       await tester.tap(find.text('Take photo'));
       await tester.pumpAndSettle();
 
-      final element = tester.element(find.byType(ComposerScreen));
-      final container = ProviderScope.containerOf(element);
-      final notifier =
-          container.read(composerProvider(null).notifier) as MockComposerNotifierWrapper;
-
-      verify(() => notifier.mockAddMediaObj('test_image.jpg', 'image/jpeg')).called(1);
+      verify(() => mockNotifier.mockAddMediaObj('test_image.jpg', 'image/jpeg')).called(1);
     });
 
     testWidgets('picks multiple images from gallery', (tester) async {
@@ -369,8 +386,9 @@ void main() {
         () => mockImagePickerPlatform.getMultiImageWithOptions(options: any(named: 'options')),
       ).thenAnswer((_) async => [file1, file2]);
 
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
+      final mockNotifier = MockComposerNotifierWrapper(createMockDraft());
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
 
       await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
       await tester.pumpAndSettle();
@@ -378,13 +396,87 @@ void main() {
       await tester.tap(find.text('Choose from gallery'));
       await tester.pumpAndSettle();
 
-      final element = tester.element(find.byType(ComposerScreen));
-      final container = ProviderScope.containerOf(element);
-      final notifier =
-          container.read(composerProvider(null).notifier) as MockComposerNotifierWrapper;
+      verify(() => mockNotifier.mockAddMediaObj('image1.png', 'image/png')).called(1);
+      verify(() => mockNotifier.mockAddMediaObj('image2.webp', 'image/webp')).called(1);
+    });
 
-      verify(() => notifier.mockAddMediaObj('image1.png', 'image/png')).called(1);
-      verify(() => notifier.mockAddMediaObj('image2.webp', 'image/webp')).called(1);
+    testWidgets('shows cancel dialog when has content', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await navigateToCompose(tester);
+
+      await tester.enterText(find.byType(TextField), 'Content');
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Save this draft?'), findsOneWidget);
+      expect(find.text('Save Draft'), findsOneWidget);
+      expect(find.text('Discard'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    testWidgets('save draft action calls forceSave and pops', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await navigateToCompose(tester);
+
+      await tester.enterText(find.byType(TextField), 'Content');
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Save Draft'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(ComposerScreen), findsNothing);
+    });
+
+    testWidgets('discard draft action calls deleteDraft and pops', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await navigateToCompose(tester);
+
+      await tester.enterText(find.byType(TextField), 'Content');
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(ComposerScreen), findsNothing);
+    });
+
+    testWidgets('cancel action closes dialog and stays on screen', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await navigateToCompose(tester);
+
+      await tester.enterText(find.byType(TextField), 'Content');
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(ComposerScreen), findsOneWidget);
+    });
+
+    testWidgets('empty draft closes without dialog and calls deleteDraft', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await navigateToCompose(tester);
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(ComposerScreen), findsNothing);
     });
   });
 }
@@ -396,7 +488,7 @@ class _MockComposerNotifier extends ComposerNotifier {
   final Draft _draft;
 
   @override
-  Future<ComposerState> build(String? draftId) async {
+  Future<ComposerState> build(ComposerArgs? args) async {
     return ComposerState(draft: _draft);
   }
 
@@ -414,6 +506,13 @@ class _MockComposerNotifier extends ComposerNotifier {
   Future<void> cancel() async {}
 
   @override
+  Future<void> deleteDraft() async {
+    mockDeleteDraft();
+  }
+
+  void mockDeleteDraft() {}
+
+  @override
   Future<void> forceSave(String text) async {
     mockForceSave(text);
   }
@@ -426,6 +525,9 @@ class _MockComposerNotifier extends ComposerNotifier {
   }
 
   void mockAddMedia(String path, String mimeType) {}
+
+  @override
+  Future<void> removeMedia(int mediaId) async {}
 }
 
 class MockComposerNotifierWrapper extends _MockComposerNotifier {
@@ -433,6 +535,7 @@ class MockComposerNotifierWrapper extends _MockComposerNotifier {
 
   final _mockForceSave = MockForceSave();
   final _mockAddMedia = MockAddMedia();
+  final _mockDeleteDraft = MockDeleteDraft();
 
   @override
   void mockForceSave(String text) => _mockForceSave(text);
@@ -440,8 +543,12 @@ class MockComposerNotifierWrapper extends _MockComposerNotifier {
   @override
   void mockAddMedia(String path, String mimeType) => _mockAddMedia(path, mimeType);
 
+  @override
+  void mockDeleteDraft() => _mockDeleteDraft();
+
   MockForceSave get mockForceSaveObj => _mockForceSave;
   MockAddMedia get mockAddMediaObj => _mockAddMedia;
+  MockDeleteDraft get mockDeleteDraftObj => _mockDeleteDraft;
 }
 
 class MockAddMedia extends Mock implements AddMediaHandler {}
@@ -455,6 +562,12 @@ abstract class ForceSaveHandler {
 }
 
 class MockForceSave extends Mock implements ForceSaveHandler {}
+
+abstract class DeleteDraftHandler {
+  void call();
+}
+
+class MockDeleteDraft extends Mock implements DeleteDraftHandler {}
 
 class MockImagePickerPlatform extends Mock
     with MockPlatformInterfaceMixin
