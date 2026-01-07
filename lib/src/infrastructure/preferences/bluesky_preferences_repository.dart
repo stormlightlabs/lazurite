@@ -352,6 +352,21 @@ class BlueskyPreferencesRepository {
     });
   }
 
+  /// Updates the muted words preference.
+  ///
+  /// Persists locally and queues for sync to Bluesky.
+  Future<void> updateMutedWordsPref(MutedWordsPref pref) async {
+    _logger.info('Updating muted words preference');
+    final now = DateTime.now();
+    final data = pref.toStoredJson();
+
+    await _dao.upsertPreference(type: 'mutedWords', data: data, lastSynced: now);
+
+    await _syncQueueDao.enqueueBlueskyPrefSync(preferenceType: 'mutedWords', preferenceData: data);
+
+    _logger.debug('Muted words preference updated and queued for sync');
+  }
+
   /// Clears all cached preferences.
   ///
   /// Useful when signing out.

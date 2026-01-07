@@ -414,4 +414,64 @@ void main() {
       expect(stored.getVisibility('sexual'), isNull);
     });
   });
+
+  group('updateMutedWordsPref', () {
+    test('persists preference to database', () async {
+      const pref = MutedWordsPref(
+        items: [
+          MutedWord(id: '1', value: 'spam', targets: [MutedWordTarget.content]),
+          MutedWord(
+            id: '2',
+            value: 'scam',
+            targets: [MutedWordTarget.tags],
+            actorTarget: MutedWordActorTarget.excludeFollowing,
+          ),
+        ],
+      );
+
+      await repository.updateMutedWordsPref(pref);
+
+      final stored = await repository.getMutedWordsPref();
+      expect(stored.items, hasLength(2));
+      expect(stored.items[0].value, 'spam');
+      expect(stored.items[1].value, 'scam');
+      expect(stored.items[1].actorTarget, MutedWordActorTarget.excludeFollowing);
+    });
+
+    test('queues sync item', () async {
+      const pref = MutedWordsPref(
+        items: [
+          MutedWord(id: '1', value: 'test', targets: [MutedWordTarget.content]),
+        ],
+      );
+
+      await repository.updateMutedWordsPref(pref);
+
+      final queued = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queued, hasLength(1));
+      expect(queued[0].type, 'mutedWords');
+    });
+
+    test('overwrites existing muted words', () async {
+      await repository.updateMutedWordsPref(
+        const MutedWordsPref(
+          items: [
+            MutedWord(id: '1', value: 'old', targets: [MutedWordTarget.content]),
+          ],
+        ),
+      );
+
+      await repository.updateMutedWordsPref(
+        const MutedWordsPref(
+          items: [
+            MutedWord(id: '2', value: 'new', targets: [MutedWordTarget.content]),
+          ],
+        ),
+      );
+
+      final stored = await repository.getMutedWordsPref();
+      expect(stored.items, hasLength(1));
+      expect(stored.items[0].value, 'new');
+    });
+  });
 }

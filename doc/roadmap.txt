@@ -306,18 +306,18 @@ Tasks:
             - explanatory text for each option
       - [x] Wire feed view prefs to feed rendering
       - [x] Wire thread view prefs to thread display
-- [ ] Phase 5 - Muted Words (MEDIUM):
-      - [ ] Build MutedWordsScreen:
+- [x] Phase 5 - Muted Words (MEDIUM):
+      - [x] Build MutedWordsScreen:
             - list of muted words with metadata
             - add button with dialog
             - remove functionality
             - search/filter for large lists
-      - [ ] Build add muted word dialog:
+      - [x] Build add muted word dialog:
             - text field for word/phrase
             - target selection (content, tags)
             - actor target (all, exclude-following)
             - optional expiration date picker
-      - [ ] Wire muted words to post filtering logic
+      - [x] Wire muted words to post filtering logic
 
 Tests:
 - [x] Theme persistence: mode persists across app restarts (11 DAO tests + 13 controller tests)
@@ -329,7 +329,7 @@ Tests:
 - [ ] Content filtering: labels filter posts per user preferences
 - [x] Feed filters: hide replies/reposts/quotes work correctly
 - [x] Thread sort: sort order applies and persists
-- [ ] Muted words: keywords filter content from feeds
+- [x] Muted words: keywords filter content from feeds
 
 Deliverables:
 - [x] Theme mode persists and supports system theme
@@ -337,7 +337,7 @@ Deliverables:
 - [ ] Content moderation settings sync with Bluesky
 - [ ] Content labels filter posts according to preferences
 - [ ] Feed and thread preferences apply to display
-- [ ] Muted words filter content from feeds
+- [x] Muted words filter content from feeds
 - [ ] All preference changes sync bidirectionally
 - [ ] Offline changes queue and retry
 - [ ] Multi-device changes merge without data loss

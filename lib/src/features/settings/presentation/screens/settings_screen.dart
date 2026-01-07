@@ -57,9 +57,7 @@ class SettingsScreen extends ConsumerWidget {
         title: 'Muted Words',
         subtitle: 'Keywords to filter from feeds',
         onTap: () {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Muted Words - Coming soon')));
+          context.push('/settings/muted-words');
         },
       ),
       SettingsTile(
