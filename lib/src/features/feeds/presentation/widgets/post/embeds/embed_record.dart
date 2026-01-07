@@ -99,6 +99,7 @@ class _QuotedPostCard extends StatelessWidget {
           : null,
       child: Container(
         decoration: BoxDecoration(
+          color: colorScheme.surfaceContainer,
           border: Border.all(color: colorScheme.outlineVariant),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -207,7 +208,7 @@ class _ErrorStateCard extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border.all(color: colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(12),
-        color: colorScheme.surfaceContainerLow,
+        color: colorScheme.surfaceContainer,
       ),
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -245,6 +246,7 @@ class _FeedGeneratorCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
+        color: colorScheme.surfaceContainer,
         border: Border.all(color: colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -365,6 +367,7 @@ class _ListCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
+        color: colorScheme.surfaceContainer,
         border: Border.all(color: colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -455,6 +458,7 @@ class _StarterPackCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
+        color: colorScheme.surfaceContainer,
         border: Border.all(color: colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(12),
       ),

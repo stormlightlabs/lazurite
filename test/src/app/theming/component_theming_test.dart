@@ -105,5 +105,137 @@ void main() {
         expect(darkCs.outlineVariant, isNot(equals(darkCs.outline)));
       });
     });
+
+    group('Embed M3 roles', () {
+      late ColorScheme darkCs;
+
+      setUp(() {
+        darkCs = oxocarbonDarkVariant.derivedScheme;
+      });
+
+      test('surfaceContainer is set for embed backgrounds', () {
+        expect(darkCs.surfaceContainer, isNotNull);
+      });
+
+      test('surfaceContainer is distinct from surfaceContainerLow', () {
+        expect(darkCs.surfaceContainer, isNot(equals(darkCs.surfaceContainerLow)));
+      });
+
+      test('surfaceContainer is lighter than surfaceContainerLow in dark theme', () {
+        final containerLuminance = darkCs.surfaceContainer.computeLuminance();
+        final containerLowLuminance = darkCs.surfaceContainerLow.computeLuminance();
+        expect(containerLuminance, greaterThan(containerLowLuminance));
+      });
+    });
+
+    group('Text emphasis M3 roles', () {
+      late ColorScheme darkCs;
+      late ColorScheme lightCs;
+
+      setUp(() {
+        darkCs = oxocarbonDarkVariant.derivedScheme;
+        lightCs = oxocarbonLightVariant.derivedScheme;
+      });
+
+      test('onSurfaceVariant is set for secondary text', () {
+        expect(darkCs.onSurfaceVariant, isNotNull);
+        expect(lightCs.onSurfaceVariant, isNotNull);
+      });
+
+      test('onSurfaceVariant is distinct from onSurface', () {
+        expect(darkCs.onSurfaceVariant, isNot(equals(darkCs.onSurface)));
+        expect(lightCs.onSurfaceVariant, isNot(equals(lightCs.onSurface)));
+      });
+
+      test('onSurfaceVariant has lower contrast than onSurface in dark theme', () {
+        final variantLuminance = darkCs.onSurfaceVariant.computeLuminance();
+        final primaryLuminance = darkCs.onSurface.computeLuminance();
+        expect(variantLuminance, lessThan(primaryLuminance));
+      });
+
+      test('onSurfaceVariant has lower contrast than onSurface in light theme', () {
+        final variantLuminance = lightCs.onSurfaceVariant.computeLuminance();
+        final primaryLuminance = lightCs.onSurface.computeLuminance();
+        expect(variantLuminance, greaterThan(primaryLuminance));
+      });
+    });
+
+    group('TextField M3 roles', () {
+      late ColorScheme darkCs;
+
+      setUp(() {
+        darkCs = oxocarbonDarkVariant.derivedScheme;
+      });
+
+      test('surfaceContainerHighest is set for filled text field background', () {
+        expect(darkCs.surfaceContainerHighest, isNotNull);
+      });
+
+      test('surfaceContainerHighest is distinct from surface', () {
+        expect(darkCs.surfaceContainerHighest, isNot(equals(darkCs.surface)));
+      });
+
+      test('outline is set for text field border', () {
+        expect(darkCs.outline, isNotNull);
+        expect(darkCs.outline, const Color(0xFF525252));
+      });
+
+      test('onSurfaceVariant is set for hint and label text', () {
+        expect(darkCs.onSurfaceVariant, isNotNull);
+      });
+    });
+
+    group('Dialog M3 roles', () {
+      late ColorScheme darkCs;
+      late ColorScheme lightCs;
+
+      setUp(() {
+        darkCs = oxocarbonDarkVariant.derivedScheme;
+        lightCs = oxocarbonLightVariant.derivedScheme;
+      });
+
+      test('surfaceContainerHigh is set for dialog background', () {
+        expect(darkCs.surfaceContainerHigh, isNotNull);
+        expect(lightCs.surfaceContainerHigh, isNotNull);
+      });
+
+      test('surfaceContainerHigh is distinct from surface', () {
+        expect(darkCs.surfaceContainerHigh, isNot(equals(darkCs.surface)));
+        expect(lightCs.surfaceContainerHigh, isNot(equals(lightCs.surface)));
+      });
+
+      test('surfaceContainerHigh is higher than surfaceContainer', () {
+        final highLuminance = darkCs.surfaceContainerHigh.computeLuminance();
+        final containerLuminance = darkCs.surfaceContainer.computeLuminance();
+        expect(highLuminance, greaterThan(containerLuminance));
+      });
+    });
+
+    group('BottomSheet M3 roles', () {
+      late ColorScheme darkCs;
+      late ColorScheme lightCs;
+
+      setUp(() {
+        darkCs = oxocarbonDarkVariant.derivedScheme;
+        lightCs = oxocarbonLightVariant.derivedScheme;
+      });
+
+      test('surfaceContainerLow is set for bottom sheet background', () {
+        expect(darkCs.surfaceContainerLow, isNotNull);
+        expect(lightCs.surfaceContainerLow, isNotNull);
+      });
+
+      test('surfaceContainerLow is distinct from surface', () {
+        expect(darkCs.surfaceContainerLow, isNot(equals(darkCs.surface)));
+      });
+
+      test('dark theme has full surface container ladder', () {
+        expect(darkCs.surfaceContainerLowest, isNotNull);
+        expect(darkCs.surfaceContainerLow, isNotNull);
+        expect(darkCs.surfaceContainer, isNotNull);
+        expect(darkCs.surfaceContainerHigh, isNotNull);
+        expect(darkCs.surfaceContainerHighest, isNotNull);
+      });
+    });
   });
 }

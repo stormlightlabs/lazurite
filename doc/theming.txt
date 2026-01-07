@@ -1,8 +1,8 @@
 *theming.txt*              Theming (Material + Theme Packs + User Customization)
 
-==============================================================================
-T. Theming 2.0 (why we’re changing it)                               *theme-T*
-==============================================================================
+================================================================================
+Theming 2.0 (why we’re changing it)                               *theme-intro*
+================================================================================
 
 - Many Material 3 components rely on the broader set of tone-based
   surfaces/containers and "onSurfaceVariant/outlineVariant" emphasis roles.
@@ -19,7 +19,7 @@ Outcome:
   Atom/One Dark) with light/dark variants, and optionally customize.
 
 ================================================================================
-0. Design principles + success criteria                               *theme-T0*
+Design Principles + Success Criteria                          *theme-principles*
 ================================================================================
 
 Principles (Material 3):
@@ -83,22 +83,22 @@ Chips (feed selector row):
   M3 chip spec explicitly calls out these roles.
 
 Cards (posts + embeds):
-- [ ] Move post rows to Card/Surface using surfaceContainerLow
+- [x] Move post rows to Card/Surface using surfaceContainerLow
       (or surfaceContainer)
-- [ ] Give embeds a slightly higher container role than the parent post container
+- [x] Give embeds a slightly higher container role than the parent post container
       ("contained area against surface" guidance).
 
 Dividers and outlines:
-- [ ] Default dividers should use outlineVariant (subtle), not strong contrast
+- [x] Default dividers should use outlineVariant (subtle), not strong contrast
       lines.
-- [ ] Reserve outline for boundaries that truly need emphasis.
+- [x] Reserve outline for boundaries that truly need emphasis.
 
 Text emphasis:
-- [ ] Ensure secondary metadata (handle, timestamp) uses onSurfaceVariant.
-- [ ] Keep body text on onSurface (highest legibility).
+- [x] Ensure secondary metadata (handle, timestamp) uses onSurfaceVariant.
+- [x] Keep body text on onSurface (highest legibility).
 
 Inputs / dialogs / sheets:
-- [ ] TextField, Dialog, BottomSheet should use container roles and consistent
+- [x] TextField, Dialog, BottomSheet should use container roles and consistent
       scrims.
 
 Deliverables:
@@ -233,10 +233,9 @@ Deliverables:
 - Visual regressions are caught before release.
 
 ================================================================================
-Definition of Done (Milestone T)                                     *theme-dod*
+Definition of Done                                                   *theme-dod*
 ================================================================================
 
-Milestone T is done when:
 - Home screen hierarchy is improved using M3 surface/container roles.
 - Nav bar and chip row follow M3 selection/indicator specs.
 - Theme switching works at runtime and persists.
@@ -244,7 +243,7 @@ Milestone T is done when:
   One Dark/Light.
 
 ================================================================================
-Implementation notes (based on your current theme.dart)            *theme-notes*
+Implementation Notes                                               *theme-notes*
 ================================================================================
 
 Current file highlights to address:

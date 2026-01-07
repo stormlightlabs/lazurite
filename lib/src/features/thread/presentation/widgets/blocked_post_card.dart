@@ -17,7 +17,7 @@ class BlockedPostCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          border: Border(bottom: BorderSide(color: theme.dividerColor)),
+          border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
         ),
         child: Row(
           children: [

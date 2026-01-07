@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lazurite/src/app/theme.dart';
 import 'package:lazurite/src/core/domain/content_label.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/content_warning.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_actions_row.dart';
@@ -115,12 +114,16 @@ class FeedPostCard extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 4.0, left: 28.0),
                 child: Row(
                   children: [
-                    const Icon(Icons.repeat, size: 12, color: AppColors.textSecondary),
+                    Icon(
+                      Icons.repeat,
+                      size: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Reposted by ${reposter['displayName'] as String? ?? reposter['handle'] as String? ?? 'someone'}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

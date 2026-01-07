@@ -63,10 +63,7 @@ class _ReportDialogState extends State<ReportDialog> {
             const SizedBox(height: 16),
             TextField(
               controller: _reasonController,
-              decoration: const InputDecoration(
-                labelText: 'Additional Details (Optional)',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'Additional Details (Optional)'),
               maxLines: 3,
             ),
           ],

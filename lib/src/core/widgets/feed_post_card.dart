@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lazurite/src/app/theme.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
 
 /// Shared post card widget used across profile feeds and search results.
@@ -91,13 +90,17 @@ class FeedPostCard extends StatelessWidget {
                   if (indexedAt != null)
                     Text(
                       '• ${_formatTime(indexedAt!)}',
-                      style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                 ],
               ),
               Text(
                 '@$authorHandle',
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

@@ -92,5 +92,85 @@ void main() {
         expect(find.byType(VerificationBadge), findsNothing);
       });
     });
+
+    group('theming', () {
+      testWidgets('uses onSurfaceVariant for handle text', (tester) async {
+        const testColor = Color(0xFF123456);
+        final author = Profile(
+          did: 'did:1',
+          handle: 'test.bsky.social',
+          displayName: 'Test User',
+          indexedAt: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(colorScheme: const ColorScheme.dark(onSurfaceVariant: testColor)),
+            home: Scaffold(
+              body: PostHeader(author: author, indexedAt: DateTime.now()),
+            ),
+          ),
+        );
+
+        final handleFinder = find.text('@test.bsky.social');
+        expect(handleFinder, findsOneWidget);
+
+        final handleWidget = tester.widget<Text>(handleFinder);
+        expect(handleWidget.style?.color, equals(testColor));
+      });
+
+      testWidgets('uses onSurfaceVariant for timestamp text', (tester) async {
+        const testColor = Color(0xFF654321);
+        final author = Profile(
+          did: 'did:1',
+          handle: 'test.bsky.social',
+          displayName: 'Test User',
+          indexedAt: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(colorScheme: const ColorScheme.dark(onSurfaceVariant: testColor)),
+            home: Scaffold(
+              body: PostHeader(
+                author: author,
+                indexedAt: DateTime.now().subtract(const Duration(minutes: 5)),
+              ),
+            ),
+          ),
+        );
+
+        final timestampFinder = find.text('• 5m');
+        expect(timestampFinder, findsOneWidget);
+
+        final timestampWidget = tester.widget<Text>(timestampFinder);
+        expect(timestampWidget.style?.color, equals(testColor));
+      });
+
+      testWidgets('uses onSurface for display name text', (tester) async {
+        const testColor = Color(0xFFABCDEF);
+        final author = Profile(
+          did: 'did:1',
+          handle: 'test.bsky.social',
+          displayName: 'Test User',
+          indexedAt: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(colorScheme: const ColorScheme.dark(onSurface: testColor)),
+            home: Scaffold(
+              body: PostHeader(author: author, indexedAt: DateTime.now()),
+            ),
+          ),
+        );
+
+        final displayNameFinder = find.text('Test User');
+        expect(displayNameFinder, findsOneWidget);
+
+        final displayNameWidget = tester.widget<Text>(displayNameFinder);
+        expect(displayNameWidget.style?.color, equals(testColor));
+      });
+    });
   });
 }

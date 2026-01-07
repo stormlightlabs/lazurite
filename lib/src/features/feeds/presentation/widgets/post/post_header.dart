@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lazurite/src/app/theme.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/verification_badge.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
@@ -22,6 +21,9 @@ class PostHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Row(
       children: [
         InkWell(
@@ -35,7 +37,10 @@ class PostHeader extends StatelessWidget {
               Flexible(
                 child: Text(
                   author.displayName ?? author.handle,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -47,14 +52,14 @@ class PostHeader extends StatelessWidget {
               Flexible(
                 child: Text(
                   '@${author.handle}',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 4),
               Text(
                 '• ${_formatTime(indexedAt)}',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
             ],
           ),

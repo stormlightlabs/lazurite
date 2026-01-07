@@ -32,8 +32,6 @@ void main() {
       expect(AppColors.success, const Color(0xFF42BE65));
     });
 
-    // FIXME: Add full AppTheme.dark/light tests once fonts are bundled as assets.
-    // See flutter_test_config.dart for details.
     test('tertiary color is correct', () {
       expect(AppColors.tertiary, const Color(0xFF33B1FF));
     });

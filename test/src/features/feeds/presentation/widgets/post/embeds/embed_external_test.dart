@@ -102,5 +102,53 @@ void main() {
 
       expect(find.byType(GestureDetector), findsOneWidget);
     });
+
+    group('theming', () {
+      testWidgets('uses surfaceContainer for background', (tester) async {
+        const containerColor = Color(0xFF2A2A2A);
+        await mockNetworkImages(() async {
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: ThemeData(
+                colorScheme: const ColorScheme.dark(surfaceContainer: containerColor),
+              ),
+              home: const Scaffold(
+                body: EmbedExternal(external: {'uri': 'https://example.com', 'title': 'Test'}),
+              ),
+            ),
+          );
+        });
+
+        final container = tester.widget<Container>(
+          find.descendant(of: find.byType(EmbedExternal), matching: find.byType(Container)).first,
+        );
+
+        final decoration = container.decoration as BoxDecoration?;
+        expect(decoration?.color, equals(containerColor));
+      });
+
+      testWidgets('uses outlineVariant for border', (tester) async {
+        const borderColor = Color(0xFF555555);
+        await mockNetworkImages(() async {
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: ThemeData(colorScheme: const ColorScheme.dark(outlineVariant: borderColor)),
+              home: const Scaffold(
+                body: EmbedExternal(external: {'uri': 'https://example.com', 'title': 'Test'}),
+              ),
+            ),
+          );
+        });
+
+        final container = tester.widget<Container>(
+          find.descendant(of: find.byType(EmbedExternal), matching: find.byType(Container)).first,
+        );
+
+        final decoration = container.decoration as BoxDecoration?;
+        expect(decoration?.border, isNotNull);
+        final border = decoration?.border as Border?;
+        expect(border?.top.color, equals(borderColor));
+      });
+    });
   });
 }

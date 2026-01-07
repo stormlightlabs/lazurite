@@ -9,9 +9,14 @@ class PostBody extends StatelessWidget {
   Widget build(BuildContext context) {
     if (text.isEmpty) return const SizedBox.shrink();
 
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Text(text, style: const TextStyle(fontSize: 15)),
+      child: Text(
+        text,
+        style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
+      ),
     );
   }
 }

@@ -42,6 +42,7 @@ class EmbedExternal extends StatelessWidget {
       onTap: uri.isNotEmpty ? () => _openUrl(uri) : null,
       child: Container(
         decoration: BoxDecoration(
+          color: colorScheme.surfaceContainer,
           border: Border.all(color: colorScheme.outlineVariant),
           borderRadius: BorderRadius.circular(12),
         ),
