@@ -362,4 +362,66 @@ void main() {
     expect(progressUpdates.first.$2, 0.5);
     expect(progressUpdates.last.$2, 1.0);
   });
+
+  test('publishDraft with quote and media creates recordWithMedia embed', () async {
+    final draft = await repository.createDraft(
+      text: 'Quote + Image',
+      quoteUri: 'at://did:web:test/app.bsky.feed.post/quoted',
+      quoteCid: 'cid-quoted',
+    );
+    final file = await createTempFile('image.png');
+
+    await repository.addMedia(
+      draft.id,
+      composer.DraftMediaInput(localPath: file.path, mimeType: 'image/png'),
+    );
+
+    when(() => mockSessionStorage.getSession()).thenAnswer((_) async => buildTestSession());
+    when(
+      () => mockApi.callRaw<Map<String, dynamic>>(
+        'com.atproto.repo.uploadBlob',
+        body: any(named: 'body'),
+        onSendProgress: any(named: 'onSendProgress'),
+        cancelToken: any(named: 'cancelToken'),
+      ),
+    ).thenAnswer(
+      (_) async => Response<Map<String, dynamic>>(
+        data: {
+          'blob': {
+            '\$type': 'blob',
+            'ref': {'\$link': 'cid-image'},
+            'mimeType': 'image/png',
+            'size': 16,
+          },
+        },
+        requestOptions: RequestOptions(path: ''),
+      ),
+    );
+
+    Map<String, dynamic>? capturedRecord;
+    when(() => mockApi.call('com.atproto.repo.createRecord', body: any(named: 'body'))).thenAnswer(
+      (invocation) async {
+        final body = invocation.namedArguments[const Symbol('body')] as Map<String, dynamic>;
+        capturedRecord = body['record'] as Map<String, dynamic>;
+        return {'uri': 'at://did:web:test/app.bsky.feed.post/123', 'cid': 'cid-123'};
+      },
+    );
+
+    await repository.publishDraft(draft.id);
+
+    expect(capturedRecord, isNotNull);
+    final embed = capturedRecord!['embed'] as Map<String, dynamic>;
+    expect(embed['\$type'], 'app.bsky.embed.recordWithMedia');
+
+    final recordEmbed = embed['record'] as Map<String, dynamic>;
+    expect(recordEmbed['\$type'], 'app.bsky.embed.record');
+    expect(recordEmbed['record'], {
+      'uri': 'at://did:web:test/app.bsky.feed.post/quoted',
+      'cid': 'cid-quoted',
+    });
+
+    final mediaEmbed = embed['media'] as Map<String, dynamic>;
+    expect(mediaEmbed['\$type'], 'app.bsky.embed.images');
+    expect((mediaEmbed['images'] as List).length, 1);
+  });
 }

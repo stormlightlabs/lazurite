@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/features/composer/application/composer_notifier.dart';
 import 'package:lazurite/src/features/composer/application/composer_providers.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/alt_text_editor_sheet.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/composer_text_field.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/media_picker_row.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/publish_button.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/quote_post_card.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/reply_context_card.dart';
 
 /// Maximum character limit for posts (grapheme clusters).
 const int kMaxPostLength = 300;
@@ -354,12 +357,28 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Reply context card
+                    if (state.replyPost != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: ReplyContextCard(
+                          author: Author(
+                            did: state.replyPost!.authorDid,
+                            handle: state.replyPost!.authorHandle,
+                            displayName: state.replyPost!.authorDisplayName,
+                            avatar: state.replyPost!.authorAvatar,
+                          ),
+                          text: state.replyPost!.text,
+                        ),
+                      ),
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: ComposerTextField(
                         controller: _textController,
                         maxLength: kMaxPostLength,
-                        hintText: "What's on your mind?",
+                        hintText: state.replyPost != null
+                            ? 'Write your reply...'
+                            : "What's on your mind?",
                       ),
                     ),
                     if (mediaPaths.isNotEmpty || state.draft?.media.length != 4)
@@ -373,6 +392,22 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                                 .map((m) => m.altText != null && m.altText!.isNotEmpty)
                                 .toList() ??
                             [],
+                      ),
+
+                    // Quote post card
+                    if (state.quotePost != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: QuotePostCard(
+                          author: Author(
+                            did: state.quotePost!.authorDid,
+                            handle: state.quotePost!.authorHandle,
+                            displayName: state.quotePost!.authorDisplayName,
+                            avatar: state.quotePost!.authorAvatar,
+                          ),
+                          text: state.quotePost!.text,
+                          imageCount: state.quotePost!.hasImages ? 1 : 0,
+                        ),
                       ),
 
                     Padding(

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
+import 'package:lazurite/src/features/profile/application/profile_providers.dart';
+import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'composer_providers.dart';
@@ -23,17 +25,37 @@ class ComposerArgs extends Equatable {
 
 /// State for the composer screen.
 class ComposerState {
-  const ComposerState({required this.draft, this.isPublishing = false, this.error});
+  const ComposerState({
+    required this.draft,
+    this.isPublishing = false,
+    this.error,
+    this.replyPost,
+    this.quotePost,
+  });
 
   final Draft? draft;
   final bool isPublishing;
   final String? error;
 
-  ComposerState copyWith({Draft? draft, bool? isPublishing, String? error}) {
+  /// The parent post being replied to (for displaying ReplyContextCard).
+  final FeedItem? replyPost;
+
+  /// The quoted post (for displaying QuotePostCard).
+  final FeedItem? quotePost;
+
+  ComposerState copyWith({
+    Draft? draft,
+    bool? isPublishing,
+    String? error,
+    FeedItem? replyPost,
+    FeedItem? quotePost,
+  }) {
     return ComposerState(
       draft: draft ?? this.draft,
       isPublishing: isPublishing ?? this.isPublishing,
       error: error,
+      replyPost: replyPost ?? this.replyPost,
+      quotePost: quotePost ?? this.quotePost,
     );
   }
 }
@@ -53,16 +75,80 @@ class ComposerNotifier extends _$ComposerNotifier {
       _debounceTimer?.cancel();
     });
 
+    // Load existing draft
     if (args?.draftId case final id?) {
       final existing = await _repository.getDraft(id);
-      return ComposerState(draft: existing);
+      // For existing drafts with reply/quote refs, fetch the post data for UI
+      FeedItem? replyPost;
+      FeedItem? quotePost;
+      if (existing.replyParentUri != null) {
+        replyPost = await _fetchPost(existing.replyParentUri!);
+      }
+      if (existing.quoteUri != null) {
+        quotePost = await _fetchPost(existing.quoteUri!);
+      }
+      return ComposerState(draft: existing, replyPost: replyPost, quotePost: quotePost);
+    }
+
+    // Fetch parent post for reply and extract refs
+    FeedItem? replyPost;
+    String? replyParentUri;
+    String? replyParentCid;
+    String? replyRootUri;
+    String? replyRootCid;
+
+    if (args?.replyTo case final replyToUri?) {
+      replyPost = await _fetchPost(replyToUri);
+      if (replyPost != null) {
+        replyParentUri = replyPost.uri;
+        replyParentCid = replyPost.cid;
+        // Extract root from parent post's reply record, or use parent as root
+        final parentReply = replyPost.record?['reply'] as Map<String, dynamic>?;
+        if (parentReply != null) {
+          final root = parentReply['root'] as Map<String, dynamic>?;
+          replyRootUri = root?['uri'] as String?;
+          replyRootCid = root?['cid'] as String?;
+        }
+        // If no root in parent (parent is a top-level post), use parent as root
+        replyRootUri ??= replyParentUri;
+        replyRootCid ??= replyParentCid;
+      }
+    }
+
+    // Fetch quoted post
+    FeedItem? quotePost;
+    String? quoteUri;
+    String? quoteCid;
+
+    if (args?.quoteTo case final quoteToUri?) {
+      quotePost = await _fetchPost(quoteToUri);
+      if (quotePost != null) {
+        quoteUri = quotePost.uri;
+        quoteCid = quotePost.cid;
+      }
     }
 
     final newDraft = await _repository.createDraft(
-      replyParentUri: args?.replyTo,
-      quoteUri: args?.quoteTo,
+      replyParentUri: replyParentUri,
+      replyParentCid: replyParentCid,
+      replyRootUri: replyRootUri,
+      replyRootCid: replyRootCid,
+      quoteUri: quoteUri,
+      quoteCid: quoteCid,
     );
-    return ComposerState(draft: newDraft);
+    return ComposerState(draft: newDraft, replyPost: replyPost, quotePost: quotePost);
+  }
+
+  /// Fetches a post by URI for reply/quote context.
+  Future<FeedItem?> _fetchPost(String uri) async {
+    try {
+      final repository = ref.read(profileRepositoryProvider);
+      return await repository.getPost(uri);
+    } catch (_) {
+      // If we can't fetch the post, we can still create the draft
+      // but won't have the context to display
+      return null;
+    }
   }
 
   /// Update draft text with debounced autosave.

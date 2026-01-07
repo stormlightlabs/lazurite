@@ -129,21 +129,21 @@ Phase 4 - Reply and Quote Posts (MEDIUM):
       - [x] Display quoted post text
       - [x] Show quoted post media (if any)
       - [x] Card border styling
-- [ ] Composer reply support:
-      - [ ] Accept replyTo parameter (post URI)
-      - [ ] Fetch parent post data
-      - [ ] Extract reply references (parent/root URI+CID)
-      - [ ] Create draft with reply refs
-      - [ ] Display ReplyContextCard
-      - [ ] Include reply in post record
-- [ ] Composer quote support:
-      - [ ] Accept quoteTo parameter (post URI)
-      - [ ] Fetch quoted post data
-      - [ ] Extract quote reference (URI+CID)
-      - [ ] Create draft with quote ref
-      - [ ] Display QuotePostCard
-      - [ ] Include quote embed in post record
-      - [ ] Support recordWithMedia (quote + images)
+- [x] Composer reply support:
+      - [x] Accept replyTo parameter (post URI)
+      - [x] Fetch parent post data
+      - [x] Extract reply references (parent/root URI+CID)
+      - [x] Create draft with reply refs
+      - [x] Display ReplyContextCard
+      - [x] Include reply in post record
+- [x] Composer quote support:
+      - [x] Accept quoteTo parameter (post URI)
+      - [x] Fetch quoted post data
+      - [x] Extract quote reference (URI+CID)
+      - [x] Create draft with quote ref
+      - [x] Display QuotePostCard
+      - [x] Include quote embed in post record
+      - [x] Support recordWithMedia (quote + images, videos)
 
 Phase 5 - Rich Text (Mentions and Links) (MEDIUM):
 - [ ] Create FacetParser utility:
@@ -181,7 +181,6 @@ Phase 6 - Global FAB and Polish (HIGH):
 - [ ] Performance optimization:
       - [ ] Image thumbnail caching
       - [ ] Smooth, animated modal transitions
-
 
 Tests:
 - [ ] Unit tests:

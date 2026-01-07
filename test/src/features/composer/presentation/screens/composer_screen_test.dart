@@ -8,11 +8,16 @@ import 'package:lazurite/src/features/composer/application/composer_providers.da
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/quote_post_card.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/publish_button.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/reply_context_card.dart';
+import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class MockDraftRepository extends Mock implements DraftRepository {}
+
+class MockFeedItem extends Mock implements FeedItem {}
 
 void main() {
   late MockDraftRepository mockRepository;
@@ -478,18 +483,55 @@ void main() {
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.byType(ComposerScreen), findsNothing);
     });
+
+    testWidgets('shows ReplyContextCard when replyPost is present', (tester) async {
+      final mockPost = MockFeedItem();
+      when(() => mockPost.authorDid).thenReturn('did:test');
+      when(() => mockPost.authorHandle).thenReturn('handle.test');
+      when(() => mockPost.authorDisplayName).thenReturn('Display Name');
+      when(() => mockPost.authorAvatar).thenReturn(null);
+      when(() => mockPost.text).thenReturn('Parent post text');
+
+      final mockNotifier = MockComposerNotifierWrapper(createMockDraft(), replyPost: mockPost);
+
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
+
+      expect(find.byType(ReplyContextCard), findsOneWidget);
+      expect(find.text('Parent post text'), findsOneWidget);
+    });
+
+    testWidgets('shows QuotePostCard when quotePost is present', (tester) async {
+      final mockPost = MockFeedItem();
+      when(() => mockPost.authorDid).thenReturn('did:test');
+      when(() => mockPost.authorHandle).thenReturn('handle.test');
+      when(() => mockPost.authorDisplayName).thenReturn('Display Name');
+      when(() => mockPost.authorAvatar).thenReturn(null);
+      when(() => mockPost.text).thenReturn('Quoted post text');
+      when(() => mockPost.hasImages).thenReturn(true);
+
+      final mockNotifier = MockComposerNotifierWrapper(createMockDraft(), quotePost: mockPost);
+
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
+
+      expect(find.byType(QuotePostCard), findsOneWidget);
+      expect(find.text('Quoted post text'), findsOneWidget);
+    });
   });
 }
 
 /// Mock notifier that returns a fixed state for testing.
 class _MockComposerNotifier extends ComposerNotifier {
-  _MockComposerNotifier(this._draft);
+  _MockComposerNotifier(this._draft, {this.replyPost, this.quotePost});
 
   final Draft _draft;
+  final FeedItem? replyPost;
+  final FeedItem? quotePost;
 
   @override
   Future<ComposerState> build(ComposerArgs? args) async {
-    return ComposerState(draft: _draft);
+    return ComposerState(draft: _draft, replyPost: replyPost, quotePost: quotePost);
   }
 
   @override
@@ -531,7 +573,7 @@ class _MockComposerNotifier extends ComposerNotifier {
 }
 
 class MockComposerNotifierWrapper extends _MockComposerNotifier {
-  MockComposerNotifierWrapper(super.draft);
+  MockComposerNotifierWrapper(super.draft, {super.replyPost, super.quotePost});
 
   final _mockForceSave = MockForceSave();
   final _mockAddMedia = MockAddMedia();
