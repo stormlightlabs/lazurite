@@ -48,6 +48,11 @@ void main() {
                     builder: (ctx, state) =>
                         const Scaffold(body: Center(child: Text('About Screen'))),
                   ),
+                  GoRoute(
+                    path: 'muted-words',
+                    builder: (ctx, state) =>
+                        const Scaffold(body: Center(child: Text('Muted Words Screen'))),
+                  ),
                 ],
               ),
               GoRoute(
@@ -106,7 +111,7 @@ void main() {
       expect(find.text('About'), findsOneWidget);
     });
 
-    testWidgets('shows coming soon snackbar for unimplemented features', (tester) async {
+    testWidgets('navigates to muted words screen when Muted Words is tapped', (tester) async {
       final mockSession = createMockSession();
 
       await tester.pumpWidget(
@@ -117,7 +122,7 @@ void main() {
       await tester.tap(find.text('Muted Words'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Muted Words - Coming soon'), findsOneWidget);
+      expect(find.text('Muted Words Screen'), findsOneWidget);
     });
 
     testWidgets('navigates to appearance screen when Theme is tapped', (tester) async {

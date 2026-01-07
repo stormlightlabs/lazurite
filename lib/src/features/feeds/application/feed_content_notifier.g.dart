@@ -11,6 +11,7 @@ part of 'feed_content_notifier.dart';
 /// Notifier for managing feed content (posts from the active feed).
 ///
 /// Watches the active feed and provides a stream of posts from that feed.
+/// Applies user preference filters (muted words, hide replies/reposts/quotes).
 /// Supports refresh, load more, and clear operations.
 
 @ProviderFor(FeedContentNotifier)
@@ -19,12 +20,14 @@ final feedContentProvider = FeedContentNotifierFamily._();
 /// Notifier for managing feed content (posts from the active feed).
 ///
 /// Watches the active feed and provides a stream of posts from that feed.
+/// Applies user preference filters (muted words, hide replies/reposts/quotes).
 /// Supports refresh, load more, and clear operations.
 final class FeedContentNotifierProvider
     extends $StreamNotifierProvider<FeedContentNotifier, List<FeedPost>> {
   /// Notifier for managing feed content (posts from the active feed).
   ///
   /// Watches the active feed and provides a stream of posts from that feed.
+  /// Applies user preference filters (muted words, hide replies/reposts/quotes).
   /// Supports refresh, load more, and clear operations.
   FeedContentNotifierProvider._({
     required FeedContentNotifierFamily super.from,
@@ -62,11 +65,12 @@ final class FeedContentNotifierProvider
   }
 }
 
-String _$feedContentNotifierHash() => r'b2fce5768ba51011fe41c6eed7791659d1bfd7dd';
+String _$feedContentNotifierHash() => r'9fe762b2a7c6b39b707928c54a0061650a2291b3';
 
 /// Notifier for managing feed content (posts from the active feed).
 ///
 /// Watches the active feed and provides a stream of posts from that feed.
+/// Applies user preference filters (muted words, hide replies/reposts/quotes).
 /// Supports refresh, load more, and clear operations.
 
 final class FeedContentNotifierFamily extends $Family
@@ -90,6 +94,7 @@ final class FeedContentNotifierFamily extends $Family
   /// Notifier for managing feed content (posts from the active feed).
   ///
   /// Watches the active feed and provides a stream of posts from that feed.
+  /// Applies user preference filters (muted words, hide replies/reposts/quotes).
   /// Supports refresh, load more, and clear operations.
 
   FeedContentNotifierProvider call(String feedUri) =>
@@ -102,6 +107,7 @@ final class FeedContentNotifierFamily extends $Family
 /// Notifier for managing feed content (posts from the active feed).
 ///
 /// Watches the active feed and provides a stream of posts from that feed.
+/// Applies user preference filters (muted words, hide replies/reposts/quotes).
 /// Supports refresh, load more, and clear operations.
 
 abstract class _$FeedContentNotifier extends $StreamNotifier<List<FeedPost>> {

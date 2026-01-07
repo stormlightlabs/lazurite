@@ -37,7 +37,8 @@ Phase 1 - Core Composer Screen (HIGH):
       - [ ] Character counter with grapheme clusters (characters package)
       - [ ] Character limit enforcement (300 graphemes)
       - [ ] Visual warning near limit (20 remaining)
-      - [ ] Error state over limit (disable publish)
+      - [ ] Error state over limit -> disable publish and let user split into
+            multiple posts
 - [ ] Implement autosave:
       - [ ] Debounce text changes (500ms)
       - [ ] Update draft on text change
@@ -230,121 +231,6 @@ Deliverables:
 - [ ] Smooth performance (<16ms text input)
 
 ================================================================================
-K. Settings & Preferences                                               *bsky-K*
-================================================================================
-
-Context:
-- Settings route exists but shows placeholder screen (app/router.dart:273-307).
-- Only saved feeds preference currently synced with Bluesky.
-- Theme mode stored in-memory without persistence.
-- Missing content moderation, labelers, muted words, and other Bluesky prefs.
-- No about screen or comprehensive local app settings.
-
-Endpoints (already registered):
-- app.bsky.actor.getPreferences (GET, requires auth)
-- app.bsky.actor.putPreferences (POST, requires auth)
-
-Tasks:
-- [x] Phase 1 - Local Settings Foundation (HIGH) [partial]:
-      - [x] Create LocalSettings table and LocalSettingsDao:
-            - themeMode, themePackId (key-value store for extensibility)
-      - [x] Update ThemeModeController to persist theme:
-            - New ThemeController with ThemeState (themeMode, currentPackId, themes)
-            - load persisted theme on app start
-            - support system theme option with brightness detection
-            - save changes to database
-      - [x] Create LocalPreferencesRepository
-      - [x] Build main SettingsScreen:
-            - Account section (authenticated only)
-            - Appearance section
-            - App section
-            - Account management (sign out)
-      - [x] Build ThemeSettingsScreen:
-            - theme mode selector (Light, Dark, System)
-            - preview cards showing appearance
-            - export theme JSON button
-      - [x] Build AboutScreen:
-            - app info (name, version, build number)
-            - links (website, GitHub, Tangled, bug reports)
-                  - https://lazurite.stormlightlabs.org
-                  - https://github.com/stormlightlabs/lazurite
-                  - https://tangled.org/desertthunder.dev/lazurite
-                  - https://tangled.org/desertthunder.dev/lazurite/issues
-            - credits and attributions
-                  - Bluesky
-                  - Flutter
-                  - Attributions in README.md
-            - legal (licenses, privacy, terms) - leave stubs
-            - tap version to copy
-- [x] Phase 2 - Bluesky Preferences Infrastructure (HIGH):
-      - [x] Create BlueskyPreferences table and DAO:
-            - generic table with type + data (JSON) + lastSynced
-      - [x] Create domain models for preference types:
-            - ContentLabelPref, LabelersPref, AdultContentPref
-            - FeedViewPref, ThreadViewPref, MutedWordsPref
-      - [x] Create BlueskyPreferencesRepository:
-            - fetch via getPreferences, parse by $type
-            - update via putPreferences (send complete pref array)
-            - queue failed updates in PreferenceSyncQueue
-            - merge remote changes on sync
-      - [x] Extend PreferenceSyncQueue to handle all pref types
-      - [x] Implement preference sync on app start (authenticated)
-      - [x] Create Riverpod providers for each preference type
-- [x] Phase 3 - Content Moderation UI (MEDIUM):
-      - [x] Build ContentModerationScreen:
-            - grouped content labels by category
-            - adult content toggle at top
-            - label visibility selectors (ignore/show/warn/hide)
-            - custom labelers section (add/remove)
-      - [x] Build LabelVisibilitySelector widget
-      - [x] Implement label visibility changes with sync
-      - [x] Wire content labels to post filtering logic
-- [x] Phase 4 - Feed & Thread Preferences UI (MEDIUM):
-      - [x] Build FeedPreferencesScreen:
-            - feed view toggles (hide replies, reposts, quotes)
-            - thread sort order selector
-            - explanatory text for each option
-      - [x] Wire feed view prefs to feed rendering
-      - [x] Wire thread view prefs to thread display
-- [x] Phase 5 - Muted Words (MEDIUM):
-      - [x] Build MutedWordsScreen:
-            - list of muted words with metadata
-            - add button with dialog
-            - remove functionality
-            - search/filter for large lists
-      - [x] Build add muted word dialog:
-            - text field for word/phrase
-            - target selection (content, tags)
-            - actor target (all, exclude-following)
-            - optional expiration date picker
-      - [x] Wire muted words to post filtering logic
-
-Tests:
-- [x] Theme persistence: mode persists across app restarts (11 DAO tests + 13 controller tests)
-- [ ] System theme: follows OS brightness changes
-- [ ] About screen: version info copies to clipboard
-- [ ] Preference sync: Bluesky preferences sync on login
-- [ ] Multi-device: preference changes merge correctly
-- [ ] Offline queue: preference updates retry on network restoration
-- [ ] Content filtering: labels filter posts per user preferences
-- [x] Feed filters: hide replies/reposts/quotes work correctly
-- [x] Thread sort: sort order applies and persists
-- [x] Muted words: keywords filter content from feeds
-
-Deliverables:
-- [x] Theme mode persists and supports system theme
-- [ ] About screen with app info, credits, licenses, links
-- [ ] Content moderation settings sync with Bluesky
-- [ ] Content labels filter posts according to preferences
-- [ ] Feed and thread preferences apply to display
-- [x] Muted words filter content from feeds
-- [ ] All preference changes sync bidirectionally
-- [ ] Offline changes queue and retry
-- [ ] Multi-device changes merge without data loss
-- [ ] Settings UI follows Material Design patterns
-- [ ] Test coverage >95% for new code
-
-================================================================================
 L. Notifications                                                        *bsky-L*
 ================================================================================
 
@@ -495,3 +381,12 @@ Tests:
 
 Deliverables:
 - Desktop build that is genuinely usable (not just "it runs").
+
+================================================================================
+Parking Lot                                                          *bsky-plot*
+================================================================================
+
+Tests:
+- [ ] System theme: follows OS brightness changes
+- [ ] Multi-device: preference changes merge correctly
+- [ ] Offline queue: preference updates retry on network restoration

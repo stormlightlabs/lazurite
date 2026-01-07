@@ -4,6 +4,11 @@
 
 ### Added
 
+#### [2026-01-07]
+
+Comprehensive settings system with theme persistence, content moderation, feed & thread
+preferences, muted words filtering, and bidirectional Bluesky pref sync.
+
 #### [2026-01-06]
 
 - Migrated NavigationBar, FilterChips, Cards, and text emphasis to M3 role-based theming

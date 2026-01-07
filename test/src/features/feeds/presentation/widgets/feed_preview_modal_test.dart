@@ -5,6 +5,9 @@ import 'package:lazurite/src/features/feeds/application/feed_content_providers.d
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/feed_preview_modal.dart';
 import 'package:lazurite/src/features/settings/application/label_filter_provider.dart';
+import 'package:lazurite/src/features/settings/application/muted_word_filter_provider.dart';
+import 'package:lazurite/src/features/settings/application/settings_providers.dart';
+import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart'; // For Post, Profile classes
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:mocktail/mocktail.dart';
@@ -61,6 +64,8 @@ void main() {
           feedRepositoryProvider.overrideWithValue(mockFeedRepository),
           feedContentRepositoryProvider.overrideWithValue(mockFeedContentRepository),
           labelFilterServiceProvider.overrideWith((ref) => null),
+          mutedWordFilterServiceProvider.overrideWith((ref) => null),
+          feedViewPrefProvider.overrideWith((ref) => Stream.value(FeedViewPref.defaultPref)),
         ],
         child: const MaterialApp(
           home: Scaffold(
@@ -104,6 +109,8 @@ void main() {
           feedRepositoryProvider.overrideWithValue(mockFeedRepository),
           feedContentRepositoryProvider.overrideWithValue(mockFeedContentRepository),
           labelFilterServiceProvider.overrideWith((ref) => null),
+          mutedWordFilterServiceProvider.overrideWith((ref) => null),
+          feedViewPrefProvider.overrideWith((ref) => Stream.value(FeedViewPref.defaultPref)),
         ],
         child: const MaterialApp(
           home: Scaffold(

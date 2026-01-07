@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/settings/application/label_filter_provider.dart';
+import 'package:lazurite/src/features/settings/application/settings_providers.dart';
+import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
 import 'package:lazurite/src/features/thread/application/thread_providers.dart';
 import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
 import 'package:lazurite/src/features/thread/presentation/thread_screen.dart';
@@ -25,6 +27,7 @@ void main() {
         threadRepositoryProvider.overrideWithValue(mockRepo),
         threadCacheProvider(postUri).overrideWith((ref) => Stream.value([])),
         labelFilterServiceProvider.overrideWith((ref) => null),
+        threadViewPrefProvider.overrideWith((ref) => Stream.value(ThreadViewPref.defaultPref)),
       ],
       child: MaterialApp(home: ThreadScreen(postUri: postUri)),
     );

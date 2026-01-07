@@ -5,6 +5,9 @@ import 'package:lazurite/src/features/feeds/application/feed_content_notifier.da
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_content_repository.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
+import 'package:lazurite/src/features/settings/application/muted_word_filter_provider.dart';
+import 'package:lazurite/src/features/settings/application/settings_providers.dart';
+import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../helpers/mocks.dart';
@@ -24,6 +27,8 @@ void main() {
       overrides: [
         feedContentRepositoryProvider.overrideWithValue(mockRepository),
         loggerProvider('FeedContentNotifier').overrideWithValue(mockLogger),
+        mutedWordFilterServiceProvider.overrideWith((ref) => null),
+        feedViewPrefProvider.overrideWith((ref) => Stream.value(FeedViewPref.defaultPref)),
       ],
     );
 

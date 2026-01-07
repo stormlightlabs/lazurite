@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/widgets/feed_post_card.dart';
+import 'package:lazurite/src/features/settings/application/settings_providers.dart';
+import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
 import 'package:lazurite/src/features/thread/application/thread_notifier.dart';
 import 'package:lazurite/src/features/thread/application/thread_providers.dart';
 import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
@@ -28,6 +30,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
   Widget build(BuildContext context) {
     final threadAsync = ref.watch(threadProvider(widget.postUri));
     final threadCacheAsync = ref.watch(threadCacheProvider(widget.postUri));
+    final threadViewPref = ref.watch(threadViewPrefProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -48,19 +51,24 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
           onRetry: () => ref.refresh(threadProvider(widget.postUri)),
         ),
         data: (thread) {
+          final pref = threadViewPref.maybeWhen(
+            data: (data) => data,
+            orElse: () => ThreadViewPref.defaultPref,
+          );
+
           if (_flattenedView) {
             return _buildFlattenedView(threadCacheAsync, thread);
           }
 
-          return _buildTreeView(thread);
+          return _buildTreeView(thread, pref);
         },
       ),
     );
   }
 
-  Widget _buildTreeView(ThreadViewPost thread) {
+  Widget _buildTreeView(ThreadViewPost thread, ThreadViewPref pref) {
     final parents = thread.parent != null ? _getParents(thread.parent!) : <ThreadViewPost>[];
-    final replies = thread.replies;
+    final sortedReplies = _sortReplies(thread.replies, pref);
 
     return CustomScrollView(
       slivers: [
@@ -81,17 +89,64 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
 
         SliverList(
           delegate: SliverChildBuilderDelegate((context, index) {
-            final reply = replies[index];
+            final reply = sortedReplies[index];
             final position = _getThreadLinePosition(
               index: index,
-              total: replies.length,
+              total: sortedReplies.length,
               isParentChain: false,
             );
             return _buildThreadPost(reply, position: position, isReply: true);
-          }, childCount: replies.length),
+          }, childCount: sortedReplies.length),
         ),
       ],
     );
+  }
+
+  /// Sorts replies based on user thread view preferences.
+  List<ThreadViewPost> _sortReplies(List<ThreadViewPost> replies, ThreadViewPref pref) {
+    if (replies.isEmpty) return replies;
+
+    final sortedReplies = List<ThreadViewPost>.from(replies);
+
+    sortedReplies.sort((a, b) {
+      switch (pref.sort) {
+        case ThreadSortOrder.oldest:
+          final aTime = a.post.indexedAt ?? DateTime(1970);
+          final bTime = b.post.indexedAt ?? DateTime(1970);
+          return aTime.compareTo(bTime);
+        case ThreadSortOrder.newest:
+          final aTime = a.post.indexedAt ?? DateTime(1970);
+          final bTime = b.post.indexedAt ?? DateTime(1970);
+          return bTime.compareTo(aTime);
+        case ThreadSortOrder.mostLikes:
+          return b.post.likeCount.compareTo(a.post.likeCount);
+        case ThreadSortOrder.random:
+          final aTime = a.post.indexedAt ?? DateTime(1970);
+          final bTime = b.post.indexedAt ?? DateTime(1970);
+          return aTime.compareTo(bTime);
+        case ThreadSortOrder.hotness:
+          return b.post.likeCount.compareTo(a.post.likeCount);
+      }
+    });
+
+    // If prioritizeFollowedUsers is enabled, partition followed users first
+    if (pref.prioritizeFollowedUsers) {
+      final followed = <ThreadViewPost>[];
+      final notFollowed = <ThreadViewPost>[];
+
+      for (final reply in sortedReplies) {
+        final isFollowing = reply.post.author.viewer?['following'] != null;
+        if (isFollowing) {
+          followed.add(reply);
+        } else {
+          notFollowed.add(reply);
+        }
+      }
+
+      return [...followed, ...notFollowed];
+    }
+
+    return sortedReplies;
   }
 
   /// Builds a single thread post with appropriate state handling
@@ -222,10 +277,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
 
   List<FeedPost> _buildFallbackLinearTimeline(ThreadViewPost thread) {
     final parents = thread.parent != null ? _getParents(thread.parent!) : <ThreadViewPost>[];
-    final replies = _getAllReplies(thread);
-    final linear = [...parents, thread, ...replies];
-
-    return [for (var i = 0; i < linear.length; i++) _mapToFeedPost(linear[i])];
+    return [...parents, thread, ..._getAllReplies(thread)].map(_mapToFeedPost).toList();
   }
 
   FeedPost _mapToFeedPost(ThreadViewPost view) => view.post.toFeedPost();
