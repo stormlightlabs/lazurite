@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:lazurite/src/features/composer/application/composer_notifier.dart';
 import 'package:lazurite/src/features/composer/application/composer_providers.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart';
@@ -9,14 +10,20 @@ import 'package:lazurite/src/features/composer/infrastructure/draft_repository.d
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/publish_button.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class MockDraftRepository extends Mock implements DraftRepository {}
 
 void main() {
   late MockDraftRepository mockRepository;
+  late MockImagePickerPlatform mockImagePickerPlatform;
 
   setUp(() {
     mockRepository = MockDraftRepository();
+    mockImagePickerPlatform = MockImagePickerPlatform();
+    ImagePickerPlatform.instance = mockImagePickerPlatform;
+    registerFallbackValue(FakeImagePickerOptions());
+    registerFallbackValue(FakeMultiImagePickerOptions());
   });
 
   Draft createMockDraft({
@@ -316,6 +323,69 @@ void main() {
 
       verify(() => notifier.mockForceSaveObj('Saving on pause')).called(1);
     });
+
+    testWidgets('shows image source selection sheet when adding media', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Take photo'), findsOneWidget);
+      expect(find.text('Choose from gallery'), findsOneWidget);
+    });
+
+    testWidgets('picks image from camera', (tester) async {
+      final file = XFile('test_image.jpg');
+      when(
+        () => mockImagePickerPlatform.getImageFromSource(
+          source: ImageSource.camera,
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer((_) async => file);
+
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Take photo'));
+      await tester.pumpAndSettle();
+
+      final element = tester.element(find.byType(ComposerScreen));
+      final container = ProviderScope.containerOf(element);
+      final notifier =
+          container.read(composerProvider(null).notifier) as MockComposerNotifierWrapper;
+
+      verify(() => notifier.mockAddMediaObj('test_image.jpg', 'image/jpeg')).called(1);
+    });
+
+    testWidgets('picks multiple images from gallery', (tester) async {
+      final file1 = XFile('image1.png');
+      final file2 = XFile('image2.webp');
+
+      when(
+        () => mockImagePickerPlatform.getMultiImageWithOptions(options: any(named: 'options')),
+      ).thenAnswer((_) async => [file1, file2]);
+
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Choose from gallery'));
+      await tester.pumpAndSettle();
+
+      final element = tester.element(find.byType(ComposerScreen));
+      final container = ProviderScope.containerOf(element);
+      final notifier =
+          container.read(composerProvider(null).notifier) as MockComposerNotifierWrapper;
+
+      verify(() => notifier.mockAddMediaObj('image1.png', 'image/png')).called(1);
+      verify(() => notifier.mockAddMediaObj('image2.webp', 'image/webp')).called(1);
+    });
   });
 }
 
@@ -349,17 +419,35 @@ class _MockComposerNotifier extends ComposerNotifier {
   }
 
   void mockForceSave(String text) {}
+
+  @override
+  Future<void> addMedia(String path, String mimeType) async {
+    mockAddMedia(path, mimeType);
+  }
+
+  void mockAddMedia(String path, String mimeType) {}
 }
 
 class MockComposerNotifierWrapper extends _MockComposerNotifier {
   MockComposerNotifierWrapper(super.draft);
 
   final _mockForceSave = MockForceSave();
+  final _mockAddMedia = MockAddMedia();
 
   @override
   void mockForceSave(String text) => _mockForceSave(text);
 
+  @override
+  void mockAddMedia(String path, String mimeType) => _mockAddMedia(path, mimeType);
+
   MockForceSave get mockForceSaveObj => _mockForceSave;
+  MockAddMedia get mockAddMediaObj => _mockAddMedia;
+}
+
+class MockAddMedia extends Mock implements AddMediaHandler {}
+
+abstract class AddMediaHandler {
+  void call(String path, String mimeType);
 }
 
 abstract class ForceSaveHandler {
@@ -367,3 +455,13 @@ abstract class ForceSaveHandler {
 }
 
 class MockForceSave extends Mock implements ForceSaveHandler {}
+
+class MockImagePickerPlatform extends Mock
+    with MockPlatformInterfaceMixin
+    implements ImagePickerPlatform {}
+
+class MockImagePicker extends Mock implements ImagePickerPlatform {}
+
+class FakeImagePickerOptions extends Fake implements ImagePickerOptions {}
+
+class FakeMultiImagePickerOptions extends Fake implements MultiImagePickerOptions {}

@@ -160,14 +160,50 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
 
     if (currentCount >= 4) return;
 
-    final picker = ImagePicker();
-    final images = await picker.pickMultiImage(limit: 4 - currentCount);
+    // Show modal sheet to choose between Camera and Gallery
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Take photo'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
 
-    if (images.isNotEmpty) {
-      final notifier = ref.read(composerProvider(widget.draftId).notifier);
-      for (final image in images) {
+    if (source == null) return;
+
+    if (!mounted) return;
+
+    final picker = ImagePicker();
+    final notifier = ref.read(composerProvider(widget.draftId).notifier);
+
+    if (source == ImageSource.camera) {
+      final image = await picker.pickImage(source: ImageSource.camera);
+      if (image != null) {
         final mimeType = _getMimeType(image.path);
         await notifier.addMedia(image.path, mimeType);
+      }
+    } else {
+      // Gallery allows multiple selection
+      final images = await picker.pickMultiImage(limit: 4 - currentCount);
+      if (images.isNotEmpty) {
+        for (final image in images) {
+          final mimeType = _getMimeType(image.path);
+          await notifier.addMedia(image.path, mimeType);
+        }
       }
     }
   }

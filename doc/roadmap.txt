@@ -43,9 +43,9 @@ Phase 1 - Core Composer Screen (HIGH):
       - [x] Immediate save on media add/remove
       - [x] Save on app backgrounding
       - [x] Cancel pending saves on dispose
-- [/] Image picker integration:
+- [x] Image picker integration:
       - [x] Gallery selection (image_picker)
-      - [ ] Camera capture
+      - [x] Camera capture
       - [x] Max 4 images limit
       - [x] JPEG/PNG/WebP support
       - [x] Add media to draft
