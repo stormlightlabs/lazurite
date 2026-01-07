@@ -261,6 +261,36 @@ class BlueskyPreferencesRepository {
     });
   }
 
+  /// Updates the feed view preference.
+  ///
+  /// Persists locally and queues for sync to Bluesky.
+  Future<void> updateFeedViewPref(FeedViewPref pref) async {
+    _logger.info('Updating feed view preference');
+    final now = DateTime.now();
+    final data = pref.toStoredJson();
+
+    await _dao.upsertPreference(type: 'feedView', data: data, lastSynced: now);
+
+    await _syncQueueDao.enqueueBlueskyPrefSync(preferenceType: 'feedView', preferenceData: data);
+
+    _logger.debug('Feed view preference updated and queued for sync');
+  }
+
+  /// Updates the thread view preference.
+  ///
+  /// Persists locally and queues for sync to Bluesky.
+  Future<void> updateThreadViewPref(ThreadViewPref pref) async {
+    _logger.info('Updating thread view preference');
+    final now = DateTime.now();
+    final data = pref.toStoredJson();
+
+    await _dao.upsertPreference(type: 'threadView', data: data, lastSynced: now);
+
+    await _syncQueueDao.enqueueBlueskyPrefSync(preferenceType: 'threadView', preferenceData: data);
+
+    _logger.debug('Thread view preference updated and queued for sync');
+  }
+
   /// Gets the muted words preference.
   Future<MutedWordsPref> getMutedWordsPref() async {
     final row = await _dao.getPreferenceByType('mutedWords');

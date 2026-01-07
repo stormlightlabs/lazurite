@@ -291,4 +291,49 @@ void main() {
       expect((await repository.getAdultContentPref()).enabled, isFalse);
     });
   });
+
+  group('updateFeedViewPref', () {
+    test('persists preference to database', () async {
+      const pref = FeedViewPref(hideReplies: true, hideReposts: true, hideQuotePosts: false);
+
+      await repository.updateFeedViewPref(pref);
+
+      final stored = await repository.getFeedViewPref();
+      expect(stored.hideReplies, isTrue);
+      expect(stored.hideReposts, isTrue);
+      expect(stored.hideQuotePosts, isFalse);
+    });
+
+    test('queues sync item', () async {
+      const pref = FeedViewPref(hideReplies: true);
+
+      await repository.updateFeedViewPref(pref);
+
+      final queued = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queued, hasLength(1));
+      expect(queued[0].type, 'feedView');
+    });
+  });
+
+  group('updateThreadViewPref', () {
+    test('persists preference to database', () async {
+      const pref = ThreadViewPref(sort: ThreadSortOrder.newest, prioritizeFollowedUsers: false);
+
+      await repository.updateThreadViewPref(pref);
+
+      final stored = await repository.getThreadViewPref();
+      expect(stored.sort, ThreadSortOrder.newest);
+      expect(stored.prioritizeFollowedUsers, isFalse);
+    });
+
+    test('queues sync item', () async {
+      const pref = ThreadViewPref(sort: ThreadSortOrder.mostLikes);
+
+      await repository.updateThreadViewPref(pref);
+
+      final queued = await db.preferenceSyncQueueDao.getPendingItems();
+      expect(queued, hasLength(1));
+      expect(queued[0].type, 'threadView');
+    });
+  });
 }

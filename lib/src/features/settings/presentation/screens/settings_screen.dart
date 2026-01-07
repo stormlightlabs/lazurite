@@ -51,9 +51,7 @@ class SettingsScreen extends ConsumerWidget {
         title: 'Feed Preferences',
         subtitle: 'Customize your feed display',
         onTap: () {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Feed Preferences - Coming soon')));
+          context.push('/settings/feeds');
         },
       ),
       SettingsTile(

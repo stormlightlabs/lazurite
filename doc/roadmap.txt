@@ -299,13 +299,13 @@ Tasks:
       - [ ] Build LabelVisibilitySelector widget
       - [ ] Implement label visibility changes with sync
       - [ ] Wire content labels to post filtering logic
-- [ ] Phase 4 - Feed & Thread Preferences UI (MEDIUM):
-      - [ ] Build FeedPreferencesScreen:
+- [x] Phase 4 - Feed & Thread Preferences UI (MEDIUM):
+      - [x] Build FeedPreferencesScreen:
             - feed view toggles (hide replies, reposts, quotes)
             - thread sort order selector
             - explanatory text for each option
-      - [ ] Wire feed view prefs to feed rendering
-      - [ ] Wire thread view prefs to thread display
+      - [x] Wire feed view prefs to feed rendering
+      - [x] Wire thread view prefs to thread display
 - [ ] Phase 5 - Muted Words (MEDIUM):
       - [ ] Build MutedWordsScreen:
             - list of muted words with metadata
@@ -327,8 +327,8 @@ Tests:
 - [ ] Multi-device: preference changes merge correctly
 - [ ] Offline queue: preference updates retry on network restoration
 - [ ] Content filtering: labels filter posts per user preferences
-- [ ] Feed filters: hide replies/reposts/quotes work correctly
-- [ ] Thread sort: sort order applies and persists
+- [x] Feed filters: hide replies/reposts/quotes work correctly
+- [x] Thread sort: sort order applies and persists
 - [ ] Muted words: keywords filter content from feeds
 
 Deliverables:
