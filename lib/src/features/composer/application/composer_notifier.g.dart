@@ -59,7 +59,7 @@ final class ComposerNotifierProvider
   }
 }
 
-String _$composerNotifierHash() => r'66064b46010be508eb84af639ab8ef61ccb61dd9';
+String _$composerNotifierHash() => r'a7dd8c494553f92b85036b1a7f40d197dee25b2e';
 
 /// Notifier for managing composer screen state.
 ///

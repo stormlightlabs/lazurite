@@ -56,5 +56,40 @@ void main() {
       await tester.pump();
       expect(find.byIcon(Icons.add_photo_alternate_outlined), findsNothing);
     });
+
+    testWidgets('fires onTapMedia callback with correct index', (tester) async {
+      int? tappedIndex;
+      await tester.pumpApp(
+        MediaPickerRow(
+          mediaPaths: const ['/fake/path1.jpg', '/fake/path2.jpg'],
+          onTapMedia: (index) => tappedIndex = index,
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.broken_image).first);
+      expect(tappedIndex, 0);
+    });
+
+    testWidgets('shows ALT indicator when media has alt text', (tester) async {
+      await tester.pumpApp(
+        const MediaPickerRow(
+          mediaPaths: ['/fake/path1.jpg', '/fake/path2.jpg'],
+          altTextIndicators: [true, false],
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('ALT'), findsOneWidget);
+    });
+
+    testWidgets('hides ALT indicator when media has no alt text', (tester) async {
+      await tester.pumpApp(
+        const MediaPickerRow(mediaPaths: ['/fake/path1.jpg'], altTextIndicators: [false]),
+      );
+      await tester.pump();
+
+      expect(find.text('ALT'), findsNothing);
+    });
   });
 }

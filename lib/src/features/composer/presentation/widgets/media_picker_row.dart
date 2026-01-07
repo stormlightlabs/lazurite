@@ -8,6 +8,8 @@ class MediaPickerRow extends StatelessWidget {
     required this.mediaPaths,
     this.onAddMedia,
     this.onRemoveMedia,
+    this.onTapMedia,
+    this.altTextIndicators = const [],
     this.maxMedia = 4,
     super.key,
   });
@@ -20,6 +22,12 @@ class MediaPickerRow extends StatelessWidget {
 
   /// Callback when user removes media at a given index.
   final ValueChanged<int>? onRemoveMedia;
+
+  /// Callback when user taps on a media thumbnail (for editing alt text).
+  final ValueChanged<int>? onTapMedia;
+
+  /// List of booleans indicating whether each media has alt text.
+  final List<bool> altTextIndicators;
 
   /// Maximum number of media attachments allowed.
   final int maxMedia;
@@ -41,9 +49,12 @@ class MediaPickerRow extends StatelessWidget {
           if (index == mediaPaths.length) {
             return _AddMediaButton(onTap: onAddMedia, colorScheme: colorScheme);
           }
+          final hasAltText = index < altTextIndicators.length && altTextIndicators[index];
           return _MediaThumbnail(
             path: mediaPaths[index],
             onRemove: onRemoveMedia != null ? () => onRemoveMedia!(index) : null,
+            onTap: onTapMedia != null ? () => onTapMedia!(index) : null,
+            hasAltText: hasAltText,
             colorScheme: colorScheme,
           );
         },
@@ -80,10 +91,18 @@ class _AddMediaButton extends StatelessWidget {
 }
 
 class _MediaThumbnail extends StatelessWidget {
-  const _MediaThumbnail({required this.path, required this.colorScheme, this.onRemove});
+  const _MediaThumbnail({
+    required this.path,
+    required this.colorScheme,
+    this.onRemove,
+    this.onTap,
+    this.hasAltText = false,
+  });
 
   final String path;
   final VoidCallback? onRemove;
+  final VoidCallback? onTap;
+  final bool hasAltText;
   final ColorScheme colorScheme;
 
   @override
@@ -91,40 +110,63 @@ class _MediaThumbnail extends StatelessWidget {
     final file = File(path);
     final hasFile = file.existsSync();
 
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            width: 80,
-            height: 80,
-            child: hasFile
-                ? Image.file(
-                    file,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => _BrokenImagePlaceholder(colorScheme: colorScheme),
-                  )
-                : _BrokenImagePlaceholder(colorScheme: colorScheme),
-          ),
-        ),
-        if (onRemove != null)
-          Positioned(
-            top: 4,
-            right: 4,
-            child: GestureDetector(
-              onTap: onRemove,
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface.withAlpha(200),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.close, size: 16, color: colorScheme.onSurface),
-              ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              width: 80,
+              height: 80,
+              child: hasFile
+                  ? Image.file(
+                      file,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => _BrokenImagePlaceholder(colorScheme: colorScheme),
+                    )
+                  : _BrokenImagePlaceholder(colorScheme: colorScheme),
             ),
           ),
-      ],
+          if (onRemove != null)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: onRemove,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface.withAlpha(200),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.close, size: 16, color: colorScheme.onSurface),
+                ),
+              ),
+            ),
+          if (hasAltText)
+            Positioned(
+              bottom: 4,
+              left: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'ALT',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

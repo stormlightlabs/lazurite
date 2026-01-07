@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lazurite/src/features/composer/application/composer_notifier.dart';
 import 'package:lazurite/src/features/composer/application/composer_providers.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/alt_text_editor_sheet.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/composer_text_field.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/media_picker_row.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/publish_button.dart';
@@ -273,6 +274,30 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
     }
   }
 
+  Future<void> _openAltTextEditor(int index) async {
+    final composerState = ref.read(composerProvider(_args)).asData?.value;
+    if (composerState?.draft?.media case final media?) {
+      if (index < media.length) {
+        final attachment = media[index];
+        final result = await showModalBottomSheet<String>(
+          context: context,
+          isScrollControlled: true,
+          showDragHandle: true,
+          builder: (context) => AltTextEditorSheet(
+            initialAltText: attachment.altText,
+            mediaPath: attachment.localPath,
+          ),
+        );
+
+        if (result != null && mounted) {
+          await ref
+              .read(composerProvider(_args).notifier)
+              .updateMediaAltText(attachment.id, result);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final composerAsync = ref.watch(composerProvider(_args));
@@ -342,6 +367,12 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                         mediaPaths: mediaPaths,
                         onAddMedia: _pickMedia,
                         onRemoveMedia: _removeMedia,
+                        onTapMedia: _openAltTextEditor,
+                        altTextIndicators:
+                            state.draft?.media
+                                .map((m) => m.altText != null && m.altText!.isNotEmpty)
+                                .toList() ??
+                            [],
                       ),
 
                     Padding(

@@ -110,6 +110,19 @@ class ComposerNotifier extends _$ComposerNotifier {
     }
   }
 
+  /// Update alt text for a media attachment.
+  Future<void> updateMediaAltText(int mediaId, String altText) async {
+    final currentState = state.asData?.value;
+    final currentDraft = currentState?.draft;
+    if (currentDraft == null) return;
+
+    await _repository.updateMediaAltText(currentDraft.id, mediaId, altText);
+    final updated = await _repository.getDraft(currentDraft.id);
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(draft: updated));
+    }
+  }
+
   /// Publish the draft.
   ///
   /// Returns true on success, false on failure.

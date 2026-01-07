@@ -135,6 +135,11 @@ class DraftRepository {
     await _dao.updateDraftFields(draftId, DraftsCompanion(updatedAt: Value(DateTime.now())));
   }
 
+  Future<void> updateMediaAltText(String draftId, int mediaId, String altText) async {
+    await _dao.updateMedia(mediaId, DraftMediaCompanion(altText: Value(altText)));
+    await _dao.updateDraftFields(draftId, DraftsCompanion(updatedAt: Value(DateTime.now())));
+  }
+
   Future<({String uri, String cid})> publishDraft(String draftId) async {
     final draft = await _dao.getDraft(draftId);
     if (draft == null) {

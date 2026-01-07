@@ -96,17 +96,17 @@ Phase 2 - Draft List and Management (HIGH):
 
 
 Phase 3 - Alt Text and Media Polish (MEDIUM):
-- [ ] Create AltTextEditorSheet modal:
-      - [ ] Text field for alt text
-      - [ ] Character limit (1000 chars)
-      - [ ] Save button
-      - [ ] Cancel button
-      - [ ] Accessibility guidance text
-- [ ] Integrate alt text editor:
-      - [ ] Tap media thumbnail to open sheet
-      - [ ] Pass media ID to sheet
-      - [ ] Update draft media alt text
-      - [ ] Display alt text indicator on thumbnails
+- [x] Create AltTextEditorSheet modal:
+      - [x] Text field for alt text
+      - [x] Character limit (1000 chars)
+      - [x] Save button
+      - [x] Cancel button
+      - [x] Accessibility guidance text
+- [x] Integrate alt text editor:
+      - [x] Tap media thumbnail to open sheet
+      - [x] Pass media ID to sheet
+      - [x] Update draft media alt text
+      - [x] Display alt text indicator on thumbnails
 - [ ] Image compression:
       - [ ] Compress before upload (flutter_image_compress)
       - [ ] Target max dimension: 2000px
@@ -201,7 +201,7 @@ Tests:
 - [ ] Widget tests:
       - [ ] ComposerScreen interactions
       - [ ] DraftListScreen rendering
-      - [ ] AltTextEditorSheet input
+      - [x] AltTextEditorSheet input
       - [ ] ReplyContextCard display
       - [ ] QuotePostCard display
       - [ ] Character counter states
