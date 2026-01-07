@@ -229,8 +229,18 @@ GoRouter createRouter(Ref ref) {
       ),
       GoRoute(
         path: '/drafts',
-        name: AppRouteNames.drafts, // We'll add this next
+        name: AppRouteNames.drafts,
         builder: (context, state) => const DraftListScreen(),
+        routes: [
+          GoRoute(
+            path: ':draftId',
+            name: AppRouteNames.draftDetail,
+            redirect: (context, state) {
+              final draftId = state.pathParameters['draftId'];
+              return '/compose?draftId=$draftId';
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.settings,

@@ -8,7 +8,7 @@ Outcome:
 - The app looks "correct" (hierarchy, emphasis, states) while preserving your
   Oxocarbon vibe.
 - Users can pick built-in themes (Oxocarbon, Catppuccin, Nord, Rosé Pine,
-  Atom/One Dark) with light/dark variants, and optionally customize.
+  Atom/One Dark) with light/dark variants, and customize.
 
 Success criteria:
 - Squint test: cards/posts/chips/nav remain visually separable without relying
@@ -32,12 +32,12 @@ Tasks:
       - currentVariantId: String?
       - setThemePack(packId, [variantId]): switches active pack/variant
       - getActiveThemeData(): ThemeData (via ThemeFactory)
-      - optional: dynamicColorEnabled for Android 12+ Material You
 - [x] Add persistence:
       - Drift table to keep settings in the central DB
       - Store: current pack ID, current variant ID (or brightness preference)
 - [x] Wire MaterialApp(theme, darkTheme, themeMode) from controller
 - [x] Migrate existing ThemeModeController to new ThemeController
+- [ ] Add dynamicColorEnabled for Android 12+ Material You
 
 Deliverables:
 - Theme pack + variant switch updates UI without restart
@@ -55,9 +55,6 @@ Design:
   - Theme pack list/dropdown (shows all available packs)
   - Variant selector: System / Light / Dark / (pack-specific variants)
   - Live preview cards showing Home feed, Post card, Chip row, Nav bar
-- Desktop enhancements (optional):
-  - Split pane theme inspector showing multiple components
-  - Computed role display (surfaceContainerLow, outlineVariant values)
 
 Tasks:
 - [x] Create AppearancePage (Settings section)
@@ -194,7 +191,7 @@ Definition of Done                                                   *theme-dod*
 - [ ] Theme packs ship: Oxocarbon (refined), Catppuccin, Nord, Rosé Pine,
       One Dark/Light
 - [x] Theme picker UI in settings
-- [ ] Users can optionally customize themes
+- [ ] Users can customize themes
 - [ ] Material Design 3 motion patterns implemented
 - [ ] Animation accessibility controls available in settings
 - [ ] Animations respect platform reduce motion preferences

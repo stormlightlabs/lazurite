@@ -140,5 +140,80 @@ void main() {
       await tester.tap(find.byType(DraftPreviewCard));
       expect(tapped, isTrue);
     });
+
+    testWidgets('shows retry button for failed drafts when onRetry provided', (tester) async {
+      final failedDraft = Draft(
+        id: '1',
+        text: 'Failed draft',
+        status: DraftStatus.failed,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        media: [],
+        errorMessage: 'Upload failed',
+      );
+
+      await tester.pumpApp(
+        Scaffold(
+          body: DraftPreviewCard(draft: failedDraft, onTap: () {}, onRetry: () {}),
+        ),
+      );
+
+      expect(find.text('Retry'), findsOneWidget);
+      expect(find.byIcon(Icons.refresh), findsOneWidget);
+    });
+
+    testWidgets('does not show retry button for non-failed drafts', (tester) async {
+      await tester.pumpApp(
+        Scaffold(
+          body: DraftPreviewCard(draft: baseDraft, onTap: () {}, onRetry: () {}),
+        ),
+      );
+
+      expect(find.text('Retry'), findsNothing);
+    });
+
+    testWidgets('does not show retry button when onRetry is null', (tester) async {
+      final failedDraft = Draft(
+        id: '1',
+        text: 'Failed draft',
+        status: DraftStatus.failed,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        media: [],
+        errorMessage: 'Upload failed',
+      );
+
+      await tester.pumpApp(
+        Scaffold(
+          body: DraftPreviewCard(draft: failedDraft, onTap: () {}),
+        ),
+      );
+
+      expect(find.text('Retry'), findsNothing);
+    });
+
+    testWidgets('callbacks onRetry when retry button tapped', (tester) async {
+      bool retried = false;
+      final failedDraft = Draft(
+        id: '1',
+        text: 'Failed draft',
+        status: DraftStatus.failed,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        media: [],
+        errorMessage: 'Upload failed',
+      );
+
+      await tester.pumpApp(
+        Scaffold(
+          body: DraftPreviewCard(draft: failedDraft, onTap: () {}, onRetry: () => retried = true),
+        ),
+      );
+
+      await tester.tap(find.text('Retry'));
+      await tester.pump();
+
+      expect(retried, isTrue);
+    });
   });
 }

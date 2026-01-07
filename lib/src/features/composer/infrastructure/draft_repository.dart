@@ -224,6 +224,12 @@ class DraftRepository {
     );
   }
 
+  /// Deletes all drafts with status `posted`.
+  /// Returns the number of drafts deleted.
+  Future<int> deletePostedDrafts() {
+    return _dao.deleteDraftsByStatus(composer.DraftStatus.posted.name);
+  }
+
   composer.Draft _toDomain(DraftRecord record) {
     return composer.Draft(
       id: record.draft.id,

@@ -67,7 +67,7 @@ Phase 1 - Core Composer Screen (HIGH):
       - [x] Accept query params (replyTo, quoteTo)
 
 Phase 2 - Draft List and Management (HIGH):
-- [ ] Create DraftListScreen widget:
+- [x] Create DraftListScreen widget:
       - [x] Load drafts from draftsProvider
       - [x] Sort by updatedAt (most recent first)
       - [x] Display draft preview cards:
@@ -78,21 +78,22 @@ Phase 2 - Draft List and Management (HIGH):
             - [x] Timestamp (relative time)
             - [x] Error message for failed drafts
       - [x] Empty state when no drafts
-      - [ ] Pull to refresh (cleanup old posted)
-- [ ] Draft list interactions:
+      - [x] Pull to refresh (cleanup old posted)
+- [x] Draft list interactions:
       - [x] Tap card to edit (navigate to /compose?draftId=xxx)
       - [x] Swipe to delete draft
-      - [ ] Retry button for failed drafts
+      - [x] Retry button for failed drafts
       - [x] Delete confirmation dialog
 - [x] Create DraftRecoverySheet:
       - [x] Detect crashed publishes on app start
       - [x] Show modal with failed draft
       - [x] Retry or delete options
       - [x] Auto-dismiss if successful
-- [ ] Router configuration:
+- [x] Router configuration:
       - [x] Add /drafts route to router
-      - [ ] Add /drafts/:draftId route
+      - [x] Add /drafts/:draftId route
       - [x] Configure navigation to composer with params
+
 
 Phase 3 - Alt Text and Media Polish (MEDIUM):
 - [ ] Create AltTextEditorSheet modal:
@@ -178,14 +179,7 @@ Phase 6 - Global FAB and Polish (HIGH):
       - [ ] Smooth show/hide animation
       - [ ] Tap navigates to /compose
       - [ ] Create new draft automatically
-- [ ] Keyboard shortcuts:
-      - [ ] Ctrl/Cmd+N to open composer
-      - [ ] Esc to cancel composer
-      - [ ] Ctrl/Cmd+Enter to publish
 - [ ] Performance optimization:
-      - [ ] Ensure text input <16ms render
-      - [ ] Optimize autosave debouncing
-      - [ ] Async database writes
       - [ ] Image thumbnail caching
       - [ ] Smooth, animated modal transitions
 - [ ] Analytics events:
@@ -226,8 +220,6 @@ Deliverables:
 - [ ] Rich text (mentions and links)
 - [ ] Offline drafts remain editable
 - [ ] Publish failures preserve drafts
-- [ ] Test coverage >95%
-- [ ] Smooth performance (<16ms text input)
 
 ================================================================================
 L. Notifications                                                        *bsky-L*
@@ -249,7 +241,7 @@ Tasks:
 - Widgets to add:
       - [ ] NotificationRow (icon + actor + snippet + time)
       - [ ] UnreadDot / SeenStyle
-      - [ ] NotificationFilterChips (optional: replies/mentions/reposts)
+      - [ ] NotificationFilterChips (replies/mentions/reposts)
 - [ ] Badge count support (in-app + push).
 - [ ] Tapping a notification routes to thread/profile as appropriate.
 
@@ -315,7 +307,7 @@ Tasks:
       - respect labels/filters returned by AppView/PDS (foundation)
 - [ ] Observability hooks:
       - [x] structured logging
-      - crash reporting integration points (optional)
+      - [ ] crash reporting integration points
 
 Tests:
 - [ ] Scroll perf sanity test on mid-range Android emulator profile.
@@ -374,7 +366,12 @@ Tasks:
 - [ ] Window behaviors:
       - restore last route, remember split pane sizes
 - [ ] ThemeInspectorPane with role inspector in Settings
-
+      - Split pane theme inspector showing multiple components
+      - Computed role display (surfaceContainerLow, outlineVariant values)
+- [ ] Composer Keyboard shortcuts:
+      - [ ] Ctrl/Cmd+N to open composer
+      - [ ] Esc to cancel composer
+      - [ ] Ctrl/Cmd+Enter to publish
 Tests:
 - [ ] Desktop smoke tests: app boots, auth works, DB works.
 

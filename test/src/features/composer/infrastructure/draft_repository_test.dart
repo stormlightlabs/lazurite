@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
@@ -185,5 +186,27 @@ void main() {
     final updated = await repository.getDraft(draft.id);
     expect(updated.text, 'Offline updated');
     verifyNever(() => mockApi.call(any(), body: any(named: 'body')));
+  });
+
+  test('deletePostedDrafts removes posted drafts only', () async {
+    final draft1 = await repository.createDraft(text: 'Draft 1');
+    final draft2 = await repository.createDraft(text: 'Draft 2');
+    final draft3 = await repository.createDraft(text: 'Draft 3');
+
+    await db.draftsDao.updateDraftFields(
+      draft2.id,
+      DraftsCompanion(status: Value(composer.DraftStatus.posted.name)),
+    );
+    await db.draftsDao.updateDraftFields(
+      draft3.id,
+      DraftsCompanion(status: Value(composer.DraftStatus.failed.name)),
+    );
+
+    final deletedCount = await repository.deletePostedDrafts();
+
+    expect(deletedCount, 1);
+    final remaining = await repository.watchDrafts().first;
+    expect(remaining, hasLength(2));
+    expect(remaining.map((d) => d.id), containsAll([draft1.id, draft3.id]));
   });
 }

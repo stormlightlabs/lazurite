@@ -146,5 +146,58 @@ void main() {
 
       verify(() => mockDraftRepository.deleteDraft('1')).called(1);
     });
+
+    testWidgets('pull to refresh calls deletePostedDrafts', (tester) async {
+      when(() => mockDraftRepository.deletePostedDrafts()).thenAnswer((_) async => 0);
+
+      await tester.pumpApp(
+        const DraftListScreen(),
+        overrides: [
+          draftsProvider.overrideWith((ref) => Stream.value([])),
+          draftRepositoryProvider.overrideWithValue(mockDraftRepository),
+        ],
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.fling(find.byType(CustomScrollView), const Offset(0, 300), 1000);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      verify(() => mockDraftRepository.deletePostedDrafts()).called(1);
+    });
+
+    testWidgets('retry button triggers publishDraft for failed drafts', (tester) async {
+      final failedDraft = Draft(
+        id: '1',
+        text: 'Failed draft',
+        status: DraftStatus.failed,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        media: [],
+        errorMessage: 'Upload failed',
+      );
+
+      when(
+        () => mockDraftRepository.publishDraft('1'),
+      ).thenAnswer((_) async => (uri: 'at://example', cid: 'cid'));
+
+      await tester.pumpApp(
+        const DraftListScreen(),
+        overrides: [
+          draftsProvider.overrideWith((ref) => Stream.value([failedDraft])),
+          draftRepositoryProvider.overrideWithValue(mockDraftRepository),
+        ],
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Retry'), findsOneWidget);
+
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockDraftRepository.publishDraft('1')).called(1);
+    });
   });
 }

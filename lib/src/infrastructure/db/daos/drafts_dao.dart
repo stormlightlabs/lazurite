@@ -91,6 +91,23 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
     return _mapRowsToRecords(rows);
   }
 
+  /// Deletes all drafts with the given status and their associated media.
+  /// Returns the number of drafts deleted.
+  Future<int> deleteDraftsByStatus(String status) async {
+    final draftIds = await (select(
+      drafts,
+    )..where((tbl) => tbl.status.equals(status))).map((row) => row.id).get();
+
+    if (draftIds.isEmpty) return 0;
+
+    await transaction(() async {
+      await (delete(draftMedia)..where((tbl) => tbl.draftId.isIn(draftIds))).go();
+      await (delete(drafts)..where((tbl) => tbl.status.equals(status))).go();
+    });
+
+    return draftIds.length;
+  }
+
   List<DraftRecord> _mapRowsToRecords(List<TypedResult> rows) {
     final map = <String, DraftRecord>{};
 

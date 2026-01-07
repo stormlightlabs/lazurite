@@ -4,10 +4,11 @@ import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/draft_status_chip.dart';
 
 class DraftPreviewCard extends StatelessWidget {
-  const DraftPreviewCard({required this.draft, required this.onTap, super.key});
+  const DraftPreviewCard({required this.draft, required this.onTap, this.onRetry, super.key});
 
   final Draft draft;
   final VoidCallback onTap;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +96,18 @@ class DraftPreviewCard extends StatelessWidget {
                           style: textTheme.labelSmall?.copyWith(color: colorScheme.error),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                    if (draft.status == DraftStatus.failed && onRetry != null) ...[
+                      const SizedBox(width: 8),
+                      FilledButton.tonalIcon(
+                        onPressed: onRetry,
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Retry'),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          minimumSize: const Size(0, 32),
                         ),
                       ),
                     ],
