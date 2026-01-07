@@ -135,7 +135,7 @@ class DraftRepository {
     await _dao.updateDraftFields(draftId, DraftsCompanion(updatedAt: Value(DateTime.now())));
   }
 
-  Future<void> publishDraft(String draftId) async {
+  Future<({String uri, String cid})> publishDraft(String draftId) async {
     final draft = await _dao.getDraft(draftId);
     if (draft == null) {
       throw StateError('Draft $draftId not found');
@@ -176,10 +176,13 @@ class DraftRepository {
       }
 
       final record = _buildPostRecord(draftToPublish);
-      await _api.call(
+      final data = await _api.call(
         'com.atproto.repo.createRecord',
         body: {'repo': session.did, 'collection': 'app.bsky.feed.post', 'record': record},
       );
+
+      final uri = data['uri'] as String;
+      final cid = data['cid'] as String;
 
       await _dao.updateDraftFields(
         draftId,
@@ -189,6 +192,8 @@ class DraftRepository {
           updatedAt: Value(DateTime.now()),
         ),
       );
+
+      return (uri: uri, cid: cid);
     } catch (e, stack) {
       _logger.error('Failed to publish draft $draftId', e, stack);
       await _dao.updateDraftFields(

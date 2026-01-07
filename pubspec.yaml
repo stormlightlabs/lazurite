@@ -50,6 +50,7 @@ dependencies:
   jose: ^0.3.5
   crypto: ^3.0.7
   collection: ^1.19.1
+  characters: ^1.4.0
   shelf: ^1.4.2
 
   # Persistence
@@ -60,6 +61,7 @@ dependencies:
   gal: ^2.3.0
   intl: ^0.20.2
   shared_preferences: ^2.3.4
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

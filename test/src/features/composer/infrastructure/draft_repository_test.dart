@@ -124,16 +124,18 @@ void main() {
         requestOptions: RequestOptions(path: ''),
       ),
     );
-    when(
-      () => mockApi.call('com.atproto.repo.createRecord', body: any(named: 'body')),
-    ).thenAnswer((_) async => {'uri': 'at://did:web:test/app.bsky.feed.post/123'});
+    when(() => mockApi.call('com.atproto.repo.createRecord', body: any(named: 'body'))).thenAnswer(
+      (_) async => {'uri': 'at://did:web:test/app.bsky.feed.post/123', 'cid': 'cid-123'},
+    );
 
-    await repository.publishDraft(draft.id);
+    final result = await repository.publishDraft(draft.id);
 
     final posted = await repository.getDraft(draft.id);
     expect(posted.status, composer.DraftStatus.posted);
     expect(posted.media.single.uploadCid, 'cid-test');
     expect(posted.media.single.blobRefJson, contains('cid-test'));
+    expect(result.uri, 'at://did:web:test/app.bsky.feed.post/123');
+    expect(result.cid, 'cid-123');
   });
 
   test('publishDraft failure keeps draft and marks failed', () async {

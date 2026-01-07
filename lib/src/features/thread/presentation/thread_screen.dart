@@ -129,7 +129,6 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
       }
     });
 
-    // If prioritizeFollowedUsers is enabled, partition followed users first
     if (pref.prioritizeFollowedUsers) {
       final followed = <ThreadViewPost>[];
       final notFollowed = <ThreadViewPost>[];

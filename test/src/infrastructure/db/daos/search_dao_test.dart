@@ -72,9 +72,6 @@ void main() {
         expect(searches, isEmpty);
       });
 
-      // FIXME: This test doesn't verify strict ordering because DateTime
-      // resolution in SQLite/tests can be insufficient. Add proper ordering
-      // verification with mocked timestamps or longer delays if needed.
       test('returns searches ordered by most recent searchedAt', () async {
         await dao.addRecentSearch('alpha');
         await dao.addRecentSearch('beta');

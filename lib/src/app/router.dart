@@ -5,6 +5,7 @@ import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/core/widgets/tab_scaffold.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
 import 'package:lazurite/src/features/dms/presentation/dms_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
@@ -218,8 +219,7 @@ GoRouter createRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.compose,
         name: AppRouteNames.compose,
-        builder: (context, state) =>
-            const _PlaceholderScreen(title: 'Compose', subtitle: 'Create a new post'),
+        builder: (context, state) => ComposerScreen(draftId: state.uri.queryParameters['draftId']),
       ),
       GoRoute(
         path: AppRoutes.settings,

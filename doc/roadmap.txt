@@ -4,8 +4,6 @@
 J. Composer + local drafts + publish pipeline                           *bsky-J*
 ================================================================================
 
-Status: Foundation complete, screens and navigation needed
-
 Endpoints (write):
 - com.atproto.repo.uploadBlob (POST) - registered
 - com.atproto.repo.createRecord (POST) - registered
@@ -26,46 +24,47 @@ Foundation:
 - [x] Routes defined (/compose, /drafts, /drafts/:draftId)
 
 Phase 1 - Core Composer Screen (HIGH):
-- [ ] Create ComposerScreen widget:
-      - [ ] Modal route presentation (full screen)
-      - [ ] Accept draftId parameter (new vs edit)
-      - [ ] Create new draft on init (if draftId null)
-      - [ ] Load existing draft (if draftId provided)
-      - [ ] Integrate ComposerTextField widget
-      - [ ] Integrate MediaPickerRow widget
-      - [ ] Integrate PublishButton widget
-      - [ ] Character counter with grapheme clusters (characters package)
-      - [ ] Character limit enforcement (300 graphemes)
-      - [ ] Visual warning near limit (20 remaining)
-      - [ ] Error state over limit -> disable publish and let user split into
+- [x] Create ComposerScreen widget:
+      - [x] Modal route presentation (full screen)
+      - [x] Accept draftId parameter (new vs edit)
+      - [x] Create new draft on init (if draftId null)
+      - [x] Load existing draft (if draftId provided)
+      - [x] Integrate ComposerTextField widget
+      - [x] Integrate MediaPickerRow widget
+      - [x] Integrate PublishButton widget
+      - [x] Character counter with grapheme clusters (characters package)
+      - [x] Character limit enforcement (300 graphemes)
+      - [x] Visual warning near limit (20 remaining)
+      - [x] Error state over limit -> disable publish and let user split into
             multiple posts
-- [ ] Implement autosave:
-      - [ ] Debounce text changes (500ms)
-      - [ ] Update draft on text change
-      - [ ] Immediate save on media add/remove
+- [/] Implement autosave:
+      - [x] Debounce text changes (500ms)
+      - [x] Update draft on text change
+      - [x] Immediate save on media add/remove
       - [ ] Save on app backgrounding
-      - [ ] Cancel pending saves on dispose
-- [ ] Image picker integration:
-      - [ ] Gallery selection (image_picker)
+      - [x] Cancel pending saves on dispose
+- [/] Image picker integration:
+      - [x] Gallery selection (image_picker)
       - [ ] Camera capture
-      - [ ] Max 4 images limit
-      - [ ] JPEG/PNG/WebP support
-      - [ ] Add media to draft
-      - [ ] Remove media from draft
-- [ ] Publish flow:
-      - [ ] Call DraftRepository.publishDraft()
-      - [ ] Show loading state
-      - [ ] Handle success (pop modal)
-      - [ ] Handle errors (show message, preserve draft)
-      - [ ] Update draft status during publish
-- [ ] Cancel flow:
-      - [ ] Save draft on cancel button
-      - [ ] Pop modal
+      - [x] Max 4 images limit
+      - [x] JPEG/PNG/WebP support
+      - [x] Add media to draft
+      - [x] Remove media from draft
+- [x] Publish flow:
+      - [x] Call DraftRepository.publishDraft()
+      - [x] Show loading state
+      - [x] Handle success (pop modal)
+      - [x] Handle errors (show message, preserve draft)
+      - [x] Update draft status during publish
+- [/] Cancel flow:
+      - [x] Save draft on cancel button
+      - [x] Pop modal
       - [ ] Confirm if unsaved changes
-- [ ] Router configuration:
-      - [ ] Add /compose route to router
-      - [ ] Configure as modal route
-      - [ ] Accept query params (draftId, replyTo, quoteTo)
+- [/] Router configuration:
+      - [x] Add /compose route to router
+      - [x] Configure as modal route
+      - [x] Accept query params (draftId)
+      - [ ] Accept query params (replyTo, quoteTo)
 
 Phase 2 - Draft List and Management (HIGH):
 - [ ] Create DraftListScreen widget:
