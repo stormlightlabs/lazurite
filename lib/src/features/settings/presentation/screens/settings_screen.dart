@@ -85,9 +85,7 @@ class SettingsScreen extends ConsumerWidget {
         title: 'Theme',
         subtitle: 'Light, dark, or system theme',
         onTap: () {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Theme Settings - Coming soon')));
+          context.push('/settings/appearance');
         },
       ),
     ];

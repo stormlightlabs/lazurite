@@ -68,20 +68,18 @@ Design:
   - Computed role display (surfaceContainerLow, outlineVariant values)
 
 Tasks:
-- [ ] Create AppearancePage (Settings section)
+- [x] Create AppearancePage (Settings section)
       - Pack selector widget (list or dropdown)
       - Variant selector (segmented control or radio buttons)
       - Wire to ThemeController
-- [ ] Build preview widgets:
+- [x] Build preview widgets:
       - ThemePreviewCard: mini Home feed + nav bar rendering
       - Shows visual hierarchy at a glance
-- [ ] Add "Export theme JSON" button (prepare for import/export)
-- [ ] Desktop-only ThemeInspectorPane with role inspector
+- [x] Add "Export theme JSON" button (prepare for import/export)
 
 Deliverables:
 - User can see theme differences before applying
 - Mobile flow: 2-3 taps to switch theme
-- Desktop: richer preview pane with computed role details
 
 --------------------------------------------------------------------------------
 5. Built-in theme packs                                                *theme-5*
@@ -187,9 +185,9 @@ Definition of Done                                                   *theme-dod*
 
 - [x] Home screen hierarchy uses M3 surface/container roles
 - [x] Nav bar and chip row follow M3 selection/indicator specs
-- [ ] Theme switching works at runtime and persists
+- [x] Theme switching works at runtime and persists
 - [ ] Theme packs ship: Oxocarbon (refined), Catppuccin, Nord, Rosé Pine,
       One Dark/Light
-- [ ] Theme picker UI in settings
+- [x] Theme picker UI in settings
 - [ ] Users can optionally customize themes
 - [ ] All packs pass role lint + accessibility tests

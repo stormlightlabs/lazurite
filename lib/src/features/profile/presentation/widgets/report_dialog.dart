@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-// FIXME: Remove the ignore and address deprecation
 import 'package:flutter/material.dart';
 
 enum ReportReason {
@@ -46,18 +44,22 @@ class _ReportDialogState extends State<ReportDialog> {
           children: [
             const Text('Why are you reporting this account?'),
             const SizedBox(height: 16),
-            ...ReportReason.values.map(
-              (reason) => RadioListTile<ReportReason>(
-                title: Text(reason.label),
-                value: reason,
-                groupValue: _selectedReason,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedReason = value;
-                  });
-                },
-                contentPadding: EdgeInsets.zero,
-                dense: true,
+            RadioGroup<ReportReason>(
+              groupValue: _selectedReason,
+              onChanged: (value) {
+                setState(() {
+                  _selectedReason = value;
+                });
+              },
+              child: Column(
+                children: ReportReason.values.map(
+                  (reason) => RadioListTile<ReportReason>(
+                    title: Text(reason.label),
+                    value: reason,
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                  ),
+                ).toList(),
               ),
             ),
             const SizedBox(height: 16),

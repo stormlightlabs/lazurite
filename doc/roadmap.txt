@@ -259,10 +259,10 @@ Tasks:
             - Appearance section
             - App section
             - Account management (sign out)
-      - [ ] Build ThemeSettingsScreen:
+      - [x] Build ThemeSettingsScreen:
             - theme mode selector (Light, Dark, System)
             - preview cards showing appearance
-            - accent color picker
+            - export theme JSON button
       - [ ] Build AboutScreen:
             - app info (name, version, build number)
             - links (website, GitHub, bug reports, features)
@@ -475,6 +475,7 @@ Tasks:
       - confirm Drift backend performance on desktop targets
 - [ ] Window behaviors:
       - restore last route, remember split pane sizes
+- [ ] ThemeInspectorPane with role inspector in Settings
 
 Tests:
 - [ ] Desktop smoke tests: app boots, auth works, DB works.

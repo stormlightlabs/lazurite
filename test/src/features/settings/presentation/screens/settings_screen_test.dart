@@ -34,7 +34,17 @@ void main() {
                 path: '/',
                 builder: (ctx, state) => const Scaffold(body: Center(child: Text('Home'))),
               ),
-              GoRoute(path: '/settings', builder: (ctx, state) => const SettingsScreen()),
+              GoRoute(
+                path: '/settings',
+                builder: (ctx, state) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'appearance',
+                    builder: (ctx, state) =>
+                        const Scaffold(body: Center(child: Text('Appearance Screen'))),
+                  ),
+                ],
+              ),
               GoRoute(
                 path: '/feeds/manage',
                 builder: (ctx, state) =>
@@ -104,6 +114,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Content Moderation - Coming soon'), findsOneWidget);
+    });
+
+    testWidgets('navigates to appearance screen when Theme is tapped', (tester) async {
+      await tester.pumpWidget(
+        buildTestApp([authProvider.overrideWith(() => _TestAuthNotifier.unauthenticated())]),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Theme'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Appearance Screen'), findsOneWidget);
     });
 
     testWidgets('shows sign out confirmation dialog', (tester) async {
