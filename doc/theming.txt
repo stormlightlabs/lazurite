@@ -83,22 +83,22 @@ Theme sources:
 - One Dark: canonical hex values from Atom editor
 
 Tasks:
-- [ ] Define ThemePacks for each (Dart constants or JSON):
+- [x] Define ThemePacks for each (Dart constants):
       - catppuccin: latte (light), frappé/macchiato/mocha (dark variants)
       - nord: light + dark variant
       - rose-pine: dawn (light), main/moon (dark)
       - one-dark + one-light
-- [ ] Map each palette → M3 roles:
+- [x] Map each palette → M3 roles:
       - base/background → surfaceDim/surface
       - panel/card → surfaceContainerLow/Default/High
       - borders → outlineVariant/outline
       - text → onSurface/onSurfaceVariant
       - accent(s) → primary/secondary/tertiary (+ containers)
-- [ ] Apply accent strategy per theme type:
+- [x] Apply accent strategy per theme type:
       - High-contrast (oxocarbon, one-dark): vivid primary
       - Pastel (catppuccin, rose-pine, nord): restrained accents, use
         secondary for chips, tertiary for highlights
-- [ ] Extend role lint tests for all new packs
+- [x] Extend role lint tests for all new packs
 
 Deliverables:
 - All packs ship with both brightness variants (where applicable)
@@ -111,7 +111,7 @@ Deliverables:
 Goal:
 - Allow users to tune themes without breaking visual consistency.
 
-Scope (v1):
+Scope:
 - Let users adjust:
   - primary/secondary/tertiary
   - surface + surfaceContainerLow/High
@@ -188,7 +188,7 @@ Definition of Done                                                   *theme-dod*
 - [x] Home screen hierarchy uses M3 surface/container roles
 - [x] Nav bar and chip row follow M3 selection/indicator specs
 - [x] Theme switching works at runtime and persists
-- [ ] Theme packs ship: Oxocarbon (refined), Catppuccin, Nord, Rosé Pine,
+- [x] Theme packs ship: Oxocarbon (refined), Catppuccin, Nord, Rosé Pine,
       One Dark/Light
 - [x] Theme picker UI in settings
 - [ ] Users can customize themes

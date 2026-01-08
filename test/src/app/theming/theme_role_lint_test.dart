@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/app/theming/packs/catppuccin_theme_pack.dart';
+import 'package:lazurite/src/app/theming/packs/nord_theme_pack.dart';
+import 'package:lazurite/src/app/theming/packs/one_dark_theme_pack.dart';
 import 'package:lazurite/src/app/theming/packs/oxocarbon_theme_pack.dart';
+import 'package:lazurite/src/app/theming/packs/rose_pine_theme_pack.dart';
 import 'package:lazurite/src/app/theming/theme_variant.dart';
 
 /// Validates that a [ThemeVariant] has all required M3 ColorScheme roles
@@ -186,6 +190,21 @@ void main() {
 
     validateVariantRoles(oxocarbonDarkVariant, 'Oxocarbon Dark');
     validateVariantRoles(oxocarbonLightVariant, 'Oxocarbon Light');
+
+    validateVariantRoles(catppuccinLatteVariant, 'Catppuccin Latte');
+    validateVariantRoles(catppuccinFrappeVariant, 'Catppuccin Frappé');
+    validateVariantRoles(catppuccinMacchiatoVariant, 'Catppuccin Macchiato');
+    validateVariantRoles(catppuccinMochaVariant, 'Catppuccin Mocha');
+
+    validateVariantRoles(nordDarkVariant, 'Nord Dark');
+    validateVariantRoles(nordLightVariant, 'Nord Light');
+
+    validateVariantRoles(rosePineMainVariant, 'Rosé Pine Main');
+    validateVariantRoles(rosePineMoonVariant, 'Rosé Pine Moon');
+    validateVariantRoles(rosePineDawnVariant, 'Rosé Pine Dawn');
+
+    validateVariantRoles(oneDarkVariant, 'One Dark');
+    validateVariantRoles(oneLightVariant, 'One Light');
   });
 
   group('OxocarbonPack', () {
@@ -230,6 +249,92 @@ void main() {
       test('light surface is oxocarbon light gray', () {
         expect(oxocarbonLightVariant.derivedScheme.surface, const Color(0xFFF2F4F8));
       });
+    });
+  });
+
+  group('CatppuccinPack', () {
+    test('pack has all 4 flavors', () {
+      expect(catppuccinPack.variants, hasLength(4));
+    });
+
+    test('pack has correct metadata', () {
+      expect(catppuccinPack.id, 'catppuccin');
+      expect(catppuccinPack.name, 'Catppuccin');
+      expect(catppuccinPack.author, 'Catppuccin');
+    });
+
+    test('latte is light variant', () {
+      expect(catppuccinLatteVariant.brightness, Brightness.light);
+    });
+
+    test('dark variants are dark', () {
+      expect(catppuccinFrappeVariant.brightness, Brightness.dark);
+      expect(catppuccinMacchiatoVariant.brightness, Brightness.dark);
+      expect(catppuccinMochaVariant.brightness, Brightness.dark);
+    });
+
+    test('variants have correct ids', () {
+      expect(catppuccinLatteVariant.id, 'catppuccin-latte');
+      expect(catppuccinFrappeVariant.id, 'catppuccin-frappe');
+      expect(catppuccinMacchiatoVariant.id, 'catppuccin-macchiato');
+      expect(catppuccinMochaVariant.id, 'catppuccin-mocha');
+    });
+  });
+
+  group('NordPack', () {
+    test('pack has dark and light variants', () {
+      expect(nordPack.darkVariant, isNotNull);
+      expect(nordPack.lightVariant, isNotNull);
+    });
+
+    test('pack has correct metadata', () {
+      expect(nordPack.id, 'nord');
+      expect(nordPack.name, 'Nord');
+      expect(nordPack.author, 'Arctic Ice Studio');
+    });
+
+    test('variants have correct brightness', () {
+      expect(nordDarkVariant.brightness, Brightness.dark);
+      expect(nordLightVariant.brightness, Brightness.light);
+    });
+  });
+
+  group('RosePinePack', () {
+    test('pack has 3 variants', () {
+      expect(rosePinePack.variants, hasLength(3));
+    });
+
+    test('pack has correct metadata', () {
+      expect(rosePinePack.id, 'rose-pine');
+      expect(rosePinePack.name, 'Rosé Pine');
+      expect(rosePinePack.author, 'Rosé Pine');
+    });
+
+    test('dawn is light variant', () {
+      expect(rosePineDawnVariant.brightness, Brightness.light);
+    });
+
+    test('main and moon are dark variants', () {
+      expect(rosePineMainVariant.brightness, Brightness.dark);
+      expect(rosePineMoonVariant.brightness, Brightness.dark);
+    });
+  });
+
+  group('OneDarkPack', () {
+    test('pack has dark and light variants', () {
+      expect(oneDarkPack.darkVariant, isNotNull);
+      expect(oneDarkPack.lightVariant, isNotNull);
+    });
+
+    test('pack has correct metadata', () {
+      expect(oneDarkPack.id, 'one-dark');
+      expect(oneDarkPack.name, 'One Dark');
+      expect(oneDarkPack.author, 'Atom');
+    });
+
+    test('variants have correct brightness', () {
+      expect(oneDarkVariant.brightness, Brightness.dark);
+      expect(oneLightVariant.brightness, Brightness.light);
     });
   });
 }
