@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:lazurite/src/core/utils/image_compressor.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart' as composer;
+import 'package:lazurite/src/features/composer/domain/facet_parser.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/drafts_dao.dart';
@@ -18,11 +19,13 @@ class DraftRepository {
     required XrpcClient api,
     required SessionStorage sessionStorage,
     required Logger logger,
+    required FacetParser facetParser,
     ImageCompressor? compressor,
   }) : _dao = dao,
        _api = api,
        _sessionStorage = sessionStorage,
        _logger = logger,
+       _facetParser = facetParser,
        _compressor = compressor ?? const ImageCompressor(),
        _uuid = const Uuid();
 
@@ -30,6 +33,7 @@ class DraftRepository {
   final XrpcClient _api;
   final SessionStorage _sessionStorage;
   final Logger _logger;
+  final FacetParser _facetParser;
   final ImageCompressor _compressor;
   final Uuid _uuid;
   final Map<int, CancelToken> _uploadCancelTokens = {};
@@ -181,6 +185,12 @@ class DraftRepository {
 
     try {
       final domain = _toDomain(draft);
+
+      final facetsJson = await _facetParser.parse(domain.text);
+      if (facetsJson != null && facetsJson != domain.facetsJson) {
+        await _dao.updateDraftFields(draftId, DraftsCompanion(facetsJson: Value(facetsJson)));
+      }
+
       for (final media in domain.media) {
         if (media.requiresUpload) {
           final blob = await _uploadMedia(
@@ -352,6 +362,10 @@ class DraftRepository {
       quoteUri: record.draft.quoteUri,
       quoteCid: record.draft.quoteCid,
       facetsJson: record.draft.facetsJson,
+      externalUri: record.draft.externalUri,
+      externalTitle: record.draft.externalTitle,
+      externalDescription: record.draft.externalDescription,
+      externalThumbBlobJson: record.draft.externalThumbBlobJson,
       status: _statusFromDb(record.draft.status),
       errorMessage: record.draft.errorMessage,
       createdAt: record.draft.createdAt,
@@ -450,6 +464,7 @@ class DraftRepository {
 
     final imagesEmbed = _buildImagesEmbed(draft.media);
     final quoteEmbed = _buildQuoteEmbed(draft);
+    final externalEmbed = _buildExternalEmbed(draft);
 
     Map<String, dynamic>? embed;
     if (imagesEmbed != null && quoteEmbed != null) {
@@ -458,10 +473,15 @@ class DraftRepository {
         'record': quoteEmbed,
         'media': imagesEmbed,
       };
+    } else if (imagesEmbed != null && externalEmbed != null) {
+      _logger.warning('Cannot combine images and external link embed, using images only');
+      embed = imagesEmbed;
     } else if (imagesEmbed != null) {
       embed = imagesEmbed;
     } else if (quoteEmbed != null) {
       embed = quoteEmbed;
+    } else if (externalEmbed != null) {
+      embed = externalEmbed;
     }
 
     if (embed != null) {
@@ -524,5 +544,28 @@ class DraftRepository {
       '\$type': 'app.bsky.embed.record',
       'record': {'uri': draft.quoteUri, if (draft.quoteCid != null) 'cid': draft.quoteCid},
     };
+  }
+
+  Map<String, dynamic>? _buildExternalEmbed(composer.Draft draft) {
+    if (draft.externalUri == null) {
+      return null;
+    }
+
+    final external = <String, dynamic>{
+      'uri': draft.externalUri!,
+      if (draft.externalTitle != null) 'title': draft.externalTitle!,
+      if (draft.externalDescription != null) 'description': draft.externalDescription!,
+    };
+
+    if (draft.externalThumbBlobJson != null) {
+      try {
+        final thumbBlob = jsonDecode(draft.externalThumbBlobJson!);
+        external['thumb'] = thumbBlob;
+      } catch (e) {
+        _logger.warning('Failed to decode external thumb blob for ${draft.id}: $e');
+      }
+    }
+
+    return {'\$type': 'app.bsky.embed.external', 'external': external};
   }
 }

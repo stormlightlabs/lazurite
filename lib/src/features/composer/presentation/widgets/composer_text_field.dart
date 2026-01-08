@@ -1,6 +1,10 @@
+import 'package:extended_text_field/extended_text_field.dart';
 import 'package:flutter/material.dart';
 
-/// Multi-line text field for composing posts with character count.
+/// Multi-line text field for composing posts with character count and rich text styling.
+///
+/// Automatically styles mentions (@handle), links (URLs), and hashtags (#tag) with
+/// distinct colors as the user types.
 class ComposerTextField extends StatelessWidget {
   const ComposerTextField({
     required this.controller,
@@ -33,7 +37,7 @@ class ComposerTextField extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(
+          ExtendedTextField(
             controller: controller,
             maxLines: null,
             minLines: 4,
@@ -45,6 +49,11 @@ class ComposerTextField extends StatelessWidget {
             ),
             style: theme.textTheme.bodyLarge,
             onChanged: onChanged,
+            specialTextSpanBuilder: ComposerTextSpanBuilder(
+              mentionColor: colorScheme.primary,
+              linkColor: colorScheme.tertiary,
+              hashtagColor: colorScheme.secondary,
+            ),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -71,6 +80,105 @@ class ComposerTextField extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Custom text span builder that styles mentions, links, and hashtags.
+class ComposerTextSpanBuilder extends SpecialTextSpanBuilder {
+  ComposerTextSpanBuilder({
+    required this.mentionColor,
+    required this.linkColor,
+    required this.hashtagColor,
+  });
+
+  final Color mentionColor;
+  final Color linkColor;
+  final Color hashtagColor;
+
+  @override
+  SpecialText? createSpecialText(
+    String flag, {
+    TextStyle? textStyle,
+    SpecialTextGestureTapCallback? onTap,
+    int? index,
+  }) {
+    if (flag.isEmpty) {
+      return null;
+    }
+
+    if (flag == '@') {
+      return MentionText(textStyle: textStyle, color: mentionColor, onTap: onTap);
+    }
+
+    if (flag == '#') {
+      return HashtagText(textStyle: textStyle, color: hashtagColor, onTap: onTap);
+    }
+
+    if (flag == 'http://' || flag == 'https://') {
+      return LinkText(textStyle: textStyle, color: linkColor, onTap: onTap);
+    }
+
+    return null;
+  }
+}
+
+/// Styled text span for @mentions.
+class MentionText extends SpecialText {
+  MentionText({
+    required TextStyle? textStyle,
+    required this.color,
+    SpecialTextGestureTapCallback? onTap,
+  }) : super('@', RegExp(r'\s|$').pattern, textStyle, onTap: onTap);
+
+  final Color color;
+
+  @override
+  InlineSpan finishText() {
+    final text = toString();
+    return TextSpan(
+      text: text,
+      style: textStyle?.copyWith(color: color, fontWeight: FontWeight.w600),
+    );
+  }
+}
+
+/// Styled text span for #hashtags.
+class HashtagText extends SpecialText {
+  HashtagText({
+    required TextStyle? textStyle,
+    required this.color,
+    SpecialTextGestureTapCallback? onTap,
+  }) : super('#', RegExp(r'\s|$').pattern, textStyle, onTap: onTap);
+
+  final Color color;
+
+  @override
+  InlineSpan finishText() {
+    final text = toString();
+    return TextSpan(
+      text: text,
+      style: textStyle?.copyWith(color: color, fontWeight: FontWeight.w600),
+    );
+  }
+}
+
+/// Styled text span for URLs.
+class LinkText extends SpecialText {
+  LinkText({
+    required TextStyle? textStyle,
+    required this.color,
+    SpecialTextGestureTapCallback? onTap,
+  }) : super('http', RegExp(r'\s|$').pattern, textStyle, onTap: onTap);
+
+  final Color color;
+
+  @override
+  InlineSpan finishText() {
+    final text = toString();
+    return TextSpan(
+      text: text,
+      style: textStyle?.copyWith(color: color, decoration: TextDecoration.underline),
     );
   }
 }

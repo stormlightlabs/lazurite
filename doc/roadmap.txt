@@ -153,17 +153,17 @@ Phase 5 - Rich Text (Mentions and Links) (MEDIUM):
       - [x] Calculate byte offsets (UTF-8 encoding)
       - [x] Build facet array
       - [x] Handle unicode and emoji correctly
-- [ ] Integrate facet parsing:
-      - [ ] Parse text on publish
-      - [ ] Store facets in facetsJson
-      - [ ] Include facets in post record
-      - [ ] Visual styling for mentions
-      - [ ] Visual styling for links
-- [ ] Link card preview:
-      - [ ] Detect URLs in text
-      - [ ] Fetch link metadata (unfurling)
-      - [ ] Display link card preview
-      - [ ] Include external embed
+- [x] Integrate facet parsing:
+      - [x] Parse text on publish
+      - [x] Store facets in facetsJson
+      - [x] Include facets in post record
+      - [x] Visual styling for mentions
+      - [x] Visual styling for links
+- [x] Link card preview:
+      - [x] Detect URLs in text
+      - [x] Fetch link metadata (unfurling)
+      - [x] Display link card preview
+      - [x] Include external embed
 
 Phase 6 - Global FAB and Polish (HIGH):
 - [ ] Create global FAB widget:
@@ -178,9 +178,9 @@ Phase 6 - Global FAB and Polish (HIGH):
       - [ ] Smooth show/hide animation
       - [ ] Tap navigates to /compose
       - [ ] Create new draft automatically
-- [ ] Performance optimization:
-      - [ ] Image thumbnail caching
-      - [ ] Smooth, animated modal transitions
+      - [ ] Performance optimization:
+            - [ ] Image thumbnail caching
+            - [ ] Smooth, animated modal transitions
 
 Tests:
 - [ ] Unit tests:

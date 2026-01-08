@@ -4486,6 +4486,46 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _externalUriMeta = const VerificationMeta('externalUri');
+  @override
+  late final GeneratedColumn<String> externalUri = GeneratedColumn<String>(
+    'external_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _externalTitleMeta = const VerificationMeta('externalTitle');
+  @override
+  late final GeneratedColumn<String> externalTitle = GeneratedColumn<String>(
+    'external_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _externalDescriptionMeta = const VerificationMeta(
+    'externalDescription',
+  );
+  @override
+  late final GeneratedColumn<String> externalDescription = GeneratedColumn<String>(
+    'external_description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _externalThumbBlobJsonMeta = const VerificationMeta(
+    'externalThumbBlobJson',
+  );
+  @override
+  late final GeneratedColumn<String> externalThumbBlobJson = GeneratedColumn<String>(
+    'external_thumb_blob_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -4533,6 +4573,10 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
     quoteUri,
     quoteCid,
     facetsJson,
+    externalUri,
+    externalTitle,
+    externalDescription,
+    externalThumbBlobJson,
     status,
     errorMessage,
     createdAt,
@@ -4595,6 +4639,36 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
       context.handle(
         _facetsJsonMeta,
         facetsJson.isAcceptableOrUnknown(data['facets_json']!, _facetsJsonMeta),
+      );
+    }
+    if (data.containsKey('external_uri')) {
+      context.handle(
+        _externalUriMeta,
+        externalUri.isAcceptableOrUnknown(data['external_uri']!, _externalUriMeta),
+      );
+    }
+    if (data.containsKey('external_title')) {
+      context.handle(
+        _externalTitleMeta,
+        externalTitle.isAcceptableOrUnknown(data['external_title']!, _externalTitleMeta),
+      );
+    }
+    if (data.containsKey('external_description')) {
+      context.handle(
+        _externalDescriptionMeta,
+        externalDescription.isAcceptableOrUnknown(
+          data['external_description']!,
+          _externalDescriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('external_thumb_blob_json')) {
+      context.handle(
+        _externalThumbBlobJsonMeta,
+        externalThumbBlobJson.isAcceptableOrUnknown(
+          data['external_thumb_blob_json']!,
+          _externalThumbBlobJsonMeta,
+        ),
       );
     }
     if (data.containsKey('status')) {
@@ -4666,6 +4740,22 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
         DriftSqlType.string,
         data['${effectivePrefix}facets_json'],
       ),
+      externalUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}external_uri'],
+      ),
+      externalTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}external_title'],
+      ),
+      externalDescription: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}external_description'],
+      ),
+      externalThumbBlobJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}external_thumb_blob_json'],
+      ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -4701,6 +4791,10 @@ class Draft extends DataClass implements Insertable<Draft> {
   final String? quoteUri;
   final String? quoteCid;
   final String? facetsJson;
+  final String? externalUri;
+  final String? externalTitle;
+  final String? externalDescription;
+  final String? externalThumbBlobJson;
   final String status;
   final String? errorMessage;
   final DateTime createdAt;
@@ -4715,6 +4809,10 @@ class Draft extends DataClass implements Insertable<Draft> {
     this.quoteUri,
     this.quoteCid,
     this.facetsJson,
+    this.externalUri,
+    this.externalTitle,
+    this.externalDescription,
+    this.externalThumbBlobJson,
     required this.status,
     this.errorMessage,
     required this.createdAt,
@@ -4746,6 +4844,18 @@ class Draft extends DataClass implements Insertable<Draft> {
     if (!nullToAbsent || facetsJson != null) {
       map['facets_json'] = Variable<String>(facetsJson);
     }
+    if (!nullToAbsent || externalUri != null) {
+      map['external_uri'] = Variable<String>(externalUri);
+    }
+    if (!nullToAbsent || externalTitle != null) {
+      map['external_title'] = Variable<String>(externalTitle);
+    }
+    if (!nullToAbsent || externalDescription != null) {
+      map['external_description'] = Variable<String>(externalDescription);
+    }
+    if (!nullToAbsent || externalThumbBlobJson != null) {
+      map['external_thumb_blob_json'] = Variable<String>(externalThumbBlobJson);
+    }
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || errorMessage != null) {
       map['error_message'] = Variable<String>(errorMessage);
@@ -4774,6 +4884,16 @@ class Draft extends DataClass implements Insertable<Draft> {
       quoteUri: quoteUri == null && nullToAbsent ? const Value.absent() : Value(quoteUri),
       quoteCid: quoteCid == null && nullToAbsent ? const Value.absent() : Value(quoteCid),
       facetsJson: facetsJson == null && nullToAbsent ? const Value.absent() : Value(facetsJson),
+      externalUri: externalUri == null && nullToAbsent ? const Value.absent() : Value(externalUri),
+      externalTitle: externalTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(externalTitle),
+      externalDescription: externalDescription == null && nullToAbsent
+          ? const Value.absent()
+          : Value(externalDescription),
+      externalThumbBlobJson: externalThumbBlobJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(externalThumbBlobJson),
       status: Value(status),
       errorMessage: errorMessage == null && nullToAbsent
           ? const Value.absent()
@@ -4795,6 +4915,10 @@ class Draft extends DataClass implements Insertable<Draft> {
       quoteUri: serializer.fromJson<String?>(json['quoteUri']),
       quoteCid: serializer.fromJson<String?>(json['quoteCid']),
       facetsJson: serializer.fromJson<String?>(json['facetsJson']),
+      externalUri: serializer.fromJson<String?>(json['externalUri']),
+      externalTitle: serializer.fromJson<String?>(json['externalTitle']),
+      externalDescription: serializer.fromJson<String?>(json['externalDescription']),
+      externalThumbBlobJson: serializer.fromJson<String?>(json['externalThumbBlobJson']),
       status: serializer.fromJson<String>(json['status']),
       errorMessage: serializer.fromJson<String?>(json['errorMessage']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -4814,6 +4938,10 @@ class Draft extends DataClass implements Insertable<Draft> {
       'quoteUri': serializer.toJson<String?>(quoteUri),
       'quoteCid': serializer.toJson<String?>(quoteCid),
       'facetsJson': serializer.toJson<String?>(facetsJson),
+      'externalUri': serializer.toJson<String?>(externalUri),
+      'externalTitle': serializer.toJson<String?>(externalTitle),
+      'externalDescription': serializer.toJson<String?>(externalDescription),
+      'externalThumbBlobJson': serializer.toJson<String?>(externalThumbBlobJson),
       'status': serializer.toJson<String>(status),
       'errorMessage': serializer.toJson<String?>(errorMessage),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -4831,6 +4959,10 @@ class Draft extends DataClass implements Insertable<Draft> {
     Value<String?> quoteUri = const Value.absent(),
     Value<String?> quoteCid = const Value.absent(),
     Value<String?> facetsJson = const Value.absent(),
+    Value<String?> externalUri = const Value.absent(),
+    Value<String?> externalTitle = const Value.absent(),
+    Value<String?> externalDescription = const Value.absent(),
+    Value<String?> externalThumbBlobJson = const Value.absent(),
     String? status,
     Value<String?> errorMessage = const Value.absent(),
     DateTime? createdAt,
@@ -4845,6 +4977,14 @@ class Draft extends DataClass implements Insertable<Draft> {
     quoteUri: quoteUri.present ? quoteUri.value : this.quoteUri,
     quoteCid: quoteCid.present ? quoteCid.value : this.quoteCid,
     facetsJson: facetsJson.present ? facetsJson.value : this.facetsJson,
+    externalUri: externalUri.present ? externalUri.value : this.externalUri,
+    externalTitle: externalTitle.present ? externalTitle.value : this.externalTitle,
+    externalDescription: externalDescription.present
+        ? externalDescription.value
+        : this.externalDescription,
+    externalThumbBlobJson: externalThumbBlobJson.present
+        ? externalThumbBlobJson.value
+        : this.externalThumbBlobJson,
     status: status ?? this.status,
     errorMessage: errorMessage.present ? errorMessage.value : this.errorMessage,
     createdAt: createdAt ?? this.createdAt,
@@ -4865,6 +5005,14 @@ class Draft extends DataClass implements Insertable<Draft> {
       quoteUri: data.quoteUri.present ? data.quoteUri.value : this.quoteUri,
       quoteCid: data.quoteCid.present ? data.quoteCid.value : this.quoteCid,
       facetsJson: data.facetsJson.present ? data.facetsJson.value : this.facetsJson,
+      externalUri: data.externalUri.present ? data.externalUri.value : this.externalUri,
+      externalTitle: data.externalTitle.present ? data.externalTitle.value : this.externalTitle,
+      externalDescription: data.externalDescription.present
+          ? data.externalDescription.value
+          : this.externalDescription,
+      externalThumbBlobJson: data.externalThumbBlobJson.present
+          ? data.externalThumbBlobJson.value
+          : this.externalThumbBlobJson,
       status: data.status.present ? data.status.value : this.status,
       errorMessage: data.errorMessage.present ? data.errorMessage.value : this.errorMessage,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -4884,6 +5032,10 @@ class Draft extends DataClass implements Insertable<Draft> {
           ..write('quoteUri: $quoteUri, ')
           ..write('quoteCid: $quoteCid, ')
           ..write('facetsJson: $facetsJson, ')
+          ..write('externalUri: $externalUri, ')
+          ..write('externalTitle: $externalTitle, ')
+          ..write('externalDescription: $externalDescription, ')
+          ..write('externalThumbBlobJson: $externalThumbBlobJson, ')
           ..write('status: $status, ')
           ..write('errorMessage: $errorMessage, ')
           ..write('createdAt: $createdAt, ')
@@ -4903,6 +5055,10 @@ class Draft extends DataClass implements Insertable<Draft> {
     quoteUri,
     quoteCid,
     facetsJson,
+    externalUri,
+    externalTitle,
+    externalDescription,
+    externalThumbBlobJson,
     status,
     errorMessage,
     createdAt,
@@ -4921,6 +5077,10 @@ class Draft extends DataClass implements Insertable<Draft> {
           other.quoteUri == this.quoteUri &&
           other.quoteCid == this.quoteCid &&
           other.facetsJson == this.facetsJson &&
+          other.externalUri == this.externalUri &&
+          other.externalTitle == this.externalTitle &&
+          other.externalDescription == this.externalDescription &&
+          other.externalThumbBlobJson == this.externalThumbBlobJson &&
           other.status == this.status &&
           other.errorMessage == this.errorMessage &&
           other.createdAt == this.createdAt &&
@@ -4937,6 +5097,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
   final Value<String?> quoteUri;
   final Value<String?> quoteCid;
   final Value<String?> facetsJson;
+  final Value<String?> externalUri;
+  final Value<String?> externalTitle;
+  final Value<String?> externalDescription;
+  final Value<String?> externalThumbBlobJson;
   final Value<String> status;
   final Value<String?> errorMessage;
   final Value<DateTime> createdAt;
@@ -4952,6 +5116,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     this.quoteUri = const Value.absent(),
     this.quoteCid = const Value.absent(),
     this.facetsJson = const Value.absent(),
+    this.externalUri = const Value.absent(),
+    this.externalTitle = const Value.absent(),
+    this.externalDescription = const Value.absent(),
+    this.externalThumbBlobJson = const Value.absent(),
     this.status = const Value.absent(),
     this.errorMessage = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -4968,6 +5136,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     this.quoteUri = const Value.absent(),
     this.quoteCid = const Value.absent(),
     this.facetsJson = const Value.absent(),
+    this.externalUri = const Value.absent(),
+    this.externalTitle = const Value.absent(),
+    this.externalDescription = const Value.absent(),
+    this.externalThumbBlobJson = const Value.absent(),
     required String status,
     this.errorMessage = const Value.absent(),
     required DateTime createdAt,
@@ -4987,6 +5159,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     Expression<String>? quoteUri,
     Expression<String>? quoteCid,
     Expression<String>? facetsJson,
+    Expression<String>? externalUri,
+    Expression<String>? externalTitle,
+    Expression<String>? externalDescription,
+    Expression<String>? externalThumbBlobJson,
     Expression<String>? status,
     Expression<String>? errorMessage,
     Expression<DateTime>? createdAt,
@@ -5003,6 +5179,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
       if (quoteUri != null) 'quote_uri': quoteUri,
       if (quoteCid != null) 'quote_cid': quoteCid,
       if (facetsJson != null) 'facets_json': facetsJson,
+      if (externalUri != null) 'external_uri': externalUri,
+      if (externalTitle != null) 'external_title': externalTitle,
+      if (externalDescription != null) 'external_description': externalDescription,
+      if (externalThumbBlobJson != null) 'external_thumb_blob_json': externalThumbBlobJson,
       if (status != null) 'status': status,
       if (errorMessage != null) 'error_message': errorMessage,
       if (createdAt != null) 'created_at': createdAt,
@@ -5021,6 +5201,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     Value<String?>? quoteUri,
     Value<String?>? quoteCid,
     Value<String?>? facetsJson,
+    Value<String?>? externalUri,
+    Value<String?>? externalTitle,
+    Value<String?>? externalDescription,
+    Value<String?>? externalThumbBlobJson,
     Value<String>? status,
     Value<String?>? errorMessage,
     Value<DateTime>? createdAt,
@@ -5037,6 +5221,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
       quoteUri: quoteUri ?? this.quoteUri,
       quoteCid: quoteCid ?? this.quoteCid,
       facetsJson: facetsJson ?? this.facetsJson,
+      externalUri: externalUri ?? this.externalUri,
+      externalTitle: externalTitle ?? this.externalTitle,
+      externalDescription: externalDescription ?? this.externalDescription,
+      externalThumbBlobJson: externalThumbBlobJson ?? this.externalThumbBlobJson,
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
       createdAt: createdAt ?? this.createdAt,
@@ -5075,6 +5263,18 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     if (facetsJson.present) {
       map['facets_json'] = Variable<String>(facetsJson.value);
     }
+    if (externalUri.present) {
+      map['external_uri'] = Variable<String>(externalUri.value);
+    }
+    if (externalTitle.present) {
+      map['external_title'] = Variable<String>(externalTitle.value);
+    }
+    if (externalDescription.present) {
+      map['external_description'] = Variable<String>(externalDescription.value);
+    }
+    if (externalThumbBlobJson.present) {
+      map['external_thumb_blob_json'] = Variable<String>(externalThumbBlobJson.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -5105,6 +5305,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
           ..write('quoteUri: $quoteUri, ')
           ..write('quoteCid: $quoteCid, ')
           ..write('facetsJson: $facetsJson, ')
+          ..write('externalUri: $externalUri, ')
+          ..write('externalTitle: $externalTitle, ')
+          ..write('externalDescription: $externalDescription, ')
+          ..write('externalThumbBlobJson: $externalThumbBlobJson, ')
           ..write('status: $status, ')
           ..write('errorMessage: $errorMessage, ')
           ..write('createdAt: $createdAt, ')
@@ -10288,6 +10492,10 @@ typedef $$DraftsTableCreateCompanionBuilder =
       Value<String?> quoteUri,
       Value<String?> quoteCid,
       Value<String?> facetsJson,
+      Value<String?> externalUri,
+      Value<String?> externalTitle,
+      Value<String?> externalDescription,
+      Value<String?> externalThumbBlobJson,
       required String status,
       Value<String?> errorMessage,
       required DateTime createdAt,
@@ -10305,6 +10513,10 @@ typedef $$DraftsTableUpdateCompanionBuilder =
       Value<String?> quoteUri,
       Value<String?> quoteCid,
       Value<String?> facetsJson,
+      Value<String?> externalUri,
+      Value<String?> externalTitle,
+      Value<String?> externalDescription,
+      Value<String?> externalThumbBlobJson,
       Value<String> status,
       Value<String?> errorMessage,
       Value<DateTime> createdAt,
@@ -10371,6 +10583,22 @@ class $$DraftsTableFilterComposer extends Composer<_$AppDatabase, $DraftsTable> 
 
   ColumnFilters<String> get facetsJson =>
       $composableBuilder(column: $table.facetsJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get externalUri =>
+      $composableBuilder(column: $table.externalUri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get externalTitle =>
+      $composableBuilder(column: $table.externalTitle, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get externalDescription => $composableBuilder(
+    column: $table.externalDescription,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get externalThumbBlobJson => $composableBuilder(
+    column: $table.externalThumbBlobJson,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => ColumnFilters(column));
@@ -10447,6 +10675,24 @@ class $$DraftsTableOrderingComposer extends Composer<_$AppDatabase, $DraftsTable
   ColumnOrderings<String> get facetsJson =>
       $composableBuilder(column: $table.facetsJson, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get externalUri =>
+      $composableBuilder(column: $table.externalUri, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get externalTitle => $composableBuilder(
+    column: $table.externalTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get externalDescription => $composableBuilder(
+    column: $table.externalDescription,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get externalThumbBlobJson => $composableBuilder(
+    column: $table.externalThumbBlobJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => ColumnOrderings(column));
 
@@ -10496,6 +10742,18 @@ class $$DraftsTableAnnotationComposer extends Composer<_$AppDatabase, $DraftsTab
 
   GeneratedColumn<String> get facetsJson =>
       $composableBuilder(column: $table.facetsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get externalUri =>
+      $composableBuilder(column: $table.externalUri, builder: (column) => column);
+
+  GeneratedColumn<String> get externalTitle =>
+      $composableBuilder(column: $table.externalTitle, builder: (column) => column);
+
+  GeneratedColumn<String> get externalDescription =>
+      $composableBuilder(column: $table.externalDescription, builder: (column) => column);
+
+  GeneratedColumn<String> get externalThumbBlobJson =>
+      $composableBuilder(column: $table.externalThumbBlobJson, builder: (column) => column);
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
@@ -10566,6 +10824,10 @@ class $$DraftsTableTableManager
                 Value<String?> quoteUri = const Value.absent(),
                 Value<String?> quoteCid = const Value.absent(),
                 Value<String?> facetsJson = const Value.absent(),
+                Value<String?> externalUri = const Value.absent(),
+                Value<String?> externalTitle = const Value.absent(),
+                Value<String?> externalDescription = const Value.absent(),
+                Value<String?> externalThumbBlobJson = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> errorMessage = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -10581,6 +10843,10 @@ class $$DraftsTableTableManager
                 quoteUri: quoteUri,
                 quoteCid: quoteCid,
                 facetsJson: facetsJson,
+                externalUri: externalUri,
+                externalTitle: externalTitle,
+                externalDescription: externalDescription,
+                externalThumbBlobJson: externalThumbBlobJson,
                 status: status,
                 errorMessage: errorMessage,
                 createdAt: createdAt,
@@ -10598,6 +10864,10 @@ class $$DraftsTableTableManager
                 Value<String?> quoteUri = const Value.absent(),
                 Value<String?> quoteCid = const Value.absent(),
                 Value<String?> facetsJson = const Value.absent(),
+                Value<String?> externalUri = const Value.absent(),
+                Value<String?> externalTitle = const Value.absent(),
+                Value<String?> externalDescription = const Value.absent(),
+                Value<String?> externalThumbBlobJson = const Value.absent(),
                 required String status,
                 Value<String?> errorMessage = const Value.absent(),
                 required DateTime createdAt,
@@ -10613,6 +10883,10 @@ class $$DraftsTableTableManager
                 quoteUri: quoteUri,
                 quoteCid: quoteCid,
                 facetsJson: facetsJson,
+                externalUri: externalUri,
+                externalTitle: externalTitle,
+                externalDescription: externalDescription,
+                externalThumbBlobJson: externalThumbBlobJson,
                 status: status,
                 errorMessage: errorMessage,
                 createdAt: createdAt,

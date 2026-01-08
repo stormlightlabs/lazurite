@@ -23,6 +23,7 @@ void main() {
   late MockXrpcClient mockApi;
   late MockSessionStorage mockSessionStorage;
   late MockLogger mockLogger;
+  late MockFacetParser mockFacetParser;
   late Directory tempDir;
 
   setUp(() {
@@ -30,11 +31,16 @@ void main() {
     mockApi = MockXrpcClient();
     mockSessionStorage = MockSessionStorage();
     mockLogger = MockLogger();
+    mockFacetParser = MockFacetParser();
+
+    when(() => mockFacetParser.parse(any())).thenAnswer((_) async => null);
+
     repository = DraftRepository(
       dao: db.draftsDao,
       api: mockApi,
       sessionStorage: mockSessionStorage,
       logger: mockLogger,
+      facetParser: mockFacetParser,
     );
     tempDir = Directory.systemTemp.createTempSync('draft_repo_test');
   });

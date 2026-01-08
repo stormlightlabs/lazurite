@@ -277,6 +277,10 @@ class Drafts extends Table {
   TextColumn get quoteUri => text().nullable()();
   TextColumn get quoteCid => text().nullable()();
   TextColumn get facetsJson => text().nullable()();
+  TextColumn get externalUri => text().nullable()();
+  TextColumn get externalTitle => text().nullable()();
+  TextColumn get externalDescription => text().nullable()();
+  TextColumn get externalThumbBlobJson => text().nullable()();
   TextColumn get status => text()();
   TextColumn get errorMessage => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();

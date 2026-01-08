@@ -6,6 +6,7 @@ import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/core/utils/image_compressor.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/composer/domain/facet_parser.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_content_repository.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
@@ -26,6 +27,8 @@ import 'package:mocktail/mocktail.dart';
 class MockLogger extends Mock implements Logger {}
 
 class MockImageCompressor extends Mock implements ImageCompressor {}
+
+class MockFacetParser extends Mock implements FacetParser {}
 
 class MockXrpcClient extends Mock implements XrpcClient {}
 

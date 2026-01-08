@@ -9,6 +9,87 @@ part of 'composer_providers.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(facetParser)
+final facetParserProvider = FacetParserProvider._();
+
+final class FacetParserProvider extends $FunctionalProvider<FacetParser, FacetParser, FacetParser>
+    with $Provider<FacetParser> {
+  FacetParserProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'facetParserProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$facetParserHash();
+
+  @$internal
+  @override
+  $ProviderElement<FacetParser> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  FacetParser create(Ref ref) {
+    return facetParser(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FacetParser value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FacetParser>(value),
+    );
+  }
+}
+
+String _$facetParserHash() => r'3df8a0ee99ce1cb7149075e5f25aa4535ad7d2bf';
+
+@ProviderFor(linkMetadataService)
+final linkMetadataServiceProvider = LinkMetadataServiceProvider._();
+
+final class LinkMetadataServiceProvider
+    extends $FunctionalProvider<LinkMetadataService, LinkMetadataService, LinkMetadataService>
+    with $Provider<LinkMetadataService> {
+  LinkMetadataServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'linkMetadataServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$linkMetadataServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<LinkMetadataService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  LinkMetadataService create(Ref ref) {
+    return linkMetadataService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(LinkMetadataService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<LinkMetadataService>(value),
+    );
+  }
+}
+
+String _$linkMetadataServiceHash() => r'f6d106408351a8efbea835eb1b18b52d0b5ef8e2';
+
 @ProviderFor(draftRepository)
 final draftRepositoryProvider = DraftRepositoryProvider._();
 
@@ -48,7 +129,7 @@ final class DraftRepositoryProvider
   }
 }
 
-String _$draftRepositoryHash() => r'cf8a45807ae0504c8969416ed0ab88bdc3dfb537';
+String _$draftRepositoryHash() => r'69131f522db3287a9da5df8a3cfc99ef66993e54';
 
 @ProviderFor(drafts)
 final draftsProvider = DraftsProvider._();

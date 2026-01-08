@@ -17,6 +17,10 @@ class Draft {
     this.quoteUri,
     this.quoteCid,
     this.facetsJson,
+    this.externalUri,
+    this.externalTitle,
+    this.externalDescription,
+    this.externalThumbBlobJson,
     this.errorMessage,
   });
 
@@ -29,6 +33,10 @@ class Draft {
   final String? quoteUri;
   final String? quoteCid;
   final String? facetsJson;
+  final String? externalUri;
+  final String? externalTitle;
+  final String? externalDescription;
+  final String? externalThumbBlobJson;
   final DraftStatus status;
   final String? errorMessage;
   final DateTime createdAt;

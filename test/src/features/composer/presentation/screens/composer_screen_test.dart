@@ -1,3 +1,4 @@
+import 'package:extended_text_field/extended_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -114,12 +115,18 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> enterText(WidgetTester tester, String text) async {
+    final textField = tester.widget<ExtendedTextField>(find.byType(ExtendedTextField));
+    textField.controller?.text = text;
+    await tester.pump();
+  }
+
   group('ComposerScreen', () {
     testWidgets('renders text field and publish button', (tester) async {
       await tester.pumpWidget(buildTestWidget());
       await navigateToCompose(tester);
 
-      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byType(ExtendedTextField), findsOneWidget);
       expect(find.byType(PublishButton), findsOneWidget);
     });
 
@@ -156,8 +163,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await navigateToCompose(tester);
 
-      await tester.enterText(find.byType(TextField), 'Hello');
-      await tester.pump();
+      await enterText(tester, 'Hello');
 
       expect(find.text('295'), findsWidgets);
     });
@@ -166,7 +172,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await navigateToCompose(tester);
 
-      await tester.enterText(find.byType(TextField), 'Hello world');
+      await enterText(tester, 'Hello world');
       await tester.pump();
 
       final publishButton = tester.widget<PublishButton>(find.byType(PublishButton));
@@ -178,7 +184,7 @@ void main() {
       await navigateToCompose(tester);
 
       final longText = 'a' * 305;
-      await tester.enterText(find.byType(TextField), longText);
+      await enterText(tester, longText);
       await tester.pump();
 
       expect(find.text('-5'), findsWidgets);
@@ -189,7 +195,7 @@ void main() {
       await navigateToCompose(tester);
 
       final longText = 'a' * 305;
-      await tester.enterText(find.byType(TextField), longText);
+      await enterText(tester, longText);
       await tester.pump();
 
       final publishButton = tester.widget<PublishButton>(find.byType(PublishButton));
@@ -201,7 +207,7 @@ void main() {
       await navigateToCompose(tester);
 
       final longText = 'a' * 305;
-      await tester.enterText(find.byType(TextField), longText);
+      await enterText(tester, longText);
       await tester.pump();
 
       expect(find.text('Split'), findsOneWidget);
@@ -212,13 +218,13 @@ void main() {
       await navigateToCompose(tester);
 
       final longText = 'a' * 305;
-      await tester.enterText(find.byType(TextField), longText);
+      await enterText(tester, longText);
       await tester.pump();
 
       await tester.tap(find.text('Split'));
       await tester.pump();
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
+      final textField = tester.widget<ExtendedTextField>(find.byType(ExtendedTextField));
       expect(textField.controller?.text.length, 300);
 
       final publishButton = tester.widget<PublishButton>(find.byType(PublishButton));
@@ -231,13 +237,13 @@ void main() {
       await navigateToCompose(tester);
 
       final text = '${'a' * 290} ${'b' * 15}';
-      await tester.enterText(find.byType(TextField), text);
+      await enterText(tester, text);
       await tester.pump();
 
       await tester.tap(find.text('Split'));
       await tester.pump();
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
+      final textField = tester.widget<ExtendedTextField>(find.byType(ExtendedTextField));
       expect(textField.controller?.text, '${'a' * 290} ');
       expect(textField.controller?.text.length, 291);
     });
@@ -247,13 +253,13 @@ void main() {
       await navigateToCompose(tester);
 
       final text = 'a' * 305;
-      await tester.enterText(find.byType(TextField), text);
+      await enterText(tester, text);
       await tester.pump();
 
       await tester.tap(find.text('Split'));
       await tester.pump();
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
+      final textField = tester.widget<ExtendedTextField>(find.byType(ExtendedTextField));
       expect(textField.controller?.text, 'a' * 300);
     });
 
@@ -275,7 +281,7 @@ void main() {
       await navigateToCompose(tester);
 
       final longText = 'a' * 305;
-      await tester.enterText(find.byType(TextField), longText);
+      await enterText(tester, longText);
       await tester.pump();
 
       await tester.tap(find.text('Split'));
@@ -301,7 +307,7 @@ void main() {
       await navigateToCompose(tester);
 
       final longText = 'a' * 305;
-      await tester.enterText(find.byType(TextField), longText);
+      await enterText(tester, longText);
       await tester.pump();
 
       await tester.tap(find.text('Split'));
@@ -332,7 +338,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget(existingDraft: draft));
       await navigateToCompose(tester);
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
+      final textField = tester.widget<ExtendedTextField>(find.byType(ExtendedTextField));
       expect(textField.controller?.text, 'Existing draft content');
     });
 
@@ -341,7 +347,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
       await navigateToCompose(tester);
 
-      await tester.enterText(find.byType(TextField), 'Saving on pause');
+      await enterText(tester, 'Saving on pause');
       await tester.pump();
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
@@ -409,7 +415,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await navigateToCompose(tester);
 
-      await tester.enterText(find.byType(TextField), 'Content');
+      await enterText(tester, 'Content');
       await tester.pump();
 
       await tester.tap(find.byIcon(Icons.close));
@@ -426,7 +432,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await navigateToCompose(tester);
 
-      await tester.enterText(find.byType(TextField), 'Content');
+      await enterText(tester, 'Content');
       await tester.pump();
 
       await tester.tap(find.byIcon(Icons.close));
@@ -443,7 +449,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await navigateToCompose(tester);
 
-      await tester.enterText(find.byType(TextField), 'Content');
+      await enterText(tester, 'Content');
       await tester.pump();
 
       await tester.tap(find.byIcon(Icons.close));
@@ -460,7 +466,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await navigateToCompose(tester);
 
-      await tester.enterText(find.byType(TextField), 'Content');
+      await enterText(tester, 'Content');
       await tester.pump();
 
       await tester.tap(find.byIcon(Icons.close));
