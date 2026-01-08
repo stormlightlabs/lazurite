@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'daos/bluesky_preferences_dao.dart';
+import 'daos/animation_preferences_dao.dart';
 import 'daos/custom_theme_dao.dart';
 import 'daos/drafts_dao.dart';
 import 'daos/feed_content_dao.dart';
@@ -42,6 +43,7 @@ part 'app_database.g.dart';
     LocalSettings,
     BlueskyPreferences,
     CustomThemes,
+    AnimationPreferencesTable,
   ],
   daos: [
     FeedContentDao,
@@ -57,6 +59,7 @@ part 'app_database.g.dart';
     LocalSettingsDao,
     BlueskyPreferencesDao,
     CustomThemeDao,
+    AnimationPreferencesDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {

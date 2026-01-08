@@ -153,11 +153,11 @@ Design:
 
 Tasks:
 - [x] Add animations package dependency
-- [ ] Create AnimationController service with Riverpod
+- [x] Create AnimationController service with Riverpod
       - Animation mode enum: full/reduced/minimal/system
       - Speed multiplier setting
       - Helper methods for duration calculation and mode resolution
-- [ ] Add Drift table for animation preferences persistence
+- [x] Add Drift table for animation preferences persistence
 - [ ] Build Settings → Accessibility page for animation controls
       - Mode selector (full/reduced/minimal/system)
       - Speed multiplier slider with preview

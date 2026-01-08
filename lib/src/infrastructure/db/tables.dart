@@ -369,3 +369,21 @@ class CustomThemes extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// Stores animation preferences for accessibility and motion control.
+///
+/// Uses key-value storage for flexibility, similar to LocalSettings.
+/// Keys: 'mode' (AnimationMode enum as string), 'speedMultiplier' (double as string).
+class AnimationPreferencesTable extends Table {
+  /// Setting key (e.g., 'mode', 'speedMultiplier').
+  TextColumn get key => text()();
+
+  /// Setting value (serialized as string).
+  TextColumn get value => text()();
+
+  /// When this setting was last updated.
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}

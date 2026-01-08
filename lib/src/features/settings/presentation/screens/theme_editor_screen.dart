@@ -177,21 +177,27 @@ class _ThemeEditorScreenState extends ConsumerState<ThemeEditorScreen> {
           ),
           const SizedBox(height: 16),
           _buildSection(context, 'BASE PACK', [
-            for (final pack in packs)
-              RadioListTile<String>(
-                title: Text(pack.name),
-                subtitle: pack.author != null ? Text('by ${pack.author}') : null,
-                value: pack.id,
-                groupValue: _basePackId,
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _basePackId = value;
-                      _isDirty = true;
-                    });
-                  }
-                },
+            RadioGroup<String>(
+              groupValue: _basePackId,
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _basePackId = value;
+                    _isDirty = true;
+                  });
+                }
+              },
+              child: Column(
+                children: [
+                  for (final pack in packs)
+                    RadioListTile<String>(
+                      title: Text(pack.name),
+                      subtitle: pack.author != null ? Text('by ${pack.author}') : null,
+                      value: pack.id,
+                    ),
+                ],
               ),
+            ),
           ]),
           const Divider(),
           _buildSection(context, 'COLOR OVERRIDES', [
@@ -252,21 +258,27 @@ class _ThemeEditorScreenState extends ConsumerState<ThemeEditorScreen> {
           ]),
           const Divider(),
           _buildSection(context, 'TYPOGRAPHY SCALE', [
-            for (final scale in TypographyScale.values)
-              RadioListTile<TypographyScale>(
-                title: Text(scale.name.toUpperCase()),
-                subtitle: Text('${(scale.scaleFactor * 100).toInt()}%'),
-                value: scale,
-                groupValue: _typographyScale,
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _typographyScale = value;
-                      _isDirty = true;
-                    });
-                  }
-                },
+            RadioGroup<TypographyScale>(
+              groupValue: _typographyScale,
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _typographyScale = value;
+                    _isDirty = true;
+                  });
+                }
+              },
+              child: Column(
+                children: [
+                  for (final scale in TypographyScale.values)
+                    RadioListTile<TypographyScale>(
+                      title: Text(scale.name.toUpperCase()),
+                      subtitle: Text('${(scale.scaleFactor * 100).toInt()}%'),
+                      value: scale,
+                    ),
+                ],
               ),
+            ),
           ]),
           const Divider(),
           _buildSection(context, 'PREVIEW', [
