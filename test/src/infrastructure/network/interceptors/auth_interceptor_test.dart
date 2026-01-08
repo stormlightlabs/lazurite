@@ -44,7 +44,7 @@ void main() {
         expect(response.statusCode, equals(200));
       });
 
-      test('does not attach token for non-authenticated requests', () async {
+      test('attaches token even for non-requiresAuth requests if session available', () async {
         final dio = Dio(BaseOptions(baseUrl: 'https://test.api'));
         final adapter = DioAdapter(dio: dio);
 
@@ -63,7 +63,7 @@ void main() {
 
         final response = await dio.get('/public');
         expect(response.statusCode, equals(200));
-        expect(sessionRequested, isFalse);
+        expect(sessionRequested, isTrue);
       });
 
       test('handles null session gracefully', () async {
@@ -118,7 +118,7 @@ void main() {
         expect(options.headers['Authorization'], isNull);
       });
 
-      test('skips auth when requiresAuth is false', () async {
+      test('attaches auth even when requiresAuth is false if session available', () async {
         final interceptor = AuthInterceptor(
           getSession: () async => _createTestSession(),
           refreshSession: () async => _createTestSession(accessJwt: 'refreshed'),
@@ -128,7 +128,8 @@ void main() {
 
         await interceptor.onRequest(options, _NoOpRequestHandler());
 
-        expect(options.headers['Authorization'], isNull);
+        expect(options.headers['Authorization'], isNotNull);
+        expect(options.headers['Authorization'], startsWith('DPoP'));
       });
     });
 

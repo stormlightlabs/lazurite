@@ -173,76 +173,70 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
               ],
             ),
           ),
-          body: NestedScrollView(
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                SliverToBoxAdapter(
-                  child: ProfileHeader(
-                    profile: profile,
-                    onFollowersPressed: () {
-                      final encodedDid = Uri.encodeComponent(profile.did);
-                      context.push('/profile/followers/$encodedDid');
-                    },
-                    onFollowingPressed: () {
-                      final encodedDid = Uri.encodeComponent(profile.did);
-                      context.push('/profile/following/$encodedDid');
-                    },
-                    followButton: widget.isCurrentUser ? null : _followButton(profile),
-                  ),
-                ),
-              ];
+          body: RefreshIndicator(
+            onRefresh: () async {
+              await ref.read(profileProvider(widget.did).notifier).refresh();
+              await ref.read(authorFeedProvider(widget.did).notifier).refresh();
             },
-            body: feedAsync.when(
-              data: (items) {
-                return TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _PostsTab(
-                      items: items
-                          .where(
-                            (item) =>
-                                !item.isReply &&
-                                (profile.pinnedPostUri == null ||
-                                    item.uri != profile.pinnedPostUri),
-                          )
-                          .toList(),
-                      pinnedPostUri: profile.pinnedPostUri,
-                      hasMore: hasMore,
-                      isLoading: false,
-                      onLoadMore: () =>
-                          ref.read(authorFeedProvider(widget.did).notifier).loadMore(),
-                      onRefresh: () async {
-                        await ref.read(profileProvider(widget.did).notifier).refresh();
-                        await ref.read(authorFeedProvider(widget.did).notifier).refresh();
+            child: NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) {
+                return [
+                  SliverToBoxAdapter(
+                    child: ProfileHeader(
+                      profile: profile,
+                      onFollowersPressed: () {
+                        final encodedDid = Uri.encodeComponent(profile.did);
+                        context.push('/profile/followers/$encodedDid');
                       },
-                    ),
-                    RepliesTab(
-                      items: items,
-                      hasMore: hasMore,
-                      isLoading: false,
-                      onLoadMore: () =>
-                          ref.read(authorFeedProvider(widget.did).notifier).loadMore(),
-                      onRefresh: () async {
-                        await ref.read(profileProvider(widget.did).notifier).refresh();
-                        await ref.read(authorFeedProvider(widget.did).notifier).refresh();
+                      onFollowingPressed: () {
+                        final encodedDid = Uri.encodeComponent(profile.did);
+                        context.push('/profile/following/$encodedDid');
                       },
+                      followButton: widget.isCurrentUser ? null : _followButton(profile),
                     ),
-                    MediaTab(
-                      items: items,
-                      hasMore: hasMore,
-                      isLoading: false,
-                      onLoadMore: () =>
-                          ref.read(authorFeedProvider(widget.did).notifier).loadMore(),
-                      onRefresh: () async {
-                        await ref.read(profileProvider(widget.did).notifier).refresh();
-                        await ref.read(authorFeedProvider(widget.did).notifier).refresh();
-                      },
-                    ),
-                  ],
-                );
+                  ),
+                ];
               },
-              loading: () => const LoadingView(),
-              error: (err, _) => Center(child: Text('Error loading posts: $err')),
+              body: feedAsync.when(
+                data: (items) {
+                  return TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _PostsTab(
+                        items: items
+                            .where(
+                              (item) =>
+                                  !item.isReply &&
+                                  (profile.pinnedPostUri == null ||
+                                      item.uri != profile.pinnedPostUri),
+                            )
+                            .toList(),
+                        pinnedPostUri: profile.pinnedPostUri,
+                        hasMore: hasMore,
+                        isLoading: false,
+                        onLoadMore: () =>
+                            ref.read(authorFeedProvider(widget.did).notifier).loadMore(),
+                      ),
+                      RepliesTab(
+                        items: items,
+                        hasMore: hasMore,
+                        isLoading: false,
+                        onLoadMore: () =>
+                            ref.read(authorFeedProvider(widget.did).notifier).loadMore(),
+                      ),
+                      MediaTab(
+                        items: items,
+                        hasMore: hasMore,
+                        isLoading: false,
+                        onLoadMore: () =>
+                            ref.read(authorFeedProvider(widget.did).notifier).loadMore(),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const LoadingView(),
+                error: (err, _) => Center(child: Text('Error loading posts: $err')),
+              ),
             ),
           ),
         );
@@ -271,7 +265,6 @@ class _PostsTab extends StatefulWidget {
     required this.hasMore,
     required this.isLoading,
     required this.onLoadMore,
-    required this.onRefresh,
   });
 
   final List<FeedItem> items;
@@ -279,7 +272,6 @@ class _PostsTab extends StatefulWidget {
   final bool hasMore;
   final bool isLoading;
   final VoidCallback onLoadMore;
-  final Future<void> Function() onRefresh;
 
   @override
   State<_PostsTab> createState() => _PostsTabState();
@@ -297,55 +289,50 @@ class _PostsTabState extends State<_PostsTab> with AutomaticKeepAliveClientMixin
       return const Center(child: Text('No posts yet'));
     }
 
-    return RefreshIndicator(
-      onRefresh: widget.onRefresh,
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount:
-            widget.items.length +
-            (widget.hasMore ? 1 : 0) +
-            (widget.pinnedPostUri != null ? 1 : 0),
-        itemBuilder: (context, index) {
-          int itemIndex = index;
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount:
+          widget.items.length + (widget.hasMore ? 1 : 0) + (widget.pinnedPostUri != null ? 1 : 0),
+      itemBuilder: (context, index) {
+        int itemIndex = index;
 
-          if (widget.pinnedPostUri != null) {
-            if (index == 0) {
-              return PinnedPostCard(widget.pinnedPostUri!);
-            }
-            itemIndex--;
+        if (widget.pinnedPostUri != null) {
+          if (index == 0) {
+            return PinnedPostCard(widget.pinnedPostUri!);
           }
+          itemIndex--;
+        }
 
-          if (itemIndex >= widget.items.length) {
-            widget.onLoadMore();
-            return const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
-
-          final item = widget.items[itemIndex];
-          return FeedPostCard(
-            uri: item.uri,
-            authorDid: item.authorDid,
-            authorHandle: item.authorHandle,
-            authorDisplayName: item.authorDisplayName,
-            authorAvatar: item.authorAvatar,
-            text: item.text,
-            indexedAt: item.indexedAt,
-            replyCount: item.replyCount,
-            repostCount: item.repostCount,
-            likeCount: item.likeCount,
-            onTap: () {
-              final encodedUri = Uri.encodeComponent(item.uri);
-              GoRouter.of(context).push('/home/t/$encodedUri');
-            },
-            onAvatarTap: () {
-              final encodedDid = Uri.encodeComponent(item.authorDid);
-              GoRouter.of(context).push('/home/u/$encodedDid');
-            },
+        if (itemIndex >= widget.items.length) {
+          widget.onLoadMore();
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
           );
-        },
-      ),
+        }
+
+        final item = widget.items[itemIndex];
+        return FeedPostCard(
+          uri: item.uri,
+          authorDid: item.authorDid,
+          authorHandle: item.authorHandle,
+          authorDisplayName: item.authorDisplayName,
+          authorAvatar: item.authorAvatar,
+          text: item.text,
+          indexedAt: item.indexedAt,
+          replyCount: item.replyCount,
+          repostCount: item.repostCount,
+          likeCount: item.likeCount,
+          onTap: () {
+            final encodedUri = Uri.encodeComponent(item.uri);
+            GoRouter.of(context).push('/home/t/$encodedUri');
+          },
+          onAvatarTap: () {
+            final encodedDid = Uri.encodeComponent(item.authorDid);
+            GoRouter.of(context).push('/home/u/$encodedDid');
+          },
+        );
+      },
     );
   }
 }

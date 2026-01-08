@@ -17,8 +17,7 @@ class GlobalComposeFab extends StatelessWidget {
 
     return FloatingActionButton.extended(
       onPressed: () => context.push(AppRoutes.compose),
-      icon: const Icon(Icons.edit_outlined),
-      label: const Text('Post'),
+      label: const Icon(Icons.edit_outlined),
       backgroundColor: theme.colorScheme.primary,
       foregroundColor: theme.colorScheme.onPrimary,
       elevation: 6,

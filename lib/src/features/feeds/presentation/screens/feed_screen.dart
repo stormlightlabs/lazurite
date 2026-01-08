@@ -4,6 +4,8 @@ import 'package:lazurite/src/core/animations/animation_utils.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/core/widgets/pull_to_refresh_wrapper.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_controller.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_notifier.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
@@ -25,6 +27,7 @@ class FeedScreen extends ConsumerStatefulWidget {
 class _FeedScreenState extends ConsumerState<FeedScreen> {
   final ScrollController _scrollController = ScrollController();
   String? _lastRequestedFeed;
+  bool _isFeedSelectorExpanded = true;
 
   @override
   void initState() {
@@ -49,6 +52,18 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   Widget build(BuildContext context) {
     ref.watch(feedContentCleanupControllerProvider);
     final activeFeedUri = ref.watch(activeFeedProvider);
+    final authState = ref.watch(authProvider);
+    final isAuthenticated = authState is AuthStateAuthenticated;
+
+    // For authenticated users, wait for pinned feeds to load before showing content
+    // This prevents briefly showing the wrong feed during initialization
+    if (isAuthenticated) {
+      final pinnedFeedsAsync = ref.watch(pinnedFeedsProvider);
+      if (pinnedFeedsAsync.isLoading) {
+        return const Scaffold(body: LoadingView(key: ValueKey('pinned-feeds-loading')));
+      }
+    }
+
     final feedContentState = ref.watch(feedContentProvider(activeFeedUri));
     _ensureFeedLoaded(activeFeedUri);
 
@@ -66,16 +81,46 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   SliverAppBar(
-                    title: Text('Lazurite', style: Theme.of(context).textTheme.displaySmall),
+                    title: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Lazurite', style: Theme.of(context).textTheme.displaySmall),
+                        if (isAuthenticated)
+                          ScaleButton(
+                            child: IconButton(
+                              icon: Icon(
+                                _isFeedSelectorExpanded
+                                    ? Icons.keyboard_arrow_up
+                                    : Icons.keyboard_arrow_down,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isFeedSelectorExpanded = !_isFeedSelectorExpanded;
+                                });
+                              },
+                              tooltip: _isFeedSelectorExpanded ? 'Hide feeds' : 'Show feeds',
+                            ),
+                          ),
+                      ],
+                    ),
                     floating: true,
                     snap: true,
-                    bottom: const PreferredSize(
-                      preferredSize: Size.fromHeight(56),
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: 8.0),
-                        child: FeedSelectorTab(),
-                      ),
-                    ),
+                    bottom: isAuthenticated
+                        ? PreferredSize(
+                            preferredSize: Size.fromHeight(_isFeedSelectorExpanded ? 56 : 0),
+                            child: AnimatedSize(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeInOut,
+                              child: _isFeedSelectorExpanded
+                                  ? const Padding(
+                                      padding: EdgeInsets.only(bottom: 8.0),
+                                      child: FeedSelectorTab(),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          )
+                        : null,
                   ),
                   if (items.isEmpty)
                     const SliverFillRemaining(

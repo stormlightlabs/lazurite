@@ -11,8 +11,9 @@ import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart'
 
 /// Tab widget for selecting between pinned feeds.
 ///
-/// For authenticated users, shows their pinned feeds plus a "Manage Feeds" button.
-/// For unauthenticated users, shows only the "Discover" feed chip.
+/// For authenticated users, shows their pinned feeds with a persistent
+/// "Manage Feeds" button.
+/// For unauthenticated users, hides the feed selector entirely.
 class FeedSelectorTab extends ConsumerWidget {
   const FeedSelectorTab({super.key});
 
@@ -22,35 +23,20 @@ class FeedSelectorTab extends ConsumerWidget {
     final isAuthenticated = authState is AuthStateAuthenticated;
 
     if (!isAuthenticated) {
-      return _buildUnauthenticatedView(context, ref);
+      return _buildUnauthenticatedView();
     }
 
     return _buildAuthenticatedView(context, ref);
   }
 
   /// Builds the feed selector for unauthenticated users.
-  /// Shows only the "Discover" chip with no management options.
-  Widget _buildUnauthenticatedView(BuildContext context, WidgetRef ref) {
-    return SizedBox(
-      height: 48,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            FilterChip(
-              showCheckmark: false,
-              label: const Text('Discover'),
-              selected: true,
-              onSelected: (_) {},
-            ),
-          ],
-        ),
-      ),
-    );
+  /// Returns an empty widget since unauthenticated users don't need feed selection.
+  Widget _buildUnauthenticatedView() {
+    return const SizedBox.shrink();
   }
 
   /// Builds the feed selector for authenticated users.
-  /// Shows pinned feeds and a "Manage Feeds" button.
+  /// Shows pinned feeds with a persistent "Manage Feeds" button.
   Widget _buildAuthenticatedView(BuildContext context, WidgetRef ref) {
     final pinnedFeedsAsync = ref.watch(pinnedFeedsProvider);
     final activeFeedUri = ref.watch(activeFeedProvider);
@@ -73,69 +59,75 @@ class FeedSelectorTab extends ConsumerWidget {
 
         return SizedBox(
           height: 48,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            itemCount: displayFeeds.length + 1,
-            separatorBuilder: (context, index) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              if (index == displayFeeds.length) {
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Tooltip(
-                      message: 'Manage Feeds',
-                      child: ScaleButton(
-                        child: IconButton(
-                          icon: const Icon(Icons.tune),
-                          onPressed: () {
-                            context.push(AppRoutes.feeds);
-                          },
-                        ),
+          child: Row(
+            children: [
+              // Scrollable feed chips
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.only(left: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: displayFeeds.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final feed = displayFeeds[index];
+                    final isActive = feed.uri == activeFeedUri;
+
+                    return FilterChip(
+                      showCheckmark: false,
+                      label: Text(feed.displayName),
+                      avatar: feed.avatar != null
+                          ? CircleAvatar(backgroundImage: NetworkImage(feed.avatar!))
+                          : null,
+                      selected: isActive,
+                      onSelected: (selected) {
+                        if (selected) {
+                          ref.read(activeFeedProvider.notifier).switchFeed(feed.uri);
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+
+              // Persistent manage feeds button
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Tooltip(
+                    message: 'Manage Feeds',
+                    child: ScaleButton(
+                      child: IconButton(
+                        icon: const Icon(Icons.tune),
+                        onPressed: () {
+                          context.push(AppRoutes.feeds);
+                        },
                       ),
                     ),
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final hasPending =
-                            ref.watch(hasPendingSyncProvider).asData?.value ?? false;
-                        if (hasPending) {
-                          return Positioned(
-                            right: 8,
-                            top: 8,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Colors.blue,
-                                shape: BoxShape.circle,
-                              ),
+                  ),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final hasPending = ref.watch(hasPendingSyncProvider).asData?.value ?? false;
+                      if (hasPending) {
+                        return Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
                             ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  ],
-                );
-              }
-
-              final feed = displayFeeds[index];
-              final isActive = feed.uri == activeFeedUri;
-
-              return FilterChip(
-                showCheckmark: false,
-                label: Text(feed.displayName),
-                avatar: feed.avatar != null
-                    ? CircleAvatar(backgroundImage: NetworkImage(feed.avatar!))
-                    : null,
-                selected: isActive,
-                onSelected: (selected) {
-                  if (selected) {
-                    ref.read(activeFeedProvider.notifier).switchFeed(feed.uri);
-                  }
-                },
-              );
-            },
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
         );
       },

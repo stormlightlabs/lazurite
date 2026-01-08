@@ -187,7 +187,6 @@ void main() {
     test('authenticated read endpoints use pds host', () {
       final authReads = [
         'app.bsky.feed.getTimeline',
-        'app.bsky.feed.getFeed',
         'app.bsky.feed.searchPosts',
         'app.bsky.notification.listNotifications',
         'app.bsky.actor.getPreferences',

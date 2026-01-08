@@ -133,43 +133,46 @@ class AuthInterceptor extends Interceptor {
   @override
   Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     final requiresAuth = options.extra[requiresAuthKey] == true;
+    var session = await getSession();
 
-    if (requiresAuth) {
-      var session = await getSession();
-
-      if (session != null && session.isNearExpiration && !session.isExpired) {
-        _logger.debug('Token near expiration, proactively refreshing');
-        final refreshed = await _performRefresh();
-        if (refreshed != null) {
-          session = refreshed;
-        } else {
-          _logger.warning('Proactive refresh failed, continuing with existing token');
-        }
+    // Proactively refresh if token is near expiration
+    if (session != null && session.isNearExpiration && !session.isExpired) {
+      _logger.debug('Token near expiration, proactively refreshing');
+      final refreshed = await _performRefresh();
+      if (refreshed != null) {
+        session = refreshed;
+      } else {
+        _logger.warning('Proactive refresh failed, continuing with existing token');
       }
+    }
 
-      if (session != null) {
-        final token = session.accessJwt;
-        options.headers['Authorization'] = 'DPoP $token';
+    // Attach auth headers if session is available
+    // (required for requiresAuth endpoints, optional otherwise)
+    if (session != null) {
+      final token = session.accessJwt;
+      options.headers['Authorization'] = 'DPoP $token';
 
-        try {
-          final dpopKey = JsonWebKey.fromJson(session.dpopKey);
-          final url = options.uri.toString();
-          final method = options.method;
-          final nonce = _nonceStore.get(session.pdsUrl);
+      try {
+        final dpopKey = JsonWebKey.fromJson(session.dpopKey);
+        final url = options.uri.toString();
+        final method = options.method;
+        final nonce = _nonceStore.get(session.pdsUrl);
 
-          final proof = await DPoPUtils.createProof(
-            url: url,
-            method: method,
-            privateKey: dpopKey,
-            accessToken: token,
-            nonce: nonce,
-          );
+        final proof = await DPoPUtils.createProof(
+          url: url,
+          method: method,
+          privateKey: dpopKey,
+          accessToken: token,
+          nonce: nonce,
+        );
 
-          options.headers['DPoP'] = proof;
-        } catch (e) {
-          _logger.warning('Failed to create DPoP proof for request', e);
-        }
+        options.headers['DPoP'] = proof;
+      } catch (e) {
+        _logger.warning('Failed to create DPoP proof for request', e);
       }
+    } else if (requiresAuth) {
+      // Fail early if auth is required but no session exists
+      _logger.warning('Request requires auth but no session available');
     }
 
     handler.next(options);

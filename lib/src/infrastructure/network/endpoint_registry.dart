@@ -62,8 +62,8 @@ class EndpointRegistry {
     'app.bsky.feed.getFeed': const EndpointMeta(
       nsid: 'app.bsky.feed.getFeed',
       method: HttpMethod.get,
-      hostKind: HostKind.pds,
-      requiresAuth: true,
+      hostKind: HostKind.publicApi,
+      requiresAuth: false,
     ),
     'app.bsky.feed.getFeedGenerator': const EndpointMeta(
       nsid: 'app.bsky.feed.getFeedGenerator',

@@ -10,7 +10,6 @@ class RepliesTab extends StatefulWidget {
     required this.hasMore,
     required this.isLoading,
     required this.onLoadMore,
-    required this.onRefresh,
     super.key,
   });
 
@@ -18,7 +17,6 @@ class RepliesTab extends StatefulWidget {
   final bool hasMore;
   final bool isLoading;
   final VoidCallback onLoadMore;
-  final Future<void> Function() onRefresh;
 
   @override
   State<RepliesTab> createState() => _RepliesTabState();
@@ -61,43 +59,40 @@ class _RepliesTabState extends State<RepliesTab> with AutomaticKeepAliveClientMi
       return const Center(child: Text('No replies yet'));
     }
 
-    return RefreshIndicator(
-      onRefresh: widget.onRefresh,
-      child: ListView.builder(
-        controller: _scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: replies.length + (widget.hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index >= replies.length) {
-            return const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
-
-          final item = replies[index];
-          return FeedPostCard(
-            uri: item.uri,
-            authorDid: item.authorDid,
-            authorHandle: item.authorHandle,
-            authorDisplayName: item.authorDisplayName,
-            authorAvatar: item.authorAvatar,
-            text: item.text,
-            indexedAt: item.indexedAt,
-            replyCount: item.replyCount,
-            repostCount: item.repostCount,
-            likeCount: item.likeCount,
-            onTap: () {
-              final encodedUri = Uri.encodeComponent(item.uri);
-              GoRouter.of(context).push('/home/t/$encodedUri');
-            },
-            onAvatarTap: () {
-              final encodedDid = Uri.encodeComponent(item.authorDid);
-              GoRouter.of(context).push('/home/u/$encodedDid');
-            },
+    return ListView.builder(
+      controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: replies.length + (widget.hasMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index >= replies.length) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
           );
-        },
-      ),
+        }
+
+        final item = replies[index];
+        return FeedPostCard(
+          uri: item.uri,
+          authorDid: item.authorDid,
+          authorHandle: item.authorHandle,
+          authorDisplayName: item.authorDisplayName,
+          authorAvatar: item.authorAvatar,
+          text: item.text,
+          indexedAt: item.indexedAt,
+          replyCount: item.replyCount,
+          repostCount: item.repostCount,
+          likeCount: item.likeCount,
+          onTap: () {
+            final encodedUri = Uri.encodeComponent(item.uri);
+            GoRouter.of(context).push('/home/t/$encodedUri');
+          },
+          onAvatarTap: () {
+            final encodedDid = Uri.encodeComponent(item.authorDid);
+            GoRouter.of(context).push('/home/u/$encodedDid');
+          },
+        );
+      },
     );
   }
 }

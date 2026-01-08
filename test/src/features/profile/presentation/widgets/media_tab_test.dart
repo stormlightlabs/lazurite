@@ -46,7 +46,6 @@ void main() {
           hasMore: hasMore,
           isLoading: isLoading,
           onLoadMore: () {},
-          onRefresh: () async {},
         ),
       ),
     );
