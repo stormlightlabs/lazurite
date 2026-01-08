@@ -15,6 +15,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../../../../helpers/mocks.dart';
 
 void main() {
+  const ownerDid = 'did:web:tester';
   late MockFeedRepository mockFeedRepository;
   late MockFeedContentRepository mockFeedContentRepository;
 
@@ -51,12 +52,15 @@ void main() {
     ];
 
     when(
-      () => mockFeedContentRepository.watchFeedContent(feedKey: any(named: 'feedKey')),
+      () => mockFeedContentRepository.watchFeedContent(
+        feedKey: any(named: 'feedKey'),
+        ownerDid: ownerDid,
+      ),
     ).thenAnswer((_) => Stream.value(posts));
     when(
-      () => mockFeedContentRepository.fetchAndCacheFeed(feedUri: feedUri),
+      () => mockFeedContentRepository.fetchAndCacheFeed(feedUri: feedUri, ownerDid: ownerDid),
     ).thenAnswer((_) async {});
-    when(() => mockFeedRepository.watchAllFeeds()).thenAnswer((_) => Stream.value([]));
+    when(() => mockFeedRepository.watchAllFeeds(ownerDid)).thenAnswer((_) => Stream.value([]));
 
     await tester.pumpWidget(
       ProviderScope(
@@ -93,14 +97,17 @@ void main() {
     const feedUri = 'at://did:1/feed/test';
 
     when(
-      () => mockFeedContentRepository.watchFeedContent(feedKey: any(named: 'feedKey')),
+      () => mockFeedContentRepository.watchFeedContent(
+        feedKey: any(named: 'feedKey'),
+        ownerDid: ownerDid,
+      ),
     ).thenAnswer((_) => Stream.value([]));
     when(
-      () => mockFeedContentRepository.fetchAndCacheFeed(feedUri: feedUri),
+      () => mockFeedContentRepository.fetchAndCacheFeed(feedUri: feedUri, ownerDid: ownerDid),
     ).thenAnswer((_) async {});
-    when(() => mockFeedRepository.watchAllFeeds()).thenAnswer((_) => Stream.value([]));
+    when(() => mockFeedRepository.watchAllFeeds(ownerDid)).thenAnswer((_) => Stream.value([]));
     when(
-      () => mockFeedRepository.saveFeed(any(), pin: any(named: 'pin')),
+      () => mockFeedRepository.saveFeed(any(), ownerDid, pin: any(named: 'pin')),
     ).thenAnswer((_) async {});
 
     await tester.pumpWidget(
@@ -123,6 +130,6 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pump();
 
-    verify(() => mockFeedRepository.saveFeed(feedUri, pin: false)).called(1);
+    verify(() => mockFeedRepository.saveFeed(feedUri, ownerDid, pin: false)).called(1);
   });
 }

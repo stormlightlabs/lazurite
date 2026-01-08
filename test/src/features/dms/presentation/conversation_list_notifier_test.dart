@@ -23,7 +23,9 @@ void main() {
     });
 
     test('build watches conversations', () async {
-      when(() => mockRepository.watchConversations()).thenAnswer((_) => Stream.value([]));
+      when(
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+      ).thenAnswer((_) => Stream.value([]));
 
       final subscription = container.listen(conversationListProvider, (previous, next) {});
 
@@ -35,26 +37,37 @@ void main() {
       await container.read(conversationListProvider.future);
 
       expect(container.read(conversationListProvider).value, isEmpty);
-      verify(() => mockRepository.watchConversations()).called(1);
+      verify(() => mockRepository.watchConversations(any(named: 'ownerDid'))).called(1);
 
       subscription.close();
     });
 
     test('refresh fetches conversations', () async {
-      when(() => mockRepository.watchConversations()).thenAnswer((_) => Stream.value([]));
-      when(() => mockRepository.fetchConversations()).thenAnswer((_) async => 'cursor-1');
+      when(
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () => mockRepository.fetchConversations(ownerDid: any(named: 'ownerDid')),
+      ).thenAnswer((_) async => 'cursor-1');
 
       final notifier = container.read(conversationListProvider.notifier);
       await notifier.refresh();
 
-      verify(() => mockRepository.fetchConversations()).called(1);
+      verify(() => mockRepository.fetchConversations(ownerDid: any(named: 'ownerDid'))).called(1);
     });
 
     test('loadMore fetches conversations with cursor', () async {
-      when(() => mockRepository.watchConversations()).thenAnswer((_) => Stream.value([]));
-      when(() => mockRepository.fetchConversations()).thenAnswer((_) async => 'cursor-1');
       when(
-        () => mockRepository.fetchConversations(cursor: 'cursor-1'),
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () => mockRepository.fetchConversations(ownerDid: any(named: 'ownerDid')),
+      ).thenAnswer((_) async => 'cursor-1');
+      when(
+        () => mockRepository.fetchConversations(
+          ownerDid: any(named: 'ownerDid'),
+          cursor: 'cursor-1',
+        ),
       ).thenAnswer((_) async => 'cursor-2');
 
       final notifier = container.read(conversationListProvider.notifier);
@@ -63,17 +76,26 @@ void main() {
 
       await notifier.loadMore();
 
-      verify(() => mockRepository.fetchConversations(cursor: 'cursor-1')).called(1);
+      verify(
+        () => mockRepository.fetchConversations(
+          cursor: 'cursor-1',
+          ownerDid: any(named: 'ownerDid'),
+        ),
+      ).called(1);
     });
 
     test('acceptConversation calls repository', () async {
-      when(() => mockRepository.watchConversations()).thenAnswer((_) => Stream.value([]));
-      when(() => mockRepository.acceptConversation(any())).thenAnswer((_) async {});
+      when(
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () => mockRepository.acceptConversation(any(named: 'convoId'), any(named: 'ownerDid')),
+      ).thenAnswer((_) async {});
 
       final notifier = container.read(conversationListProvider.notifier);
       await notifier.acceptConversation('123');
 
-      verify(() => mockRepository.acceptConversation('123')).called(1);
+      verify(() => mockRepository.acceptConversation('123', any(named: 'ownerDid'))).called(1);
     });
   });
 }

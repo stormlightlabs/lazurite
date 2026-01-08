@@ -33,7 +33,7 @@ final class ConversationListNotifierProvider
   ConversationListNotifier create() => ConversationListNotifier();
 }
 
-String _$conversationListNotifierHash() => r'8a0c48fc15f890677f632249df5371a3ff84de0a';
+String _$conversationListNotifierHash() => r'3b6206fff5fb37531fefb0e602b40d1147f12c10';
 
 abstract class _$ConversationListNotifier extends $StreamNotifier<List<DmConversation>> {
   Stream<List<DmConversation>> build();

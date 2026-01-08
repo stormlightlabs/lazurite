@@ -19,47 +19,42 @@ class NotificationsSyncQueueDao extends DatabaseAccessor<AppDatabase>
     with _$NotificationsSyncQueueDaoMixin {
   NotificationsSyncQueueDao(super.db);
 
-  /// Enqueues a mark-as-seen operation.
+  /// Enqueues a mark-as-seen operation for a specific user.
   ///
   /// The [seenAt] timestamp marks all notifications up to that point as seen.
-  Future<int> enqueueMarkSeen(DateTime seenAt) {
+  Future<int> enqueueMarkSeen(DateTime seenAt, String ownerDid) {
     return into(notificationsSyncQueue).insert(
       NotificationsSyncQueueCompanion.insert(
         type: 'mark_seen',
         seenAt: seenAt.toIso8601String(),
+        ownerDid: ownerDid,
         createdAt: DateTime.now(),
       ),
     );
   }
 
-  /// Gets all retryable items (retryCount < [kMaxNotificationSyncRetries]).
-  ///
-  /// Returns items ordered by creation time (oldest first).
-  Future<List<NotificationsSyncQueueData>> getRetryableItems() {
-    return (select(notificationsSyncQueue)
-          ..where((t) => t.retryCount.isSmallerThanValue(kMaxNotificationSyncRetries))
-          ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
-        .get();
+  /// Get the latest 'seenAt' timestamp from the queue for a user.
+  Future<DateTime?> getLatestSeenAt(String ownerDid) async {
+    final query = select(notificationsSyncQueue)
+      ..where((t) => t.ownerDid.equals(ownerDid))
+      ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+      ..limit(1);
+
+    final item = await query.getSingleOrNull();
+    if (item == null) return null;
+    return DateTime.tryParse(item.seenAt);
   }
 
-  /// Gets the latest seenAt timestamp from the queue.
-  ///
-  /// Returns null if queue is empty. This allows batching multiple failed
-  /// operations into a single retry with the most recent timestamp.
-  Future<DateTime?> getLatestSeenAt() async {
-    final items = await getRetryableItems();
-    if (items.isEmpty) {
-      return null;
-    }
-
-    DateTime? latest;
-    for (final item in items) {
-      final timestamp = DateTime.parse(item.seenAt);
-      if (latest == null || timestamp.isAfter(latest)) {
-        latest = timestamp;
-      }
-    }
-    return latest;
+  /// Get items that can be retried for a user.
+  Future<List<NotificationsSyncQueueData>> getRetryableItems(String ownerDid) {
+    return (select(notificationsSyncQueue)
+          ..where(
+            (t) =>
+                t.ownerDid.equals(ownerDid) &
+                t.retryCount.isSmallerThanValue(kMaxNotificationSyncRetries),
+          )
+          ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
+        .get();
   }
 
   /// Increments the retry count for a specific item.
@@ -76,13 +71,16 @@ class NotificationsSyncQueueDao extends DatabaseAccessor<AppDatabase>
     return (delete(notificationsSyncQueue)..where((t) => t.id.equals(id))).go();
   }
 
-  /// Deletes all items with seenAt <= the specified timestamp.
+  /// Deletes all items with seenAt <= the specified timestamp for a specific user.
   ///
   /// Used after successfully syncing to remove obsolete queue items.
-  Future<int> deleteItemsUpTo(DateTime seenAt) {
-    return (delete(
-      notificationsSyncQueue,
-    )..where((t) => t.seenAt.isSmallerOrEqualValue(seenAt.toIso8601String()))).go();
+  Future<int> deleteItemsUpTo(DateTime seenAt, String ownerDid) {
+    return (delete(notificationsSyncQueue)..where(
+          (t) =>
+              t.seenAt.isSmallerOrEqualValue(seenAt.toIso8601String()) &
+              t.ownerDid.equals(ownerDid),
+        ))
+        .go();
   }
 
   /// Cleans up old permanently failed items.
@@ -98,8 +96,8 @@ class NotificationsSyncQueueDao extends DatabaseAccessor<AppDatabase>
         .go();
   }
 
-  /// Clears the entire queue.
-  Future<int> clearQueue() {
-    return delete(notificationsSyncQueue).go();
+  /// Clears the entire queue for a specific user.
+  Future<int> clearQueue(String ownerDid) {
+    return (delete(notificationsSyncQueue)..where((t) => t.ownerDid.equals(ownerDid))).go();
   }
 }

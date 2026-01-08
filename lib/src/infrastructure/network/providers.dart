@@ -39,7 +39,7 @@ Dio? dioPds(Ref ref) {
     onSessionInvalidated: () {
       try {
         final db = ref.read(appDatabaseProvider);
-        db.feedContentDao.clearFeedContent('home');
+        db.feedContentDao.clearFeedContent('home', session.did);
       } catch (e) {
         /* Ignore if database not available */
       }

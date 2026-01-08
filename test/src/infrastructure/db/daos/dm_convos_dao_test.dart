@@ -7,6 +7,7 @@ import 'package:lazurite/src/infrastructure/db/daos/dm_convos_dao.dart';
 void main() {
   late AppDatabase database;
   late DmConvosDao dao;
+  const ownerDid = 'did:web:tester';
 
   setUp(() {
     database = AppDatabase(NativeDatabase.memory());
@@ -35,12 +36,13 @@ void main() {
             lastMessageText: const Value('Hello!'),
             lastMessageAt: Value(DateTime.now()),
             cachedAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         ];
 
         await dao.insertConvosBatch(newConvos: convos, newProfiles: profiles);
 
-        final results = await dao.watchConversations().first;
+        final results = await dao.watchConversations(ownerDid).first;
         expect(results, hasLength(1));
         expect(results.first.convo.convoId, 'convo1');
         expect(results.first.convo.lastMessageText, 'Hello!');
@@ -59,6 +61,7 @@ void main() {
           lastMessageText: const Value('First message'),
           unreadCount: const Value(1),
           cachedAt: DateTime.now(),
+          ownerDid: ownerDid,
         );
 
         await dao.insertConvosBatch(newConvos: [convo1], newProfiles: profiles);
@@ -69,11 +72,12 @@ void main() {
           lastMessageText: const Value('Updated message'),
           unreadCount: const Value(3),
           cachedAt: DateTime.now(),
+          ownerDid: ownerDid,
         );
 
         await dao.insertConvosBatch(newConvos: [convo2], newProfiles: profiles);
 
-        final results = await dao.watchConversations().first;
+        final results = await dao.watchConversations(ownerDid).first;
         expect(results, hasLength(1));
         expect(results.first.convo.lastMessageText, 'Updated message');
         expect(results.first.convo.unreadCount, 3);
@@ -93,24 +97,27 @@ void main() {
             membersJson: '["did:plc:member1"]',
             lastMessageAt: Value(now.subtract(const Duration(hours: 2))),
             cachedAt: now,
+            ownerDid: ownerDid,
           ),
           DmConvosCompanion.insert(
             convoId: 'convo2',
             membersJson: '["did:plc:member1"]',
             lastMessageAt: Value(now),
             cachedAt: now,
+            ownerDid: ownerDid,
           ),
           DmConvosCompanion.insert(
             convoId: 'convo3',
             membersJson: '["did:plc:member1"]',
             lastMessageAt: Value(now.subtract(const Duration(hours: 1))),
             cachedAt: now,
+            ownerDid: ownerDid,
           ),
         ];
 
         await dao.insertConvosBatch(newConvos: convos, newProfiles: profiles);
 
-        final results = await dao.watchConversations().first;
+        final results = await dao.watchConversations(ownerDid).first;
         expect(results, hasLength(3));
         expect(results[0].convo.convoId, 'convo2');
         expect(results[1].convo.convoId, 'convo3');
@@ -130,18 +137,19 @@ void main() {
               convoId: 'convo1',
               membersJson: '["did:plc:member1"]',
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
           ],
           newProfiles: profiles,
         );
 
-        final result = await dao.getConvo('convo1');
+        final result = await dao.getConvo('convo1', ownerDid);
         expect(result, isNotNull);
         expect(result!.convo.convoId, 'convo1');
       });
 
       test('returns null for non-existent conversation', () async {
-        final result = await dao.getConvo('nonexistent');
+        final result = await dao.getConvo('nonexistent', ownerDid);
         expect(result, isNull);
       });
     });
@@ -159,14 +167,20 @@ void main() {
               membersJson: '["did:plc:member1"]',
               unreadCount: const Value(5),
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
           ],
           newProfiles: profiles,
         );
 
-        await dao.updateReadState(convoId: 'convo1', lastReadMessageId: 'msg123', unreadCount: 0);
+        await dao.updateReadState(
+          convoId: 'convo1',
+          lastReadMessageId: 'msg123',
+          unreadCount: 0,
+          ownerDid: ownerDid,
+        );
 
-        final result = await dao.getConvo('convo1');
+        final result = await dao.getConvo('convo1', ownerDid);
         expect(result!.convo.lastReadMessageId, 'msg123');
         expect(result.convo.unreadCount, 0);
       });
@@ -185,14 +199,15 @@ void main() {
               membersJson: '["did:plc:member1"]',
               isAccepted: const Value(false),
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
           ],
           newProfiles: profiles,
         );
 
-        await dao.acceptConvo('convo1');
+        await dao.acceptConvo('convo1', ownerDid);
 
-        final result = await dao.getConvo('convo1');
+        final result = await dao.getConvo('convo1', ownerDid);
         expect(result!.convo.isAccepted, isTrue);
       });
     });
@@ -209,19 +224,21 @@ void main() {
               convoId: 'convo1',
               membersJson: '["did:plc:member1"]',
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
             DmConvosCompanion.insert(
               convoId: 'convo2',
               membersJson: '["did:plc:member1"]',
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
           ],
           newProfiles: profiles,
         );
 
-        await dao.clearConversations();
+        await dao.clearConversations(ownerDid);
 
-        final results = await dao.watchConversations().first;
+        final results = await dao.watchConversations(ownerDid).first;
         expect(results, isEmpty);
       });
     });

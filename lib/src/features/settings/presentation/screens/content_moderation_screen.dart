@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 
 import '../../application/settings_providers.dart';
 import '../../domain/bluesky_preferences.dart';
@@ -202,7 +204,10 @@ class ContentModerationScreen extends ConsumerWidget {
 
   Future<void> _updateAdultContent(WidgetRef ref, bool enabled) async {
     final repo = ref.read(blueskyPreferencesRepositoryProvider);
-    await repo.updateAdultContentPref(AdultContentPref(enabled: enabled));
+    final authState = ref.read(authProvider);
+    if (authState is AuthStateAuthenticated) {
+      await repo.updateAdultContentPref(AdultContentPref(enabled: enabled), authState.session.did);
+    }
   }
 
   Future<void> _updateLabelVisibility(
@@ -222,7 +227,13 @@ class ContentModerationScreen extends ConsumerWidget {
     updatedItems.add(ContentLabelPref(label: labelId, visibility: visibility));
 
     final repo = ref.read(blueskyPreferencesRepositoryProvider);
-    await repo.updateContentLabelPrefs(ContentLabelPrefs(items: updatedItems));
+    final authState = ref.read(authProvider);
+    if (authState is AuthStateAuthenticated) {
+      await repo.updateContentLabelPrefs(
+        ContentLabelPrefs(items: updatedItems),
+        authState.session.did,
+      );
+    }
   }
 }
 

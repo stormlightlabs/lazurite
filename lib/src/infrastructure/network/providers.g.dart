@@ -101,7 +101,7 @@ final class DioPdsProvider extends $FunctionalProvider<Dio?, Dio?, Dio?> with $P
   }
 }
 
-String _$dioPdsHash() => r'd1e9b53f22f3cdf12fa0cafcbc26908b1f10b36d';
+String _$dioPdsHash() => r'58b56b8b3713905fbe532dff9f7e5e80f3c47288';
 
 /// Provides the XRPC client for making API requests.
 ///

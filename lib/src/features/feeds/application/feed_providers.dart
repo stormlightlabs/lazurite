@@ -64,8 +64,15 @@ class SavedFeedData {
 class AllFeedsNotifier extends _$AllFeedsNotifier {
   @override
   Stream<List<SavedFeedData>> build() {
+    final authState = ref.watch(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) return const Stream.empty();
+
     final repository = ref.watch(feedRepositoryProvider);
-    return repository.watchAllFeeds().map((list) => list.map(SavedFeedData.fromEntity).toList());
+    return repository
+        .watchAllFeeds(ownerDid)
+        .map((list) => list.map(SavedFeedData.fromEntity).toList());
   }
 }
 
@@ -74,10 +81,15 @@ class AllFeedsNotifier extends _$AllFeedsNotifier {
 class PinnedFeedsNotifier extends _$PinnedFeedsNotifier {
   @override
   Stream<List<SavedFeedData>> build() {
+    final authState = ref.watch(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) return const Stream.empty();
+
     final repository = ref.watch(feedRepositoryProvider);
-    return repository.watchPinnedFeeds().map(
-      (list) => list.map(SavedFeedData.fromEntity).toList(),
-    );
+    return repository
+        .watchPinnedFeeds(ownerDid)
+        .map((list) => list.map(SavedFeedData.fromEntity).toList());
   }
 }
 
@@ -91,19 +103,25 @@ class SavedFeedsNotifier extends _$SavedFeedsNotifier {
 
   /// Syncs saved feeds from user preferences (app.bsky.actor.getPreferences).
   Future<void> sync() async {
+    final authState = ref.read(authProvider);
+    if (authState is! AuthStateAuthenticated) return;
+
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(feedRepositoryProvider);
-      await repository.syncPreferences();
+      await repository.syncPreferences(authState.session.did);
     });
   }
 
   /// Refreshes stale feed metadata (not synced in 24 hours).
   Future<void> refreshStaleMetadata() async {
+    final authState = ref.read(authProvider);
+    if (authState is! AuthStateAuthenticated) return;
+
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(feedRepositoryProvider);
-      await repository.refreshStaleMetadata();
+      await repository.refreshStaleMetadata(authState.session.did);
     });
   }
 }
@@ -118,28 +136,46 @@ class FeedMutationNotifier extends _$FeedMutationNotifier {
 
   /// Saves a feed to user preferences and local cache.
   Future<void> saveFeed(String feedUri, {bool pin = false}) async {
+    final authState = ref.read(authProvider);
+    if (authState is! AuthStateAuthenticated) {
+      state = AsyncError(StateError('Must be authenticated'), StackTrace.current);
+      return;
+    }
+
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(feedRepositoryProvider);
-      await repository.saveFeed(feedUri, pin: pin);
+      await repository.saveFeed(feedUri, authState.session.did, pin: pin);
     });
   }
 
   /// Removes a feed from user preferences and local cache.
   Future<void> removeFeed(String feedUri) async {
+    final authState = ref.read(authProvider);
+    if (authState is! AuthStateAuthenticated) {
+      state = AsyncError(StateError('Must be authenticated'), StackTrace.current);
+      return;
+    }
+
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(feedRepositoryProvider);
-      await repository.removeFeed(feedUri);
+      await repository.removeFeed(feedUri, authState.session.did);
     });
   }
 
   /// Reorders feeds according to the provided URI list.
   Future<void> reorder(List<String> orderedUris) async {
+    final authState = ref.read(authProvider);
+    if (authState is! AuthStateAuthenticated) {
+      state = AsyncError(StateError('Must be authenticated'), StackTrace.current);
+      return;
+    }
+
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(feedRepositoryProvider);
-      await repository.reorderFeeds(orderedUris);
+      await repository.reorderFeeds(orderedUris, authState.session.did);
     });
   }
 }

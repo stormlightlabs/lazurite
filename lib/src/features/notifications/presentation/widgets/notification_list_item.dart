@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/avatar.dart';
@@ -111,8 +113,11 @@ class NotificationListItem extends ConsumerWidget {
 
     return VisibilityDetector(
       onVisible: () {
-        final service = ref.read(markAsSeenServiceProvider);
-        service.markAsSeen(notification.indexedAt);
+        final authState = ref.read(authProvider);
+        if (authState is AuthStateAuthenticated) {
+          final service = ref.read(markAsSeenServiceProvider);
+          service.markAsSeen(notification.indexedAt, authState.session.did);
+        }
       },
       child: card,
     );

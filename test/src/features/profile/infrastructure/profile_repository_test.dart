@@ -37,7 +37,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => _mockProfileResponse(withViewer: true));
 
-        final profile = await repository.getProfile('testuser.bsky.social');
+        final profile = await repository.getProfile('testuser.bsky.social', any());
 
         expect(profile.did, 'did:plc:test123');
         expect(profile.handle, 'testuser.bsky.social');
@@ -61,7 +61,10 @@ void main() {
         expect(cached, isNotNull);
         expect(cached!.handle, 'testuser.bsky.social');
 
-        final relationship = await db.profileRelationshipDao.getRelationship('did:plc:test123');
+        final relationship = await db.profileRelationshipDao.getRelationship(
+          'did:plc:test123',
+          any(),
+        );
         expect(relationship, isNotNull);
         expect(relationship!.following, true);
         expect(relationship.followingUri, 'at://did:plc:viewer/app.bsky.graph.follow/abc123');
@@ -72,7 +75,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => {'did': 'did:plc:minimal', 'handle': 'minimal.bsky.social'});
 
-        final profile = await repository.getProfile('minimal.bsky.social');
+        final profile = await repository.getProfile('minimal.bsky.social', any());
 
         expect(profile.did, 'did:plc:minimal');
         expect(profile.handle, 'minimal.bsky.social');
@@ -85,7 +88,7 @@ void main() {
         final exception = Exception('Network error');
         when(() => mockApi.call(any(), params: any(named: 'params'))).thenThrow(exception);
 
-        expect(() => repository.getProfile('testuser'), throwsA(isA<Exception>()));
+        expect(() => repository.getProfile('testuser', any()), throwsA(isA<Exception>()));
 
         verify(() => mockLogger.error(any(), exception, any())).called(1);
       });
@@ -97,7 +100,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => _mockProfileResponse());
 
-        await repository.getProfile('testuser.bsky.social');
+        await repository.getProfile('testuser.bsky.social', any());
 
         final result = await repository.getCachedProfile('did:plc:test123');
 
@@ -117,7 +120,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => _mockProfileResponse());
 
-        await repository.getProfile('testuser.bsky.social');
+        await repository.getProfile('testuser.bsky.social', any());
 
         final result = await repository.watchProfile('did:plc:test123').first;
         expect(result, isNotNull);
@@ -173,7 +176,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => _mockProfileResponse(withViewer: true));
 
-        final profile = await repository.getProfile('testuser');
+        final profile = await repository.getProfile('testuser', any());
 
         expect(profile.viewerFollowing, isTrue);
         expect(profile.viewerFollowUri, 'at://did:plc:viewer/app.bsky.graph.follow/abc123');
@@ -184,7 +187,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => _mockProfileResponse());
 
-        final profile = await repository.getProfile('testuser');
+        final profile = await repository.getProfile('testuser', any());
 
         expect(profile.viewerFollowing, isFalse);
         expect(profile.viewerFollowUri, isNull);
@@ -314,6 +317,7 @@ void main() {
           ProfileRelationshipsCompanion.insert(
             profileDid: 'did:plc:subject',
             updatedAt: DateTime.now(),
+            ownerDid: 'did:plc:actor',
           ),
         );
 
@@ -324,7 +328,10 @@ void main() {
         final uri = await repository.blockActor('did:plc:actor', 'did:plc:subject');
         expect(uri, 'at://did:plc:actor/app.bsky.graph.block/rkey123');
 
-        final rel = await db.profileRelationshipDao.getRelationship('did:plc:subject');
+        final rel = await db.profileRelationshipDao.getRelationship(
+          'did:plc:subject',
+          'did:plc:actor',
+        );
         expect(rel, isNotNull);
         expect(rel!.blocked, isTrue);
         expect(rel.blockingUri, uri);
@@ -339,6 +346,7 @@ void main() {
             blocked: const Value(true),
             blockingUri: const Value('at://did:plc:actor/app.bsky.graph.block/rkey123'),
             updatedAt: DateTime.now(),
+            ownerDid: 'did:plc:actor',
           ),
         );
 
@@ -363,7 +371,10 @@ void main() {
           ),
         ).called(1);
 
-        final rel = await db.profileRelationshipDao.getRelationship('did:plc:subject');
+        final rel = await db.profileRelationshipDao.getRelationship(
+          'did:plc:subject',
+          'did:plc:actor',
+        );
         expect(rel, isNotNull);
         expect(rel!.blocked, isFalse);
         expect(rel.blockingUri, isNull);
@@ -376,6 +387,7 @@ void main() {
             blocked: const Value(true),
             blockingUri: const Value('at://did:plc:actor/app.bsky.graph.block/rkey123'),
             updatedAt: DateTime.now(),
+            ownerDid: 'did:plc:actor',
           ),
         );
 
@@ -388,7 +400,10 @@ void main() {
           'at://did:plc:actor/app.bsky.graph.block/rkey123',
         );
 
-        final rel = await db.profileRelationshipDao.getRelationship('did:plc:subject');
+        final rel = await db.profileRelationshipDao.getRelationship(
+          'did:plc:subject',
+          'did:plc:actor',
+        );
         expect(rel, isNotNull);
         expect(rel!.blocked, isTrue);
       });

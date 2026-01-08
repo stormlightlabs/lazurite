@@ -28,48 +28,65 @@ class SavedFeedsDao extends DatabaseAccessor<AppDatabase> with _$SavedFeedsDaoMi
   }
 
   /// Deletes a saved feed by URI.
-  Future<int> deleteFeed(String uri) {
-    return (delete(savedFeeds)..where((t) => t.uri.equals(uri))).go();
+  Future<int> deleteFeed(String uri, String ownerDid) {
+    return (delete(savedFeeds)
+          ..where((t) => t.uri.equals(uri))
+          ..where((t) => t.ownerDid.equals(ownerDid)))
+        .go();
   }
 
-  /// Deletes all saved feeds.
+  /// Deletes all saved feeds for a specific owner.
   ///
   /// Used when clearing cache or during user logout.
-  Future<int> deleteAllFeeds() {
-    return delete(savedFeeds).go();
+  Future<int> deleteAllFeeds(String ownerDid) {
+    return (delete(savedFeeds)..where((t) => t.ownerDid.equals(ownerDid))).go();
   }
 
   /// Gets a saved feed by URI.
-  Future<SavedFeed?> getFeed(String uri) {
-    return (select(savedFeeds)..where((t) => t.uri.equals(uri))).getSingleOrNull();
+  Future<SavedFeed?> getFeed(String uri, String ownerDid) {
+    return (select(savedFeeds)
+          ..where((t) => t.uri.equals(uri))
+          ..where((t) => t.ownerDid.equals(ownerDid)))
+        .getSingleOrNull();
   }
 
   /// Watches a saved feed reactively.
-  Stream<SavedFeed?> watchFeed(String uri) {
-    return (select(savedFeeds)..where((t) => t.uri.equals(uri))).watchSingleOrNull();
+  Stream<SavedFeed?> watchFeed(String uri, String ownerDid) {
+    return (select(savedFeeds)
+          ..where((t) => t.uri.equals(uri))
+          ..where((t) => t.ownerDid.equals(ownerDid)))
+        .watchSingleOrNull();
   }
 
   /// Gets all saved feeds ordered by sortOrder.
-  Future<List<SavedFeed>> getAllFeeds() {
-    return (select(savedFeeds)..orderBy([(t) => OrderingTerm(expression: t.sortOrder)])).get();
+  Future<List<SavedFeed>> getAllFeeds(String ownerDid) {
+    return (select(savedFeeds)
+          ..where((t) => t.ownerDid.equals(ownerDid))
+          ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]))
+        .get();
   }
 
   /// Watches all saved feeds reactively, ordered by sortOrder.
-  Stream<List<SavedFeed>> watchAllFeeds() {
-    return (select(savedFeeds)..orderBy([(t) => OrderingTerm(expression: t.sortOrder)])).watch();
+  Stream<List<SavedFeed>> watchAllFeeds(String ownerDid) {
+    return (select(savedFeeds)
+          ..where((t) => t.ownerDid.equals(ownerDid))
+          ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]))
+        .watch();
   }
 
   /// Gets all pinned feeds ordered by sortOrder.
-  Future<List<SavedFeed>> getPinnedFeeds() {
+  Future<List<SavedFeed>> getPinnedFeeds(String ownerDid) {
     return (select(savedFeeds)
+          ..where((t) => t.ownerDid.equals(ownerDid))
           ..where((t) => t.isPinned.equals(true))
           ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]))
         .get();
   }
 
   /// Watches pinned feeds reactively, ordered by sortOrder.
-  Stream<List<SavedFeed>> watchPinnedFeeds() {
+  Stream<List<SavedFeed>> watchPinnedFeeds(String ownerDid) {
     return (select(savedFeeds)
+          ..where((t) => t.ownerDid.equals(ownerDid))
           ..where((t) => t.isPinned.equals(true))
           ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]))
         .watch();
@@ -78,31 +95,41 @@ class SavedFeedsDao extends DatabaseAccessor<AppDatabase> with _$SavedFeedsDaoMi
   /// Gets feeds that haven't been synced recently (stale metadata).
   ///
   /// Returns feeds where lastSynced is older than the given threshold.
-  Future<List<SavedFeed>> getStaleFeeds(DateTime threshold) {
-    return (select(savedFeeds)..where((t) => t.lastSynced.isSmallerThanValue(threshold))).get();
+  Future<List<SavedFeed>> getStaleFeeds(DateTime threshold, String ownerDid) {
+    return (select(savedFeeds)
+          ..where((t) => t.ownerDid.equals(ownerDid))
+          ..where((t) => t.lastSynced.isSmallerThanValue(threshold)))
+        .get();
   }
 
   /// Updates the sortOrder for a feed and marks it as locally modified.
-  Future<int> updateSortOrder(String uri, int sortOrder) {
-    return (update(savedFeeds)..where((t) => t.uri.equals(uri))).write(
-      SavedFeedsCompanion(sortOrder: Value(sortOrder), localUpdatedAt: Value(DateTime.now())),
-    );
+  Future<int> updateSortOrder(String uri, int sortOrder, String ownerDid) {
+    return (update(savedFeeds)
+          ..where((t) => t.uri.equals(uri))
+          ..where((t) => t.ownerDid.equals(ownerDid)))
+        .write(
+          SavedFeedsCompanion(sortOrder: Value(sortOrder), localUpdatedAt: Value(DateTime.now())),
+        );
   }
 
   /// Updates the isPinned status for a feed.
-  Future<int> updatePinnedStatus(String uri, bool isPinned) {
-    return (update(savedFeeds)..where((t) => t.uri.equals(uri))).write(
-      SavedFeedsCompanion(isPinned: Value(isPinned), localUpdatedAt: Value(DateTime.now())),
-    );
+  Future<int> updatePinnedStatus(String uri, bool isPinned, String ownerDid) {
+    return (update(savedFeeds)
+          ..where((t) => t.uri.equals(uri))
+          ..where((t) => t.ownerDid.equals(ownerDid)))
+        .write(
+          SavedFeedsCompanion(isPinned: Value(isPinned), localUpdatedAt: Value(DateTime.now())),
+        );
   }
 
   /// Clears the localUpdatedAt timestamp after successful remote sync.
   ///
   /// This marks the feed as "in sync" with the remote state.
-  Future<int> clearLocalModification(String uri) {
-    return (update(savedFeeds)..where((t) => t.uri.equals(uri))).write(
-      const SavedFeedsCompanion(localUpdatedAt: Value(null)),
-    );
+  Future<int> clearLocalModification(String uri, String ownerDid) {
+    return (update(savedFeeds)
+          ..where((t) => t.uri.equals(uri))
+          ..where((t) => t.ownerDid.equals(ownerDid)))
+        .write(const SavedFeedsCompanion(localUpdatedAt: Value(null)));
   }
 
   /// Updates sync-related fields for an existing feed.
@@ -115,20 +142,27 @@ class SavedFeedsDao extends DatabaseAccessor<AppDatabase> with _$SavedFeedsDaoMi
     required int sortOrder,
     required bool isPinned,
     required DateTime lastSynced,
+    required String ownerDid,
     bool clearLocalModification = false,
   }) {
-    return (update(savedFeeds)..where((t) => t.uri.equals(uri))).write(
-      SavedFeedsCompanion(
-        sortOrder: Value(sortOrder),
-        isPinned: Value(isPinned),
-        lastSynced: Value(lastSynced),
-        localUpdatedAt: clearLocalModification ? const Value(null) : const Value.absent(),
-      ),
-    );
+    return (update(savedFeeds)
+          ..where((t) => t.uri.equals(uri))
+          ..where((t) => t.ownerDid.equals(ownerDid)))
+        .write(
+          SavedFeedsCompanion(
+            sortOrder: Value(sortOrder),
+            isPinned: Value(isPinned),
+            lastSynced: Value(lastSynced),
+            localUpdatedAt: clearLocalModification ? const Value(null) : const Value.absent(),
+          ),
+        );
   }
 
   /// Gets feeds with pending local modifications (localUpdatedAt != null).
-  Future<List<SavedFeed>> getLocallyModifiedFeeds() {
-    return (select(savedFeeds)..where((t) => t.localUpdatedAt.isNotNull())).get();
+  Future<List<SavedFeed>> getLocallyModifiedFeeds(String ownerDid) {
+    return (select(savedFeeds)
+          ..where((t) => t.ownerDid.equals(ownerDid))
+          ..where((t) => t.localUpdatedAt.isNotNull()))
+        .get();
   }
 }

@@ -7,6 +7,7 @@ import 'package:lazurite/src/infrastructure/db/daos/dm_outbox_dao.dart';
 void main() {
   late AppDatabase database;
   late DmOutboxDao dao;
+  const ownerDid = 'did:web:tester';
 
   setUp(() {
     database = AppDatabase(NativeDatabase.memory());
@@ -27,10 +28,11 @@ void main() {
             messageText: 'Hello!',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
 
-        final pending = await dao.getPending();
+        final pending = await dao.getPending(ownerDid);
         expect(pending, hasLength(1));
         expect(pending.first.outboxId, 'outbox1');
         expect(pending.first.messageText, 'Hello!');
@@ -49,6 +51,7 @@ void main() {
             messageText: 'Second',
             status: 'pending',
             createdAt: now,
+            ownerDid: ownerDid,
           ),
         );
         await dao.enqueue(
@@ -58,10 +61,11 @@ void main() {
             messageText: 'First',
             status: 'pending',
             createdAt: now.subtract(const Duration(minutes: 1)),
+            ownerDid: ownerDid,
           ),
         );
 
-        final pending = await dao.getPending();
+        final pending = await dao.getPending(ownerDid);
         expect(pending, hasLength(2));
         expect(pending[0].outboxId, 'outbox1');
         expect(pending[1].outboxId, 'outbox2');
@@ -75,6 +79,7 @@ void main() {
             messageText: 'Pending',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
         await dao.enqueue(
@@ -84,10 +89,11 @@ void main() {
             messageText: 'Failed',
             status: 'failed',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
 
-        final pending = await dao.getPending();
+        final pending = await dao.getPending(ownerDid);
         expect(pending, hasLength(1));
         expect(pending.first.outboxId, 'outbox1');
       });
@@ -102,6 +108,7 @@ void main() {
             messageText: 'Pending',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
         await dao.enqueue(
@@ -111,10 +118,11 @@ void main() {
             messageText: 'Failed',
             status: 'failed',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
 
-        final failed = await dao.getFailed();
+        final failed = await dao.getFailed(ownerDid);
         expect(failed, hasLength(1));
         expect(failed.first.outboxId, 'outbox2');
       });
@@ -129,6 +137,7 @@ void main() {
             messageText: 'Test',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
 
@@ -152,6 +161,7 @@ void main() {
             messageText: 'Pending',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
         await dao.enqueue(
@@ -161,6 +171,7 @@ void main() {
             messageText: 'Sending',
             status: 'sending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
         await dao.enqueue(
@@ -170,10 +181,11 @@ void main() {
             messageText: 'Other convo',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
 
-        final results = await dao.getByConvo('convo1');
+        final results = await dao.getByConvo('convo1', ownerDid);
         expect(results, hasLength(2));
       });
     });
@@ -187,6 +199,7 @@ void main() {
             messageText: 'Test',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
 
@@ -205,6 +218,7 @@ void main() {
             messageText: 'Test',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
 
@@ -230,6 +244,7 @@ void main() {
             status: 'pending',
             retryCount: const Value(0),
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
 
@@ -249,6 +264,7 @@ void main() {
             messageText: 'Test',
             status: 'failed',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
         await dao.updateStatus(outboxId: 'outbox1', status: 'failed', errorMessage: 'Error');
@@ -270,6 +286,7 @@ void main() {
             messageText: 'Test',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
 
@@ -290,6 +307,7 @@ void main() {
             messageText: 'Pending 1',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
         await dao.enqueue(
@@ -299,6 +317,7 @@ void main() {
             messageText: 'Pending 2',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
         await dao.enqueue(
@@ -308,10 +327,11 @@ void main() {
             messageText: 'Failed',
             status: 'failed',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
 
-        final count = await dao.countPending();
+        final count = await dao.countPending(ownerDid);
         expect(count, 2);
       });
     });
@@ -325,12 +345,13 @@ void main() {
             messageText: 'Test',
             status: 'pending',
             createdAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         );
 
-        await dao.clearOutbox();
+        await dao.clearOutbox(ownerDid);
 
-        final pending = await dao.getPending();
+        final pending = await dao.getPending(ownerDid);
         expect(pending, isEmpty);
       });
     });

@@ -12,6 +12,7 @@ void main() {
   late AppDatabase db;
   late MockLogger mockLogger;
   late FeedRepository repository;
+  const ownerDid = 'did:web:tester';
 
   setUp(() {
     mockApi = MockXrpcClient();
@@ -151,9 +152,9 @@ void main() {
         ),
       ).thenAnswer((_) async => feedMetadata);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(2));
 
       final list = feeds.firstWhere((f) => f.uri == 'at://did:plc:abc/app.bsky.graph.list/mylist');
@@ -204,9 +205,9 @@ void main() {
         ),
       ).thenAnswer((_) async => feedMetadata);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(2));
 
       final followingFeed = feeds.firstWhere((f) => f.uri == 'following');
@@ -232,9 +233,9 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenAnswer((_) async => prefsResponse);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
 
       final timelineFeed = feeds.first;
@@ -254,6 +255,7 @@ void main() {
           isPinned: const Value(false),
           lastSynced: DateTime.now().subtract(const Duration(days: 1)),
           localUpdatedAt: const Value(null),
+          ownerDid: ownerDid,
         ),
       );
 
@@ -271,9 +273,9 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenAnswer((_) async => prefsResponse);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
 
       final followingFeed = feeds.first;
@@ -293,6 +295,7 @@ void main() {
           creatorDid: 'did:plc:abc',
           sortOrder: 0,
           lastSynced: staleTimestamp,
+          ownerDid: ownerDid,
         ),
       );
 
@@ -315,9 +318,9 @@ void main() {
         ),
       ).thenAnswer((_) async => listMetadata);
 
-      await repository.refreshStaleMetadata();
+      await repository.refreshStaleMetadata(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
 
       final list = feeds.first;
@@ -337,10 +340,11 @@ void main() {
           creatorDid: '',
           sortOrder: 0,
           lastSynced: staleTimestamp,
+          ownerDid: ownerDid,
         ),
       );
 
-      await repository.refreshStaleMetadata();
+      await repository.refreshStaleMetadata(ownerDid);
 
       verifyNever(() => mockApi.call('app.bsky.graph.getList', params: any(named: 'params')));
       verifyNever(
@@ -359,6 +363,7 @@ void main() {
           creatorDid: 'did:plc:abc',
           sortOrder: 0,
           lastSynced: staleTimestamp,
+          ownerDid: ownerDid,
         ),
         SavedFeedsCompanion.insert(
           uri: 'at://did:plc:def/app.bsky.feed.generator/test',
@@ -366,6 +371,7 @@ void main() {
           creatorDid: 'did:plc:def',
           sortOrder: 1,
           lastSynced: staleTimestamp,
+          ownerDid: ownerDid,
         ),
       ]);
 
@@ -405,9 +411,9 @@ void main() {
         ),
       ).thenAnswer((_) async => feedMetadata);
 
-      await repository.refreshStaleMetadata();
+      await repository.refreshStaleMetadata(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(2));
 
       final list = feeds.firstWhere((f) => f.uri == 'at://did:plc:abc/app.bsky.graph.list/mylist');

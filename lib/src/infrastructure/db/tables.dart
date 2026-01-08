@@ -77,11 +77,12 @@ class Profiles extends Table {
 class FeedContentItems extends Table {
   TextColumn get feedKey => text()();
   TextColumn get postUri => text().references(Posts, #uri)();
+  TextColumn get ownerDid => text()();
   TextColumn get reason => text().nullable()();
   TextColumn get sortKey => text()();
 
   @override
-  Set<Column> get primaryKey => {feedKey, postUri};
+  Set<Column> get primaryKey => {feedKey, postUri, ownerDid};
 }
 
 class Accounts extends Table {
@@ -95,11 +96,12 @@ class Accounts extends Table {
 
 class FeedCursors extends Table {
   TextColumn get feedKey => text()();
+  TextColumn get ownerDid => text()();
   TextColumn get cursor => text()();
   DateTimeColumn get lastUpdated => dateTime().nullable()();
 
   @override
-  Set<Column> get primaryKey => {feedKey};
+  Set<Column> get primaryKey => {feedKey, ownerDid};
 }
 
 class RecentSearches extends Table {
@@ -161,6 +163,9 @@ class Follows extends Table {
 
 /// Stores normalized viewer relationships for profiles.
 class ProfileRelationships extends Table {
+  /// The DID of the owner (the user who sees these relationships).
+  TextColumn get ownerDid => text()();
+
   /// The DID of the profile this relationship applies to (subject).
   TextColumn get profileDid => text().references(Profiles, #did)();
 
@@ -195,7 +200,7 @@ class ProfileRelationships extends Table {
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
-  Set<Column> get primaryKey => {profileDid};
+  Set<Column> get primaryKey => {ownerDid, profileDid};
 }
 
 /// Stores saved feed generators with metadata.
@@ -205,6 +210,9 @@ class ProfileRelationships extends Table {
 class SavedFeeds extends Table {
   /// Feed generator AT URI (at://did:plc:xxx/app.bsky.feed.generator/yyy).
   TextColumn get uri => text()();
+
+  /// The DID of the user who saved this feed.
+  TextColumn get ownerDid => text()();
 
   /// Display name of the feed.
   TextColumn get displayName => text()();
@@ -235,7 +243,7 @@ class SavedFeeds extends Table {
   DateTimeColumn get localUpdatedAt => dateTime().nullable()();
 
   @override
-  Set<Column> get primaryKey => {uri};
+  Set<Column> get primaryKey => {uri, ownerDid};
 }
 
 /// Stores queued preference updates for offline synchronization.
@@ -244,6 +252,9 @@ class SavedFeeds extends Table {
 /// preferences (content labels, muted words, etc.).
 class PreferenceSyncQueue extends Table {
   IntColumn get id => integer().autoIncrement()();
+
+  /// The DID of the user who owns this action.
+  TextColumn get ownerDid => text()();
 
   /// Category of preference being synced: 'feed' or 'bluesky_pref'.
   TextColumn get category => text().withDefault(const Constant('feed'))();
@@ -273,6 +284,9 @@ class PreferenceSyncQueue extends Table {
 /// operations are queued here for retry when the connection is restored.
 class NotificationsSyncQueue extends Table {
   IntColumn get id => integer().autoIncrement()();
+
+  /// The DID of the user who owns this action.
+  TextColumn get ownerDid => text()();
 
   /// Type of operation: 'mark_seen'.
   TextColumn get type => text()();
@@ -350,6 +364,9 @@ class BlueskyPreferences extends Table {
   /// The preference type identifier (e.g., 'contentLabel', 'adultContent').
   TextColumn get type => text()();
 
+  /// The DID of the owner of these preferences.
+  TextColumn get ownerDid => text()();
+
   /// The preference data serialized as JSON.
   TextColumn get data => text()();
 
@@ -357,7 +374,7 @@ class BlueskyPreferences extends Table {
   DateTimeColumn get lastSynced => dateTime()();
 
   @override
-  Set<Column> get primaryKey => {type};
+  Set<Column> get primaryKey => {type, ownerDid};
 }
 
 /// Stores user-customized themes.
@@ -417,6 +434,9 @@ class Notifications extends Table {
   /// Notification AT URI (primary key).
   TextColumn get uri => text()();
 
+  /// The DID of the user receiving the notification.
+  TextColumn get ownerDid => text()();
+
   /// DID of the user who triggered the notification.
   TextColumn get actorDid => text().references(Profiles, #did)();
 
@@ -442,13 +462,16 @@ class Notifications extends Table {
   DateTimeColumn get cachedAt => dateTime()();
 
   @override
-  Set<Column> get primaryKey => {uri};
+  Set<Column> get primaryKey => {uri, ownerDid};
 }
 
 /// Stores pagination cursor for notifications feed.
 class NotificationCursors extends Table {
   /// Feed key identifier (e.g., 'notifications').
   TextColumn get feedKey => text()();
+
+  /// The DID of the user this cursor belongs to.
+  TextColumn get ownerDid => text()();
 
   /// Pagination cursor from API.
   TextColumn get cursor => text()();
@@ -457,7 +480,7 @@ class NotificationCursors extends Table {
   DateTimeColumn get lastUpdated => dateTime().nullable()();
 
   @override
-  Set<Column> get primaryKey => {feedKey};
+  Set<Column> get primaryKey => {feedKey, ownerDid};
 }
 
 /// Stores direct message conversations from chat.bsky.convo.listConvos.
@@ -467,6 +490,9 @@ class NotificationCursors extends Table {
 class DmConvos extends Table {
   /// Conversation ID (unique identifier from API).
   TextColumn get convoId => text()();
+
+  /// The DID of the user who owns this conversation view.
+  TextColumn get ownerDid => text()();
 
   /// JSON array of participant DIDs.
   TextColumn get membersJson => text()();
@@ -493,7 +519,7 @@ class DmConvos extends Table {
   DateTimeColumn get cachedAt => dateTime()();
 
   @override
-  Set<Column> get primaryKey => {convoId};
+  Set<Column> get primaryKey => {convoId, ownerDid};
 }
 
 /// Stores direct messages from chat.bsky.convo.getMessages.
@@ -504,6 +530,9 @@ class DmConvos extends Table {
 class DmMessages extends Table {
   /// Message ID (unique identifier from API).
   TextColumn get messageId => text()();
+
+  /// The DID of the user who owns this message view.
+  TextColumn get ownerDid => text()();
 
   /// Conversation this message belongs to.
   TextColumn get convoId => text()();
@@ -524,7 +553,7 @@ class DmMessages extends Table {
   DateTimeColumn get cachedAt => dateTime()();
 
   @override
-  Set<Column> get primaryKey => {messageId};
+  Set<Column> get primaryKey => {messageId, ownerDid};
 }
 
 /// Stores pending message sends for reliable offline delivery.
@@ -534,6 +563,9 @@ class DmMessages extends Table {
 class DmOutbox extends Table {
   /// Local UUID for this outbox item.
   TextColumn get outboxId => text()();
+
+  /// The DID of the user who sent this message.
+  TextColumn get ownerDid => text()();
 
   /// Conversation to send the message to.
   TextColumn get convoId => text()();

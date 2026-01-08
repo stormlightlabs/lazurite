@@ -26,20 +26,31 @@ class MarkAsSeenService {
   /// Timer for batching operations.
   Timer? _batchTimer;
 
-  /// Most recent notification timestamp in the current batch.
+  /// The owner DID for the current batch.
+  String? _currentOwnerDid;
+
+  /// The timestamp of the most recent seen notification in the current batch.
   DateTime? _latestSeenTimestamp;
 
-  /// Whether a flush is currently in progress.
+  /// Flag to prevent concurrent flush operations.
   bool _isFlushingseenAt = false;
 
   /// Marks a notification as seen by adding its timestamp to the batch.
   ///
   /// The notification will be marked locally immediately, and synced
   /// to the server after [_batchDuration] or when enough notifications accumulate.
-  void markAsSeen(DateTime notificationTimestamp) {
+  void markAsSeen(DateTime notificationTimestamp, String ownerDid) {
     _logger.debug('Marking notification as seen', {
       'timestamp': notificationTimestamp.toIso8601String(),
+      'ownerDid': ownerDid,
     });
+
+    if (_currentOwnerDid != null && _currentOwnerDid != ownerDid) {
+      // Owner changed, flush previous batch immediately
+      flush();
+    }
+
+    _currentOwnerDid = ownerDid;
 
     if (_latestSeenTimestamp == null || notificationTimestamp.isAfter(_latestSeenTimestamp!)) {
       _latestSeenTimestamp = notificationTimestamp;
@@ -60,18 +71,25 @@ class MarkAsSeenService {
 
   /// Internal flush implementation.
   Future<void> _flush() async {
-    if (_isFlushingseenAt || _latestSeenTimestamp == null) {
+    if (_isFlushingseenAt || _latestSeenTimestamp == null || _currentOwnerDid == null) {
       return;
     }
 
     _isFlushingseenAt = true;
     final seenAt = _latestSeenTimestamp!;
-    _latestSeenTimestamp = null;
+    final ownerDid = _currentOwnerDid!;
 
-    _logger.info('Flushing mark as seen batch', {'seenAt': seenAt.toIso8601String()});
+    // Clear state before async operation to handle re-entry or new batches
+    _latestSeenTimestamp = null;
+    _currentOwnerDid = null;
+
+    _logger.info('Flushing mark as seen batch', {
+      'seenAt': seenAt.toIso8601String(),
+      'ownerDid': ownerDid,
+    });
 
     try {
-      await _repository.markAsSeenLocally(seenAt);
+      await _repository.markAsSeenLocally(seenAt, ownerDid);
       await _repository.updateSeen(seenAt);
 
       _logger.debug('Successfully flushed mark as seen batch', {});
@@ -79,8 +97,11 @@ class MarkAsSeenService {
       _logger.error('Failed to flush mark as seen batch', error, stack);
 
       try {
-        await _syncQueue.enqueueMarkSeen(seenAt);
-        _logger.info('Queued mark as seen for offline sync', {'seenAt': seenAt.toIso8601String()});
+        await _syncQueue.enqueueMarkSeen(seenAt, ownerDid);
+        _logger.info('Queued mark as seen for offline sync', {
+          'seenAt': seenAt.toIso8601String(),
+          'ownerDid': ownerDid,
+        });
       } catch (queueError, queueStack) {
         _logger.error('Failed to queue mark as seen for offline sync', queueError, queueStack);
       }

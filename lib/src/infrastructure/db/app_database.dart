@@ -5,13 +5,18 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'daos/bluesky_preferences_dao.dart';
 import 'daos/animation_preferences_dao.dart';
+import 'daos/bluesky_preferences_dao.dart';
 import 'daos/custom_theme_dao.dart';
+import 'daos/dm_convos_dao.dart';
+import 'daos/dm_messages_dao.dart';
+import 'daos/dm_outbox_dao.dart';
 import 'daos/drafts_dao.dart';
 import 'daos/feed_content_dao.dart';
 import 'daos/follows_dao.dart';
 import 'daos/local_settings_dao.dart';
+import 'daos/notifications_dao.dart';
+import 'daos/notifications_sync_queue_dao.dart';
 import 'daos/post_interactions_dao.dart';
 import 'daos/preference_sync_queue_dao.dart';
 import 'daos/profile_dao.dart';
@@ -19,11 +24,6 @@ import 'daos/profile_relationship_dao.dart';
 import 'daos/saved_feeds_dao.dart';
 import 'daos/search_cache_dao.dart';
 import 'daos/search_dao.dart';
-import 'daos/notifications_dao.dart';
-import 'daos/notifications_sync_queue_dao.dart';
-import 'daos/dm_convos_dao.dart';
-import 'daos/dm_messages_dao.dart';
-import 'daos/dm_outbox_dao.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -82,7 +82,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(

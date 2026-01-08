@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 
 import '../../application/settings_providers.dart';
 import '../../domain/bluesky_preferences.dart';
@@ -192,11 +194,17 @@ class FeedPreferencesScreen extends ConsumerWidget {
 
   Future<void> _updateFeedPref(WidgetRef ref, FeedViewPref pref) async {
     final repo = ref.read(blueskyPreferencesRepositoryProvider);
-    await repo.updateFeedViewPref(pref);
+    final authState = ref.read(authProvider);
+    if (authState is AuthStateAuthenticated) {
+      await repo.updateFeedViewPref(pref, authState.session.did);
+    }
   }
 
   Future<void> _updateThreadPref(WidgetRef ref, ThreadViewPref pref) async {
     final repo = ref.read(blueskyPreferencesRepositoryProvider);
-    await repo.updateThreadViewPref(pref);
+    final authState = ref.read(authProvider);
+    if (authState is AuthStateAuthenticated) {
+      await repo.updateThreadViewPref(pref, authState.session.did);
+    }
   }
 }

@@ -19,16 +19,27 @@ void preferenceSyncController(Ref ref) {
   final logger = ref.watch(loggerProvider('PreferenceSync'));
   var hasInitialized = false;
 
-  Future<void> runSync() async {
-    logger.debug('runSync() called');
+  Future<void> runSync([String? ownerDid]) async {
+    logger.debug('runSync() called', {'ownerDid': ownerDid});
+
+    // If ownerDid is not provided, try to get it from current state
+    final authState = ref.read(authProvider);
+    final effectiveOwnerDid =
+        ownerDid ?? ((authState is AuthStateAuthenticated) ? authState.session.did : null);
+
+    if (effectiveOwnerDid == null) {
+      logger.debug('Skipping sync: no ownerDid available');
+      return;
+    }
+
     try {
       final repo = ref.read(blueskyPreferencesRepositoryProvider);
       logger.debug('Syncing preferences from remote');
-      await repo.syncPreferencesFromRemote();
+      await repo.syncPreferencesFromRemote(effectiveOwnerDid);
       logger.info('Preferences synced successfully');
 
       logger.debug('Processing preference sync queue');
-      await repo.processSyncQueue();
+      await repo.processSyncQueue(effectiveOwnerDid);
       logger.info('Preference sync queue processed');
     } catch (e, stack) {
       logger.error('Failed to sync preferences on resume', e, stack);
@@ -52,17 +63,25 @@ void preferenceSyncController(Ref ref) {
       if (wasAuthed != isAuthed) {
         if (isAuthed) {
           logger.info('User logged in - triggering preference sync');
-          unawaited(runSync());
+          final newDid = next.session.did;
+          unawaited(runSync(newDid));
         } else {
           logger.info('User logged out - clearing cached preferences');
-          unawaited(ref.read(blueskyPreferencesRepositoryProvider).clearAll());
+          final oldDid = (previous as AuthStateAuthenticated).session.did;
+          unawaited(ref.read(blueskyPreferencesRepositoryProvider).clearAll(oldDid));
         }
       } else if (isAuthed && wasAuthed) {
         final prevSession = previous.session;
         final nextSession = next.session;
-        if (prevSession.accessJwt != nextSession.accessJwt) {
+        if (prevSession.accessJwt != nextSession.accessJwt && prevSession.did == nextSession.did) {
+          // Same user, session refresh
           logger.debug('Session refreshed - triggering sync to fetch preferences');
-          unawaited(runSync());
+          unawaited(runSync(nextSession.did));
+        } else if (prevSession.did != nextSession.did) {
+          // User switched without full logout/login cycle (e.g. account switcher)
+          logger.info('User switched - clearing old prefs and syncing new');
+          unawaited(ref.read(blueskyPreferencesRepositoryProvider).clearAll(prevSession.did));
+          unawaited(runSync(nextSession.did));
         }
       }
     } else {
@@ -77,7 +96,7 @@ void preferenceSyncController(Ref ref) {
 
     if (authState is AuthStateAuthenticated) {
       logger.info('User is authenticated, running initial sync');
-      await runSync();
+      await runSync(authState.session.did);
     } else {
       logger.info('User not authenticated, skipping initial sync');
     }

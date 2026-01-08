@@ -16,29 +16,38 @@ class ProfileRelationshipDao extends DatabaseAccessor<AppDatabase>
   }
 
   /// Gets a viewer relationship by profile DID.
-  Future<ProfileRelationship?> getRelationship(String profileDid) {
-    return (select(
-      profileRelationships,
-    )..where((t) => t.profileDid.equals(profileDid))).getSingleOrNull();
+  Future<ProfileRelationship?> getRelationship(String profileDid, String ownerDid) {
+    return (select(profileRelationships)
+          ..where((t) => t.profileDid.equals(profileDid) & t.ownerDid.equals(ownerDid)))
+        .getSingleOrNull();
   }
 
   /// Watches a viewer relationship by profile DID.
-  Stream<ProfileRelationship?> watchRelationship(String profileDid) {
-    return (select(
-      profileRelationships,
-    )..where((t) => t.profileDid.equals(profileDid))).watchSingleOrNull();
+  Stream<ProfileRelationship?> watchRelationship(String profileDid, String ownerDid) {
+    return (select(profileRelationships)
+          ..where((t) => t.profileDid.equals(profileDid) & t.ownerDid.equals(ownerDid)))
+        .watchSingleOrNull();
   }
 
   /// Updates the mute status for a profile.
-  Future<void> updateMuteStatus(String profileDid, bool muted) {
-    return (update(profileRelationships)..where((t) => t.profileDid.equals(profileDid))).write(
+  Future<void> updateMuteStatus(String profileDid, bool muted, String ownerDid) {
+    return (update(
+      profileRelationships,
+    )..where((t) => t.profileDid.equals(profileDid) & t.ownerDid.equals(ownerDid))).write(
       ProfileRelationshipsCompanion(muted: Value(muted), updatedAt: Value(DateTime.now())),
     );
   }
 
   /// Updates the block status for a profile.
-  Future<void> updateBlockStatus(String profileDid, bool blocked, {String? blockingUri}) {
-    return (update(profileRelationships)..where((t) => t.profileDid.equals(profileDid))).write(
+  Future<void> updateBlockStatus(
+    String profileDid,
+    bool blocked,
+    String ownerDid, {
+    String? blockingUri,
+  }) {
+    return (update(
+      profileRelationships,
+    )..where((t) => t.profileDid.equals(profileDid) & t.ownerDid.equals(ownerDid))).write(
       ProfileRelationshipsCompanion(
         blocked: Value(blocked),
         blockingUri: Value(blockingUri),

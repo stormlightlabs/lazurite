@@ -7,6 +7,7 @@ import 'package:lazurite/src/infrastructure/db/daos/dm_messages_dao.dart';
 void main() {
   late AppDatabase database;
   late DmMessagesDao dao;
+  const ownerDid = 'did:web:tester';
 
   setUp(() {
     database = AppDatabase(NativeDatabase.memory());
@@ -37,12 +38,13 @@ void main() {
             sentAt: DateTime.now(),
             status: 'sent',
             cachedAt: DateTime.now(),
+            ownerDid: ownerDid,
           ),
         ];
 
         await dao.insertMessagesBatch(newMessages: messages, newProfiles: profiles);
 
-        final results = await dao.watchMessagesByConvo('convo1').first;
+        final results = await dao.watchMessagesByConvo('convo1', ownerDid).first;
         expect(results, hasLength(1));
         expect(results.first.message.content, 'Hello!');
         expect(results.first.sender.handle, 'sender1.bsky.social');
@@ -61,6 +63,7 @@ void main() {
           sentAt: DateTime.now(),
           status: 'pending',
           cachedAt: DateTime.now(),
+          ownerDid: ownerDid,
         );
 
         await dao.insertMessagesBatch(newMessages: [msg1], newProfiles: profiles);
@@ -73,11 +76,12 @@ void main() {
           sentAt: DateTime.now(),
           status: 'sent',
           cachedAt: DateTime.now(),
+          ownerDid: ownerDid,
         );
 
         await dao.insertMessagesBatch(newMessages: [msg2], newProfiles: profiles);
 
-        final results = await dao.watchMessagesByConvo('convo1').first;
+        final results = await dao.watchMessagesByConvo('convo1', ownerDid).first;
         expect(results, hasLength(1));
         expect(results.first.message.content, 'Updated');
         expect(results.first.message.status, 'sent');
@@ -100,6 +104,7 @@ void main() {
             sentAt: now,
             status: 'sent',
             cachedAt: now,
+            ownerDid: ownerDid,
           ),
           DmMessagesCompanion.insert(
             messageId: 'msg1',
@@ -109,6 +114,7 @@ void main() {
             sentAt: now.subtract(const Duration(hours: 2)),
             status: 'sent',
             cachedAt: now,
+            ownerDid: ownerDid,
           ),
           DmMessagesCompanion.insert(
             messageId: 'msg2',
@@ -118,12 +124,13 @@ void main() {
             sentAt: now.subtract(const Duration(hours: 1)),
             status: 'sent',
             cachedAt: now,
+            ownerDid: ownerDid,
           ),
         ];
 
         await dao.insertMessagesBatch(newMessages: messages, newProfiles: profiles);
 
-        final results = await dao.watchMessagesByConvo('convo1').first;
+        final results = await dao.watchMessagesByConvo('convo1', ownerDid).first;
         expect(results, hasLength(3));
         expect(results[0].message.content, 'First');
         expect(results[1].message.content, 'Second');
@@ -145,6 +152,7 @@ void main() {
               sentAt: DateTime.now(),
               status: 'sent',
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
             DmMessagesCompanion.insert(
               messageId: 'msg2',
@@ -154,12 +162,13 @@ void main() {
               sentAt: DateTime.now(),
               status: 'sent',
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
           ],
           newProfiles: profiles,
         );
 
-        final results = await dao.watchMessagesByConvo('convo1').first;
+        final results = await dao.watchMessagesByConvo('convo1', ownerDid).first;
         expect(results, hasLength(1));
         expect(results.first.message.content, 'Convo 1 message');
       });
@@ -181,14 +190,15 @@ void main() {
               sentAt: DateTime.now(),
               status: 'pending',
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
           ],
           newProfiles: profiles,
         );
 
-        await dao.updateMessageStatus(messageId: 'msg1', status: 'sent');
+        await dao.updateMessageStatus(messageId: 'msg1', status: 'sent', ownerDid: ownerDid);
 
-        final results = await dao.watchMessagesByConvo('convo1').first;
+        final results = await dao.watchMessagesByConvo('convo1', ownerDid).first;
         expect(results.first.message.status, 'sent');
       });
     });
@@ -210,6 +220,7 @@ void main() {
               sentAt: now.subtract(const Duration(hours: 1)),
               status: 'sent',
               cachedAt: now,
+              ownerDid: ownerDid,
             ),
             DmMessagesCompanion.insert(
               messageId: 'msg2',
@@ -219,18 +230,19 @@ void main() {
               sentAt: now,
               status: 'sent',
               cachedAt: now,
+              ownerDid: ownerDid,
             ),
           ],
           newProfiles: profiles,
         );
 
-        final result = await dao.getLatestMessage('convo1');
+        final result = await dao.getLatestMessage('convo1', ownerDid);
         expect(result, isNotNull);
         expect(result!.content, 'Latest');
       });
 
       test('returns null for empty conversation', () async {
-        final result = await dao.getLatestMessage('nonexistent');
+        final result = await dao.getLatestMessage('nonexistent', ownerDid);
         expect(result, isNull);
       });
     });
@@ -251,6 +263,7 @@ void main() {
               sentAt: DateTime.now(),
               status: 'sent',
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
             DmMessagesCompanion.insert(
               messageId: 'msg2',
@@ -260,6 +273,7 @@ void main() {
               sentAt: DateTime.now(),
               status: 'sent',
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
             DmMessagesCompanion.insert(
               messageId: 'msg3',
@@ -269,18 +283,19 @@ void main() {
               sentAt: DateTime.now(),
               status: 'sent',
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
           ],
           newProfiles: profiles,
         );
 
-        final deletedCount = await dao.deleteMessagesByConvo('convo1');
+        final deletedCount = await dao.deleteMessagesByConvo('convo1', ownerDid);
         expect(deletedCount, 2);
 
-        final convo1Results = await dao.watchMessagesByConvo('convo1').first;
+        final convo1Results = await dao.watchMessagesByConvo('convo1', ownerDid).first;
         expect(convo1Results, isEmpty);
 
-        final convo2Results = await dao.watchMessagesByConvo('convo2').first;
+        final convo2Results = await dao.watchMessagesByConvo('convo2', ownerDid).first;
         expect(convo2Results, hasLength(1));
       });
     });
@@ -301,14 +316,15 @@ void main() {
               sentAt: DateTime.now(),
               status: 'sent',
               cachedAt: DateTime.now(),
+              ownerDid: ownerDid,
             ),
           ],
           newProfiles: profiles,
         );
 
-        await dao.clearMessages();
+        await dao.clearMessages(ownerDid);
 
-        final results = await dao.watchMessagesByConvo('convo1').first;
+        final results = await dao.watchMessagesByConvo('convo1', ownerDid).first;
         expect(results, isEmpty);
       });
     });

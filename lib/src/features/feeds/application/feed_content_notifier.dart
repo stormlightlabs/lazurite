@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:lazurite/src/core/utils/logger.dart';
@@ -33,11 +34,18 @@ class FeedContentNotifier extends _$FeedContentNotifier {
     final logger = ref.watch(loggerProvider('FeedContentNotifier'));
     final mutedWordFilter = ref.watch(mutedWordFilterServiceProvider);
     final feedViewPref = ref.watch(feedViewPrefProvider);
+    final authState = ref.watch(authProvider);
+
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : 'anonymous';
 
     final feedKey = _feedKeyFromUri(feedUri);
-    logger.debug('Watching feed content stream', {'feedKey': feedKey, 'feedUri': feedUri});
+    logger.debug('Watching feed content stream', {
+      'feedKey': feedKey,
+      'feedUri': feedUri,
+      'ownerDid': ownerDid,
+    });
 
-    return repository.watchFeedContent(feedKey: feedKey).map((items) {
+    return repository.watchFeedContent(feedKey: feedKey, ownerDid: ownerDid).map((items) {
       final pref = feedViewPref.maybeWhen(
         data: (data) => data,
         orElse: () => FeedViewPref.defaultPref,
@@ -165,6 +173,8 @@ class FeedContentNotifier extends _$FeedContentNotifier {
   /// Fetches the latest posts from the active feed and caches them locally.
   Future<void> refresh() async {
     final repository = ref.read(feedContentRepositoryProvider);
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : 'anonymous';
 
     final actualFeedUri = _resolveRemoteFeedUri();
     if (actualFeedUri == null && !_isAuthenticated) {
@@ -173,7 +183,7 @@ class FeedContentNotifier extends _$FeedContentNotifier {
     }
 
     try {
-      await repository.fetchAndCacheFeed(feedUri: actualFeedUri);
+      await repository.fetchAndCacheFeed(feedUri: actualFeedUri, ownerDid: ownerDid);
     } catch (error, stack) {
       _logger.error('Failed to refresh feed content', error, stack);
     }
@@ -184,6 +194,8 @@ class FeedContentNotifier extends _$FeedContentNotifier {
   /// Fetches the next page using the stored cursor for the active feed.
   Future<void> loadMore() async {
     final repository = ref.read(feedContentRepositoryProvider);
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : 'anonymous';
 
     final feedKey = _feedKeyFromUri(feedUri);
     final actualFeedUri = _resolveRemoteFeedUri();
@@ -192,11 +204,15 @@ class FeedContentNotifier extends _$FeedContentNotifier {
       return;
     }
 
-    final cursor = await repository.getCursor(feedKey);
+    final cursor = await repository.getCursor(feedKey, ownerDid);
 
     if (cursor != null) {
       try {
-        await repository.fetchAndCacheFeed(cursor: cursor, feedUri: actualFeedUri);
+        await repository.fetchAndCacheFeed(
+          cursor: cursor,
+          feedUri: actualFeedUri,
+          ownerDid: ownerDid,
+        );
       } catch (error, stack) {
         _logger.error('Failed to load more feed content', error, stack);
       }
@@ -208,7 +224,10 @@ class FeedContentNotifier extends _$FeedContentNotifier {
   /// Removes all cached items and cursor for the active feed.
   Future<void> clearFeedContent() async {
     final repository = ref.read(feedContentRepositoryProvider);
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : 'anonymous';
+
     final feedKey = _feedKeyFromUri(feedUri);
-    await repository.clearFeedContent(feedKey);
+    await repository.clearFeedContent(feedKey, ownerDid);
   }
 }

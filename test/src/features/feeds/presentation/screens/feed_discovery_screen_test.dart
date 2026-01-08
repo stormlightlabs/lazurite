@@ -43,19 +43,27 @@ void main() {
       ),
     ).thenAnswer((_) async => kTrendingFeeds);
 
-    when(() => mockRepository.saveFeed(any(), pin: any(named: 'pin'))).thenAnswer((_) async => {});
-    when(() => mockRepository.watchAllFeeds()).thenAnswer((_) async* {
+    when(
+      () => mockRepository.saveFeed(any(), any(), pin: any(named: 'pin')),
+    ).thenAnswer((_) async => {});
+    when(() => mockRepository.watchAllFeeds(any())).thenAnswer((_) async* {
       yield [];
     });
 
     final mockContentRepository = MockFeedContentRepository();
     when(
-      () => mockContentRepository.watchFeedContent(feedKey: any(named: 'feedKey')),
+      () => mockContentRepository.watchFeedContent(
+        feedKey: any(named: 'feedKey'),
+        ownerDid: any(named: 'ownerDid'),
+      ),
     ).thenAnswer((_) => Stream.value([]));
     when(
-      () => mockContentRepository.fetchAndCacheFeed(feedUri: any(named: 'feedUri')),
+      () => mockContentRepository.fetchAndCacheFeed(
+        feedUri: any(named: 'feedUri'),
+        ownerDid: any(named: 'ownerDid'),
+      ),
     ).thenAnswer((_) async {});
-    when(() => mockRepository.watchAllFeeds()).thenAnswer((_) => Stream.value([]));
+    when(() => mockRepository.watchAllFeeds(any())).thenAnswer((_) => Stream.value([]));
 
     await tester.pumpWidget(
       ProviderScope(

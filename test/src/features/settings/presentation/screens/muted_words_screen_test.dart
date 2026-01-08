@@ -16,9 +16,9 @@ void main() {
     mockRepository = MockBlueskyPreferencesRepository();
 
     when(
-      () => mockRepository.watchMutedWordsPref(),
+      () => mockRepository.watchMutedWordsPref(any()),
     ).thenAnswer((_) => Stream.value(MutedWordsPref.empty));
-    when(() => mockRepository.updateMutedWordsPref(any())).thenAnswer((_) async {});
+    when(() => mockRepository.updateMutedWordsPref(any(), any())).thenAnswer((_) async {});
   });
 
   setUpAll(() {
@@ -26,12 +26,12 @@ void main() {
   });
 
   Widget buildTestWidget({MutedWordsPref pref = MutedWordsPref.empty}) {
-    when(() => mockRepository.watchMutedWordsPref()).thenAnswer((_) => Stream.value(pref));
+    when(() => mockRepository.watchMutedWordsPref(any())).thenAnswer((_) => Stream.value(pref));
 
     return ProviderScope(
       overrides: [
         blueskyPreferencesRepositoryProvider.overrideWithValue(mockRepository),
-        mutedWordsPrefProvider.overrideWith((ref) => mockRepository.watchMutedWordsPref()),
+        mutedWordsPrefProvider.overrideWith((ref) => mockRepository.watchMutedWordsPref(any())),
       ],
       child: const MaterialApp(home: MutedWordsScreen()),
     );

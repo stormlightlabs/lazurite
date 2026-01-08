@@ -38,7 +38,9 @@ void main() {
     when(() => mockLogger.info(any(), any())).thenReturn(null);
     when(() => mockLogger.error(any(), any(), any())).thenReturn(null);
 
-    when(() => mockRepository.watchUnreadCount()).thenAnswer((_) => Stream.value(0));
+    when(
+      () => mockRepository.watchUnreadCount(any(named: 'ownerDid')),
+    ).thenAnswer((_) => Stream.value(0));
   });
 
   group('UnreadCountNotifier', () {
@@ -50,7 +52,7 @@ void main() {
 
       await pumpEventQueue();
 
-      verify(() => mockRepository.watchUnreadCount()).called(1);
+      verify(() => mockRepository.watchUnreadCount(any(named: 'ownerDid'))).called(1);
     });
 
     test('build returns 0 when not authenticated', () async {
@@ -65,11 +67,13 @@ void main() {
       await pumpEventQueue();
 
       expect(emittedValue, 0);
-      verifyNever(() => mockRepository.watchUnreadCount());
+      verifyNever(() => mockRepository.watchUnreadCount(any(named: 'ownerDid')));
     });
 
     test('stream emits unread count from repository', () async {
-      when(() => mockRepository.watchUnreadCount()).thenAnswer((_) => Stream.value(5));
+      when(
+        () => mockRepository.watchUnreadCount(any(named: 'ownerDid')),
+      ).thenAnswer((_) => Stream.value(5));
 
       final container = createContainer();
       addTearDown(container.dispose);
@@ -82,12 +86,14 @@ void main() {
       await pumpEventQueue();
 
       expect(emittedValue, 5);
-      verify(() => mockRepository.watchUnreadCount()).called(1);
+      verify(() => mockRepository.watchUnreadCount(any(named: 'ownerDid'))).called(1);
     });
 
     test('stream emits multiple updates as count changes', () async {
       final controller = StreamController<int>();
-      when(() => mockRepository.watchUnreadCount()).thenAnswer((_) => controller.stream);
+      when(
+        () => mockRepository.watchUnreadCount(any(named: 'ownerDid')),
+      ).thenAnswer((_) => controller.stream);
 
       final container = createContainer();
       addTearDown(() {
@@ -113,7 +119,9 @@ void main() {
     });
 
     test('stream handles zero unread count', () async {
-      when(() => mockRepository.watchUnreadCount()).thenAnswer((_) => Stream.value(0));
+      when(
+        () => mockRepository.watchUnreadCount(any(named: 'ownerDid')),
+      ).thenAnswer((_) => Stream.value(0));
 
       final container = createContainer();
       addTearDown(container.dispose);
@@ -126,11 +134,13 @@ void main() {
       await pumpEventQueue();
 
       expect(emittedValue, 0);
-      verify(() => mockRepository.watchUnreadCount()).called(1);
+      verify(() => mockRepository.watchUnreadCount(any(named: 'ownerDid'))).called(1);
     });
 
     test('stream handles large unread counts', () async {
-      when(() => mockRepository.watchUnreadCount()).thenAnswer((_) => Stream.value(9999));
+      when(
+        () => mockRepository.watchUnreadCount(any(named: 'ownerDid')),
+      ).thenAnswer((_) => Stream.value(9999));
 
       final container = createContainer();
       addTearDown(container.dispose);

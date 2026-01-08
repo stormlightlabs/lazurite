@@ -18,29 +18,36 @@ part 'notifications_notifier.g.dart';
 class NotificationsNotifier extends _$NotificationsNotifier {
   Logger get _logger => ref.read(loggerProvider('NotificationsNotifier'));
 
-  bool get _isAuthenticated => ref.read(authProvider) is AuthStateAuthenticated;
-
   @override
   Stream<List<GroupedNotification>> build() {
     final repository = ref.watch(notificationsRepositoryProvider);
-    _logger.debug('Building grouped notifications stream', {});
-    return repository.watchNotifications().map(GroupedNotification.groupNotifications);
+    final authState = ref.watch(authProvider);
+
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) {
+      return const Stream.empty();
+    }
+
+    _logger.debug('Building grouped notifications stream', {'ownerDid': ownerDid});
+    return repository.watchNotifications(ownerDid).map(GroupedNotification.groupNotifications);
   }
 
   /// Refreshes notifications from the API.
-  ///
-  /// Fetches the latest notifications and updates the local cache.
   Future<void> refresh() async {
-    if (!_isAuthenticated) {
-      _logger.debug('Skipping refresh: not authenticated', {});
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) {
+      _logger.debug('Skipping refresh: not authenticated or unknown owner', {});
       return;
     }
 
     final repository = ref.read(notificationsRepositoryProvider);
 
     try {
-      await repository.fetchNotifications();
-      _logger.info('Notifications refreshed', {});
+      await repository.fetchNotifications(ownerDid: ownerDid);
+      _logger.info('Notifications refreshed', {'ownerDid': ownerDid});
     } catch (error, stack) {
       _logger.error('Failed to refresh notifications', error, stack);
       rethrow;
@@ -49,13 +56,16 @@ class NotificationsNotifier extends _$NotificationsNotifier {
 
   /// Loads more notifications using cursor-based pagination.
   Future<void> loadMore() async {
-    if (!_isAuthenticated) {
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) {
       _logger.debug('Skipping loadMore: not authenticated', {});
       return;
     }
 
     final repository = ref.read(notificationsRepositoryProvider);
-    final cursor = await repository.getCursor();
+    final cursor = await repository.getCursor(ownerDid);
 
     if (cursor == null) {
       _logger.debug('No cursor available for loadMore', {});
@@ -63,7 +73,7 @@ class NotificationsNotifier extends _$NotificationsNotifier {
     }
 
     try {
-      await repository.fetchNotifications(cursor: cursor);
+      await repository.fetchNotifications(ownerDid: ownerDid, cursor: cursor);
       _logger.info('Loaded more notifications', {'cursor': cursor});
     } catch (error, stack) {
       _logger.error('Failed to load more notifications', error, stack);
@@ -72,19 +82,21 @@ class NotificationsNotifier extends _$NotificationsNotifier {
   }
 
   /// Marks all notifications as read.
-  ///
-  /// This flushes any pending mark as seen operations, then marks all
-  /// notifications as read locally and syncs with the server.
   Future<void> markAllAsRead() async {
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) return;
+
     final repository = ref.read(notificationsRepositoryProvider);
     final markAsSeenService = ref.read(markAsSeenServiceProvider);
 
     try {
       await markAsSeenService.flush();
 
-      await repository.markAllAsRead();
+      await repository.markAllAsRead(ownerDid);
 
-      await repository.updateSeen(DateTime.now());
+      await repository.markAsSeenLocally(DateTime.now(), ownerDid);
 
       _logger.info('Marked all notifications as read', {});
     } catch (error, stack) {

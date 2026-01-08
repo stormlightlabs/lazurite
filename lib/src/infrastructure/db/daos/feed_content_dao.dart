@@ -15,13 +15,14 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
   FeedContentDao(super.db);
 
   /// Inserts or updates a batch of posts, profiles, and feed content items.
-  /// Also updates the cursor for the given [feedKey].
+  /// Also updates the cursor for the given [feedKey] and [ownerDid].
   Future<void> insertFeedContentBatch({
     required List<PostsCompanion> newPosts,
     required List<ProfilesCompanion> newProfiles,
     required List<ProfileRelationshipsCompanion> newRelationships,
     required List<FeedContentItemsCompanion> newItems,
     required String feedKey,
+    required String ownerDid,
     String? newCursor,
   }) {
     return transaction(() async {
@@ -35,6 +36,7 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
             (item) => FeedContentItemsCompanion.insert(
               feedKey: item.feedKey.value,
               postUri: item.postUri.value,
+              ownerDid: ownerDid,
               reason: item.reason,
               sortKey: item.sortKey.value,
             ),
@@ -47,6 +49,7 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
         await into(feedCursors).insertOnConflictUpdate(
           FeedCursorsCompanion.insert(
             feedKey: feedKey,
+            ownerDid: ownerDid,
             cursor: newCursor,
             lastUpdated: Value(DateTime.now()),
           ),
@@ -55,15 +58,17 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
     });
   }
 
-  /// Get stream of feed content items for a given feed.
-  Stream<List<FeedPost>> watchFeedContent(String feedKey) {
+  /// Get stream of feed content items for a given feed and owner.
+  Stream<List<FeedPost>> watchFeedContent(String feedKey, String ownerDid) {
     final query = select(feedContentItems).join([
       innerJoin(posts, posts.uri.equalsExp(feedContentItems.postUri)),
       innerJoin(profiles, profiles.did.equalsExp(posts.authorDid)),
       leftOuterJoin(profileRelationships, profileRelationships.profileDid.equalsExp(profiles.did)),
     ]);
 
-    query.where(feedContentItems.feedKey.equals(feedKey));
+    query.where(
+      feedContentItems.feedKey.equals(feedKey) & feedContentItems.ownerDid.equals(ownerDid),
+    );
     query.orderBy([OrderingTerm.desc(feedContentItems.sortKey)]);
 
     return query.watch().map((rows) {
@@ -79,33 +84,42 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
     });
   }
 
-  /// Gets the cursor for a specific feed.
-  Future<String?> getCursor(String feedKey) async {
-    final query = select(feedCursors)..where((t) => t.feedKey.equals(feedKey));
+  /// Gets the cursor for a specific feed and owner.
+  Future<String?> getCursor(String feedKey, String ownerDid) async {
+    final query = select(feedCursors)
+      ..where((t) => t.feedKey.equals(feedKey) & t.ownerDid.equals(ownerDid));
     final result = await query.getSingleOrNull();
     return result?.cursor;
   }
 
-  /// Clears all cached items for a specific feed.
-  Future<void> clearFeedContent(String feedKey) async {
-    await (delete(feedContentItems)..where((t) => t.feedKey.equals(feedKey))).go();
-    await (delete(feedCursors)..where((t) => t.feedKey.equals(feedKey))).go();
+  /// Clears all cached items for a specific feed and owner.
+  Future<void> clearFeedContent(String feedKey, String ownerDid) async {
+    await (delete(
+      feedContentItems,
+    )..where((t) => t.feedKey.equals(feedKey) & t.ownerDid.equals(ownerDid))).go();
+    await (delete(
+      feedCursors,
+    )..where((t) => t.feedKey.equals(feedKey) & t.ownerDid.equals(ownerDid))).go();
   }
 
-  /// Deletes feed content items and cursors for feeds not updated since [threshold].
-  Future<int> deleteStaleFeedContentItems(DateTime threshold) async {
+  /// Deletes feed content items and cursors for feeds not updated since [threshold] for a specific user.
+  Future<int> deleteStaleFeedContentItems(DateTime threshold, String ownerDid) async {
     return transaction(() async {
-      final staleCursors = await (select(
-        feedCursors,
-      )..where((t) => t.lastUpdated.isSmallerThanValue(threshold))).get();
+      final staleCursors =
+          await (select(feedCursors)
+                ..where((t) => t.ownerDid.equals(ownerDid))
+                ..where((t) => t.lastUpdated.isSmallerThanValue(threshold)))
+              .get();
 
       int deletedCount = 0;
 
       for (final cursor in staleCursors) {
         deletedCount += await (delete(
           feedContentItems,
-        )..where((t) => t.feedKey.equals(cursor.feedKey))).go();
-        await (delete(feedCursors)..where((t) => t.feedKey.equals(cursor.feedKey))).go();
+        )..where((t) => t.feedKey.equals(cursor.feedKey) & t.ownerDid.equals(ownerDid))).go();
+        await (delete(
+          feedCursors,
+        )..where((t) => t.feedKey.equals(cursor.feedKey) & t.ownerDid.equals(ownerDid))).go();
       }
 
       return deletedCount;

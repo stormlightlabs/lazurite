@@ -16,16 +16,16 @@ void main() {
     mockRepository = MockBlueskyPreferencesRepository();
 
     when(
-      () => mockRepository.watchAdultContentPref(),
+      () => mockRepository.watchAdultContentPref(any()),
     ).thenAnswer((_) => Stream.value(const AdultContentPref(enabled: false)));
     when(
-      () => mockRepository.watchContentLabelPrefs(),
+      () => mockRepository.watchContentLabelPrefs(any()),
     ).thenAnswer((_) => Stream.value(ContentLabelPrefs.empty));
     when(
-      () => mockRepository.watchLabelersPref(),
+      () => mockRepository.watchLabelersPref(any()),
     ).thenAnswer((_) => Stream.value(LabelersPref.empty));
-    when(() => mockRepository.updateAdultContentPref(any())).thenAnswer((_) async {});
-    when(() => mockRepository.updateContentLabelPrefs(any())).thenAnswer((_) async {});
+    when(() => mockRepository.updateAdultContentPref(any(), any())).thenAnswer((_) async {});
+    when(() => mockRepository.updateContentLabelPrefs(any(), any())).thenAnswer((_) async {});
   });
 
   setUpAll(() {
@@ -38,18 +38,26 @@ void main() {
     ContentLabelPrefs labelPrefs = ContentLabelPrefs.empty,
     LabelersPref labelersPref = LabelersPref.empty,
   }) {
-    when(() => mockRepository.watchAdultContentPref()).thenAnswer((_) => Stream.value(adultPref));
     when(
-      () => mockRepository.watchContentLabelPrefs(),
+      () => mockRepository.watchAdultContentPref(any()),
+    ).thenAnswer((_) => Stream.value(adultPref));
+    when(
+      () => mockRepository.watchContentLabelPrefs(any()),
     ).thenAnswer((_) => Stream.value(labelPrefs));
-    when(() => mockRepository.watchLabelersPref()).thenAnswer((_) => Stream.value(labelersPref));
+    when(
+      () => mockRepository.watchLabelersPref(any()),
+    ).thenAnswer((_) => Stream.value(labelersPref));
 
     return ProviderScope(
       overrides: [
         blueskyPreferencesRepositoryProvider.overrideWithValue(mockRepository),
-        adultContentPrefProvider.overrideWith((ref) => mockRepository.watchAdultContentPref()),
-        contentLabelPrefsProvider.overrideWith((ref) => mockRepository.watchContentLabelPrefs()),
-        labelersPrefProvider.overrideWith((ref) => mockRepository.watchLabelersPref()),
+        adultContentPrefProvider.overrideWith(
+          (ref) => mockRepository.watchAdultContentPref(any()),
+        ),
+        contentLabelPrefsProvider.overrideWith(
+          (ref) => mockRepository.watchContentLabelPrefs(any()),
+        ),
+        labelersPrefProvider.overrideWith((ref) => mockRepository.watchLabelersPref(any())),
       ],
       child: const MaterialApp(home: ContentModerationScreen()),
     );
@@ -132,6 +140,7 @@ void main() {
       verify(
         () => mockRepository.updateAdultContentPref(
           any(that: predicate<AdultContentPref>((p) => p.enabled == true)),
+          any(),
         ),
       ).called(1);
     });
@@ -168,7 +177,7 @@ void main() {
       await tester.tap(hideButtons.first);
       await tester.pumpAndSettle();
 
-      verify(() => mockRepository.updateContentLabelPrefs(any())).called(1);
+      verify(() => mockRepository.updateContentLabelPrefs(any(), any())).called(1);
     });
 
     testWidgets('shows current label preferences', (tester) async {

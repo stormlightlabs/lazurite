@@ -8,46 +8,46 @@ void main() {
 
   setUp(() {
     mockRepository = MockFeedRepository();
-    when(() => mockRepository.seedDefaultFeeds()).thenAnswer((_) async {});
-    when(() => mockRepository.syncOnResume()).thenAnswer((_) async {});
-    when(() => mockRepository.syncPreferences()).thenAnswer((_) async {});
+    when(() => mockRepository.seedDefaultFeeds(any())).thenAnswer((_) async {});
+    when(() => mockRepository.syncOnResume(any())).thenAnswer((_) async {});
+    when(() => mockRepository.syncPreferences(any())).thenAnswer((_) async {});
   });
 
   group('FeedRepository sync behavior', () {
     test('syncOnResume calls syncPreferences', () async {
-      await mockRepository.syncOnResume();
+      await mockRepository.syncOnResume(any());
 
-      verify(() => mockRepository.syncOnResume()).called(1);
+      verify(() => mockRepository.syncOnResume(any())).called(1);
     });
 
     test('seedDefaultFeeds is callable', () async {
-      await mockRepository.seedDefaultFeeds();
+      await mockRepository.seedDefaultFeeds(any());
 
-      verify(() => mockRepository.seedDefaultFeeds()).called(1);
+      verify(() => mockRepository.seedDefaultFeeds(any())).called(1);
     });
 
     test('syncPreferences is callable', () async {
-      await mockRepository.syncPreferences();
+      await mockRepository.syncPreferences(any());
 
-      verify(() => mockRepository.syncPreferences()).called(1);
+      verify(() => mockRepository.syncPreferences(any())).called(1);
     });
   });
 
   group('sync flow integration', () {
     test('simulates login sync flow', () async {
-      await mockRepository.seedDefaultFeeds();
-      await mockRepository.syncOnResume();
+      await mockRepository.seedDefaultFeeds(any());
+      await mockRepository.syncOnResume(any());
 
-      verify(() => mockRepository.seedDefaultFeeds()).called(1);
-      verify(() => mockRepository.syncOnResume()).called(1);
+      verify(() => mockRepository.seedDefaultFeeds(any())).called(1);
+      verify(() => mockRepository.syncOnResume(any())).called(1);
     });
 
     test('simulates app resume flow', () async {
-      await mockRepository.seedDefaultFeeds();
-      await mockRepository.syncOnResume();
+      await mockRepository.seedDefaultFeeds(any());
+      await mockRepository.syncOnResume(any());
 
-      verify(() => mockRepository.seedDefaultFeeds()).called(1);
-      verify(() => mockRepository.syncOnResume()).called(1);
+      verify(() => mockRepository.seedDefaultFeeds(any())).called(1);
+      verify(() => mockRepository.syncOnResume(any())).called(1);
     });
   });
 }

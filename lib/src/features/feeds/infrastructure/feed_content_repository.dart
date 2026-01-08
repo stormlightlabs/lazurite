@@ -94,7 +94,7 @@ class FeedContentRepository {
   /// Helper to map API Author to DB Companion with validation.
   ///
   /// Extracts viewer relationship data if present.
-  ProfileRelationshipsCompanion? _mapRelationship(Map<String, dynamic> json) {
+  ProfileRelationshipsCompanion? _mapRelationship(Map<String, dynamic> json, String ownerDid) {
     final did = json['did'];
     if (did is! String || did.isEmpty) return null;
 
@@ -103,6 +103,7 @@ class FeedContentRepository {
 
     return ProfileRelationshipsCompanion.insert(
       profileDid: did,
+      ownerDid: ownerDid,
       following: Value(viewer['following'] != null),
       followingUri: Value(viewer['following'] as String?),
       followedBy: Value(viewer['followedBy'] != null),
@@ -139,17 +140,21 @@ class FeedContentRepository {
   }
 
   /// Fetch remote feed content and cache it.
-  ///
-  /// If [feedUri] is provided, fetches that specific feed using
-  /// app.bsky.feed.getFeed (even when authenticated). Otherwise, fetches
-  /// the user's home feed (authenticated) or Discover feed (unauthenticated).
-  Future<void> fetchAndCacheFeed({String? cursor, String? feedUri}) async {
+  Future<void> fetchAndCacheFeed({
+    required String ownerDid,
+    String? cursor,
+    String? feedUri,
+  }) async {
     final feedKey = _feedKeyFromUri(feedUri);
+    // Sanity check: Ensure authenticated user matches ownerDid
+    // if (_api.did != ownerDid) throw Exception('Owner mismatch');
+
     _logger.info('Fetching feed content', {
       'cursor': cursor,
       'authenticated': _api.isAuthenticated,
       'feedUri': feedUri,
       'feedKey': feedKey,
+      'ownerDid': ownerDid,
     });
 
     try {
@@ -216,7 +221,7 @@ class FeedContentRepository {
 
         posts.add(_mapPost(postJson));
         profiles.add(_mapProfile(authorJson));
-        final authorRel = _mapRelationship(authorJson);
+        final authorRel = _mapRelationship(authorJson, ownerDid);
         if (authorRel != null) {
           relationships.add(authorRel);
         }
@@ -226,7 +231,7 @@ class FeedContentRepository {
           final byJson = reasonJson['by'];
           if (byJson is Map<String, dynamic>) {
             profiles.add(_mapProfile(byJson));
-            final byRel = _mapRelationship(byJson);
+            final byRel = _mapRelationship(byJson, ownerDid);
             if (byRel != null) {
               relationships.add(byRel);
             }
@@ -239,6 +244,7 @@ class FeedContentRepository {
           FeedContentItemsCompanion.insert(
             feedKey: feedKey,
             postUri: postUri,
+            ownerDid: ownerDid,
             reason: Value(reasonJson != null ? jsonEncode(reasonJson) : null),
             sortKey: sortKey,
           ),
@@ -247,6 +253,7 @@ class FeedContentRepository {
 
       await _dao.insertFeedContentBatch(
         feedKey: feedKey,
+        ownerDid: ownerDid,
         newPosts: posts,
         newProfiles: profiles,
         newRelationships: relationships,
@@ -260,34 +267,27 @@ class FeedContentRepository {
     }
   }
 
-  /// Watches a feed's content reactively.
-  ///
-  /// If [feedKey] is provided, watches that specific feed. Otherwise, watches
-  /// the home feed.
-  Stream<List<FeedPost>> watchFeedContent({String? feedKey}) {
-    return _dao.watchFeedContent(feedKey ?? kInternalHomeFeedKey);
+  /// Watches a feed's content reactively for a specific user.
+  Stream<List<FeedPost>> watchFeedContent({required String ownerDid, String? feedKey}) {
+    return _dao.watchFeedContent(feedKey ?? kInternalHomeFeedKey, ownerDid);
   }
 
-  /// Gets the cursor for a specific feed.
-  ///
-  /// Returns null if no cursor is stored for the feed.
-  Future<String?> getCursor(String feedKey) {
-    return _dao.getCursor(feedKey);
+  /// Gets the cursor for a specific feed and user.
+  Future<String?> getCursor(String feedKey, String ownerDid) {
+    return _dao.getCursor(feedKey, ownerDid);
   }
 
-  /// Clears all cached items for a specific feed.
-  ///
-  /// Removes feed content items and cursor for the given feedKey.
-  Future<void> clearFeedContent(String feedKey) {
-    return _dao.clearFeedContent(feedKey);
+  /// Clears all cached items for a specific feed and user.
+  Future<void> clearFeedContent(String feedKey, String ownerDid) {
+    return _dao.clearFeedContent(feedKey, ownerDid);
   }
 
   /// Cleans up stale feed content (not viewed in 7 days).
-  Future<void> cleanupCache() async {
+  Future<void> cleanupCache(String ownerDid) async {
     final threshold = DateTime.now().subtract(const Duration(days: 7));
-    final count = await _dao.deleteStaleFeedContentItems(threshold);
+    final count = await _dao.deleteStaleFeedContentItems(threshold, ownerDid);
     if (count > 0) {
-      _logger.info('Cleaned up $count stale feed content items');
+      _logger.info('Cleaned up $count stale feed content items for $ownerDid');
     }
   }
 

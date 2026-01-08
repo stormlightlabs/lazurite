@@ -16,13 +16,13 @@ void main() {
     mockRepository = MockBlueskyPreferencesRepository();
 
     when(
-      () => mockRepository.watchFeedViewPref(),
+      () => mockRepository.watchFeedViewPref(any()),
     ).thenAnswer((_) => Stream.value(FeedViewPref.defaultPref));
     when(
-      () => mockRepository.watchThreadViewPref(),
+      () => mockRepository.watchThreadViewPref(any()),
     ).thenAnswer((_) => Stream.value(ThreadViewPref.defaultPref));
-    when(() => mockRepository.updateFeedViewPref(any())).thenAnswer((_) async {});
-    when(() => mockRepository.updateThreadViewPref(any())).thenAnswer((_) async {});
+    when(() => mockRepository.updateFeedViewPref(any(), any())).thenAnswer((_) async {});
+    when(() => mockRepository.updateThreadViewPref(any(), any())).thenAnswer((_) async {});
   });
 
   setUpAll(() {
@@ -34,14 +34,16 @@ void main() {
     FeedViewPref feedPref = FeedViewPref.defaultPref,
     ThreadViewPref threadPref = ThreadViewPref.defaultPref,
   }) {
-    when(() => mockRepository.watchFeedViewPref()).thenAnswer((_) => Stream.value(feedPref));
-    when(() => mockRepository.watchThreadViewPref()).thenAnswer((_) => Stream.value(threadPref));
+    when(() => mockRepository.watchFeedViewPref(any())).thenAnswer((_) => Stream.value(feedPref));
+    when(
+      () => mockRepository.watchThreadViewPref(any()),
+    ).thenAnswer((_) => Stream.value(threadPref));
 
     return ProviderScope(
       overrides: [
         blueskyPreferencesRepositoryProvider.overrideWithValue(mockRepository),
-        feedViewPrefProvider.overrideWith((ref) => mockRepository.watchFeedViewPref()),
-        threadViewPrefProvider.overrideWith((ref) => mockRepository.watchThreadViewPref()),
+        feedViewPrefProvider.overrideWith((ref) => mockRepository.watchFeedViewPref(any())),
+        threadViewPrefProvider.overrideWith((ref) => mockRepository.watchThreadViewPref(any())),
       ],
       child: const MaterialApp(home: FeedPreferencesScreen()),
     );
@@ -88,6 +90,7 @@ void main() {
       verify(
         () => mockRepository.updateFeedViewPref(
           any(that: predicate<FeedViewPref>((p) => p.hideReplies == true)),
+          any(),
         ),
       ).called(1);
     });
@@ -102,6 +105,7 @@ void main() {
       verify(
         () => mockRepository.updateFeedViewPref(
           any(that: predicate<FeedViewPref>((p) => p.hideReposts == true)),
+          any(),
         ),
       ).called(1);
     });
@@ -116,6 +120,7 @@ void main() {
       verify(
         () => mockRepository.updateFeedViewPref(
           any(that: predicate<FeedViewPref>((p) => p.hideQuotePosts == true)),
+          any(),
         ),
       ).called(1);
     });
@@ -140,6 +145,7 @@ void main() {
       verify(
         () => mockRepository.updateThreadViewPref(
           any(that: predicate<ThreadViewPref>((p) => p.sort == ThreadSortOrder.newest)),
+          any(),
         ),
       ).called(1);
     });
@@ -157,6 +163,7 @@ void main() {
       verify(
         () => mockRepository.updateThreadViewPref(
           any(that: predicate<ThreadViewPref>((p) => p.prioritizeFollowedUsers == false)),
+          any(),
         ),
       ).called(1);
     });

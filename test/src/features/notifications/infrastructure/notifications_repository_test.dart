@@ -17,6 +17,7 @@ void main() {
   late MockNotificationsSyncQueueDao mockSyncQueue;
   late MockLogger mockLogger;
   late NotificationsRepository repository;
+  const ownerDid = 'did:web:tester';
 
   setUp(() {
     mockApi = MockXrpcClient();
@@ -41,10 +42,11 @@ void main() {
             newNotifications: any(named: 'newNotifications'),
             newProfiles: any(named: 'newProfiles'),
             newCursor: any(named: 'newCursor'),
+            ownerDid: any(named: 'ownerDid'),
           ),
         ).thenAnswer((_) async {});
 
-        await repository.fetchNotifications();
+        await repository.fetchNotifications(ownerDid: ownerDid);
 
         verify(
           () => mockApi.call(
@@ -63,10 +65,11 @@ void main() {
             newNotifications: any(named: 'newNotifications'),
             newProfiles: any(named: 'newProfiles'),
             newCursor: any(named: 'newCursor'),
+            ownerDid: any(named: 'ownerDid'),
           ),
         ).thenAnswer((_) async {});
 
-        await repository.fetchNotifications(cursor: 'test_cursor');
+        await repository.fetchNotifications(cursor: 'test_cursor', ownerDid: ownerDid);
 
         verify(
           () => mockApi.call(
@@ -114,13 +117,14 @@ void main() {
             newNotifications: any(named: 'newNotifications'),
             newProfiles: any(named: 'newProfiles'),
             newCursor: any(named: 'newCursor'),
+            ownerDid: any(named: 'ownerDid'),
           ),
         ).thenAnswer((invocation) async {
           capturedNotifications = invocation.namedArguments[#newNotifications] as List;
           capturedProfiles = invocation.namedArguments[#newProfiles] as List;
         });
 
-        await repository.fetchNotifications();
+        await repository.fetchNotifications(ownerDid: ownerDid);
 
         expect(capturedNotifications, hasLength(2));
         expect(capturedProfiles, hasLength(2));
@@ -130,6 +134,7 @@ void main() {
             newNotifications: any(named: 'newNotifications'),
             newProfiles: any(named: 'newProfiles'),
             newCursor: 'next_cursor',
+            ownerDid: ownerDid,
           ),
         ).called(1);
       });
@@ -156,12 +161,13 @@ void main() {
             newNotifications: any(named: 'newNotifications'),
             newProfiles: any(named: 'newProfiles'),
             newCursor: any(named: 'newCursor'),
+            ownerDid: any(named: 'ownerDid'),
           ),
         ).thenAnswer((invocation) async {
           capturedNotifications = invocation.namedArguments[#newNotifications] as List;
         });
 
-        await repository.fetchNotifications();
+        await repository.fetchNotifications(ownerDid: ownerDid);
 
         expect(capturedNotifications, isEmpty);
       });
@@ -189,12 +195,13 @@ void main() {
             newNotifications: any(named: 'newNotifications'),
             newProfiles: any(named: 'newProfiles'),
             newCursor: any(named: 'newCursor'),
+            ownerDid: any(named: 'ownerDid'),
           ),
         ).thenAnswer((invocation) async {
           capturedNotifications = invocation.namedArguments[#newNotifications] as List;
         });
 
-        await repository.fetchNotifications();
+        await repository.fetchNotifications(ownerDid: ownerDid);
 
         expect(capturedNotifications, isEmpty);
       });
@@ -222,12 +229,13 @@ void main() {
             newNotifications: any(named: 'newNotifications'),
             newProfiles: any(named: 'newProfiles'),
             newCursor: any(named: 'newCursor'),
+            ownerDid: any(named: 'ownerDid'),
           ),
         ).thenAnswer((invocation) async {
           capturedNotifications = invocation.namedArguments[#newNotifications] as List;
         });
 
-        await repository.fetchNotifications();
+        await repository.fetchNotifications(ownerDid: ownerDid);
 
         expect(capturedNotifications, hasLength(1));
       });
@@ -237,7 +245,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenThrow(Exception('Network error'));
 
-        expect(() => repository.fetchNotifications(), throwsException);
+        expect(() => repository.fetchNotifications(ownerDid: ownerDid), throwsException);
 
         verify(() => mockLogger.error(any(), any(), any())).called(1);
       });
@@ -245,44 +253,44 @@ void main() {
 
     group('watchNotifications', () {
       test('returns stream from DAO mapped to domain models', () async {
-        when(() => mockDao.watchNotifications()).thenAnswer((_) => Stream.value([]));
+        when(() => mockDao.watchNotifications(any())).thenAnswer((_) => Stream.value([]));
 
-        final stream = repository.watchNotifications();
+        final stream = repository.watchNotifications(ownerDid);
         final result = await stream.first;
 
         expect(result, isEmpty);
-        verify(() => mockDao.watchNotifications()).called(1);
+        verify(() => mockDao.watchNotifications(ownerDid)).called(1);
       });
     });
 
     group('getCursor', () {
       test('returns cursor from DAO', () async {
-        when(() => mockDao.getCursor()).thenAnswer((_) async => 'test_cursor');
+        when(() => mockDao.getCursor(any())).thenAnswer((_) async => 'test_cursor');
 
-        final cursor = await repository.getCursor();
+        final cursor = await repository.getCursor(ownerDid);
 
         expect(cursor, 'test_cursor');
-        verify(() => mockDao.getCursor()).called(1);
+        verify(() => mockDao.getCursor(ownerDid)).called(1);
       });
     });
 
     group('clearNotifications', () {
       test('calls DAO clearNotifications', () async {
-        when(() => mockDao.clearNotifications()).thenAnswer((_) async {});
+        when(() => mockDao.clearNotifications(any())).thenAnswer((_) async {});
 
-        await repository.clearNotifications();
+        await repository.clearNotifications(ownerDid);
 
-        verify(() => mockDao.clearNotifications()).called(1);
+        verify(() => mockDao.clearNotifications(ownerDid)).called(1);
       });
     });
 
     group('markAllAsRead', () {
       test('calls DAO markAllAsRead', () async {
-        when(() => mockDao.markAllAsRead()).thenAnswer((_) async {});
+        when(() => mockDao.markAllAsRead(any())).thenAnswer((_) async {});
 
-        await repository.markAllAsRead();
+        await repository.markAllAsRead(ownerDid);
 
-        verify(() => mockDao.markAllAsRead()).called(1);
+        verify(() => mockDao.markAllAsRead(ownerDid)).called(1);
       });
     });
 
@@ -347,36 +355,36 @@ void main() {
     group('markAsSeenLocally', () {
       test('calls DAO markAsSeenBefore with timestamp', () async {
         final seenAt = DateTime.parse('2026-01-07T12:30:00.000Z');
-        when(() => mockDao.markAsSeenBefore(any())).thenAnswer((_) async {});
+        when(() => mockDao.markAsSeenBefore(any(), any())).thenAnswer((_) async {});
 
-        await repository.markAsSeenLocally(seenAt);
+        await repository.markAsSeenLocally(seenAt, ownerDid);
 
-        verify(() => mockDao.markAsSeenBefore(seenAt)).called(1);
+        verify(() => mockDao.markAsSeenBefore(seenAt, ownerDid)).called(1);
       });
     });
 
     group('watchUnreadCount', () {
       test('returns stream from DAO', () async {
-        when(() => mockDao.watchUnreadCount()).thenAnswer((_) => Stream.value(5));
+        when(() => mockDao.watchUnreadCount(any())).thenAnswer((_) => Stream.value(5));
 
-        final stream = repository.watchUnreadCount();
+        final stream = repository.watchUnreadCount(ownerDid);
         final result = await stream.first;
 
         expect(result, 5);
-        verify(() => mockDao.watchUnreadCount()).called(1);
+        verify(() => mockDao.watchUnreadCount(ownerDid)).called(1);
       });
     });
 
     group('processSyncQueue', () {
       test('does nothing when queue is empty', () async {
         when(() => mockSyncQueue.cleanupOldFailedItems(any())).thenAnswer((_) async => 0);
-        when(() => mockSyncQueue.getLatestSeenAt()).thenAnswer((_) async => null);
+        when(() => mockSyncQueue.getLatestSeenAt(any())).thenAnswer((_) async => null);
 
-        await repository.processSyncQueue();
+        await repository.processSyncQueue(ownerDid);
 
         verify(() => mockSyncQueue.cleanupOldFailedItems(any())).called(1);
-        verify(() => mockSyncQueue.getLatestSeenAt()).called(1);
-        verifyNever(() => mockDao.markAsSeenBefore(any()));
+        verify(() => mockSyncQueue.getLatestSeenAt(ownerDid)).called(1);
+        verifyNever(() => mockDao.markAsSeenBefore(any(), any()));
         verifyNever(() => mockApi.call(any(), body: any(named: 'body')));
       });
 
@@ -384,22 +392,22 @@ void main() {
         final latestSeenAt = DateTime.parse('2026-01-07T12:30:00.000Z');
 
         when(() => mockSyncQueue.cleanupOldFailedItems(any())).thenAnswer((_) async => 0);
-        when(() => mockSyncQueue.getLatestSeenAt()).thenAnswer((_) async => latestSeenAt);
-        when(() => mockSyncQueue.getRetryableItems()).thenAnswer((_) async => []);
-        when(() => mockDao.markAsSeenBefore(any())).thenAnswer((_) async {});
+        when(() => mockSyncQueue.getLatestSeenAt(any())).thenAnswer((_) async => latestSeenAt);
+        when(() => mockSyncQueue.getRetryableItems(any())).thenAnswer((_) async => []);
+        when(() => mockDao.markAsSeenBefore(any(), any())).thenAnswer((_) async {});
         when(() => mockApi.call(any(), body: any(named: 'body'))).thenAnswer((_) async => {});
-        when(() => mockSyncQueue.deleteItemsUpTo(any())).thenAnswer((_) async => 2);
+        when(() => mockSyncQueue.deleteItemsUpTo(any(), any())).thenAnswer((_) async => 2);
 
-        await repository.processSyncQueue();
+        await repository.processSyncQueue(ownerDid);
 
-        verify(() => mockDao.markAsSeenBefore(latestSeenAt)).called(1);
+        verify(() => mockDao.markAsSeenBefore(latestSeenAt, ownerDid)).called(1);
         verify(
           () => mockApi.call(
             'app.bsky.notification.updateSeen',
             body: {'seenAt': latestSeenAt.toIso8601String()},
           ),
         ).called(1);
-        verify(() => mockSyncQueue.deleteItemsUpTo(latestSeenAt)).called(1);
+        verify(() => mockSyncQueue.deleteItemsUpTo(latestSeenAt, ownerDid)).called(1);
       });
 
       test('increments retry count on failure', () async {
@@ -412,6 +420,7 @@ void main() {
           seenAt: latestSeenAt.toIso8601String(),
           createdAt: now,
           retryCount: 0,
+          ownerDid: ownerDid,
         );
         final mockItem2 = NotificationsSyncQueueData(
           id: 2,
@@ -419,31 +428,32 @@ void main() {
           seenAt: latestSeenAt.toIso8601String(),
           createdAt: now,
           retryCount: 1,
+          ownerDid: ownerDid,
         );
 
         when(() => mockSyncQueue.cleanupOldFailedItems(any())).thenAnswer((_) async => 0);
-        when(() => mockSyncQueue.getLatestSeenAt()).thenAnswer((_) async => latestSeenAt);
+        when(() => mockSyncQueue.getLatestSeenAt(any())).thenAnswer((_) async => latestSeenAt);
         when(
-          () => mockSyncQueue.getRetryableItems(),
+          () => mockSyncQueue.getRetryableItems(any()),
         ).thenAnswer((_) async => [mockItem1, mockItem2]);
-        when(() => mockDao.markAsSeenBefore(any())).thenAnswer((_) async {});
+        when(() => mockDao.markAsSeenBefore(any(), any())).thenAnswer((_) async {});
         when(
           () => mockApi.call(any(), body: any(named: 'body')),
         ).thenThrow(Exception('Network error'));
         when(() => mockSyncQueue.incrementRetryCount(any())).thenAnswer((_) async => 1);
 
-        await repository.processSyncQueue();
+        await repository.processSyncQueue(ownerDid);
 
         verify(() => mockSyncQueue.incrementRetryCount(1)).called(1);
         verify(() => mockSyncQueue.incrementRetryCount(2)).called(1);
-        verifyNever(() => mockSyncQueue.deleteItemsUpTo(any()));
+        verifyNever(() => mockSyncQueue.deleteItemsUpTo(any(), any()));
       });
 
       test('cleans up old failed items', () async {
         when(() => mockSyncQueue.cleanupOldFailedItems(any())).thenAnswer((_) async => 3);
-        when(() => mockSyncQueue.getLatestSeenAt()).thenAnswer((_) async => null);
+        when(() => mockSyncQueue.getLatestSeenAt(any())).thenAnswer((_) async => null);
 
-        await repository.processSyncQueue();
+        await repository.processSyncQueue(ownerDid);
 
         verify(() => mockSyncQueue.cleanupOldFailedItems(any())).called(1);
         verify(() => mockLogger.info(any(), any())).called(greaterThanOrEqualTo(1));

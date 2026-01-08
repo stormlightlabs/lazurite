@@ -42,7 +42,7 @@ void main() {
         },
       );
 
-      final profile = await repository.getProfile('test.bsky.social');
+      final profile = await repository.getProfile('test.bsky.social', any());
 
       expect(profile.pinnedPostUri, 'at://did:plc:test123/app.bsky.feed.post/pinned123');
 
@@ -55,7 +55,7 @@ void main() {
         () => mockApi.call(any(), params: any(named: 'params')),
       ).thenAnswer((_) async => {'did': 'did:plc:test123', 'handle': 'test.bsky.social'});
 
-      final profile = await repository.getProfile('test.bsky.social');
+      final profile = await repository.getProfile('test.bsky.social', any());
 
       expect(profile.pinnedPostUri, isNull);
     });

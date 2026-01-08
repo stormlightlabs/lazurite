@@ -18,26 +18,26 @@ class DmOutboxDao extends DatabaseAccessor<AppDatabase> with _$DmOutboxDaoMixin 
     await into(dmOutbox).insert(item);
   }
 
-  /// Gets a stream of all pending outbox items.
-  Stream<List<DmOutboxData>> watchPending() {
+  /// Gets a stream of all pending outbox items for a specific owner.
+  Stream<List<DmOutboxData>> watchPending(String ownerDid) {
     return (select(dmOutbox)
-          ..where((o) => o.status.isIn(['pending', 'sending']))
+          ..where((o) => o.ownerDid.equals(ownerDid) & o.status.isIn(['pending', 'sending']))
           ..orderBy([(o) => OrderingTerm.asc(o.createdAt)]))
         .watch();
   }
 
-  /// Gets all pending outbox items, oldest first.
-  Future<List<DmOutboxData>> getPending() async {
+  /// Gets all pending outbox items for a specific owner, oldest first.
+  Future<List<DmOutboxData>> getPending(String ownerDid) async {
     return (select(dmOutbox)
-          ..where((o) => o.status.equals('pending'))
+          ..where((o) => o.ownerDid.equals(ownerDid) & o.status.equals('pending'))
           ..orderBy([(o) => OrderingTerm.asc(o.createdAt)]))
         .get();
   }
 
-  /// Gets all failed outbox items.
-  Future<List<DmOutboxData>> getFailed() async {
+  /// Gets all failed outbox items for a specific owner.
+  Future<List<DmOutboxData>> getFailed(String ownerDid) async {
     return (select(dmOutbox)
-          ..where((o) => o.status.equals('failed'))
+          ..where((o) => o.ownerDid.equals(ownerDid) & o.status.equals('failed'))
           ..orderBy([(o) => OrderingTerm.desc(o.lastAttemptAt)]))
         .get();
   }
@@ -47,10 +47,15 @@ class DmOutboxDao extends DatabaseAccessor<AppDatabase> with _$DmOutboxDaoMixin 
     return (select(dmOutbox)..where((o) => o.outboxId.equals(outboxId))).getSingleOrNull();
   }
 
-  /// Gets pending outbox items for a specific conversation.
-  Future<List<DmOutboxData>> getByConvo(String convoId) async {
+  /// Gets pending outbox items for a specific conversation and owner.
+  Future<List<DmOutboxData>> getByConvo(String convoId, String ownerDid) async {
     return (select(dmOutbox)
-          ..where((o) => o.convoId.equals(convoId) & o.status.isIn(['pending', 'sending']))
+          ..where(
+            (o) =>
+                o.convoId.equals(convoId) &
+                o.ownerDid.equals(ownerDid) &
+                o.status.isIn(['pending', 'sending']),
+          )
           ..orderBy([(o) => OrderingTerm.asc(o.createdAt)]))
         .get();
   }
@@ -95,15 +100,17 @@ class DmOutboxDao extends DatabaseAccessor<AppDatabase> with _$DmOutboxDaoMixin 
     return (delete(dmOutbox)..where((o) => o.outboxId.equals(outboxId))).go();
   }
 
-  /// Clears all outbox items.
-  Future<void> clearOutbox() async {
-    await delete(dmOutbox).go();
+  /// Clears all outbox items for a specific owner.
+  Future<void> clearOutbox(String ownerDid) async {
+    await (delete(dmOutbox)..where((o) => o.ownerDid.equals(ownerDid))).go();
   }
 
-  /// Counts pending items.
-  Future<int> countPending() async {
+  /// Counts pending items for a specific owner.
+  Future<int> countPending(String ownerDid) async {
     final count = dmOutbox.outboxId.count();
-    final query = selectOnly(dmOutbox)..addColumns([count]);
+    final query = selectOnly(dmOutbox)
+      ..where(dmOutbox.ownerDid.equals(ownerDid))
+      ..addColumns([count]);
     query.where(dmOutbox.status.equals('pending'));
     final result = await query.getSingle();
     return result.read(count) ?? 0;

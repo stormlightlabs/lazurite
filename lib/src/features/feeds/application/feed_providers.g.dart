@@ -78,7 +78,7 @@ final class AllFeedsNotifierProvider
   AllFeedsNotifier create() => AllFeedsNotifier();
 }
 
-String _$allFeedsNotifierHash() => r'26e8c1b497541ae6b47ef11db4a9e2923710986e';
+String _$allFeedsNotifierHash() => r'150e08e3ea64c0a368a0d0515eb73edadb1bfe4e';
 
 /// Notifier for watching all saved feeds reactively.
 
@@ -128,7 +128,7 @@ final class PinnedFeedsNotifierProvider
   PinnedFeedsNotifier create() => PinnedFeedsNotifier();
 }
 
-String _$pinnedFeedsNotifierHash() => r'042b4477bb79cfdbd28b02edca0d6d23df571434';
+String _$pinnedFeedsNotifierHash() => r'b21dee72c84c29e80e0f073b019e768fd7952a67';
 
 /// Notifier for watching pinned feeds reactively.
 
@@ -186,7 +186,7 @@ final class SavedFeedsNotifierProvider
   }
 }
 
-String _$savedFeedsNotifierHash() => r'68a14844d9eb86981133d500f484d9353db677b1';
+String _$savedFeedsNotifierHash() => r'9011a0e366e3c1666453859e1e29873c90e0742e';
 
 /// Notifier for syncing saved feeds from remote preferences.
 
@@ -244,7 +244,7 @@ final class FeedMutationNotifierProvider
   }
 }
 
-String _$feedMutationNotifierHash() => r'0461e118b7eb62385b9cdaf729671538d4936df7';
+String _$feedMutationNotifierHash() => r'03a9b5b0ab93edba6f435e07d7958062a3820967';
 
 /// Notifier for feed mutations (save, remove, pin).
 

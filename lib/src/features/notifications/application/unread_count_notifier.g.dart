@@ -44,7 +44,7 @@ final class UnreadCountNotifierProvider extends $StreamNotifierProvider<UnreadCo
   UnreadCountNotifier create() => UnreadCountNotifier();
 }
 
-String _$unreadCountNotifierHash() => r'd92a51e1927057acc715ca32c4371e16e56b8707';
+String _$unreadCountNotifierHash() => r'cc920f31355bc1a2fc031bdf693fcb8c5ad7a4dc';
 
 /// Notifier for managing unread notification count.
 ///

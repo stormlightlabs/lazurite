@@ -24,11 +24,16 @@ class DmsRepository {
   final Logger _logger;
 
   /// Fetches conversations from the API and caches them locally.
-  ///
-  /// [cursor] - Pagination cursor for fetching older conversations.
-  /// [limit] - Maximum number of conversations to fetch (default 50).
-  Future<String?> fetchConversations({String? cursor, int limit = 50}) async {
-    _logger.info('Fetching conversations', {'cursor': cursor, 'limit': limit});
+  Future<String?> fetchConversations({
+    required String ownerDid,
+    String? cursor,
+    int limit = 50,
+  }) async {
+    _logger.info('Fetching conversations', {
+      'cursor': cursor,
+      'limit': limit,
+      'ownerDid': ownerDid,
+    });
 
     try {
       final params = <String, dynamic>{'limit': limit.clamp(1, 100)};
@@ -89,6 +94,7 @@ class DmsRepository {
         convos.add(
           DmConvosCompanion.insert(
             convoId: convoMap['id'] as String,
+            ownerDid: ownerDid,
             membersJson: jsonEncode(memberDids),
             lastMessageText: Value(lastMessageText),
             lastMessageAt: Value(lastMessageAt),
@@ -114,11 +120,9 @@ class DmsRepository {
     }
   }
 
-  /// Returns a stream of conversations from the local cache.
-  ///
-  /// Conversations are joined with member profiles for complete display data.
-  Stream<List<DmConversation>> watchConversations() {
-    return _convosDao.watchConversations().map((items) {
+  /// Returns a stream of conversations from the local cache for a specific user.
+  Stream<List<DmConversation>> watchConversations(String ownerDid) {
+    return _convosDao.watchConversations(ownerDid).map((items) {
       return items.map((item) {
         return DmConversation(
           convoId: item.convo.convoId,
@@ -134,9 +138,9 @@ class DmsRepository {
     });
   }
 
-  /// Gets a single conversation by ID.
-  Future<DmConversation?> getConversation(String convoId) async {
-    final item = await _convosDao.getConvo(convoId);
+  /// Gets a single conversation by ID for a specific user.
+  Future<DmConversation?> getConversation(String convoId, String ownerDid) async {
+    final item = await _convosDao.getConvo(convoId, ownerDid);
     if (item == null) return null;
 
     return DmConversation(
@@ -152,12 +156,18 @@ class DmsRepository {
   }
 
   /// Fetches messages for a conversation from the API and caches them locally.
-  ///
-  /// [convoId] - Conversation to fetch messages for.
-  /// [cursor] - Pagination cursor for fetching older messages.
-  /// [limit] - Maximum number of messages to fetch (default 50).
-  Future<String?> fetchMessages(String convoId, {String? cursor, int limit = 50}) async {
-    _logger.info('Fetching messages', {'convoId': convoId, 'cursor': cursor, 'limit': limit});
+  Future<String?> fetchMessages(
+    String convoId, {
+    required String ownerDid,
+    String? cursor,
+    int limit = 50,
+  }) async {
+    _logger.info('Fetching messages', {
+      'convoId': convoId,
+      'cursor': cursor,
+      'limit': limit,
+      'ownerDid': ownerDid,
+    });
 
     try {
       final params = <String, dynamic>{'convoId': convoId, 'limit': limit.clamp(1, 100)};
@@ -202,6 +212,7 @@ class DmsRepository {
           DmMessagesCompanion.insert(
             messageId: messageMap['id'] as String,
             convoId: convoId,
+            ownerDid: ownerDid,
             senderDid: senderDid,
             content: messageMap['text'] as String? ?? '',
             sentAt: sentAt,
@@ -225,11 +236,9 @@ class DmsRepository {
     }
   }
 
-  /// Returns a stream of messages for a conversation from the local cache.
-  ///
-  /// Messages are joined with sender profiles for complete display data.
-  Stream<List<domain.AppDmMessage>> watchMessages(String convoId) {
-    return _messagesDao.watchMessagesByConvo(convoId).map((items) {
+  /// Returns a stream of messages for a conversation from the local cache for a specific user.
+  Stream<List<domain.AppDmMessage>> watchMessages(String convoId, String ownerDid) {
+    return _messagesDao.watchMessagesByConvo(convoId, ownerDid).map((items) {
       return items.map((item) {
         return domain.AppDmMessage(
           messageId: item.message.messageId,
@@ -244,13 +253,13 @@ class DmsRepository {
   }
 
   /// Accepts a conversation request.
-  Future<void> acceptConversation(String convoId) async {
+  Future<void> acceptConversation(String convoId, String ownerDid) async {
     _logger.info('Accepting conversation', {'convoId': convoId});
 
     try {
       await _client.call('chat.bsky.convo.acceptConvo', body: {'convoId': convoId});
 
-      await _convosDao.acceptConvo(convoId);
+      await _convosDao.acceptConvo(convoId, ownerDid);
 
       _logger.debug('Successfully accepted conversation', {});
     } catch (error, stack) {
@@ -260,7 +269,11 @@ class DmsRepository {
   }
 
   /// Updates the read state for a conversation.
-  Future<void> updateReadState(String convoId, String messageId) async {
+  Future<void> updateReadState({
+    required String convoId,
+    required String ownerDid,
+    required String messageId,
+  }) async {
     _logger.info('Updating read state', {'convoId': convoId, 'messageId': messageId});
 
     try {
@@ -271,6 +284,7 @@ class DmsRepository {
 
       await _convosDao.updateReadState(
         convoId: convoId,
+        ownerDid: ownerDid,
         lastReadMessageId: messageId,
         unreadCount: 0,
       );
@@ -283,13 +297,13 @@ class DmsRepository {
   }
 
   /// Mutes a conversation.
-  Future<void> muteConversation(String convoId) async {
+  Future<void> muteConversation(String convoId, String ownerDid) async {
     _logger.info('Muting conversation', {'convoId': convoId});
 
     try {
       await _client.call('chat.bsky.convo.muteConvo', body: {'convoId': convoId});
 
-      await _convosDao.muteConvo(convoId, isMuted: true);
+      await _convosDao.muteConvo(convoId, ownerDid, isMuted: true);
 
       _logger.debug('Successfully muted conversation', {});
     } catch (error, stack) {
@@ -299,13 +313,13 @@ class DmsRepository {
   }
 
   /// Unmutes a conversation.
-  Future<void> unmuteConversation(String convoId) async {
+  Future<void> unmuteConversation(String convoId, String ownerDid) async {
     _logger.info('Unmuting conversation', {'convoId': convoId});
 
     try {
       await _client.call('chat.bsky.convo.unmuteConvo', body: {'convoId': convoId});
 
-      await _convosDao.muteConvo(convoId, isMuted: false);
+      await _convosDao.muteConvo(convoId, ownerDid, isMuted: false);
 
       _logger.debug('Successfully unmuted conversation', {});
     } catch (error, stack) {
@@ -315,13 +329,13 @@ class DmsRepository {
   }
 
   /// Leaves a conversation.
-  Future<void> leaveConversation(String convoId) async {
+  Future<void> leaveConversation(String convoId, String ownerDid) async {
     _logger.info('Leaving conversation', {'convoId': convoId});
 
     try {
       await _client.call('chat.bsky.convo.leaveConvo', body: {'convoId': convoId});
 
-      await _convosDao.deleteConvo(convoId);
+      await _convosDao.deleteConvo(convoId, ownerDid);
 
       _logger.debug('Successfully left conversation', {});
     } catch (error, stack) {
@@ -330,9 +344,9 @@ class DmsRepository {
     }
   }
 
-  /// Clears all cached conversations and messages.
-  Future<void> clearAll() async {
-    await _messagesDao.clearMessages();
-    await _convosDao.clearConversations();
+  /// Clears all cached conversations and messages for a specific user.
+  Future<void> clearAll(String ownerDid) async {
+    await _messagesDao.clearMessages(ownerDid);
+    await _convosDao.clearConversations(ownerDid);
   }
 }

@@ -39,16 +39,20 @@ void main() {
 
     registerFallbackValue('');
     when(
-      () => mockRepository.watchFeedContent(feedKey: any(named: 'feedKey')),
+      () => mockRepository.watchFeedContent(
+        feedKey: any(named: 'feedKey'),
+        ownerDid: any(named: 'ownerDid'),
+      ),
     ).thenAnswer((_) => Stream.value([]));
     when(
       () => mockRepository.fetchAndCacheFeed(
         cursor: any(named: 'cursor'),
         feedUri: any(named: 'feedUri'),
+        ownerDid: any(named: 'ownerDid'),
       ),
     ).thenAnswer((_) async {});
-    when(() => mockRepository.getCursor(any())).thenAnswer((_) async => null);
-    when(() => mockRepository.clearFeedContent(any())).thenAnswer((_) async {});
+    when(() => mockRepository.getCursor(any(), any())).thenAnswer((_) async => null);
+    when(() => mockRepository.clearFeedContent(any(), any())).thenAnswer((_) async {});
   });
 
   group('FeedContentNotifier', () {
@@ -61,7 +65,10 @@ void main() {
       await Future.delayed(Duration.zero);
 
       verify(
-        () => mockRepository.watchFeedContent(feedKey: FeedContentRepository.kInternalHomeFeedKey),
+        () => mockRepository.watchFeedContent(
+          feedKey: FeedContentRepository.kInternalHomeFeedKey,
+          ownerDid: any(named: 'ownerDid'),
+        ),
       ).called(1);
     });
 
@@ -71,14 +78,22 @@ void main() {
       const feedUri = 'at://did:example:123/app.bsky.feed.generator/custom';
 
       when(
-        () => mockRepository.watchFeedContent(feedKey: feedUri),
+        () => mockRepository.watchFeedContent(
+          feedKey: feedUri,
+          ownerDid: any(named: 'ownerDid'),
+        ),
       ).thenAnswer((_) => Stream.value([]));
 
       container.read(feedContentProvider(feedUri));
 
       await Future.delayed(Duration.zero);
 
-      verify(() => mockRepository.watchFeedContent(feedKey: feedUri)).called(1);
+      verify(
+        () => mockRepository.watchFeedContent(
+          feedKey: feedUri,
+          ownerDid: any(named: 'ownerDid'),
+        ),
+      ).called(1);
     });
 
     test('build maps following feed to internal home key', () async {
@@ -91,7 +106,10 @@ void main() {
       await Future.delayed(Duration.zero);
 
       verify(
-        () => mockRepository.watchFeedContent(feedKey: FeedContentRepository.kInternalHomeFeedKey),
+        () => mockRepository.watchFeedContent(
+          feedKey: FeedContentRepository.kInternalHomeFeedKey,
+          ownerDid: any(named: 'ownerDid'),
+        ),
       ).called(1);
     });
 
@@ -99,11 +117,15 @@ void main() {
       final container = createContainer();
       addTearDown(container.dispose);
       const feedUri = FeedRepository.kHomeFeedUri;
-      when(() => mockRepository.fetchAndCacheFeed(feedUri: null)).thenAnswer((_) async {});
+      when(
+        () => mockRepository.fetchAndCacheFeed(feedUri: null, ownerDid: any(named: 'ownerDid')),
+      ).thenAnswer((_) async {});
 
       await container.read(feedContentProvider(feedUri).notifier).refresh();
 
-      verify(() => mockRepository.fetchAndCacheFeed(feedUri: null)).called(1);
+      verify(
+        () => mockRepository.fetchAndCacheFeed(feedUri: null, ownerDid: any(named: 'ownerDid')),
+      ).called(1);
     });
 
     test('refresh calls fetchAndCacheFeed with correct key for custom feed', () async {
@@ -112,13 +134,26 @@ void main() {
       const feedUri = 'at://did:example:123/app.bsky.feed.generator/custom';
 
       when(
-        () => mockRepository.watchFeedContent(feedKey: feedUri),
+        () => mockRepository.watchFeedContent(
+          feedKey: feedUri,
+          ownerDid: any(named: 'ownerDid'),
+        ),
       ).thenAnswer((_) => Stream.value([]));
-      when(() => mockRepository.fetchAndCacheFeed(feedUri: feedUri)).thenAnswer((_) async {});
+      when(
+        () => mockRepository.fetchAndCacheFeed(
+          feedUri: feedUri,
+          ownerDid: any(named: 'ownerDid'),
+        ),
+      ).thenAnswer((_) async {});
 
       await container.read(feedContentProvider(feedUri).notifier).refresh();
 
-      verify(() => mockRepository.fetchAndCacheFeed(feedUri: feedUri)).called(1);
+      verify(
+        () => mockRepository.fetchAndCacheFeed(
+          feedUri: feedUri,
+          ownerDid: any(named: 'ownerDid'),
+        ),
+      ).called(1);
     });
 
     test('loadMore fetches next page using cursor', () async {
@@ -127,17 +162,27 @@ void main() {
       const feedUri = FeedRepository.kHomeFeedUri;
 
       when(
-        () => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey),
+        () => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey, any()),
       ).thenAnswer((_) async => 'next_cursor');
       when(
-        () => mockRepository.fetchAndCacheFeed(cursor: 'next_cursor', feedUri: null),
+        () => mockRepository.fetchAndCacheFeed(
+          cursor: 'next_cursor',
+          feedUri: null,
+          ownerDid: any(named: 'ownerDid'),
+        ),
       ).thenAnswer((_) async {});
 
       await container.read(feedContentProvider(feedUri).notifier).loadMore();
 
-      verify(() => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey)).called(1);
       verify(
-        () => mockRepository.fetchAndCacheFeed(cursor: 'next_cursor', feedUri: null),
+        () => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey, any()),
+      ).called(1);
+      verify(
+        () => mockRepository.fetchAndCacheFeed(
+          cursor: 'next_cursor',
+          feedUri: null,
+          ownerDid: any(named: 'ownerDid'),
+        ),
       ).called(1);
     });
 
@@ -147,16 +192,19 @@ void main() {
       const feedUri = FeedRepository.kHomeFeedUri;
 
       when(
-        () => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey),
+        () => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey, any()),
       ).thenAnswer((_) async => null);
 
       await container.read(feedContentProvider(feedUri).notifier).loadMore();
 
-      verify(() => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey)).called(1);
+      verify(
+        () => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey, any()),
+      ).called(1);
       verifyNever(
         () => mockRepository.fetchAndCacheFeed(
           cursor: any(named: 'cursor'),
           feedUri: any(named: 'feedUri'),
+          ownerDid: any(named: 'ownerDid'),
         ),
       );
     });
@@ -167,13 +215,13 @@ void main() {
       const feedUri = FeedRepository.kHomeFeedUri;
 
       when(
-        () => mockRepository.clearFeedContent(FeedContentRepository.kInternalHomeFeedKey),
+        () => mockRepository.clearFeedContent(FeedContentRepository.kInternalHomeFeedKey, any()),
       ).thenAnswer((_) async {});
 
       await container.read(feedContentProvider(feedUri).notifier).clearFeedContent();
 
       verify(
-        () => mockRepository.clearFeedContent(FeedContentRepository.kInternalHomeFeedKey),
+        () => mockRepository.clearFeedContent(FeedContentRepository.kInternalHomeFeedKey, any()),
       ).called(1);
     });
 
@@ -188,6 +236,7 @@ void main() {
         () => mockRepository.fetchAndCacheFeed(
           cursor: any(named: 'cursor'),
           feedUri: any(named: 'feedUri'),
+          ownerDid: any(named: 'ownerDid'),
         ),
       );
     });

@@ -37,7 +37,7 @@ void main() {
     const testUri = 'at://did:test/app.bsky.feed.post/1';
 
     testWidgets('renders thread with focal post highlighted', (tester) async {
-      when(() => mockRepo.getPostThread(testUri)).thenAnswer(
+      when(() => mockRepo.getPostThread(testUri, any())).thenAnswer(
         (_) async => ThreadViewPost(
           post: ThreadPost(
             uri: testUri,
@@ -73,7 +73,7 @@ void main() {
         ),
       );
 
-      when(() => mockRepo.getPostThread(testUri)).thenAnswer(
+      when(() => mockRepo.getPostThread(testUri, any())).thenAnswer(
         (_) async => ThreadViewPost(
           post: ThreadPost(
             uri: testUri,
@@ -98,7 +98,7 @@ void main() {
     });
 
     testWidgets('renders replies correctly', (tester) async {
-      when(() => mockRepo.getPostThread(testUri)).thenAnswer(
+      when(() => mockRepo.getPostThread(testUri, any())).thenAnswer(
         (_) async => ThreadViewPost(
           post: ThreadPost(
             uri: testUri,
@@ -129,7 +129,7 @@ void main() {
     });
 
     testWidgets('displays BlockedPostCard for blocked posts', (tester) async {
-      when(() => mockRepo.getPostThread(testUri)).thenAnswer(
+      when(() => mockRepo.getPostThread(testUri, any())).thenAnswer(
         (_) async => ThreadViewPost(
           post: ThreadPost(
             uri: testUri,
@@ -159,7 +159,7 @@ void main() {
     });
 
     testWidgets('displays NotFoundPostCard for deleted posts', (tester) async {
-      when(() => mockRepo.getPostThread(testUri)).thenAnswer(
+      when(() => mockRepo.getPostThread(testUri, any())).thenAnswer(
         (_) async => ThreadViewPost(
           post: ThreadPost(
             uri: testUri,
@@ -189,7 +189,7 @@ void main() {
     });
 
     testWidgets('displays ThreadgateIndicator when threadgate is present', (tester) async {
-      when(() => mockRepo.getPostThread(testUri)).thenAnswer(
+      when(() => mockRepo.getPostThread(testUri, any())).thenAnswer(
         (_) async => ThreadViewPost(
           post: ThreadPost(
             uri: testUri,
@@ -218,7 +218,7 @@ void main() {
     });
 
     testWidgets('toggles between tree and flattened view', (tester) async {
-      when(() => mockRepo.getPostThread(testUri)).thenAnswer(
+      when(() => mockRepo.getPostThread(testUri, any())).thenAnswer(
         (_) async => ThreadViewPost(
           post: ThreadPost(
             uri: testUri,

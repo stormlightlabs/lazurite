@@ -11,6 +11,7 @@ class MockNotificationsRepository extends Mock implements NotificationsRepositor
 class MockNotificationsSyncQueueDao extends Mock implements NotificationsSyncQueueDao {}
 
 void main() {
+  const ownerDid = 'did:web:tester';
   late MockNotificationsRepository mockRepository;
   late MockNotificationsSyncQueueDao mockSyncQueue;
   late MockLogger mockLogger;
@@ -40,16 +41,16 @@ void main() {
         final timestamp2 = DateTime.parse('2026-01-07T12:01:00.000Z');
         final timestamp3 = DateTime.parse('2026-01-07T12:02:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
 
-        service.markAsSeen(timestamp1);
-        service.markAsSeen(timestamp2);
-        service.markAsSeen(timestamp3);
+        service.markAsSeen(timestamp1, ownerDid);
+        service.markAsSeen(timestamp2, ownerDid);
+        service.markAsSeen(timestamp3, ownerDid);
 
         await Future.delayed(const Duration(seconds: 3));
 
-        verify(() => mockRepository.markAsSeenLocally(timestamp3)).called(1);
+        verify(() => mockRepository.markAsSeenLocally(timestamp3, ownerDid)).called(1);
         verify(() => mockRepository.updateSeen(timestamp3)).called(1);
       });
 
@@ -58,16 +59,16 @@ void main() {
         final later = DateTime.parse('2026-01-07T12:05:00.000Z');
         final middle = DateTime.parse('2026-01-07T12:02:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
 
-        service.markAsSeen(middle);
-        service.markAsSeen(earlier);
-        service.markAsSeen(later);
+        service.markAsSeen(middle, ownerDid);
+        service.markAsSeen(earlier, ownerDid);
+        service.markAsSeen(later, ownerDid);
 
         await Future.delayed(const Duration(seconds: 3));
 
-        verify(() => mockRepository.markAsSeenLocally(later)).called(1);
+        verify(() => mockRepository.markAsSeenLocally(later, ownerDid)).called(1);
         verify(() => mockRepository.updateSeen(later)).called(1);
       });
 
@@ -75,18 +76,18 @@ void main() {
         final timestamp1 = DateTime.parse('2026-01-07T12:00:00.000Z');
         final timestamp2 = DateTime.parse('2026-01-07T12:01:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
 
-        service.markAsSeen(timestamp1);
+        service.markAsSeen(timestamp1, ownerDid);
 
         await Future.delayed(const Duration(seconds: 1));
 
-        service.markAsSeen(timestamp2);
+        service.markAsSeen(timestamp2, ownerDid);
 
         await Future.delayed(const Duration(milliseconds: 2500));
 
-        verify(() => mockRepository.markAsSeenLocally(timestamp2)).called(1);
+        verify(() => mockRepository.markAsSeenLocally(timestamp2, ownerDid)).called(1);
       });
     });
 
@@ -94,39 +95,39 @@ void main() {
       test('immediately flushes pending operations', () async {
         final timestamp = DateTime.parse('2026-01-07T12:00:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
 
-        service.markAsSeen(timestamp);
+        service.markAsSeen(timestamp, ownerDid);
 
         await service.flush();
 
-        verify(() => mockRepository.markAsSeenLocally(timestamp)).called(1);
+        verify(() => mockRepository.markAsSeenLocally(timestamp, ownerDid)).called(1);
         verify(() => mockRepository.updateSeen(timestamp)).called(1);
       });
 
       test('does nothing when no pending operations', () async {
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
 
         await service.flush();
 
-        verifyNever(() => mockRepository.markAsSeenLocally(any()));
+        verifyNever(() => mockRepository.markAsSeenLocally(any(), any()));
         verifyNever(() => mockRepository.updateSeen(any()));
       });
 
       test('cancels pending timer', () async {
         final timestamp = DateTime.parse('2026-01-07T12:00:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
 
-        service.markAsSeen(timestamp);
+        service.markAsSeen(timestamp, ownerDid);
         await service.flush();
 
         await Future.delayed(const Duration(seconds: 3));
 
-        verify(() => mockRepository.markAsSeenLocally(timestamp)).called(1);
+        verify(() => mockRepository.markAsSeenLocally(timestamp, ownerDid)).called(1);
         verify(() => mockRepository.updateSeen(timestamp)).called(1);
       });
     });
@@ -135,14 +136,14 @@ void main() {
       test('updates local cache even when API fails', () async {
         final timestamp = DateTime.parse('2026-01-07T12:00:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenThrow(Exception('Network error'));
-        when(() => mockSyncQueue.enqueueMarkSeen(any())).thenAnswer((_) async => 1);
+        when(() => mockSyncQueue.enqueueMarkSeen(any(), any())).thenAnswer((_) async => 1);
 
-        service.markAsSeen(timestamp);
+        service.markAsSeen(timestamp, ownerDid);
         await Future.delayed(const Duration(seconds: 3));
 
-        verify(() => mockRepository.markAsSeenLocally(timestamp)).called(1);
+        verify(() => mockRepository.markAsSeenLocally(timestamp, ownerDid)).called(1);
         verify(() => mockRepository.updateSeen(timestamp)).called(1);
         verify(() => mockLogger.error(any(), any(), any())).called(1);
       });
@@ -150,11 +151,11 @@ void main() {
       test('does not retry failed operations automatically', () async {
         final timestamp = DateTime.parse('2026-01-07T12:00:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenThrow(Exception('Network error'));
-        when(() => mockSyncQueue.enqueueMarkSeen(any())).thenAnswer((_) async => 1);
+        when(() => mockSyncQueue.enqueueMarkSeen(any(), any())).thenAnswer((_) async => 1);
 
-        service.markAsSeen(timestamp);
+        service.markAsSeen(timestamp, ownerDid);
         await Future.delayed(const Duration(seconds: 3));
 
         verify(() => mockRepository.updateSeen(timestamp)).called(1);
@@ -163,24 +164,25 @@ void main() {
       test('enqueues failed operation to sync queue', () async {
         final timestamp = DateTime.parse('2026-01-07T12:00:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenThrow(Exception('Network error'));
-        when(() => mockSyncQueue.enqueueMarkSeen(any())).thenAnswer((_) async => 1);
+        when(() => mockSyncQueue.enqueueMarkSeen(any(), any())).thenAnswer((_) async => 1);
 
-        service.markAsSeen(timestamp);
+        service.markAsSeen(timestamp, ownerDid);
         await Future.delayed(const Duration(seconds: 3));
 
-        verify(() => mockSyncQueue.enqueueMarkSeen(timestamp)).called(1);
+        verify(() => mockSyncQueue.enqueueMarkSeen(timestamp, ownerDid)).called(1);
       });
 
       test('logs error if queueing fails', () async {
         final timestamp = DateTime.parse('2026-01-07T12:00:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenThrow(Exception('Network error'));
-        when(() => mockSyncQueue.enqueueMarkSeen(any())).thenThrow(Exception('Queue error'));
-
-        service.markAsSeen(timestamp);
+        when(
+          () => mockSyncQueue.enqueueMarkSeen(any(), any()),
+        ).thenThrow(Exception('Queue error'));
+        service.markAsSeen(timestamp, ownerDid);
         await Future.delayed(const Duration(seconds: 3));
 
         verify(() => mockLogger.error(any(), any(), any())).called(2);
@@ -189,13 +191,13 @@ void main() {
       test('does not enqueue when flush succeeds', () async {
         final timestamp = DateTime.parse('2026-01-07T12:00:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
 
-        service.markAsSeen(timestamp);
+        service.markAsSeen(timestamp, ownerDid);
         await Future.delayed(const Duration(seconds: 3));
 
-        verifyNever(() => mockSyncQueue.enqueueMarkSeen(any()));
+        verifyNever(() => mockSyncQueue.enqueueMarkSeen(any(), any()));
       });
     });
 
@@ -203,15 +205,15 @@ void main() {
       test('cancels pending timer', () async {
         final timestamp = DateTime.parse('2026-01-07T12:00:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
 
-        service.markAsSeen(timestamp);
+        service.markAsSeen(timestamp, ownerDid);
         service.dispose();
 
         await Future.delayed(const Duration(seconds: 3));
 
-        verifyNever(() => mockRepository.markAsSeenLocally(any()));
+        verifyNever(() => mockRepository.markAsSeenLocally(any(), any()));
         verifyNever(() => mockRepository.updateSeen(any()));
       });
     });
@@ -220,19 +222,19 @@ void main() {
       test('prevents concurrent flush operations', () async {
         final timestamp = DateTime.parse('2026-01-07T12:00:00.000Z');
 
-        when(() => mockRepository.markAsSeenLocally(any())).thenAnswer((_) async {});
+        when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
         when(
           () => mockRepository.updateSeen(any()),
         ).thenAnswer((_) async => Future.delayed(const Duration(milliseconds: 100)));
 
-        service.markAsSeen(timestamp);
+        service.markAsSeen(timestamp, ownerDid);
 
         final flush1 = service.flush();
         final flush2 = service.flush();
 
         await Future.wait([flush1, flush2]);
 
-        verify(() => mockRepository.markAsSeenLocally(timestamp)).called(1);
+        verify(() => mockRepository.markAsSeenLocally(timestamp, ownerDid)).called(1);
         verify(() => mockRepository.updateSeen(timestamp)).called(1);
       });
     });

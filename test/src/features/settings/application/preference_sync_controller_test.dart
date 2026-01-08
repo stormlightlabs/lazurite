@@ -47,9 +47,9 @@ void main() {
   setUp(() {
     mockRepository = MockBlueskyPreferencesRepository();
 
-    when(() => mockRepository.syncPreferencesFromRemote()).thenAnswer((_) async {});
-    when(() => mockRepository.processSyncQueue()).thenAnswer((_) async {});
-    when(() => mockRepository.clearAll()).thenAnswer((_) async {});
+    when(() => mockRepository.syncPreferencesFromRemote(any())).thenAnswer((_) async {});
+    when(() => mockRepository.processSyncQueue(any())).thenAnswer((_) async {});
+    when(() => mockRepository.clearAll(any())).thenAnswer((_) async {});
   });
 
   group('PreferenceSyncController', () {
@@ -70,8 +70,8 @@ void main() {
         container.read(preferenceSyncControllerProvider);
         await Future<void>.delayed(Duration.zero);
 
-        verify(() => mockRepository.syncPreferencesFromRemote()).called(1);
-        verify(() => mockRepository.processSyncQueue()).called(1);
+        verify(() => mockRepository.syncPreferencesFromRemote(any())).called(1);
+        verify(() => mockRepository.processSyncQueue(any())).called(1);
       });
 
       test('does not sync when user is not authenticated', () async {
@@ -89,8 +89,8 @@ void main() {
         container.read(preferenceSyncControllerProvider);
         await Future<void>.delayed(Duration.zero);
 
-        verifyNever(() => mockRepository.syncPreferencesFromRemote());
-        verifyNever(() => mockRepository.processSyncQueue());
+        verifyNever(() => mockRepository.syncPreferencesFromRemote(any()));
+        verifyNever(() => mockRepository.processSyncQueue(any()));
       });
     });
 
@@ -100,7 +100,7 @@ void main() {
         final authState = AuthStateAuthenticated(fakeSession);
 
         when(
-          () => mockRepository.syncPreferencesFromRemote(),
+          () => mockRepository.syncPreferencesFromRemote(any()),
         ).thenThrow(Exception('Network error'));
 
         final container = ProviderContainer(
@@ -115,14 +115,14 @@ void main() {
         expect(() => container.read(preferenceSyncControllerProvider), returnsNormally);
         await Future<void>.delayed(Duration.zero);
 
-        verify(() => mockRepository.syncPreferencesFromRemote()).called(1);
+        verify(() => mockRepository.syncPreferencesFromRemote(any())).called(1);
       });
 
       test('handles queue processing errors gracefully', () async {
         final fakeSession = _createFakeSession();
         final authState = AuthStateAuthenticated(fakeSession);
 
-        when(() => mockRepository.processSyncQueue()).thenThrow(Exception('Queue error'));
+        when(() => mockRepository.processSyncQueue(any())).thenThrow(Exception('Queue error'));
 
         final container = ProviderContainer(
           overrides: [
@@ -138,7 +138,7 @@ void main() {
       });
 
       test('does not crash when clearAll fails on logout', () async {
-        when(() => mockRepository.clearAll()).thenThrow(Exception('Clear failed'));
+        when(() => mockRepository.clearAll(any())).thenThrow(Exception('Clear failed'));
 
         const authState = AuthStateUnauthenticated();
 
@@ -172,7 +172,7 @@ void main() {
 
         container.read(preferenceSyncControllerProvider);
         await Future<void>.delayed(Duration.zero);
-        verify(() => mockRepository.syncPreferencesFromRemote()).called(1);
+        verify(() => mockRepository.syncPreferencesFromRemote(any())).called(1);
       });
     });
   });

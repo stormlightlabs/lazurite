@@ -12,6 +12,7 @@ void main() {
   late AppDatabase db;
   late MockLogger mockLogger;
   late FeedRepository repository;
+  const ownerDid = 'did:web:tester';
 
   setUp(() {
     mockApi = MockXrpcClient();
@@ -133,6 +134,7 @@ void main() {
           creatorDid: 'did:plc:abc',
           sortOrder: 0,
           lastSynced: oldDate,
+          ownerDid: ownerDid,
         ),
       );
 
@@ -153,9 +155,9 @@ void main() {
         () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
       ).thenAnswer((_) async => updatedMetadata);
 
-      await repository.refreshStaleMetadata();
+      await repository.refreshStaleMetadata(ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed!.displayName, 'Updated Name');
       expect(feed.likeCount, 200);
     });
@@ -170,10 +172,11 @@ void main() {
           creatorDid: 'did:plc:abc',
           sortOrder: 0,
           lastSynced: recentDate,
+          ownerDid: ownerDid,
         ),
       );
 
-      await repository.refreshStaleMetadata();
+      await repository.refreshStaleMetadata(ownerDid);
 
       verifyNever(
         () => mockApi.call('app.bsky.feed.getFeedGenerator', params: any(named: 'params')),
@@ -190,10 +193,11 @@ void main() {
           creatorDid: 'did:plc:abc',
           sortOrder: 0,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       );
 
-      final stream = repository.watchAllFeeds();
+      final stream = repository.watchAllFeeds(ownerDid);
       expect(stream, emits(hasLength(1)));
     });
   });
@@ -208,6 +212,7 @@ void main() {
           sortOrder: 0,
           isPinned: const Value(true),
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
         SavedFeedsCompanion.insert(
           uri: 'at://did:plc:def/app.bsky.feed.generator/unpinned',
@@ -216,10 +221,11 @@ void main() {
           sortOrder: 1,
           isPinned: const Value(false),
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       ]);
 
-      final stream = repository.watchPinnedFeeds();
+      final stream = repository.watchPinnedFeeds(ownerDid);
       final feeds = await stream.first;
       expect(feeds, hasLength(1));
       expect(feeds[0].displayName, 'Pinned Feed');
@@ -237,10 +243,11 @@ void main() {
           creatorDid: 'did:plc:abc',
           sortOrder: 0,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       );
 
-      final feed = await repository.getFeed(feedUri);
+      final feed = await repository.getFeed(feedUri, ownerDid);
       expect(feed, isNotNull);
       expect(feed!.displayName, 'Test Feed');
     });
@@ -258,6 +265,7 @@ void main() {
           sortOrder: 0,
           isPinned: const Value(true),
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
         SavedFeedsCompanion.insert(
           uri: FeedRepository.kForYouFeedUri,
@@ -266,6 +274,7 @@ void main() {
           sortOrder: 1,
           isPinned: const Value(true),
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
         SavedFeedsCompanion.insert(
           uri: FeedRepository.kDiscoverFeedUri,
@@ -274,12 +283,13 @@ void main() {
           sortOrder: 2,
           isPinned: const Value(true),
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       ]);
 
-      await repository.seedDefaultFeeds();
+      await repository.seedDefaultFeeds(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, isEmpty);
     });
 
@@ -306,9 +316,9 @@ void main() {
         ),
       ).thenAnswer((_) async => mockMetadata);
 
-      await repository.seedDefaultFeeds();
+      await repository.seedDefaultFeeds(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
       expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
       expect(feeds[0].displayName, 'What\'s Hot');
@@ -325,9 +335,9 @@ void main() {
         ),
       ).thenThrow(Exception('Network error'));
 
-      await repository.seedDefaultFeeds();
+      await repository.seedDefaultFeeds(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
       expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
       expect(feeds[0].displayName, 'Discover');
@@ -346,12 +356,13 @@ void main() {
           sortOrder: 0,
           isPinned: const Value(true),
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       );
 
-      await repository.seedDefaultFeeds();
+      await repository.seedDefaultFeeds(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
       expect(feeds[0].displayName, 'Existing Discover');
       verifyNever(
@@ -372,6 +383,7 @@ void main() {
           creatorDid: 'did:plc:test',
           sortOrder: 0,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       );
 
@@ -395,12 +407,12 @@ void main() {
         ),
       ).thenAnswer((_) async => mockMetadata);
 
-      await repository.seedDefaultFeeds();
+      await repository.seedDefaultFeeds(ownerDid);
 
-      final deprecatedFeed = await db.savedFeedsDao.getFeed(deprecatedUri);
+      final deprecatedFeed = await db.savedFeedsDao.getFeed(deprecatedUri, ownerDid);
       expect(deprecatedFeed, isNull);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
       expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
     });
@@ -419,6 +431,7 @@ void main() {
           sortOrder: 3,
           isPinned: const Value(true),
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       );
 
@@ -442,9 +455,9 @@ void main() {
         ),
       ).thenAnswer((_) async => mockMetadata);
 
-      await repository.seedDefaultFeeds();
+      await repository.seedDefaultFeeds(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
       expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
       expect(feeds[0].isPinned, true, reason: 'Pin status should be preserved');
@@ -465,6 +478,7 @@ void main() {
           sortOrder: 5,
           isPinned: const Value(false),
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       );
 
@@ -488,9 +502,9 @@ void main() {
         ),
       ).thenAnswer((_) async => mockMetadata);
 
-      await repository.seedDefaultFeeds();
+      await repository.seedDefaultFeeds(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
       expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
       expect(feeds[0].isPinned, false, reason: 'Unpinned status should be preserved');
@@ -511,6 +525,7 @@ void main() {
           sortOrder: 5,
           isPinned: const Value(true),
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       );
 
@@ -522,15 +537,16 @@ void main() {
           sortOrder: 0,
           isPinned: const Value(false),
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       );
 
-      await repository.seedDefaultFeeds();
+      await repository.seedDefaultFeeds(ownerDid);
 
-      final deprecatedFeed = await db.savedFeedsDao.getFeed(deprecatedUri);
+      final deprecatedFeed = await db.savedFeedsDao.getFeed(deprecatedUri, ownerDid);
       expect(deprecatedFeed, isNull);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
       expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
       expect(feeds[0].displayName, 'Existing Discover');
@@ -561,9 +577,9 @@ void main() {
         ),
       ).thenAnswer((_) async => mockMetadata);
 
-      await repository.seedDefaultFeeds();
+      await repository.seedDefaultFeeds(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
       expect(feeds[0].uri, FeedRepository.kDiscoverFeedUri);
       expect(feeds[0].isPinned, true);

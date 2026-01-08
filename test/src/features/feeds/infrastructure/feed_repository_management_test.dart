@@ -11,6 +11,7 @@ void main() {
   late AppDatabase db;
   late MockLogger mockLogger;
   late FeedRepository repository;
+  const ownerDid = 'did:web:tester';
 
   setUp(() {
     mockApi = MockXrpcClient();
@@ -66,7 +67,7 @@ void main() {
         () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
       ).thenAnswer((_) async => feedMetadata);
 
-      await repository.saveFeed(feedUri);
+      await repository.saveFeed(feedUri, ownerDid);
 
       verify(
         () => mockApi.call(
@@ -83,10 +84,10 @@ void main() {
         ),
       ).called(1);
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNotNull);
       expect(feed!.displayName, 'New Feed');
-      final queue = await db.preferenceSyncQueueDao.getPendingItems();
+      final queue = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queue, isEmpty);
     });
 
@@ -111,12 +112,12 @@ void main() {
         () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
       ).thenThrow(Exception('Network error'));
 
-      await repository.saveFeed(feedUri);
+      await repository.saveFeed(feedUri, ownerDid);
 
       verify(
         () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
       ).called(1);
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNotNull);
       expect(feed!.displayName, 'Saved Feed');
     });
@@ -131,13 +132,13 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenThrow(Exception('Network error'));
 
-      await repository.saveFeed(feedUri);
+      await repository.saveFeed(feedUri, ownerDid);
 
-      final queue = await db.preferenceSyncQueueDao.getPendingItems();
+      final queue = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queue, hasLength(1));
       expect(queue.first.type, 'save');
       expect(queue.first.payload, feedUri);
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNotNull);
     });
 
@@ -175,7 +176,7 @@ void main() {
         () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
       ).thenAnswer((_) async => feedMetadata);
 
-      await repository.saveFeed(feedUri, pin: true);
+      await repository.saveFeed(feedUri, ownerDid, pin: true);
 
       verify(
         () => mockApi.call(
@@ -192,7 +193,7 @@ void main() {
         ),
       ).called(1);
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed!.isPinned, true);
     });
 
@@ -230,7 +231,7 @@ void main() {
         () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
       ).thenAnswer((_) async => feedMetadata);
 
-      await repository.saveFeed(feedUri);
+      await repository.saveFeed(feedUri, ownerDid);
 
       verify(
         () => mockApi.call(
@@ -284,7 +285,7 @@ void main() {
         () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
       ).thenAnswer((_) async => feedMetadata);
 
-      await repository.saveFeed(feedUri);
+      await repository.saveFeed(feedUri, ownerDid);
 
       final captured =
           verify(
@@ -303,7 +304,7 @@ void main() {
       when(() => mockApi.isAuthenticated).thenReturn(false);
 
       expect(
-        () => repository.saveFeed('at://did:plc:abc/app.bsky.feed.generator/test'),
+        () => repository.saveFeed('at://did:plc:abc/app.bsky.feed.generator/test', ownerDid),
         throwsA(isA<Exception>()),
       );
     });
@@ -320,6 +321,7 @@ void main() {
           creatorDid: 'did:plc:abc',
           sortOrder: 0,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       );
 
@@ -341,7 +343,7 @@ void main() {
         () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
       ).thenAnswer((_) async => {});
 
-      await repository.removeFeed(feedUri);
+      await repository.removeFeed(feedUri, ownerDid);
 
       verify(
         () => mockApi.call(
@@ -354,7 +356,7 @@ void main() {
         ),
       ).called(1);
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNull);
     });
 
@@ -371,7 +373,7 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenAnswer((_) async => currentPrefs);
 
-      await repository.removeFeed(feedUri);
+      await repository.removeFeed(feedUri, ownerDid);
 
       verifyNever(() => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')));
     });
@@ -380,7 +382,7 @@ void main() {
       when(() => mockApi.isAuthenticated).thenReturn(false);
 
       expect(
-        () => repository.removeFeed('at://did:plc:abc/app.bsky.feed.generator/test'),
+        () => repository.removeFeed('at://did:plc:abc/app.bsky.feed.generator/test', ownerDid),
         throwsA(isA<Exception>()),
       );
     });
@@ -399,6 +401,7 @@ void main() {
           creatorDid: 'did:plc:abc',
           sortOrder: 0,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
         SavedFeedsCompanion.insert(
           uri: feed2,
@@ -406,6 +409,7 @@ void main() {
           creatorDid: 'did:plc:def',
           sortOrder: 1,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
         SavedFeedsCompanion.insert(
           uri: feed3,
@@ -413,6 +417,7 @@ void main() {
           creatorDid: 'did:plc:ghi',
           sortOrder: 2,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       ]);
 
@@ -434,9 +439,9 @@ void main() {
         () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
       ).thenAnswer((_) async => {});
 
-      await repository.reorderFeeds([feed3, feed1, feed2]);
+      await repository.reorderFeeds([feed3, feed1, feed2], ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds[0].uri, feed3);
       expect(feeds[0].sortOrder, 0);
       expect(feeds[1].uri, feed1);
@@ -456,6 +461,7 @@ void main() {
           creatorDid: 'did:plc:abc',
           sortOrder: 0,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
         SavedFeedsCompanion.insert(
           uri: feed2,
@@ -463,6 +469,7 @@ void main() {
           creatorDid: 'did:plc:def',
           sortOrder: 1,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       ]);
 
@@ -484,7 +491,7 @@ void main() {
         () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
       ).thenAnswer((_) async => {});
 
-      await repository.reorderFeeds([feed2, feed1]);
+      await repository.reorderFeeds([feed2, feed1], ownerDid);
 
       verify(
         () => mockApi.call(
@@ -513,6 +520,7 @@ void main() {
           creatorDid: 'did:plc:abc',
           sortOrder: 0,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
         SavedFeedsCompanion.insert(
           uri: feed2,
@@ -520,6 +528,7 @@ void main() {
           creatorDid: 'did:plc:def',
           sortOrder: 1,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       ]);
 
@@ -527,13 +536,13 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenThrow(Exception('Network error'));
 
-      await repository.reorderFeeds([feed2, feed1]);
+      await repository.reorderFeeds([feed2, feed1], ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds[0].uri, feed2);
       expect(feeds[1].uri, feed1);
 
-      final queue = await db.preferenceSyncQueueDao.getPendingItems();
+      final queue = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queue, hasLength(1));
       expect(queue.first.type, 'reorder');
       expect(queue.first.payload, '$feed2,$feed1');
@@ -543,7 +552,7 @@ void main() {
       when(() => mockApi.isAuthenticated).thenReturn(false);
 
       expect(
-        () => repository.reorderFeeds(['at://did:plc:abc/app.bsky.feed.generator/test']),
+        () => repository.reorderFeeds(['at://did:plc:abc/app.bsky.feed.generator/test'], ownerDid),
         throwsA(isA<Exception>()),
       );
     });
@@ -552,7 +561,7 @@ void main() {
   group('Feed URI Validation', () {
     test('rejects empty feed URI', () {
       expect(
-        () => repository.saveFeed(''),
+        () => repository.saveFeed('', ownerDid),
         throwsA(
           isA<ArgumentError>().having((e) => e.message, 'message', contains('cannot be empty')),
         ),
@@ -561,7 +570,7 @@ void main() {
 
     test('rejects URI without at:// scheme', () {
       expect(
-        () => repository.saveFeed('did:plc:abc/app.bsky.feed.generator/test'),
+        () => repository.saveFeed('did:plc:abc/app.bsky.feed.generator/test', ownerDid),
         throwsA(
           isA<ArgumentError>().having(
             (e) => e.message,
@@ -574,7 +583,7 @@ void main() {
 
     test('rejects URI with insufficient components', () {
       expect(
-        () => repository.saveFeed('at://did:plc:abc'),
+        () => repository.saveFeed('at://did:plc:abc', ownerDid),
         throwsA(
           isA<ArgumentError>().having((e) => e.message, 'message', contains('must have format')),
         ),
@@ -583,7 +592,7 @@ void main() {
 
     test('rejects URI without valid DID', () {
       expect(
-        () => repository.saveFeed('at://invalid/app.bsky.feed.generator/test'),
+        () => repository.saveFeed('at://invalid/app.bsky.feed.generator/test', ownerDid),
         throwsA(
           isA<ArgumentError>().having(
             (e) => e.message,
@@ -596,7 +605,7 @@ void main() {
 
     test('rejects URI with wrong collection', () {
       expect(
-        () => repository.saveFeed('at://did:plc:abc/app.bsky.post/test'),
+        () => repository.saveFeed('at://did:plc:abc/app.bsky.post/test', ownerDid),
         throwsA(
           isA<ArgumentError>().having(
             (e) => e.message,
@@ -609,7 +618,7 @@ void main() {
 
     test('rejects URI with empty rkey', () {
       expect(
-        () => repository.saveFeed('at://did:plc:abc/app.bsky.feed.generator/'),
+        () => repository.saveFeed('at://did:plc:abc/app.bsky.feed.generator/', ownerDid),
         throwsA(
           isA<ArgumentError>().having(
             (e) => e.message,
@@ -650,9 +659,9 @@ void main() {
         () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': validUri}),
       ).thenAnswer((_) async => feedMetadata);
 
-      await repository.saveFeed(validUri);
+      await repository.saveFeed(validUri, ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(validUri);
+      final feed = await db.savedFeedsDao.getFeed(validUri, ownerDid);
       expect(feed, isNotNull);
       expect(feed!.displayName, 'Valid Feed');
     });

@@ -40,4 +40,4 @@ final class HasPendingSyncProvider
   }
 }
 
-String _$hasPendingSyncHash() => r'33e3e83f5f00b3051b137776becab72bea426bc0';
+String _$hasPendingSyncHash() => r'24d7f04743e85d3d36ec4107179db9937abd89af';

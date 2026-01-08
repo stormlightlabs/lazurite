@@ -26,63 +26,67 @@ void main() {
     test('adultContentPrefProvider calls repository watch method', () {
       const expectedPref = AdultContentPref(enabled: true);
       when(
-        () => mockRepository.watchAdultContentPref(),
+        () => mockRepository.watchAdultContentPref(any()),
       ).thenAnswer((_) => Stream.value(expectedPref));
 
       container.listen(adultContentPrefProvider, (prev, next) {});
 
-      verify(() => mockRepository.watchAdultContentPref()).called(1);
+      verify(() => mockRepository.watchAdultContentPref(any())).called(1);
     });
 
     test('contentLabelPrefsProvider calls repository watch method', () {
       const expectedPrefs = ContentLabelPrefs.empty;
       when(
-        () => mockRepository.watchContentLabelPrefs(),
+        () => mockRepository.watchContentLabelPrefs(any()),
       ).thenAnswer((_) => Stream.value(expectedPrefs));
 
       container.listen(contentLabelPrefsProvider, (prev, next) {});
 
-      verify(() => mockRepository.watchContentLabelPrefs()).called(1);
+      verify(() => mockRepository.watchContentLabelPrefs(any())).called(1);
     });
 
     test('labelersPrefProvider calls repository watch method', () {
       const expectedPref = LabelersPref.empty;
-      when(() => mockRepository.watchLabelersPref()).thenAnswer((_) => Stream.value(expectedPref));
+      when(
+        () => mockRepository.watchLabelersPref(any()),
+      ).thenAnswer((_) => Stream.value(expectedPref));
 
       container.listen(labelersPrefProvider, (prev, next) {});
 
-      verify(() => mockRepository.watchLabelersPref()).called(1);
+      verify(() => mockRepository.watchLabelersPref(any())).called(1);
     });
 
     test('feedViewPrefProvider calls repository watch method', () {
       const expectedPref = FeedViewPref.defaultPref;
-      when(() => mockRepository.watchFeedViewPref()).thenAnswer((_) => Stream.value(expectedPref));
+      when(
+        () => mockRepository.watchFeedViewPref(any()),
+      ).thenAnswer((_) => Stream.value(expectedPref));
 
       container.listen(feedViewPrefProvider, (prev, next) {});
 
-      verify(() => mockRepository.watchFeedViewPref()).called(1);
+      verify(() => mockRepository.watchFeedViewPref(any())).called(1);
     });
 
     test('threadViewPrefProvider calls repository watch method', () {
       const expectedPref = ThreadViewPref.defaultPref;
       when(
-        () => mockRepository.watchThreadViewPref(),
+        () => mockRepository.watchThreadViewPref(any()),
       ).thenAnswer((_) => Stream.value(expectedPref));
 
       container.listen(threadViewPrefProvider, (prev, next) {});
 
-      verify(() => mockRepository.watchThreadViewPref()).called(1);
+      verify(() => mockRepository.watchThreadViewPref(any())).called(1);
     });
 
     test('mutedWordsPrefProvider calls repository watch method', () {
       const expectedPref = MutedWordsPref.empty;
       when(
-        () => mockRepository.watchMutedWordsPref(),
+        () => mockRepository.watchMutedWordsPref(any()),
       ).thenAnswer((_) => Stream.value(expectedPref));
 
       container.listen(mutedWordsPrefProvider, (prev, next) {});
 
-      verify(() => mockRepository.watchMutedWordsPref()).called(1);
+      verify(() => mockRepository.watchMutedWordsPref(any())).called(1);
     });
   });
 }

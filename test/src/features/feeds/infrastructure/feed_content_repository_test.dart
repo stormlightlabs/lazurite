@@ -8,6 +8,7 @@ import '../../../../helpers/mocks.dart';
 class MockFeedContentDao extends Mock implements FeedContentDao {}
 
 void main() {
+  const ownerDid = 'did:web:tester';
   late MockXrpcClient mockApi;
   late MockFeedContentDao mockDao;
   late MockLogger mockLogger;
@@ -35,6 +36,7 @@ void main() {
         when(
           () => mockDao.insertFeedContentBatch(
             feedKey: any(named: 'feedKey'),
+            ownerDid: ownerDid,
             newPosts: any(named: 'newPosts'),
             newProfiles: any(named: 'newProfiles'),
             newRelationships: any(named: 'newRelationships'),
@@ -43,7 +45,7 @@ void main() {
           ),
         ).thenAnswer((_) async {});
 
-        await repository.fetchAndCacheFeed();
+        await repository.fetchAndCacheFeed(ownerDid: ownerDid);
 
         verify(
           () => mockApi.call('app.bsky.feed.getTimeline', params: any(named: 'params')),
@@ -56,6 +58,7 @@ void main() {
             newRelationships: any(named: 'newRelationships'),
             newItems: any(named: 'newItems'),
             newCursor: 'next_cursor',
+            ownerDid: ownerDid,
           ),
         ).called(1);
       },
@@ -71,6 +74,7 @@ void main() {
         when(
           () => mockDao.insertFeedContentBatch(
             feedKey: any(named: 'feedKey'),
+            ownerDid: ownerDid,
             newPosts: any(named: 'newPosts'),
             newProfiles: any(named: 'newProfiles'),
             newRelationships: any(named: 'newRelationships'),
@@ -79,7 +83,7 @@ void main() {
           ),
         ).thenAnswer((_) async {});
 
-        await repository.fetchAndCacheFeed();
+        await repository.fetchAndCacheFeed(ownerDid: ownerDid);
 
         verify(
           () => mockApi.call(
@@ -98,6 +102,7 @@ void main() {
       when(
         () => mockDao.insertFeedContentBatch(
           feedKey: any(named: 'feedKey'),
+          ownerDid: ownerDid,
           newPosts: any(named: 'newPosts'),
           newProfiles: any(named: 'newProfiles'),
           newRelationships: any(named: 'newRelationships'),
@@ -107,7 +112,7 @@ void main() {
       ).thenAnswer((_) async {});
 
       const feedUri = 'at://did:example:123/app.bsky.feed.generator/custom';
-      await repository.fetchAndCacheFeed(feedUri: feedUri);
+      await repository.fetchAndCacheFeed(feedUri: feedUri, ownerDid: ownerDid);
 
       verify(
         () => mockApi.call(
@@ -119,6 +124,7 @@ void main() {
       verify(
         () => mockDao.insertFeedContentBatch(
           feedKey: feedUri,
+          ownerDid: ownerDid,
           newPosts: any(named: 'newPosts'),
           newProfiles: any(named: 'newProfiles'),
           newRelationships: any(named: 'newRelationships'),
@@ -134,7 +140,7 @@ void main() {
         () => mockApi.call(any(), params: any(named: 'params')),
       ).thenThrow(Exception('Bad Request'));
 
-      expect(() => repository.fetchAndCacheFeed(), throwsException);
+      expect(() => repository.fetchAndCacheFeed(ownerDid: ownerDid), throwsException);
 
       verify(() => mockLogger.error(any(), any(), any())).called(1);
     });
@@ -148,6 +154,7 @@ void main() {
         when(
           () => mockDao.insertFeedContentBatch(
             feedKey: any(named: 'feedKey'),
+            ownerDid: ownerDid,
             newPosts: any(named: 'newPosts'),
             newProfiles: any(named: 'newProfiles'),
             newRelationships: any(named: 'newRelationships'),
@@ -156,7 +163,7 @@ void main() {
           ),
         ).thenAnswer((_) async {});
 
-        await repository.fetchAndCacheFeed();
+        await repository.fetchAndCacheFeed(ownerDid: ownerDid);
 
         verify(
           () => mockDao.insertFeedContentBatch(
@@ -166,6 +173,7 @@ void main() {
             newRelationships: any(named: 'newRelationships'),
             newItems: any(named: 'newItems'),
             newCursor: any(named: 'newCursor'),
+            ownerDid: ownerDid,
           ),
         ).called(1);
 
@@ -192,7 +200,7 @@ void main() {
         );
 
         expect(
-          () => repository.fetchAndCacheFeed(feedUri: '__internal:malicious'),
+          () => repository.fetchAndCacheFeed(feedUri: '__internal:malicious', ownerDid: ownerDid),
           throwsA(
             isA<ArgumentError>().having(
               (e) => e.message,
@@ -211,6 +219,7 @@ void main() {
         when(
           () => mockDao.insertFeedContentBatch(
             feedKey: any(named: 'feedKey'),
+            ownerDid: ownerDid,
             newPosts: any(named: 'newPosts'),
             newProfiles: any(named: 'newProfiles'),
             newRelationships: any(named: 'newRelationships'),
@@ -220,11 +229,12 @@ void main() {
         ).thenAnswer((_) async {});
 
         const validUri = 'at://did:plc:abc123/app.bsky.feed.generator/test';
-        await repository.fetchAndCacheFeed(feedUri: validUri);
+        await repository.fetchAndCacheFeed(feedUri: validUri, ownerDid: ownerDid);
 
         verify(
           () => mockDao.insertFeedContentBatch(
             feedKey: validUri,
+            ownerDid: ownerDid,
             newPosts: any(named: 'newPosts'),
             newProfiles: any(named: 'newProfiles'),
             newRelationships: any(named: 'newRelationships'),
@@ -267,6 +277,7 @@ void main() {
         when(
           () => mockDao.insertFeedContentBatch(
             feedKey: any(named: 'feedKey'),
+            ownerDid: ownerDid,
             newPosts: any(named: 'newPosts'),
             newProfiles: any(named: 'newProfiles'),
             newRelationships: any(named: 'newRelationships'),
@@ -277,7 +288,7 @@ void main() {
           capturedPosts = invocation.namedArguments[#newPosts] as List;
         });
 
-        await repository.fetchAndCacheFeed();
+        await repository.fetchAndCacheFeed(ownerDid: ownerDid);
 
         expect(capturedPosts, isNotNull);
         expect(capturedPosts, hasLength(1));
@@ -312,6 +323,7 @@ void main() {
         when(
           () => mockDao.insertFeedContentBatch(
             feedKey: any(named: 'feedKey'),
+            ownerDid: ownerDid,
             newPosts: any(named: 'newPosts'),
             newProfiles: any(named: 'newProfiles'),
             newRelationships: any(named: 'newRelationships'),
@@ -322,7 +334,7 @@ void main() {
           capturedPosts = invocation.namedArguments[#newPosts] as List;
         });
 
-        await repository.fetchAndCacheFeed();
+        await repository.fetchAndCacheFeed(ownerDid: ownerDid);
 
         expect(capturedPosts, isNotNull);
         final postCompanion = capturedPosts!.first;
@@ -373,6 +385,7 @@ void main() {
         when(
           () => mockDao.insertFeedContentBatch(
             feedKey: any(named: 'feedKey'),
+            ownerDid: ownerDid,
             newPosts: any(named: 'newPosts'),
             newProfiles: any(named: 'newProfiles'),
             newRelationships: any(named: 'newRelationships'),
@@ -383,7 +396,7 @@ void main() {
           capturedItems = invocation.namedArguments[#newItems] as List;
         });
 
-        await repository.fetchAndCacheFeed();
+        await repository.fetchAndCacheFeed(ownerDid: ownerDid);
 
         expect(capturedItems, isNotNull);
         final sortKeys = capturedItems!
@@ -439,6 +452,7 @@ void main() {
         when(
           () => mockDao.insertFeedContentBatch(
             feedKey: any(named: 'feedKey'),
+            ownerDid: ownerDid,
             newPosts: any(named: 'newPosts'),
             newProfiles: any(named: 'newProfiles'),
             newRelationships: any(named: 'newRelationships'),
@@ -450,8 +464,8 @@ void main() {
           allCapturedItems.add(items);
         });
 
-        await repository.fetchAndCacheFeed();
-        await repository.fetchAndCacheFeed();
+        await repository.fetchAndCacheFeed(ownerDid: ownerDid);
+        await repository.fetchAndCacheFeed(ownerDid: ownerDid);
 
         final allSortKeys = allCapturedItems
             .expand((items) => items)

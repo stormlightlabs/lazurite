@@ -26,11 +26,16 @@ class NotificationsRepository {
   static const kNotificationsFeedKey = 'notifications';
 
   /// Fetches notifications from the API and caches them locally.
-  ///
-  /// [cursor] - Pagination cursor for fetching older notifications.
-  /// [limit] - Maximum number of notifications to fetch (default 50, max 100).
-  Future<void> fetchNotifications({String? cursor, int limit = 50}) async {
-    _logger.info('Fetching notifications', {'cursor': cursor, 'limit': limit});
+  Future<void> fetchNotifications({
+    required String ownerDid,
+    String? cursor,
+    int limit = 50,
+  }) async {
+    _logger.info('Fetching notifications', {
+      'cursor': cursor,
+      'limit': limit,
+      'ownerDid': ownerDid,
+    });
 
     try {
       final params = <String, dynamic>{'limit': limit.clamp(1, 100)};
@@ -94,6 +99,7 @@ class NotificationsRepository {
           NotificationsCompanion.insert(
             uri: notificationMap['uri'] as String,
             actorDid: author['did'] as String,
+            ownerDid: ownerDid,
             type: type.name,
             reasonSubjectUri: Value(notificationMap['reasonSubject'] as String?),
             recordJson: Value(recordJson),
@@ -107,6 +113,7 @@ class NotificationsRepository {
       await _dao.insertNotificationsBatch(
         newNotifications: notifications,
         newProfiles: profiles,
+        ownerDid: ownerDid,
         newCursor: newCursor,
       );
 
@@ -120,11 +127,9 @@ class NotificationsRepository {
     }
   }
 
-  /// Returns a stream of notifications from the local cache.
-  ///
-  /// Notifications are joined with actor profiles for complete display data.
-  Stream<List<AppNotification>> watchNotifications() {
-    return _dao.watchNotifications().map((items) {
+  /// Returns a stream of notifications from the local cache for a specific user.
+  Stream<List<AppNotification>> watchNotifications(String ownerDid) {
+    return _dao.watchNotifications(ownerDid).map((items) {
       return items
           .map((item) {
             final type = NotificationType.fromString(item.notification.type);
@@ -145,36 +150,32 @@ class NotificationsRepository {
     });
   }
 
-  /// Gets the pagination cursor for loading more notifications.
-  Future<String?> getCursor() {
-    return _dao.getCursor();
+  /// Gets the pagination cursor for loading more notifications for a specific user.
+  Future<String?> getCursor(String ownerDid) {
+    return _dao.getCursor(ownerDid);
   }
 
-  /// Clears all cached notifications.
-  Future<void> clearNotifications() {
-    return _dao.clearNotifications();
+  /// Clears all cached notifications for a specific user.
+  Future<void> clearNotifications(String ownerDid) {
+    return _dao.clearNotifications(ownerDid);
   }
 
-  /// Deletes notifications older than the specified threshold.
-  Future<int> deleteStaleNotifications(DateTime threshold) {
-    return _dao.deleteStaleNotifications(threshold);
+  /// Deletes notifications older than the specified threshold for a specific user.
+  Future<int> deleteStaleNotifications(DateTime threshold, String ownerDid) {
+    return _dao.deleteStaleNotifications(threshold, ownerDid);
   }
 
-  /// Marks all notifications as read locally.
-  Future<void> markAllAsRead() {
-    return _dao.markAllAsRead();
+  /// Marks all notifications as read locally for a specific user.
+  Future<void> markAllAsRead(String ownerDid) {
+    return _dao.markAllAsRead(ownerDid);
   }
 
-  /// Returns a stream of the unread notification count.
-  ///
-  /// Emits updates whenever notifications are inserted, updated, or deleted.
-  Stream<int> watchUnreadCount() {
-    return _dao.watchUnreadCount();
+  /// Returns a stream of the unread notification count for a specific user.
+  Stream<int> watchUnreadCount(String ownerDid) {
+    return _dao.watchUnreadCount(ownerDid);
   }
 
   /// Fetches the current unread count from the API.
-  ///
-  /// Returns the number of unread notifications according to the server.
   Future<int> getUnreadCount() async {
     _logger.info('Fetching unread count from API', {});
 
@@ -191,9 +192,6 @@ class NotificationsRepository {
   }
 
   /// Marks notifications as seen on the server.
-  ///
-  /// All notifications before [seenAt] timestamp will be marked as seen.
-  /// This updates the server state and should be followed by local cache updates.
   Future<void> updateSeen(DateTime seenAt) async {
     _logger.info('Updating seen state', {'seenAt': seenAt.toIso8601String()});
 
@@ -210,23 +208,19 @@ class NotificationsRepository {
     }
   }
 
-  /// Marks specific notifications as seen locally.
-  ///
-  /// Updates the local cache to mark notifications before [seenAt] as read.
-  Future<void> markAsSeenLocally(DateTime seenAt) async {
-    _logger.debug('Marking notifications as seen locally', {'seenAt': seenAt.toIso8601String()});
+  /// Marks specific notifications as seen locally for a specific user.
+  Future<void> markAsSeenLocally(DateTime seenAt, String ownerDid) async {
+    _logger.debug('Marking notifications as seen locally', {
+      'seenAt': seenAt.toIso8601String(),
+      'ownerDid': ownerDid,
+    });
 
-    await _dao.markAsSeenBefore(seenAt);
+    await _dao.markAsSeenBefore(seenAt, ownerDid);
   }
 
-  /// Processes the sync queue to retry failed mark-as-seen operations.
-  ///
-  /// Cleans up old failed items, then attempts to sync the latest queued
-  /// timestamp. Since marking at timestamp T marks all notifications before T,
-  /// we only need to sync the most recent timestamp and can then clear all
-  /// older queue items.
-  Future<void> processSyncQueue() async {
-    _logger.debug('Processing notification sync queue', {});
+  /// Processes the sync queue to retry failed mark-as-seen operations for a specific user.
+  Future<void> processSyncQueue(String ownerDid) async {
+    _logger.debug('Processing notification sync queue', {'ownerDid': ownerDid});
 
     final threshold = DateTime.now().subtract(const Duration(days: 30));
     final cleanedCount = await _syncQueue.cleanupOldFailedItems(threshold);
@@ -234,7 +228,7 @@ class NotificationsRepository {
       _logger.info('Cleaned up old failed sync items', {'count': cleanedCount});
     }
 
-    final latestSeenAt = await _syncQueue.getLatestSeenAt();
+    final latestSeenAt = await _syncQueue.getLatestSeenAt(ownerDid);
     if (latestSeenAt == null) {
       _logger.debug('No items in sync queue', {});
       return;
@@ -242,13 +236,13 @@ class NotificationsRepository {
 
     _logger.info('Processing sync queue', {'latestSeenAt': latestSeenAt.toIso8601String()});
 
-    final retryableItems = await _syncQueue.getRetryableItems();
+    final retryableItems = await _syncQueue.getRetryableItems(ownerDid);
 
     try {
-      await markAsSeenLocally(latestSeenAt);
+      await markAsSeenLocally(latestSeenAt, ownerDid);
       await updateSeen(latestSeenAt);
 
-      final deletedCount = await _syncQueue.deleteItemsUpTo(latestSeenAt);
+      final deletedCount = await _syncQueue.deleteItemsUpTo(latestSeenAt, ownerDid);
       _logger.info('Successfully synced notifications', {
         'seenAt': latestSeenAt.toIso8601String(),
         'clearedQueueItems': deletedCount,

@@ -36,7 +36,7 @@ void main() {
       ],
     );
 
-    when(() => mockRepository.getProfile(testDid)).thenAnswer((_) async => testProfile);
+    when(() => mockRepository.getProfile(testDid, any())).thenAnswer((_) async => testProfile);
   });
 
   tearDown(() {
@@ -48,7 +48,7 @@ void main() {
       when(() => mockRepository.muteActor(myDid, testDid)).thenAnswer((_) async {});
 
       final notifier = container.read(profileProvider(testDid).notifier);
-      await container.read(profileProvider(testDid).future); // Wait for build
+      await container.read(profileProvider(testDid).future);
 
       await notifier.toggleMute();
 
@@ -60,7 +60,7 @@ void main() {
 
     test('toggleMute un-mutes if already muted', () async {
       final mutedProfile = testProfile.copyWith(viewerMuted: true);
-      when(() => mockRepository.getProfile(testDid)).thenAnswer((_) async => mutedProfile);
+      when(() => mockRepository.getProfile(testDid, any())).thenAnswer((_) async => mutedProfile);
       when(() => mockRepository.unmuteActor(myDid, testDid)).thenAnswer((_) async {});
 
       final notifier = container.read(profileProvider(testDid).notifier);
@@ -91,7 +91,9 @@ void main() {
       const blockUri = 'at://...';
       final blockedProfile = testProfile.copyWith(viewerBlockingUri: blockUri);
 
-      when(() => mockRepository.getProfile(testDid)).thenAnswer((_) async => blockedProfile);
+      when(
+        () => mockRepository.getProfile(testDid, any()),
+      ).thenAnswer((_) async => blockedProfile);
       when(
         () => mockRepository.unblockActor(myDid, blockUri, subjectDid: any(named: 'subjectDid')),
       ).thenAnswer((_) async {});

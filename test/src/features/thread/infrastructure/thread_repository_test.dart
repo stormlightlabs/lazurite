@@ -63,7 +63,7 @@ void main() {
         () => mockApi.call(any(), params: any(named: 'params')),
       ).thenAnswer((_) async => mockResponse);
 
-      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1');
+      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1', 'did:1');
 
       verify(
         () => mockApi.call(
@@ -77,7 +77,7 @@ void main() {
       expect(thread.replies.first.post.uri, 'at://did:2/app.bsky.feed.post/2');
 
       final cached = await db.feedContentDao
-          .watchFeedContent('thread:at://did:1/app.bsky.feed.post/1')
+          .watchFeedContent('thread:at://did:1/app.bsky.feed.post/1', 'did:1')
           .first;
       expect(cached, hasLength(2));
       expect(
@@ -111,7 +111,7 @@ void main() {
         () => mockApi.call(any(), params: any(named: 'params')),
       ).thenAnswer((_) async => mockResponse);
 
-      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1');
+      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1', 'did:1');
       expect(thread.replies, hasLength(2));
       expect(thread.replies.first.post.placeholderReason, 'Post blocked');
       expect(thread.replies.last.post.placeholderReason, 'Post not found');
@@ -150,7 +150,7 @@ void main() {
         () => mockApi.call(any(), params: any(named: 'params')),
       ).thenAnswer((_) async => mockResponse);
 
-      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1');
+      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1', 'did:1');
 
       expect(thread.post.viewerLikeUri, 'at://did:viewer/app.bsky.feed.like/abc');
       expect(thread.post.viewerRepostUri, 'at://did:viewer/app.bsky.feed.repost/def');
@@ -192,7 +192,7 @@ void main() {
         () => mockApi.call(any(), params: any(named: 'params')),
       ).thenAnswer((_) async => mockResponse);
 
-      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1');
+      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1', 'did:1');
 
       expect(thread.threadgate, isNotNull);
       expect(thread.threadgate!.uri, 'at://did:1/app.bsky.feed.threadgate/1');
@@ -226,7 +226,7 @@ void main() {
         () => mockApi.call(any(), params: any(named: 'params')),
       ).thenAnswer((_) async => mockResponse);
 
-      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1');
+      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1', 'did:1');
 
       expect(thread.replies.first.isBlocked, true);
       expect(thread.replies.first.post.isBlocked, true);
@@ -254,7 +254,7 @@ void main() {
         () => mockApi.call(any(), params: any(named: 'params')),
       ).thenAnswer((_) async => mockResponse);
 
-      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1');
+      final thread = await repository.getPostThread('at://did:1/app.bsky.feed.post/1', 'did:1');
 
       expect(thread.replies.first.isNotFound, true);
       expect(thread.replies.first.post.isNotFound, true);

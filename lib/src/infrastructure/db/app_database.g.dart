@@ -1631,6 +1631,15 @@ class $FeedContentItemsTable extends FeedContentItems
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES posts (uri)'),
   );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
   @override
   late final GeneratedColumn<String> reason = GeneratedColumn<String>(
@@ -1650,7 +1659,7 @@ class $FeedContentItemsTable extends FeedContentItems
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [feedKey, postUri, reason, sortKey];
+  List<GeneratedColumn> get $columns => [feedKey, postUri, ownerDid, reason, sortKey];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1673,6 +1682,14 @@ class $FeedContentItemsTable extends FeedContentItems
     } else if (isInserting) {
       context.missing(_postUriMeta);
     }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
+    }
     if (data.containsKey('reason')) {
       context.handle(_reasonMeta, reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta));
     }
@@ -1685,7 +1702,7 @@ class $FeedContentItemsTable extends FeedContentItems
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {feedKey, postUri};
+  Set<GeneratedColumn> get $primaryKey => {feedKey, postUri, ownerDid};
   @override
   FeedContentItem map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -1697,6 +1714,10 @@ class $FeedContentItemsTable extends FeedContentItems
       postUri: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}post_uri'],
+      )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
       )!,
       reason: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -1718,11 +1739,13 @@ class $FeedContentItemsTable extends FeedContentItems
 class FeedContentItem extends DataClass implements Insertable<FeedContentItem> {
   final String feedKey;
   final String postUri;
+  final String ownerDid;
   final String? reason;
   final String sortKey;
   const FeedContentItem({
     required this.feedKey,
     required this.postUri,
+    required this.ownerDid,
     this.reason,
     required this.sortKey,
   });
@@ -1731,6 +1754,7 @@ class FeedContentItem extends DataClass implements Insertable<FeedContentItem> {
     final map = <String, Expression>{};
     map['feed_key'] = Variable<String>(feedKey);
     map['post_uri'] = Variable<String>(postUri);
+    map['owner_did'] = Variable<String>(ownerDid);
     if (!nullToAbsent || reason != null) {
       map['reason'] = Variable<String>(reason);
     }
@@ -1742,6 +1766,7 @@ class FeedContentItem extends DataClass implements Insertable<FeedContentItem> {
     return FeedContentItemsCompanion(
       feedKey: Value(feedKey),
       postUri: Value(postUri),
+      ownerDid: Value(ownerDid),
       reason: reason == null && nullToAbsent ? const Value.absent() : Value(reason),
       sortKey: Value(sortKey),
     );
@@ -1752,6 +1777,7 @@ class FeedContentItem extends DataClass implements Insertable<FeedContentItem> {
     return FeedContentItem(
       feedKey: serializer.fromJson<String>(json['feedKey']),
       postUri: serializer.fromJson<String>(json['postUri']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       reason: serializer.fromJson<String?>(json['reason']),
       sortKey: serializer.fromJson<String>(json['sortKey']),
     );
@@ -1762,6 +1788,7 @@ class FeedContentItem extends DataClass implements Insertable<FeedContentItem> {
     return <String, dynamic>{
       'feedKey': serializer.toJson<String>(feedKey),
       'postUri': serializer.toJson<String>(postUri),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'reason': serializer.toJson<String?>(reason),
       'sortKey': serializer.toJson<String>(sortKey),
     };
@@ -1770,11 +1797,13 @@ class FeedContentItem extends DataClass implements Insertable<FeedContentItem> {
   FeedContentItem copyWith({
     String? feedKey,
     String? postUri,
+    String? ownerDid,
     Value<String?> reason = const Value.absent(),
     String? sortKey,
   }) => FeedContentItem(
     feedKey: feedKey ?? this.feedKey,
     postUri: postUri ?? this.postUri,
+    ownerDid: ownerDid ?? this.ownerDid,
     reason: reason.present ? reason.value : this.reason,
     sortKey: sortKey ?? this.sortKey,
   );
@@ -1782,6 +1811,7 @@ class FeedContentItem extends DataClass implements Insertable<FeedContentItem> {
     return FeedContentItem(
       feedKey: data.feedKey.present ? data.feedKey.value : this.feedKey,
       postUri: data.postUri.present ? data.postUri.value : this.postUri,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       reason: data.reason.present ? data.reason.value : this.reason,
       sortKey: data.sortKey.present ? data.sortKey.value : this.sortKey,
     );
@@ -1792,6 +1822,7 @@ class FeedContentItem extends DataClass implements Insertable<FeedContentItem> {
     return (StringBuffer('FeedContentItem(')
           ..write('feedKey: $feedKey, ')
           ..write('postUri: $postUri, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('reason: $reason, ')
           ..write('sortKey: $sortKey')
           ..write(')'))
@@ -1799,13 +1830,14 @@ class FeedContentItem extends DataClass implements Insertable<FeedContentItem> {
   }
 
   @override
-  int get hashCode => Object.hash(feedKey, postUri, reason, sortKey);
+  int get hashCode => Object.hash(feedKey, postUri, ownerDid, reason, sortKey);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is FeedContentItem &&
           other.feedKey == this.feedKey &&
           other.postUri == this.postUri &&
+          other.ownerDid == this.ownerDid &&
           other.reason == this.reason &&
           other.sortKey == this.sortKey);
 }
@@ -1813,12 +1845,14 @@ class FeedContentItem extends DataClass implements Insertable<FeedContentItem> {
 class FeedContentItemsCompanion extends UpdateCompanion<FeedContentItem> {
   final Value<String> feedKey;
   final Value<String> postUri;
+  final Value<String> ownerDid;
   final Value<String?> reason;
   final Value<String> sortKey;
   final Value<int> rowid;
   const FeedContentItemsCompanion({
     this.feedKey = const Value.absent(),
     this.postUri = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.reason = const Value.absent(),
     this.sortKey = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1826,15 +1860,18 @@ class FeedContentItemsCompanion extends UpdateCompanion<FeedContentItem> {
   FeedContentItemsCompanion.insert({
     required String feedKey,
     required String postUri,
+    required String ownerDid,
     this.reason = const Value.absent(),
     required String sortKey,
     this.rowid = const Value.absent(),
   }) : feedKey = Value(feedKey),
        postUri = Value(postUri),
+       ownerDid = Value(ownerDid),
        sortKey = Value(sortKey);
   static Insertable<FeedContentItem> custom({
     Expression<String>? feedKey,
     Expression<String>? postUri,
+    Expression<String>? ownerDid,
     Expression<String>? reason,
     Expression<String>? sortKey,
     Expression<int>? rowid,
@@ -1842,6 +1879,7 @@ class FeedContentItemsCompanion extends UpdateCompanion<FeedContentItem> {
     return RawValuesInsertable({
       if (feedKey != null) 'feed_key': feedKey,
       if (postUri != null) 'post_uri': postUri,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (reason != null) 'reason': reason,
       if (sortKey != null) 'sort_key': sortKey,
       if (rowid != null) 'rowid': rowid,
@@ -1851,6 +1889,7 @@ class FeedContentItemsCompanion extends UpdateCompanion<FeedContentItem> {
   FeedContentItemsCompanion copyWith({
     Value<String>? feedKey,
     Value<String>? postUri,
+    Value<String>? ownerDid,
     Value<String?>? reason,
     Value<String>? sortKey,
     Value<int>? rowid,
@@ -1858,6 +1897,7 @@ class FeedContentItemsCompanion extends UpdateCompanion<FeedContentItem> {
     return FeedContentItemsCompanion(
       feedKey: feedKey ?? this.feedKey,
       postUri: postUri ?? this.postUri,
+      ownerDid: ownerDid ?? this.ownerDid,
       reason: reason ?? this.reason,
       sortKey: sortKey ?? this.sortKey,
       rowid: rowid ?? this.rowid,
@@ -1872,6 +1912,9 @@ class FeedContentItemsCompanion extends UpdateCompanion<FeedContentItem> {
     }
     if (postUri.present) {
       map['post_uri'] = Variable<String>(postUri.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (reason.present) {
       map['reason'] = Variable<String>(reason.value);
@@ -1890,6 +1933,7 @@ class FeedContentItemsCompanion extends UpdateCompanion<FeedContentItem> {
     return (StringBuffer('FeedContentItemsCompanion(')
           ..write('feedKey: $feedKey, ')
           ..write('postUri: $postUri, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('reason: $reason, ')
           ..write('sortKey: $sortKey, ')
           ..write('rowid: $rowid')
@@ -2141,6 +2185,15 @@ class $FeedCursorsTable extends FeedCursors with TableInfo<$FeedCursorsTable, Fe
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _cursorMeta = const VerificationMeta('cursor');
   @override
   late final GeneratedColumn<String> cursor = GeneratedColumn<String>(
@@ -2160,7 +2213,7 @@ class $FeedCursorsTable extends FeedCursors with TableInfo<$FeedCursorsTable, Fe
     requiredDuringInsert: false,
   );
   @override
-  List<GeneratedColumn> get $columns => [feedKey, cursor, lastUpdated];
+  List<GeneratedColumn> get $columns => [feedKey, ownerDid, cursor, lastUpdated];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2178,6 +2231,14 @@ class $FeedCursorsTable extends FeedCursors with TableInfo<$FeedCursorsTable, Fe
     } else if (isInserting) {
       context.missing(_feedKeyMeta);
     }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
+    }
     if (data.containsKey('cursor')) {
       context.handle(_cursorMeta, cursor.isAcceptableOrUnknown(data['cursor']!, _cursorMeta));
     } else if (isInserting) {
@@ -2193,7 +2254,7 @@ class $FeedCursorsTable extends FeedCursors with TableInfo<$FeedCursorsTable, Fe
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {feedKey};
+  Set<GeneratedColumn> get $primaryKey => {feedKey, ownerDid};
   @override
   FeedCursor map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -2201,6 +2262,10 @@ class $FeedCursorsTable extends FeedCursors with TableInfo<$FeedCursorsTable, Fe
       feedKey: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}feed_key'],
+      )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
       )!,
       cursor: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -2221,13 +2286,20 @@ class $FeedCursorsTable extends FeedCursors with TableInfo<$FeedCursorsTable, Fe
 
 class FeedCursor extends DataClass implements Insertable<FeedCursor> {
   final String feedKey;
+  final String ownerDid;
   final String cursor;
   final DateTime? lastUpdated;
-  const FeedCursor({required this.feedKey, required this.cursor, this.lastUpdated});
+  const FeedCursor({
+    required this.feedKey,
+    required this.ownerDid,
+    required this.cursor,
+    this.lastUpdated,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['feed_key'] = Variable<String>(feedKey);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['cursor'] = Variable<String>(cursor);
     if (!nullToAbsent || lastUpdated != null) {
       map['last_updated'] = Variable<DateTime>(lastUpdated);
@@ -2238,6 +2310,7 @@ class FeedCursor extends DataClass implements Insertable<FeedCursor> {
   FeedCursorsCompanion toCompanion(bool nullToAbsent) {
     return FeedCursorsCompanion(
       feedKey: Value(feedKey),
+      ownerDid: Value(ownerDid),
       cursor: Value(cursor),
       lastUpdated: lastUpdated == null && nullToAbsent ? const Value.absent() : Value(lastUpdated),
     );
@@ -2247,6 +2320,7 @@ class FeedCursor extends DataClass implements Insertable<FeedCursor> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return FeedCursor(
       feedKey: serializer.fromJson<String>(json['feedKey']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       cursor: serializer.fromJson<String>(json['cursor']),
       lastUpdated: serializer.fromJson<DateTime?>(json['lastUpdated']),
     );
@@ -2256,6 +2330,7 @@ class FeedCursor extends DataClass implements Insertable<FeedCursor> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'feedKey': serializer.toJson<String>(feedKey),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'cursor': serializer.toJson<String>(cursor),
       'lastUpdated': serializer.toJson<DateTime?>(lastUpdated),
     };
@@ -2263,16 +2338,19 @@ class FeedCursor extends DataClass implements Insertable<FeedCursor> {
 
   FeedCursor copyWith({
     String? feedKey,
+    String? ownerDid,
     String? cursor,
     Value<DateTime?> lastUpdated = const Value.absent(),
   }) => FeedCursor(
     feedKey: feedKey ?? this.feedKey,
+    ownerDid: ownerDid ?? this.ownerDid,
     cursor: cursor ?? this.cursor,
     lastUpdated: lastUpdated.present ? lastUpdated.value : this.lastUpdated,
   );
   FeedCursor copyWithCompanion(FeedCursorsCompanion data) {
     return FeedCursor(
       feedKey: data.feedKey.present ? data.feedKey.value : this.feedKey,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       cursor: data.cursor.present ? data.cursor.value : this.cursor,
       lastUpdated: data.lastUpdated.present ? data.lastUpdated.value : this.lastUpdated,
     );
@@ -2282,6 +2360,7 @@ class FeedCursor extends DataClass implements Insertable<FeedCursor> {
   String toString() {
     return (StringBuffer('FeedCursor(')
           ..write('feedKey: $feedKey, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('cursor: $cursor, ')
           ..write('lastUpdated: $lastUpdated')
           ..write(')'))
@@ -2289,42 +2368,49 @@ class FeedCursor extends DataClass implements Insertable<FeedCursor> {
   }
 
   @override
-  int get hashCode => Object.hash(feedKey, cursor, lastUpdated);
+  int get hashCode => Object.hash(feedKey, ownerDid, cursor, lastUpdated);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is FeedCursor &&
           other.feedKey == this.feedKey &&
+          other.ownerDid == this.ownerDid &&
           other.cursor == this.cursor &&
           other.lastUpdated == this.lastUpdated);
 }
 
 class FeedCursorsCompanion extends UpdateCompanion<FeedCursor> {
   final Value<String> feedKey;
+  final Value<String> ownerDid;
   final Value<String> cursor;
   final Value<DateTime?> lastUpdated;
   final Value<int> rowid;
   const FeedCursorsCompanion({
     this.feedKey = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.cursor = const Value.absent(),
     this.lastUpdated = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FeedCursorsCompanion.insert({
     required String feedKey,
+    required String ownerDid,
     required String cursor,
     this.lastUpdated = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : feedKey = Value(feedKey),
+       ownerDid = Value(ownerDid),
        cursor = Value(cursor);
   static Insertable<FeedCursor> custom({
     Expression<String>? feedKey,
+    Expression<String>? ownerDid,
     Expression<String>? cursor,
     Expression<DateTime>? lastUpdated,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (feedKey != null) 'feed_key': feedKey,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (cursor != null) 'cursor': cursor,
       if (lastUpdated != null) 'last_updated': lastUpdated,
       if (rowid != null) 'rowid': rowid,
@@ -2333,12 +2419,14 @@ class FeedCursorsCompanion extends UpdateCompanion<FeedCursor> {
 
   FeedCursorsCompanion copyWith({
     Value<String>? feedKey,
+    Value<String>? ownerDid,
     Value<String>? cursor,
     Value<DateTime?>? lastUpdated,
     Value<int>? rowid,
   }) {
     return FeedCursorsCompanion(
       feedKey: feedKey ?? this.feedKey,
+      ownerDid: ownerDid ?? this.ownerDid,
       cursor: cursor ?? this.cursor,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       rowid: rowid ?? this.rowid,
@@ -2350,6 +2438,9 @@ class FeedCursorsCompanion extends UpdateCompanion<FeedCursor> {
     final map = <String, Expression>{};
     if (feedKey.present) {
       map['feed_key'] = Variable<String>(feedKey.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (cursor.present) {
       map['cursor'] = Variable<String>(cursor.value);
@@ -2367,6 +2458,7 @@ class FeedCursorsCompanion extends UpdateCompanion<FeedCursor> {
   String toString() {
     return (StringBuffer('FeedCursorsCompanion(')
           ..write('feedKey: $feedKey, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('cursor: $cursor, ')
           ..write('lastUpdated: $lastUpdated, ')
           ..write('rowid: $rowid')
@@ -3431,6 +3523,15 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _displayNameMeta = const VerificationMeta('displayName');
   @override
   late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
@@ -3519,6 +3620,7 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
   @override
   List<GeneratedColumn> get $columns => [
     uri,
+    ownerDid,
     displayName,
     description,
     avatar,
@@ -3545,6 +3647,14 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
       context.handle(_uriMeta, uri.isAcceptableOrUnknown(data['uri']!, _uriMeta));
     } else if (isInserting) {
       context.missing(_uriMeta);
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('display_name')) {
       context.handle(
@@ -3609,12 +3719,16 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {uri};
+  Set<GeneratedColumn> get $primaryKey => {uri, ownerDid};
   @override
   SavedFeed map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SavedFeed(
       uri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}uri'])!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
+      )!,
       displayName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}display_name'],
@@ -3664,6 +3778,9 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
   /// Feed generator AT URI (at://did:plc:xxx/app.bsky.feed.generator/yyy).
   final String uri;
 
+  /// The DID of the user who saved this feed.
+  final String ownerDid;
+
   /// Display name of the feed.
   final String displayName;
 
@@ -3693,6 +3810,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
   final DateTime? localUpdatedAt;
   const SavedFeed({
     required this.uri,
+    required this.ownerDid,
     required this.displayName,
     this.description,
     this.avatar,
@@ -3707,6 +3825,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['uri'] = Variable<String>(uri);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['display_name'] = Variable<String>(displayName);
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
@@ -3728,6 +3847,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
   SavedFeedsCompanion toCompanion(bool nullToAbsent) {
     return SavedFeedsCompanion(
       uri: Value(uri),
+      ownerDid: Value(ownerDid),
       displayName: Value(displayName),
       description: description == null && nullToAbsent ? const Value.absent() : Value(description),
       avatar: avatar == null && nullToAbsent ? const Value.absent() : Value(avatar),
@@ -3746,6 +3866,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SavedFeed(
       uri: serializer.fromJson<String>(json['uri']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       displayName: serializer.fromJson<String>(json['displayName']),
       description: serializer.fromJson<String?>(json['description']),
       avatar: serializer.fromJson<String?>(json['avatar']),
@@ -3762,6 +3883,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'uri': serializer.toJson<String>(uri),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'displayName': serializer.toJson<String>(displayName),
       'description': serializer.toJson<String?>(description),
       'avatar': serializer.toJson<String?>(avatar),
@@ -3776,6 +3898,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
 
   SavedFeed copyWith({
     String? uri,
+    String? ownerDid,
     String? displayName,
     Value<String?> description = const Value.absent(),
     Value<String?> avatar = const Value.absent(),
@@ -3787,6 +3910,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
     Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => SavedFeed(
     uri: uri ?? this.uri,
+    ownerDid: ownerDid ?? this.ownerDid,
     displayName: displayName ?? this.displayName,
     description: description.present ? description.value : this.description,
     avatar: avatar.present ? avatar.value : this.avatar,
@@ -3800,6 +3924,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
   SavedFeed copyWithCompanion(SavedFeedsCompanion data) {
     return SavedFeed(
       uri: data.uri.present ? data.uri.value : this.uri,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       displayName: data.displayName.present ? data.displayName.value : this.displayName,
       description: data.description.present ? data.description.value : this.description,
       avatar: data.avatar.present ? data.avatar.value : this.avatar,
@@ -3818,6 +3943,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
   String toString() {
     return (StringBuffer('SavedFeed(')
           ..write('uri: $uri, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('displayName: $displayName, ')
           ..write('description: $description, ')
           ..write('avatar: $avatar, ')
@@ -3834,6 +3960,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
   @override
   int get hashCode => Object.hash(
     uri,
+    ownerDid,
     displayName,
     description,
     avatar,
@@ -3849,6 +3976,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
       identical(this, other) ||
       (other is SavedFeed &&
           other.uri == this.uri &&
+          other.ownerDid == this.ownerDid &&
           other.displayName == this.displayName &&
           other.description == this.description &&
           other.avatar == this.avatar &&
@@ -3862,6 +3990,7 @@ class SavedFeed extends DataClass implements Insertable<SavedFeed> {
 
 class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
   final Value<String> uri;
+  final Value<String> ownerDid;
   final Value<String> displayName;
   final Value<String?> description;
   final Value<String?> avatar;
@@ -3874,6 +4003,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
   final Value<int> rowid;
   const SavedFeedsCompanion({
     this.uri = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.displayName = const Value.absent(),
     this.description = const Value.absent(),
     this.avatar = const Value.absent(),
@@ -3887,6 +4017,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
   });
   SavedFeedsCompanion.insert({
     required String uri,
+    required String ownerDid,
     required String displayName,
     this.description = const Value.absent(),
     this.avatar = const Value.absent(),
@@ -3898,12 +4029,14 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
     this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : uri = Value(uri),
+       ownerDid = Value(ownerDid),
        displayName = Value(displayName),
        creatorDid = Value(creatorDid),
        sortOrder = Value(sortOrder),
        lastSynced = Value(lastSynced);
   static Insertable<SavedFeed> custom({
     Expression<String>? uri,
+    Expression<String>? ownerDid,
     Expression<String>? displayName,
     Expression<String>? description,
     Expression<String>? avatar,
@@ -3917,6 +4050,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
   }) {
     return RawValuesInsertable({
       if (uri != null) 'uri': uri,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (displayName != null) 'display_name': displayName,
       if (description != null) 'description': description,
       if (avatar != null) 'avatar': avatar,
@@ -3932,6 +4066,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
 
   SavedFeedsCompanion copyWith({
     Value<String>? uri,
+    Value<String>? ownerDid,
     Value<String>? displayName,
     Value<String?>? description,
     Value<String?>? avatar,
@@ -3945,6 +4080,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
   }) {
     return SavedFeedsCompanion(
       uri: uri ?? this.uri,
+      ownerDid: ownerDid ?? this.ownerDid,
       displayName: displayName ?? this.displayName,
       description: description ?? this.description,
       avatar: avatar ?? this.avatar,
@@ -3963,6 +4099,9 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
     final map = <String, Expression>{};
     if (uri.present) {
       map['uri'] = Variable<String>(uri.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (displayName.present) {
       map['display_name'] = Variable<String>(displayName.value);
@@ -4001,6 +4140,7 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeed> {
   String toString() {
     return (StringBuffer('SavedFeedsCompanion(')
           ..write('uri: $uri, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('displayName: $displayName, ')
           ..write('description: $description, ')
           ..write('avatar: $avatar, ')
@@ -4032,6 +4172,15 @@ class $PreferenceSyncQueueTable extends PreferenceSyncQueue
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+  );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
   );
   static const VerificationMeta _categoryMeta = const VerificationMeta('category');
   @override
@@ -4081,7 +4230,15 @@ class $PreferenceSyncQueueTable extends PreferenceSyncQueue
     defaultValue: const Constant(0),
   );
   @override
-  List<GeneratedColumn> get $columns => [id, category, type, payload, createdAt, retryCount];
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerDid,
+    category,
+    type,
+    payload,
+    createdAt,
+    retryCount,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -4096,6 +4253,14 @@ class $PreferenceSyncQueueTable extends PreferenceSyncQueue
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('category')) {
       context.handle(
@@ -4137,6 +4302,10 @@ class $PreferenceSyncQueueTable extends PreferenceSyncQueue
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return PreferenceSyncQueueData(
       id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
+      )!,
       category: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}category'],
@@ -4169,6 +4338,9 @@ class $PreferenceSyncQueueTable extends PreferenceSyncQueue
 class PreferenceSyncQueueData extends DataClass implements Insertable<PreferenceSyncQueueData> {
   final int id;
 
+  /// The DID of the user who owns this action.
+  final String ownerDid;
+
   /// Category of preference being synced: 'feed' or 'bluesky_pref'.
   final String category;
 
@@ -4191,6 +4363,7 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
   final int retryCount;
   const PreferenceSyncQueueData({
     required this.id,
+    required this.ownerDid,
     required this.category,
     required this.type,
     required this.payload,
@@ -4201,6 +4374,7 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['category'] = Variable<String>(category);
     map['type'] = Variable<String>(type);
     map['payload'] = Variable<String>(payload);
@@ -4212,6 +4386,7 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
   PreferenceSyncQueueCompanion toCompanion(bool nullToAbsent) {
     return PreferenceSyncQueueCompanion(
       id: Value(id),
+      ownerDid: Value(ownerDid),
       category: Value(category),
       type: Value(type),
       payload: Value(payload),
@@ -4227,6 +4402,7 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return PreferenceSyncQueueData(
       id: serializer.fromJson<int>(json['id']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       category: serializer.fromJson<String>(json['category']),
       type: serializer.fromJson<String>(json['type']),
       payload: serializer.fromJson<String>(json['payload']),
@@ -4239,6 +4415,7 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'category': serializer.toJson<String>(category),
       'type': serializer.toJson<String>(type),
       'payload': serializer.toJson<String>(payload),
@@ -4249,6 +4426,7 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
 
   PreferenceSyncQueueData copyWith({
     int? id,
+    String? ownerDid,
     String? category,
     String? type,
     String? payload,
@@ -4256,6 +4434,7 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
     int? retryCount,
   }) => PreferenceSyncQueueData(
     id: id ?? this.id,
+    ownerDid: ownerDid ?? this.ownerDid,
     category: category ?? this.category,
     type: type ?? this.type,
     payload: payload ?? this.payload,
@@ -4265,6 +4444,7 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
   PreferenceSyncQueueData copyWithCompanion(PreferenceSyncQueueCompanion data) {
     return PreferenceSyncQueueData(
       id: data.id.present ? data.id.value : this.id,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       category: data.category.present ? data.category.value : this.category,
       type: data.type.present ? data.type.value : this.type,
       payload: data.payload.present ? data.payload.value : this.payload,
@@ -4277,6 +4457,7 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
   String toString() {
     return (StringBuffer('PreferenceSyncQueueData(')
           ..write('id: $id, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('category: $category, ')
           ..write('type: $type, ')
           ..write('payload: $payload, ')
@@ -4287,12 +4468,13 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
   }
 
   @override
-  int get hashCode => Object.hash(id, category, type, payload, createdAt, retryCount);
+  int get hashCode => Object.hash(id, ownerDid, category, type, payload, createdAt, retryCount);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is PreferenceSyncQueueData &&
           other.id == this.id &&
+          other.ownerDid == this.ownerDid &&
           other.category == this.category &&
           other.type == this.type &&
           other.payload == this.payload &&
@@ -4302,6 +4484,7 @@ class PreferenceSyncQueueData extends DataClass implements Insertable<Preference
 
 class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueData> {
   final Value<int> id;
+  final Value<String> ownerDid;
   final Value<String> category;
   final Value<String> type;
   final Value<String> payload;
@@ -4309,6 +4492,7 @@ class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueDa
   final Value<int> retryCount;
   const PreferenceSyncQueueCompanion({
     this.id = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.category = const Value.absent(),
     this.type = const Value.absent(),
     this.payload = const Value.absent(),
@@ -4317,16 +4501,19 @@ class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueDa
   });
   PreferenceSyncQueueCompanion.insert({
     this.id = const Value.absent(),
+    required String ownerDid,
     this.category = const Value.absent(),
     required String type,
     required String payload,
     required DateTime createdAt,
     this.retryCount = const Value.absent(),
-  }) : type = Value(type),
+  }) : ownerDid = Value(ownerDid),
+       type = Value(type),
        payload = Value(payload),
        createdAt = Value(createdAt);
   static Insertable<PreferenceSyncQueueData> custom({
     Expression<int>? id,
+    Expression<String>? ownerDid,
     Expression<String>? category,
     Expression<String>? type,
     Expression<String>? payload,
@@ -4335,6 +4522,7 @@ class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueDa
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (category != null) 'category': category,
       if (type != null) 'type': type,
       if (payload != null) 'payload': payload,
@@ -4345,6 +4533,7 @@ class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueDa
 
   PreferenceSyncQueueCompanion copyWith({
     Value<int>? id,
+    Value<String>? ownerDid,
     Value<String>? category,
     Value<String>? type,
     Value<String>? payload,
@@ -4353,6 +4542,7 @@ class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueDa
   }) {
     return PreferenceSyncQueueCompanion(
       id: id ?? this.id,
+      ownerDid: ownerDid ?? this.ownerDid,
       category: category ?? this.category,
       type: type ?? this.type,
       payload: payload ?? this.payload,
@@ -4366,6 +4556,9 @@ class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueDa
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (category.present) {
       map['category'] = Variable<String>(category.value);
@@ -4389,6 +4582,7 @@ class PreferenceSyncQueueCompanion extends UpdateCompanion<PreferenceSyncQueueDa
   String toString() {
     return (StringBuffer('PreferenceSyncQueueCompanion(')
           ..write('id: $id, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('category: $category, ')
           ..write('type: $type, ')
           ..write('payload: $payload, ')
@@ -5885,6 +6079,15 @@ class $ProfileRelationshipsTable extends ProfileRelationships
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $ProfileRelationshipsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _profileDidMeta = const VerificationMeta('profileDid');
   @override
   late final GeneratedColumn<String> profileDid = GeneratedColumn<String>(
@@ -5997,6 +6200,7 @@ class $ProfileRelationshipsTable extends ProfileRelationships
   );
   @override
   List<GeneratedColumn> get $columns => [
+    ownerDid,
     profileDid,
     following,
     followingUri,
@@ -6021,6 +6225,14 @@ class $ProfileRelationshipsTable extends ProfileRelationships
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
+    }
     if (data.containsKey('profile_did')) {
       context.handle(
         _profileDidMeta,
@@ -6089,11 +6301,15 @@ class $ProfileRelationshipsTable extends ProfileRelationships
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {profileDid};
+  Set<GeneratedColumn> get $primaryKey => {ownerDid, profileDid};
   @override
   ProfileRelationship map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return ProfileRelationship(
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
+      )!,
       profileDid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}profile_did'],
@@ -6148,6 +6364,9 @@ class $ProfileRelationshipsTable extends ProfileRelationships
 }
 
 class ProfileRelationship extends DataClass implements Insertable<ProfileRelationship> {
+  /// The DID of the owner (the user who sees these relationships).
+  final String ownerDid;
+
   /// The DID of the profile this relationship applies to (subject).
   final String profileDid;
 
@@ -6181,6 +6400,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
   /// When this relationship was last updated.
   final DateTime updatedAt;
   const ProfileRelationship({
+    required this.ownerDid,
     required this.profileDid,
     required this.following,
     this.followingUri,
@@ -6196,6 +6416,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    map['owner_did'] = Variable<String>(ownerDid);
     map['profile_did'] = Variable<String>(profileDid);
     map['following'] = Variable<bool>(following);
     if (!nullToAbsent || followingUri != null) {
@@ -6220,6 +6441,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
 
   ProfileRelationshipsCompanion toCompanion(bool nullToAbsent) {
     return ProfileRelationshipsCompanion(
+      ownerDid: Value(ownerDid),
       profileDid: Value(profileDid),
       following: Value(following),
       followingUri: followingUri == null && nullToAbsent
@@ -6241,6 +6463,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
   factory ProfileRelationship.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ProfileRelationship(
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       profileDid: serializer.fromJson<String>(json['profileDid']),
       following: serializer.fromJson<bool>(json['following']),
       followingUri: serializer.fromJson<String?>(json['followingUri']),
@@ -6258,6 +6481,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'profileDid': serializer.toJson<String>(profileDid),
       'following': serializer.toJson<bool>(following),
       'followingUri': serializer.toJson<String?>(followingUri),
@@ -6273,6 +6497,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
   }
 
   ProfileRelationship copyWith({
+    String? ownerDid,
     String? profileDid,
     bool? following,
     Value<String?> followingUri = const Value.absent(),
@@ -6285,6 +6510,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
     Value<String?> blockingByList = const Value.absent(),
     DateTime? updatedAt,
   }) => ProfileRelationship(
+    ownerDid: ownerDid ?? this.ownerDid,
     profileDid: profileDid ?? this.profileDid,
     following: following ?? this.following,
     followingUri: followingUri.present ? followingUri.value : this.followingUri,
@@ -6299,6 +6525,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
   );
   ProfileRelationship copyWithCompanion(ProfileRelationshipsCompanion data) {
     return ProfileRelationship(
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       profileDid: data.profileDid.present ? data.profileDid.value : this.profileDid,
       following: data.following.present ? data.following.value : this.following,
       followingUri: data.followingUri.present ? data.followingUri.value : this.followingUri,
@@ -6318,6 +6545,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
   @override
   String toString() {
     return (StringBuffer('ProfileRelationship(')
+          ..write('ownerDid: $ownerDid, ')
           ..write('profileDid: $profileDid, ')
           ..write('following: $following, ')
           ..write('followingUri: $followingUri, ')
@@ -6335,6 +6563,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
 
   @override
   int get hashCode => Object.hash(
+    ownerDid,
     profileDid,
     following,
     followingUri,
@@ -6351,6 +6580,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ProfileRelationship &&
+          other.ownerDid == this.ownerDid &&
           other.profileDid == this.profileDid &&
           other.following == this.following &&
           other.followingUri == this.followingUri &&
@@ -6365,6 +6595,7 @@ class ProfileRelationship extends DataClass implements Insertable<ProfileRelatio
 }
 
 class ProfileRelationshipsCompanion extends UpdateCompanion<ProfileRelationship> {
+  final Value<String> ownerDid;
   final Value<String> profileDid;
   final Value<bool> following;
   final Value<String?> followingUri;
@@ -6378,6 +6609,7 @@ class ProfileRelationshipsCompanion extends UpdateCompanion<ProfileRelationship>
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const ProfileRelationshipsCompanion({
+    this.ownerDid = const Value.absent(),
     this.profileDid = const Value.absent(),
     this.following = const Value.absent(),
     this.followingUri = const Value.absent(),
@@ -6392,6 +6624,7 @@ class ProfileRelationshipsCompanion extends UpdateCompanion<ProfileRelationship>
     this.rowid = const Value.absent(),
   });
   ProfileRelationshipsCompanion.insert({
+    required String ownerDid,
     required String profileDid,
     this.following = const Value.absent(),
     this.followingUri = const Value.absent(),
@@ -6404,9 +6637,11 @@ class ProfileRelationshipsCompanion extends UpdateCompanion<ProfileRelationship>
     this.blockingByList = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
-  }) : profileDid = Value(profileDid),
+  }) : ownerDid = Value(ownerDid),
+       profileDid = Value(profileDid),
        updatedAt = Value(updatedAt);
   static Insertable<ProfileRelationship> custom({
+    Expression<String>? ownerDid,
     Expression<String>? profileDid,
     Expression<bool>? following,
     Expression<String>? followingUri,
@@ -6421,6 +6656,7 @@ class ProfileRelationshipsCompanion extends UpdateCompanion<ProfileRelationship>
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (profileDid != null) 'profile_did': profileDid,
       if (following != null) 'following': following,
       if (followingUri != null) 'following_uri': followingUri,
@@ -6437,6 +6673,7 @@ class ProfileRelationshipsCompanion extends UpdateCompanion<ProfileRelationship>
   }
 
   ProfileRelationshipsCompanion copyWith({
+    Value<String>? ownerDid,
     Value<String>? profileDid,
     Value<bool>? following,
     Value<String?>? followingUri,
@@ -6451,6 +6688,7 @@ class ProfileRelationshipsCompanion extends UpdateCompanion<ProfileRelationship>
     Value<int>? rowid,
   }) {
     return ProfileRelationshipsCompanion(
+      ownerDid: ownerDid ?? this.ownerDid,
       profileDid: profileDid ?? this.profileDid,
       following: following ?? this.following,
       followingUri: followingUri ?? this.followingUri,
@@ -6469,6 +6707,9 @@ class ProfileRelationshipsCompanion extends UpdateCompanion<ProfileRelationship>
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
+    }
     if (profileDid.present) {
       map['profile_did'] = Variable<String>(profileDid.value);
     }
@@ -6511,6 +6752,7 @@ class ProfileRelationshipsCompanion extends UpdateCompanion<ProfileRelationship>
   @override
   String toString() {
     return (StringBuffer('ProfileRelationshipsCompanion(')
+          ..write('ownerDid: $ownerDid, ')
           ..write('profileDid: $profileDid, ')
           ..write('following: $following, ')
           ..write('followingUri: $followingUri, ')
@@ -7191,6 +7433,15 @@ class $BlueskyPreferencesTable extends BlueskyPreferences
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _dataMeta = const VerificationMeta('data');
   @override
   late final GeneratedColumn<String> data = GeneratedColumn<String>(
@@ -7210,7 +7461,7 @@ class $BlueskyPreferencesTable extends BlueskyPreferences
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [type, data, lastSynced];
+  List<GeneratedColumn> get $columns => [type, ownerDid, data, lastSynced];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -7227,6 +7478,14 @@ class $BlueskyPreferencesTable extends BlueskyPreferences
       context.handle(_typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
     } else if (isInserting) {
       context.missing(_typeMeta);
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('data')) {
       context.handle(_dataMeta, this.data.isAcceptableOrUnknown(data['data']!, _dataMeta));
@@ -7245,7 +7504,7 @@ class $BlueskyPreferencesTable extends BlueskyPreferences
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {type};
+  Set<GeneratedColumn> get $primaryKey => {type, ownerDid};
   @override
   BlueskyPreference map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -7253,6 +7512,10 @@ class $BlueskyPreferencesTable extends BlueskyPreferences
       type: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}type'],
+      )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
       )!,
       data: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -7275,16 +7538,25 @@ class BlueskyPreference extends DataClass implements Insertable<BlueskyPreferenc
   /// The preference type identifier (e.g., 'contentLabel', 'adultContent').
   final String type;
 
+  /// The DID of the owner of these preferences.
+  final String ownerDid;
+
   /// The preference data serialized as JSON.
   final String data;
 
   /// When this preference was last synced from the remote server.
   final DateTime lastSynced;
-  const BlueskyPreference({required this.type, required this.data, required this.lastSynced});
+  const BlueskyPreference({
+    required this.type,
+    required this.ownerDid,
+    required this.data,
+    required this.lastSynced,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['type'] = Variable<String>(type);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['data'] = Variable<String>(data);
     map['last_synced'] = Variable<DateTime>(lastSynced);
     return map;
@@ -7293,6 +7565,7 @@ class BlueskyPreference extends DataClass implements Insertable<BlueskyPreferenc
   BlueskyPreferencesCompanion toCompanion(bool nullToAbsent) {
     return BlueskyPreferencesCompanion(
       type: Value(type),
+      ownerDid: Value(ownerDid),
       data: Value(data),
       lastSynced: Value(lastSynced),
     );
@@ -7302,6 +7575,7 @@ class BlueskyPreference extends DataClass implements Insertable<BlueskyPreferenc
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return BlueskyPreference(
       type: serializer.fromJson<String>(json['type']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       data: serializer.fromJson<String>(json['data']),
       lastSynced: serializer.fromJson<DateTime>(json['lastSynced']),
     );
@@ -7311,20 +7585,27 @@ class BlueskyPreference extends DataClass implements Insertable<BlueskyPreferenc
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'type': serializer.toJson<String>(type),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'data': serializer.toJson<String>(data),
       'lastSynced': serializer.toJson<DateTime>(lastSynced),
     };
   }
 
-  BlueskyPreference copyWith({String? type, String? data, DateTime? lastSynced}) =>
-      BlueskyPreference(
-        type: type ?? this.type,
-        data: data ?? this.data,
-        lastSynced: lastSynced ?? this.lastSynced,
-      );
+  BlueskyPreference copyWith({
+    String? type,
+    String? ownerDid,
+    String? data,
+    DateTime? lastSynced,
+  }) => BlueskyPreference(
+    type: type ?? this.type,
+    ownerDid: ownerDid ?? this.ownerDid,
+    data: data ?? this.data,
+    lastSynced: lastSynced ?? this.lastSynced,
+  );
   BlueskyPreference copyWithCompanion(BlueskyPreferencesCompanion data) {
     return BlueskyPreference(
       type: data.type.present ? data.type.value : this.type,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       data: data.data.present ? data.data.value : this.data,
       lastSynced: data.lastSynced.present ? data.lastSynced.value : this.lastSynced,
     );
@@ -7334,6 +7615,7 @@ class BlueskyPreference extends DataClass implements Insertable<BlueskyPreferenc
   String toString() {
     return (StringBuffer('BlueskyPreference(')
           ..write('type: $type, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('data: $data, ')
           ..write('lastSynced: $lastSynced')
           ..write(')'))
@@ -7341,43 +7623,50 @@ class BlueskyPreference extends DataClass implements Insertable<BlueskyPreferenc
   }
 
   @override
-  int get hashCode => Object.hash(type, data, lastSynced);
+  int get hashCode => Object.hash(type, ownerDid, data, lastSynced);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is BlueskyPreference &&
           other.type == this.type &&
+          other.ownerDid == this.ownerDid &&
           other.data == this.data &&
           other.lastSynced == this.lastSynced);
 }
 
 class BlueskyPreferencesCompanion extends UpdateCompanion<BlueskyPreference> {
   final Value<String> type;
+  final Value<String> ownerDid;
   final Value<String> data;
   final Value<DateTime> lastSynced;
   final Value<int> rowid;
   const BlueskyPreferencesCompanion({
     this.type = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.data = const Value.absent(),
     this.lastSynced = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BlueskyPreferencesCompanion.insert({
     required String type,
+    required String ownerDid,
     required String data,
     required DateTime lastSynced,
     this.rowid = const Value.absent(),
   }) : type = Value(type),
+       ownerDid = Value(ownerDid),
        data = Value(data),
        lastSynced = Value(lastSynced);
   static Insertable<BlueskyPreference> custom({
     Expression<String>? type,
+    Expression<String>? ownerDid,
     Expression<String>? data,
     Expression<DateTime>? lastSynced,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (type != null) 'type': type,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (data != null) 'data': data,
       if (lastSynced != null) 'last_synced': lastSynced,
       if (rowid != null) 'rowid': rowid,
@@ -7386,12 +7675,14 @@ class BlueskyPreferencesCompanion extends UpdateCompanion<BlueskyPreference> {
 
   BlueskyPreferencesCompanion copyWith({
     Value<String>? type,
+    Value<String>? ownerDid,
     Value<String>? data,
     Value<DateTime>? lastSynced,
     Value<int>? rowid,
   }) {
     return BlueskyPreferencesCompanion(
       type: type ?? this.type,
+      ownerDid: ownerDid ?? this.ownerDid,
       data: data ?? this.data,
       lastSynced: lastSynced ?? this.lastSynced,
       rowid: rowid ?? this.rowid,
@@ -7403,6 +7694,9 @@ class BlueskyPreferencesCompanion extends UpdateCompanion<BlueskyPreference> {
     final map = <String, Expression>{};
     if (type.present) {
       map['type'] = Variable<String>(type.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (data.present) {
       map['data'] = Variable<String>(data.value);
@@ -7420,6 +7714,7 @@ class BlueskyPreferencesCompanion extends UpdateCompanion<BlueskyPreference> {
   String toString() {
     return (StringBuffer('BlueskyPreferencesCompanion(')
           ..write('type: $type, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('data: $data, ')
           ..write('lastSynced: $lastSynced, ')
           ..write('rowid: $rowid')
@@ -8147,6 +8442,15 @@ class $NotificationsTable extends Notifications with TableInfo<$NotificationsTab
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _actorDidMeta = const VerificationMeta('actorDid');
   @override
   late final GeneratedColumn<String> actorDid = GeneratedColumn<String>(
@@ -8225,6 +8529,7 @@ class $NotificationsTable extends Notifications with TableInfo<$NotificationsTab
   @override
   List<GeneratedColumn> get $columns => [
     uri,
+    ownerDid,
     actorDid,
     type,
     reasonSubjectUri,
@@ -8250,6 +8555,14 @@ class $NotificationsTable extends Notifications with TableInfo<$NotificationsTab
       context.handle(_uriMeta, uri.isAcceptableOrUnknown(data['uri']!, _uriMeta));
     } else if (isInserting) {
       context.missing(_uriMeta);
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('actor_did')) {
       context.handle(
@@ -8302,12 +8615,16 @@ class $NotificationsTable extends Notifications with TableInfo<$NotificationsTab
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {uri};
+  Set<GeneratedColumn> get $primaryKey => {uri, ownerDid};
   @override
   Notification map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Notification(
       uri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}uri'])!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
+      )!,
       actorDid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}actor_did'],
@@ -8353,6 +8670,9 @@ class Notification extends DataClass implements Insertable<Notification> {
   /// Notification AT URI (primary key).
   final String uri;
 
+  /// The DID of the user receiving the notification.
+  final String ownerDid;
+
   /// DID of the user who triggered the notification.
   final String actorDid;
 
@@ -8378,6 +8698,7 @@ class Notification extends DataClass implements Insertable<Notification> {
   final DateTime cachedAt;
   const Notification({
     required this.uri,
+    required this.ownerDid,
     required this.actorDid,
     required this.type,
     this.reasonSubjectUri,
@@ -8391,6 +8712,7 @@ class Notification extends DataClass implements Insertable<Notification> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['uri'] = Variable<String>(uri);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['actor_did'] = Variable<String>(actorDid);
     map['type'] = Variable<String>(type);
     if (!nullToAbsent || reasonSubjectUri != null) {
@@ -8411,6 +8733,7 @@ class Notification extends DataClass implements Insertable<Notification> {
   NotificationsCompanion toCompanion(bool nullToAbsent) {
     return NotificationsCompanion(
       uri: Value(uri),
+      ownerDid: Value(ownerDid),
       actorDid: Value(actorDid),
       type: Value(type),
       reasonSubjectUri: reasonSubjectUri == null && nullToAbsent
@@ -8428,6 +8751,7 @@ class Notification extends DataClass implements Insertable<Notification> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Notification(
       uri: serializer.fromJson<String>(json['uri']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       actorDid: serializer.fromJson<String>(json['actorDid']),
       type: serializer.fromJson<String>(json['type']),
       reasonSubjectUri: serializer.fromJson<String?>(json['reasonSubjectUri']),
@@ -8443,6 +8767,7 @@ class Notification extends DataClass implements Insertable<Notification> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'uri': serializer.toJson<String>(uri),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'actorDid': serializer.toJson<String>(actorDid),
       'type': serializer.toJson<String>(type),
       'reasonSubjectUri': serializer.toJson<String?>(reasonSubjectUri),
@@ -8456,6 +8781,7 @@ class Notification extends DataClass implements Insertable<Notification> {
 
   Notification copyWith({
     String? uri,
+    String? ownerDid,
     String? actorDid,
     String? type,
     Value<String?> reasonSubjectUri = const Value.absent(),
@@ -8466,6 +8792,7 @@ class Notification extends DataClass implements Insertable<Notification> {
     DateTime? cachedAt,
   }) => Notification(
     uri: uri ?? this.uri,
+    ownerDid: ownerDid ?? this.ownerDid,
     actorDid: actorDid ?? this.actorDid,
     type: type ?? this.type,
     reasonSubjectUri: reasonSubjectUri.present ? reasonSubjectUri.value : this.reasonSubjectUri,
@@ -8478,6 +8805,7 @@ class Notification extends DataClass implements Insertable<Notification> {
   Notification copyWithCompanion(NotificationsCompanion data) {
     return Notification(
       uri: data.uri.present ? data.uri.value : this.uri,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       actorDid: data.actorDid.present ? data.actorDid.value : this.actorDid,
       type: data.type.present ? data.type.value : this.type,
       reasonSubjectUri: data.reasonSubjectUri.present
@@ -8495,6 +8823,7 @@ class Notification extends DataClass implements Insertable<Notification> {
   String toString() {
     return (StringBuffer('Notification(')
           ..write('uri: $uri, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('actorDid: $actorDid, ')
           ..write('type: $type, ')
           ..write('reasonSubjectUri: $reasonSubjectUri, ')
@@ -8510,6 +8839,7 @@ class Notification extends DataClass implements Insertable<Notification> {
   @override
   int get hashCode => Object.hash(
     uri,
+    ownerDid,
     actorDid,
     type,
     reasonSubjectUri,
@@ -8524,6 +8854,7 @@ class Notification extends DataClass implements Insertable<Notification> {
       identical(this, other) ||
       (other is Notification &&
           other.uri == this.uri &&
+          other.ownerDid == this.ownerDid &&
           other.actorDid == this.actorDid &&
           other.type == this.type &&
           other.reasonSubjectUri == this.reasonSubjectUri &&
@@ -8536,6 +8867,7 @@ class Notification extends DataClass implements Insertable<Notification> {
 
 class NotificationsCompanion extends UpdateCompanion<Notification> {
   final Value<String> uri;
+  final Value<String> ownerDid;
   final Value<String> actorDid;
   final Value<String> type;
   final Value<String?> reasonSubjectUri;
@@ -8547,6 +8879,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
   final Value<int> rowid;
   const NotificationsCompanion({
     this.uri = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.actorDid = const Value.absent(),
     this.type = const Value.absent(),
     this.reasonSubjectUri = const Value.absent(),
@@ -8559,6 +8892,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
   });
   NotificationsCompanion.insert({
     required String uri,
+    required String ownerDid,
     required String actorDid,
     required String type,
     this.reasonSubjectUri = const Value.absent(),
@@ -8569,12 +8903,14 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
     required DateTime cachedAt,
     this.rowid = const Value.absent(),
   }) : uri = Value(uri),
+       ownerDid = Value(ownerDid),
        actorDid = Value(actorDid),
        type = Value(type),
        indexedAt = Value(indexedAt),
        cachedAt = Value(cachedAt);
   static Insertable<Notification> custom({
     Expression<String>? uri,
+    Expression<String>? ownerDid,
     Expression<String>? actorDid,
     Expression<String>? type,
     Expression<String>? reasonSubjectUri,
@@ -8587,6 +8923,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
   }) {
     return RawValuesInsertable({
       if (uri != null) 'uri': uri,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (actorDid != null) 'actor_did': actorDid,
       if (type != null) 'type': type,
       if (reasonSubjectUri != null) 'reason_subject_uri': reasonSubjectUri,
@@ -8601,6 +8938,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
 
   NotificationsCompanion copyWith({
     Value<String>? uri,
+    Value<String>? ownerDid,
     Value<String>? actorDid,
     Value<String>? type,
     Value<String?>? reasonSubjectUri,
@@ -8613,6 +8951,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
   }) {
     return NotificationsCompanion(
       uri: uri ?? this.uri,
+      ownerDid: ownerDid ?? this.ownerDid,
       actorDid: actorDid ?? this.actorDid,
       type: type ?? this.type,
       reasonSubjectUri: reasonSubjectUri ?? this.reasonSubjectUri,
@@ -8630,6 +8969,9 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
     final map = <String, Expression>{};
     if (uri.present) {
       map['uri'] = Variable<String>(uri.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (actorDid.present) {
       map['actor_did'] = Variable<String>(actorDid.value);
@@ -8665,6 +9007,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
   String toString() {
     return (StringBuffer('NotificationsCompanion(')
           ..write('uri: $uri, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('actorDid: $actorDid, ')
           ..write('type: $type, ')
           ..write('reasonSubjectUri: $reasonSubjectUri, ')
@@ -8694,6 +9037,15 @@ class $NotificationCursorsTable extends NotificationCursors
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _cursorMeta = const VerificationMeta('cursor');
   @override
   late final GeneratedColumn<String> cursor = GeneratedColumn<String>(
@@ -8713,7 +9065,7 @@ class $NotificationCursorsTable extends NotificationCursors
     requiredDuringInsert: false,
   );
   @override
-  List<GeneratedColumn> get $columns => [feedKey, cursor, lastUpdated];
+  List<GeneratedColumn> get $columns => [feedKey, ownerDid, cursor, lastUpdated];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -8731,6 +9083,14 @@ class $NotificationCursorsTable extends NotificationCursors
     } else if (isInserting) {
       context.missing(_feedKeyMeta);
     }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
+    }
     if (data.containsKey('cursor')) {
       context.handle(_cursorMeta, cursor.isAcceptableOrUnknown(data['cursor']!, _cursorMeta));
     } else if (isInserting) {
@@ -8746,7 +9106,7 @@ class $NotificationCursorsTable extends NotificationCursors
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {feedKey};
+  Set<GeneratedColumn> get $primaryKey => {feedKey, ownerDid};
   @override
   NotificationCursor map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -8754,6 +9114,10 @@ class $NotificationCursorsTable extends NotificationCursors
       feedKey: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}feed_key'],
+      )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
       )!,
       cursor: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -8776,16 +9140,25 @@ class NotificationCursor extends DataClass implements Insertable<NotificationCur
   /// Feed key identifier (e.g., 'notifications').
   final String feedKey;
 
+  /// The DID of the user this cursor belongs to.
+  final String ownerDid;
+
   /// Pagination cursor from API.
   final String cursor;
 
   /// When the cursor was last updated.
   final DateTime? lastUpdated;
-  const NotificationCursor({required this.feedKey, required this.cursor, this.lastUpdated});
+  const NotificationCursor({
+    required this.feedKey,
+    required this.ownerDid,
+    required this.cursor,
+    this.lastUpdated,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['feed_key'] = Variable<String>(feedKey);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['cursor'] = Variable<String>(cursor);
     if (!nullToAbsent || lastUpdated != null) {
       map['last_updated'] = Variable<DateTime>(lastUpdated);
@@ -8796,6 +9169,7 @@ class NotificationCursor extends DataClass implements Insertable<NotificationCur
   NotificationCursorsCompanion toCompanion(bool nullToAbsent) {
     return NotificationCursorsCompanion(
       feedKey: Value(feedKey),
+      ownerDid: Value(ownerDid),
       cursor: Value(cursor),
       lastUpdated: lastUpdated == null && nullToAbsent ? const Value.absent() : Value(lastUpdated),
     );
@@ -8805,6 +9179,7 @@ class NotificationCursor extends DataClass implements Insertable<NotificationCur
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return NotificationCursor(
       feedKey: serializer.fromJson<String>(json['feedKey']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       cursor: serializer.fromJson<String>(json['cursor']),
       lastUpdated: serializer.fromJson<DateTime?>(json['lastUpdated']),
     );
@@ -8814,6 +9189,7 @@ class NotificationCursor extends DataClass implements Insertable<NotificationCur
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'feedKey': serializer.toJson<String>(feedKey),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'cursor': serializer.toJson<String>(cursor),
       'lastUpdated': serializer.toJson<DateTime?>(lastUpdated),
     };
@@ -8821,16 +9197,19 @@ class NotificationCursor extends DataClass implements Insertable<NotificationCur
 
   NotificationCursor copyWith({
     String? feedKey,
+    String? ownerDid,
     String? cursor,
     Value<DateTime?> lastUpdated = const Value.absent(),
   }) => NotificationCursor(
     feedKey: feedKey ?? this.feedKey,
+    ownerDid: ownerDid ?? this.ownerDid,
     cursor: cursor ?? this.cursor,
     lastUpdated: lastUpdated.present ? lastUpdated.value : this.lastUpdated,
   );
   NotificationCursor copyWithCompanion(NotificationCursorsCompanion data) {
     return NotificationCursor(
       feedKey: data.feedKey.present ? data.feedKey.value : this.feedKey,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       cursor: data.cursor.present ? data.cursor.value : this.cursor,
       lastUpdated: data.lastUpdated.present ? data.lastUpdated.value : this.lastUpdated,
     );
@@ -8840,6 +9219,7 @@ class NotificationCursor extends DataClass implements Insertable<NotificationCur
   String toString() {
     return (StringBuffer('NotificationCursor(')
           ..write('feedKey: $feedKey, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('cursor: $cursor, ')
           ..write('lastUpdated: $lastUpdated')
           ..write(')'))
@@ -8847,42 +9227,49 @@ class NotificationCursor extends DataClass implements Insertable<NotificationCur
   }
 
   @override
-  int get hashCode => Object.hash(feedKey, cursor, lastUpdated);
+  int get hashCode => Object.hash(feedKey, ownerDid, cursor, lastUpdated);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is NotificationCursor &&
           other.feedKey == this.feedKey &&
+          other.ownerDid == this.ownerDid &&
           other.cursor == this.cursor &&
           other.lastUpdated == this.lastUpdated);
 }
 
 class NotificationCursorsCompanion extends UpdateCompanion<NotificationCursor> {
   final Value<String> feedKey;
+  final Value<String> ownerDid;
   final Value<String> cursor;
   final Value<DateTime?> lastUpdated;
   final Value<int> rowid;
   const NotificationCursorsCompanion({
     this.feedKey = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.cursor = const Value.absent(),
     this.lastUpdated = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   NotificationCursorsCompanion.insert({
     required String feedKey,
+    required String ownerDid,
     required String cursor,
     this.lastUpdated = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : feedKey = Value(feedKey),
+       ownerDid = Value(ownerDid),
        cursor = Value(cursor);
   static Insertable<NotificationCursor> custom({
     Expression<String>? feedKey,
+    Expression<String>? ownerDid,
     Expression<String>? cursor,
     Expression<DateTime>? lastUpdated,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (feedKey != null) 'feed_key': feedKey,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (cursor != null) 'cursor': cursor,
       if (lastUpdated != null) 'last_updated': lastUpdated,
       if (rowid != null) 'rowid': rowid,
@@ -8891,12 +9278,14 @@ class NotificationCursorsCompanion extends UpdateCompanion<NotificationCursor> {
 
   NotificationCursorsCompanion copyWith({
     Value<String>? feedKey,
+    Value<String>? ownerDid,
     Value<String>? cursor,
     Value<DateTime?>? lastUpdated,
     Value<int>? rowid,
   }) {
     return NotificationCursorsCompanion(
       feedKey: feedKey ?? this.feedKey,
+      ownerDid: ownerDid ?? this.ownerDid,
       cursor: cursor ?? this.cursor,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       rowid: rowid ?? this.rowid,
@@ -8908,6 +9297,9 @@ class NotificationCursorsCompanion extends UpdateCompanion<NotificationCursor> {
     final map = <String, Expression>{};
     if (feedKey.present) {
       map['feed_key'] = Variable<String>(feedKey.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (cursor.present) {
       map['cursor'] = Variable<String>(cursor.value);
@@ -8925,6 +9317,7 @@ class NotificationCursorsCompanion extends UpdateCompanion<NotificationCursor> {
   String toString() {
     return (StringBuffer('NotificationCursorsCompanion(')
           ..write('feedKey: $feedKey, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('cursor: $cursor, ')
           ..write('lastUpdated: $lastUpdated, ')
           ..write('rowid: $rowid')
@@ -8949,6 +9342,15 @@ class $NotificationsSyncQueueTable extends NotificationsSyncQueue
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+  );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
   );
   static const VerificationMeta _typeMeta = const VerificationMeta('type');
   @override
@@ -8988,7 +9390,7 @@ class $NotificationsSyncQueueTable extends NotificationsSyncQueue
     defaultValue: const Constant(0),
   );
   @override
-  List<GeneratedColumn> get $columns => [id, type, seenAt, createdAt, retryCount];
+  List<GeneratedColumn> get $columns => [id, ownerDid, type, seenAt, createdAt, retryCount];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -9003,6 +9405,14 @@ class $NotificationsSyncQueueTable extends NotificationsSyncQueue
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('type')) {
       context.handle(_typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
@@ -9038,6 +9448,10 @@ class $NotificationsSyncQueueTable extends NotificationsSyncQueue
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return NotificationsSyncQueueData(
       id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
+      )!,
       type: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}type'],
@@ -9067,6 +9481,9 @@ class NotificationsSyncQueueData extends DataClass
     implements Insertable<NotificationsSyncQueueData> {
   final int id;
 
+  /// The DID of the user who owns this action.
+  final String ownerDid;
+
   /// Type of operation: 'mark_seen'.
   final String type;
 
@@ -9080,6 +9497,7 @@ class NotificationsSyncQueueData extends DataClass
   final int retryCount;
   const NotificationsSyncQueueData({
     required this.id,
+    required this.ownerDid,
     required this.type,
     required this.seenAt,
     required this.createdAt,
@@ -9089,6 +9507,7 @@ class NotificationsSyncQueueData extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['type'] = Variable<String>(type);
     map['seen_at'] = Variable<String>(seenAt);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -9099,6 +9518,7 @@ class NotificationsSyncQueueData extends DataClass
   NotificationsSyncQueueCompanion toCompanion(bool nullToAbsent) {
     return NotificationsSyncQueueCompanion(
       id: Value(id),
+      ownerDid: Value(ownerDid),
       type: Value(type),
       seenAt: Value(seenAt),
       createdAt: Value(createdAt),
@@ -9113,6 +9533,7 @@ class NotificationsSyncQueueData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return NotificationsSyncQueueData(
       id: serializer.fromJson<int>(json['id']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       type: serializer.fromJson<String>(json['type']),
       seenAt: serializer.fromJson<String>(json['seenAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -9124,6 +9545,7 @@ class NotificationsSyncQueueData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'type': serializer.toJson<String>(type),
       'seenAt': serializer.toJson<String>(seenAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -9133,12 +9555,14 @@ class NotificationsSyncQueueData extends DataClass
 
   NotificationsSyncQueueData copyWith({
     int? id,
+    String? ownerDid,
     String? type,
     String? seenAt,
     DateTime? createdAt,
     int? retryCount,
   }) => NotificationsSyncQueueData(
     id: id ?? this.id,
+    ownerDid: ownerDid ?? this.ownerDid,
     type: type ?? this.type,
     seenAt: seenAt ?? this.seenAt,
     createdAt: createdAt ?? this.createdAt,
@@ -9147,6 +9571,7 @@ class NotificationsSyncQueueData extends DataClass
   NotificationsSyncQueueData copyWithCompanion(NotificationsSyncQueueCompanion data) {
     return NotificationsSyncQueueData(
       id: data.id.present ? data.id.value : this.id,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       type: data.type.present ? data.type.value : this.type,
       seenAt: data.seenAt.present ? data.seenAt.value : this.seenAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -9158,6 +9583,7 @@ class NotificationsSyncQueueData extends DataClass
   String toString() {
     return (StringBuffer('NotificationsSyncQueueData(')
           ..write('id: $id, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('type: $type, ')
           ..write('seenAt: $seenAt, ')
           ..write('createdAt: $createdAt, ')
@@ -9167,12 +9593,13 @@ class NotificationsSyncQueueData extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(id, type, seenAt, createdAt, retryCount);
+  int get hashCode => Object.hash(id, ownerDid, type, seenAt, createdAt, retryCount);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is NotificationsSyncQueueData &&
           other.id == this.id &&
+          other.ownerDid == this.ownerDid &&
           other.type == this.type &&
           other.seenAt == this.seenAt &&
           other.createdAt == this.createdAt &&
@@ -9181,12 +9608,14 @@ class NotificationsSyncQueueData extends DataClass
 
 class NotificationsSyncQueueCompanion extends UpdateCompanion<NotificationsSyncQueueData> {
   final Value<int> id;
+  final Value<String> ownerDid;
   final Value<String> type;
   final Value<String> seenAt;
   final Value<DateTime> createdAt;
   final Value<int> retryCount;
   const NotificationsSyncQueueCompanion({
     this.id = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.type = const Value.absent(),
     this.seenAt = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -9194,15 +9623,18 @@ class NotificationsSyncQueueCompanion extends UpdateCompanion<NotificationsSyncQ
   });
   NotificationsSyncQueueCompanion.insert({
     this.id = const Value.absent(),
+    required String ownerDid,
     required String type,
     required String seenAt,
     required DateTime createdAt,
     this.retryCount = const Value.absent(),
-  }) : type = Value(type),
+  }) : ownerDid = Value(ownerDid),
+       type = Value(type),
        seenAt = Value(seenAt),
        createdAt = Value(createdAt);
   static Insertable<NotificationsSyncQueueData> custom({
     Expression<int>? id,
+    Expression<String>? ownerDid,
     Expression<String>? type,
     Expression<String>? seenAt,
     Expression<DateTime>? createdAt,
@@ -9210,6 +9642,7 @@ class NotificationsSyncQueueCompanion extends UpdateCompanion<NotificationsSyncQ
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (type != null) 'type': type,
       if (seenAt != null) 'seen_at': seenAt,
       if (createdAt != null) 'created_at': createdAt,
@@ -9219,6 +9652,7 @@ class NotificationsSyncQueueCompanion extends UpdateCompanion<NotificationsSyncQ
 
   NotificationsSyncQueueCompanion copyWith({
     Value<int>? id,
+    Value<String>? ownerDid,
     Value<String>? type,
     Value<String>? seenAt,
     Value<DateTime>? createdAt,
@@ -9226,6 +9660,7 @@ class NotificationsSyncQueueCompanion extends UpdateCompanion<NotificationsSyncQ
   }) {
     return NotificationsSyncQueueCompanion(
       id: id ?? this.id,
+      ownerDid: ownerDid ?? this.ownerDid,
       type: type ?? this.type,
       seenAt: seenAt ?? this.seenAt,
       createdAt: createdAt ?? this.createdAt,
@@ -9238,6 +9673,9 @@ class NotificationsSyncQueueCompanion extends UpdateCompanion<NotificationsSyncQ
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (type.present) {
       map['type'] = Variable<String>(type.value);
@@ -9258,6 +9696,7 @@ class NotificationsSyncQueueCompanion extends UpdateCompanion<NotificationsSyncQ
   String toString() {
     return (StringBuffer('NotificationsSyncQueueCompanion(')
           ..write('id: $id, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('type: $type, ')
           ..write('seenAt: $seenAt, ')
           ..write('createdAt: $createdAt, ')
@@ -9276,6 +9715,15 @@ class $DmConvosTable extends DmConvos with TableInfo<$DmConvosTable, DmConvo> {
   @override
   late final GeneratedColumn<String> convoId = GeneratedColumn<String>(
     'convo_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -9363,6 +9811,7 @@ class $DmConvosTable extends DmConvos with TableInfo<$DmConvosTable, DmConvo> {
   @override
   List<GeneratedColumn> get $columns => [
     convoId,
+    ownerDid,
     membersJson,
     lastMessageText,
     lastMessageAt,
@@ -9385,6 +9834,14 @@ class $DmConvosTable extends DmConvos with TableInfo<$DmConvosTable, DmConvo> {
       context.handle(_convoIdMeta, convoId.isAcceptableOrUnknown(data['convo_id']!, _convoIdMeta));
     } else if (isInserting) {
       context.missing(_convoIdMeta);
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('members_json')) {
       context.handle(
@@ -9442,7 +9899,7 @@ class $DmConvosTable extends DmConvos with TableInfo<$DmConvosTable, DmConvo> {
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {convoId};
+  Set<GeneratedColumn> get $primaryKey => {convoId, ownerDid};
   @override
   DmConvo map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -9450,6 +9907,10 @@ class $DmConvosTable extends DmConvos with TableInfo<$DmConvosTable, DmConvo> {
       convoId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}convo_id'],
+      )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
       )!,
       membersJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -9496,6 +9957,9 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
   /// Conversation ID (unique identifier from API).
   final String convoId;
 
+  /// The DID of the user who owns this conversation view.
+  final String ownerDid;
+
   /// JSON array of participant DIDs.
   final String membersJson;
 
@@ -9521,6 +9985,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
   final DateTime cachedAt;
   const DmConvo({
     required this.convoId,
+    required this.ownerDid,
     required this.membersJson,
     this.lastMessageText,
     this.lastMessageAt,
@@ -9534,6 +9999,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['convo_id'] = Variable<String>(convoId);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['members_json'] = Variable<String>(membersJson);
     if (!nullToAbsent || lastMessageText != null) {
       map['last_message_text'] = Variable<String>(lastMessageText);
@@ -9554,6 +10020,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
   DmConvosCompanion toCompanion(bool nullToAbsent) {
     return DmConvosCompanion(
       convoId: Value(convoId),
+      ownerDid: Value(ownerDid),
       membersJson: Value(membersJson),
       lastMessageText: lastMessageText == null && nullToAbsent
           ? const Value.absent()
@@ -9575,6 +10042,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return DmConvo(
       convoId: serializer.fromJson<String>(json['convoId']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       membersJson: serializer.fromJson<String>(json['membersJson']),
       lastMessageText: serializer.fromJson<String?>(json['lastMessageText']),
       lastMessageAt: serializer.fromJson<DateTime?>(json['lastMessageAt']),
@@ -9590,6 +10058,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'convoId': serializer.toJson<String>(convoId),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'membersJson': serializer.toJson<String>(membersJson),
       'lastMessageText': serializer.toJson<String?>(lastMessageText),
       'lastMessageAt': serializer.toJson<DateTime?>(lastMessageAt),
@@ -9603,6 +10072,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
 
   DmConvo copyWith({
     String? convoId,
+    String? ownerDid,
     String? membersJson,
     Value<String?> lastMessageText = const Value.absent(),
     Value<DateTime?> lastMessageAt = const Value.absent(),
@@ -9613,6 +10083,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
     DateTime? cachedAt,
   }) => DmConvo(
     convoId: convoId ?? this.convoId,
+    ownerDid: ownerDid ?? this.ownerDid,
     membersJson: membersJson ?? this.membersJson,
     lastMessageText: lastMessageText.present ? lastMessageText.value : this.lastMessageText,
     lastMessageAt: lastMessageAt.present ? lastMessageAt.value : this.lastMessageAt,
@@ -9627,6 +10098,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
   DmConvo copyWithCompanion(DmConvosCompanion data) {
     return DmConvo(
       convoId: data.convoId.present ? data.convoId.value : this.convoId,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       membersJson: data.membersJson.present ? data.membersJson.value : this.membersJson,
       lastMessageText: data.lastMessageText.present
           ? data.lastMessageText.value
@@ -9646,6 +10118,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
   String toString() {
     return (StringBuffer('DmConvo(')
           ..write('convoId: $convoId, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('membersJson: $membersJson, ')
           ..write('lastMessageText: $lastMessageText, ')
           ..write('lastMessageAt: $lastMessageAt, ')
@@ -9661,6 +10134,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
   @override
   int get hashCode => Object.hash(
     convoId,
+    ownerDid,
     membersJson,
     lastMessageText,
     lastMessageAt,
@@ -9675,6 +10149,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
       identical(this, other) ||
       (other is DmConvo &&
           other.convoId == this.convoId &&
+          other.ownerDid == this.ownerDid &&
           other.membersJson == this.membersJson &&
           other.lastMessageText == this.lastMessageText &&
           other.lastMessageAt == this.lastMessageAt &&
@@ -9687,6 +10162,7 @@ class DmConvo extends DataClass implements Insertable<DmConvo> {
 
 class DmConvosCompanion extends UpdateCompanion<DmConvo> {
   final Value<String> convoId;
+  final Value<String> ownerDid;
   final Value<String> membersJson;
   final Value<String?> lastMessageText;
   final Value<DateTime?> lastMessageAt;
@@ -9698,6 +10174,7 @@ class DmConvosCompanion extends UpdateCompanion<DmConvo> {
   final Value<int> rowid;
   const DmConvosCompanion({
     this.convoId = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.membersJson = const Value.absent(),
     this.lastMessageText = const Value.absent(),
     this.lastMessageAt = const Value.absent(),
@@ -9710,6 +10187,7 @@ class DmConvosCompanion extends UpdateCompanion<DmConvo> {
   });
   DmConvosCompanion.insert({
     required String convoId,
+    required String ownerDid,
     required String membersJson,
     this.lastMessageText = const Value.absent(),
     this.lastMessageAt = const Value.absent(),
@@ -9720,10 +10198,12 @@ class DmConvosCompanion extends UpdateCompanion<DmConvo> {
     required DateTime cachedAt,
     this.rowid = const Value.absent(),
   }) : convoId = Value(convoId),
+       ownerDid = Value(ownerDid),
        membersJson = Value(membersJson),
        cachedAt = Value(cachedAt);
   static Insertable<DmConvo> custom({
     Expression<String>? convoId,
+    Expression<String>? ownerDid,
     Expression<String>? membersJson,
     Expression<String>? lastMessageText,
     Expression<DateTime>? lastMessageAt,
@@ -9736,6 +10216,7 @@ class DmConvosCompanion extends UpdateCompanion<DmConvo> {
   }) {
     return RawValuesInsertable({
       if (convoId != null) 'convo_id': convoId,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (membersJson != null) 'members_json': membersJson,
       if (lastMessageText != null) 'last_message_text': lastMessageText,
       if (lastMessageAt != null) 'last_message_at': lastMessageAt,
@@ -9750,6 +10231,7 @@ class DmConvosCompanion extends UpdateCompanion<DmConvo> {
 
   DmConvosCompanion copyWith({
     Value<String>? convoId,
+    Value<String>? ownerDid,
     Value<String>? membersJson,
     Value<String?>? lastMessageText,
     Value<DateTime?>? lastMessageAt,
@@ -9762,6 +10244,7 @@ class DmConvosCompanion extends UpdateCompanion<DmConvo> {
   }) {
     return DmConvosCompanion(
       convoId: convoId ?? this.convoId,
+      ownerDid: ownerDid ?? this.ownerDid,
       membersJson: membersJson ?? this.membersJson,
       lastMessageText: lastMessageText ?? this.lastMessageText,
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
@@ -9779,6 +10262,9 @@ class DmConvosCompanion extends UpdateCompanion<DmConvo> {
     final map = <String, Expression>{};
     if (convoId.present) {
       map['convo_id'] = Variable<String>(convoId.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (membersJson.present) {
       map['members_json'] = Variable<String>(membersJson.value);
@@ -9814,6 +10300,7 @@ class DmConvosCompanion extends UpdateCompanion<DmConvo> {
   String toString() {
     return (StringBuffer('DmConvosCompanion(')
           ..write('convoId: $convoId, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('membersJson: $membersJson, ')
           ..write('lastMessageText: $lastMessageText, ')
           ..write('lastMessageAt: $lastMessageAt, ')
@@ -9837,6 +10324,15 @@ class $DmMessagesTable extends DmMessages with TableInfo<$DmMessagesTable, DmMes
   @override
   late final GeneratedColumn<String> messageId = GeneratedColumn<String>(
     'message_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -9900,6 +10396,7 @@ class $DmMessagesTable extends DmMessages with TableInfo<$DmMessagesTable, DmMes
   @override
   List<GeneratedColumn> get $columns => [
     messageId,
+    ownerDid,
     convoId,
     senderDid,
     content,
@@ -9926,6 +10423,14 @@ class $DmMessagesTable extends DmMessages with TableInfo<$DmMessagesTable, DmMes
       );
     } else if (isInserting) {
       context.missing(_messageIdMeta);
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('convo_id')) {
       context.handle(_convoIdMeta, convoId.isAcceptableOrUnknown(data['convo_id']!, _convoIdMeta));
@@ -9967,7 +10472,7 @@ class $DmMessagesTable extends DmMessages with TableInfo<$DmMessagesTable, DmMes
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {messageId};
+  Set<GeneratedColumn> get $primaryKey => {messageId, ownerDid};
   @override
   DmMessage map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -9975,6 +10480,10 @@ class $DmMessagesTable extends DmMessages with TableInfo<$DmMessagesTable, DmMes
       messageId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}message_id'],
+      )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
       )!,
       convoId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -10013,6 +10522,9 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
   /// Message ID (unique identifier from API).
   final String messageId;
 
+  /// The DID of the user who owns this message view.
+  final String ownerDid;
+
   /// Conversation this message belongs to.
   final String convoId;
 
@@ -10032,6 +10544,7 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
   final DateTime cachedAt;
   const DmMessage({
     required this.messageId,
+    required this.ownerDid,
     required this.convoId,
     required this.senderDid,
     required this.content,
@@ -10043,6 +10556,7 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['message_id'] = Variable<String>(messageId);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['convo_id'] = Variable<String>(convoId);
     map['sender_did'] = Variable<String>(senderDid);
     map['content'] = Variable<String>(content);
@@ -10055,6 +10569,7 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
   DmMessagesCompanion toCompanion(bool nullToAbsent) {
     return DmMessagesCompanion(
       messageId: Value(messageId),
+      ownerDid: Value(ownerDid),
       convoId: Value(convoId),
       senderDid: Value(senderDid),
       content: Value(content),
@@ -10068,6 +10583,7 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return DmMessage(
       messageId: serializer.fromJson<String>(json['messageId']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       convoId: serializer.fromJson<String>(json['convoId']),
       senderDid: serializer.fromJson<String>(json['senderDid']),
       content: serializer.fromJson<String>(json['content']),
@@ -10081,6 +10597,7 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'messageId': serializer.toJson<String>(messageId),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'convoId': serializer.toJson<String>(convoId),
       'senderDid': serializer.toJson<String>(senderDid),
       'content': serializer.toJson<String>(content),
@@ -10092,6 +10609,7 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
 
   DmMessage copyWith({
     String? messageId,
+    String? ownerDid,
     String? convoId,
     String? senderDid,
     String? content,
@@ -10100,6 +10618,7 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
     DateTime? cachedAt,
   }) => DmMessage(
     messageId: messageId ?? this.messageId,
+    ownerDid: ownerDid ?? this.ownerDid,
     convoId: convoId ?? this.convoId,
     senderDid: senderDid ?? this.senderDid,
     content: content ?? this.content,
@@ -10110,6 +10629,7 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
   DmMessage copyWithCompanion(DmMessagesCompanion data) {
     return DmMessage(
       messageId: data.messageId.present ? data.messageId.value : this.messageId,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       convoId: data.convoId.present ? data.convoId.value : this.convoId,
       senderDid: data.senderDid.present ? data.senderDid.value : this.senderDid,
       content: data.content.present ? data.content.value : this.content,
@@ -10123,6 +10643,7 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
   String toString() {
     return (StringBuffer('DmMessage(')
           ..write('messageId: $messageId, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('convoId: $convoId, ')
           ..write('senderDid: $senderDid, ')
           ..write('content: $content, ')
@@ -10135,12 +10656,13 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
 
   @override
   int get hashCode =>
-      Object.hash(messageId, convoId, senderDid, content, sentAt, status, cachedAt);
+      Object.hash(messageId, ownerDid, convoId, senderDid, content, sentAt, status, cachedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is DmMessage &&
           other.messageId == this.messageId &&
+          other.ownerDid == this.ownerDid &&
           other.convoId == this.convoId &&
           other.senderDid == this.senderDid &&
           other.content == this.content &&
@@ -10151,6 +10673,7 @@ class DmMessage extends DataClass implements Insertable<DmMessage> {
 
 class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
   final Value<String> messageId;
+  final Value<String> ownerDid;
   final Value<String> convoId;
   final Value<String> senderDid;
   final Value<String> content;
@@ -10160,6 +10683,7 @@ class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
   final Value<int> rowid;
   const DmMessagesCompanion({
     this.messageId = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.convoId = const Value.absent(),
     this.senderDid = const Value.absent(),
     this.content = const Value.absent(),
@@ -10170,6 +10694,7 @@ class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
   });
   DmMessagesCompanion.insert({
     required String messageId,
+    required String ownerDid,
     required String convoId,
     required String senderDid,
     required String content,
@@ -10178,6 +10703,7 @@ class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
     required DateTime cachedAt,
     this.rowid = const Value.absent(),
   }) : messageId = Value(messageId),
+       ownerDid = Value(ownerDid),
        convoId = Value(convoId),
        senderDid = Value(senderDid),
        content = Value(content),
@@ -10186,6 +10712,7 @@ class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
        cachedAt = Value(cachedAt);
   static Insertable<DmMessage> custom({
     Expression<String>? messageId,
+    Expression<String>? ownerDid,
     Expression<String>? convoId,
     Expression<String>? senderDid,
     Expression<String>? content,
@@ -10196,6 +10723,7 @@ class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
   }) {
     return RawValuesInsertable({
       if (messageId != null) 'message_id': messageId,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (convoId != null) 'convo_id': convoId,
       if (senderDid != null) 'sender_did': senderDid,
       if (content != null) 'content': content,
@@ -10208,6 +10736,7 @@ class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
 
   DmMessagesCompanion copyWith({
     Value<String>? messageId,
+    Value<String>? ownerDid,
     Value<String>? convoId,
     Value<String>? senderDid,
     Value<String>? content,
@@ -10218,6 +10747,7 @@ class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
   }) {
     return DmMessagesCompanion(
       messageId: messageId ?? this.messageId,
+      ownerDid: ownerDid ?? this.ownerDid,
       convoId: convoId ?? this.convoId,
       senderDid: senderDid ?? this.senderDid,
       content: content ?? this.content,
@@ -10233,6 +10763,9 @@ class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
     final map = <String, Expression>{};
     if (messageId.present) {
       map['message_id'] = Variable<String>(messageId.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (convoId.present) {
       map['convo_id'] = Variable<String>(convoId.value);
@@ -10262,6 +10795,7 @@ class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
   String toString() {
     return (StringBuffer('DmMessagesCompanion(')
           ..write('messageId: $messageId, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('convoId: $convoId, ')
           ..write('senderDid: $senderDid, ')
           ..write('content: $content, ')
@@ -10283,6 +10817,15 @@ class $DmOutboxTable extends DmOutbox with TableInfo<$DmOutboxTable, DmOutboxDat
   @override
   late final GeneratedColumn<String> outboxId = GeneratedColumn<String>(
     'outbox_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -10355,6 +10898,7 @@ class $DmOutboxTable extends DmOutbox with TableInfo<$DmOutboxTable, DmOutboxDat
   @override
   List<GeneratedColumn> get $columns => [
     outboxId,
+    ownerDid,
     convoId,
     messageText,
     status,
@@ -10382,6 +10926,14 @@ class $DmOutboxTable extends DmOutbox with TableInfo<$DmOutboxTable, DmOutboxDat
       );
     } else if (isInserting) {
       context.missing(_outboxIdMeta);
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('convo_id')) {
       context.handle(_convoIdMeta, convoId.isAcceptableOrUnknown(data['convo_id']!, _convoIdMeta));
@@ -10440,6 +10992,10 @@ class $DmOutboxTable extends DmOutbox with TableInfo<$DmOutboxTable, DmOutboxDat
         DriftSqlType.string,
         data['${effectivePrefix}outbox_id'],
       )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
+      )!,
       convoId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}convo_id'],
@@ -10481,6 +11037,9 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
   /// Local UUID for this outbox item.
   final String outboxId;
 
+  /// The DID of the user who sent this message.
+  final String ownerDid;
+
   /// Conversation to send the message to.
   final String convoId;
 
@@ -10503,6 +11062,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
   final String? errorMessage;
   const DmOutboxData({
     required this.outboxId,
+    required this.ownerDid,
     required this.convoId,
     required this.messageText,
     required this.status,
@@ -10515,6 +11075,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['outbox_id'] = Variable<String>(outboxId);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['convo_id'] = Variable<String>(convoId);
     map['message_text'] = Variable<String>(messageText);
     map['status'] = Variable<String>(status);
@@ -10532,6 +11093,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
   DmOutboxCompanion toCompanion(bool nullToAbsent) {
     return DmOutboxCompanion(
       outboxId: Value(outboxId),
+      ownerDid: Value(ownerDid),
       convoId: Value(convoId),
       messageText: Value(messageText),
       status: Value(status),
@@ -10550,6 +11112,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return DmOutboxData(
       outboxId: serializer.fromJson<String>(json['outboxId']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       convoId: serializer.fromJson<String>(json['convoId']),
       messageText: serializer.fromJson<String>(json['messageText']),
       status: serializer.fromJson<String>(json['status']),
@@ -10564,6 +11127,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'outboxId': serializer.toJson<String>(outboxId),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'convoId': serializer.toJson<String>(convoId),
       'messageText': serializer.toJson<String>(messageText),
       'status': serializer.toJson<String>(status),
@@ -10576,6 +11140,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
 
   DmOutboxData copyWith({
     String? outboxId,
+    String? ownerDid,
     String? convoId,
     String? messageText,
     String? status,
@@ -10585,6 +11150,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
     Value<String?> errorMessage = const Value.absent(),
   }) => DmOutboxData(
     outboxId: outboxId ?? this.outboxId,
+    ownerDid: ownerDid ?? this.ownerDid,
     convoId: convoId ?? this.convoId,
     messageText: messageText ?? this.messageText,
     status: status ?? this.status,
@@ -10596,6 +11162,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
   DmOutboxData copyWithCompanion(DmOutboxCompanion data) {
     return DmOutboxData(
       outboxId: data.outboxId.present ? data.outboxId.value : this.outboxId,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       convoId: data.convoId.present ? data.convoId.value : this.convoId,
       messageText: data.messageText.present ? data.messageText.value : this.messageText,
       status: data.status.present ? data.status.value : this.status,
@@ -10610,6 +11177,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
   String toString() {
     return (StringBuffer('DmOutboxData(')
           ..write('outboxId: $outboxId, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('convoId: $convoId, ')
           ..write('messageText: $messageText, ')
           ..write('status: $status, ')
@@ -10624,6 +11192,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
   @override
   int get hashCode => Object.hash(
     outboxId,
+    ownerDid,
     convoId,
     messageText,
     status,
@@ -10637,6 +11206,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
       identical(this, other) ||
       (other is DmOutboxData &&
           other.outboxId == this.outboxId &&
+          other.ownerDid == this.ownerDid &&
           other.convoId == this.convoId &&
           other.messageText == this.messageText &&
           other.status == this.status &&
@@ -10648,6 +11218,7 @@ class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
 
 class DmOutboxCompanion extends UpdateCompanion<DmOutboxData> {
   final Value<String> outboxId;
+  final Value<String> ownerDid;
   final Value<String> convoId;
   final Value<String> messageText;
   final Value<String> status;
@@ -10658,6 +11229,7 @@ class DmOutboxCompanion extends UpdateCompanion<DmOutboxData> {
   final Value<int> rowid;
   const DmOutboxCompanion({
     this.outboxId = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.convoId = const Value.absent(),
     this.messageText = const Value.absent(),
     this.status = const Value.absent(),
@@ -10669,6 +11241,7 @@ class DmOutboxCompanion extends UpdateCompanion<DmOutboxData> {
   });
   DmOutboxCompanion.insert({
     required String outboxId,
+    required String ownerDid,
     required String convoId,
     required String messageText,
     required String status,
@@ -10678,12 +11251,14 @@ class DmOutboxCompanion extends UpdateCompanion<DmOutboxData> {
     this.errorMessage = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : outboxId = Value(outboxId),
+       ownerDid = Value(ownerDid),
        convoId = Value(convoId),
        messageText = Value(messageText),
        status = Value(status),
        createdAt = Value(createdAt);
   static Insertable<DmOutboxData> custom({
     Expression<String>? outboxId,
+    Expression<String>? ownerDid,
     Expression<String>? convoId,
     Expression<String>? messageText,
     Expression<String>? status,
@@ -10695,6 +11270,7 @@ class DmOutboxCompanion extends UpdateCompanion<DmOutboxData> {
   }) {
     return RawValuesInsertable({
       if (outboxId != null) 'outbox_id': outboxId,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (convoId != null) 'convo_id': convoId,
       if (messageText != null) 'message_text': messageText,
       if (status != null) 'status': status,
@@ -10708,6 +11284,7 @@ class DmOutboxCompanion extends UpdateCompanion<DmOutboxData> {
 
   DmOutboxCompanion copyWith({
     Value<String>? outboxId,
+    Value<String>? ownerDid,
     Value<String>? convoId,
     Value<String>? messageText,
     Value<String>? status,
@@ -10719,6 +11296,7 @@ class DmOutboxCompanion extends UpdateCompanion<DmOutboxData> {
   }) {
     return DmOutboxCompanion(
       outboxId: outboxId ?? this.outboxId,
+      ownerDid: ownerDid ?? this.ownerDid,
       convoId: convoId ?? this.convoId,
       messageText: messageText ?? this.messageText,
       status: status ?? this.status,
@@ -10735,6 +11313,9 @@ class DmOutboxCompanion extends UpdateCompanion<DmOutboxData> {
     final map = <String, Expression>{};
     if (outboxId.present) {
       map['outbox_id'] = Variable<String>(outboxId.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (convoId.present) {
       map['convo_id'] = Variable<String>(convoId.value);
@@ -10767,6 +11348,7 @@ class DmOutboxCompanion extends UpdateCompanion<DmOutboxData> {
   String toString() {
     return (StringBuffer('DmOutboxCompanion(')
           ..write('outboxId: $outboxId, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('convoId: $convoId, ')
           ..write('messageText: $messageText, ')
           ..write('status: $status, ')
@@ -12269,6 +12851,7 @@ typedef $$FeedContentItemsTableCreateCompanionBuilder =
     FeedContentItemsCompanion Function({
       required String feedKey,
       required String postUri,
+      required String ownerDid,
       Value<String?> reason,
       required String sortKey,
       Value<int> rowid,
@@ -12277,6 +12860,7 @@ typedef $$FeedContentItemsTableUpdateCompanionBuilder =
     FeedContentItemsCompanion Function({
       Value<String> feedKey,
       Value<String> postUri,
+      Value<String> ownerDid,
       Value<String?> reason,
       Value<String> sortKey,
       Value<int> rowid,
@@ -12313,6 +12897,9 @@ class $$FeedContentItemsTableFilterComposer
   });
   ColumnFilters<String> get feedKey =>
       $composableBuilder(column: $table.feedKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get reason =>
       $composableBuilder(column: $table.reason, builder: (column) => ColumnFilters(column));
@@ -12352,6 +12939,9 @@ class $$FeedContentItemsTableOrderingComposer
   ColumnOrderings<String> get feedKey =>
       $composableBuilder(column: $table.feedKey, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get reason =>
       $composableBuilder(column: $table.reason, builder: (column) => ColumnOrderings(column));
 
@@ -12389,6 +12979,9 @@ class $$FeedContentItemsTableAnnotationComposer
   });
   GeneratedColumn<String> get feedKey =>
       $composableBuilder(column: $table.feedKey, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get reason =>
       $composableBuilder(column: $table.reason, builder: (column) => column);
@@ -12446,12 +13039,14 @@ class $$FeedContentItemsTableTableManager
               ({
                 Value<String> feedKey = const Value.absent(),
                 Value<String> postUri = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String?> reason = const Value.absent(),
                 Value<String> sortKey = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FeedContentItemsCompanion(
                 feedKey: feedKey,
                 postUri: postUri,
+                ownerDid: ownerDid,
                 reason: reason,
                 sortKey: sortKey,
                 rowid: rowid,
@@ -12460,12 +13055,14 @@ class $$FeedContentItemsTableTableManager
               ({
                 required String feedKey,
                 required String postUri,
+                required String ownerDid,
                 Value<String?> reason = const Value.absent(),
                 required String sortKey,
                 Value<int> rowid = const Value.absent(),
               }) => FeedContentItemsCompanion.insert(
                 feedKey: feedKey,
                 postUri: postUri,
+                ownerDid: ownerDid,
                 reason: reason,
                 sortKey: sortKey,
                 rowid: rowid,
@@ -12665,6 +13262,7 @@ typedef $$AccountsTableProcessedTableManager =
 typedef $$FeedCursorsTableCreateCompanionBuilder =
     FeedCursorsCompanion Function({
       required String feedKey,
+      required String ownerDid,
       required String cursor,
       Value<DateTime?> lastUpdated,
       Value<int> rowid,
@@ -12672,6 +13270,7 @@ typedef $$FeedCursorsTableCreateCompanionBuilder =
 typedef $$FeedCursorsTableUpdateCompanionBuilder =
     FeedCursorsCompanion Function({
       Value<String> feedKey,
+      Value<String> ownerDid,
       Value<String> cursor,
       Value<DateTime?> lastUpdated,
       Value<int> rowid,
@@ -12687,6 +13286,9 @@ class $$FeedCursorsTableFilterComposer extends Composer<_$AppDatabase, $FeedCurs
   });
   ColumnFilters<String> get feedKey =>
       $composableBuilder(column: $table.feedKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get cursor =>
       $composableBuilder(column: $table.cursor, builder: (column) => ColumnFilters(column));
@@ -12706,6 +13308,9 @@ class $$FeedCursorsTableOrderingComposer extends Composer<_$AppDatabase, $FeedCu
   ColumnOrderings<String> get feedKey =>
       $composableBuilder(column: $table.feedKey, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get cursor =>
       $composableBuilder(column: $table.cursor, builder: (column) => ColumnOrderings(column));
 
@@ -12723,6 +13328,9 @@ class $$FeedCursorsTableAnnotationComposer extends Composer<_$AppDatabase, $Feed
   });
   GeneratedColumn<String> get feedKey =>
       $composableBuilder(column: $table.feedKey, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get cursor =>
       $composableBuilder(column: $table.cursor, builder: (column) => column);
@@ -12758,11 +13366,13 @@ class $$FeedCursorsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> feedKey = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> cursor = const Value.absent(),
                 Value<DateTime?> lastUpdated = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FeedCursorsCompanion(
                 feedKey: feedKey,
+                ownerDid: ownerDid,
                 cursor: cursor,
                 lastUpdated: lastUpdated,
                 rowid: rowid,
@@ -12770,11 +13380,13 @@ class $$FeedCursorsTableTableManager
           createCompanionCallback:
               ({
                 required String feedKey,
+                required String ownerDid,
                 required String cursor,
                 Value<DateTime?> lastUpdated = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FeedCursorsCompanion.insert(
                 feedKey: feedKey,
+                ownerDid: ownerDid,
                 cursor: cursor,
                 lastUpdated: lastUpdated,
                 rowid: rowid,
@@ -13485,6 +14097,7 @@ typedef $$FollowsTableProcessedTableManager =
 typedef $$SavedFeedsTableCreateCompanionBuilder =
     SavedFeedsCompanion Function({
       required String uri,
+      required String ownerDid,
       required String displayName,
       Value<String?> description,
       Value<String?> avatar,
@@ -13499,6 +14112,7 @@ typedef $$SavedFeedsTableCreateCompanionBuilder =
 typedef $$SavedFeedsTableUpdateCompanionBuilder =
     SavedFeedsCompanion Function({
       Value<String> uri,
+      Value<String> ownerDid,
       Value<String> displayName,
       Value<String?> description,
       Value<String?> avatar,
@@ -13541,6 +14155,9 @@ class $$SavedFeedsTableFilterComposer extends Composer<_$AppDatabase, $SavedFeed
   });
   ColumnFilters<String> get uri =>
       $composableBuilder(column: $table.uri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get displayName =>
       $composableBuilder(column: $table.displayName, builder: (column) => ColumnFilters(column));
@@ -13599,6 +14216,9 @@ class $$SavedFeedsTableOrderingComposer extends Composer<_$AppDatabase, $SavedFe
   ColumnOrderings<String> get uri =>
       $composableBuilder(column: $table.uri, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get displayName =>
       $composableBuilder(column: $table.displayName, builder: (column) => ColumnOrderings(column));
 
@@ -13655,6 +14275,9 @@ class $$SavedFeedsTableAnnotationComposer extends Composer<_$AppDatabase, $Saved
   });
   GeneratedColumn<String> get uri =>
       $composableBuilder(column: $table.uri, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get displayName =>
       $composableBuilder(column: $table.displayName, builder: (column) => column);
@@ -13727,6 +14350,7 @@ class $$SavedFeedsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> uri = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> displayName = const Value.absent(),
                 Value<String?> description = const Value.absent(),
                 Value<String?> avatar = const Value.absent(),
@@ -13739,6 +14363,7 @@ class $$SavedFeedsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => SavedFeedsCompanion(
                 uri: uri,
+                ownerDid: ownerDid,
                 displayName: displayName,
                 description: description,
                 avatar: avatar,
@@ -13753,6 +14378,7 @@ class $$SavedFeedsTableTableManager
           createCompanionCallback:
               ({
                 required String uri,
+                required String ownerDid,
                 required String displayName,
                 Value<String?> description = const Value.absent(),
                 Value<String?> avatar = const Value.absent(),
@@ -13765,6 +14391,7 @@ class $$SavedFeedsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => SavedFeedsCompanion.insert(
                 uri: uri,
+                ownerDid: ownerDid,
                 displayName: displayName,
                 description: description,
                 avatar: avatar,
@@ -13840,6 +14467,7 @@ typedef $$SavedFeedsTableProcessedTableManager =
 typedef $$PreferenceSyncQueueTableCreateCompanionBuilder =
     PreferenceSyncQueueCompanion Function({
       Value<int> id,
+      required String ownerDid,
       Value<String> category,
       required String type,
       required String payload,
@@ -13849,6 +14477,7 @@ typedef $$PreferenceSyncQueueTableCreateCompanionBuilder =
 typedef $$PreferenceSyncQueueTableUpdateCompanionBuilder =
     PreferenceSyncQueueCompanion Function({
       Value<int> id,
+      Value<String> ownerDid,
       Value<String> category,
       Value<String> type,
       Value<String> payload,
@@ -13867,6 +14496,9 @@ class $$PreferenceSyncQueueTableFilterComposer
   });
   ColumnFilters<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => ColumnFilters(column));
@@ -13896,6 +14528,9 @@ class $$PreferenceSyncQueueTableOrderingComposer
   ColumnOrderings<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => ColumnOrderings(column));
 
@@ -13923,6 +14558,9 @@ class $$PreferenceSyncQueueTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
@@ -13972,6 +14610,7 @@ class $$PreferenceSyncQueueTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> category = const Value.absent(),
                 Value<String> type = const Value.absent(),
                 Value<String> payload = const Value.absent(),
@@ -13979,6 +14618,7 @@ class $$PreferenceSyncQueueTableTableManager
                 Value<int> retryCount = const Value.absent(),
               }) => PreferenceSyncQueueCompanion(
                 id: id,
+                ownerDid: ownerDid,
                 category: category,
                 type: type,
                 payload: payload,
@@ -13988,6 +14628,7 @@ class $$PreferenceSyncQueueTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                required String ownerDid,
                 Value<String> category = const Value.absent(),
                 required String type,
                 required String payload,
@@ -13995,6 +14636,7 @@ class $$PreferenceSyncQueueTableTableManager
                 Value<int> retryCount = const Value.absent(),
               }) => PreferenceSyncQueueCompanion.insert(
                 id: id,
+                ownerDid: ownerDid,
                 category: category,
                 type: type,
                 payload: payload,
@@ -14823,6 +15465,7 @@ typedef $$DraftMediaTableProcessedTableManager =
     >;
 typedef $$ProfileRelationshipsTableCreateCompanionBuilder =
     ProfileRelationshipsCompanion Function({
+      required String ownerDid,
       required String profileDid,
       Value<bool> following,
       Value<String?> followingUri,
@@ -14838,6 +15481,7 @@ typedef $$ProfileRelationshipsTableCreateCompanionBuilder =
     });
 typedef $$ProfileRelationshipsTableUpdateCompanionBuilder =
     ProfileRelationshipsCompanion Function({
+      Value<String> ownerDid,
       Value<String> profileDid,
       Value<bool> following,
       Value<String?> followingUri,
@@ -14882,6 +15526,9 @@ class $$ProfileRelationshipsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<bool> get following =>
       $composableBuilder(column: $table.following, builder: (column) => ColumnFilters(column));
 
@@ -14943,6 +15590,9 @@ class $$ProfileRelationshipsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get following =>
       $composableBuilder(column: $table.following, builder: (column) => ColumnOrderings(column));
 
@@ -15006,6 +15656,9 @@ class $$ProfileRelationshipsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
+
   GeneratedColumn<bool> get following =>
       $composableBuilder(column: $table.following, builder: (column) => column);
 
@@ -15084,6 +15737,7 @@ class $$ProfileRelationshipsTableTableManager
               $$ProfileRelationshipsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> profileDid = const Value.absent(),
                 Value<bool> following = const Value.absent(),
                 Value<String?> followingUri = const Value.absent(),
@@ -15097,6 +15751,7 @@ class $$ProfileRelationshipsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProfileRelationshipsCompanion(
+                ownerDid: ownerDid,
                 profileDid: profileDid,
                 following: following,
                 followingUri: followingUri,
@@ -15112,6 +15767,7 @@ class $$ProfileRelationshipsTableTableManager
               ),
           createCompanionCallback:
               ({
+                required String ownerDid,
                 required String profileDid,
                 Value<bool> following = const Value.absent(),
                 Value<String?> followingUri = const Value.absent(),
@@ -15125,6 +15781,7 @@ class $$ProfileRelationshipsTableTableManager
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => ProfileRelationshipsCompanion.insert(
+                ownerDid: ownerDid,
                 profileDid: profileDid,
                 following: following,
                 followingUri: followingUri,
@@ -15643,6 +16300,7 @@ typedef $$LocalSettingsTableProcessedTableManager =
 typedef $$BlueskyPreferencesTableCreateCompanionBuilder =
     BlueskyPreferencesCompanion Function({
       required String type,
+      required String ownerDid,
       required String data,
       required DateTime lastSynced,
       Value<int> rowid,
@@ -15650,6 +16308,7 @@ typedef $$BlueskyPreferencesTableCreateCompanionBuilder =
 typedef $$BlueskyPreferencesTableUpdateCompanionBuilder =
     BlueskyPreferencesCompanion Function({
       Value<String> type,
+      Value<String> ownerDid,
       Value<String> data,
       Value<DateTime> lastSynced,
       Value<int> rowid,
@@ -15666,6 +16325,9 @@ class $$BlueskyPreferencesTableFilterComposer
   });
   ColumnFilters<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get data =>
       $composableBuilder(column: $table.data, builder: (column) => ColumnFilters(column));
@@ -15686,6 +16348,9 @@ class $$BlueskyPreferencesTableOrderingComposer
   ColumnOrderings<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get data =>
       $composableBuilder(column: $table.data, builder: (column) => ColumnOrderings(column));
 
@@ -15704,6 +16369,9 @@ class $$BlueskyPreferencesTableAnnotationComposer
   });
   GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get data =>
       $composableBuilder(column: $table.data, builder: (column) => column);
@@ -15744,11 +16412,13 @@ class $$BlueskyPreferencesTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> type = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> data = const Value.absent(),
                 Value<DateTime> lastSynced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BlueskyPreferencesCompanion(
                 type: type,
+                ownerDid: ownerDid,
                 data: data,
                 lastSynced: lastSynced,
                 rowid: rowid,
@@ -15756,11 +16426,13 @@ class $$BlueskyPreferencesTableTableManager
           createCompanionCallback:
               ({
                 required String type,
+                required String ownerDid,
                 required String data,
                 required DateTime lastSynced,
                 Value<int> rowid = const Value.absent(),
               }) => BlueskyPreferencesCompanion.insert(
                 type: type,
+                ownerDid: ownerDid,
                 data: data,
                 lastSynced: lastSynced,
                 rowid: rowid,
@@ -16156,6 +16828,7 @@ typedef $$AnimationPreferencesTableTableProcessedTableManager =
 typedef $$NotificationsTableCreateCompanionBuilder =
     NotificationsCompanion Function({
       required String uri,
+      required String ownerDid,
       required String actorDid,
       required String type,
       Value<String?> reasonSubjectUri,
@@ -16169,6 +16842,7 @@ typedef $$NotificationsTableCreateCompanionBuilder =
 typedef $$NotificationsTableUpdateCompanionBuilder =
     NotificationsCompanion Function({
       Value<String> uri,
+      Value<String> ownerDid,
       Value<String> actorDid,
       Value<String> type,
       Value<String?> reasonSubjectUri,
@@ -16210,6 +16884,9 @@ class $$NotificationsTableFilterComposer extends Composer<_$AppDatabase, $Notifi
   });
   ColumnFilters<String> get uri =>
       $composableBuilder(column: $table.uri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
@@ -16265,6 +16942,9 @@ class $$NotificationsTableOrderingComposer extends Composer<_$AppDatabase, $Noti
   ColumnOrderings<String> get uri =>
       $composableBuilder(column: $table.uri, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
 
@@ -16318,6 +16998,9 @@ class $$NotificationsTableAnnotationComposer extends Composer<_$AppDatabase, $No
   });
   GeneratedColumn<String> get uri =>
       $composableBuilder(column: $table.uri, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
@@ -16389,6 +17072,7 @@ class $$NotificationsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> uri = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> actorDid = const Value.absent(),
                 Value<String> type = const Value.absent(),
                 Value<String?> reasonSubjectUri = const Value.absent(),
@@ -16400,6 +17084,7 @@ class $$NotificationsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => NotificationsCompanion(
                 uri: uri,
+                ownerDid: ownerDid,
                 actorDid: actorDid,
                 type: type,
                 reasonSubjectUri: reasonSubjectUri,
@@ -16413,6 +17098,7 @@ class $$NotificationsTableTableManager
           createCompanionCallback:
               ({
                 required String uri,
+                required String ownerDid,
                 required String actorDid,
                 required String type,
                 Value<String?> reasonSubjectUri = const Value.absent(),
@@ -16424,6 +17110,7 @@ class $$NotificationsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => NotificationsCompanion.insert(
                 uri: uri,
+                ownerDid: ownerDid,
                 actorDid: actorDid,
                 type: type,
                 reasonSubjectUri: reasonSubjectUri,
@@ -16498,6 +17185,7 @@ typedef $$NotificationsTableProcessedTableManager =
 typedef $$NotificationCursorsTableCreateCompanionBuilder =
     NotificationCursorsCompanion Function({
       required String feedKey,
+      required String ownerDid,
       required String cursor,
       Value<DateTime?> lastUpdated,
       Value<int> rowid,
@@ -16505,6 +17193,7 @@ typedef $$NotificationCursorsTableCreateCompanionBuilder =
 typedef $$NotificationCursorsTableUpdateCompanionBuilder =
     NotificationCursorsCompanion Function({
       Value<String> feedKey,
+      Value<String> ownerDid,
       Value<String> cursor,
       Value<DateTime?> lastUpdated,
       Value<int> rowid,
@@ -16521,6 +17210,9 @@ class $$NotificationCursorsTableFilterComposer
   });
   ColumnFilters<String> get feedKey =>
       $composableBuilder(column: $table.feedKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get cursor =>
       $composableBuilder(column: $table.cursor, builder: (column) => ColumnFilters(column));
@@ -16541,6 +17233,9 @@ class $$NotificationCursorsTableOrderingComposer
   ColumnOrderings<String> get feedKey =>
       $composableBuilder(column: $table.feedKey, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get cursor =>
       $composableBuilder(column: $table.cursor, builder: (column) => ColumnOrderings(column));
 
@@ -16559,6 +17254,9 @@ class $$NotificationCursorsTableAnnotationComposer
   });
   GeneratedColumn<String> get feedKey =>
       $composableBuilder(column: $table.feedKey, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get cursor =>
       $composableBuilder(column: $table.cursor, builder: (column) => column);
@@ -16599,11 +17297,13 @@ class $$NotificationCursorsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> feedKey = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> cursor = const Value.absent(),
                 Value<DateTime?> lastUpdated = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NotificationCursorsCompanion(
                 feedKey: feedKey,
+                ownerDid: ownerDid,
                 cursor: cursor,
                 lastUpdated: lastUpdated,
                 rowid: rowid,
@@ -16611,11 +17311,13 @@ class $$NotificationCursorsTableTableManager
           createCompanionCallback:
               ({
                 required String feedKey,
+                required String ownerDid,
                 required String cursor,
                 Value<DateTime?> lastUpdated = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NotificationCursorsCompanion.insert(
                 feedKey: feedKey,
+                ownerDid: ownerDid,
                 cursor: cursor,
                 lastUpdated: lastUpdated,
                 rowid: rowid,
@@ -16647,6 +17349,7 @@ typedef $$NotificationCursorsTableProcessedTableManager =
 typedef $$NotificationsSyncQueueTableCreateCompanionBuilder =
     NotificationsSyncQueueCompanion Function({
       Value<int> id,
+      required String ownerDid,
       required String type,
       required String seenAt,
       required DateTime createdAt,
@@ -16655,6 +17358,7 @@ typedef $$NotificationsSyncQueueTableCreateCompanionBuilder =
 typedef $$NotificationsSyncQueueTableUpdateCompanionBuilder =
     NotificationsSyncQueueCompanion Function({
       Value<int> id,
+      Value<String> ownerDid,
       Value<String> type,
       Value<String> seenAt,
       Value<DateTime> createdAt,
@@ -16672,6 +17376,9 @@ class $$NotificationsSyncQueueTableFilterComposer
   });
   ColumnFilters<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
@@ -16698,6 +17405,9 @@ class $$NotificationsSyncQueueTableOrderingComposer
   ColumnOrderings<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
 
@@ -16722,6 +17432,9 @@ class $$NotificationsSyncQueueTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
@@ -16772,12 +17485,14 @@ class $$NotificationsSyncQueueTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> type = const Value.absent(),
                 Value<String> seenAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> retryCount = const Value.absent(),
               }) => NotificationsSyncQueueCompanion(
                 id: id,
+                ownerDid: ownerDid,
                 type: type,
                 seenAt: seenAt,
                 createdAt: createdAt,
@@ -16786,12 +17501,14 @@ class $$NotificationsSyncQueueTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                required String ownerDid,
                 required String type,
                 required String seenAt,
                 required DateTime createdAt,
                 Value<int> retryCount = const Value.absent(),
               }) => NotificationsSyncQueueCompanion.insert(
                 id: id,
+                ownerDid: ownerDid,
                 type: type,
                 seenAt: seenAt,
                 createdAt: createdAt,
@@ -16824,6 +17541,7 @@ typedef $$NotificationsSyncQueueTableProcessedTableManager =
 typedef $$DmConvosTableCreateCompanionBuilder =
     DmConvosCompanion Function({
       required String convoId,
+      required String ownerDid,
       required String membersJson,
       Value<String?> lastMessageText,
       Value<DateTime?> lastMessageAt,
@@ -16837,6 +17555,7 @@ typedef $$DmConvosTableCreateCompanionBuilder =
 typedef $$DmConvosTableUpdateCompanionBuilder =
     DmConvosCompanion Function({
       Value<String> convoId,
+      Value<String> ownerDid,
       Value<String> membersJson,
       Value<String?> lastMessageText,
       Value<DateTime?> lastMessageAt,
@@ -16858,6 +17577,9 @@ class $$DmConvosTableFilterComposer extends Composer<_$AppDatabase, $DmConvosTab
   });
   ColumnFilters<String> get convoId =>
       $composableBuilder(column: $table.convoId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get membersJson =>
       $composableBuilder(column: $table.membersJson, builder: (column) => ColumnFilters(column));
@@ -16898,6 +17620,9 @@ class $$DmConvosTableOrderingComposer extends Composer<_$AppDatabase, $DmConvosT
   });
   ColumnOrderings<String> get convoId =>
       $composableBuilder(column: $table.convoId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get membersJson =>
       $composableBuilder(column: $table.membersJson, builder: (column) => ColumnOrderings(column));
@@ -16940,6 +17665,9 @@ class $$DmConvosTableAnnotationComposer extends Composer<_$AppDatabase, $DmConvo
   });
   GeneratedColumn<String> get convoId =>
       $composableBuilder(column: $table.convoId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get membersJson =>
       $composableBuilder(column: $table.membersJson, builder: (column) => column);
@@ -16993,6 +17721,7 @@ class $$DmConvosTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> convoId = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> membersJson = const Value.absent(),
                 Value<String?> lastMessageText = const Value.absent(),
                 Value<DateTime?> lastMessageAt = const Value.absent(),
@@ -17004,6 +17733,7 @@ class $$DmConvosTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => DmConvosCompanion(
                 convoId: convoId,
+                ownerDid: ownerDid,
                 membersJson: membersJson,
                 lastMessageText: lastMessageText,
                 lastMessageAt: lastMessageAt,
@@ -17017,6 +17747,7 @@ class $$DmConvosTableTableManager
           createCompanionCallback:
               ({
                 required String convoId,
+                required String ownerDid,
                 required String membersJson,
                 Value<String?> lastMessageText = const Value.absent(),
                 Value<DateTime?> lastMessageAt = const Value.absent(),
@@ -17028,6 +17759,7 @@ class $$DmConvosTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => DmConvosCompanion.insert(
                 convoId: convoId,
+                ownerDid: ownerDid,
                 membersJson: membersJson,
                 lastMessageText: lastMessageText,
                 lastMessageAt: lastMessageAt,
@@ -17062,6 +17794,7 @@ typedef $$DmConvosTableProcessedTableManager =
 typedef $$DmMessagesTableCreateCompanionBuilder =
     DmMessagesCompanion Function({
       required String messageId,
+      required String ownerDid,
       required String convoId,
       required String senderDid,
       required String content,
@@ -17073,6 +17806,7 @@ typedef $$DmMessagesTableCreateCompanionBuilder =
 typedef $$DmMessagesTableUpdateCompanionBuilder =
     DmMessagesCompanion Function({
       Value<String> messageId,
+      Value<String> ownerDid,
       Value<String> convoId,
       Value<String> senderDid,
       Value<String> content,
@@ -17112,6 +17846,9 @@ class $$DmMessagesTableFilterComposer extends Composer<_$AppDatabase, $DmMessage
   });
   ColumnFilters<String> get messageId =>
       $composableBuilder(column: $table.messageId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get convoId =>
       $composableBuilder(column: $table.convoId, builder: (column) => ColumnFilters(column));
@@ -17159,6 +17896,9 @@ class $$DmMessagesTableOrderingComposer extends Composer<_$AppDatabase, $DmMessa
   ColumnOrderings<String> get messageId =>
       $composableBuilder(column: $table.messageId, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get convoId =>
       $composableBuilder(column: $table.convoId, builder: (column) => ColumnOrderings(column));
 
@@ -17204,6 +17944,9 @@ class $$DmMessagesTableAnnotationComposer extends Composer<_$AppDatabase, $DmMes
   });
   GeneratedColumn<String> get messageId =>
       $composableBuilder(column: $table.messageId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get convoId =>
       $composableBuilder(column: $table.convoId, builder: (column) => column);
@@ -17267,6 +18010,7 @@ class $$DmMessagesTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> messageId = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> convoId = const Value.absent(),
                 Value<String> senderDid = const Value.absent(),
                 Value<String> content = const Value.absent(),
@@ -17276,6 +18020,7 @@ class $$DmMessagesTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => DmMessagesCompanion(
                 messageId: messageId,
+                ownerDid: ownerDid,
                 convoId: convoId,
                 senderDid: senderDid,
                 content: content,
@@ -17287,6 +18032,7 @@ class $$DmMessagesTableTableManager
           createCompanionCallback:
               ({
                 required String messageId,
+                required String ownerDid,
                 required String convoId,
                 required String senderDid,
                 required String content,
@@ -17296,6 +18042,7 @@ class $$DmMessagesTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => DmMessagesCompanion.insert(
                 messageId: messageId,
+                ownerDid: ownerDid,
                 convoId: convoId,
                 senderDid: senderDid,
                 content: content,
@@ -17368,6 +18115,7 @@ typedef $$DmMessagesTableProcessedTableManager =
 typedef $$DmOutboxTableCreateCompanionBuilder =
     DmOutboxCompanion Function({
       required String outboxId,
+      required String ownerDid,
       required String convoId,
       required String messageText,
       required String status,
@@ -17380,6 +18128,7 @@ typedef $$DmOutboxTableCreateCompanionBuilder =
 typedef $$DmOutboxTableUpdateCompanionBuilder =
     DmOutboxCompanion Function({
       Value<String> outboxId,
+      Value<String> ownerDid,
       Value<String> convoId,
       Value<String> messageText,
       Value<String> status,
@@ -17400,6 +18149,9 @@ class $$DmOutboxTableFilterComposer extends Composer<_$AppDatabase, $DmOutboxTab
   });
   ColumnFilters<String> get outboxId =>
       $composableBuilder(column: $table.outboxId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get convoId =>
       $composableBuilder(column: $table.convoId, builder: (column) => ColumnFilters(column));
@@ -17433,6 +18185,9 @@ class $$DmOutboxTableOrderingComposer extends Composer<_$AppDatabase, $DmOutboxT
   });
   ColumnOrderings<String> get outboxId =>
       $composableBuilder(column: $table.outboxId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get convoId =>
       $composableBuilder(column: $table.convoId, builder: (column) => ColumnOrderings(column));
@@ -17470,6 +18225,9 @@ class $$DmOutboxTableAnnotationComposer extends Composer<_$AppDatabase, $DmOutbo
   });
   GeneratedColumn<String> get outboxId =>
       $composableBuilder(column: $table.outboxId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get convoId =>
       $composableBuilder(column: $table.convoId, builder: (column) => column);
@@ -17520,6 +18278,7 @@ class $$DmOutboxTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> outboxId = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> convoId = const Value.absent(),
                 Value<String> messageText = const Value.absent(),
                 Value<String> status = const Value.absent(),
@@ -17530,6 +18289,7 @@ class $$DmOutboxTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => DmOutboxCompanion(
                 outboxId: outboxId,
+                ownerDid: ownerDid,
                 convoId: convoId,
                 messageText: messageText,
                 status: status,
@@ -17542,6 +18302,7 @@ class $$DmOutboxTableTableManager
           createCompanionCallback:
               ({
                 required String outboxId,
+                required String ownerDid,
                 required String convoId,
                 required String messageText,
                 required String status,
@@ -17552,6 +18313,7 @@ class $$DmOutboxTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => DmOutboxCompanion.insert(
                 outboxId: outboxId,
+                ownerDid: ownerDid,
                 convoId: convoId,
                 messageText: messageText,
                 status: status,

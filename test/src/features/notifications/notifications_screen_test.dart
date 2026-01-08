@@ -37,11 +37,11 @@ void main() {
 
     if (throwError) {
       when(
-        () => mockRepository.watchNotifications(),
+        () => mockRepository.watchNotifications(any(named: 'ownerDid')),
       ).thenAnswer((_) => Stream.error(Exception('Network error')));
     } else {
       when(
-        () => mockRepository.watchNotifications(),
+        () => mockRepository.watchNotifications(any(named: 'ownerDid')),
       ).thenAnswer((_) => Stream.value(notifications));
     }
 
@@ -60,16 +60,21 @@ void main() {
     when(() => mockLogger.info(any(), any())).thenReturn(null);
     when(() => mockLogger.error(any(), any(), any())).thenReturn(null);
 
-    when(() => mockRepository.watchNotifications()).thenAnswer((_) => Stream.value([]));
+    when(
+      () => mockRepository.watchNotifications(any(named: 'ownerDid')),
+    ).thenAnswer((_) => Stream.value([]));
     when(
       () => mockRepository.fetchNotifications(
         cursor: any(named: 'cursor'),
         limit: any(named: 'limit'),
+        ownerDid: any(named: 'ownerDid'),
       ),
     ).thenAnswer((_) async {});
-    when(() => mockRepository.fetchNotifications()).thenAnswer((_) async {});
-    when(() => mockRepository.getCursor()).thenAnswer((_) async => null);
-    when(() => mockRepository.markAllAsRead()).thenAnswer((_) async {});
+    when(
+      () => mockRepository.fetchNotifications(ownerDid: any(named: 'ownerDid')),
+    ).thenAnswer((_) async {});
+    when(() => mockRepository.getCursor(any(named: 'ownerDid'))).thenAnswer((_) async => null);
+    when(() => mockRepository.markAllAsRead(any(named: 'ownerDid'))).thenAnswer((_) async {});
     when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
     when(() => mockMarkAsSeenService.flush()).thenAnswer((_) async {});
 
@@ -125,7 +130,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      verify(() => mockRepository.fetchNotifications()).called(1);
+      verify(() => mockRepository.fetchNotifications(ownerDid: any(named: 'ownerDid'))).called(1);
     });
 
     testWidgets('mark all as read button is visible when authenticated', (tester) async {
@@ -162,7 +167,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.done_all));
       await tester.pump();
 
-      verify(() => mockRepository.markAllAsRead()).called(1);
+      verify(() => mockRepository.markAllAsRead(any(named: 'ownerDid'))).called(1);
     });
   });
 }

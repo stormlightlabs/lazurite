@@ -49,7 +49,7 @@ final class ThreadNotifierProvider extends $AsyncNotifierProvider<ThreadNotifier
   }
 }
 
-String _$threadNotifierHash() => r'acb87e725d16f18afdd4e7e4f65be411ee23664e';
+String _$threadNotifierHash() => r'779c8a2cb5b70214e9972972796a6820c41d42b1';
 
 final class ThreadNotifierFamily extends $Family
     with

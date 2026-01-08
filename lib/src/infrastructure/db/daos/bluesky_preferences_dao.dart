@@ -18,27 +18,29 @@ class BlueskyPreferencesDao extends DatabaseAccessor<AppDatabase>
   /// Gets a preference by its type identifier.
   ///
   /// Returns null if no preference of that type exists.
-  Future<BlueskyPreference?> getPreferenceByType(String type) async {
-    final query = select(blueskyPreferences)..where((t) => t.type.equals(type));
+  Future<BlueskyPreference?> getPreferenceByType(String type, String ownerDid) async {
+    final query = select(blueskyPreferences)
+      ..where((t) => t.type.equals(type) & t.ownerDid.equals(ownerDid));
     return query.getSingleOrNull();
   }
 
   /// Watches a preference by its type identifier.
   ///
   /// Emits null if no preference of that type exists.
-  Stream<BlueskyPreference?> watchPreferenceByType(String type) {
-    final query = select(blueskyPreferences)..where((t) => t.type.equals(type));
+  Stream<BlueskyPreference?> watchPreferenceByType(String type, String ownerDid) {
+    final query = select(blueskyPreferences)
+      ..where((t) => t.type.equals(type) & t.ownerDid.equals(ownerDid));
     return query.watchSingleOrNull();
   }
 
-  /// Gets all cached preferences.
-  Future<List<BlueskyPreference>> getAllPreferences() async {
-    return select(blueskyPreferences).get();
+  /// Gets all cached preferences for a specific owner.
+  Future<List<BlueskyPreference>> getAllPreferences(String ownerDid) async {
+    return (select(blueskyPreferences)..where((t) => t.ownerDid.equals(ownerDid))).get();
   }
 
-  /// Watches all cached preferences.
-  Stream<List<BlueskyPreference>> watchAllPreferences() {
-    return select(blueskyPreferences).watch();
+  /// Watches all cached preferences for a specific owner.
+  Stream<List<BlueskyPreference>> watchAllPreferences(String ownerDid) {
+    return (select(blueskyPreferences)..where((t) => t.ownerDid.equals(ownerDid))).watch();
   }
 
   /// Inserts or updates a preference.
@@ -48,23 +50,31 @@ class BlueskyPreferencesDao extends DatabaseAccessor<AppDatabase>
     required String type,
     required String data,
     required DateTime lastSynced,
+    required String ownerDid,
   }) async {
     await into(blueskyPreferences).insertOnConflictUpdate(
-      BlueskyPreferencesCompanion.insert(type: type, data: data, lastSynced: lastSynced),
+      BlueskyPreferencesCompanion.insert(
+        type: type,
+        ownerDid: ownerDid,
+        data: data,
+        lastSynced: lastSynced,
+      ),
     );
   }
 
   /// Deletes a preference by its type identifier.
   ///
   /// Returns 1 if deleted, 0 if not found.
-  Future<int> deletePreference(String type) async {
-    return (delete(blueskyPreferences)..where((t) => t.type.equals(type))).go();
+  Future<int> deletePreference(String type, String ownerDid) async {
+    return (delete(
+      blueskyPreferences,
+    )..where((t) => t.type.equals(type) & t.ownerDid.equals(ownerDid))).go();
   }
 
-  /// Clears all cached preferences.
+  /// Clears all cached preferences for a specific owner.
   ///
   /// Useful when signing out or resetting the app.
-  Future<int> clearAll() async {
-    return delete(blueskyPreferences).go();
+  Future<int> clearAll(String ownerDid) async {
+    return (delete(blueskyPreferences)..where((t) => t.ownerDid.equals(ownerDid))).go();
   }
 }

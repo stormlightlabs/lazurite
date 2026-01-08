@@ -39,6 +39,7 @@ void main() {
           sortOrder: 0,
           isPinned: false,
           lastSynced: DateTime.now(),
+          ownerDid: 'did:plc:test',
         ),
         SavedFeed(
           uri: 'at://did:plc:test/app.bsky.feed.generator/feed2',
@@ -50,10 +51,11 @@ void main() {
           sortOrder: 1,
           isPinned: true,
           lastSynced: DateTime.now(),
+          ownerDid: 'did:plc:test',
         ),
       ];
 
-      when(() => mockRepository.watchAllFeeds()).thenAnswer((_) => Stream.value(feeds));
+      when(() => mockRepository.watchAllFeeds(any())).thenAnswer((_) => Stream.value(feeds));
 
       final container = createContainer();
 
@@ -70,7 +72,7 @@ void main() {
     });
 
     test('handles empty feed list', () async {
-      when(() => mockRepository.watchAllFeeds()).thenAnswer((_) => Stream.value([]));
+      when(() => mockRepository.watchAllFeeds(any())).thenAnswer((_) => Stream.value([]));
 
       final container = createContainer();
 
@@ -96,10 +98,13 @@ void main() {
           sortOrder: 0,
           isPinned: true,
           lastSynced: DateTime.now(),
+          ownerDid: 'did:plc:test',
         ),
       ];
 
-      when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value(pinnedFeeds));
+      when(
+        () => mockRepository.watchPinnedFeeds(any()),
+      ).thenAnswer((_) => Stream.value(pinnedFeeds));
 
       final container = createContainer();
 
@@ -114,7 +119,7 @@ void main() {
     });
 
     test('handles no pinned feeds', () async {
-      when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value([]));
+      when(() => mockRepository.watchPinnedFeeds(any())).thenAnswer((_) => Stream.value([]));
 
       final container = createContainer();
 
@@ -139,9 +144,12 @@ void main() {
         sortOrder: 0,
         isPinned: true,
         lastSynced: DateTime.now(),
+        ownerDid: 'did:plc:test',
       );
 
-      when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value([pinnedFeed]));
+      when(
+        () => mockRepository.watchPinnedFeeds(any()),
+      ).thenAnswer((_) => Stream.value([pinnedFeed]));
 
       final container = createContainer(authenticated: true);
       final subscription = container.listen(pinnedFeedsProvider, (previous, next) {});
@@ -156,7 +164,7 @@ void main() {
     });
 
     test('initial state falls back to discover when authenticated with no pinned feeds', () async {
-      when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value([]));
+      when(() => mockRepository.watchPinnedFeeds(any())).thenAnswer((_) => Stream.value([]));
 
       final container = createContainer(authenticated: true);
 
@@ -205,9 +213,12 @@ void main() {
         sortOrder: 0,
         isPinned: true,
         lastSynced: DateTime.now(),
+        ownerDid: 'did:plc:test',
       );
 
-      when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value([pinnedFeed]));
+      when(
+        () => mockRepository.watchPinnedFeeds(any()),
+      ).thenAnswer((_) => Stream.value([pinnedFeed]));
 
       final container = createContainer(authenticated: true);
       final subscription = container.listen(pinnedFeedsProvider, (previous, next) {});
@@ -224,7 +235,7 @@ void main() {
     });
 
     test('resetToDefault falls back to discover when unauthenticated', () async {
-      when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value([]));
+      when(() => mockRepository.watchPinnedFeeds(any())).thenAnswer((_) => Stream.value([]));
 
       final container = createContainer(authenticated: false);
       final subscription = container.listen(pinnedFeedsProvider, (_, _) {});

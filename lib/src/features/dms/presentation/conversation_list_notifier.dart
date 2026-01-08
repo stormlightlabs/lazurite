@@ -1,5 +1,7 @@
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/dms/domain/dm_conversation.dart';
 import 'package:lazurite/src/features/dms/providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -14,16 +16,29 @@ class ConversationListNotifier extends _$ConversationListNotifier {
   @override
   Stream<List<DmConversation>> build() {
     final repository = ref.watch(dmsRepositoryProvider);
-    return repository.watchConversations();
+    final authState = ref.watch(authProvider);
+
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) {
+      return const Stream.empty();
+    }
+
+    return repository.watchConversations(ownerDid);
   }
 
   /// Refreshes the conversation list.
   ///
   /// Fetches the latest conversations from the API and caches them.
   Future<void> refresh() async {
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) return;
+
     final repository = ref.read(dmsRepositoryProvider);
     try {
-      _cursor = await repository.fetchConversations();
+      _cursor = await repository.fetchConversations(ownerDid: ownerDid);
     } catch (error, stack) {
       _logger.error('Failed to refresh conversations', error, stack);
     }
@@ -33,11 +48,14 @@ class ConversationListNotifier extends _$ConversationListNotifier {
   ///
   /// Fetches older conversations using the current cursor.
   Future<void> loadMore() async {
-    if (_cursor == null) return;
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null || _cursor == null) return;
 
     final repository = ref.read(dmsRepositoryProvider);
     try {
-      final newCursor = await repository.fetchConversations(cursor: _cursor);
+      final newCursor = await repository.fetchConversations(cursor: _cursor, ownerDid: ownerDid);
       _cursor = newCursor;
     } catch (error, stack) {
       _logger.error('Failed to load more conversations', error, stack);
@@ -46,9 +64,14 @@ class ConversationListNotifier extends _$ConversationListNotifier {
 
   /// Accepts a conversation request.
   Future<void> acceptConversation(String convoId) async {
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) return;
+
     final repository = ref.read(dmsRepositoryProvider);
     try {
-      await repository.acceptConversation(convoId);
+      await repository.acceptConversation(convoId, ownerDid);
     } catch (error, stack) {
       _logger.error('Failed to accept conversation', error, stack);
       rethrow;
@@ -57,9 +80,14 @@ class ConversationListNotifier extends _$ConversationListNotifier {
 
   /// Mutes a conversation.
   Future<void> muteConversation(String convoId) async {
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) return;
+
     final repository = ref.read(dmsRepositoryProvider);
     try {
-      await repository.muteConversation(convoId);
+      await repository.muteConversation(convoId, ownerDid);
     } catch (error, stack) {
       _logger.error('Failed to mute conversation', error, stack);
       rethrow;
@@ -68,9 +96,14 @@ class ConversationListNotifier extends _$ConversationListNotifier {
 
   /// Unmutes a conversation.
   Future<void> unmuteConversation(String convoId) async {
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) return;
+
     final repository = ref.read(dmsRepositoryProvider);
     try {
-      await repository.unmuteConversation(convoId);
+      await repository.unmuteConversation(convoId, ownerDid);
     } catch (error, stack) {
       _logger.error('Failed to unmute conversation', error, stack);
       rethrow;
@@ -79,9 +112,14 @@ class ConversationListNotifier extends _$ConversationListNotifier {
 
   /// Leaves a conversation.
   Future<void> leaveConversation(String convoId) async {
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) return;
+
     final repository = ref.read(dmsRepositoryProvider);
     try {
-      await repository.leaveConversation(convoId);
+      await repository.leaveConversation(convoId, ownerDid);
     } catch (error, stack) {
       _logger.error('Failed to leave conversation', error, stack);
       rethrow;
@@ -90,27 +128,26 @@ class ConversationListNotifier extends _$ConversationListNotifier {
 
   /// Marks a conversation as read.
   Future<void> markAsRead(String convoId) async {
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
+
+    if (ownerDid == null) return;
+
     final repository = ref.read(dmsRepositoryProvider);
     try {
       // Fetch latest messages to get the last message ID.
-      await repository.fetchMessages(convoId, limit: 1);
-      final messages = await repository.watchMessages(convoId).first;
+      await repository.fetchMessages(convoId, ownerDid: ownerDid, limit: 1);
+      final messages = await repository.watchMessages(convoId, ownerDid).first;
       if (messages.isNotEmpty) {
-        // Messages are usually sorted by sentAt, but let's be sure or take the last one?
-        // watchMessages in dms_repository.dart uses _messagesDao.watchMessagesByConvo
-        // Let's assume it returns descending or we should check the DAO sort order.
-        // DmMessagesDao usually defaults to something.
-        // If sorting not guaranteed, we might get random.
-        // But assuming latest is what we want.
-        // DmMessagesDao.watchMessagesByConvo sort?
-        // I should check `DmConvosDao`.
-        // I will assume the first one is the latest or I can sort.
-        // Ideally we pick the one with max sentAt.
         final lastMessage = messages.reduce(
           (curr, next) => curr.sentAt.isAfter(next.sentAt) ? curr : next,
         );
 
-        await repository.updateReadState(convoId, lastMessage.messageId);
+        await repository.updateReadState(
+          convoId: convoId,
+          ownerDid: ownerDid,
+          messageId: lastMessage.messageId,
+        );
       }
     } catch (error, stack) {
       _logger.error('Failed to mark conversation as read', error, stack);

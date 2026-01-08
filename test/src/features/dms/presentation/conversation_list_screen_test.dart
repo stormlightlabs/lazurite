@@ -20,16 +20,33 @@ void main() {
     setUp(() {
       mockRepository = MockDmsRepository();
       when(
-        () => mockRepository.fetchConversations(cursor: any(named: 'cursor')),
+        () => mockRepository.fetchConversations(
+          cursor: any(named: 'cursor'),
+          ownerDid: any(named: 'ownerDid'),
+        ),
       ).thenAnswer((_) async => null);
-      when(() => mockRepository.muteConversation(any())).thenAnswer((_) async {});
-      when(() => mockRepository.unmuteConversation(any())).thenAnswer((_) async {});
-      when(() => mockRepository.leaveConversation(any())).thenAnswer((_) async {});
       when(
-        () => mockRepository.fetchMessages(any(), limit: any(named: 'limit')),
+        () => mockRepository.muteConversation(any(), any(named: 'ownerDid')),
+      ).thenAnswer((_) async {});
+      when(
+        () => mockRepository.unmuteConversation(any(), any(named: 'ownerDid')),
+      ).thenAnswer((_) async {});
+      when(
+        () => mockRepository.leaveConversation(any(), any(named: 'ownerDid')),
+      ).thenAnswer((_) async {});
+      when(
+        () => mockRepository.fetchMessages(
+          any(),
+          limit: any(named: 'limit'),
+          ownerDid: any(named: 'ownerDid'),
+        ),
       ).thenAnswer((_) async => null);
-      when(() => mockRepository.watchMessages(any())).thenAnswer((_) => Stream.value([]));
-      when(() => mockRepository.updateReadState(any(), any())).thenAnswer((_) async {});
+      when(
+        () => mockRepository.watchMessages(any(), any(named: 'ownerDid')),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () => mockRepository.updateReadState(convoId: any(), messageId: any(), ownerDid: any()),
+      ).thenAnswer((_) async {});
     });
 
     const profile = Profile(
@@ -51,7 +68,9 @@ void main() {
       final controller = StreamController<List<DmConversation>>();
       addTearDown(controller.close);
 
-      when(() => mockRepository.watchConversations()).thenAnswer((_) => controller.stream);
+      when(
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+      ).thenAnswer((_) => controller.stream);
 
       await tester.pumpApp(
         const ConversationListScreen(),
@@ -63,8 +82,12 @@ void main() {
     });
 
     testWidgets('renders empty state when no conversations', (tester) async {
-      when(() => mockRepository.watchConversations()).thenAnswer((_) => Stream.value([]));
-      when(() => mockRepository.fetchConversations()).thenAnswer((_) async => null);
+      when(
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+      ).thenAnswer((_) => Stream.value([]));
+      when(
+        () => mockRepository.fetchConversations(ownerDid: any(named: 'ownerDid')),
+      ).thenAnswer((_) async => null);
 
       await tester.pumpApp(
         const ConversationListScreen(),
@@ -78,7 +101,7 @@ void main() {
 
     testWidgets('renders conversation list', (tester) async {
       when(
-        () => mockRepository.watchConversations(),
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
       ).thenAnswer((_) => Stream.value([conversation]));
 
       await tester.pumpApp(
@@ -94,7 +117,7 @@ void main() {
     testWidgets('renders message requests section', (tester) async {
       final requestConvo = conversation.copyWith(isAccepted: false, convoId: '456');
       when(
-        () => mockRepository.watchConversations(),
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
       ).thenAnswer((_) => Stream.value([requestConvo, conversation]));
 
       await tester.pumpApp(
@@ -110,9 +133,11 @@ void main() {
 
     testWidgets('triggers refresh on pull to refresh', (tester) async {
       when(
-        () => mockRepository.watchConversations(),
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
       ).thenAnswer((_) => Stream.value([conversation]));
-      when(() => mockRepository.fetchConversations()).thenAnswer((_) async => 'new-cursor');
+      when(
+        () => mockRepository.fetchConversations(ownerDid: any(named: 'ownerDid')),
+      ).thenAnswer((_) async => 'new-cursor');
 
       await tester.pumpApp(
         const ConversationListScreen(),
@@ -123,12 +148,12 @@ void main() {
       await tester.drag(find.byType(CustomScrollView), const Offset(0, 300));
       await tester.pumpAndSettle();
 
-      verify(() => mockRepository.fetchConversations()).called(1);
+      verify(() => mockRepository.fetchConversations(ownerDid: any(named: 'ownerDid'))).called(1);
     });
 
     testWidgets('shows FAB', (tester) async {
       when(
-        () => mockRepository.watchConversations(),
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
       ).thenAnswer((_) => Stream.value([conversation]));
 
       await tester.pumpApp(
@@ -142,7 +167,7 @@ void main() {
 
     testWidgets('triggers mark as read on swipe right', (tester) async {
       when(
-        () => mockRepository.watchConversations(),
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
       ).thenAnswer((_) => Stream.value([conversation]));
 
       final message = dmm.AppDmMessage(
@@ -154,7 +179,9 @@ void main() {
         status: dmm.MessageStatus.sent,
       );
 
-      when(() => mockRepository.watchMessages('123')).thenAnswer((_) => Stream.value([message]));
+      when(
+        () => mockRepository.watchMessages('123', any(named: 'ownerDid')),
+      ).thenAnswer((_) => Stream.value([message]));
 
       await tester.pumpApp(
         const ConversationListScreen(),
@@ -162,17 +189,24 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Swipe right (Start to End)
       await tester.drag(find.byType(ConversationListItem), const Offset(500, 0));
       await tester.pumpAndSettle();
 
-      verify(() => mockRepository.fetchMessages('123', limit: 1)).called(1);
-      verify(() => mockRepository.updateReadState('123', 'msg1')).called(1);
+      verify(
+        () => mockRepository.fetchMessages('123', ownerDid: any(named: 'ownerDid'), limit: 1),
+      ).called(1);
+      verify(
+        () => mockRepository.updateReadState(
+          convoId: '123',
+          messageId: 'msg1',
+          ownerDid: any(named: 'ownerDid'),
+        ),
+      ).called(1);
     });
 
     testWidgets('triggers leave conversation on swipe left and confirm', (tester) async {
       when(
-        () => mockRepository.watchConversations(),
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
       ).thenAnswer((_) => Stream.value([conversation]));
 
       await tester.pumpApp(
@@ -181,9 +215,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Swipe left (End to Start) - confirmDismiss logic makes this tricky with tester.drag
-      // unless we assume direction is correct.
-      // Offset -500 is left.
       await tester.drag(find.byType(ConversationListItem), const Offset(-500, 0));
       await tester.pumpAndSettle();
 
@@ -192,12 +223,12 @@ void main() {
       await tester.tap(find.text('Leave'));
       await tester.pumpAndSettle();
 
-      verify(() => mockRepository.leaveConversation('123')).called(1);
+      verify(() => mockRepository.leaveConversation('123', any(named: 'ownerDid'))).called(1);
     });
 
     testWidgets('triggers mute/unmute on long press', (tester) async {
       when(
-        () => mockRepository.watchConversations(),
+        () => mockRepository.watchConversations(any(named: 'ownerDid')),
       ).thenAnswer((_) => Stream.value([conversation]));
 
       await tester.pumpApp(
@@ -214,7 +245,7 @@ void main() {
       await tester.tap(find.text('Mute'));
       await tester.pumpAndSettle();
 
-      verify(() => mockRepository.muteConversation('123')).called(1);
+      verify(() => mockRepository.muteConversation('123', any(named: 'ownerDid'))).called(1);
     });
   });
 }

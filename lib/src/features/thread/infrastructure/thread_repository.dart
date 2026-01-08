@@ -13,15 +13,15 @@ class ThreadRepository {
   final FeedContentDao _dao;
   final Logger _logger;
 
-  Future<ThreadViewPost> getPostThread(String uri) async {
-    _logger.info('Fetching thread', {'uri': uri});
+  Future<ThreadViewPost> getPostThread(String uri, String ownerDid) async {
+    _logger.info('Fetching thread', {'uri': uri, 'ownerDid': ownerDid});
     try {
       final response = await _api.call('app.bsky.feed.getPostThread', params: {'uri': uri});
 
       final threadJson = response['thread'] as Map<String, dynamic>;
       final thread = ThreadViewPost.fromJson(threadJson);
 
-      await _cacheThread(thread);
+      await _cacheThread(thread, ownerDid);
       _logger.debug('Cached thread posts and participants');
 
       return thread;
@@ -31,7 +31,7 @@ class ThreadRepository {
     }
   }
 
-  Future<void> _cacheThread(ThreadViewPost thread) async {
+  Future<void> _cacheThread(ThreadViewPost thread, String ownerDid) async {
     final posts = <PostsCompanion>[];
     final profiles = <ProfilesCompanion>[];
     final relationships = <ProfileRelationshipsCompanion>[];
@@ -45,7 +45,7 @@ class ThreadRepository {
     void visit(ThreadViewPost node) {
       final postCompanion = node.post.toPostsCompanion();
       final profileCompanion = node.post.toProfilesCompanion();
-      final relationshipCompanion = node.post.toRelationshipCompanion();
+      final relationshipCompanion = node.post.toRelationshipCompanion(ownerDid);
 
       if (seenPosts.add(node.post.uri)) {
         posts.add(postCompanion);
@@ -61,6 +61,7 @@ class ThreadRepository {
         FeedContentItemsCompanion.insert(
           feedKey: feedKey,
           postUri: node.post.uri,
+          ownerDid: ownerDid,
           sortKey: order.toString().padLeft(6, '0'),
         ),
       );
@@ -79,6 +80,7 @@ class ThreadRepository {
     if (posts.isNotEmpty) {
       await _dao.insertFeedContentBatch(
         feedKey: feedKey,
+        ownerDid: ownerDid,
         newPosts: posts,
         newProfiles: profiles,
         newRelationships: relationships,
@@ -282,11 +284,12 @@ class ThreadPost {
     );
   }
 
-  ProfileRelationshipsCompanion? toRelationshipCompanion() {
+  ProfileRelationshipsCompanion? toRelationshipCompanion(String ownerDid) {
     final viewer = author.viewer;
     if (viewer == null) return null;
 
     return ProfileRelationshipsCompanion.insert(
+      ownerDid: ownerDid,
       profileDid: author.did,
       following: Value(viewer['following'] != null),
       followingUri: Value(viewer['following'] as String?),

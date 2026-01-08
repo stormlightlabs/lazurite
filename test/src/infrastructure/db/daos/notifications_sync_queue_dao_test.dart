@@ -8,6 +8,7 @@ void main() {
   group('NotificationsSyncQueueDao', () {
     late AppDatabase db;
     late NotificationsSyncQueueDao dao;
+    const ownerDid = 'did:web:tester';
 
     setUp(() {
       db = AppDatabase(NativeDatabase.memory());
@@ -20,9 +21,9 @@ void main() {
 
     test('enqueueMarkSeen adds item to queue', () async {
       final now = DateTime.now();
-      await dao.enqueueMarkSeen(now);
+      await dao.enqueueMarkSeen(now, ownerDid);
 
-      final pending = await dao.getRetryableItems();
+      final pending = await dao.getRetryableItems(ownerDid);
       expect(pending.length, 1);
       expect(pending.first.type, 'mark_seen');
       expect(pending.first.seenAt, now.toIso8601String());
@@ -33,10 +34,10 @@ void main() {
       final now = DateTime.now();
       final earlier = now.subtract(const Duration(hours: 1));
 
-      await dao.enqueueMarkSeen(earlier);
-      await dao.enqueueMarkSeen(now);
+      await dao.enqueueMarkSeen(earlier, ownerDid);
+      await dao.enqueueMarkSeen(now, ownerDid);
 
-      final pending = await dao.getRetryableItems();
+      final pending = await dao.getRetryableItems(ownerDid);
       expect(pending.length, 2);
       expect(DateTime.parse(pending[0].seenAt), earlier);
       expect(DateTime.parse(pending[1].seenAt), now);
@@ -47,16 +48,16 @@ void main() {
       final earlier = now.subtract(const Duration(hours: 1));
       final earliest = now.subtract(const Duration(hours: 2));
 
-      await dao.enqueueMarkSeen(earliest);
-      await dao.enqueueMarkSeen(earlier);
-      await dao.enqueueMarkSeen(now);
+      await dao.enqueueMarkSeen(earliest, ownerDid);
+      await dao.enqueueMarkSeen(earlier, ownerDid);
+      await dao.enqueueMarkSeen(now, ownerDid);
 
-      final latest = await dao.getLatestSeenAt();
+      final latest = await dao.getLatestSeenAt(ownerDid);
       expect(latest, now);
     });
 
     test('getLatestSeenAt returns null when queue is empty', () async {
-      final latest = await dao.getLatestSeenAt();
+      final latest = await dao.getLatestSeenAt(ownerDid);
       expect(latest, null);
     });
 
@@ -64,7 +65,7 @@ void main() {
       final now = DateTime.now();
       final older = now.subtract(const Duration(hours: 1));
 
-      await dao.enqueueMarkSeen(older);
+      await dao.enqueueMarkSeen(older, ownerDid);
 
       await db
           .into(db.notificationsSyncQueue)
@@ -74,23 +75,24 @@ void main() {
               seenAt: now.toIso8601String(),
               createdAt: DateTime.now(),
               retryCount: const Value(kMaxNotificationSyncRetries),
+              ownerDid: ownerDid,
             ),
           );
 
-      final latest = await dao.getLatestSeenAt();
+      final latest = await dao.getLatestSeenAt(ownerDid);
       expect(latest, older);
     });
 
     test('deleteItem removes specific item', () async {
       final now = DateTime.now();
-      await dao.enqueueMarkSeen(now);
+      await dao.enqueueMarkSeen(now, ownerDid);
 
-      var pending = await dao.getRetryableItems();
+      var pending = await dao.getRetryableItems(ownerDid);
       final id = pending.first.id;
 
       await dao.deleteItem(id);
 
-      pending = await dao.getRetryableItems();
+      pending = await dao.getRetryableItems(ownerDid);
       expect(pending, isEmpty);
     });
 
@@ -100,26 +102,26 @@ void main() {
       final earliest = now.subtract(const Duration(hours: 2));
       final later = now.add(const Duration(hours: 1));
 
-      await dao.enqueueMarkSeen(earliest);
-      await dao.enqueueMarkSeen(earlier);
-      await dao.enqueueMarkSeen(now);
-      await dao.enqueueMarkSeen(later);
+      await dao.enqueueMarkSeen(earliest, ownerDid);
+      await dao.enqueueMarkSeen(earlier, ownerDid);
+      await dao.enqueueMarkSeen(now, ownerDid);
+      await dao.enqueueMarkSeen(later, ownerDid);
 
-      await dao.deleteItemsUpTo(now);
+      await dao.deleteItemsUpTo(now, ownerDid);
 
-      final remaining = await dao.getRetryableItems();
+      final remaining = await dao.getRetryableItems(ownerDid);
       expect(remaining.length, 1);
       expect(DateTime.parse(remaining.first.seenAt), later);
     });
 
     test('clearQueue removes all items', () async {
       final now = DateTime.now();
-      await dao.enqueueMarkSeen(now);
-      await dao.enqueueMarkSeen(now.add(const Duration(hours: 1)));
+      await dao.enqueueMarkSeen(now, ownerDid);
+      await dao.enqueueMarkSeen(now.add(const Duration(hours: 1)), ownerDid);
 
-      await dao.clearQueue();
+      await dao.clearQueue(ownerDid);
 
-      final pending = await dao.getRetryableItems();
+      final pending = await dao.getRetryableItems(ownerDid);
       expect(pending, isEmpty);
     });
 
@@ -129,7 +131,7 @@ void main() {
         () async {
           final now = DateTime.now();
 
-          await dao.enqueueMarkSeen(now);
+          await dao.enqueueMarkSeen(now, ownerDid);
 
           await db
               .into(db.notificationsSyncQueue)
@@ -139,6 +141,7 @@ void main() {
                   seenAt: now.subtract(const Duration(hours: 1)).toIso8601String(),
                   createdAt: now,
                   retryCount: const Value(4),
+                  ownerDid: ownerDid,
                 ),
               );
 
@@ -150,10 +153,11 @@ void main() {
                   seenAt: now.subtract(const Duration(hours: 2)).toIso8601String(),
                   createdAt: now,
                   retryCount: const Value(5),
+                  ownerDid: ownerDid,
                 ),
               );
 
-          final retryable = await dao.getRetryableItems();
+          final retryable = await dao.getRetryableItems(ownerDid);
           expect(retryable.length, 2);
           expect(retryable.map((r) => r.retryCount), containsAll([0, 4]));
         },
@@ -161,20 +165,20 @@ void main() {
 
       test('incrementRetryCount updates the retry count', () async {
         final now = DateTime.now();
-        final id = await dao.enqueueMarkSeen(now);
+        final id = await dao.enqueueMarkSeen(now, ownerDid);
 
-        var items = await dao.getRetryableItems();
+        var items = await dao.getRetryableItems(ownerDid);
         expect(items.first.retryCount, 0);
 
         await dao.incrementRetryCount(id);
 
-        items = await dao.getRetryableItems();
+        items = await dao.getRetryableItems(ownerDid);
         expect(items.first.retryCount, 1);
 
         await dao.incrementRetryCount(id);
         await dao.incrementRetryCount(id);
 
-        items = await dao.getRetryableItems();
+        items = await dao.getRetryableItems(ownerDid);
         expect(items.first.retryCount, 3);
       });
 
@@ -190,6 +194,7 @@ void main() {
                 seenAt: now.subtract(const Duration(days: 50)).toIso8601String(),
                 createdAt: now.subtract(const Duration(days: 45)),
                 retryCount: const Value(5),
+                ownerDid: ownerDid,
               ),
             );
 
@@ -201,6 +206,7 @@ void main() {
                 seenAt: now.subtract(const Duration(days: 50)).toIso8601String(),
                 createdAt: now.subtract(const Duration(days: 45)),
                 retryCount: const Value(3),
+                ownerDid: ownerDid,
               ),
             );
 
@@ -212,26 +218,27 @@ void main() {
                 seenAt: now.toIso8601String(),
                 createdAt: now.subtract(const Duration(days: 5)),
                 retryCount: const Value(5),
+                ownerDid: ownerDid,
               ),
             );
 
-        await dao.enqueueMarkSeen(now);
+        await dao.enqueueMarkSeen(now, ownerDid);
 
         final deleted = await dao.cleanupOldFailedItems(threshold);
         expect(deleted, 1);
 
-        final remaining = await dao.getRetryableItems();
+        final remaining = await dao.getRetryableItems(ownerDid);
         expect(remaining.length, 2);
       });
 
       test('cleanupOldFailedItems returns 0 when nothing to clean', () async {
         final now = DateTime.now();
-        await dao.enqueueMarkSeen(now);
+        await dao.enqueueMarkSeen(now, ownerDid);
 
         final deleted = await dao.cleanupOldFailedItems(now.subtract(const Duration(days: 30)));
         expect(deleted, 0);
 
-        final remaining = await dao.getRetryableItems();
+        final remaining = await dao.getRetryableItems(ownerDid);
         expect(remaining.length, 1);
       });
     });

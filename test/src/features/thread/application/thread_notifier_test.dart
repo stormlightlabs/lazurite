@@ -36,22 +36,26 @@ void main() {
 
   group('ThreadNotifier', () {
     test('build fetches thread successfully', () async {
-      when(() => mockRepository.getPostThread(postUri)).thenAnswer((_) async => expectedThread);
+      when(
+        () => mockRepository.getPostThread(postUri, any()),
+      ).thenAnswer((_) async => expectedThread);
 
       final result = await container.read(threadProvider(postUri).future);
 
       expect(result, expectedThread);
-      verify(() => mockRepository.getPostThread(postUri)).called(1);
+      verify(() => mockRepository.getPostThread(postUri, any())).called(1);
     });
 
     test('refresh re-fetches thread', () async {
-      when(() => mockRepository.getPostThread(postUri)).thenAnswer((_) async => expectedThread);
+      when(
+        () => mockRepository.getPostThread(postUri, any()),
+      ).thenAnswer((_) async => expectedThread);
 
       await container.read(threadProvider(postUri).future);
 
       await container.read(threadProvider(postUri).notifier).refresh();
 
-      verify(() => mockRepository.getPostThread(postUri)).called(2);
+      verify(() => mockRepository.getPostThread(postUri, any())).called(2);
     });
   });
 }

@@ -21,7 +21,10 @@ void feedSyncController(Ref ref) {
 
   Future<void> seedDefaults() async {
     try {
-      await ref.read(feedRepositoryProvider).seedDefaultFeeds();
+      final authState = ref.read(authProvider);
+      final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : 'anonymous';
+
+      await ref.read(feedRepositoryProvider).seedDefaultFeeds(ownerDid);
     } catch (e, stack) {
       logger.warning('Failed to seed default feeds', e, stack);
     }
@@ -29,10 +32,13 @@ void feedSyncController(Ref ref) {
 
   Future<void> runSync() async {
     logger.debug('runSync() called');
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : 'anonymous';
+
     await seedDefaults();
     try {
       logger.debug('Calling repository.syncOnResume()');
-      await ref.read(feedRepositoryProvider).syncOnResume();
+      await ref.read(feedRepositoryProvider).syncOnResume(ownerDid);
       logger.info('syncOnResume() completed successfully');
     } catch (e, stack) {
       logger.error('Failed to sync feeds on resume', e, stack);

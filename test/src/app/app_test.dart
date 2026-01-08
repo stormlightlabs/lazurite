@@ -48,7 +48,9 @@ void main() {
     );
     when(() => mockSessionStorage.getSession()).thenAnswer((_) async => testSession);
     when(() => mockSearchRepository.watchRecentSearches()).thenAnswer((_) => Stream.value([]));
-    when(() => mockProfileRepository.getProfile(any())).thenAnswer(
+    when(
+      () => mockProfileRepository.getProfile(any(named: 'actor'), any(named: 'ownerDid')),
+    ).thenAnswer(
       (_) async => ProfileData(
         did: 'did:web:test',
         handle: 'handle',
@@ -62,18 +64,27 @@ void main() {
     );
     when(() => mockProfileRepository.watchProfile(any())).thenAnswer((_) => Stream.value(null));
     when(
-      () => mockFeedContentRepository.watchFeedContent(feedKey: any(named: 'feedKey')),
+      () => mockFeedContentRepository.watchFeedContent(
+        ownerDid: any(named: 'ownerDid'),
+        feedKey: any(named: 'feedKey'),
+      ),
     ).thenAnswer((_) => Stream.value([]));
     when(
-      () => mockFeedContentRepository.fetchAndCacheFeed(feedUri: any(named: 'feedUri')),
+      () => mockFeedContentRepository.fetchAndCacheFeed(
+        ownerDid: any(named: 'ownerDid'),
+        feedUri: any(named: 'feedUri'),
+      ),
     ).thenAnswer((_) async {});
     when(
       () => mockFeedContentRepository.fetchAndCacheFeed(
+        ownerDid: any(named: 'ownerDid'),
         cursor: any(named: 'cursor'),
         feedUri: any(named: 'feedUri'),
       ),
     ).thenAnswer((_) async {});
-    when(() => mockFeedContentRepository.getCursor(any())).thenAnswer((_) async => null);
+    when(
+      () => mockFeedContentRepository.getCursor(any(named: 'feedKey'), any(named: 'ownerDid')),
+    ).thenAnswer((_) async => null);
   });
 
   List<Override> getTestOverrides() {

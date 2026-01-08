@@ -16,6 +16,7 @@ void main() {
   late MockDmMessagesDao mockMessagesDao;
   late MockLogger mockLogger;
   late DmsRepository repository;
+  const ownerDid = 'did:web:tester';
 
   setUp(() {
     mockApi = MockXrpcClient();
@@ -42,7 +43,7 @@ void main() {
           ),
         ).thenAnswer((_) async {});
 
-        await repository.fetchConversations();
+        await repository.fetchConversations(ownerDid: ownerDid);
 
         verify(
           () => mockApi.call(
@@ -63,7 +64,7 @@ void main() {
           ),
         ).thenAnswer((_) async {});
 
-        await repository.fetchConversations(cursor: 'test_cursor');
+        await repository.fetchConversations(ownerDid: ownerDid, cursor: 'test_cursor');
 
         verify(
           () => mockApi.call(
@@ -107,7 +108,7 @@ void main() {
           capturedProfiles = invocation.namedArguments[#newProfiles] as List;
         });
 
-        final cursor = await repository.fetchConversations();
+        final cursor = await repository.fetchConversations(ownerDid: ownerDid);
 
         expect(cursor, 'next_cursor');
         expect(capturedConvos, hasLength(1));
@@ -134,7 +135,7 @@ void main() {
           capturedConvos = invocation.namedArguments[#newConvos] as List;
         });
 
-        await repository.fetchConversations();
+        await repository.fetchConversations(ownerDid: ownerDid);
 
         expect(capturedConvos, isEmpty);
       });
@@ -144,7 +145,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenThrow(Exception('Network error'));
 
-        expect(() => repository.fetchConversations(), throwsException);
+        expect(() => repository.fetchConversations(ownerDid: ownerDid), throwsException);
 
         verify(() => mockLogger.error(any(), any(), any())).called(1);
       });
@@ -162,7 +163,7 @@ void main() {
           ),
         ).thenAnswer((_) async {});
 
-        await repository.fetchMessages('convo1');
+        await repository.fetchMessages('convo1', ownerDid: ownerDid);
 
         verify(
           () => mockApi.call(
@@ -197,7 +198,7 @@ void main() {
           capturedMessages = invocation.namedArguments[#newMessages] as List;
         });
 
-        final cursor = await repository.fetchMessages('convo1');
+        final cursor = await repository.fetchMessages('convo1', ownerDid: ownerDid);
 
         expect(cursor, 'next_cursor');
         expect(capturedMessages, hasLength(1));
@@ -207,14 +208,14 @@ void main() {
     group('acceptConversation', () {
       test('calls acceptConvo API and updates DAO', () async {
         when(() => mockApi.call(any(), body: any(named: 'body'))).thenAnswer((_) async => {});
-        when(() => mockConvosDao.acceptConvo(any())).thenAnswer((_) async {});
+        when(() => mockConvosDao.acceptConvo(any(), any())).thenAnswer((_) async {});
 
-        await repository.acceptConversation('convo1');
+        await repository.acceptConversation('convo1', ownerDid);
 
         verify(
           () => mockApi.call('chat.bsky.convo.acceptConvo', body: {'convoId': 'convo1'}),
         ).called(1);
-        verify(() => mockConvosDao.acceptConvo('convo1')).called(1);
+        verify(() => mockConvosDao.acceptConvo('convo1', ownerDid)).called(1);
       });
     });
 
@@ -223,13 +224,18 @@ void main() {
         when(() => mockApi.call(any(), body: any(named: 'body'))).thenAnswer((_) async => {});
         when(
           () => mockConvosDao.updateReadState(
+            ownerDid: any(named: 'ownerDid'),
             convoId: any(named: 'convoId'),
             lastReadMessageId: any(named: 'lastReadMessageId'),
             unreadCount: any(named: 'unreadCount'),
           ),
         ).thenAnswer((_) async {});
 
-        await repository.updateReadState('convo1', 'msg123');
+        await repository.updateReadState(
+          convoId: 'convo1',
+          messageId: 'msg123',
+          ownerDid: ownerDid,
+        );
 
         verify(
           () => mockApi.call(
@@ -239,6 +245,7 @@ void main() {
         ).called(1);
         verify(
           () => mockConvosDao.updateReadState(
+            ownerDid: ownerDid,
             convoId: 'convo1',
             lastReadMessageId: 'msg123',
             unreadCount: 0,
@@ -249,39 +256,41 @@ void main() {
 
     group('watchConversations', () {
       test('returns stream from DAO mapped to domain models', () async {
-        when(() => mockConvosDao.watchConversations()).thenAnswer((_) => Stream.value([]));
+        when(() => mockConvosDao.watchConversations(any())).thenAnswer((_) => Stream.value([]));
 
-        final stream = repository.watchConversations();
+        final stream = repository.watchConversations(ownerDid);
         final result = await stream.first;
 
         expect(result, isEmpty);
-        verify(() => mockConvosDao.watchConversations()).called(1);
+        verify(() => mockConvosDao.watchConversations(ownerDid)).called(1);
       });
     });
 
     group('watchMessages', () {
       test('returns stream from DAO mapped to domain models', () async {
         when(
-          () => mockMessagesDao.watchMessagesByConvo(any()),
+          () => mockMessagesDao.watchMessagesByConvo(any(), any()),
         ).thenAnswer((_) => Stream.value([]));
 
-        final stream = repository.watchMessages('convo1');
+        final stream = repository.watchMessages('convo1', ownerDid);
         final result = await stream.first;
 
         expect(result, isEmpty);
-        verify(() => mockMessagesDao.watchMessagesByConvo('convo1')).called(1);
+        verify(() => mockMessagesDao.watchMessagesByConvo('convo1', ownerDid)).called(1);
       });
     });
 
     group('clearAll', () {
       test('clears messages and conversations', () async {
-        when(() => mockMessagesDao.clearMessages()).thenAnswer((_) async {});
-        when(() => mockConvosDao.clearConversations()).thenAnswer((_) async {});
+        when(() => mockMessagesDao.clearMessages(any())).thenAnswer((_) async {
+          return 0;
+        });
+        when(() => mockConvosDao.clearConversations(any())).thenAnswer((_) async {});
 
-        await repository.clearAll();
+        await repository.clearAll(ownerDid);
 
-        verify(() => mockMessagesDao.clearMessages()).called(1);
-        verify(() => mockConvosDao.clearConversations()).called(1);
+        verify(() => mockMessagesDao.clearMessages(ownerDid)).called(1);
+        verify(() => mockConvosDao.clearConversations(ownerDid)).called(1);
       });
     });
   });

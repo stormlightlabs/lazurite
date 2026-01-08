@@ -21,8 +21,8 @@ class ProfileRepository {
   /// Fetches a profile from the API and caches it.
   ///
   /// [actor] can be a DID or handle.
-  Future<ProfileData> getProfile(String actor) async {
-    _logger.info('Fetching profile', {'actor': actor});
+  Future<ProfileData> getProfile(String actor, String ownerDid) async {
+    _logger.info('Fetching profile', {'actor': actor, 'ownerDid': ownerDid});
     try {
       final response = await _api.call('app.bsky.actor.getProfile', params: {'actor': actor});
 
@@ -58,6 +58,7 @@ class ProfileRepository {
 
       await _relationshipsDao.upsertRelationship(
         ProfileRelationshipsCompanion.insert(
+          ownerDid: ownerDid,
           profileDid: profile.did,
           following: Value(profile.viewerFollowing),
           followingUri: Value(profile.viewerFollowUri),
@@ -184,7 +185,7 @@ class ProfileRepository {
 
       await _followsDao.upsertFollow(
         FollowsCompanion.insert(
-          actorDid: actorDid,
+          actorDid: actorDid, // actorDid is the owner
           subjectDid: subjectDid,
           uri: uri,
           createdAt: Value(DateTime.now()),
@@ -241,7 +242,7 @@ class ProfileRepository {
     try {
       await _api.call('app.bsky.graph.muteActor', body: {'actor': subjectDid});
 
-      await _relationshipsDao.updateMuteStatus(subjectDid, true);
+      await _relationshipsDao.updateMuteStatus(subjectDid, true, actorDid);
       _logger.debug('Muted user', {'subject': subjectDid});
     } catch (e, stack) {
       _logger.error('Failed to mute user', e, stack);
@@ -257,7 +258,7 @@ class ProfileRepository {
     try {
       await _api.call('app.bsky.graph.unmuteActor', body: {'actor': subjectDid});
 
-      await _relationshipsDao.updateMuteStatus(subjectDid, false);
+      await _relationshipsDao.updateMuteStatus(subjectDid, false, actorDid);
       _logger.debug('Unmuted user', {'subject': subjectDid});
     } catch (e, stack) {
       _logger.error('Failed to unmute user', e, stack);
@@ -286,7 +287,7 @@ class ProfileRepository {
 
       final uri = response['uri'] as String;
 
-      await _relationshipsDao.updateBlockStatus(subjectDid, true, blockingUri: uri);
+      await _relationshipsDao.updateBlockStatus(subjectDid, true, actorDid, blockingUri: uri);
       _logger.debug('Blocked user', {'subject': subjectDid, 'uri': uri});
       return uri;
     } catch (e, stack) {
@@ -314,7 +315,7 @@ class ProfileRepository {
       );
 
       if (subjectDid != null) {
-        await _relationshipsDao.updateBlockStatus(subjectDid, false);
+        await _relationshipsDao.updateBlockStatus(subjectDid, false, actorDid);
       }
 
       _logger.debug('Deleted block record', {'uri': blockUri});

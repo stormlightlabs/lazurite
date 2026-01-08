@@ -100,7 +100,7 @@ final class AdultContentPrefProvider
   }
 }
 
-String _$adultContentPrefHash() => r'cdc458780da7c351c2fced97f1b3b03aa298340c';
+String _$adultContentPrefHash() => r'6175521bfb2e3f424fabc4f455b711f5acd2c30a';
 
 /// Watches content label preferences.
 
@@ -143,7 +143,7 @@ final class ContentLabelPrefsProvider
   }
 }
 
-String _$contentLabelPrefsHash() => r'2fc2f175331482fb8f05119519be263e04223440';
+String _$contentLabelPrefsHash() => r'64a76573483e6a43e306451a16ec7251396d3197';
 
 /// Watches the labelers preference.
 
@@ -181,7 +181,7 @@ final class LabelersPrefProvider
   }
 }
 
-String _$labelersPrefHash() => r'ee7f90859d0d27d3bfc9dae105f62f64f85e2624';
+String _$labelersPrefHash() => r'683933f67c7717d800c5f563b2f23e33e89ba904';
 
 /// Watches the feed view preference.
 
@@ -219,7 +219,7 @@ final class FeedViewPrefProvider
   }
 }
 
-String _$feedViewPrefHash() => r'65ea4ae206e707cc70ca28091a39ba2d8b748c9c';
+String _$feedViewPrefHash() => r'6cbee61f1a6e3bb8170f5394539d29ecb6023f5b';
 
 /// Watches the thread view preference.
 
@@ -257,7 +257,7 @@ final class ThreadViewPrefProvider
   }
 }
 
-String _$threadViewPrefHash() => r'4c5a060b06421d062c4905a3ea6ecf6662ecc75f';
+String _$threadViewPrefHash() => r'c75e582075530962cb5683ae0035e73c1c9570c0';
 
 /// Watches the muted words preference.
 
@@ -295,4 +295,4 @@ final class MutedWordsPrefProvider
   }
 }
 
-String _$mutedWordsPrefHash() => r'aa031687ba6f0bfef3aaf1212c382611f0a74a9e';
+String _$mutedWordsPrefHash() => r'9052fd9aaba1911f28a132c9ed46467fd80ac132';

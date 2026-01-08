@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/utils/date_formatter.dart';
 import 'package:lazurite/src/core/widgets/widgets.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/notifications/application/notifications_providers.dart';
 import 'package:lazurite/src/features/notifications/domain/grouped_notification.dart';
 import 'package:lazurite/src/features/notifications/domain/notification_type.dart';
@@ -216,8 +218,11 @@ class _GroupedNotificationItemState extends ConsumerState<GroupedNotificationIte
     }
 
     if (group.subjectUri != null) {
-      final service = ref.read(markAsSeenServiceProvider);
-      service.markAsSeen(group.mostRecentTimestamp);
+      final authState = ref.read(authProvider);
+      if (authState is AuthStateAuthenticated) {
+        final service = ref.read(markAsSeenServiceProvider);
+        service.markAsSeen(group.mostRecentTimestamp, authState.session.did);
+      }
 
       final encodedUri = Uri.encodeComponent(group.subjectUri!);
       GoRouter.of(context).push('/home/t/$encodedUri');

@@ -89,4 +89,4 @@ final class OutboxRepositoryProvider
   }
 }
 
-String _$outboxRepositoryHash() => r'49973f0d95b8739001506afcede74bc7eb1ba8e8';
+String _$outboxRepositoryHash() => r'63bdc933665b73616d72dca13d38650bbe4823c6';

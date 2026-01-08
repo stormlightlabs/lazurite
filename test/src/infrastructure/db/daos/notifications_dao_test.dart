@@ -7,6 +7,7 @@ import 'package:lazurite/src/infrastructure/db/daos/notifications_dao.dart';
 void main() {
   late AppDatabase database;
   late NotificationsDao dao;
+  const ownerDid = 'did:plc:owner';
 
   setUp(() {
     database = AppDatabase(NativeDatabase.memory());
@@ -32,15 +33,21 @@ void main() {
           NotificationsCompanion.insert(
             uri: 'at://did:plc:user/app.bsky.notification/1',
             actorDid: 'did:plc:actor1',
+            ownerDid: ownerDid,
             type: 'like',
             indexedAt: DateTime.now(),
             cachedAt: DateTime.now(),
           ),
         ];
 
-        await dao.insertNotificationsBatch(newNotifications: notifications, newProfiles: profiles);
+        await dao.insertNotificationsBatch(
+          newNotifications: notifications,
+          newProfiles: profiles,
+          newCursor: null,
+          ownerDid: ownerDid,
+        );
 
-        final results = await dao.watchNotifications().first;
+        final results = await dao.watchNotifications(ownerDid).first;
         expect(results, hasLength(1));
         expect(results.first.notification.type, 'like');
         expect(results.first.actor.handle, 'actor1.bsky.social');
@@ -51,9 +58,10 @@ void main() {
           newNotifications: [],
           newProfiles: [],
           newCursor: 'cursor123',
+          ownerDid: ownerDid,
         );
 
-        final cursor = await dao.getCursor();
+        final cursor = await dao.getCursor(ownerDid);
         expect(cursor, 'cursor123');
       });
 
@@ -65,6 +73,7 @@ void main() {
         final notification1 = NotificationsCompanion.insert(
           uri: 'at://did:plc:user/app.bsky.notification/1',
           actorDid: 'did:plc:actor1',
+          ownerDid: ownerDid,
           type: 'like',
           isRead: const Value(false),
           indexedAt: DateTime.now(),
@@ -74,11 +83,14 @@ void main() {
         await dao.insertNotificationsBatch(
           newNotifications: [notification1],
           newProfiles: profiles,
+          newCursor: null,
+          ownerDid: ownerDid,
         );
 
         final notification2 = NotificationsCompanion.insert(
           uri: 'at://did:plc:user/app.bsky.notification/1',
           actorDid: 'did:plc:actor1',
+          ownerDid: ownerDid,
           type: 'like',
           isRead: const Value(true),
           indexedAt: DateTime.now(),
@@ -88,9 +100,11 @@ void main() {
         await dao.insertNotificationsBatch(
           newNotifications: [notification2],
           newProfiles: profiles,
+          newCursor: null,
+          ownerDid: ownerDid,
         );
 
-        final results = await dao.watchNotifications().first;
+        final results = await dao.watchNotifications(ownerDid).first;
         expect(results, hasLength(1));
         expect(results.first.notification.isRead, isTrue);
       });
@@ -107,6 +121,7 @@ void main() {
           NotificationsCompanion.insert(
             uri: 'at://did:plc:user/app.bsky.notification/1',
             actorDid: 'did:plc:actor1',
+            ownerDid: ownerDid,
             type: 'like',
             indexedAt: now.subtract(const Duration(hours: 2)),
             cachedAt: now,
@@ -114,6 +129,7 @@ void main() {
           NotificationsCompanion.insert(
             uri: 'at://did:plc:user/app.bsky.notification/2',
             actorDid: 'did:plc:actor1',
+            ownerDid: ownerDid,
             type: 'follow',
             indexedAt: now.subtract(const Duration(hours: 1)),
             cachedAt: now,
@@ -121,15 +137,21 @@ void main() {
           NotificationsCompanion.insert(
             uri: 'at://did:plc:user/app.bsky.notification/3',
             actorDid: 'did:plc:actor1',
+            ownerDid: ownerDid,
             type: 'repost',
             indexedAt: now,
             cachedAt: now,
           ),
         ];
 
-        await dao.insertNotificationsBatch(newNotifications: notifications, newProfiles: profiles);
+        await dao.insertNotificationsBatch(
+          newNotifications: notifications,
+          newProfiles: profiles,
+          newCursor: null,
+          ownerDid: ownerDid,
+        );
 
-        final results = await dao.watchNotifications().first;
+        final results = await dao.watchNotifications(ownerDid).first;
         expect(results, hasLength(3));
         expect(results[0].notification.type, 'repost'); // Most recent
         expect(results[1].notification.type, 'follow');
@@ -141,7 +163,7 @@ void main() {
           ProfilesCompanion.insert(did: 'did:plc:actor1', handle: 'actor1.bsky.social'),
         ];
 
-        final stream = dao.watchNotifications();
+        final stream = dao.watchNotifications(ownerDid);
         final emissions = <List<NotificationWithActor>>[];
         final subscription = stream.listen(emissions.add);
 
@@ -152,12 +174,15 @@ void main() {
             NotificationsCompanion.insert(
               uri: 'at://did:plc:user/app.bsky.notification/1',
               actorDid: 'did:plc:actor1',
+              ownerDid: ownerDid,
               type: 'like',
               indexedAt: DateTime.now(),
               cachedAt: DateTime.now(),
             ),
           ],
           newProfiles: profiles,
+          newCursor: null,
+          ownerDid: ownerDid,
         );
 
         await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -172,7 +197,7 @@ void main() {
 
     group('getCursor', () {
       test('returns null when no cursor exists', () async {
-        final cursor = await dao.getCursor();
+        final cursor = await dao.getCursor(ownerDid);
         expect(cursor, isNull);
       });
 
@@ -181,9 +206,10 @@ void main() {
           newNotifications: [],
           newProfiles: [],
           newCursor: 'test_cursor',
+          ownerDid: ownerDid,
         );
 
-        final cursor = await dao.getCursor();
+        final cursor = await dao.getCursor(ownerDid);
         expect(cursor, 'test_cursor');
       });
     });
@@ -199,6 +225,7 @@ void main() {
             NotificationsCompanion.insert(
               uri: 'at://did:plc:user/app.bsky.notification/1',
               actorDid: 'did:plc:actor1',
+              ownerDid: ownerDid,
               type: 'like',
               indexedAt: DateTime.now(),
               cachedAt: DateTime.now(),
@@ -206,14 +233,15 @@ void main() {
           ],
           newProfiles: profiles,
           newCursor: 'cursor123',
+          ownerDid: ownerDid,
         );
 
-        await dao.clearNotifications();
+        await dao.clearNotifications(ownerDid);
 
-        final results = await dao.watchNotifications().first;
+        final results = await dao.watchNotifications(ownerDid).first;
         expect(results, isEmpty);
 
-        final cursor = await dao.getCursor();
+        final cursor = await dao.getCursor(ownerDid);
         expect(cursor, isNull);
       });
     });
@@ -233,6 +261,7 @@ void main() {
             NotificationsCompanion.insert(
               uri: 'at://did:plc:user/app.bsky.notification/old',
               actorDid: 'did:plc:actor1',
+              ownerDid: ownerDid,
               type: 'like',
               indexedAt: stale,
               cachedAt: stale,
@@ -240,20 +269,23 @@ void main() {
             NotificationsCompanion.insert(
               uri: 'at://did:plc:user/app.bsky.notification/new',
               actorDid: 'did:plc:actor1',
+              ownerDid: ownerDid,
               type: 'follow',
               indexedAt: fresh,
               cachedAt: fresh,
             ),
           ],
           newProfiles: profiles,
+          newCursor: null,
+          ownerDid: ownerDid,
         );
 
         final threshold = now.subtract(const Duration(days: 30));
-        final deletedCount = await dao.deleteStaleNotifications(threshold);
+        final deletedCount = await dao.deleteStaleNotifications(threshold, ownerDid);
 
         expect(deletedCount, 1);
 
-        final results = await dao.watchNotifications().first;
+        final results = await dao.watchNotifications(ownerDid).first;
         expect(results, hasLength(1));
         expect(results.first.notification.type, 'follow');
       });
@@ -270,6 +302,7 @@ void main() {
             NotificationsCompanion.insert(
               uri: 'at://did:plc:user/app.bsky.notification/1',
               actorDid: 'did:plc:actor1',
+              ownerDid: ownerDid,
               type: 'like',
               isRead: const Value(false),
               indexedAt: DateTime.now(),
@@ -278,6 +311,7 @@ void main() {
             NotificationsCompanion.insert(
               uri: 'at://did:plc:user/app.bsky.notification/2',
               actorDid: 'did:plc:actor1',
+              ownerDid: ownerDid,
               type: 'follow',
               isRead: const Value(false),
               indexedAt: DateTime.now(),
@@ -285,11 +319,13 @@ void main() {
             ),
           ],
           newProfiles: profiles,
+          newCursor: null,
+          ownerDid: ownerDid,
         );
 
-        await dao.markAllAsRead();
+        await dao.markAllAsRead(ownerDid);
 
-        final results = await dao.watchNotifications().first;
+        final results = await dao.watchNotifications(ownerDid).first;
         expect(results, hasLength(2));
         expect(results.every((n) => n.notification.isRead), isTrue);
       });

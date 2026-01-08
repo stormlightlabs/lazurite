@@ -9,6 +9,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../../helpers/mocks.dart';
 
 void main() {
+  const ownerDid = 'did:web:tester';
   late AppDatabase db;
   late MockXrpcClient mockApi;
   late Logger logger;
@@ -34,7 +35,7 @@ void main() {
     test('skips sync for unauthenticated user', () async {
       when(() => mockApi.isAuthenticated).thenReturn(false);
 
-      await repository.syncPreferencesFromRemote();
+      await repository.syncPreferencesFromRemote(ownerDid);
 
       verifyNever(() => mockApi.call(any()));
     });
@@ -49,9 +50,9 @@ void main() {
         },
       );
 
-      await repository.syncPreferencesFromRemote();
+      await repository.syncPreferencesFromRemote(ownerDid);
 
-      final pref = await repository.getAdultContentPref();
+      final pref = await repository.getAdultContentPref(ownerDid);
       expect(pref.enabled, isTrue);
     });
 
@@ -74,9 +75,9 @@ void main() {
         },
       );
 
-      await repository.syncPreferencesFromRemote();
+      await repository.syncPreferencesFromRemote(ownerDid);
 
-      final prefs = await repository.getContentLabelPrefs();
+      final prefs = await repository.getContentLabelPrefs(ownerDid);
       expect(prefs.items, hasLength(2));
       expect(prefs.getVisibility('sexual'), LabelVisibility.hide);
       expect(prefs.getVisibility('nudity'), LabelVisibility.warn);
@@ -98,9 +99,9 @@ void main() {
         },
       );
 
-      await repository.syncPreferencesFromRemote();
+      await repository.syncPreferencesFromRemote(ownerDid);
 
-      final pref = await repository.getLabelersPref();
+      final pref = await repository.getLabelersPref(ownerDid);
       expect(pref.labelerDids, ['did:plc:test1', 'did:plc:test2']);
     });
 
@@ -118,9 +119,9 @@ void main() {
         },
       );
 
-      await repository.syncPreferencesFromRemote();
+      await repository.syncPreferencesFromRemote(ownerDid);
 
-      final pref = await repository.getFeedViewPref();
+      final pref = await repository.getFeedViewPref(ownerDid);
       expect(pref.hideReplies, isTrue);
       expect(pref.hideReposts, isTrue);
     });
@@ -139,9 +140,9 @@ void main() {
         },
       );
 
-      await repository.syncPreferencesFromRemote();
+      await repository.syncPreferencesFromRemote(ownerDid);
 
-      final pref = await repository.getThreadViewPref();
+      final pref = await repository.getThreadViewPref(ownerDid);
       expect(pref.sort, ThreadSortOrder.newest);
       expect(pref.prioritizeFollowedUsers, isFalse);
     });
@@ -165,9 +166,9 @@ void main() {
         },
       );
 
-      await repository.syncPreferencesFromRemote();
+      await repository.syncPreferencesFromRemote(ownerDid);
 
-      final pref = await repository.getMutedWordsPref();
+      final pref = await repository.getMutedWordsPref(ownerDid);
       expect(pref.items, hasLength(1));
       expect(pref.items[0].value, 'test-word');
     });
@@ -191,14 +192,14 @@ void main() {
         },
       );
 
-      await repository.syncPreferencesFromRemote();
+      await repository.syncPreferencesFromRemote(ownerDid);
 
-      expect((await repository.getAdultContentPref()).enabled, isTrue);
-      expect((await repository.getContentLabelPrefs()).items, hasLength(1));
-      expect((await repository.getLabelersPref()).labelers, isEmpty);
-      expect((await repository.getFeedViewPref()).hideQuotePosts, isTrue);
-      expect((await repository.getThreadViewPref()).sort, ThreadSortOrder.hotness);
-      expect((await repository.getMutedWordsPref()).items, isEmpty);
+      expect((await repository.getAdultContentPref(ownerDid)).enabled, isTrue);
+      expect((await repository.getContentLabelPrefs(ownerDid)).items, hasLength(1));
+      expect((await repository.getLabelersPref(ownerDid)).labelers, isEmpty);
+      expect((await repository.getFeedViewPref(ownerDid)).hideQuotePosts, isTrue);
+      expect((await repository.getThreadViewPref(ownerDid)).sort, ThreadSortOrder.hotness);
+      expect((await repository.getMutedWordsPref(ownerDid)).items, isEmpty);
     });
 
     test('handles malformed preference gracefully', () async {
@@ -206,49 +207,49 @@ void main() {
       when(() => mockApi.call('app.bsky.actor.getPreferences')).thenAnswer(
         (_) async => {
           'preferences': [
-            'not-a-map', // Invalid
+            'not-a-map',
             {r'$type': 'app.bsky.actor.defs#adultContentPref', 'enabled': true},
           ],
         },
       );
 
-      await repository.syncPreferencesFromRemote();
+      await repository.syncPreferencesFromRemote(ownerDid);
 
-      final pref = await repository.getAdultContentPref();
+      final pref = await repository.getAdultContentPref(ownerDid);
       expect(pref.enabled, isTrue);
     });
   });
 
   group('getters return defaults when not synced', () {
     test('getAdultContentPref returns false by default', () async {
-      final pref = await repository.getAdultContentPref();
+      final pref = await repository.getAdultContentPref(ownerDid);
       expect(pref.enabled, isFalse);
     });
 
     test('getContentLabelPrefs returns empty by default', () async {
-      final prefs = await repository.getContentLabelPrefs();
+      final prefs = await repository.getContentLabelPrefs(ownerDid);
       expect(prefs.items, isEmpty);
     });
 
     test('getLabelersPref returns empty by default', () async {
-      final pref = await repository.getLabelersPref();
+      final pref = await repository.getLabelersPref(ownerDid);
       expect(pref.labelers, isEmpty);
     });
 
     test('getFeedViewPref returns defaults', () async {
-      final pref = await repository.getFeedViewPref();
+      final pref = await repository.getFeedViewPref(ownerDid);
       expect(pref.hideReplies, isFalse);
       expect(pref.hideReposts, isFalse);
     });
 
     test('getThreadViewPref returns defaults', () async {
-      final pref = await repository.getThreadViewPref();
+      final pref = await repository.getThreadViewPref(ownerDid);
       expect(pref.sort, ThreadSortOrder.oldest);
       expect(pref.prioritizeFollowedUsers, isTrue);
     });
 
     test('getMutedWordsPref returns empty by default', () async {
-      final pref = await repository.getMutedWordsPref();
+      final pref = await repository.getMutedWordsPref(ownerDid);
       expect(pref.items, isEmpty);
     });
   });
@@ -264,10 +265,10 @@ void main() {
         },
       );
 
-      final stream = repository.watchAdultContentPref();
+      final stream = repository.watchAdultContentPref(ownerDid);
       expect((await stream.first).enabled, isFalse);
 
-      await repository.syncPreferencesFromRemote();
+      await repository.syncPreferencesFromRemote(ownerDid);
       expect((await stream.first).enabled, isTrue);
     });
   });
@@ -283,12 +284,12 @@ void main() {
         },
       );
 
-      await repository.syncPreferencesFromRemote();
-      expect((await repository.getAdultContentPref()).enabled, isTrue);
+      await repository.syncPreferencesFromRemote(ownerDid);
+      expect((await repository.getAdultContentPref(ownerDid)).enabled, isTrue);
 
-      await repository.clearAll();
+      await repository.clearAll(ownerDid);
 
-      expect((await repository.getAdultContentPref()).enabled, isFalse);
+      expect((await repository.getAdultContentPref(ownerDid)).enabled, isFalse);
     });
   });
 
@@ -296,9 +297,9 @@ void main() {
     test('persists preference to database', () async {
       const pref = FeedViewPref(hideReplies: true, hideReposts: true, hideQuotePosts: false);
 
-      await repository.updateFeedViewPref(pref);
+      await repository.updateFeedViewPref(pref, ownerDid);
 
-      final stored = await repository.getFeedViewPref();
+      final stored = await repository.getFeedViewPref(ownerDid);
       expect(stored.hideReplies, isTrue);
       expect(stored.hideReposts, isTrue);
       expect(stored.hideQuotePosts, isFalse);
@@ -307,9 +308,9 @@ void main() {
     test('queues sync item', () async {
       const pref = FeedViewPref(hideReplies: true);
 
-      await repository.updateFeedViewPref(pref);
+      await repository.updateFeedViewPref(pref, ownerDid);
 
-      final queued = await db.preferenceSyncQueueDao.getPendingItems();
+      final queued = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queued, hasLength(1));
       expect(queued[0].type, 'feedView');
     });
@@ -319,9 +320,9 @@ void main() {
     test('persists preference to database', () async {
       const pref = ThreadViewPref(sort: ThreadSortOrder.newest, prioritizeFollowedUsers: false);
 
-      await repository.updateThreadViewPref(pref);
+      await repository.updateThreadViewPref(pref, ownerDid);
 
-      final stored = await repository.getThreadViewPref();
+      final stored = await repository.getThreadViewPref(ownerDid);
       expect(stored.sort, ThreadSortOrder.newest);
       expect(stored.prioritizeFollowedUsers, isFalse);
     });
@@ -329,9 +330,9 @@ void main() {
     test('queues sync item', () async {
       const pref = ThreadViewPref(sort: ThreadSortOrder.mostLikes);
 
-      await repository.updateThreadViewPref(pref);
+      await repository.updateThreadViewPref(pref, ownerDid);
 
-      final queued = await db.preferenceSyncQueueDao.getPendingItems();
+      final queued = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queued, hasLength(1));
       expect(queued[0].type, 'threadView');
     });
@@ -341,28 +342,28 @@ void main() {
     test('persists preference to database', () async {
       const pref = AdultContentPref(enabled: true);
 
-      await repository.updateAdultContentPref(pref);
+      await repository.updateAdultContentPref(pref, ownerDid);
 
-      final stored = await repository.getAdultContentPref();
+      final stored = await repository.getAdultContentPref(ownerDid);
       expect(stored.enabled, isTrue);
     });
 
     test('queues sync item', () async {
       const pref = AdultContentPref(enabled: true);
 
-      await repository.updateAdultContentPref(pref);
+      await repository.updateAdultContentPref(pref, ownerDid);
 
-      final queued = await db.preferenceSyncQueueDao.getPendingItems();
+      final queued = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queued, hasLength(1));
       expect(queued[0].type, 'adultContent');
     });
 
     test('updates from enabled to disabled', () async {
-      await repository.updateAdultContentPref(const AdultContentPref(enabled: true));
-      expect((await repository.getAdultContentPref()).enabled, isTrue);
+      await repository.updateAdultContentPref(const AdultContentPref(enabled: true), ownerDid);
+      expect((await repository.getAdultContentPref(ownerDid)).enabled, isTrue);
 
-      await repository.updateAdultContentPref(const AdultContentPref(enabled: false));
-      expect((await repository.getAdultContentPref()).enabled, isFalse);
+      await repository.updateAdultContentPref(const AdultContentPref(enabled: false), ownerDid);
+      expect((await repository.getAdultContentPref(ownerDid)).enabled, isFalse);
     });
   });
 
@@ -375,9 +376,9 @@ void main() {
         ],
       );
 
-      await repository.updateContentLabelPrefs(prefs);
+      await repository.updateContentLabelPrefs(prefs, ownerDid);
 
-      final stored = await repository.getContentLabelPrefs();
+      final stored = await repository.getContentLabelPrefs(ownerDid);
       expect(stored.items, hasLength(2));
       expect(stored.getVisibility('sexual'), LabelVisibility.hide);
       expect(stored.getVisibility('gore'), LabelVisibility.warn);
@@ -388,9 +389,9 @@ void main() {
         items: [ContentLabelPref(label: 'spam', visibility: LabelVisibility.hide)],
       );
 
-      await repository.updateContentLabelPrefs(prefs);
+      await repository.updateContentLabelPrefs(prefs, ownerDid);
 
-      final queued = await db.preferenceSyncQueueDao.getPendingItems();
+      final queued = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queued, hasLength(1));
       expect(queued[0].type, 'contentLabels');
     });
@@ -400,15 +401,17 @@ void main() {
         const ContentLabelPrefs(
           items: [ContentLabelPref(label: 'sexual', visibility: LabelVisibility.hide)],
         ),
+        ownerDid,
       );
 
       await repository.updateContentLabelPrefs(
         const ContentLabelPrefs(
           items: [ContentLabelPref(label: 'gore', visibility: LabelVisibility.warn)],
         ),
+        ownerDid,
       );
 
-      final stored = await repository.getContentLabelPrefs();
+      final stored = await repository.getContentLabelPrefs(ownerDid);
       expect(stored.items, hasLength(1));
       expect(stored.getVisibility('gore'), LabelVisibility.warn);
       expect(stored.getVisibility('sexual'), isNull);
@@ -429,9 +432,9 @@ void main() {
         ],
       );
 
-      await repository.updateMutedWordsPref(pref);
+      await repository.updateMutedWordsPref(pref, ownerDid);
 
-      final stored = await repository.getMutedWordsPref();
+      final stored = await repository.getMutedWordsPref(ownerDid);
       expect(stored.items, hasLength(2));
       expect(stored.items[0].value, 'spam');
       expect(stored.items[1].value, 'scam');
@@ -445,9 +448,9 @@ void main() {
         ],
       );
 
-      await repository.updateMutedWordsPref(pref);
+      await repository.updateMutedWordsPref(pref, ownerDid);
 
-      final queued = await db.preferenceSyncQueueDao.getPendingItems();
+      final queued = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queued, hasLength(1));
       expect(queued[0].type, 'mutedWords');
     });
@@ -459,6 +462,7 @@ void main() {
             MutedWord(id: '1', value: 'old', targets: [MutedWordTarget.content]),
           ],
         ),
+        ownerDid,
       );
 
       await repository.updateMutedWordsPref(
@@ -467,9 +471,10 @@ void main() {
             MutedWord(id: '2', value: 'new', targets: [MutedWordTarget.content]),
           ],
         ),
+        ownerDid,
       );
 
-      final stored = await repository.getMutedWordsPref();
+      final stored = await repository.getMutedWordsPref(ownerDid);
       expect(stored.items, hasLength(1));
       expect(stored.items[0].value, 'new');
     });

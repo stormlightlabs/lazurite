@@ -53,18 +53,32 @@ void main() {
     mockNotificationsRepository = MockNotificationsRepository();
     mockDmsRepository = MockDmsRepository();
     when(
-      () => mockNotificationsRepository.watchNotifications(),
+      () => mockNotificationsRepository.watchNotifications(any(named: 'ownerDid')),
     ).thenAnswer((_) => Stream.value([]));
-    when(() => mockNotificationsRepository.getCursor()).thenAnswer((_) async => null);
     when(
-      () => mockNotificationsRepository.fetchNotifications(cursor: any(named: 'cursor')),
-    ).thenAnswer((_) async {});
-    when(() => mockNotificationsRepository.fetchNotifications()).thenAnswer((_) async {});
-    when(() => mockDmsRepository.watchConversations()).thenAnswer((_) => Stream.value([]));
-    when(
-      () => mockDmsRepository.fetchConversations(cursor: any(named: 'cursor')),
+      () => mockNotificationsRepository.getCursor(any(named: 'ownerDid')),
     ).thenAnswer((_) async => null);
-    when(() => mockDmsRepository.fetchConversations()).thenAnswer((_) async => null);
+    when(
+      () => mockNotificationsRepository.fetchNotifications(
+        cursor: any(named: 'cursor'),
+        ownerDid: any(named: 'ownerDid'),
+      ),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockNotificationsRepository.fetchNotifications(ownerDid: any(named: 'ownerDid')),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockDmsRepository.watchConversations(any(named: 'ownerDid')),
+    ).thenAnswer((_) => Stream.value([]));
+    when(
+      () => mockDmsRepository.fetchConversations(
+        cursor: any(named: 'cursor'),
+        ownerDid: any(named: 'ownerDid'),
+      ),
+    ).thenAnswer((_) async => null);
+    when(
+      () => mockDmsRepository.fetchConversations(ownerDid: any(named: 'ownerDid')),
+    ).thenAnswer((_) async => null);
     testSession = Session(
       did: 'did:web:test',
       handle: 'handle',
@@ -77,7 +91,9 @@ void main() {
     );
     when(() => mockSessionStorage.getSession()).thenAnswer((_) async => testSession);
     when(() => mockSearchRepository.watchRecentSearches()).thenAnswer((_) => Stream.value([]));
-    when(() => mockProfileRepository.getProfile(any())).thenAnswer(
+    when(
+      () => mockProfileRepository.getProfile(any(named: 'actor'), any(named: 'ownerDid')),
+    ).thenAnswer(
       (_) async => ProfileData(
         did: 'did:web:test',
         handle: 'handle',
@@ -91,18 +107,27 @@ void main() {
     );
 
     when(
-      () => mockFeedContentRepository.watchFeedContent(feedKey: any(named: 'feedKey')),
+      () => mockFeedContentRepository.watchFeedContent(
+        feedKey: any(named: 'feedKey'),
+        ownerDid: any(named: 'ownerDid'),
+      ),
     ).thenAnswer((_) => Stream.value([]));
     when(
-      () => mockFeedContentRepository.fetchAndCacheFeed(feedUri: any(named: 'feedUri')),
+      () => mockFeedContentRepository.fetchAndCacheFeed(
+        feedUri: any(named: 'feedUri'),
+        ownerDid: any(named: 'ownerDid'),
+      ),
     ).thenAnswer((_) async {});
     when(
       () => mockFeedContentRepository.fetchAndCacheFeed(
         cursor: any(named: 'cursor'),
         feedUri: any(named: 'feedUri'),
+        ownerDid: any(named: 'ownerDid'),
       ),
     ).thenAnswer((_) async {});
-    when(() => mockFeedContentRepository.getCursor(any())).thenAnswer((_) async => null);
+    when(
+      () => mockFeedContentRepository.getCursor(any(named: 'feedKey'), any(named: 'ownerDid')),
+    ).thenAnswer((_) async => null);
   });
 
   List<Override> getTestOverrides() {

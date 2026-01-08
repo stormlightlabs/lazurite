@@ -8,6 +8,7 @@ void main() {
   group('PreferenceSyncQueueDao', () {
     late AppDatabase db;
     late PreferenceSyncQueueDao dao;
+    const ownerDid = 'did:web:tester';
 
     setUp(() {
       db = AppDatabase(NativeDatabase.memory());
@@ -26,10 +27,11 @@ void main() {
           type: 'save',
           payload: 'at://test',
           createdAt: now,
+          ownerDid: ownerDid,
         ),
       );
 
-      final pending = await dao.getPendingItems();
+      final pending = await dao.getPendingItems(ownerDid);
       expect(pending.length, 1);
       expect(pending.first.category, 'feed');
       expect(pending.first.type, 'save');
@@ -37,9 +39,9 @@ void main() {
     });
 
     test('enqueueFeedSync adds feed item with correct category', () async {
-      await dao.enqueueFeedSync(type: 'save', feedUri: 'at://test-feed');
+      await dao.enqueueFeedSync(type: 'save', feedUri: 'at://test-feed', ownerDid: ownerDid);
 
-      final pending = await dao.getPendingItems();
+      final pending = await dao.getPendingItems(ownerDid);
       expect(pending.length, 1);
       expect(pending.first.category, 'feed');
       expect(pending.first.type, 'save');
@@ -50,9 +52,10 @@ void main() {
       await dao.enqueueBlueskyPrefSync(
         preferenceType: 'adultContent',
         preferenceData: '{"enabled": true}',
+        ownerDid: ownerDid,
       );
 
-      final pending = await dao.getPendingItems();
+      final pending = await dao.getPendingItems(ownerDid);
       expect(pending.length, 1);
       expect(pending.first.category, 'bluesky_pref');
       expect(pending.first.type, 'adultContent');
@@ -67,6 +70,7 @@ void main() {
           type: 'save',
           payload: 'first',
           createdAt: now,
+          ownerDid: ownerDid,
         ),
       );
       await dao.enqueue(
@@ -75,10 +79,11 @@ void main() {
           type: 'remove',
           payload: 'second',
           createdAt: now.add(const Duration(seconds: 1)),
+          ownerDid: ownerDid,
         ),
       );
 
-      final pending = await dao.getPendingItems();
+      final pending = await dao.getPendingItems(ownerDid);
       expect(pending.length, 2);
       expect(pending[0].payload, 'first');
       expect(pending[1].payload, 'second');
@@ -92,15 +97,16 @@ void main() {
           type: 'save',
           payload: 'at://test',
           createdAt: now,
+          ownerDid: ownerDid,
         ),
       );
 
-      var pending = await dao.getPendingItems();
+      var pending = await dao.getPendingItems(ownerDid);
       final id = pending.first.id;
 
       await dao.deleteItem(id);
 
-      pending = await dao.getPendingItems();
+      pending = await dao.getPendingItems(ownerDid);
       expect(pending, isEmpty);
     });
 
@@ -112,6 +118,7 @@ void main() {
           type: 'save',
           payload: '1',
           createdAt: now,
+          ownerDid: ownerDid,
         ),
       );
       await dao.enqueue(
@@ -120,12 +127,13 @@ void main() {
           type: 'save',
           payload: '2',
           createdAt: now,
+          ownerDid: ownerDid,
         ),
       );
 
-      await dao.clearQueue();
+      await dao.clearQueue(ownerDid);
 
-      final pending = await dao.getPendingItems();
+      final pending = await dao.getPendingItems(ownerDid);
       expect(pending, isEmpty);
     });
 
@@ -139,6 +147,7 @@ void main() {
             type: 'save',
             payload: 'at://retryable',
             createdAt: now,
+            ownerDid: ownerDid,
           ),
         );
 
@@ -151,6 +160,7 @@ void main() {
                 payload: 'at://almost-maxed',
                 createdAt: now,
                 retryCount: const Value(4),
+                ownerDid: ownerDid,
               ),
             );
 
@@ -163,10 +173,11 @@ void main() {
                 payload: 'at://maxed-out',
                 createdAt: now,
                 retryCount: const Value(5),
+                ownerDid: ownerDid,
               ),
             );
 
-        final retryable = await dao.getRetryableItems();
+        final retryable = await dao.getRetryableItems(ownerDid);
         expect(retryable.length, 2);
         expect(
           retryable.map((r) => r.payload),
@@ -176,28 +187,34 @@ void main() {
       });
 
       test('getRetryableFeedItems filters by feed category', () async {
-        await dao.enqueueFeedSync(type: 'save', feedUri: 'at://feed1');
-        await dao.enqueueFeedSync(type: 'remove', feedUri: 'at://feed2');
+        await dao.enqueueFeedSync(type: 'save', feedUri: 'at://feed1', ownerDid: ownerDid);
+        await dao.enqueueFeedSync(type: 'remove', feedUri: 'at://feed2', ownerDid: ownerDid);
         await dao.enqueueBlueskyPrefSync(
           preferenceType: 'adultContent',
           preferenceData: '{"enabled": true}',
+          ownerDid: ownerDid,
         );
 
-        final feedItems = await dao.getRetryableFeedItems();
+        final feedItems = await dao.getRetryableFeedItems(ownerDid);
         expect(feedItems.length, 2);
         expect(feedItems.every((item) => item.category == 'feed'), true);
         expect(feedItems.map((r) => r.payload), containsAll(['at://feed1', 'at://feed2']));
       });
 
       test('getRetryableBlueskyPrefItems filters by bluesky_pref category', () async {
-        await dao.enqueueFeedSync(type: 'save', feedUri: 'at://feed1');
+        await dao.enqueueFeedSync(type: 'save', feedUri: 'at://feed1', ownerDid: ownerDid);
         await dao.enqueueBlueskyPrefSync(
           preferenceType: 'adultContent',
           preferenceData: '{"enabled": true}',
+          ownerDid: ownerDid,
         );
-        await dao.enqueueBlueskyPrefSync(preferenceType: 'contentLabels', preferenceData: '[]');
+        await dao.enqueueBlueskyPrefSync(
+          preferenceType: 'contentLabels',
+          preferenceData: '[]',
+          ownerDid: ownerDid,
+        );
 
-        final prefItems = await dao.getRetryableBlueskyPrefItems();
+        final prefItems = await dao.getRetryableBlueskyPrefItems(ownerDid);
         expect(prefItems.length, 2);
         expect(prefItems.every((item) => item.category == 'bluesky_pref'), true);
         expect(prefItems.map((r) => r.payload), containsAll(['{"enabled": true}', '[]']));
@@ -211,21 +228,22 @@ void main() {
             type: 'save',
             payload: 'at://test',
             createdAt: now,
+            ownerDid: ownerDid,
           ),
         );
 
-        var items = await dao.getPendingItems();
+        var items = await dao.getPendingItems(ownerDid);
         expect(items.first.retryCount, 0);
 
         await dao.incrementRetryCount(id);
 
-        items = await dao.getPendingItems();
+        items = await dao.getPendingItems(ownerDid);
         expect(items.first.retryCount, 1);
 
         await dao.incrementRetryCount(id);
         await dao.incrementRetryCount(id);
 
-        items = await dao.getPendingItems();
+        items = await dao.getPendingItems(ownerDid);
         expect(items.first.retryCount, 3);
       });
 
@@ -242,6 +260,7 @@ void main() {
                 payload: 'at://old-failed',
                 createdAt: now.subtract(const Duration(days: 45)),
                 retryCount: const Value(5),
+                ownerDid: ownerDid,
               ),
             );
 
@@ -254,6 +273,7 @@ void main() {
                 payload: 'at://old-retryable',
                 createdAt: now.subtract(const Duration(days: 45)),
                 retryCount: const Value(3),
+                ownerDid: ownerDid,
               ),
             );
 
@@ -266,6 +286,7 @@ void main() {
                 payload: 'at://recent-failed',
                 createdAt: now.subtract(const Duration(days: 5)),
                 retryCount: const Value(5),
+                ownerDid: ownerDid,
               ),
             );
 
@@ -275,13 +296,14 @@ void main() {
             type: 'save',
             payload: 'at://new-item',
             createdAt: now,
+            ownerDid: ownerDid,
           ),
         );
 
         final deleted = await dao.cleanupOldFailedItems(threshold);
         expect(deleted, 1);
 
-        final remaining = await dao.getPendingItems();
+        final remaining = await dao.getPendingItems(ownerDid);
         expect(remaining.length, 3);
         expect(
           remaining.map((r) => r.payload),
@@ -298,13 +320,14 @@ void main() {
             type: 'save',
             payload: 'at://test',
             createdAt: now,
+            ownerDid: ownerDid,
           ),
         );
 
         final deleted = await dao.cleanupOldFailedItems(now.subtract(const Duration(days: 30)));
         expect(deleted, 0);
 
-        final remaining = await dao.getPendingItems();
+        final remaining = await dao.getPendingItems(ownerDid);
         expect(remaining.length, 1);
       });
     });

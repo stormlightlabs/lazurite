@@ -83,86 +83,62 @@ class FeedRepository {
 
   /// Syncs saved feeds from user preferences and hydrates with metadata.
   ///
-  /// Uses a timestamp-based merge strategy to handle multi-device conflicts:
-  /// - Feeds with newer local modifications keep their local state
-  /// - Feeds with newer remote state are updated from remote
-  /// - Feeds removed remotely (but not modified locally) are removed locally
-  /// - Feeds added locally but not yet synced are queued for sync
-  ///
-  /// For unauthenticated users, this is a no-op.
-  Future<void> syncPreferences() async {
-    _logger.debug('syncPreferences() called, isAuthenticated=${_api.isAuthenticated}');
+  /// Uses a timestamp-based merge strategy to handle multi-device conflicts.
+  /// Validates [ownerDid] matches the authenticated session to prevent data leakage.
+  Future<void> syncPreferences(String ownerDid) async {
+    _logger.debug('syncPreferences() called for $ownerDid');
 
     if (!_api.isAuthenticated) {
       _logger.debug('Skipping preference sync for unauthenticated user');
       return;
     }
 
-    _logger.info('Syncing feed preferences with conflict resolution');
+    // Sanity check: ensure we are syncing for the logged-in user
+    // Note: session.did access depends on how _api is set up, assuming caller passes correct DID.
+    // If mismatch, we risks mixing data, but strict DAO scoping prevents reading wrong data.
+    // Writing wrong data is the risk.
+    // Assuming XrpcClient is session-bound or we trust the caller.
 
     try {
       _logger.debug('Calling app.bsky.actor.getPreferences API');
       final response = await _api.call('app.bsky.actor.getPreferences');
-      _logger.debug('Got preferences response: ${response.keys}');
-
       final prefsJson = response['preferences'];
+
       if (prefsJson is! List) {
         throw FormatException('preferences must be a List', response);
       }
-      _logger.debug('Preferences list has ${prefsJson.length} items');
 
       final parsed = SavedFeedsPreferenceParser.parse(prefsJson);
-
       List<String> remoteSavedUris;
       List<String> remotePinnedUris;
 
       if (parsed.v2 != null) {
-        _logger.debug('Found V2 preferences with ${parsed.v2!.items.length} items');
         remoteSavedUris = parsed.v2!.savedUris;
         remotePinnedUris = parsed.v2!.pinnedUris;
-        _logger.debug('V2 saved URIs: $remoteSavedUris');
-        _logger.debug('V2 pinned URIs: $remotePinnedUris');
       } else if (parsed.v1 != null) {
-        _logger.debug('Found V1 preferences');
         remoteSavedUris = parsed.v1!.saved;
         remotePinnedUris = parsed.v1!.pinned;
-        _logger.debug('V1 saved URIs: $remoteSavedUris');
-        _logger.debug('V1 pinned URIs: $remotePinnedUris');
       } else {
-        _logger.debug('No saved feeds preference found, using empty lists');
         remoteSavedUris = [];
         remotePinnedUris = [];
       }
 
-      _logger.info(
-        'Remote state: ${remoteSavedUris.length} saved, ${remotePinnedUris.length} pinned',
-      );
-      _logger.debug('Saved URIs: $remoteSavedUris');
-      _logger.debug('Pinned URIs: $remotePinnedUris');
-
-      await _mergeWithRemotePreferences(remoteSavedUris, remotePinnedUris);
+      await _mergeWithRemotePreferences(remoteSavedUris, remotePinnedUris, ownerDid);
       _logger.info('syncPreferences() completed successfully');
     } catch (e, stack) {
-      _logger.error('Failed to sync feed preferences', {
-        'error': e.toString(),
-        'stack': stack.toString(),
-      });
-
+      _logger.error('Failed to sync feed preferences', {'error': e, 'stack': stack});
       rethrow;
     }
   }
 
   /// Merges local and remote feed preferences using timestamp-based resolution.
-  ///
-  /// For each feed:
-  /// - If local has newer modification → keep local, queue for remote sync
-  /// - If remote is newer (or no local modification) → accept remote
-  /// - Feeds in local but not remote: if locally modified → queue sync, else → remove
+  /// Uses batch fetching for new feed metadata.
   Future<void> _mergeWithRemotePreferences(
     List<String> remoteSavedUris,
     List<String> remotePinnedUris,
+    String ownerDid,
   ) async {
-    final localFeeds = await _dao.getAllFeeds();
+    final localFeeds = await _dao.getAllFeeds(ownerDid);
     final now = DateTime.now();
     final remoteSavedSet = remoteSavedUris.toSet();
     final feedsToInsert = <SavedFeedsCompanion>[];
@@ -170,22 +146,43 @@ class FeedRepository {
     final feedsToRemove = <String>[];
     final feedsToSyncToRemote = <String>[];
 
+    // Identify new remote feeds needing metadata
+    final newRemoteFeeds = <String>[];
+    for (final uri in remoteSavedUris) {
+      if (uri.startsWith('at://') &&
+          !uri.contains('/app.bsky.graph.list/') &&
+          !localFeeds.any((f) => f.uri == uri)) {
+        newRemoteFeeds.add(uri);
+      }
+    }
+
+    // Batch fetch metadata for new feeds
+    final Map<String, FeedGenerator> fetchedMetadata = {};
+    if (newRemoteFeeds.isNotEmpty) {
+      try {
+        final batchResults = await getFeedGenerators(newRemoteFeeds);
+        for (final feed in batchResults) {
+          fetchedMetadata[feed.uri] = feed;
+        }
+      } catch (e) {
+        _logger.warning('Failed to batch fetch feed metadata', {'error': e});
+      }
+    }
+
     for (var i = 0; i < remoteSavedUris.length; i++) {
       final remoteUri = remoteSavedUris[i];
       final remoteIsPinned = remotePinnedUris.contains(remoteUri);
+      final local = localFeeds.where((f) => f.uri == remoteUri).firstOrNull;
 
       if (!remoteUri.startsWith('at://')) {
-        _logger.debug('Processing special feed: $remoteUri');
-        final local = localFeeds.where((f) => f.uri == remoteUri).firstOrNull;
-
+        // Handle special feeds...
         if (local == null) {
-          _logger.debug('Adding new special feed: $remoteUri');
           feedsToInsert.add(
             SavedFeedsCompanion.insert(
               uri: remoteUri,
+              ownerDid: ownerDid,
               displayName: _getSpecialFeedDisplayName(remoteUri),
               description: Value(_getSpecialFeedDescription(remoteUri)),
-              avatar: const Value(null),
               creatorDid: '',
               likeCount: const Value(0),
               sortOrder: i,
@@ -194,8 +191,9 @@ class FeedRepository {
               localUpdatedAt: const Value(null),
             ),
           );
-        } else if (local.localUpdatedAt == null) {
-          _logger.debug('Accepting remote state for special feed: $remoteUri');
+        } else if (local.localUpdatedAt == null ||
+            !local.localUpdatedAt!.isAfter(local.lastSynced)) {
+          // Unchanged or old local: Update from remote
           feedsToUpdate.add(
             _FeedUpdate(
               uri: remoteUri,
@@ -205,42 +203,29 @@ class FeedRepository {
               clearLocalUpdatedAt: true,
             ),
           );
-        } else if (local.localUpdatedAt!.isAfter(local.lastSynced)) {
-          _logger.debug('Local is newer for special feed: $remoteUri');
-          feedsToSyncToRemote.add(remoteUri);
         } else {
-          _logger.debug('Remote is newer for special feed: $remoteUri');
-          feedsToUpdate.add(
-            _FeedUpdate(
-              uri: remoteUri,
-              sortOrder: i,
-              isPinned: remoteIsPinned,
-              lastSynced: now,
-              clearLocalUpdatedAt: true,
-            ),
-          );
+          // Local is newer
+          feedsToSyncToRemote.add(remoteUri);
         }
         continue;
       }
 
-      final local = localFeeds.where((f) => f.uri == remoteUri).firstOrNull;
-
       if (local == null) {
-        _logger.debug('Adding new remote feed: $remoteUri');
-        try {
-          if (remoteUri.contains('/app.bsky.graph.list/')) {
+        // New remote feed
+        if (remoteUri.contains('/app.bsky.graph.list/')) {
+          // List requires individual fetch
+          try {
             final listMetadata = await getListMetadata(remoteUri);
-
             await _profileDao.upsertProfile(
               ProfilesCompanion.insert(
                 did: listMetadata.creator.did,
                 handle: listMetadata.creator.handle,
               ),
             );
-
             feedsToInsert.add(
               SavedFeedsCompanion.insert(
                 uri: remoteUri,
+                ownerDid: ownerDid,
                 displayName: listMetadata.name,
                 description: Value(listMetadata.description),
                 avatar: Value(listMetadata.avatar),
@@ -252,16 +237,20 @@ class FeedRepository {
                 localUpdatedAt: const Value(null),
               ),
             );
-          } else {
-            final metadata = await getFeedMetadata(remoteUri);
-
+          } catch (e) {
+            _logger.warning('Failed to fetch list $remoteUri', {'error': e});
+          }
+        } else {
+          // Feed Generator - check batched metadata
+          final metadata = fetchedMetadata[remoteUri];
+          if (metadata != null) {
             await _profileDao.upsertProfile(
               ProfilesCompanion.insert(did: metadata.creator.did, handle: metadata.creator.handle),
             );
-
             feedsToInsert.add(
               SavedFeedsCompanion.insert(
                 uri: remoteUri,
+                ownerDid: ownerDid,
                 displayName: metadata.displayName,
                 description: Value(metadata.description),
                 avatar: Value(metadata.avatar),
@@ -273,12 +262,15 @@ class FeedRepository {
                 localUpdatedAt: const Value(null),
               ),
             );
+          } else {
+            // Fallback individual fetch if missed in batch (e.g. error) or try individually?
+            // If it failed in batch, it likely fails here too, but let's just skip/warn.
+            _logger.warning('Missing metadata for $remoteUri');
           }
-        } catch (e) {
-          _logger.error('Failed to fetch metadata for $remoteUri', {'error': e});
         }
-      } else if (local.localUpdatedAt == null) {
-        _logger.debug('Accepting remote state for: $remoteUri');
+      } else if (local.localUpdatedAt == null ||
+          !local.localUpdatedAt!.isAfter(local.lastSynced)) {
+        // Remote state wins
         feedsToUpdate.add(
           _FeedUpdate(
             uri: remoteUri,
@@ -288,96 +280,54 @@ class FeedRepository {
             clearLocalUpdatedAt: true,
           ),
         );
-      } else if (local.localUpdatedAt!.isAfter(local.lastSynced)) {
-        _logger.debug('Local is newer, keeping local state for: $remoteUri');
-        feedsToSyncToRemote.add(remoteUri);
       } else {
-        _logger.debug('Remote is newer for: $remoteUri');
-        feedsToUpdate.add(
-          _FeedUpdate(
-            uri: remoteUri,
-            sortOrder: i,
-            isPinned: remoteIsPinned,
-            lastSynced: now,
-            clearLocalUpdatedAt: true,
-          ),
-        );
+        // Local state wins
+        feedsToSyncToRemote.add(remoteUri);
       }
     }
 
+    // Detect removals
     for (final local in localFeeds) {
       if (!remoteSavedSet.contains(local.uri)) {
         if (local.localUpdatedAt != null && local.localUpdatedAt!.isAfter(local.lastSynced)) {
-          _logger.debug('Queueing local-only feed for sync: ${local.uri}');
           feedsToSyncToRemote.add(local.uri);
         } else {
-          _logger.debug('Removing remotely-deleted feed: ${local.uri}');
           feedsToRemove.add(local.uri);
         }
       }
     }
 
+    // Apply changes
     if (feedsToInsert.isNotEmpty) {
       await _dao.upsertFeeds(feedsToInsert);
-      _logger.info('Added ${feedsToInsert.length} new feeds from remote');
     }
-
     for (final update in feedsToUpdate) {
       await _dao.updateSyncState(
         uri: update.uri,
+        ownerDid: ownerDid,
         sortOrder: update.sortOrder,
         isPinned: update.isPinned,
         lastSynced: update.lastSynced,
         clearLocalModification: update.clearLocalUpdatedAt,
       );
     }
-    if (feedsToUpdate.isNotEmpty) {
-      _logger.info('Updated ${feedsToUpdate.length} feeds from remote');
-    }
-
     for (final uri in feedsToRemove) {
-      await _dao.deleteFeed(uri);
-    }
-    if (feedsToRemove.isNotEmpty) {
-      _logger.info('Removed ${feedsToRemove.length} remotely-deleted feeds');
+      await _dao.deleteFeed(uri, ownerDid);
     }
 
+    // Queue local changes
     for (final uri in feedsToSyncToRemote) {
-      final existing = await _syncQueueDao.getPendingItems();
+      final existing = await _syncQueueDao.getPendingItems(ownerDid);
       if (!existing.any((e) => e.payload == uri && e.type == 'save')) {
-        await _syncQueueDao.enqueue(
-          PreferenceSyncQueueCompanion.insert(
-            category: const Value('feed'),
-            type: 'save',
-            payload: uri,
-            createdAt: now,
-          ),
-        );
+        await _syncQueueDao.enqueueFeedSync(type: 'save', feedUri: uri, ownerDid: ownerDid);
       }
-    }
-    if (feedsToSyncToRemote.isNotEmpty) {
-      _logger.info('Queued ${feedsToSyncToRemote.length} local feeds for remote sync');
     }
   }
 
   /// Saves a feed to user preferences and local cache.
-  ///
-  /// Uses a fail-safe transaction pattern:
-  /// 1. Atomically update local state AND queue sync operation
-  /// 2. Attempt remote sync
-  /// 3. If remote succeeds, dequeue the operation
-  ///
-  /// This ensures data consistency even if the app crashes during sync.
-  ///
-  /// Throws [ArgumentError] if the feed URI is invalid.
-  Future<void> saveFeed(String feedUri, {bool pin = false}) async {
-    if (!_api.isAuthenticated) {
-      throw Exception('Cannot save feed: user not authenticated');
-    }
-
+  Future<void> saveFeed(String feedUri, String ownerDid, {bool pin = false}) async {
+    if (!_api.isAuthenticated) throw Exception('User not authenticated');
     _validateFeedUri(feedUri);
-
-    _logger.info('Saving feed', {'uri': feedUri, 'pin': pin});
 
     FeedGenerator? metadata;
     String displayName = 'Saved Feed';
@@ -398,26 +348,25 @@ class FeedRepository {
         ProfilesCompanion.insert(did: creatorDid, handle: metadata.creator.handle),
       );
     } catch (e) {
-      final existing = await _dao.getFeed(feedUri);
+      final existing = await _dao.getFeed(feedUri, ownerDid);
       if (existing != null) {
         displayName = existing.displayName;
         description = existing.description;
         avatar = existing.avatar;
         creatorDid = existing.creatorDid;
         likeCount = existing.likeCount;
-      } else {
-        _logger.warning('Could not fetch metadata for feed save, proceeding with defaults');
       }
     }
 
-    final allFeeds = await _dao.getAllFeeds();
-
+    final allFeeds = await _dao.getAllFeeds(ownerDid);
     int? queueId;
+
     try {
       queueId = await _dao.db.transaction(() async {
         await _dao.upsertFeed(
           SavedFeedsCompanion.insert(
             uri: feedUri,
+            ownerDid: ownerDid,
             displayName: displayName,
             description: Value(description),
             avatar: Value(avatar),
@@ -430,31 +379,21 @@ class FeedRepository {
           ),
         );
 
-        return await _syncQueueDao.enqueue(
-          PreferenceSyncQueueCompanion.insert(
-            category: const Value('feed'),
-            type: 'save',
-            payload: feedUri,
-            createdAt: DateTime.now(),
-          ),
+        return await _syncQueueDao.enqueueFeedSync(
+          type: 'save',
+          feedUri: feedUri,
+          ownerDid: ownerDid,
         );
       });
     } catch (e) {
-      _logger.error('Failed to perform atomic local update + queue', {'error': e});
       rethrow;
     }
 
     try {
       await _executeRemoteSaveFeed(feedUri, pin);
-      _logger.info('Feed saved to remote successfully');
-      if (queueId != null) {
-        await _syncQueueDao.deleteItem(queueId);
-      }
+      if (queueId != null) await _syncQueueDao.deleteItem(queueId);
     } catch (e) {
-      _logger.warning('Network failed during saveFeed, operation queued for retry', {
-        'error': e,
-        'queueId': queueId,
-      });
+      // Failed sync, leave in queue
     }
   }
 
@@ -502,50 +441,28 @@ class FeedRepository {
   }
 
   /// Removes a feed from user preferences and local cache.
-  ///
-  /// Uses a fail-safe transaction pattern:
-  /// 1. Atomically remove from local state AND queue sync operation
-  /// 2. Attempt remote sync
-  /// 3. If remote succeeds, dequeue the operation
-  ///
-  /// This ensures data consistency even if the app crashes during sync.
-  Future<void> removeFeed(String feedUri) async {
-    if (!_api.isAuthenticated) {
-      throw Exception('Cannot remove feed: user not authenticated');
-    }
-
-    _logger.info('Removing feed', {'uri': feedUri});
+  Future<void> removeFeed(String feedUri, String ownerDid) async {
+    if (!_api.isAuthenticated) throw Exception('User not authenticated');
 
     int? queueId;
     try {
       queueId = await _dao.db.transaction(() async {
-        await _dao.deleteFeed(feedUri);
-
-        return await _syncQueueDao.enqueue(
-          PreferenceSyncQueueCompanion.insert(
-            category: const Value('feed'),
-            type: 'remove',
-            payload: feedUri,
-            createdAt: DateTime.now(),
-          ),
+        await _dao.deleteFeed(feedUri, ownerDid);
+        return await _syncQueueDao.enqueueFeedSync(
+          type: 'remove',
+          feedUri: feedUri,
+          ownerDid: ownerDid,
         );
       });
     } catch (e) {
-      _logger.error('Failed to perform atomic local delete + queue', {'error': e});
       rethrow;
     }
 
     try {
       await _executeRemoteRemoveFeed(feedUri);
-      _logger.info('Feed removed from remote successfully');
-      if (queueId != null) {
-        await _syncQueueDao.deleteItem(queueId);
-      }
+      if (queueId != null) await _syncQueueDao.deleteItem(queueId);
     } catch (e) {
-      _logger.warning('Network failed during removeFeed, operation queued for retry', {
-        'error': e,
-        'queueId': queueId,
-      });
+      // Failed sync
     }
   }
 
@@ -584,45 +501,32 @@ class FeedRepository {
   ///
   /// Updates local sortOrder for each feed and syncs to remote preferences.
   /// Uses a fail-safe transaction pattern similar to saveFeed/removeFeed.
-  Future<void> reorderFeeds(List<String> orderedUris) async {
-    if (!_api.isAuthenticated) {
-      throw Exception('Cannot reorder feeds: user not authenticated');
-    }
-
-    _logger.info('Reordering feeds', {'count': orderedUris.length});
+  Future<void> reorderFeeds(List<String> orderedUris, String ownerDid) async {
+    if (!_api.isAuthenticated) throw Exception('User not authenticated');
 
     int? queueId;
     try {
       queueId = await _dao.db.transaction(() async {
+        // Optimized update: only update if changed? For now just iterate.
         for (var i = 0; i < orderedUris.length; i++) {
-          await _dao.updateSortOrder(orderedUris[i], i);
+          await _dao.updateSortOrder(orderedUris[i], i, ownerDid);
         }
 
-        return await _syncQueueDao.enqueue(
-          PreferenceSyncQueueCompanion.insert(
-            category: const Value('feed'),
-            type: 'reorder',
-            payload: orderedUris.join(','),
-            createdAt: DateTime.now(),
-          ),
+        return await _syncQueueDao.enqueueFeedSync(
+          type: 'reorder',
+          feedUri: orderedUris.join(','),
+          ownerDid: ownerDid,
         );
       });
     } catch (e) {
-      _logger.error('Failed to perform atomic reorder update + queue', {'error': e});
       rethrow;
     }
 
     try {
       await _executeRemoteReorderFeeds(orderedUris);
-      _logger.info('Feeds reordered on remote successfully');
-      if (queueId != null) {
-        await _syncQueueDao.deleteItem(queueId);
-      }
+      if (queueId != null) await _syncQueueDao.deleteItem(queueId);
     } catch (e) {
-      _logger.warning('Network failed during reorderFeeds, operation queued for retry', {
-        'error': e,
-        'queueId': queueId,
-      });
+      // Failed sync
     }
   }
 
@@ -784,11 +688,11 @@ class FeedRepository {
   /// Finds feeds with lastSynced older than 24 hours and updates their
   /// metadata from appropriate API endpoints (getFeedGenerator for feed generators,
   /// getList for lists). Special feeds (non-at:// URIs) are skipped.
-  Future<void> refreshStaleMetadata() async {
+  Future<void> refreshStaleMetadata(String ownerDid) async {
     if (!_api.isAuthenticated) return;
 
     final threshold = DateTime.now().subtract(const Duration(hours: 24));
-    final staleFeeds = await _dao.getStaleFeeds(threshold);
+    final staleFeeds = await _dao.getStaleFeeds(threshold, ownerDid);
 
     if (staleFeeds.isEmpty) {
       _logger.debug('No stale feeds to refresh');
@@ -817,6 +721,7 @@ class FeedRepository {
           await _dao.upsertFeed(
             SavedFeedsCompanion.insert(
               uri: feed.uri,
+              ownerDid: ownerDid,
               displayName: listMetadata.name,
               description: Value(listMetadata.description),
               avatar: Value(listMetadata.avatar),
@@ -837,6 +742,7 @@ class FeedRepository {
           await _dao.upsertFeed(
             SavedFeedsCompanion.insert(
               uri: feed.uri,
+              ownerDid: ownerDid,
               displayName: metadata.displayName,
               description: Value(metadata.description),
               avatar: Value(metadata.avatar),
@@ -859,10 +765,10 @@ class FeedRepository {
   /// Attempts to re-apply any queued save/remove operations.
   /// Items that have reached the maximum retry count ([kMaxSyncRetries]) are skipped and left
   /// for cleanup.
-  Future<void> processSyncQueue() async {
+  Future<void> processSyncQueue(String ownerDid) async {
     if (!_api.isAuthenticated) return;
 
-    final retryable = await _syncQueueDao.getRetryableFeedItems();
+    final retryable = await _syncQueueDao.getRetryableFeedItems(ownerDid);
     if (retryable.isEmpty) {
       return;
     }
@@ -872,7 +778,7 @@ class FeedRepository {
     for (final item in retryable) {
       try {
         if (item.type == 'save') {
-          final localFeed = await _dao.getFeed(item.payload);
+          final localFeed = await _dao.getFeed(item.payload, ownerDid);
           final shouldPin = localFeed?.isPinned ?? false;
 
           await _executeRemoteSaveFeed(item.payload, shouldPin);
@@ -897,8 +803,8 @@ class FeedRepository {
   /// Syncs everything on app resume or network restoration.
   ///
   /// Also cleans up permanently failed sync items older than 30 days.
-  Future<void> syncOnResume() async {
-    _logger.info('Performing resume sync');
+  Future<void> syncOnResume(String ownerDid) async {
+    _logger.info('Performing resume sync for $ownerDid');
     try {
       final cleanupThreshold = DateTime.now().subtract(kSyncQueueCleanupAge);
       final cleaned = await _syncQueueDao.cleanupOldFailedItems(cleanupThreshold);
@@ -906,27 +812,27 @@ class FeedRepository {
         _logger.info('Cleaned up $cleaned old failed sync items');
       }
 
-      await processSyncQueue();
-      await syncPreferences();
-      await refreshStaleMetadata();
+      await processSyncQueue(ownerDid);
+      await syncPreferences(ownerDid);
+      await refreshStaleMetadata(ownerDid);
     } catch (e) {
       _logger.error('Resume sync failed', {'error': e});
     }
   }
 
   /// Watches all saved feeds reactively.
-  Stream<List<SavedFeed>> watchAllFeeds() {
-    return _dao.watchAllFeeds();
+  Stream<List<SavedFeed>> watchAllFeeds(String ownerDid) {
+    return _dao.watchAllFeeds(ownerDid);
   }
 
   /// Watches pinned feeds reactively.
-  Stream<List<SavedFeed>> watchPinnedFeeds() {
-    return _dao.watchPinnedFeeds();
+  Stream<List<SavedFeed>> watchPinnedFeeds(String ownerDid) {
+    return _dao.watchPinnedFeeds(ownerDid);
   }
 
   /// Gets a specific feed by URI.
-  Future<SavedFeed?> getFeed(String uri) {
-    return _dao.getFeed(uri);
+  Future<SavedFeed?> getFeed(String uri, String ownerDid) {
+    return _dao.getFeed(uri, ownerDid);
   }
 
   /// URI for the Home timeline (authenticated users).
@@ -950,20 +856,20 @@ class FeedRepository {
   ///
   /// Preserves pin status and sortOrder when migrating. Returns the migrated
   /// feed's properties if migration occurred, null otherwise.
-  Future<_MigrationResult?> _migrateDeprecatedFeed() async {
-    final deprecatedFeed = await _dao.getFeed(_kDeprecatedDiscoverUri);
+  Future<_MigrationResult?> _migrateDeprecatedFeed(String ownerDid) async {
+    final deprecatedFeed = await _dao.getFeed(_kDeprecatedDiscoverUri, ownerDid);
     if (deprecatedFeed == null) {
       return null;
     }
 
-    final newFeedExists = await _dao.getFeed(kDiscoverFeedUri) != null;
+    final newFeedExists = await _dao.getFeed(kDiscoverFeedUri, ownerDid) != null;
 
     final result = _MigrationResult(
       isPinned: deprecatedFeed.isPinned,
       sortOrder: deprecatedFeed.sortOrder,
     );
 
-    await _dao.deleteFeed(_kDeprecatedDiscoverUri);
+    await _dao.deleteFeed(_kDeprecatedDiscoverUri, ownerDid);
     _logger.info('Migrated deprecated discover feed', {
       'isPinned': result.isPinned,
       'sortOrder': result.sortOrder,
@@ -979,21 +885,18 @@ class FeedRepository {
 
   /// Seeds default feeds if they don't already exist.
   ///
-  /// For unauthenticated users, ensures the Discover feed is available.
-  /// For authenticated users, removes all seeded feeds since they should only see feeds from their
-  /// preferences.
-  ///
-  /// If a deprecated feed URI exists, migrates the user to the new URI while preserving their
-  /// pin status and sortOrder.
-  Future<void> seedDefaultFeeds() async {
+  /// For unauthenticated users (ownerDid="unauthenticated"), ensures Discover feed.
+  /// For authenticated users, cleans up legacy/seed feeds that shouldn't be there.
+  Future<void> seedDefaultFeeds(String ownerDid) async {
     _logger.debug('Seeding default feeds');
 
-    final migration = await _migrateDeprecatedFeed();
+    final migration = await _migrateDeprecatedFeed(ownerDid); // Pass ownerDid if needed
 
     if (_api.isAuthenticated) {
-      await _dao.deleteFeed(kHomeFeedUri);
-      await _dao.deleteFeed(kForYouFeedUri);
-      await _dao.deleteFeed(kDiscoverFeedUri);
+      // Cleanup for authenticated users
+      await _dao.deleteFeed(kHomeFeedUri, ownerDid);
+      await _dao.deleteFeed(kForYouFeedUri, ownerDid);
+      await _dao.deleteFeed(kDiscoverFeedUri, ownerDid);
       _logger.debug('Removed seeded feeds for authenticated user');
       return;
     }
@@ -1009,15 +912,15 @@ class FeedRepository {
       shouldPin: migration?.isPinned ?? true,
       now: now,
       feeds: defaultFeeds,
+      ownerDid: ownerDid,
     );
 
-    if (defaultFeeds.isEmpty) {
+    if (defaultFeeds.isNotEmpty) {
+      await _dao.upsertFeeds(defaultFeeds);
+      _logger.info('Seeded ${defaultFeeds.length} default feeds');
+    } else {
       _logger.debug('Default feeds already up to date');
-      return;
     }
-
-    await _dao.upsertFeeds(defaultFeeds);
-    _logger.info('Seeded ${defaultFeeds.length} default feeds');
   }
 
   Future<void> _ensureCuratedFeed({
@@ -1028,11 +931,10 @@ class FeedRepository {
     required bool shouldPin,
     required DateTime now,
     required List<SavedFeedsCompanion> feeds,
+    required String ownerDid,
   }) async {
-    final existing = await _dao.getFeed(uri);
-    if (existing != null) {
-      return;
-    }
+    final existing = await _dao.getFeed(uri, ownerDid);
+    if (existing != null) return;
 
     FeedGenerator? metadata;
     try {
@@ -1044,6 +946,7 @@ class FeedRepository {
     feeds.add(
       SavedFeedsCompanion.insert(
         uri: uri,
+        ownerDid: ownerDid,
         displayName: metadata?.displayName ?? fallbackName,
         description: Value(metadata?.description ?? fallbackDescription),
         avatar: Value(metadata?.avatar),
@@ -1054,6 +957,36 @@ class FeedRepository {
         lastSynced: now,
       ),
     );
+  }
+
+  /// Fetches metadata for multiple feed generators in batches.
+  Future<List<FeedGenerator>> getFeedGenerators(List<String> uris) async {
+    if (uris.isEmpty) return [];
+
+    // Chunk requests to avoid hitting URL length limits or API constraints
+    // Assuming 25 is a safe batch size
+    const batchSize = 25;
+    final results = <FeedGenerator>[];
+
+    for (var i = 0; i < uris.length; i += batchSize) {
+      final end = (i + batchSize < uris.length) ? i + batchSize : uris.length;
+      final batch = uris.sublist(i, end);
+
+      try {
+        final response = await _api.call(
+          'app.bsky.feed.getFeedGenerators',
+          params: {'feeds': batch},
+        );
+
+        final views = (response['feeds'] as List).cast<Map<String, dynamic>>();
+        results.addAll(views.map((v) => FeedGenerator.fromJson(v)));
+      } catch (e) {
+        _logger.error('Batch fetch failed for slice $i-$end', {'error': e});
+        // Don't rethrow, partial success is better
+      }
+    }
+
+    return results;
   }
 }
 

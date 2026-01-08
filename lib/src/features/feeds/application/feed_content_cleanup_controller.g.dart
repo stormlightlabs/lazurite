@@ -56,4 +56,4 @@ final class FeedContentCleanupControllerProvider extends $FunctionalProvider<voi
   }
 }
 
-String _$feedContentCleanupControllerHash() => r'eb2027b4d945ded8b13c6919bc993e8881fe1e5d';
+String _$feedContentCleanupControllerHash() => r'721c568678ab6838264702798fcb43a441122d06';

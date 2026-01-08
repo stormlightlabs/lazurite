@@ -27,16 +27,21 @@ class OutboxRepository {
   ///
   /// The message is persisted to the outbox and displayed immediately
   /// with pending status. Returns the outbox ID for tracking.
-  Future<String> enqueueSend(String convoId, String text) async {
+  Future<String> enqueueSend(String convoId, String text, String ownerDid) async {
     final outboxId = _uuid.v4();
     final now = DateTime.now();
 
-    _logger.info('Enqueueing message', {'outboxId': outboxId, 'convoId': convoId});
+    _logger.info('Enqueueing message', {
+      'outboxId': outboxId,
+      'convoId': convoId,
+      'ownerDid': ownerDid,
+    });
 
     await _outboxDao.enqueue(
       DmOutboxCompanion.insert(
         outboxId: outboxId,
         convoId: convoId,
+        ownerDid: ownerDid,
         messageText: text,
         status: 'pending',
         createdAt: now,
@@ -47,7 +52,8 @@ class OutboxRepository {
       DmMessagesCompanion.insert(
         messageId: 'pending:$outboxId',
         convoId: convoId,
-        senderDid: '',
+        ownerDid: ownerDid,
+        senderDid: ownerDid,
         content: text,
         sentAt: now,
         status: 'pending',
@@ -59,8 +65,8 @@ class OutboxRepository {
   }
 
   /// Returns a stream of all pending outbox items.
-  Stream<List<OutboxItem>> watchPending() {
-    return _outboxDao.watchPending().map((items) {
+  Stream<List<OutboxItem>> watchPending(String ownerDid) {
+    return _outboxDao.watchPending(ownerDid).map((items) {
       return items.map(_toOutboxItem).toList();
     });
   }
@@ -69,14 +75,14 @@ class OutboxRepository {
   ///
   /// Processes items oldest-first, one at a time per conversation.
   /// Uses exponential backoff for retries.
-  Future<void> processOutbox() async {
-    final pending = await _outboxDao.getPending();
+  Future<void> processOutbox(String ownerDid) async {
+    final pending = await _outboxDao.getPending(ownerDid);
     if (pending.isEmpty) {
-      _logger.debug('No pending outbox items', {});
+      _logger.debug('No pending outbox items', {'ownerDid': ownerDid});
       return;
     }
 
-    _logger.info('Processing outbox', {'pendingCount': pending.length});
+    _logger.info('Processing outbox', {'pendingCount': pending.length, 'ownerDid': ownerDid});
 
     final processingConvos = <String>{};
 
@@ -103,42 +109,56 @@ class OutboxRepository {
   }
 
   /// Retries a failed message (user-initiated).
-  Future<void> retryMessage(String outboxId) async {
-    _logger.info('Retrying message', {'outboxId': outboxId});
+  Future<void> retryMessage(String outboxId, String ownerDid) async {
+    _logger.info('Retrying message', {'outboxId': outboxId, 'ownerDid': ownerDid});
 
     await _outboxDao.resetForRetry(outboxId);
 
-    await _messagesDao.updateMessageStatus(messageId: 'pending:$outboxId', status: 'pending');
+    await _messagesDao.updateMessageStatus(
+      messageId: 'pending:$outboxId',
+      status: 'pending',
+      ownerDid: ownerDid,
+    );
 
     final item = await _outboxDao.getById(outboxId);
     if (item != null) {
+      // Ensure we only retry if owner matches
+      if (item.ownerDid != ownerDid) {
+        _logger.warning('Skipping retry: owner mismatch', {
+          'itemOwner': item.ownerDid,
+          'reqOwner': ownerDid,
+        });
+        return;
+      }
       await _sendMessage(item);
     }
   }
 
   /// Deletes a failed message from the outbox.
-  Future<void> deleteOutboxItem(String outboxId) async {
-    _logger.info('Deleting outbox item', {'outboxId': outboxId});
+  Future<void> deleteOutboxItem(String outboxId, String ownerDid) async {
+    _logger.info('Deleting outbox item', {'outboxId': outboxId, 'ownerDid': ownerDid});
 
     await _outboxDao.deleteItem(outboxId);
 
-    await _messagesDao.deleteMessage('pending:$outboxId');
+    await _messagesDao.deleteMessage('pending:$outboxId', ownerDid);
   }
 
   /// Gets the count of pending outbox items.
-  Future<int> getPendingCount() async {
-    return _outboxDao.countPending();
+  Future<int> getPendingCount(String ownerDid) async {
+    return _outboxDao.countPending(ownerDid);
   }
 
   /// Sends a message via the API.
   Future<void> _sendMessage(DmOutboxData item) async {
     _logger.debug('Sending message', {'outboxId': item.outboxId, 'convoId': item.convoId});
+    final ownerDid = item.ownerDid;
 
     try {
       await _outboxDao.updateStatus(outboxId: item.outboxId, status: 'sending');
       await _messagesDao.updateMessageStatus(
         messageId: 'pending:${item.outboxId}',
         status: 'sending',
+        ownerDid: ownerDid,
       );
 
       final response = await _client.call(
@@ -154,6 +174,7 @@ class OutboxRepository {
         await _messagesDao.updateMessageStatus(
           messageId: 'pending:${item.outboxId}',
           status: 'sent',
+          ownerDid: ownerDid,
         );
       }
 
@@ -178,6 +199,7 @@ class OutboxRepository {
         await _messagesDao.updateMessageStatus(
           messageId: 'pending:${item.outboxId}',
           status: 'failed',
+          ownerDid: ownerDid,
         );
         _logger.error('Message permanently failed after max retries', error, stack);
       } else {
@@ -189,6 +211,7 @@ class OutboxRepository {
         await _messagesDao.updateMessageStatus(
           messageId: 'pending:${item.outboxId}',
           status: 'pending',
+          ownerDid: ownerDid,
         );
       }
     }

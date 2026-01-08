@@ -22,6 +22,7 @@ void main() {
   late AppDatabase db;
   late MockLogger mockLogger;
   late FeedRepository repository;
+  const ownerDid = 'did:web:tester';
 
   setUp(() {
     mockApi = MockXrpcClient();
@@ -101,9 +102,9 @@ void main() {
         ),
       ).thenAnswer((_) async => feed2Metadata);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(2));
       expect(feeds[0].uri, 'at://did:plc:abc/app.bsky.feed.generator/test1');
       expect(feeds[0].displayName, 'Test Feed 1');
@@ -126,9 +127,9 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenAnswer((_) async => prefsResponse);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, isEmpty);
     });
 
@@ -143,16 +144,16 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenAnswer((_) async => prefsResponse);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, isEmpty);
     });
 
     test('skips sync for unauthenticated user', () async {
       when(() => mockApi.isAuthenticated).thenReturn(false);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
       verifyNever(() => mockApi.call('app.bsky.actor.getPreferences'));
     });
@@ -202,9 +203,9 @@ void main() {
         ),
       ).thenAnswer((_) async => feed2Metadata);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feeds = await db.savedFeedsDao.getAllFeeds();
+      final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
       expect(feeds, hasLength(1));
       expect(feeds[0].displayName, 'Test Feed 2');
     });
@@ -235,12 +236,12 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenThrow(Exception('Network error'));
 
-      await repository.saveFeed(feedUri);
+      await repository.saveFeed(feedUri, ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNotNull, reason: 'Local feed should be saved');
 
-      final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
+      final queueItems = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queueItems, hasLength(1), reason: 'Should have queued sync operation');
       expect(queueItems[0].payload, feedUri);
       expect(queueItems[0].type, 'save');
@@ -276,12 +277,12 @@ void main() {
         () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
       ).thenAnswer((_) async => {});
 
-      await repository.saveFeed(feedUri);
+      await repository.saveFeed(feedUri, ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNotNull, reason: 'Local feed should be saved');
 
-      final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
+      final queueItems = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queueItems, isEmpty, reason: 'Queue should be empty after successful sync');
     });
 
@@ -295,6 +296,7 @@ void main() {
           creatorDid: 'did:plc:remove',
           sortOrder: 0,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       );
 
@@ -302,12 +304,12 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenThrow(Exception('Network error'));
 
-      await repository.removeFeed(feedUri);
+      await repository.removeFeed(feedUri, ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNull, reason: 'Local feed should be deleted');
 
-      final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
+      final queueItems = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queueItems, hasLength(1), reason: 'Should have queued sync operation');
       expect(queueItems[0].payload, feedUri);
       expect(queueItems[0].type, 'remove');
@@ -323,6 +325,7 @@ void main() {
           creatorDid: 'did:plc:remove',
           sortOrder: 0,
           lastSynced: DateTime.now(),
+          ownerDid: ownerDid,
         ),
       );
 
@@ -344,12 +347,12 @@ void main() {
         () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
       ).thenAnswer((_) async => {});
 
-      await repository.removeFeed(feedUri);
+      await repository.removeFeed(feedUri, ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNull, reason: 'Local feed should be deleted');
 
-      final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
+      final queueItems = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queueItems, isEmpty, reason: 'Queue should be empty after successful sync');
     });
 
@@ -376,17 +379,16 @@ void main() {
           'likeCount': 1,
         },
       };
-
       when(
         () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
       ).thenAnswer((_) async => feedMetadata);
 
-      expect(() => failingRepo.saveFeed(feedUri), throwsA(isA<Exception>()));
+      expect(() => failingRepo.saveFeed(feedUri, ownerDid), throwsA(isA<Exception>()));
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNull, reason: 'Local insert should be rolled back');
 
-      final queueItems = await db.preferenceSyncQueueDao.getPendingItems();
+      final queueItems = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queueItems, isEmpty, reason: 'Queue should remain empty on failure');
     });
   });
@@ -402,6 +404,7 @@ void main() {
           type: 'save',
           payload: feedUri,
           createdAt: now,
+          ownerDid: ownerDid,
         ),
       );
 
@@ -412,6 +415,7 @@ void main() {
           creatorDid: 'did:plc:test',
           sortOrder: 0,
           lastSynced: now,
+          ownerDid: ownerDid,
         ),
       );
 
@@ -419,9 +423,9 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenThrow(Exception('Network error'));
 
-      await repository.processSyncQueue();
+      await repository.processSyncQueue(ownerDid);
 
-      final items = await db.preferenceSyncQueueDao.getPendingItems();
+      final items = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(items.length, 1);
       expect(items.first.retryCount, 1, reason: 'Retry count should be incremented');
     });
@@ -439,14 +443,15 @@ void main() {
               payload: feedUri,
               createdAt: now,
               retryCount: const Value(5),
+              ownerDid: ownerDid,
             ),
           );
 
-      await repository.processSyncQueue();
+      await repository.processSyncQueue(ownerDid);
 
       verifyNever(() => mockApi.call('app.bsky.actor.getPreferences'));
 
-      final items = await db.preferenceSyncQueueDao.getPendingItems();
+      final items = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(items.length, 1);
       expect(items.first.retryCount, 5, reason: 'Retry count should not change');
     });
@@ -463,6 +468,7 @@ void main() {
               payload: 'at://did:plc:test/app.bsky.feed.generator/old-failed',
               createdAt: now.subtract(const Duration(days: 45)),
               retryCount: const Value(5),
+              ownerDid: ownerDid,
             ),
           );
 
@@ -472,6 +478,7 @@ void main() {
           type: 'save',
           payload: 'at://did:plc:test/app.bsky.feed.generator/recent',
           createdAt: now,
+          ownerDid: ownerDid,
         ),
       );
 
@@ -479,9 +486,9 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenThrow(Exception('Network error'));
 
-      await repository.syncOnResume();
+      await repository.syncOnResume(ownerDid);
 
-      final items = await db.preferenceSyncQueueDao.getPendingItems();
+      final items = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(items.length, 1);
       expect(items.first.payload, 'at://did:plc:test/app.bsky.feed.generator/recent');
     });
@@ -495,6 +502,7 @@ void main() {
           type: 'save',
           payload: 'at://did:plc:ok/app.bsky.feed.generator/retryable',
           createdAt: now,
+          ownerDid: ownerDid,
         ),
       );
 
@@ -505,6 +513,7 @@ void main() {
           creatorDid: 'did:plc:ok',
           sortOrder: 0,
           lastSynced: now,
+          ownerDid: ownerDid,
         ),
       );
 
@@ -517,6 +526,7 @@ void main() {
               payload: 'at://did:plc:fail/app.bsky.feed.generator/maxed',
               createdAt: now,
               retryCount: const Value(5),
+              ownerDid: ownerDid,
             ),
           );
 
@@ -528,9 +538,9 @@ void main() {
         () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
       ).thenAnswer((_) async => {});
 
-      await repository.processSyncQueue();
+      await repository.processSyncQueue(ownerDid);
 
-      final items = await db.preferenceSyncQueueDao.getPendingItems();
+      final items = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(items.length, 1, reason: 'Only the maxed-out item should remain');
       expect(items.first.payload, 'at://did:plc:fail/app.bsky.feed.generator/maxed');
     });
@@ -550,6 +560,7 @@ void main() {
           isPinned: const Value(true),
           lastSynced: baseTime,
           localUpdatedAt: Value(baseTime.add(const Duration(hours: 1))),
+          ownerDid: ownerDid,
         ),
       );
 
@@ -567,13 +578,13 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenAnswer((_) async => remotePrefs);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNotNull);
       expect(feed!.isPinned, true, reason: 'Local pin status should win');
       expect(feed.displayName, 'Local Name', reason: 'Local display name should be preserved');
-      final queue = await db.preferenceSyncQueueDao.getPendingItems();
+      final queue = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queue.any((q) => q.payload == feedUri && q.type == 'save'), true);
     });
 
@@ -589,6 +600,7 @@ void main() {
           sortOrder: 5,
           isPinned: const Value(false),
           lastSynced: baseTime,
+          ownerDid: ownerDid,
         ),
       );
 
@@ -606,9 +618,9 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenAnswer((_) async => remotePrefs);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNotNull);
       expect(feed!.isPinned, true, reason: 'Remote pin status should win');
       expect(feed.sortOrder, 0, reason: 'Should use remote sort order');
@@ -648,9 +660,9 @@ void main() {
         () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': newFeedUri}),
       ).thenAnswer((_) async => feedMetadata);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(newFeedUri);
+      final feed = await db.savedFeedsDao.getFeed(newFeedUri, ownerDid);
       expect(feed, isNotNull);
       expect(feed!.displayName, 'New Remote Feed');
       expect(feed.isPinned, true);
@@ -672,6 +684,7 @@ void main() {
           creatorDid: 'did:plc:test',
           sortOrder: 0,
           lastSynced: baseTime,
+          ownerDid: ownerDid,
         ),
       );
 
@@ -685,9 +698,9 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenAnswer((_) async => remotePrefs);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(deletedFeedUri);
+      final feed = await db.savedFeedsDao.getFeed(deletedFeedUri, ownerDid);
       expect(feed, isNull, reason: 'Remotely deleted feed should be removed locally');
     });
 
@@ -704,6 +717,7 @@ void main() {
           isPinned: const Value(true),
           lastSynced: baseTime,
           localUpdatedAt: Value(baseTime.add(const Duration(hours: 1))),
+          ownerDid: ownerDid,
         ),
       );
 
@@ -717,12 +731,12 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenAnswer((_) async => remotePrefs);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(localOnlyFeedUri);
+      final feed = await db.savedFeedsDao.getFeed(localOnlyFeedUri, ownerDid);
       expect(feed, isNotNull, reason: 'Local-only feed with modifications should be kept');
 
-      final queue = await db.preferenceSyncQueueDao.getPendingItems();
+      final queue = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(
         queue.any((q) => q.payload == localOnlyFeedUri && q.type == 'save'),
         true,
@@ -743,6 +757,7 @@ void main() {
           isPinned: const Value(true),
           lastSynced: baseTime,
           localUpdatedAt: Value(baseTime.add(const Duration(hours: 1))),
+          ownerDid: ownerDid,
         ),
       );
 
@@ -760,9 +775,9 @@ void main() {
         () => mockApi.call('app.bsky.actor.getPreferences'),
       ).thenAnswer((_) async => remotePrefs);
 
-      await repository.syncPreferences();
+      await repository.syncPreferences(ownerDid);
 
-      final feed = await db.savedFeedsDao.getFeed(feedUri);
+      final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNotNull);
       expect(feed!.isPinned, true, reason: 'Local pin status should be preserved (newer)');
     });

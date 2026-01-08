@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 
 import '../../application/settings_providers.dart';
 import '../../domain/bluesky_preferences.dart';
@@ -220,7 +222,10 @@ class _MutedWordsScreenState extends ConsumerState<MutedWordsScreen> {
     final updatedItems = [...pref.items, word];
 
     final repo = ref.read(blueskyPreferencesRepositoryProvider);
-    await repo.updateMutedWordsPref(MutedWordsPref(items: updatedItems));
+    final authState = ref.read(authProvider);
+    if (authState is AuthStateAuthenticated) {
+      await repo.updateMutedWordsPref(MutedWordsPref(items: updatedItems), authState.session.did);
+    }
   }
 
   Future<void> _removeMutedWord(MutedWord word, MutedWordsPref pref) async {
@@ -245,7 +250,13 @@ class _MutedWordsScreenState extends ConsumerState<MutedWordsScreen> {
     if (confirmed == true) {
       final updatedItems = pref.items.where((w) => w.id != word.id).toList();
       final repo = ref.read(blueskyPreferencesRepositoryProvider);
-      await repo.updateMutedWordsPref(MutedWordsPref(items: updatedItems));
+      final authState = ref.read(authProvider);
+      if (authState is AuthStateAuthenticated) {
+        await repo.updateMutedWordsPref(
+          MutedWordsPref(items: updatedItems),
+          authState.session.did,
+        );
+      }
     }
   }
 }

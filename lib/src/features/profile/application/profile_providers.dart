@@ -31,7 +31,9 @@ class ProfileNotifier extends _$ProfileNotifier {
 
   Future<ProfileData> _fetchProfile(String actor) async {
     final repository = ref.read(profileRepositoryProvider);
-    return repository.getProfile(actor);
+    final authState = ref.read(authProvider);
+    final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : 'anonymous';
+    return repository.getProfile(actor, ownerDid);
   }
 
   Future<void> refresh() async {

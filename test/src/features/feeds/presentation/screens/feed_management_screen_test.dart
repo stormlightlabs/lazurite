@@ -48,9 +48,10 @@ void main() {
       ),
     ];
 
-    when(() => mockRepository.saveFeed(any(), pin: any(named: 'pin'))).thenAnswer((_) async => {});
-
-    when(() => mockRepository.removeFeed(any())).thenAnswer((_) async => {});
+    when(
+      () => mockRepository.saveFeed(any(), any(), pin: any(named: 'pin')),
+    ).thenAnswer((_) async => {});
+    when(() => mockRepository.removeFeed(any(), any())).thenAnswer((_) async => {});
 
     await tester.pumpWidget(
       ProviderScope(
@@ -75,12 +76,12 @@ void main() {
     expect(find.text('Saved'), findsOneWidget);
 
     await tester.tap(find.widgetWithIcon(IconButton, Icons.push_pin).first);
-    verify(() => mockRepository.saveFeed('at://did:1/feed/saved1', pin: false)).called(1);
+    verify(() => mockRepository.saveFeed('at://did:1/feed/saved1', any(), pin: false)).called(1);
 
     final deleteButtons = find.widgetWithIcon(IconButton, Icons.delete_outline);
     await tester.tap(deleteButtons.last);
 
-    verify(() => mockRepository.removeFeed('at://did:1/feed/saved2')).called(1);
+    verify(() => mockRepository.removeFeed('at://did:1/feed/saved2', any())).called(1);
   });
 
   testWidgets('FeedManagementScreen renders drag handles for reordering', (tester) async {
@@ -108,9 +109,11 @@ void main() {
       ),
     ];
 
-    when(() => mockRepository.saveFeed(any(), pin: any(named: 'pin'))).thenAnswer((_) async => {});
-    when(() => mockRepository.removeFeed(any())).thenAnswer((_) async => {});
-    when(() => mockRepository.reorderFeeds(any())).thenAnswer((_) async => {});
+    when(
+      () => mockRepository.saveFeed(any(), any(), pin: any(named: 'pin')),
+    ).thenAnswer((_) async => {});
+    when(() => mockRepository.removeFeed(any(), any())).thenAnswer((_) async => {});
+    when(() => mockRepository.reorderFeeds(any(), any())).thenAnswer((_) async => {});
 
     await tester.pumpWidget(
       ProviderScope(

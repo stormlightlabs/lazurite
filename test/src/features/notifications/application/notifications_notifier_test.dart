@@ -41,16 +41,21 @@ void main() {
     when(() => mockLogger.info(any(), any())).thenReturn(null);
     when(() => mockLogger.error(any(), any(), any())).thenReturn(null);
 
-    when(() => mockRepository.watchNotifications()).thenAnswer((_) => Stream.value([]));
+    when(
+      () => mockRepository.watchNotifications(any(named: 'ownerDid')),
+    ).thenAnswer((_) => Stream.value([]));
     when(
       () => mockRepository.fetchNotifications(
         cursor: any(named: 'cursor'),
         limit: any(named: 'limit'),
+        ownerDid: any(named: 'ownerDid'),
       ),
     ).thenAnswer((_) async {});
-    when(() => mockRepository.fetchNotifications()).thenAnswer((_) async {});
-    when(() => mockRepository.getCursor()).thenAnswer((_) async => null);
-    when(() => mockRepository.markAllAsRead()).thenAnswer((_) async {});
+    when(
+      () => mockRepository.fetchNotifications(ownerDid: any(named: 'ownerDid')),
+    ).thenAnswer((_) async {});
+    when(() => mockRepository.getCursor(any(named: 'ownerDid'))).thenAnswer((_) async => null);
+    when(() => mockRepository.markAllAsRead(any(named: 'ownerDid'))).thenAnswer((_) async {});
     when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
     when(() => mockMarkAsSeenService.flush()).thenAnswer((_) async {});
 
@@ -66,7 +71,7 @@ void main() {
 
       await Future.delayed(Duration.zero);
 
-      verify(() => mockRepository.watchNotifications()).called(1);
+      verify(() => mockRepository.watchNotifications(any(named: 'ownerDid'))).called(1);
     });
 
     test('refresh calls repository fetchNotifications when authenticated', () async {
@@ -75,7 +80,7 @@ void main() {
 
       await container.read(notificationsProvider.notifier).refresh();
 
-      verify(() => mockRepository.fetchNotifications()).called(1);
+      verify(() => mockRepository.fetchNotifications(ownerDid: any(named: 'ownerDid'))).called(1);
     });
 
     test('refresh skips fetch when not authenticated', () async {
@@ -84,13 +89,18 @@ void main() {
 
       await container.read(notificationsProvider.notifier).refresh();
 
-      verifyNever(() => mockRepository.fetchNotifications());
+      verifyNever(() => mockRepository.fetchNotifications(ownerDid: any(named: 'ownerDid')));
     });
 
     test('loadMore fetches next page using cursor', () async {
-      when(() => mockRepository.getCursor()).thenAnswer((_) async => 'next_cursor');
       when(
-        () => mockRepository.fetchNotifications(cursor: 'next_cursor'),
+        () => mockRepository.getCursor(any(named: 'ownerDid')),
+      ).thenAnswer((_) async => 'next_cursor');
+      when(
+        () => mockRepository.fetchNotifications(
+          cursor: 'next_cursor',
+          ownerDid: any(named: 'ownerDid'),
+        ),
       ).thenAnswer((_) async {});
 
       final container = createContainer();
@@ -98,20 +108,30 @@ void main() {
 
       await container.read(notificationsProvider.notifier).loadMore();
 
-      verify(() => mockRepository.getCursor()).called(1);
-      verify(() => mockRepository.fetchNotifications(cursor: 'next_cursor')).called(1);
+      verify(() => mockRepository.getCursor(any(named: 'ownerDid'))).called(1);
+      verify(
+        () => mockRepository.fetchNotifications(
+          cursor: 'next_cursor',
+          ownerDid: any(named: 'ownerDid'),
+        ),
+      ).called(1);
     });
 
     test('loadMore does nothing without cursor', () async {
-      when(() => mockRepository.getCursor()).thenAnswer((_) async => null);
+      when(() => mockRepository.getCursor(any(named: 'ownerDid'))).thenAnswer((_) async => null);
 
       final container = createContainer();
       addTearDown(container.dispose);
 
       await container.read(notificationsProvider.notifier).loadMore();
 
-      verify(() => mockRepository.getCursor()).called(1);
-      verifyNever(() => mockRepository.fetchNotifications(cursor: any(named: 'cursor')));
+      verify(() => mockRepository.getCursor(any(named: 'ownerDid'))).called(1);
+      verifyNever(
+        () => mockRepository.fetchNotifications(
+          cursor: any(named: 'cursor'),
+          ownerDid: any(named: 'ownerDid'),
+        ),
+      );
     });
 
     test('loadMore skips when not authenticated', () async {
@@ -120,7 +140,7 @@ void main() {
 
       await container.read(notificationsProvider.notifier).loadMore();
 
-      verifyNever(() => mockRepository.getCursor());
+      verifyNever(() => mockRepository.getCursor(any(named: 'ownerDid')));
     });
 
     test('markAllAsRead flushes service and syncs with server', () async {
@@ -131,14 +151,16 @@ void main() {
 
       verifyInOrder([
         () => mockMarkAsSeenService.flush(),
-        () => mockRepository.markAllAsRead(),
+        () => mockRepository.markAllAsRead(any(named: 'ownerDid')),
         () => mockRepository.updateSeen(any()),
       ]);
     });
 
     test('markAllAsRead rethrows errors', () async {
       when(() => mockMarkAsSeenService.flush()).thenAnswer((_) async {});
-      when(() => mockRepository.markAllAsRead()).thenThrow(Exception('DB error'));
+      when(
+        () => mockRepository.markAllAsRead(any(named: 'ownerDid')),
+      ).thenThrow(Exception('DB error'));
 
       final container = createContainer();
       addTearDown(container.dispose);
@@ -150,7 +172,9 @@ void main() {
     });
 
     test('refresh rethrows errors', () async {
-      when(() => mockRepository.fetchNotifications()).thenThrow(Exception('Network error'));
+      when(
+        () => mockRepository.fetchNotifications(ownerDid: any(named: 'ownerDid')),
+      ).thenThrow(Exception('Network error'));
 
       final container = createContainer();
       addTearDown(container.dispose);
@@ -170,7 +194,7 @@ void main() {
       );
 
       when(
-        () => mockRepository.watchNotifications(),
+        () => mockRepository.watchNotifications(any(named: 'ownerDid')),
       ).thenAnswer((_) => Stream.value([testNotification]));
 
       final container = createContainer();
@@ -180,7 +204,7 @@ void main() {
 
       await Future.delayed(Duration.zero);
 
-      verify(() => mockRepository.watchNotifications()).called(1);
+      verify(() => mockRepository.watchNotifications(any(named: 'ownerDid'))).called(1);
     });
   });
 }

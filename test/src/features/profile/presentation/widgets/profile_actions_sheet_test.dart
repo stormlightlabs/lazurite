@@ -60,7 +60,7 @@ void main() {
   setUp(() {
     mockProfileRepository = MockProfileRepository();
     when(
-      () => mockProfileRepository.getProfile(any()),
+      () => mockProfileRepository.getProfile(any(), any()),
     ).thenAnswer((_) async => ProfileData(did: 'did:plc:test', handle: 'test.bsky.social'));
     when(() => mockProfileRepository.watchProfile(any())).thenAnswer((_) => Stream.value(null));
     when(

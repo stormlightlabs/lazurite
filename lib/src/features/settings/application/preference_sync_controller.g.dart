@@ -56,4 +56,4 @@ final class PreferenceSyncControllerProvider extends $FunctionalProvider<void, v
   }
 }
 
-String _$preferenceSyncControllerHash() => r'394099cdba86119b64aa45ae68b7bbc1e39f760e';
+String _$preferenceSyncControllerHash() => r'305b3f9687000b6b52bcb4da4ea77629f45d66bb';
