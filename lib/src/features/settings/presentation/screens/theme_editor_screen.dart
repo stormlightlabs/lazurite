@@ -24,6 +24,7 @@ class ThemeEditorScreen extends ConsumerStatefulWidget {
 
 class _ThemeEditorScreenState extends ConsumerState<ThemeEditorScreen> {
   late String _name;
+  late TextEditingController _nameController;
   late String _basePackId;
   late ThemeRoleOverrides _overrides;
   late TypographyScale _typographyScale;
@@ -34,10 +35,18 @@ class _ThemeEditorScreenState extends ConsumerState<ThemeEditorScreen> {
   @override
   void initState() {
     super.initState();
+    _nameController = TextEditingController();
     _loadOrCreateDraft();
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadOrCreateDraft() async {
+    await Future.microtask(() {});
     if (widget.customThemeId != null) {
       final repo = ref.read(customThemeRepositoryProvider);
       final existing = await repo.getById(widget.customThemeId!);
@@ -45,6 +54,7 @@ class _ThemeEditorScreenState extends ConsumerState<ThemeEditorScreen> {
         setState(() {
           _existingId = existing.id;
           _name = existing.name;
+          _nameController.text = _name;
           _basePackId = existing.basePackId;
           _overrides = existing.overrides;
           _typographyScale = existing.typographyScale;
@@ -57,6 +67,7 @@ class _ThemeEditorScreenState extends ConsumerState<ThemeEditorScreen> {
     final themeState = ref.read(themeControllerProvider);
     setState(() {
       _name = 'My Custom Theme';
+      _nameController.text = _name;
       _basePackId = themeState.currentPackId;
       _overrides = ThemeRoleOverrides.empty;
       _typographyScale = TypographyScale.normal;
@@ -168,10 +179,13 @@ class _ThemeEditorScreenState extends ConsumerState<ThemeEditorScreen> {
                 labelText: 'Theme Name',
                 border: OutlineInputBorder(),
               ),
-              controller: TextEditingController(text: _name),
+
+              controller: _nameController,
               onChanged: (value) {
-                _name = value;
-                _isDirty = true;
+                setState(() {
+                  _name = value;
+                  _isDirty = true;
+                });
               },
             ),
           ),
