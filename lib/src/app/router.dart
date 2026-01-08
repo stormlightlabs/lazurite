@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/app/animation_controller.dart' as lazurite_anim;
 import 'package:lazurite/src/app/routes.dart';
+import 'package:lazurite/src/core/animations/page_transitions.dart';
 import 'package:lazurite/src/core/widgets/tab_scaffold.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
@@ -41,6 +43,7 @@ final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 GoRouter createRouter(Ref ref) {
   final authState = ValueNotifier(ref.read(authProvider));
   final splashMinWait = ValueNotifier(true);
+  final animationController = ref.read(lazurite_anim.animationControllerProvider.notifier);
 
   ref.listen(authProvider, (previous, next) {
     authState.value = next;
@@ -101,14 +104,24 @@ GoRouter createRouter(Ref ref) {
                   GoRoute(
                     path: 't/:uri',
                     name: '${AppRouteNames.home}_${AppRouteNames.thread}',
-                    builder: (context, state) =>
-                        ThreadScreen(postUri: Uri.decodeComponent(state.pathParameters['uri']!)),
+                    pageBuilder: (context, state) => LazuritePageTransitions.build(
+                      child: ThreadScreen(
+                        postUri: Uri.decodeComponent(state.pathParameters['uri']!),
+                      ),
+                      type: LazuriteTransitionType.sharedAxisHorizontal,
+                      state: state,
+                      controller: animationController,
+                    ),
                   ),
                   GoRoute(
                     path: AppRoutes.profileDetail,
                     name: '${AppRouteNames.home}_${AppRouteNames.profileDetail}',
-                    builder: (context, state) =>
-                        ProfilePage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                    pageBuilder: (context, state) => LazuritePageTransitions.build(
+                      child: ProfilePage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                      type: LazuriteTransitionType.sharedAxisHorizontal,
+                      state: state,
+                      controller: animationController,
+                    ),
                   ),
                 ],
               ),
@@ -125,14 +138,24 @@ GoRouter createRouter(Ref ref) {
                   GoRoute(
                     path: 't/:uri',
                     name: '${AppRouteNames.search}_${AppRouteNames.thread}',
-                    builder: (context, state) =>
-                        ThreadScreen(postUri: Uri.decodeComponent(state.pathParameters['uri']!)),
+                    pageBuilder: (context, state) => LazuritePageTransitions.build(
+                      child: ThreadScreen(
+                        postUri: Uri.decodeComponent(state.pathParameters['uri']!),
+                      ),
+                      type: LazuriteTransitionType.sharedAxisHorizontal,
+                      state: state,
+                      controller: animationController,
+                    ),
                   ),
                   GoRoute(
                     path: AppRoutes.profileDetail,
                     name: '${AppRouteNames.search}_${AppRouteNames.profileDetail}',
-                    builder: (context, state) =>
-                        ProfilePage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                    pageBuilder: (context, state) => LazuritePageTransitions.build(
+                      child: ProfilePage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                      type: LazuriteTransitionType.sharedAxisHorizontal,
+                      state: state,
+                      controller: animationController,
+                    ),
                   ),
                 ],
               ),
@@ -148,14 +171,24 @@ GoRouter createRouter(Ref ref) {
                   GoRoute(
                     path: AppRoutes.thread,
                     name: '${AppRouteNames.notifications}_${AppRouteNames.thread}',
-                    builder: (context, state) =>
-                        ThreadScreen(postUri: Uri.decodeComponent(state.pathParameters['uri']!)),
+                    pageBuilder: (context, state) => LazuritePageTransitions.build(
+                      child: ThreadScreen(
+                        postUri: Uri.decodeComponent(state.pathParameters['uri']!),
+                      ),
+                      type: LazuriteTransitionType.sharedAxisHorizontal,
+                      state: state,
+                      controller: animationController,
+                    ),
                   ),
                   GoRoute(
                     path: AppRoutes.profileDetail,
                     name: '${AppRouteNames.notifications}_${AppRouteNames.profileDetail}',
-                    builder: (context, state) =>
-                        ProfilePage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                    pageBuilder: (context, state) => LazuritePageTransitions.build(
+                      child: ProfilePage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                      type: LazuriteTransitionType.sharedAxisHorizontal,
+                      state: state,
+                      controller: animationController,
+                    ),
                   ),
                 ],
               ),
@@ -190,12 +223,22 @@ GoRouter createRouter(Ref ref) {
                   GoRoute(
                     path: AppRoutes.followers,
                     name: AppRouteNames.followers,
-                    builder: (context, state) => FollowersPage(did: state.pathParameters['did']!),
+                    pageBuilder: (context, state) => LazuritePageTransitions.build(
+                      child: FollowersPage(did: state.pathParameters['did']!),
+                      type: LazuriteTransitionType.sharedAxisHorizontal,
+                      state: state,
+                      controller: animationController,
+                    ),
                   ),
                   GoRoute(
                     path: AppRoutes.following,
                     name: AppRouteNames.following,
-                    builder: (context, state) => FollowingPage(did: state.pathParameters['did']!),
+                    pageBuilder: (context, state) => LazuritePageTransitions.build(
+                      child: FollowingPage(did: state.pathParameters['did']!),
+                      type: LazuriteTransitionType.sharedAxisHorizontal,
+                      state: state,
+                      controller: animationController,
+                    ),
                   ),
                 ],
               ),
@@ -223,23 +266,15 @@ GoRouter createRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.compose,
         name: AppRouteNames.compose,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
+        pageBuilder: (context, state) => LazuritePageTransitions.build(
           child: ComposerScreen(
             draftId: state.uri.queryParameters['draftId'],
             replyTo: state.uri.queryParameters['replyTo'],
             quoteTo: state.uri.queryParameters['quoteTo'],
           ),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(0.0, 1.0);
-            const end = Offset.zero;
-            const curve = Curves.easeInOutCubic;
-
-            final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-            final offsetAnimation = animation.drive(tween);
-
-            return SlideTransition(position: offsetAnimation, child: child);
-          },
+          type: LazuriteTransitionType.sharedAxisVertical,
+          state: state,
+          controller: animationController,
         ),
       ),
       GoRoute(
@@ -265,40 +300,74 @@ GoRouter createRouter(Ref ref) {
           GoRoute(
             path: 'appearance',
             name: AppRouteNames.appearance,
-            builder: (context, state) => const ThemeSettingsScreen(),
+            pageBuilder: (context, state) => LazuritePageTransitions.build(
+              child: const ThemeSettingsScreen(),
+              type: LazuriteTransitionType.sharedAxisHorizontal,
+              state: state,
+              controller: animationController,
+            ),
             routes: [
               GoRoute(
                 path: 'editor',
                 name: 'theme_editor',
-                builder: (context, state) =>
-                    ThemeEditorScreen(customThemeId: state.uri.queryParameters['id']),
+                pageBuilder: (context, state) => LazuritePageTransitions.build(
+                  child: ThemeEditorScreen(customThemeId: state.uri.queryParameters['id']),
+                  type: LazuriteTransitionType.sharedAxisHorizontal,
+                  state: state,
+                  controller: animationController,
+                ),
               ),
             ],
           ),
           GoRoute(
             path: 'about',
             name: AppRouteNames.about,
-            builder: (context, state) => const AboutScreen(),
+            pageBuilder: (context, state) => LazuritePageTransitions.build(
+              child: const AboutScreen(),
+              type: LazuriteTransitionType.sharedAxisHorizontal,
+              state: state,
+              controller: animationController,
+            ),
           ),
           GoRoute(
             path: 'feeds',
             name: AppRouteNames.feedPreferences,
-            builder: (context, state) => const FeedPreferencesScreen(),
+            pageBuilder: (context, state) => LazuritePageTransitions.build(
+              child: const FeedPreferencesScreen(),
+              type: LazuriteTransitionType.sharedAxisHorizontal,
+              state: state,
+              controller: animationController,
+            ),
           ),
           GoRoute(
             path: 'moderation',
             name: AppRouteNames.contentModeration,
-            builder: (context, state) => const ContentModerationScreen(),
+            pageBuilder: (context, state) => LazuritePageTransitions.build(
+              child: const ContentModerationScreen(),
+              type: LazuriteTransitionType.sharedAxisHorizontal,
+              state: state,
+              controller: animationController,
+            ),
           ),
           GoRoute(
             path: 'muted-words',
             name: AppRouteNames.mutedWords,
-            builder: (context, state) => const MutedWordsScreen(),
+            pageBuilder: (context, state) => LazuritePageTransitions.build(
+              child: const MutedWordsScreen(),
+              type: LazuriteTransitionType.sharedAxisHorizontal,
+              state: state,
+              controller: animationController,
+            ),
           ),
           GoRoute(
             path: 'accessibility',
             name: AppRouteNames.accessibility,
-            builder: (context, state) => const AccessibilitySettingsScreen(),
+            pageBuilder: (context, state) => LazuritePageTransitions.build(
+              child: const AccessibilitySettingsScreen(),
+              type: LazuriteTransitionType.sharedAxisHorizontal,
+              state: state,
+              controller: animationController,
+            ),
           ),
         ],
       ),

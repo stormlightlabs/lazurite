@@ -162,7 +162,7 @@ Tasks:
       - Mode selector (full/reduced/minimal/system)
       - Speed multiplier slider with preview
       - Wire to AnimationController
-- [ ] Implement core navigation transitions
+- [x] Implement core navigation transitions
       - Home feed scroll animations
       - Post detail expansion (container transform)
       - Tab navigation (shared axis)

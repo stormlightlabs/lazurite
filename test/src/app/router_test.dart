@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/app/animation_controller.dart' as lazurite_anim;
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/app/theme.dart';
@@ -23,6 +24,7 @@ import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dar
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
+import 'package:lazurite/src/features/settings/domain/animation_preferences.dart';
 import 'package:lazurite/src/features/splash/presentation/splash_screen.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -97,6 +99,7 @@ void main() {
       pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
       activeFeedProvider.overrideWith(() => MockActiveFeed()),
       draftsProvider.overrideWith((ref) => Stream.value([])),
+      lazurite_anim.animationControllerProvider.overrideWith(MockAnimationController.new),
     ];
   }
 
@@ -421,4 +424,12 @@ class MockComposerNotifier extends ComposerNotifier {
       ),
     );
   }
+}
+
+class MockAnimationController extends lazurite_anim.AnimationController {
+  @override
+  lazurite_anim.AnimationState build() => const lazurite_anim.AnimationState(
+    preferences: AnimationPreferences(mode: AnimationMode.full, speedMultiplier: 1.0),
+    isLoading: false,
+  );
 }
