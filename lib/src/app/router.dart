@@ -10,6 +10,7 @@ import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/draft_list_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/draft_recovery_listener.dart';
+import 'package:lazurite/src/features/dms/presentation/conversation_detail_screen.dart';
 import 'package:lazurite/src/features/dms/presentation/conversation_list_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
@@ -210,9 +211,11 @@ GoRouter createRouter(Ref ref) {
                   GoRoute(
                     path: AppRoutes.convo,
                     name: AppRouteNames.convo,
-                    builder: (context, state) => _PlaceholderScreen(
-                      title: 'Conversation',
-                      subtitle: 'Convo: ${state.pathParameters['convoId']}',
+                    pageBuilder: (context, state) => LazuritePageTransitions.build(
+                      child: ConversationDetailScreen(convoId: state.pathParameters['convoId']!),
+                      type: LazuriteTransitionType.sharedAxisHorizontal,
+                      state: state,
+                      controller: animationController,
                     ),
                   ),
                 ],
@@ -434,6 +437,7 @@ class _CallbackHandlerState extends ConsumerState<_CallbackHandler> {
 }
 
 /// Temporary placeholder screen for unimplemented routes.
+// ignore: unused_element
 class _PlaceholderScreen extends StatelessWidget {
   const _PlaceholderScreen({required this.title, required this.subtitle});
 

@@ -68,31 +68,31 @@ Phase 2: Conversation List Screen
       - acceptConversation() action
 
 Phase 3: Conversation Detail Screen
-- [ ] ConversationDetailScreen:
+- [x] ConversationDetailScreen:
       - display messages in chronological order (newest at bottom)
       - pull-to-refresh for older messages (pagination)
       - scroll to bottom on new messages
       - auto-mark as read on view (updateRead)
       - compose input with send button
       - optimistic send (show immediately with pending state)
-- [ ] MessageBubble widget:
+- [x] MessageBubble widget:
       - sender avatar (other party only)
       - message text content
       - timestamp (relative or absolute)
       - delivery status indicator (sending, sent, failed, read)
       - group consecutive messages by same sender
-- [ ] MessageComposer widget:
+- [x] MessageComposer widget:
       - multi-line text input (auto-expanding)
       - send button (disabled when empty)
       - character limit (10,000 chars)
       - character counter when approaching limit
-- [ ] DeliveryStatusIndicator widget:
+- [x] DeliveryStatusIndicator widget:
       - pending: clock icon
       - sending: spinner
       - sent: single checkmark
       - read: double checkmark
       - failed: error icon with retry button
-- [ ] ConversationDetailNotifier:
+- [x] ConversationDetailNotifier:
       - watchMessages stream for convoId
       - sendMessage (enqueue in outbox + trigger worker)
       - markAsRead on conversation open
