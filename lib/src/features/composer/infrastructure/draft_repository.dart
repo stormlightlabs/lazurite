@@ -38,16 +38,22 @@ class DraftRepository {
   final Uuid _uuid;
   final Map<int, CancelToken> _uploadCancelTokens = {};
 
-  Stream<List<composer.Draft>> watchDrafts() {
-    return _dao.watchDrafts().map((records) => records.map(_toDomain).toList());
+  Stream<List<composer.Draft>> watchDrafts() async* {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    yield* _dao.watchDrafts(ownerDid).map((records) => records.map(_toDomain).toList());
   }
 
-  Stream<composer.Draft?> watchDraft(String id) {
-    return _dao.watchDraft(id).map((record) => record == null ? null : _toDomain(record));
+  Stream<composer.Draft?> watchDraft(String id) async* {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    yield* _dao.watchDraft(id, ownerDid).map((record) => record == null ? null : _toDomain(record));
   }
 
   Future<composer.Draft> getDraft(String id) async {
-    final record = await _dao.getDraft(id);
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    final record = await _dao.getDraft(id, ownerDid);
     if (record == null) {
       throw StateError('Draft $id not found');
     }
@@ -64,11 +70,14 @@ class DraftRepository {
     String? quoteCid,
     String? facetsJson,
   }) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
     final id = _uuid.v4();
     final now = DateTime.now();
     await _dao.insertDraft(
       DraftsCompanion.insert(
         id: id,
+        ownerDid: ownerDid,
         content: Value(text),
         replyParentUri: Value(replyParentUri),
         replyParentCid: Value(replyParentCid),
@@ -98,6 +107,8 @@ class DraftRepository {
     String? quoteUri,
     String? quoteCid,
   }) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
     final companion = DraftsCompanion(
       content: text != null ? Value(text) : const Value.absent(),
       facetsJson: facetsJson != null ? Value(facetsJson) : const Value.absent(),
@@ -110,13 +121,19 @@ class DraftRepository {
       updatedAt: Value(DateTime.now()),
     );
 
-    await _dao.updateDraftFields(id, companion);
+    await _dao.updateDraftFields(id, ownerDid, companion);
   }
 
-  Future<void> deleteDraft(String id) => _dao.deleteDraft(id);
+  Future<void> deleteDraft(String id) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    return _dao.deleteDraft(id, ownerDid);
+  }
 
   Future<void> addMedia(String draftId, composer.DraftMediaInput media) async {
-    final draft = await _dao.getDraft(draftId);
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    final draft = await _dao.getDraft(draftId, ownerDid);
     if (draft == null) {
       throw StateError('Draft $draftId not found');
     }
@@ -134,6 +151,7 @@ class DraftRepository {
     await _dao.insertMedia([
       DraftMediaCompanion.insert(
         draftId: draftId,
+        ownerDid: ownerDid,
         localPath: localPath,
         mimeType: media.mimeType,
         altText: Value(media.altText),
@@ -145,7 +163,7 @@ class DraftRepository {
       ),
     ]);
 
-    await _dao.updateDraftFields(draftId, DraftsCompanion(updatedAt: Value(DateTime.now())));
+    await _dao.updateDraftFields(draftId, ownerDid, DraftsCompanion(updatedAt: Value(DateTime.now())));
   }
 
   bool _isImageMimeType(String mimeType) {
@@ -153,13 +171,17 @@ class DraftRepository {
   }
 
   Future<void> removeMedia(String draftId, int mediaId) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
     await _dao.deleteMedia(mediaId);
-    await _dao.updateDraftFields(draftId, DraftsCompanion(updatedAt: Value(DateTime.now())));
+    await _dao.updateDraftFields(draftId, ownerDid, DraftsCompanion(updatedAt: Value(DateTime.now())));
   }
 
   Future<void> updateMediaAltText(String draftId, int mediaId, String altText) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
     await _dao.updateMedia(mediaId, DraftMediaCompanion(altText: Value(altText)));
-    await _dao.updateDraftFields(draftId, DraftsCompanion(updatedAt: Value(DateTime.now())));
+    await _dao.updateDraftFields(draftId, ownerDid, DraftsCompanion(updatedAt: Value(DateTime.now())));
   }
 
   /// Publishes a draft with optional progress tracking.
@@ -169,13 +191,16 @@ class DraftRepository {
     String draftId, {
     void Function(int mediaId, double progress)? onMediaProgress,
   }) async {
-    final draft = await _dao.getDraft(draftId);
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    final draft = await _dao.getDraft(draftId, ownerDid);
     if (draft == null) {
       throw StateError('Draft $draftId not found');
     }
 
     await _dao.updateDraftFields(
       draftId,
+      ownerDid,
       DraftsCompanion(
         status: Value(composer.DraftStatus.publishing.name),
         errorMessage: const Value(null),
@@ -188,7 +213,7 @@ class DraftRepository {
 
       final facetsJson = await _facetParser.parse(domain.text);
       if (facetsJson != null && facetsJson != domain.facetsJson) {
-        await _dao.updateDraftFields(draftId, DraftsCompanion(facetsJson: Value(facetsJson)));
+        await _dao.updateDraftFields(draftId, ownerDid, DraftsCompanion(facetsJson: Value(facetsJson)));
       }
 
       for (final media in domain.media) {
@@ -209,19 +234,14 @@ class DraftRepository {
         }
       }
 
-      final refreshed = await _dao.getDraft(draftId);
+      final refreshed = await _dao.getDraft(draftId, ownerDid);
       if (refreshed == null) throw StateError('Draft $draftId missing after upload');
       final draftToPublish = _toDomain(refreshed);
-
-      final session = await _sessionStorage.getSession();
-      if (session == null) {
-        throw StateError('Cannot publish draft without an active session');
-      }
 
       final record = _buildPostRecord(draftToPublish);
       final data = await _api.call(
         'com.atproto.repo.createRecord',
-        body: {'repo': session.did, 'collection': 'app.bsky.feed.post', 'record': record},
+        body: {'repo': ownerDid, 'collection': 'app.bsky.feed.post', 'record': record},
       );
 
       final uri = data['uri'] as String;
@@ -229,6 +249,7 @@ class DraftRepository {
 
       await _dao.updateDraftFields(
         draftId,
+        ownerDid,
         DraftsCompanion(
           status: Value(composer.DraftStatus.posted.name),
           errorMessage: const Value(null),
@@ -246,6 +267,7 @@ class DraftRepository {
       _logger.error('Failed to publish draft $draftId', e, stack);
       await _dao.updateDraftFields(
         draftId,
+        ownerDid,
         DraftsCompanion(
           status: Value(composer.DraftStatus.failed.name),
           errorMessage: Value(e.toString()),
@@ -264,6 +286,8 @@ class DraftRepository {
     int mediaId, {
     void Function(double progress)? onProgress,
   }) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
     await _dao.updateMedia(
       mediaId,
       DraftMediaCompanion(
@@ -273,7 +297,7 @@ class DraftRepository {
       ),
     );
 
-    final draft = await _dao.getDraft(draftId);
+    final draft = await _dao.getDraft(draftId, ownerDid);
     if (draft == null) {
       throw StateError('Draft $draftId not found');
     }
@@ -330,13 +354,18 @@ class DraftRepository {
   }
 
   Future<List<composer.Draft>> getCrashedDrafts() async {
-    final records = await _dao.getDraftsByStatus(composer.DraftStatus.publishing.name);
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    final records = await _dao.getDraftsByStatus(composer.DraftStatus.publishing.name, ownerDid);
     return records.map(_toDomain).toList();
   }
 
   Future<void> markAsFailed(String id, String reason) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
     await _dao.updateDraftFields(
       id,
+      ownerDid,
       DraftsCompanion(
         status: Value(composer.DraftStatus.failed.name),
         errorMessage: Value(reason),
@@ -347,8 +376,10 @@ class DraftRepository {
 
   /// Deletes all drafts with status `posted`.
   /// Returns the number of drafts deleted.
-  Future<int> deletePostedDrafts() {
-    return _dao.deleteDraftsByStatus(composer.DraftStatus.posted.name);
+  Future<int> deletePostedDrafts() async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    return _dao.deleteDraftsByStatus(composer.DraftStatus.posted.name, ownerDid);
   }
 
   composer.Draft _toDomain(DraftRecord record) {

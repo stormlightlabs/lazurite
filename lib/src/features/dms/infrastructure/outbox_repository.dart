@@ -120,7 +120,7 @@ class OutboxRepository {
       ownerDid: ownerDid,
     );
 
-    final item = await _outboxDao.getById(outboxId);
+    final item = await _outboxDao.getById(outboxId, ownerDid);
     if (item != null) {
       if (item.ownerDid != ownerDid) {
         _logger.warning('Skipping retry: owner mismatch', {
@@ -186,8 +186,8 @@ class OutboxRepository {
     } catch (error, stack) {
       _logger.error('Failed to send message', error, stack);
 
-      await _outboxDao.incrementRetryCount(item.outboxId);
-      final updatedItem = await _outboxDao.getById(item.outboxId);
+      await _outboxDao.incrementRetryCount(item.outboxId, ownerDid);
+      final updatedItem = await _outboxDao.getById(item.outboxId, ownerDid);
 
       if (updatedItem != null && updatedItem.retryCount >= OutboxItem.maxRetries) {
         await _outboxDao.updateStatus(

@@ -90,10 +90,11 @@ class NotificationsSyncQueueDao extends DatabaseAccessor<AppDatabase>
   /// Cleans up old permanently failed items.
   ///
   /// Deletes items with retryCount >= [kMaxNotificationSyncRetries] that are
-  /// older than the specified threshold.
-  Future<int> cleanupOldFailedItems(DateTime threshold) {
+  /// older than the specified threshold for a specific user.
+  Future<int> cleanupOldFailedItems(DateTime threshold, String ownerDid) {
     return (delete(notificationsSyncQueue)..where(
           (t) =>
+              t.ownerDid.equals(ownerDid) &
               t.retryCount.isBiggerOrEqualValue(kMaxNotificationSyncRetries) &
               t.createdAt.isSmallerThanValue(threshold),
         ))

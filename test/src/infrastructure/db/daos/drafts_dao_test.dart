@@ -7,6 +7,7 @@ import 'package:lazurite/src/infrastructure/db/daos/drafts_dao.dart';
 void main() {
   late AppDatabase db;
   late DraftsDao dao;
+  const ownerDid = 'did:plc:test';
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -18,12 +19,13 @@ void main() {
   });
 
   test('watchDrafts emits drafts with media changes', () async {
-    final stream = dao.watchDrafts();
+    final stream = dao.watchDrafts(ownerDid);
 
     final now = DateTime.now();
     await dao.insertDraft(
       DraftsCompanion.insert(
         id: 'draft-1',
+        ownerDid: ownerDid,
         content: const Value('Hello world'),
         status: 'draft',
         errorMessage: const Value(null),
@@ -35,6 +37,7 @@ void main() {
     await dao.insertMedia([
       DraftMediaCompanion.insert(
         draftId: 'draft-1',
+        ownerDid: ownerDid,
         localPath: '/tmp/image.png',
         mimeType: 'image/png',
         altText: const Value('alt'),
@@ -57,6 +60,7 @@ void main() {
     await dao.insertDraft(
       DraftsCompanion.insert(
         id: 'draft-ordered',
+        ownerDid: ownerDid,
         content: const Value('Ordering'),
         status: 'draft',
         errorMessage: const Value(null),
@@ -68,6 +72,7 @@ void main() {
     await dao.insertMedia([
       DraftMediaCompanion.insert(
         draftId: 'draft-ordered',
+        ownerDid: ownerDid,
         localPath: '/tmp/second.png',
         mimeType: 'image/png',
         altText: const Value(null),
@@ -79,6 +84,7 @@ void main() {
       ),
       DraftMediaCompanion.insert(
         draftId: 'draft-ordered',
+        ownerDid: ownerDid,
         localPath: '/tmp/first.png',
         mimeType: 'image/png',
         altText: const Value(null),
@@ -90,7 +96,7 @@ void main() {
       ),
     ]);
 
-    final record = await dao.getDraft('draft-ordered');
+    final record = await dao.getDraft('draft-ordered', ownerDid);
     expect(record, isNotNull);
     expect(record!.media.map((m) => m.localPath), ['/tmp/first.png', '/tmp/second.png']);
   });

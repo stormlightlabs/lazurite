@@ -20,13 +20,17 @@ class PostInteractionsDao extends DatabaseAccessor<AppDatabase> with _$PostInter
   }
 
   /// Gets the viewer interaction for a specific post.
-  Future<PostInteraction?> getInteraction(String postUri) {
-    return (select(postInteractions)..where((t) => t.postUri.equals(postUri))).getSingleOrNull();
+  Future<PostInteraction?> getInteraction(String postUri, String ownerDid) {
+    return (select(
+      postInteractions,
+    )..where((t) => t.postUri.equals(postUri) & t.ownerDid.equals(ownerDid))).getSingleOrNull();
   }
 
   /// Watches the viewer interaction for a specific post.
-  Stream<PostInteraction?> watchInteraction(String postUri) {
-    return (select(postInteractions)..where((t) => t.postUri.equals(postUri))).watchSingleOrNull();
+  Stream<PostInteraction?> watchInteraction(String postUri, String ownerDid) {
+    return (select(
+      postInteractions,
+    )..where((t) => t.postUri.equals(postUri) & t.ownerDid.equals(ownerDid))).watchSingleOrNull();
   }
 
   /// Batch upserts multiple viewer interactions.
@@ -37,17 +41,23 @@ class PostInteractionsDao extends DatabaseAccessor<AppDatabase> with _$PostInter
   }
 
   /// Gets all liked posts (where likeUri is not null).
-  Stream<List<PostInteraction>> watchLikedPosts() {
-    return (select(postInteractions)..where((t) => t.likeUri.isNotNull())).watch();
+  Stream<List<PostInteraction>> watchLikedPosts(String ownerDid) {
+    return (select(
+      postInteractions,
+    )..where((t) => t.ownerDid.equals(ownerDid) & t.likeUri.isNotNull())).watch();
   }
 
   /// Gets all bookmarked posts.
-  Stream<List<PostInteraction>> watchBookmarkedPosts() {
-    return (select(postInteractions)..where((t) => t.bookmarked.equals(true))).watch();
+  Stream<List<PostInteraction>> watchBookmarkedPosts(String ownerDid) {
+    return (select(
+      postInteractions,
+    )..where((t) => t.ownerDid.equals(ownerDid) & t.bookmarked.equals(true))).watch();
   }
 
   /// Removes interaction record for a post.
-  Future<int> deleteInteraction(String postUri) {
-    return (delete(postInteractions)..where((t) => t.postUri.equals(postUri))).go();
+  Future<int> deleteInteraction(String postUri, String ownerDid) {
+    return (delete(
+      postInteractions,
+    )..where((t) => t.postUri.equals(postUri) & t.ownerDid.equals(ownerDid))).go();
   }
 }

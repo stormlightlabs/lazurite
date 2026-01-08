@@ -137,8 +137,8 @@ void main() {
         when(
           () => mockApi.call(any(), body: any(named: 'body')),
         ).thenThrow(Exception('Network error'));
-        when(() => mockOutboxDao.incrementRetryCount(any())).thenAnswer((_) async {});
-        when(() => mockOutboxDao.getById(any())).thenAnswer(
+        when(() => mockOutboxDao.incrementRetryCount(any(), any())).thenAnswer((_) async {});
+        when(() => mockOutboxDao.getById(any(), any())).thenAnswer(
           (_) async => DmOutboxData(
             outboxId: 'outbox1',
             convoId: 'convo1',
@@ -154,7 +154,7 @@ void main() {
 
         await repository.processOutbox('did:plc:owner');
 
-        verify(() => mockOutboxDao.incrementRetryCount('outbox1')).called(1);
+        verify(() => mockOutboxDao.incrementRetryCount('outbox1', 'did:plc:owner')).called(1);
         verifyNever(() => mockOutboxDao.deleteItem(any()));
       });
 
@@ -190,8 +190,8 @@ void main() {
         when(
           () => mockApi.call(any(), body: any(named: 'body')),
         ).thenThrow(Exception('Network error'));
-        when(() => mockOutboxDao.incrementRetryCount(any())).thenAnswer((_) async {});
-        when(() => mockOutboxDao.getById(any())).thenAnswer(
+        when(() => mockOutboxDao.incrementRetryCount(any(), any())).thenAnswer((_) async {});
+        when(() => mockOutboxDao.getById(any(), any())).thenAnswer(
           (_) async => DmOutboxData(
             outboxId: 'outbox1',
             convoId: 'convo1',
@@ -308,7 +308,7 @@ void main() {
             ownerDid: any(named: 'ownerDid'),
           ),
         ).thenAnswer((_) async {});
-        when(() => mockOutboxDao.getById(any())).thenAnswer((_) async => item);
+        when(() => mockOutboxDao.getById(any(), any())).thenAnswer((_) async => item);
         when(
           () => mockOutboxDao.updateStatus(
             outboxId: any(named: 'outboxId'),

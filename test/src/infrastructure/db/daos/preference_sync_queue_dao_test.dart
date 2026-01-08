@@ -300,7 +300,7 @@ void main() {
           ),
         );
 
-        final deleted = await dao.cleanupOldFailedItems(threshold);
+        final deleted = await dao.cleanupOldFailedItems(threshold, ownerDid);
         expect(deleted, 1);
 
         final remaining = await dao.getPendingItems(ownerDid);
@@ -324,7 +324,7 @@ void main() {
           ),
         );
 
-        final deleted = await dao.cleanupOldFailedItems(now.subtract(const Duration(days: 30)));
+        final deleted = await dao.cleanupOldFailedItems(now.subtract(const Duration(days: 30)), ownerDid);
         expect(deleted, 0);
 
         final remaining = await dao.getPendingItems(ownerDid);

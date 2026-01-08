@@ -785,7 +785,7 @@ class FeedRepository {
     _logger.info('Performing resume sync for $ownerDid');
     try {
       final cleanupThreshold = DateTime.now().subtract(kSyncQueueCleanupAge);
-      final cleaned = await _syncQueueDao.cleanupOldFailedItems(cleanupThreshold);
+      final cleaned = await _syncQueueDao.cleanupOldFailedItems(cleanupThreshold, ownerDid);
       if (cleaned > 0) {
         _logger.info('Cleaned up $cleaned old failed sync items');
       }

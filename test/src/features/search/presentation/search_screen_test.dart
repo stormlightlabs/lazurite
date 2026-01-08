@@ -44,8 +44,8 @@ void main() {
     testWidgets('shows recent searches when query is empty', (tester) async {
       when(() => mockRepository.watchRecentSearches()).thenAnswer(
         (_) => Stream.value([
-          RecentSearche(id: 1, query: 'flutter', searchedAt: DateTime.now()),
-          RecentSearche(id: 2, query: 'dart', searchedAt: DateTime.now()),
+          RecentSearche(id: 1, query: 'flutter', searchedAt: DateTime.now(), ownerDid: 'did:plc:test'),
+          RecentSearche(id: 2, query: 'dart', searchedAt: DateTime.now(), ownerDid: 'did:plc:test'),
         ]),
       );
 

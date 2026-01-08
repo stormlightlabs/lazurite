@@ -2484,6 +2484,15 @@ class $RecentSearchesTable extends RecentSearches
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
   );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _queryMeta = const VerificationMeta('query');
   @override
   late final GeneratedColumn<String> query = GeneratedColumn<String>(
@@ -2492,7 +2501,6 @@ class $RecentSearchesTable extends RecentSearches
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
   static const VerificationMeta _searchedAtMeta = const VerificationMeta('searchedAt');
   @override
@@ -2504,7 +2512,7 @@ class $RecentSearchesTable extends RecentSearches
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, query, searchedAt];
+  List<GeneratedColumn> get $columns => [id, ownerDid, query, searchedAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2519,6 +2527,14 @@ class $RecentSearchesTable extends RecentSearches
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('query')) {
       context.handle(_queryMeta, query.isAcceptableOrUnknown(data['query']!, _queryMeta));
@@ -2543,6 +2559,10 @@ class $RecentSearchesTable extends RecentSearches
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return RecentSearche(
       id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
+      )!,
       query: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}query'],
@@ -2562,13 +2582,20 @@ class $RecentSearchesTable extends RecentSearches
 
 class RecentSearche extends DataClass implements Insertable<RecentSearche> {
   final int id;
+  final String ownerDid;
   final String query;
   final DateTime searchedAt;
-  const RecentSearche({required this.id, required this.query, required this.searchedAt});
+  const RecentSearche({
+    required this.id,
+    required this.ownerDid,
+    required this.query,
+    required this.searchedAt,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['query'] = Variable<String>(query);
     map['searched_at'] = Variable<DateTime>(searchedAt);
     return map;
@@ -2577,6 +2604,7 @@ class RecentSearche extends DataClass implements Insertable<RecentSearche> {
   RecentSearchesCompanion toCompanion(bool nullToAbsent) {
     return RecentSearchesCompanion(
       id: Value(id),
+      ownerDid: Value(ownerDid),
       query: Value(query),
       searchedAt: Value(searchedAt),
     );
@@ -2586,6 +2614,7 @@ class RecentSearche extends DataClass implements Insertable<RecentSearche> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return RecentSearche(
       id: serializer.fromJson<int>(json['id']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       query: serializer.fromJson<String>(json['query']),
       searchedAt: serializer.fromJson<DateTime>(json['searchedAt']),
     );
@@ -2595,19 +2624,23 @@ class RecentSearche extends DataClass implements Insertable<RecentSearche> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'query': serializer.toJson<String>(query),
       'searchedAt': serializer.toJson<DateTime>(searchedAt),
     };
   }
 
-  RecentSearche copyWith({int? id, String? query, DateTime? searchedAt}) => RecentSearche(
-    id: id ?? this.id,
-    query: query ?? this.query,
-    searchedAt: searchedAt ?? this.searchedAt,
-  );
+  RecentSearche copyWith({int? id, String? ownerDid, String? query, DateTime? searchedAt}) =>
+      RecentSearche(
+        id: id ?? this.id,
+        ownerDid: ownerDid ?? this.ownerDid,
+        query: query ?? this.query,
+        searchedAt: searchedAt ?? this.searchedAt,
+      );
   RecentSearche copyWithCompanion(RecentSearchesCompanion data) {
     return RecentSearche(
       id: data.id.present ? data.id.value : this.id,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       query: data.query.present ? data.query.value : this.query,
       searchedAt: data.searchedAt.present ? data.searchedAt.value : this.searchedAt,
     );
@@ -2617,6 +2650,7 @@ class RecentSearche extends DataClass implements Insertable<RecentSearche> {
   String toString() {
     return (StringBuffer('RecentSearche(')
           ..write('id: $id, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('query: $query, ')
           ..write('searchedAt: $searchedAt')
           ..write(')'))
@@ -2624,38 +2658,45 @@ class RecentSearche extends DataClass implements Insertable<RecentSearche> {
   }
 
   @override
-  int get hashCode => Object.hash(id, query, searchedAt);
+  int get hashCode => Object.hash(id, ownerDid, query, searchedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is RecentSearche &&
           other.id == this.id &&
+          other.ownerDid == this.ownerDid &&
           other.query == this.query &&
           other.searchedAt == this.searchedAt);
 }
 
 class RecentSearchesCompanion extends UpdateCompanion<RecentSearche> {
   final Value<int> id;
+  final Value<String> ownerDid;
   final Value<String> query;
   final Value<DateTime> searchedAt;
   const RecentSearchesCompanion({
     this.id = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.query = const Value.absent(),
     this.searchedAt = const Value.absent(),
   });
   RecentSearchesCompanion.insert({
     this.id = const Value.absent(),
+    required String ownerDid,
     required String query,
     required DateTime searchedAt,
-  }) : query = Value(query),
+  }) : ownerDid = Value(ownerDid),
+       query = Value(query),
        searchedAt = Value(searchedAt);
   static Insertable<RecentSearche> custom({
     Expression<int>? id,
+    Expression<String>? ownerDid,
     Expression<String>? query,
     Expression<DateTime>? searchedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (query != null) 'query': query,
       if (searchedAt != null) 'searched_at': searchedAt,
     });
@@ -2663,11 +2704,13 @@ class RecentSearchesCompanion extends UpdateCompanion<RecentSearche> {
 
   RecentSearchesCompanion copyWith({
     Value<int>? id,
+    Value<String>? ownerDid,
     Value<String>? query,
     Value<DateTime>? searchedAt,
   }) {
     return RecentSearchesCompanion(
       id: id ?? this.id,
+      ownerDid: ownerDid ?? this.ownerDid,
       query: query ?? this.query,
       searchedAt: searchedAt ?? this.searchedAt,
     );
@@ -2678,6 +2721,9 @@ class RecentSearchesCompanion extends UpdateCompanion<RecentSearche> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (query.present) {
       map['query'] = Variable<String>(query.value);
@@ -2692,6 +2738,7 @@ class RecentSearchesCompanion extends UpdateCompanion<RecentSearche> {
   String toString() {
     return (StringBuffer('RecentSearchesCompanion(')
           ..write('id: $id, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('query: $query, ')
           ..write('searchedAt: $searchedAt')
           ..write(')'))
@@ -4607,6 +4654,15 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _contentMeta = const VerificationMeta('content');
   @override
   late final GeneratedColumn<String> content = GeneratedColumn<String>(
@@ -4759,6 +4815,7 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    ownerDid,
     content,
     replyParentUri,
     replyParentCid,
@@ -4789,6 +4846,14 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('content')) {
       context.handle(_contentMeta, content.isAcceptableOrUnknown(data['content']!, _contentMeta));
@@ -4896,12 +4961,16 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => {id, ownerDid};
   @override
   Draft map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Draft(
       id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
+      )!,
       content: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}content'],
@@ -4977,6 +5046,7 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
 
 class Draft extends DataClass implements Insertable<Draft> {
   final String id;
+  final String ownerDid;
   final String content;
   final String? replyParentUri;
   final String? replyParentCid;
@@ -4995,6 +5065,7 @@ class Draft extends DataClass implements Insertable<Draft> {
   final DateTime updatedAt;
   const Draft({
     required this.id,
+    required this.ownerDid,
     required this.content,
     this.replyParentUri,
     this.replyParentCid,
@@ -5016,6 +5087,7 @@ class Draft extends DataClass implements Insertable<Draft> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['content'] = Variable<String>(content);
     if (!nullToAbsent || replyParentUri != null) {
       map['reply_parent_uri'] = Variable<String>(replyParentUri);
@@ -5062,6 +5134,7 @@ class Draft extends DataClass implements Insertable<Draft> {
   DraftsCompanion toCompanion(bool nullToAbsent) {
     return DraftsCompanion(
       id: Value(id),
+      ownerDid: Value(ownerDid),
       content: Value(content),
       replyParentUri: replyParentUri == null && nullToAbsent
           ? const Value.absent()
@@ -5101,6 +5174,7 @@ class Draft extends DataClass implements Insertable<Draft> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Draft(
       id: serializer.fromJson<String>(json['id']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       content: serializer.fromJson<String>(json['content']),
       replyParentUri: serializer.fromJson<String?>(json['replyParentUri']),
       replyParentCid: serializer.fromJson<String?>(json['replyParentCid']),
@@ -5124,6 +5198,7 @@ class Draft extends DataClass implements Insertable<Draft> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'content': serializer.toJson<String>(content),
       'replyParentUri': serializer.toJson<String?>(replyParentUri),
       'replyParentCid': serializer.toJson<String?>(replyParentCid),
@@ -5145,6 +5220,7 @@ class Draft extends DataClass implements Insertable<Draft> {
 
   Draft copyWith({
     String? id,
+    String? ownerDid,
     String? content,
     Value<String?> replyParentUri = const Value.absent(),
     Value<String?> replyParentCid = const Value.absent(),
@@ -5163,6 +5239,7 @@ class Draft extends DataClass implements Insertable<Draft> {
     DateTime? updatedAt,
   }) => Draft(
     id: id ?? this.id,
+    ownerDid: ownerDid ?? this.ownerDid,
     content: content ?? this.content,
     replyParentUri: replyParentUri.present ? replyParentUri.value : this.replyParentUri,
     replyParentCid: replyParentCid.present ? replyParentCid.value : this.replyParentCid,
@@ -5187,6 +5264,7 @@ class Draft extends DataClass implements Insertable<Draft> {
   Draft copyWithCompanion(DraftsCompanion data) {
     return Draft(
       id: data.id.present ? data.id.value : this.id,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       content: data.content.present ? data.content.value : this.content,
       replyParentUri: data.replyParentUri.present
           ? data.replyParentUri.value
@@ -5218,6 +5296,7 @@ class Draft extends DataClass implements Insertable<Draft> {
   String toString() {
     return (StringBuffer('Draft(')
           ..write('id: $id, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('content: $content, ')
           ..write('replyParentUri: $replyParentUri, ')
           ..write('replyParentCid: $replyParentCid, ')
@@ -5241,6 +5320,7 @@ class Draft extends DataClass implements Insertable<Draft> {
   @override
   int get hashCode => Object.hash(
     id,
+    ownerDid,
     content,
     replyParentUri,
     replyParentCid,
@@ -5263,6 +5343,7 @@ class Draft extends DataClass implements Insertable<Draft> {
       identical(this, other) ||
       (other is Draft &&
           other.id == this.id &&
+          other.ownerDid == this.ownerDid &&
           other.content == this.content &&
           other.replyParentUri == this.replyParentUri &&
           other.replyParentCid == this.replyParentCid &&
@@ -5283,6 +5364,7 @@ class Draft extends DataClass implements Insertable<Draft> {
 
 class DraftsCompanion extends UpdateCompanion<Draft> {
   final Value<String> id;
+  final Value<String> ownerDid;
   final Value<String> content;
   final Value<String?> replyParentUri;
   final Value<String?> replyParentCid;
@@ -5302,6 +5384,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
   final Value<int> rowid;
   const DraftsCompanion({
     this.id = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.content = const Value.absent(),
     this.replyParentUri = const Value.absent(),
     this.replyParentCid = const Value.absent(),
@@ -5322,6 +5405,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
   });
   DraftsCompanion.insert({
     required String id,
+    required String ownerDid,
     this.content = const Value.absent(),
     this.replyParentUri = const Value.absent(),
     this.replyParentCid = const Value.absent(),
@@ -5340,11 +5424,13 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
+       ownerDid = Value(ownerDid),
        status = Value(status),
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt);
   static Insertable<Draft> custom({
     Expression<String>? id,
+    Expression<String>? ownerDid,
     Expression<String>? content,
     Expression<String>? replyParentUri,
     Expression<String>? replyParentCid,
@@ -5365,6 +5451,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (content != null) 'content': content,
       if (replyParentUri != null) 'reply_parent_uri': replyParentUri,
       if (replyParentCid != null) 'reply_parent_cid': replyParentCid,
@@ -5387,6 +5474,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
 
   DraftsCompanion copyWith({
     Value<String>? id,
+    Value<String>? ownerDid,
     Value<String>? content,
     Value<String?>? replyParentUri,
     Value<String?>? replyParentCid,
@@ -5407,6 +5495,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
   }) {
     return DraftsCompanion(
       id: id ?? this.id,
+      ownerDid: ownerDid ?? this.ownerDid,
       content: content ?? this.content,
       replyParentUri: replyParentUri ?? this.replyParentUri,
       replyParentCid: replyParentCid ?? this.replyParentCid,
@@ -5432,6 +5521,9 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (content.present) {
       map['content'] = Variable<String>(content.value);
@@ -5491,6 +5583,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
   String toString() {
     return (StringBuffer('DraftsCompanion(')
           ..write('id: $id, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('content: $content, ')
           ..write('replyParentUri: $replyParentUri, ')
           ..write('replyParentCid: $replyParentCid, ')
@@ -5537,7 +5630,15 @@ class $DraftMediaTable extends DraftMedia with TableInfo<$DraftMediaTable, Draft
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES drafts (id)'),
+  );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
   );
   static const VerificationMeta _localPathMeta = const VerificationMeta('localPath');
   @override
@@ -5615,6 +5716,7 @@ class $DraftMediaTable extends DraftMedia with TableInfo<$DraftMediaTable, Draft
   List<GeneratedColumn> get $columns => [
     id,
     draftId,
+    ownerDid,
     localPath,
     mimeType,
     altText,
@@ -5643,6 +5745,14 @@ class $DraftMediaTable extends DraftMedia with TableInfo<$DraftMediaTable, Draft
       context.handle(_draftIdMeta, draftId.isAcceptableOrUnknown(data['draft_id']!, _draftIdMeta));
     } else if (isInserting) {
       context.missing(_draftIdMeta);
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('local_path')) {
       context.handle(
@@ -5710,6 +5820,10 @@ class $DraftMediaTable extends DraftMedia with TableInfo<$DraftMediaTable, Draft
         DriftSqlType.string,
         data['${effectivePrefix}draft_id'],
       )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
+      )!,
       localPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}local_path'],
@@ -5754,6 +5868,7 @@ class $DraftMediaTable extends DraftMedia with TableInfo<$DraftMediaTable, Draft
 class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
   final int id;
   final String draftId;
+  final String ownerDid;
   final String localPath;
   final String mimeType;
   final String? altText;
@@ -5765,6 +5880,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
   const DraftMediaData({
     required this.id,
     required this.draftId,
+    required this.ownerDid,
     required this.localPath,
     required this.mimeType,
     this.altText,
@@ -5779,6 +5895,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['draft_id'] = Variable<String>(draftId);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['local_path'] = Variable<String>(localPath);
     map['mime_type'] = Variable<String>(mimeType);
     if (!nullToAbsent || altText != null) {
@@ -5800,6 +5917,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
     return DraftMediaCompanion(
       id: Value(id),
       draftId: Value(draftId),
+      ownerDid: Value(ownerDid),
       localPath: Value(localPath),
       mimeType: Value(mimeType),
       altText: altText == null && nullToAbsent ? const Value.absent() : Value(altText),
@@ -5816,6 +5934,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
     return DraftMediaData(
       id: serializer.fromJson<int>(json['id']),
       draftId: serializer.fromJson<String>(json['draftId']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       localPath: serializer.fromJson<String>(json['localPath']),
       mimeType: serializer.fromJson<String>(json['mimeType']),
       altText: serializer.fromJson<String?>(json['altText']),
@@ -5832,6 +5951,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'draftId': serializer.toJson<String>(draftId),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'localPath': serializer.toJson<String>(localPath),
       'mimeType': serializer.toJson<String>(mimeType),
       'altText': serializer.toJson<String?>(altText),
@@ -5846,6 +5966,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
   DraftMediaData copyWith({
     int? id,
     String? draftId,
+    String? ownerDid,
     String? localPath,
     String? mimeType,
     Value<String?> altText = const Value.absent(),
@@ -5857,6 +5978,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
   }) => DraftMediaData(
     id: id ?? this.id,
     draftId: draftId ?? this.draftId,
+    ownerDid: ownerDid ?? this.ownerDid,
     localPath: localPath ?? this.localPath,
     mimeType: mimeType ?? this.mimeType,
     altText: altText.present ? altText.value : this.altText,
@@ -5870,6 +5992,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
     return DraftMediaData(
       id: data.id.present ? data.id.value : this.id,
       draftId: data.draftId.present ? data.draftId.value : this.draftId,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       localPath: data.localPath.present ? data.localPath.value : this.localPath,
       mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
       altText: data.altText.present ? data.altText.value : this.altText,
@@ -5886,6 +6009,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
     return (StringBuffer('DraftMediaData(')
           ..write('id: $id, ')
           ..write('draftId: $draftId, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('localPath: $localPath, ')
           ..write('mimeType: $mimeType, ')
           ..write('altText: $altText, ')
@@ -5902,6 +6026,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
   int get hashCode => Object.hash(
     id,
     draftId,
+    ownerDid,
     localPath,
     mimeType,
     altText,
@@ -5917,6 +6042,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
       (other is DraftMediaData &&
           other.id == this.id &&
           other.draftId == this.draftId &&
+          other.ownerDid == this.ownerDid &&
           other.localPath == this.localPath &&
           other.mimeType == this.mimeType &&
           other.altText == this.altText &&
@@ -5930,6 +6056,7 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
 class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
   final Value<int> id;
   final Value<String> draftId;
+  final Value<String> ownerDid;
   final Value<String> localPath;
   final Value<String> mimeType;
   final Value<String?> altText;
@@ -5941,6 +6068,7 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
   const DraftMediaCompanion({
     this.id = const Value.absent(),
     this.draftId = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.localPath = const Value.absent(),
     this.mimeType = const Value.absent(),
     this.altText = const Value.absent(),
@@ -5953,6 +6081,7 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
   DraftMediaCompanion.insert({
     this.id = const Value.absent(),
     required String draftId,
+    required String ownerDid,
     required String localPath,
     required String mimeType,
     this.altText = const Value.absent(),
@@ -5962,6 +6091,7 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
     required int sortOrder,
     required DateTime createdAt,
   }) : draftId = Value(draftId),
+       ownerDid = Value(ownerDid),
        localPath = Value(localPath),
        mimeType = Value(mimeType),
        status = Value(status),
@@ -5970,6 +6100,7 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
   static Insertable<DraftMediaData> custom({
     Expression<int>? id,
     Expression<String>? draftId,
+    Expression<String>? ownerDid,
     Expression<String>? localPath,
     Expression<String>? mimeType,
     Expression<String>? altText,
@@ -5982,6 +6113,7 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (draftId != null) 'draft_id': draftId,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (localPath != null) 'local_path': localPath,
       if (mimeType != null) 'mime_type': mimeType,
       if (altText != null) 'alt_text': altText,
@@ -5996,6 +6128,7 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
   DraftMediaCompanion copyWith({
     Value<int>? id,
     Value<String>? draftId,
+    Value<String>? ownerDid,
     Value<String>? localPath,
     Value<String>? mimeType,
     Value<String?>? altText,
@@ -6008,6 +6141,7 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
     return DraftMediaCompanion(
       id: id ?? this.id,
       draftId: draftId ?? this.draftId,
+      ownerDid: ownerDid ?? this.ownerDid,
       localPath: localPath ?? this.localPath,
       mimeType: mimeType ?? this.mimeType,
       altText: altText ?? this.altText,
@@ -6027,6 +6161,9 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
     }
     if (draftId.present) {
       map['draft_id'] = Variable<String>(draftId.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (localPath.present) {
       map['local_path'] = Variable<String>(localPath.value);
@@ -6060,6 +6197,7 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
     return (StringBuffer('DraftMediaCompanion(')
           ..write('id: $id, ')
           ..write('draftId: $draftId, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('localPath: $localPath, ')
           ..write('mimeType: $mimeType, ')
           ..write('altText: $altText, ')
@@ -6786,6 +6924,15 @@ class $PostInteractionsTable extends PostInteractions
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES posts (uri)'),
   );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _likeUriMeta = const VerificationMeta('likeUri');
   @override
   late final GeneratedColumn<String> likeUri = GeneratedColumn<String>(
@@ -6838,6 +6985,7 @@ class $PostInteractionsTable extends PostInteractions
   @override
   List<GeneratedColumn> get $columns => [
     postUri,
+    ownerDid,
     likeUri,
     repostUri,
     bookmarked,
@@ -6860,6 +7008,14 @@ class $PostInteractionsTable extends PostInteractions
       context.handle(_postUriMeta, postUri.isAcceptableOrUnknown(data['post_uri']!, _postUriMeta));
     } else if (isInserting) {
       context.missing(_postUriMeta);
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
     }
     if (data.containsKey('like_uri')) {
       context.handle(_likeUriMeta, likeUri.isAcceptableOrUnknown(data['like_uri']!, _likeUriMeta));
@@ -6894,7 +7050,7 @@ class $PostInteractionsTable extends PostInteractions
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {postUri};
+  Set<GeneratedColumn> get $primaryKey => {postUri, ownerDid};
   @override
   PostInteraction map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -6902,6 +7058,10 @@ class $PostInteractionsTable extends PostInteractions
       postUri: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}post_uri'],
+      )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
       )!,
       likeUri: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -6936,6 +7096,9 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
   /// Reference to the post this interaction applies to.
   final String postUri;
 
+  /// The DID of the user who owns this interaction.
+  final String ownerDid;
+
   /// AT URI of the like record (if liked).
   final String? likeUri;
 
@@ -6952,6 +7115,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
   final DateTime updatedAt;
   const PostInteraction({
     required this.postUri,
+    required this.ownerDid,
     this.likeUri,
     this.repostUri,
     required this.bookmarked,
@@ -6962,6 +7126,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['post_uri'] = Variable<String>(postUri);
+    map['owner_did'] = Variable<String>(ownerDid);
     if (!nullToAbsent || likeUri != null) {
       map['like_uri'] = Variable<String>(likeUri);
     }
@@ -6977,6 +7142,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
   PostInteractionsCompanion toCompanion(bool nullToAbsent) {
     return PostInteractionsCompanion(
       postUri: Value(postUri),
+      ownerDid: Value(ownerDid),
       likeUri: likeUri == null && nullToAbsent ? const Value.absent() : Value(likeUri),
       repostUri: repostUri == null && nullToAbsent ? const Value.absent() : Value(repostUri),
       bookmarked: Value(bookmarked),
@@ -6989,6 +7155,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return PostInteraction(
       postUri: serializer.fromJson<String>(json['postUri']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       likeUri: serializer.fromJson<String?>(json['likeUri']),
       repostUri: serializer.fromJson<String?>(json['repostUri']),
       bookmarked: serializer.fromJson<bool>(json['bookmarked']),
@@ -7001,6 +7168,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'postUri': serializer.toJson<String>(postUri),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'likeUri': serializer.toJson<String?>(likeUri),
       'repostUri': serializer.toJson<String?>(repostUri),
       'bookmarked': serializer.toJson<bool>(bookmarked),
@@ -7011,6 +7179,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
 
   PostInteraction copyWith({
     String? postUri,
+    String? ownerDid,
     Value<String?> likeUri = const Value.absent(),
     Value<String?> repostUri = const Value.absent(),
     bool? bookmarked,
@@ -7018,6 +7187,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
     DateTime? updatedAt,
   }) => PostInteraction(
     postUri: postUri ?? this.postUri,
+    ownerDid: ownerDid ?? this.ownerDid,
     likeUri: likeUri.present ? likeUri.value : this.likeUri,
     repostUri: repostUri.present ? repostUri.value : this.repostUri,
     bookmarked: bookmarked ?? this.bookmarked,
@@ -7027,6 +7197,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
   PostInteraction copyWithCompanion(PostInteractionsCompanion data) {
     return PostInteraction(
       postUri: data.postUri.present ? data.postUri.value : this.postUri,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       likeUri: data.likeUri.present ? data.likeUri.value : this.likeUri,
       repostUri: data.repostUri.present ? data.repostUri.value : this.repostUri,
       bookmarked: data.bookmarked.present ? data.bookmarked.value : this.bookmarked,
@@ -7039,6 +7210,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
   String toString() {
     return (StringBuffer('PostInteraction(')
           ..write('postUri: $postUri, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('likeUri: $likeUri, ')
           ..write('repostUri: $repostUri, ')
           ..write('bookmarked: $bookmarked, ')
@@ -7049,12 +7221,14 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
   }
 
   @override
-  int get hashCode => Object.hash(postUri, likeUri, repostUri, bookmarked, threadMuted, updatedAt);
+  int get hashCode =>
+      Object.hash(postUri, ownerDid, likeUri, repostUri, bookmarked, threadMuted, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is PostInteraction &&
           other.postUri == this.postUri &&
+          other.ownerDid == this.ownerDid &&
           other.likeUri == this.likeUri &&
           other.repostUri == this.repostUri &&
           other.bookmarked == this.bookmarked &&
@@ -7064,6 +7238,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
 
 class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
   final Value<String> postUri;
+  final Value<String> ownerDid;
   final Value<String?> likeUri;
   final Value<String?> repostUri;
   final Value<bool> bookmarked;
@@ -7072,6 +7247,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
   final Value<int> rowid;
   const PostInteractionsCompanion({
     this.postUri = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.likeUri = const Value.absent(),
     this.repostUri = const Value.absent(),
     this.bookmarked = const Value.absent(),
@@ -7081,6 +7257,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
   });
   PostInteractionsCompanion.insert({
     required String postUri,
+    required String ownerDid,
     this.likeUri = const Value.absent(),
     this.repostUri = const Value.absent(),
     this.bookmarked = const Value.absent(),
@@ -7088,9 +7265,11 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
   }) : postUri = Value(postUri),
+       ownerDid = Value(ownerDid),
        updatedAt = Value(updatedAt);
   static Insertable<PostInteraction> custom({
     Expression<String>? postUri,
+    Expression<String>? ownerDid,
     Expression<String>? likeUri,
     Expression<String>? repostUri,
     Expression<bool>? bookmarked,
@@ -7100,6 +7279,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
   }) {
     return RawValuesInsertable({
       if (postUri != null) 'post_uri': postUri,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (likeUri != null) 'like_uri': likeUri,
       if (repostUri != null) 'repost_uri': repostUri,
       if (bookmarked != null) 'bookmarked': bookmarked,
@@ -7111,6 +7291,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
 
   PostInteractionsCompanion copyWith({
     Value<String>? postUri,
+    Value<String>? ownerDid,
     Value<String?>? likeUri,
     Value<String?>? repostUri,
     Value<bool>? bookmarked,
@@ -7120,6 +7301,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
   }) {
     return PostInteractionsCompanion(
       postUri: postUri ?? this.postUri,
+      ownerDid: ownerDid ?? this.ownerDid,
       likeUri: likeUri ?? this.likeUri,
       repostUri: repostUri ?? this.repostUri,
       bookmarked: bookmarked ?? this.bookmarked,
@@ -7134,6 +7316,9 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
     final map = <String, Expression>{};
     if (postUri.present) {
       map['post_uri'] = Variable<String>(postUri.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (likeUri.present) {
       map['like_uri'] = Variable<String>(likeUri.value);
@@ -7160,6 +7345,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
   String toString() {
     return (StringBuffer('PostInteractionsCompanion(')
           ..write('postUri: $postUri, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('likeUri: $likeUri, ')
           ..write('repostUri: $repostUri, ')
           ..write('bookmarked: $bookmarked, ')
@@ -11397,6 +11583,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
   );
+  late final Index recentSearchesUniqueIdx = Index(
+    'recent_searches_unique_idx',
+    'CREATE UNIQUE INDEX recent_searches_unique_idx ON recent_searches (owner_did, "query")',
+  );
   late final Index searchCacheSortIdx = Index(
     'search_cache_sort_idx',
     'CREATE INDEX search_cache_sort_idx ON search_cache_items (query_key, sort_key)',
@@ -11469,6 +11659,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     dmMessages,
     dmOutbox,
     feedContentSortIdx,
+    recentSearchesUniqueIdx,
     searchCacheSortIdx,
     notificationsIndexedAtIdx,
     dmMessagesConvoIdx,
@@ -13415,12 +13606,14 @@ typedef $$FeedCursorsTableProcessedTableManager =
 typedef $$RecentSearchesTableCreateCompanionBuilder =
     RecentSearchesCompanion Function({
       Value<int> id,
+      required String ownerDid,
       required String query,
       required DateTime searchedAt,
     });
 typedef $$RecentSearchesTableUpdateCompanionBuilder =
     RecentSearchesCompanion Function({
       Value<int> id,
+      Value<String> ownerDid,
       Value<String> query,
       Value<DateTime> searchedAt,
     });
@@ -13435,6 +13628,9 @@ class $$RecentSearchesTableFilterComposer extends Composer<_$AppDatabase, $Recen
   });
   ColumnFilters<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get query =>
       $composableBuilder(column: $table.query, builder: (column) => ColumnFilters(column));
@@ -13454,6 +13650,9 @@ class $$RecentSearchesTableOrderingComposer extends Composer<_$AppDatabase, $Rec
   ColumnOrderings<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get query =>
       $composableBuilder(column: $table.query, builder: (column) => ColumnOrderings(column));
 
@@ -13472,6 +13671,9 @@ class $$RecentSearchesTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get query =>
       $composableBuilder(column: $table.query, builder: (column) => column);
@@ -13509,15 +13711,27 @@ class $$RecentSearchesTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> query = const Value.absent(),
                 Value<DateTime> searchedAt = const Value.absent(),
-              }) => RecentSearchesCompanion(id: id, query: query, searchedAt: searchedAt),
+              }) => RecentSearchesCompanion(
+                id: id,
+                ownerDid: ownerDid,
+                query: query,
+                searchedAt: searchedAt,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                required String ownerDid,
                 required String query,
                 required DateTime searchedAt,
-              }) => RecentSearchesCompanion.insert(id: id, query: query, searchedAt: searchedAt),
+              }) => RecentSearchesCompanion.insert(
+                id: id,
+                ownerDid: ownerDid,
+                query: query,
+                searchedAt: searchedAt,
+              ),
           withReferenceMapper: (p0) =>
               p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
           prefetchHooksCallback: null,
@@ -14670,6 +14884,7 @@ typedef $$PreferenceSyncQueueTableProcessedTableManager =
 typedef $$DraftsTableCreateCompanionBuilder =
     DraftsCompanion Function({
       required String id,
+      required String ownerDid,
       Value<String> content,
       Value<String?> replyParentUri,
       Value<String?> replyParentCid,
@@ -14691,6 +14906,7 @@ typedef $$DraftsTableCreateCompanionBuilder =
 typedef $$DraftsTableUpdateCompanionBuilder =
     DraftsCompanion Function({
       Value<String> id,
+      Value<String> ownerDid,
       Value<String> content,
       Value<String?> replyParentUri,
       Value<String?> replyParentCid,
@@ -14710,27 +14926,6 @@ typedef $$DraftsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-final class $$DraftsTableReferences extends BaseReferences<_$AppDatabase, $DraftsTable, Draft> {
-  $$DraftsTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static MultiTypedResultKey<$DraftMediaTable, List<DraftMediaData>> _draftMediaRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
-    db.draftMedia,
-    aliasName: $_aliasNameGenerator(db.drafts.id, db.draftMedia.draftId),
-  );
-
-  $$DraftMediaTableProcessedTableManager get draftMediaRefs {
-    final manager = $$DraftMediaTableTableManager(
-      $_db,
-      $_db.draftMedia,
-    ).filter((f) => f.draftId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_draftMediaRefsTable($_db));
-    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
-  }
-}
-
 class $$DraftsTableFilterComposer extends Composer<_$AppDatabase, $DraftsTable> {
   $$DraftsTableFilterComposer({
     required super.$db,
@@ -14741,6 +14936,9 @@ class $$DraftsTableFilterComposer extends Composer<_$AppDatabase, $DraftsTable> 
   });
   ColumnFilters<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get content =>
       $composableBuilder(column: $table.content, builder: (column) => ColumnFilters(column));
@@ -14797,25 +14995,6 @@ class $$DraftsTableFilterComposer extends Composer<_$AppDatabase, $DraftsTable> 
 
   ColumnFilters<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
-
-  Expression<bool> draftMediaRefs(Expression<bool> Function($$DraftMediaTableFilterComposer f) f) {
-    final $$DraftMediaTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.draftMedia,
-      getReferencedColumn: (t) => t.draftId,
-      builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$DraftMediaTableFilterComposer(
-                $db: $db,
-                $table: $db.draftMedia,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
-    );
-    return f(composer);
-  }
 }
 
 class $$DraftsTableOrderingComposer extends Composer<_$AppDatabase, $DraftsTable> {
@@ -14828,6 +15007,9 @@ class $$DraftsTableOrderingComposer extends Composer<_$AppDatabase, $DraftsTable
   });
   ColumnOrderings<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get content =>
       $composableBuilder(column: $table.content, builder: (column) => ColumnOrderings(column));
@@ -14905,6 +15087,9 @@ class $$DraftsTableAnnotationComposer extends Composer<_$AppDatabase, $DraftsTab
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
+
   GeneratedColumn<String> get content =>
       $composableBuilder(column: $table.content, builder: (column) => column);
 
@@ -14952,27 +15137,6 @@ class $$DraftsTableAnnotationComposer extends Composer<_$AppDatabase, $DraftsTab
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  Expression<T> draftMediaRefs<T extends Object>(
-    Expression<T> Function($$DraftMediaTableAnnotationComposer a) f,
-  ) {
-    final $$DraftMediaTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.draftMedia,
-      getReferencedColumn: (t) => t.draftId,
-      builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$DraftMediaTableAnnotationComposer(
-                $db: $db,
-                $table: $db.draftMedia,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
-    );
-    return f(composer);
-  }
 }
 
 class $$DraftsTableTableManager
@@ -14986,9 +15150,9 @@ class $$DraftsTableTableManager
           $$DraftsTableAnnotationComposer,
           $$DraftsTableCreateCompanionBuilder,
           $$DraftsTableUpdateCompanionBuilder,
-          (Draft, $$DraftsTableReferences),
+          (Draft, BaseReferences<_$AppDatabase, $DraftsTable, Draft>),
           Draft,
-          PrefetchHooks Function({bool draftMediaRefs})
+          PrefetchHooks Function()
         > {
   $$DraftsTableTableManager(_$AppDatabase db, $DraftsTable table)
     : super(
@@ -15002,6 +15166,7 @@ class $$DraftsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> content = const Value.absent(),
                 Value<String?> replyParentUri = const Value.absent(),
                 Value<String?> replyParentCid = const Value.absent(),
@@ -15021,6 +15186,7 @@ class $$DraftsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => DraftsCompanion(
                 id: id,
+                ownerDid: ownerDid,
                 content: content,
                 replyParentUri: replyParentUri,
                 replyParentCid: replyParentCid,
@@ -15042,6 +15208,7 @@ class $$DraftsTableTableManager
           createCompanionCallback:
               ({
                 required String id,
+                required String ownerDid,
                 Value<String> content = const Value.absent(),
                 Value<String?> replyParentUri = const Value.absent(),
                 Value<String?> replyParentCid = const Value.absent(),
@@ -15061,6 +15228,7 @@ class $$DraftsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => DraftsCompanion.insert(
                 id: id,
+                ownerDid: ownerDid,
                 content: content,
                 replyParentUri: replyParentUri,
                 replyParentCid: replyParentCid,
@@ -15080,28 +15248,8 @@ class $$DraftsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) =>
-              p0.map((e) => (e.readTable(table), $$DraftsTableReferences(db, table, e))).toList(),
-          prefetchHooksCallback: ({draftMediaRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (draftMediaRefs) db.draftMedia],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (draftMediaRefs)
-                    await $_getPrefetchedData<Draft, $DraftsTable, DraftMediaData>(
-                      currentTable: table,
-                      referencedTable: $$DraftsTableReferences._draftMediaRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$DraftsTableReferences(db, table, p0).draftMediaRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.draftId == item.id),
-                      typedResults: items,
-                    ),
-                ];
-              },
-            );
-          },
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
         ),
       );
 }
@@ -15116,14 +15264,15 @@ typedef $$DraftsTableProcessedTableManager =
       $$DraftsTableAnnotationComposer,
       $$DraftsTableCreateCompanionBuilder,
       $$DraftsTableUpdateCompanionBuilder,
-      (Draft, $$DraftsTableReferences),
+      (Draft, BaseReferences<_$AppDatabase, $DraftsTable, Draft>),
       Draft,
-      PrefetchHooks Function({bool draftMediaRefs})
+      PrefetchHooks Function()
     >;
 typedef $$DraftMediaTableCreateCompanionBuilder =
     DraftMediaCompanion Function({
       Value<int> id,
       required String draftId,
+      required String ownerDid,
       required String localPath,
       required String mimeType,
       Value<String?> altText,
@@ -15137,6 +15286,7 @@ typedef $$DraftMediaTableUpdateCompanionBuilder =
     DraftMediaCompanion Function({
       Value<int> id,
       Value<String> draftId,
+      Value<String> ownerDid,
       Value<String> localPath,
       Value<String> mimeType,
       Value<String?> altText,
@@ -15146,26 +15296,6 @@ typedef $$DraftMediaTableUpdateCompanionBuilder =
       Value<int> sortOrder,
       Value<DateTime> createdAt,
     });
-
-final class $$DraftMediaTableReferences
-    extends BaseReferences<_$AppDatabase, $DraftMediaTable, DraftMediaData> {
-  $$DraftMediaTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $DraftsTable _draftIdTable(_$AppDatabase db) =>
-      db.drafts.createAlias($_aliasNameGenerator(db.draftMedia.draftId, db.drafts.id));
-
-  $$DraftsTableProcessedTableManager get draftId {
-    final $_column = $_itemColumn<String>('draft_id')!;
-
-    final manager = $$DraftsTableTableManager(
-      $_db,
-      $_db.drafts,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_draftIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: [item]));
-  }
-}
 
 class $$DraftMediaTableFilterComposer extends Composer<_$AppDatabase, $DraftMediaTable> {
   $$DraftMediaTableFilterComposer({
@@ -15177,6 +15307,12 @@ class $$DraftMediaTableFilterComposer extends Composer<_$AppDatabase, $DraftMedi
   });
   ColumnFilters<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get draftId =>
+      $composableBuilder(column: $table.draftId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get localPath =>
       $composableBuilder(column: $table.localPath, builder: (column) => ColumnFilters(column));
@@ -15201,25 +15337,6 @@ class $$DraftMediaTableFilterComposer extends Composer<_$AppDatabase, $DraftMedi
 
   ColumnFilters<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
-
-  $$DraftsTableFilterComposer get draftId {
-    final $$DraftsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.draftId,
-      referencedTable: $db.drafts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$DraftsTableFilterComposer(
-                $db: $db,
-                $table: $db.drafts,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
-    );
-    return composer;
-  }
 }
 
 class $$DraftMediaTableOrderingComposer extends Composer<_$AppDatabase, $DraftMediaTable> {
@@ -15232,6 +15349,12 @@ class $$DraftMediaTableOrderingComposer extends Composer<_$AppDatabase, $DraftMe
   });
   ColumnOrderings<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get draftId =>
+      $composableBuilder(column: $table.draftId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get localPath =>
       $composableBuilder(column: $table.localPath, builder: (column) => ColumnOrderings(column));
@@ -15256,25 +15379,6 @@ class $$DraftMediaTableOrderingComposer extends Composer<_$AppDatabase, $DraftMe
 
   ColumnOrderings<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
-
-  $$DraftsTableOrderingComposer get draftId {
-    final $$DraftsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.draftId,
-      referencedTable: $db.drafts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$DraftsTableOrderingComposer(
-                $db: $db,
-                $table: $db.drafts,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
-    );
-    return composer;
-  }
 }
 
 class $$DraftMediaTableAnnotationComposer extends Composer<_$AppDatabase, $DraftMediaTable> {
@@ -15287,6 +15391,12 @@ class $$DraftMediaTableAnnotationComposer extends Composer<_$AppDatabase, $Draft
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get draftId =>
+      $composableBuilder(column: $table.draftId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get localPath =>
       $composableBuilder(column: $table.localPath, builder: (column) => column);
@@ -15311,25 +15421,6 @@ class $$DraftMediaTableAnnotationComposer extends Composer<_$AppDatabase, $Draft
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  $$DraftsTableAnnotationComposer get draftId {
-    final $$DraftsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.draftId,
-      referencedTable: $db.drafts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$DraftsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.drafts,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
-    );
-    return composer;
-  }
 }
 
 class $$DraftMediaTableTableManager
@@ -15343,9 +15434,9 @@ class $$DraftMediaTableTableManager
           $$DraftMediaTableAnnotationComposer,
           $$DraftMediaTableCreateCompanionBuilder,
           $$DraftMediaTableUpdateCompanionBuilder,
-          (DraftMediaData, $$DraftMediaTableReferences),
+          (DraftMediaData, BaseReferences<_$AppDatabase, $DraftMediaTable, DraftMediaData>),
           DraftMediaData,
-          PrefetchHooks Function({bool draftId})
+          PrefetchHooks Function()
         > {
   $$DraftMediaTableTableManager(_$AppDatabase db, $DraftMediaTable table)
     : super(
@@ -15360,6 +15451,7 @@ class $$DraftMediaTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> draftId = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> localPath = const Value.absent(),
                 Value<String> mimeType = const Value.absent(),
                 Value<String?> altText = const Value.absent(),
@@ -15371,6 +15463,7 @@ class $$DraftMediaTableTableManager
               }) => DraftMediaCompanion(
                 id: id,
                 draftId: draftId,
+                ownerDid: ownerDid,
                 localPath: localPath,
                 mimeType: mimeType,
                 altText: altText,
@@ -15384,6 +15477,7 @@ class $$DraftMediaTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 required String draftId,
+                required String ownerDid,
                 required String localPath,
                 required String mimeType,
                 Value<String?> altText = const Value.absent(),
@@ -15395,6 +15489,7 @@ class $$DraftMediaTableTableManager
               }) => DraftMediaCompanion.insert(
                 id: id,
                 draftId: draftId,
+                ownerDid: ownerDid,
                 localPath: localPath,
                 mimeType: mimeType,
                 altText: altText,
@@ -15404,47 +15499,9 @@ class $$DraftMediaTableTableManager
                 sortOrder: sortOrder,
                 createdAt: createdAt,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), $$DraftMediaTableReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: ({draftId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (draftId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.draftId,
-                                referencedTable: $$DraftMediaTableReferences._draftIdTable(db),
-                                referencedColumn: $$DraftMediaTableReferences._draftIdTable(db).id,
-                              )
-                              as T;
-                    }
-
-                    return state;
-                  },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
         ),
       );
 }
@@ -15459,9 +15516,9 @@ typedef $$DraftMediaTableProcessedTableManager =
       $$DraftMediaTableAnnotationComposer,
       $$DraftMediaTableCreateCompanionBuilder,
       $$DraftMediaTableUpdateCompanionBuilder,
-      (DraftMediaData, $$DraftMediaTableReferences),
+      (DraftMediaData, BaseReferences<_$AppDatabase, $DraftMediaTable, DraftMediaData>),
       DraftMediaData,
-      PrefetchHooks Function({bool draftId})
+      PrefetchHooks Function()
     >;
 typedef $$ProfileRelationshipsTableCreateCompanionBuilder =
     ProfileRelationshipsCompanion Function({
@@ -15862,6 +15919,7 @@ typedef $$ProfileRelationshipsTableProcessedTableManager =
 typedef $$PostInteractionsTableCreateCompanionBuilder =
     PostInteractionsCompanion Function({
       required String postUri,
+      required String ownerDid,
       Value<String?> likeUri,
       Value<String?> repostUri,
       Value<bool> bookmarked,
@@ -15872,6 +15930,7 @@ typedef $$PostInteractionsTableCreateCompanionBuilder =
 typedef $$PostInteractionsTableUpdateCompanionBuilder =
     PostInteractionsCompanion Function({
       Value<String> postUri,
+      Value<String> ownerDid,
       Value<String?> likeUri,
       Value<String?> repostUri,
       Value<bool> bookmarked,
@@ -15909,6 +15968,9 @@ class $$PostInteractionsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get likeUri =>
       $composableBuilder(column: $table.likeUri, builder: (column) => ColumnFilters(column));
 
@@ -15953,6 +16015,9 @@ class $$PostInteractionsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get likeUri =>
       $composableBuilder(column: $table.likeUri, builder: (column) => ColumnOrderings(column));
 
@@ -15997,6 +16062,9 @@ class $$PostInteractionsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
+
   GeneratedColumn<String> get likeUri =>
       $composableBuilder(column: $table.likeUri, builder: (column) => column);
 
@@ -16061,6 +16129,7 @@ class $$PostInteractionsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> postUri = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String?> likeUri = const Value.absent(),
                 Value<String?> repostUri = const Value.absent(),
                 Value<bool> bookmarked = const Value.absent(),
@@ -16069,6 +16138,7 @@ class $$PostInteractionsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => PostInteractionsCompanion(
                 postUri: postUri,
+                ownerDid: ownerDid,
                 likeUri: likeUri,
                 repostUri: repostUri,
                 bookmarked: bookmarked,
@@ -16079,6 +16149,7 @@ class $$PostInteractionsTableTableManager
           createCompanionCallback:
               ({
                 required String postUri,
+                required String ownerDid,
                 Value<String?> likeUri = const Value.absent(),
                 Value<String?> repostUri = const Value.absent(),
                 Value<bool> bookmarked = const Value.absent(),
@@ -16087,6 +16158,7 @@ class $$PostInteractionsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => PostInteractionsCompanion.insert(
                 postUri: postUri,
+                ownerDid: ownerDid,
                 likeUri: likeUri,
                 repostUri: repostUri,
                 bookmarked: bookmarked,

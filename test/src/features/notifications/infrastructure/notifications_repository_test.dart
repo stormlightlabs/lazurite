@@ -377,12 +377,12 @@ void main() {
 
     group('processSyncQueue', () {
       test('does nothing when queue is empty', () async {
-        when(() => mockSyncQueue.cleanupOldFailedItems(any())).thenAnswer((_) async => 0);
+        when(() => mockSyncQueue.cleanupOldFailedItems(any(), any())).thenAnswer((_) async => 0);
         when(() => mockSyncQueue.getLatestSeenAt(any())).thenAnswer((_) async => null);
 
         await repository.processSyncQueue(ownerDid);
 
-        verify(() => mockSyncQueue.cleanupOldFailedItems(any())).called(1);
+        verify(() => mockSyncQueue.cleanupOldFailedItems(any(), ownerDid)).called(1);
         verify(() => mockSyncQueue.getLatestSeenAt(ownerDid)).called(1);
         verifyNever(() => mockDao.markAsSeenBefore(any(), any()));
         verifyNever(() => mockApi.call(any(), body: any(named: 'body')));
@@ -391,7 +391,7 @@ void main() {
       test('processes queue with latest timestamp', () async {
         final latestSeenAt = DateTime.parse('2026-01-07T12:30:00.000Z');
 
-        when(() => mockSyncQueue.cleanupOldFailedItems(any())).thenAnswer((_) async => 0);
+        when(() => mockSyncQueue.cleanupOldFailedItems(any(), any())).thenAnswer((_) async => 0);
         when(() => mockSyncQueue.getLatestSeenAt(any())).thenAnswer((_) async => latestSeenAt);
         when(() => mockSyncQueue.getRetryableItems(any())).thenAnswer((_) async => []);
         when(() => mockDao.markAsSeenBefore(any(), any())).thenAnswer((_) async {});
@@ -431,7 +431,7 @@ void main() {
           ownerDid: ownerDid,
         );
 
-        when(() => mockSyncQueue.cleanupOldFailedItems(any())).thenAnswer((_) async => 0);
+        when(() => mockSyncQueue.cleanupOldFailedItems(any(), any())).thenAnswer((_) async => 0);
         when(() => mockSyncQueue.getLatestSeenAt(any())).thenAnswer((_) async => latestSeenAt);
         when(
           () => mockSyncQueue.getRetryableItems(any()),
@@ -450,12 +450,12 @@ void main() {
       });
 
       test('cleans up old failed items', () async {
-        when(() => mockSyncQueue.cleanupOldFailedItems(any())).thenAnswer((_) async => 3);
+        when(() => mockSyncQueue.cleanupOldFailedItems(any(), any())).thenAnswer((_) async => 3);
         when(() => mockSyncQueue.getLatestSeenAt(any())).thenAnswer((_) async => null);
 
         await repository.processSyncQueue(ownerDid);
 
-        verify(() => mockSyncQueue.cleanupOldFailedItems(any())).called(1);
+        verify(() => mockSyncQueue.cleanupOldFailedItems(any(), ownerDid)).called(1);
         verify(() => mockLogger.info(any(), any())).called(greaterThanOrEqualTo(1));
       });
     });

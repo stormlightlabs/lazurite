@@ -62,7 +62,7 @@ final class ConversationDetailNotifierProvider
   }
 }
 
-String _$conversationDetailNotifierHash() => r'a236b475a2c5990ceca37ea1c177baca8ea7ca3e';
+String _$conversationDetailNotifierHash() => r'82824e14b49d96cd6ee2fe248f5673e7f9f07704';
 
 /// Notifier for managing conversation detail state.
 ///

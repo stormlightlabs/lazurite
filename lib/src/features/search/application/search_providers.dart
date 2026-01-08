@@ -4,6 +4,7 @@ import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
 import 'package:lazurite/src/core/utils/pagination.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -14,8 +15,9 @@ part 'search_providers.g.dart';
 SearchRepository searchRepository(Ref ref) {
   final api = ref.watch(xrpcClientProvider);
   final db = ref.watch(appDatabaseProvider);
+  final sessionStorage = ref.watch(sessionStorageProvider);
   final logger = ref.watch(loggerProvider('SearchRepository'));
-  return SearchRepository(api, db.searchDao, db.searchCacheDao, logger);
+  return SearchRepository(api, db.searchDao, db.searchCacheDao, sessionStorage, logger);
 }
 
 @riverpod

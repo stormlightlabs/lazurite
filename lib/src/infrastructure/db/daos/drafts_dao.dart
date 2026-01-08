@@ -20,14 +20,20 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
     return into(drafts).insert(entry);
   }
 
-  Future<void> updateDraftFields(String id, DraftsCompanion entry) {
-    return (update(drafts)..where((tbl) => tbl.id.equals(id))).write(entry);
+  Future<void> updateDraftFields(String id, String ownerDid, DraftsCompanion entry) {
+    return (update(
+      drafts,
+    )..where((tbl) => tbl.id.equals(id) & tbl.ownerDid.equals(ownerDid))).write(entry);
   }
 
-  Future<void> deleteDraft(String id) async {
+  Future<void> deleteDraft(String id, String ownerDid) async {
     await transaction(() async {
-      await (delete(draftMedia)..where((tbl) => tbl.draftId.equals(id))).go();
-      await (delete(drafts)..where((tbl) => tbl.id.equals(id))).go();
+      await (delete(
+        draftMedia,
+      )..where((tbl) => tbl.draftId.equals(id) & tbl.ownerDid.equals(ownerDid))).go();
+      await (delete(
+        drafts,
+      )..where((tbl) => tbl.id.equals(id) & tbl.ownerDid.equals(ownerDid))).go();
     });
   }
 
@@ -46,20 +52,29 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
     return (update(draftMedia)..where((tbl) => tbl.id.equals(mediaId))).write(entry);
   }
 
-  Stream<List<DraftRecord>> watchDrafts() {
-    final join = select(
-      drafts,
-    ).join([leftOuterJoin(draftMedia, draftMedia.draftId.equalsExp(drafts.id))]);
+  Stream<List<DraftRecord>> watchDrafts(String ownerDid) {
+    final join = select(drafts).join([
+      leftOuterJoin(
+        draftMedia,
+        draftMedia.draftId.equalsExp(drafts.id) & draftMedia.ownerDid.equalsExp(drafts.ownerDid),
+      ),
+    ])..where(drafts.ownerDid.equals(ownerDid));
 
     join.orderBy([OrderingTerm.desc(drafts.updatedAt), OrderingTerm.asc(draftMedia.sortOrder)]);
 
     return join.watch().map(_mapRowsToRecords);
   }
 
-  Stream<DraftRecord?> watchDraft(String id) {
+  Stream<DraftRecord?> watchDraft(String id, String ownerDid) {
     final join =
-        select(drafts).join([leftOuterJoin(draftMedia, draftMedia.draftId.equalsExp(drafts.id))])
-          ..where(drafts.id.equals(id))
+        select(drafts).join([
+            leftOuterJoin(
+              draftMedia,
+              draftMedia.draftId.equalsExp(drafts.id) &
+                  draftMedia.ownerDid.equalsExp(drafts.ownerDid),
+            ),
+          ])
+          ..where(drafts.id.equals(id) & drafts.ownerDid.equals(ownerDid))
           ..orderBy([OrderingTerm.desc(drafts.updatedAt), OrderingTerm.asc(draftMedia.sortOrder)]);
 
     return join.watch().map((rows) {
@@ -69,10 +84,16 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
     });
   }
 
-  Future<DraftRecord?> getDraft(String id) async {
+  Future<DraftRecord?> getDraft(String id, String ownerDid) async {
     final join =
-        select(drafts).join([leftOuterJoin(draftMedia, draftMedia.draftId.equalsExp(drafts.id))])
-          ..where(drafts.id.equals(id))
+        select(drafts).join([
+            leftOuterJoin(
+              draftMedia,
+              draftMedia.draftId.equalsExp(drafts.id) &
+                  draftMedia.ownerDid.equalsExp(drafts.ownerDid),
+            ),
+          ])
+          ..where(drafts.id.equals(id) & drafts.ownerDid.equals(ownerDid))
           ..orderBy([OrderingTerm.desc(drafts.updatedAt), OrderingTerm.asc(draftMedia.sortOrder)]);
 
     final rows = await join.get();
@@ -81,10 +102,16 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
     return records.first;
   }
 
-  Future<List<DraftRecord>> getDraftsByStatus(String status) async {
+  Future<List<DraftRecord>> getDraftsByStatus(String status, String ownerDid) async {
     final join =
-        select(drafts).join([leftOuterJoin(draftMedia, draftMedia.draftId.equalsExp(drafts.id))])
-          ..where(drafts.status.equals(status))
+        select(drafts).join([
+            leftOuterJoin(
+              draftMedia,
+              draftMedia.draftId.equalsExp(drafts.id) &
+                  draftMedia.ownerDid.equalsExp(drafts.ownerDid),
+            ),
+          ])
+          ..where(drafts.status.equals(status) & drafts.ownerDid.equals(ownerDid))
           ..orderBy([OrderingTerm.desc(drafts.updatedAt), OrderingTerm.asc(draftMedia.sortOrder)]);
 
     final rows = await join.get();
@@ -93,16 +120,22 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
 
   /// Deletes all drafts with the given status and their associated media.
   /// Returns the number of drafts deleted.
-  Future<int> deleteDraftsByStatus(String status) async {
-    final draftIds = await (select(
-      drafts,
-    )..where((tbl) => tbl.status.equals(status))).map((row) => row.id).get();
+  Future<int> deleteDraftsByStatus(String status, String ownerDid) async {
+    final draftIds =
+        await (select(drafts)
+              ..where((tbl) => tbl.status.equals(status) & tbl.ownerDid.equals(ownerDid)))
+            .map((row) => row.id)
+            .get();
 
     if (draftIds.isEmpty) return 0;
 
     await transaction(() async {
-      await (delete(draftMedia)..where((tbl) => tbl.draftId.isIn(draftIds))).go();
-      await (delete(drafts)..where((tbl) => tbl.status.equals(status))).go();
+      await (delete(
+        draftMedia,
+      )..where((tbl) => tbl.draftId.isIn(draftIds) & tbl.ownerDid.equals(ownerDid))).go();
+      await (delete(
+        drafts,
+      )..where((tbl) => tbl.status.equals(status) & tbl.ownerDid.equals(ownerDid))).go();
     });
 
     return draftIds.length;

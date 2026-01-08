@@ -35,6 +35,9 @@ class PostInteractions extends Table {
   /// Reference to the post this interaction applies to.
   TextColumn get postUri => text().references(Posts, #uri)();
 
+  /// The DID of the user who owns this interaction.
+  TextColumn get ownerDid => text()();
+
   /// AT URI of the like record (if liked).
   TextColumn get likeUri => text().nullable()();
 
@@ -51,7 +54,7 @@ class PostInteractions extends Table {
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
-  Set<Column> get primaryKey => {postUri};
+  Set<Column> get primaryKey => {postUri, ownerDid};
 }
 
 class Profiles extends Table {
@@ -104,9 +107,11 @@ class FeedCursors extends Table {
   Set<Column> get primaryKey => {feedKey, ownerDid};
 }
 
+@TableIndex(name: 'recent_searches_unique_idx', columns: {#ownerDid, #query}, unique: true)
 class RecentSearches extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get query => text().unique()();
+  TextColumn get ownerDid => text()();
+  TextColumn get query => text()();
   DateTimeColumn get searchedAt => dateTime()();
 }
 
@@ -303,6 +308,7 @@ class NotificationsSyncQueue extends Table {
 
 class Drafts extends Table {
   TextColumn get id => text()();
+  TextColumn get ownerDid => text()();
   TextColumn get content => text().withDefault(const Constant(''))();
   TextColumn get replyParentUri => text().nullable()();
   TextColumn get replyParentCid => text().nullable()();
@@ -321,12 +327,13 @@ class Drafts extends Table {
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
-  Set<Column> get primaryKey => {id};
+  Set<Column> get primaryKey => {id, ownerDid};
 }
 
 class DraftMedia extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get draftId => text().references(Drafts, #id)();
+  TextColumn get draftId => text()();
+  TextColumn get ownerDid => text()();
   TextColumn get localPath => text()();
   TextColumn get mimeType => text()();
   TextColumn get altText => text().nullable()();
@@ -335,6 +342,11 @@ class DraftMedia extends Table {
   TextColumn get status => text()();
   IntColumn get sortOrder => integer()();
   DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  List<String> get customConstraints => [
+    'FOREIGN KEY (draft_id, owner_did) REFERENCES drafts (id, owner_did)',
+  ];
 }
 
 /// Stores local app settings as key-value pairs.

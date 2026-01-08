@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
@@ -241,6 +242,225 @@ void main() {
       final userAPref = await dao.getPreferenceByType('adultContent', userA);
       expect(userAPref, isNotNull);
       expect(userAPref!.data, '{"enabled": true}');
+    });
+  });
+
+  group('PostInteractions isolation', () {
+    test('User B cannot see User A interactions', () async {
+      final dao = db.postInteractionsDao;
+      const postUri = 'at://did:plc:author/app.bsky.feed.post/123';
+
+      await dao.upsertInteraction(
+        PostInteractionsCompanion.insert(
+          postUri: postUri,
+          ownerDid: userA,
+          likeUri: const Value('at://did:plc:user_a/app.bsky.feed.like/1'),
+          bookmarked: const Value(true),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      final userBInteraction = await dao.getInteraction(postUri, userB);
+      expect(userBInteraction, isNull);
+
+      final userAInteraction = await dao.getInteraction(postUri, userA);
+      expect(userAInteraction, isNotNull);
+      expect(userAInteraction!.likeUri, 'at://did:plc:user_a/app.bsky.feed.like/1');
+      expect(userAInteraction.bookmarked, true);
+    });
+
+    test('Same post can have different interactions for different users', () async {
+      final dao = db.postInteractionsDao;
+      const postUri = 'at://did:plc:author/app.bsky.feed.post/popular';
+
+      await dao.upsertInteraction(
+        PostInteractionsCompanion.insert(
+          postUri: postUri,
+          ownerDid: userA,
+          likeUri: const Value('at://did:plc:user_a/app.bsky.feed.like/1'),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      await dao.upsertInteraction(
+        PostInteractionsCompanion.insert(
+          postUri: postUri,
+          ownerDid: userB,
+          bookmarked: const Value(true),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      final userAInteraction = await dao.getInteraction(postUri, userA);
+      final userBInteraction = await dao.getInteraction(postUri, userB);
+
+      expect(userAInteraction?.likeUri, isNotNull);
+      expect(userAInteraction?.bookmarked, false);
+
+      expect(userBInteraction?.likeUri, isNull);
+      expect(userBInteraction?.bookmarked, true);
+    });
+
+    test('watchLikedPosts only returns posts liked by specific user', () async {
+      final dao = db.postInteractionsDao;
+
+      await dao.upsertInteraction(
+        PostInteractionsCompanion.insert(
+          postUri: 'at://did:plc:author/app.bsky.feed.post/1',
+          ownerDid: userA,
+          likeUri: const Value('at://did:plc:user_a/app.bsky.feed.like/1'),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      await dao.upsertInteraction(
+        PostInteractionsCompanion.insert(
+          postUri: 'at://did:plc:author/app.bsky.feed.post/2',
+          ownerDid: userB,
+          likeUri: const Value('at://did:plc:user_b/app.bsky.feed.like/1'),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      final userALikes = await dao.watchLikedPosts(userA).first;
+      final userBLikes = await dao.watchLikedPosts(userB).first;
+
+      expect(userALikes, hasLength(1));
+      expect(userALikes.first.postUri, 'at://did:plc:author/app.bsky.feed.post/1');
+
+      expect(userBLikes, hasLength(1));
+      expect(userBLikes.first.postUri, 'at://did:plc:author/app.bsky.feed.post/2');
+    });
+  });
+
+  group('Drafts isolation', () {
+    test('User B cannot see User A drafts', () async {
+      final dao = db.draftsDao;
+
+      await dao.insertDraft(
+        DraftsCompanion.insert(
+          id: 'draft-a-1',
+          ownerDid: userA,
+          content: const Value('User A draft content'),
+          status: 'draft',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      final userBDrafts = await dao.watchDrafts(userB).first;
+      expect(userBDrafts, isEmpty);
+
+      final userADrafts = await dao.watchDrafts(userA).first;
+      expect(userADrafts, hasLength(1));
+      expect(userADrafts.first.draft.content, 'User A draft content');
+    });
+
+    test('getDraft requires matching ownerDid', () async {
+      final dao = db.draftsDao;
+      const draftId = 'draft-private';
+
+      await dao.insertDraft(
+        DraftsCompanion.insert(
+          id: draftId,
+          ownerDid: userA,
+          content: const Value('Private draft'),
+          status: 'draft',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      final userBDraft = await dao.getDraft(draftId, userB);
+      expect(userBDraft, isNull);
+
+      final userADraft = await dao.getDraft(draftId, userA);
+      expect(userADraft, isNotNull);
+      expect(userADraft!.draft.content, 'Private draft');
+    });
+
+    test('deleteDraft only deletes drafts owned by user', () async {
+      final dao = db.draftsDao;
+
+      await dao.insertDraft(
+        DraftsCompanion.insert(
+          id: 'draft-a',
+          ownerDid: userA,
+          status: 'draft',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      await dao.deleteDraft('draft-a', userB);
+
+      final userADraft = await dao.getDraft('draft-a', userA);
+      expect(userADraft, isNotNull, reason: 'UserB should not be able to delete UserA draft');
+    });
+  });
+
+  group('DmOutbox isolation', () {
+    test('getById requires matching ownerDid', () async {
+      final dao = db.dmOutboxDao;
+      const outboxId = 'outbox-123';
+
+      await dao.enqueue(
+        DmOutboxCompanion.insert(
+          outboxId: outboxId,
+          ownerDid: userA,
+          convoId: 'convo-1',
+          messageText: 'Private outbox message',
+          status: 'pending',
+          createdAt: DateTime.now(),
+        ),
+      );
+
+      final userBOutbox = await dao.getById(outboxId, userB);
+      expect(userBOutbox, isNull);
+
+      final userAOutbox = await dao.getById(outboxId, userA);
+      expect(userAOutbox, isNotNull);
+      expect(userAOutbox!.messageText, 'Private outbox message');
+    });
+  });
+
+  group('RecentSearches isolation', () {
+    test('User B cannot see User A recent searches', () async {
+      final dao = db.searchDao;
+
+      await dao.addRecentSearch('privacy query', userA);
+      await dao.addRecentSearch('public search', userB);
+
+      final userASearches = await dao.getRecentSearches(userA);
+      final userBSearches = await dao.getRecentSearches(userB);
+
+      expect(userASearches, hasLength(1));
+      expect(userASearches.first.query, 'privacy query');
+
+      expect(userBSearches, hasLength(1));
+      expect(userBSearches.first.query, 'public search');
+    });
+
+    test('Same search query can exist for different users', () async {
+      final dao = db.searchDao;
+      const query = 'popular search';
+
+      await dao.addRecentSearch(query, userA);
+      await dao.addRecentSearch(query, userB);
+
+      final userASearches = await dao.getRecentSearches(userA);
+      final userBSearches = await dao.getRecentSearches(userB);
+
+      expect(userASearches, hasLength(1));
+      expect(userBSearches, hasLength(1));
+
+      await dao.deleteRecentSearch(query, userA);
+
+      final userAAfterDelete = await dao.getRecentSearches(userA);
+      final userBAfterDelete = await dao.getRecentSearches(userB);
+
+      expect(userAAfterDelete, isEmpty);
+      expect(userBAfterDelete, hasLength(1), reason: 'UserA delete should not affect UserB');
     });
   });
 }

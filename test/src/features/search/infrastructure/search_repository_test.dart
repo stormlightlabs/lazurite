@@ -10,14 +10,22 @@ import '../../../../helpers/mocks.dart';
 void main() {
   late MockXrpcClient mockApi;
   late AppDatabase db;
+  late MockSessionStorage mockSessionStorage;
   late MockLogger mockLogger;
   late SearchRepository repository;
+
+  const testOwnerDid = 'did:plc:test';
 
   setUp(() {
     mockApi = MockXrpcClient();
     db = AppDatabase(NativeDatabase.memory());
+    mockSessionStorage = MockSessionStorage();
     mockLogger = MockLogger();
-    repository = SearchRepository(mockApi, db.searchDao, db.searchCacheDao, mockLogger);
+    final mockSession = MockSession();
+    when(() => mockSession.did).thenReturn(testOwnerDid);
+    when(() => mockSession.handle).thenReturn('test.handle');
+    when(() => mockSessionStorage.getSession()).thenAnswer((_) async => mockSession);
+    repository = SearchRepository(mockApi, db.searchDao, db.searchCacheDao, mockSessionStorage, mockLogger);
   });
 
   tearDown(() async {
@@ -216,7 +224,7 @@ void main() {
       test('saves search to DAO', () async {
         await repository.saveRecentSearch('flutter');
 
-        final searches = await db.searchDao.getRecentSearches();
+        final searches = await db.searchDao.getRecentSearches(testOwnerDid);
         expect(searches, hasLength(1));
         expect(searches.first.query, 'flutter');
       });
@@ -224,8 +232,8 @@ void main() {
 
     group('getRecentSearches', () {
       test('returns searches from DAO', () async {
-        await db.searchDao.addRecentSearch('flutter');
-        await db.searchDao.addRecentSearch('dart');
+        await db.searchDao.addRecentSearch('flutter', testOwnerDid);
+        await db.searchDao.addRecentSearch('dart', testOwnerDid);
 
         final result = await repository.getRecentSearches();
 
@@ -235,7 +243,7 @@ void main() {
 
       test('respects limit parameter', () async {
         for (var i = 0; i < 20; i++) {
-          await db.searchDao.addRecentSearch('query$i');
+          await db.searchDao.addRecentSearch('query$i', testOwnerDid);
         }
 
         final result = await repository.getRecentSearches(limit: 5);
@@ -245,7 +253,7 @@ void main() {
 
     group('watchRecentSearches', () {
       test('returns stream from DAO', () async {
-        await db.searchDao.addRecentSearch('test');
+        await db.searchDao.addRecentSearch('test', testOwnerDid);
 
         final results = await repository.watchRecentSearches().first;
         expect(results, hasLength(1));
@@ -255,12 +263,12 @@ void main() {
 
     group('removeRecentSearch', () {
       test('deletes search from DAO', () async {
-        await db.searchDao.addRecentSearch('flutter');
-        await db.searchDao.addRecentSearch('dart');
+        await db.searchDao.addRecentSearch('flutter', testOwnerDid);
+        await db.searchDao.addRecentSearch('dart', testOwnerDid);
 
         await repository.removeRecentSearch('flutter');
 
-        final searches = await db.searchDao.getRecentSearches();
+        final searches = await db.searchDao.getRecentSearches(testOwnerDid);
         expect(searches, hasLength(1));
         expect(searches.first.query, 'dart');
       });
@@ -268,12 +276,12 @@ void main() {
 
     group('clearAllRecentSearches', () {
       test('clears all searches in DAO', () async {
-        await db.searchDao.addRecentSearch('flutter');
-        await db.searchDao.addRecentSearch('dart');
+        await db.searchDao.addRecentSearch('flutter', testOwnerDid);
+        await db.searchDao.addRecentSearch('dart', testOwnerDid);
 
         await repository.clearAllRecentSearches();
 
-        final searches = await db.searchDao.getRecentSearches();
+        final searches = await db.searchDao.getRecentSearches(testOwnerDid);
         expect(searches, isEmpty);
       });
     });

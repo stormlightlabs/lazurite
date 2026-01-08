@@ -223,7 +223,7 @@ class NotificationsRepository {
     _logger.debug('Processing notification sync queue', {'ownerDid': ownerDid});
 
     final threshold = DateTime.now().subtract(const Duration(days: 30));
-    final cleanedCount = await _syncQueue.cleanupOldFailedItems(threshold);
+    final cleanedCount = await _syncQueue.cleanupOldFailedItems(threshold, ownerDid);
     if (cleanedCount > 0) {
       _logger.info('Cleaned up old failed sync items', {'count': cleanedCount});
     }

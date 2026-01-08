@@ -423,7 +423,7 @@ class BlueskyPreferencesRepository {
     if (!_api.isAuthenticated) return;
 
     final threshold = DateTime.now().subtract(const Duration(days: 30));
-    await _syncQueueDao.cleanupOldFailedItems(threshold);
+    await _syncQueueDao.cleanupOldFailedItems(threshold, ownerDid);
 
     final retryable = await _syncQueueDao.getRetryableBlueskyPrefItems(ownerDid);
     if (retryable.isEmpty) {

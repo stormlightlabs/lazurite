@@ -141,13 +141,13 @@ void main() {
           ),
         );
 
-        final result = await dao.getById('outbox1');
+        final result = await dao.getById('outbox1', ownerDid);
         expect(result, isNotNull);
         expect(result!.messageText, 'Test');
       });
 
       test('returns null for non-existent ID', () async {
-        final result = await dao.getById('nonexistent');
+        final result = await dao.getById('nonexistent', ownerDid);
         expect(result, isNull);
       });
     });
@@ -205,7 +205,7 @@ void main() {
 
         await dao.updateStatus(outboxId: 'outbox1', status: 'sending');
 
-        final result = await dao.getById('outbox1');
+        final result = await dao.getById('outbox1', ownerDid);
         expect(result!.status, 'sending');
         expect(result.lastAttemptAt, isNotNull);
       });
@@ -228,7 +228,7 @@ void main() {
           errorMessage: 'Network error',
         );
 
-        final result = await dao.getById('outbox1');
+        final result = await dao.getById('outbox1', ownerDid);
         expect(result!.status, 'failed');
         expect(result.errorMessage, 'Network error');
       });
@@ -248,9 +248,9 @@ void main() {
           ),
         );
 
-        await dao.incrementRetryCount('outbox1');
+        await dao.incrementRetryCount('outbox1', ownerDid);
 
-        final result = await dao.getById('outbox1');
+        final result = await dao.getById('outbox1', ownerDid);
         expect(result!.retryCount, 1);
       });
     });
@@ -271,7 +271,7 @@ void main() {
 
         await dao.resetForRetry('outbox1');
 
-        final result = await dao.getById('outbox1');
+        final result = await dao.getById('outbox1', ownerDid);
         expect(result!.status, 'pending');
         expect(result.errorMessage, isNull);
       });
@@ -293,7 +293,7 @@ void main() {
         final deletedCount = await dao.deleteItem('outbox1');
         expect(deletedCount, 1);
 
-        final result = await dao.getById('outbox1');
+        final result = await dao.getById('outbox1', ownerDid);
         expect(result, isNull);
       });
     });

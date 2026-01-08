@@ -43,8 +43,10 @@ class DmOutboxDao extends DatabaseAccessor<AppDatabase> with _$DmOutboxDaoMixin 
   }
 
   /// Gets an outbox item by ID.
-  Future<DmOutboxData?> getById(String outboxId) async {
-    return (select(dmOutbox)..where((o) => o.outboxId.equals(outboxId))).getSingleOrNull();
+  Future<DmOutboxData?> getById(String outboxId, String ownerDid) async {
+    return (select(
+      dmOutbox,
+    )..where((o) => o.outboxId.equals(outboxId) & o.ownerDid.equals(ownerDid))).getSingleOrNull();
   }
 
   /// Gets pending outbox items for a specific conversation and owner.
@@ -76,8 +78,8 @@ class DmOutboxDao extends DatabaseAccessor<AppDatabase> with _$DmOutboxDaoMixin 
   }
 
   /// Increments the retry count for an outbox item.
-  Future<void> incrementRetryCount(String outboxId) async {
-    final item = await getById(outboxId);
+  Future<void> incrementRetryCount(String outboxId, String ownerDid) async {
+    final item = await getById(outboxId, ownerDid);
     if (item == null) return;
 
     await (update(dmOutbox)..where((o) => o.outboxId.equals(outboxId))).write(

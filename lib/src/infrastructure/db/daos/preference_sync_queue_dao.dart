@@ -112,10 +112,11 @@ class PreferenceSyncQueueDao extends DatabaseAccessor<AppDatabase>
   /// Cleans up old permanently failed items.
   ///
   /// Deletes items with retryCount >= [kMaxSyncRetries] that are older than
-  /// the specified threshold.
-  Future<int> cleanupOldFailedItems(DateTime threshold) {
+  /// the specified threshold for a specific user.
+  Future<int> cleanupOldFailedItems(DateTime threshold, String ownerDid) {
     return (delete(preferenceSyncQueue)..where(
           (t) =>
+              t.ownerDid.equals(ownerDid) &
               t.retryCount.isBiggerOrEqualValue(kMaxSyncRetries) &
               t.createdAt.isSmallerThanValue(threshold),
         ))

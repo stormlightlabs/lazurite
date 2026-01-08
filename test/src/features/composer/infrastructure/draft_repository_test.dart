@@ -25,6 +25,20 @@ void main() {
   late MockLogger mockLogger;
   late MockFacetParser mockFacetParser;
   late Directory tempDir;
+  const testOwnerDid = 'did:plc:test';
+
+  Session buildTestSession() {
+    return Session(
+      did: testOwnerDid,
+      handle: 'test',
+      pdsUrl: 'https://pds.test',
+      accessJwt: 'access',
+      refreshJwt: 'refresh',
+      scope: 'atproto',
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+      dpopKey: const {'kty': 'EC'},
+    );
+  }
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -34,6 +48,7 @@ void main() {
     mockFacetParser = MockFacetParser();
 
     when(() => mockFacetParser.parse(any())).thenAnswer((_) async => null);
+    when(() => mockSessionStorage.getSession()).thenAnswer((_) async => buildTestSession());
 
     repository = DraftRepository(
       dao: db.draftsDao,
@@ -56,19 +71,6 @@ void main() {
     final file = File('${tempDir.path}/$name');
     await file.writeAsBytes(List<int>.filled(16, 1));
     return file;
-  }
-
-  Session buildTestSession() {
-    return Session(
-      did: 'did:web:test',
-      handle: 'test',
-      pdsUrl: 'https://pds.test',
-      accessJwt: 'access',
-      refreshJwt: 'refresh',
-      scope: 'atproto',
-      expiresAt: DateTime.now().add(const Duration(hours: 1)),
-      dpopKey: const {'kty': 'EC'},
-    );
   }
 
   test('createDraft emits via watchDrafts', () async {
@@ -206,10 +208,12 @@ void main() {
 
     await db.draftsDao.updateDraftFields(
       draft2.id,
+      testOwnerDid,
       DraftsCompanion(status: Value(composer.DraftStatus.posted.name)),
     );
     await db.draftsDao.updateDraftFields(
       draft3.id,
+      testOwnerDid,
       DraftsCompanion(status: Value(composer.DraftStatus.failed.name)),
     );
 

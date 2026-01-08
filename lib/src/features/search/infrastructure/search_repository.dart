@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/core/utils/pagination.dart';
+import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart' hide Post;
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/search_cache_dao.dart';
@@ -12,11 +13,12 @@ import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
 /// Repository for search functionality.
 class SearchRepository {
-  SearchRepository(this._api, this._dao, this._cacheDao, this._logger);
+  SearchRepository(this._api, this._dao, this._cacheDao, this._sessionStorage, this._logger);
 
   final XrpcClient _api;
   final SearchDao _dao;
   final SearchCacheDao _cacheDao;
+  final SessionStorage _sessionStorage;
   final Logger _logger;
 
   /// Normalizes a query string for use as a cache key.
@@ -195,29 +197,39 @@ class SearchRepository {
 
   /// Saves a search query to recent searches.
   Future<void> saveRecentSearch(String query) async {
-    await _dao.addRecentSearch(query);
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    await _dao.addRecentSearch(query, ownerDid);
     _logger.debug('Saved recent search', {'query': query});
   }
 
   /// Gets recent searches.
-  Future<List<RecentSearche>> getRecentSearches({int limit = 10}) {
-    return _dao.getRecentSearches(limit: limit);
+  Future<List<RecentSearche>> getRecentSearches({int limit = 10}) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    return _dao.getRecentSearches(ownerDid, limit: limit);
   }
 
   /// Watches recent searches.
-  Stream<List<RecentSearche>> watchRecentSearches({int limit = 10}) {
-    return _dao.watchRecentSearches(limit: limit);
+  Stream<List<RecentSearche>> watchRecentSearches({int limit = 10}) async* {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    yield* _dao.watchRecentSearches(ownerDid, limit: limit);
   }
 
   /// Removes a single recent search.
   Future<void> removeRecentSearch(String query) async {
-    await _dao.deleteRecentSearch(query);
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    await _dao.deleteRecentSearch(query, ownerDid);
     _logger.debug('Removed recent search', {'query': query});
   }
 
   /// Clears all recent searches.
   Future<void> clearAllRecentSearches() async {
-    await _dao.clearAllRecentSearches();
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    await _dao.clearAllRecentSearches(ownerDid);
     _logger.debug('Cleared all recent searches');
   }
 
