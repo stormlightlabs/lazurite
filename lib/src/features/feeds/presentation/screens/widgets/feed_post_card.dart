@@ -108,49 +108,54 @@ class FeedPostCard extends ConsumerWidget {
       );
     }
 
-    return InkWell(
-      onTap:
-          onTap ??
-          () {
-            final encodedUri = Uri.encodeComponent(item.post.uri);
-            GoRouter.of(context).push('/home/t/$encodedUri');
-          },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isRepost && reposter != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4.0, left: 28.0),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.repeat,
-                      size: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Reposted by ${reposter['displayName'] as String? ?? reposter['handle'] as String? ?? 'someone'}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      child: InkWell(
+        onTap:
+            onTap ??
+            () {
+              final encodedUri = Uri.encodeComponent(item.post.uri);
+              GoRouter.of(context).push('/home/t/$encodedUri');
+            },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isRepost && reposter != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4.0, left: 28.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.repeat,
+                        size: 12,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Text(
+                        'Reposted by ${reposter['displayName'] as String? ?? reposter['handle'] as String? ?? 'someone'}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              PostHeader(
+                author: item.author,
+                indexedAt: createdAt,
+                onAvatarTap: () {
+                  final encodedDid = Uri.encodeComponent(item.author.did);
+                  GoRouter.of(context).push('/home/u/$encodedDid');
+                },
               ),
-            PostHeader(
-              author: item.author,
-              indexedAt: createdAt,
-              onAvatarTap: () {
-                final encodedDid = Uri.encodeComponent(item.author.did);
-                GoRouter.of(context).push('/home/u/$encodedDid');
-              },
-            ),
-            Padding(padding: const EdgeInsets.only(left: 52.0), child: postContent),
-          ],
+              Padding(padding: const EdgeInsets.only(left: 52.0), child: postContent),
+            ],
+          ),
         ),
       ),
     );

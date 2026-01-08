@@ -55,8 +55,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final authState = ref.watch(authProvider);
     final isAuthenticated = authState is AuthStateAuthenticated;
 
-    // For authenticated users, wait for pinned feeds to load before showing content
-    // This prevents briefly showing the wrong feed during initialization
     if (isAuthenticated) {
       final pinnedFeedsAsync = ref.watch(pinnedFeedsProvider);
       if (pinnedFeedsAsync.isLoading) {
@@ -130,15 +128,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                   else
                     SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
-                        if (index.isOdd) {
-                          return const Divider(height: 1);
-                        }
-                        final itemIndex = index ~/ 2;
                         return AnimatedItem(
-                          index: itemIndex,
-                          child: FeedPostCard(item: items[itemIndex]),
+                          index: index,
+                          child: FeedPostCard(item: items[index]),
                         );
-                      }, childCount: items.length * 2 - 1),
+                      }, childCount: items.length),
                     ),
                 ],
               ),

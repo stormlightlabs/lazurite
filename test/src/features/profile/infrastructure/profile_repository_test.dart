@@ -49,6 +49,7 @@ void main() {
         expect(profile.pronouns, 'they/them');
         expect(profile.website, 'https://example.com');
         expect(profile.verificationStatus, 'verified');
+        expect(profile.pinnedPostUri, 'at://did:plc:test123/app.bsky.feed.post/pinned123');
         expect(profile.viewerFollowing, true);
 
         verify(
@@ -392,8 +393,55 @@ void main() {
         expect(rel!.blocked, isTrue);
       });
     });
+
+    group('getPost', () {
+      test('fetches post and parses it correctly', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => _mockGetPostsResponse());
+
+        final post = await repository.getPost('at://did:plc:test123/app.bsky.feed.post/1');
+
+        expect(post, isNotNull);
+        expect(post!.uri, 'at://did:plc:test123/app.bsky.feed.post/1');
+        expect(post.text, 'Hello world');
+        expect(post.authorDid, 'did:plc:test123');
+        expect(post.replyCount, 5);
+      });
+
+      test('returns null if no posts found', () async {
+        when(
+          () => mockApi.call(any(), params: any(named: 'params')),
+        ).thenAnswer((_) async => {'posts': <dynamic>[]});
+
+        final post = await repository.getPost('at://did:plc:test123/app.bsky.feed.post/1');
+
+        expect(post, isNull);
+      });
+    });
   });
 }
+
+Map<String, dynamic> _mockGetPostsResponse() => {
+  'posts': [
+    {
+      'uri': 'at://did:plc:test123/app.bsky.feed.post/1',
+      'cid': 'cid1',
+      'author': {
+        'did': 'did:plc:test123',
+        'handle': 'testuser.bsky.social',
+        'displayName': 'Test User',
+        'avatar': 'https://example.com/avatar.jpg',
+      },
+      'record': {'text': 'Hello world', 'createdAt': '2024-01-01T12:00:00.000Z'},
+      'indexedAt': '2024-01-01T12:00:00.000Z',
+      'replyCount': 5,
+      'repostCount': 3,
+      'likeCount': 10,
+      'viewer': {'like': 'at://did:plc:viewer/app.bsky.feed.like/123'},
+    },
+  ],
+};
 
 Map<String, dynamic> _mockProfileResponse({bool withViewer = false}) => {
   'did': 'did:plc:test123',
@@ -409,6 +457,7 @@ Map<String, dynamic> _mockProfileResponse({bool withViewer = false}) => {
   'pronouns': 'they/them',
   'website': 'https://example.com',
   'verification': {'type': 'verified'},
+  'pinnedPost': {'uri': 'at://did:plc:test123/app.bsky.feed.post/pinned123', 'cid': 'cid123'},
   if (withViewer)
     'viewer': {
       'following': 'at://did:plc:viewer/app.bsky.graph.follow/abc123',

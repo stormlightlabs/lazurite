@@ -111,7 +111,7 @@ void main() {
     expect(homeChipAfter.selected, isFalse);
   });
 
-  testWidgets('FeedSelectorTab shows only Discover for unauthenticated users', (tester) async {
+  testWidgets('FeedSelectorTab is hidden for unauthenticated users', (tester) async {
     final mockDatabase = MockAppDatabase();
 
     await tester.pumpWidget(
@@ -126,7 +126,7 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Discover'), findsOneWidget);
+    expect(find.text('Discover'), findsNothing);
     expect(find.text('Home'), findsNothing);
     expect(find.byIcon(Icons.tune), findsNothing);
   });

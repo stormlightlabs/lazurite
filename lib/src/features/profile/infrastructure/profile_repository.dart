@@ -25,6 +25,17 @@ class ProfileRepository {
     _logger.info('Fetching profile', {'actor': actor});
     try {
       final response = await _api.call('app.bsky.actor.getProfile', params: {'actor': actor});
+
+      final pinnedRaw = response['pinnedPost'];
+      if (pinnedRaw != null) {
+        _logger.info('Received pinnedPost', {
+          'type': pinnedRaw.runtimeType.toString(),
+          'value': pinnedRaw.toString(),
+        });
+      } else {
+        _logger.info('No pinnedPost in response');
+      }
+
       final profile = ProfileData.fromJson(response);
 
       await _dao.upsertProfile(
@@ -352,7 +363,7 @@ class ProfileRepository {
       final posts = response['posts'] as List?;
       if (posts == null || posts.isEmpty) return null;
 
-      return FeedItem.fromJson(posts.first as Map<String, dynamic>);
+      return FeedItem.fromPostView(posts.first as Map<String, dynamic>);
     } catch (e, stack) {
       _logger.error('Failed to fetch post', e, stack);
       rethrow;
@@ -547,6 +558,42 @@ class ActorBasic {
 
 /// Represents a single feed item from author feed.
 class FeedItem {
+  factory FeedItem.fromPostView(Map<String, dynamic> json) {
+    final author = json['author'] as Map<String, dynamic>;
+    final record = json['record'] as Map<String, dynamic>;
+    final embed = json['embed'] as Map<String, dynamic>?;
+    final embedType = embed?[r'$type'] as String?;
+    final hasImages =
+        embedType == 'app.bsky.embed.images#view' ||
+        embedType == 'app.bsky.embed.recordWithMedia#view' &&
+            (embed?['media'] as Map<String, dynamic>?)?[r'$type'] == 'app.bsky.embed.images#view';
+    final hasVideo = embedType == 'app.bsky.embed.video#view';
+    final viewer = json['viewer'] as Map<String, dynamic>?;
+
+    return FeedItem(
+      uri: json['uri'] as String,
+      cid: json['cid'] as String,
+      authorDid: author['did'] as String,
+      authorHandle: author['handle'] as String,
+      authorDisplayName: author['displayName'] as String?,
+      authorAvatar: author['avatar'] as String?,
+      text: record['text'] as String? ?? '',
+      indexedAt: DateTime.tryParse(json['indexedAt'] as String? ?? ''),
+      replyCount: json['replyCount'] as int? ?? 0,
+      repostCount: json['repostCount'] as int? ?? 0,
+      likeCount: json['likeCount'] as int? ?? 0,
+      isReply: record['reply'] != null,
+      hasImages: hasImages,
+      hasVideo: hasVideo,
+      embedType: embedType,
+      record: record,
+      embed: embed,
+      viewerLikeUri: viewer?['like'] as String?,
+      viewerRepostUri: viewer?['repost'] as String?,
+      viewerBookmarked: viewer?['bookmarked'] as bool? ?? false,
+    );
+  }
+
   factory FeedItem.fromJson(Map<String, dynamic> json) {
     final post = json['post'] as Map<String, dynamic>;
     final author = post['author'] as Map<String, dynamic>;

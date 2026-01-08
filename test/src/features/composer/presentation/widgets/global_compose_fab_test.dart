@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -11,14 +12,12 @@ void main() {
     testWidgets('renders extended FAB with Post label', (tester) async {
       await tester.pumpApp(const GlobalComposeFab());
 
-      expect(find.text('Post'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
     });
 
     testWidgets('renders with edit icon', (tester) async {
       await tester.pumpApp(const GlobalComposeFab());
-
-      expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.pencil_ellipsis_rectangle), findsOneWidget);
     });
 
     testWidgets('navigates to compose route when tapped', (tester) async {

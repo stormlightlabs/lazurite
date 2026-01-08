@@ -80,7 +80,13 @@ class PinnedPostCard extends ConsumerWidget {
             padding: EdgeInsets.all(16.0),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (error, stack) => const SizedBox.shrink(),
+          error: (error, stack) => Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Error loading pinned post: $error',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
         ),
       ],
     );

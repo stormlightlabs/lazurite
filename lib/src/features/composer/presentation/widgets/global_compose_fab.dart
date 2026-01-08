@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/routes.dart';
@@ -6,8 +7,9 @@ import 'package:lazurite/src/app/routes.dart';
 ///
 /// Displays an extended FAB with "Post" label and edit icon.
 /// Navigates to the composer screen when tapped.
-/// Should be shown on main screens (Home, Search, Notifications, Profile)
-/// and hidden on screens like Composer, Login, Drafts, and Settings.
+///
+/// Should be shown on main screens (Home, Search, Notifications, Profile) and hidden on screens
+/// like Composer, Login, Drafts, and Settings.
 class GlobalComposeFab extends StatelessWidget {
   const GlobalComposeFab({super.key});
 
@@ -15,12 +17,12 @@ class GlobalComposeFab extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return FloatingActionButton.extended(
+    return FloatingActionButton(
       onPressed: () => context.push(AppRoutes.compose),
-      label: const Icon(Icons.edit_outlined),
       backgroundColor: theme.colorScheme.primary,
       foregroundColor: theme.colorScheme.onPrimary,
-      elevation: 6,
+      elevation: 4,
+      child: const Icon(CupertinoIcons.pencil_ellipsis_rectangle),
     );
   }
 }

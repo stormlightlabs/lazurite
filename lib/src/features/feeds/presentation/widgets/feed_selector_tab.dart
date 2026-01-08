@@ -61,7 +61,6 @@ class FeedSelectorTab extends ConsumerWidget {
           height: 48,
           child: Row(
             children: [
-              // Scrollable feed chips
               Expanded(
                 child: ListView.separated(
                   padding: const EdgeInsets.only(left: 16),
@@ -88,8 +87,6 @@ class FeedSelectorTab extends ConsumerWidget {
                   },
                 ),
               ),
-
-              // Persistent manage feeds button
               Stack(
                 alignment: Alignment.center,
                 children: [

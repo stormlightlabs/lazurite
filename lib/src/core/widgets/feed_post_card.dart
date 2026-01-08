@@ -20,7 +20,6 @@ class FeedPostCard extends StatelessWidget {
     this.likeCount = 0,
     this.onTap,
     this.onAvatarTap,
-    this.showDivider = true,
     super.key,
   });
 
@@ -36,32 +35,31 @@ class FeedPostCard extends StatelessWidget {
   final int likeCount;
   final VoidCallback? onTap;
   final VoidCallback? onAvatarTap;
-  final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(theme),
-                const SizedBox(height: 8),
-                _buildBody(theme),
-                const SizedBox(height: 8),
-                _buildActions(theme),
-              ],
-            ),
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(theme),
+              const SizedBox(height: 8),
+              _buildBody(theme),
+              const SizedBox(height: 8),
+              _buildActions(theme),
+            ],
           ),
         ),
-        if (showDivider) const Divider(height: 1),
-      ],
+      ),
     );
   }
 

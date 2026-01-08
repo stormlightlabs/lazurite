@@ -16,7 +16,6 @@ void main() {
     int likeCount = 0,
     VoidCallback? onTap,
     VoidCallback? onAvatarTap,
-    bool showDivider = true,
   }) {
     return MaterialApp(
       home: Scaffold(
@@ -33,7 +32,6 @@ void main() {
           likeCount: likeCount,
           onTap: onTap,
           onAvatarTap: onAvatarTap,
-          showDivider: showDivider,
         ),
       ),
     );
@@ -90,16 +88,6 @@ void main() {
       await tester.pump();
 
       expect(avatarTapped, true);
-    });
-
-    testWidgets('shows divider by default', (tester) async {
-      await tester.pumpWidget(createSubject(showDivider: true));
-      expect(find.byType(Divider), findsOneWidget);
-    });
-
-    testWidgets('hides divider when showDivider is false', (tester) async {
-      await tester.pumpWidget(createSubject(showDivider: false));
-      expect(find.byType(Divider), findsNothing);
     });
 
     testWidgets('renders relative time', (tester) async {

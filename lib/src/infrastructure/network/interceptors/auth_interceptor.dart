@@ -135,7 +135,6 @@ class AuthInterceptor extends Interceptor {
     final requiresAuth = options.extra[requiresAuthKey] == true;
     var session = await getSession();
 
-    // Proactively refresh if token is near expiration
     if (session != null && session.isNearExpiration && !session.isExpired) {
       _logger.debug('Token near expiration, proactively refreshing');
       final refreshed = await _performRefresh();
@@ -146,8 +145,6 @@ class AuthInterceptor extends Interceptor {
       }
     }
 
-    // Attach auth headers if session is available
-    // (required for requiresAuth endpoints, optional otherwise)
     if (session != null) {
       final token = session.accessJwt;
       options.headers['Authorization'] = 'DPoP $token';
@@ -171,7 +168,6 @@ class AuthInterceptor extends Interceptor {
         _logger.warning('Failed to create DPoP proof for request', e);
       }
     } else if (requiresAuth) {
-      // Fail early if auth is required but no session exists
       _logger.warning('Request requires auth but no session available');
     }
 
