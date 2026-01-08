@@ -5,6 +5,7 @@ import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/core/widgets/tab_scaffold.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/global_compose_fab.dart';
 
 import '../../../helpers/pump_app.dart';
 
@@ -258,6 +259,154 @@ void main() {
       await tester.tap(find.text('Login'));
       await tester.pumpAndSettle();
       expect(find.text('Login Screen'), findsOneWidget);
+    });
+  });
+
+  group('TabScaffold - Global Compose FAB', () {
+    testWidgets('shows FAB on home screen when authenticated', (tester) async {
+      final router = _createTestRouter();
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+        ],
+      );
+
+      expect(find.byType(GlobalComposeFab), findsOneWidget);
+    });
+
+    testWidgets('shows FAB on search screen when authenticated', (tester) async {
+      final router = _createTestRouter();
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+        ],
+      );
+
+      await tester.tap(find.text('Search'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(GlobalComposeFab), findsOneWidget);
+    });
+
+    testWidgets('shows FAB on notifications screen when authenticated', (tester) async {
+      final router = _createTestRouter();
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+        ],
+      );
+
+      await tester.tap(find.text('Notifications'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(GlobalComposeFab), findsOneWidget);
+    });
+
+    testWidgets('shows FAB on profile screen when authenticated', (tester) async {
+      final router = _createTestRouter();
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+        ],
+      );
+
+      await tester.tap(find.text('Profile'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(GlobalComposeFab), findsOneWidget);
+    });
+
+    testWidgets('does not show FAB when unauthenticated', (tester) async {
+      final router = _createTestRouter();
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(() => _TestAuthNotifier(const AuthState.unauthenticated())),
+        ],
+      );
+
+      expect(find.byType(GlobalComposeFab), findsNothing);
+    });
+
+    testWidgets('hides FAB when navigating to login', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/home',
+        routes: [
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, shell) {
+              return TabScaffold(navigationShell: shell);
+            },
+            branches: [
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/home',
+                    builder: (_, _) => const Scaffold(body: Center(child: Text('Home'))),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/login',
+            builder: (_, _) => const Scaffold(body: Center(child: Text('Login Screen'))),
+          ),
+        ],
+      );
+
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+        ],
+      );
+
+      expect(find.byType(GlobalComposeFab), findsOneWidget);
+
+      router.go('/login');
+      await tester.pumpAndSettle();
+
+      expect(find.byType(GlobalComposeFab), findsNothing);
+    });
+
+    testWidgets('FAB persists across tab switches', (tester) async {
+      final router = _createTestRouter();
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+        ],
+      );
+
+      expect(find.byType(GlobalComposeFab), findsOneWidget);
+
+      await tester.tap(find.text('Search'));
+      await tester.pumpAndSettle();
+      expect(find.byType(GlobalComposeFab), findsOneWidget);
+
+      await tester.tap(find.text('Notifications'));
+      await tester.pumpAndSettle();
+      expect(find.byType(GlobalComposeFab), findsOneWidget);
+
+      await tester.tap(find.text('Profile'));
+      await tester.pumpAndSettle();
+      expect(find.byType(GlobalComposeFab), findsOneWidget);
     });
   });
 }

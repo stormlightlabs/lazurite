@@ -166,18 +166,18 @@ Phase 5 - Rich Text (Mentions and Links) (MEDIUM):
       - [x] Include external embed
 
 Phase 6 - Global FAB and Polish (HIGH):
-- [ ] Create global FAB widget:
-      - [ ] Extended FAB with "Post" label
-      - [ ] Pen/edit icon
-      - [ ] Primary color styling
-      - [ ] Elevation shadow
-- [ ] Integrate FAB in app scaffold:
-      - [ ] Show on: Home, Feeds, Search, Profile
-      - [ ] Hide on: Composer, Login, Drafts, Settings
-      - [ ] Fixed bottom-right position
-      - [ ] Smooth show/hide animation
-      - [ ] Tap navigates to /compose
-      - [ ] Create new draft automatically
+- [x] Create global FAB widget:
+      - [x] Extended FAB with "Post" label
+      - [x] Pen/edit icon
+      - [x] Primary color styling
+      - [x] Elevation shadow
+- [x] Integrate FAB in app scaffold:
+      - [x] Show on: Home, Feeds, Search, Profile
+      - [x] Hide on: Composer, Login, Drafts, Settings
+      - [x] Fixed bottom-right position
+      - [x] Smooth show/hide animation
+      - [x] Tap navigates to /compose
+      - [x] Create new draft automatically
       - [ ] Performance optimization:
             - [ ] Image thumbnail caching
             - [ ] Smooth, animated modal transitions

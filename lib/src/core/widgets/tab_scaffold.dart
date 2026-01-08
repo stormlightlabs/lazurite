@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/global_compose_fab.dart';
 
 /// Bottom navigation scaffold that wraps the tab content.
 ///
@@ -49,7 +50,29 @@ class _TabScaffoldState extends ConsumerState<TabScaffold> {
         },
         destinations: isAuthenticated ? _authenticatedDestinations : _unauthenticatedDestinations,
       ),
+      floatingActionButton: _shouldShowFab(context, isAuthenticated)
+          ? const GlobalComposeFab()
+          : null,
     );
+  }
+
+  /// Determines whether the compose FAB should be shown.
+  ///
+  /// The FAB is visible on main tab screens (Home, Search, Notifications, Profile)
+  /// but hidden on other screens like Composer, Login, Drafts, and Settings.
+  bool _shouldShowFab(BuildContext context, bool isAuthenticated) {
+    if (!isAuthenticated) return false;
+
+    final location = GoRouterState.of(context).matchedLocation;
+
+    final showOnRoutes = [
+      AppRoutes.home,
+      AppRoutes.search,
+      AppRoutes.notifications,
+      AppRoutes.profile,
+    ];
+
+    return showOnRoutes.any((route) => location.startsWith(route));
   }
 
   void _ensureHomeBranchWhenUnauthenticated(bool isAuthenticated) {
