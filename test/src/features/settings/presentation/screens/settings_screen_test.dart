@@ -86,9 +86,14 @@ void main() {
       expect(find.text('Muted Words'), findsOneWidget);
       expect(find.text('Saved Feeds'), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -200));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Accessibility'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
 
-      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
       await tester.pumpAndSettle();
 
       expect(find.text('ACCOUNT MANAGEMENT'), findsOneWidget);
@@ -108,6 +113,7 @@ void main() {
       expect(find.text('APPEARANCE'), findsOneWidget);
       expect(find.text('APP'), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
+      expect(find.text('Accessibility'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
     });
 

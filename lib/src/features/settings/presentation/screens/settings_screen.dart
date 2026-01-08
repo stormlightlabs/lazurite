@@ -89,6 +89,14 @@ class SettingsScreen extends ConsumerWidget {
     return [
       const SettingsSection(title: 'App'),
       SettingsTile(
+        leading: const Icon(Icons.accessibility_new),
+        title: 'Accessibility',
+        subtitle: 'Animation controls and preferences',
+        onTap: () {
+          context.push('/settings/accessibility');
+        },
+      ),
+      SettingsTile(
         leading: const Icon(Icons.info_outline),
         title: 'About',
         subtitle: 'App version and information',

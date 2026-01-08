@@ -22,6 +22,7 @@ import 'package:lazurite/src/features/profile/presentation/following_page.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/about_screen.dart';
+import 'package:lazurite/src/features/settings/presentation/screens/accessibility_settings_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/content_moderation_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/feed_preferences_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/muted_words_screen.dart';
@@ -293,6 +294,11 @@ GoRouter createRouter(Ref ref) {
             path: 'muted-words',
             name: AppRouteNames.mutedWords,
             builder: (context, state) => const MutedWordsScreen(),
+          ),
+          GoRoute(
+            path: 'accessibility',
+            name: AppRouteNames.accessibility,
+            builder: (context, state) => const AccessibilitySettingsScreen(),
           ),
         ],
       ),

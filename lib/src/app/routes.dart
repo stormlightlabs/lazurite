@@ -22,6 +22,7 @@ abstract final class AppRoutes {
   static const String feedPreferences = '/settings/feeds';
   static const String contentModeration = '/settings/moderation';
   static const String mutedWords = '/settings/muted-words';
+  static const String accessibility = '/settings/accessibility';
 
   static const String thread = 't/:uri';
   static const String profileDetail = 'u/:did';
@@ -52,6 +53,7 @@ abstract final class AppRouteNames {
   static const String feedPreferences = 'feedPreferences';
   static const String contentModeration = 'contentModeration';
   static const String mutedWords = 'mutedWords';
+  static const String accessibility = 'accessibility';
   static const String drafts = 'drafts';
   static const String thread = 'thread';
   static const String profileDetail = 'profileDetail';
