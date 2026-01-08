@@ -6,6 +6,7 @@ import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/features/composer/application/composer_notifier.dart';
 import 'package:lazurite/src/features/composer/application/composer_providers.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/alt_text_editor_sheet.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/character_count_meter.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/composer_text_field.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/media_picker_row.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/publish_button.dart';
@@ -17,6 +18,9 @@ const int kMaxPostLength = 300;
 
 /// Character count at which warning styling is applied.
 const int kWarningThreshold = 20;
+
+/// Duration for quick UI polish animations.
+const Duration _kComposerAnimationDuration = Duration(milliseconds: 250);
 
 /// Full-screen composer for creating or editing posts.
 class ComposerScreen extends ConsumerStatefulWidget {
@@ -84,8 +88,6 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
   }
 
   bool get _isOverLimit => _characterCount > kMaxPostLength;
-  bool get _isNearLimit => _characterCount > kMaxPostLength - kWarningThreshold && !_isOverLimit;
-
   void _splitText() {
     final text = _textController.text;
     final characters = text.characters;
@@ -306,6 +308,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
     final composerAsync = ref.watch(composerProvider(_args));
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final insets = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
       appBar: AppBar(
@@ -351,111 +354,141 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
 
           final mediaPaths = state.draft?.media.map((m) => m.localPath).toList() ?? [];
 
-          return Stack(
-            children: [
-              SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (state.replyPost != null)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child: ReplyContextCard(
-                          author: Author(
-                            did: state.replyPost!.authorDid,
-                            handle: state.replyPost!.authorHandle,
-                            displayName: state.replyPost!.authorDisplayName,
-                            avatar: state.replyPost!.authorAvatar,
+          return SafeArea(
+            child: AnimatedPadding(
+              duration: _kComposerAnimationDuration,
+              padding: EdgeInsets.only(bottom: insets),
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (state.replyPost != null)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                            child: ReplyContextCard(
+                              author: Author(
+                                did: state.replyPost!.authorDid,
+                                handle: state.replyPost!.authorHandle,
+                                displayName: state.replyPost!.authorDisplayName,
+                                avatar: state.replyPost!.authorAvatar,
+                              ),
+                              text: state.replyPost!.text,
+                            ),
                           ),
-                          text: state.replyPost!.text,
-                        ),
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: ComposerTextField(
-                        controller: _textController,
-                        maxLength: kMaxPostLength,
-                        hintText: state.replyPost != null
-                            ? 'Write your reply...'
-                            : "What's on your mind?",
-                      ),
-                    ),
-                    if (mediaPaths.isNotEmpty || state.draft?.media.length != 4)
-                      MediaPickerRow(
-                        mediaPaths: mediaPaths,
-                        onAddMedia: _pickMedia,
-                        onRemoveMedia: _removeMedia,
-                        onTapMedia: _openAltTextEditor,
-                        altTextIndicators:
-                            state.draft?.media
-                                .map((m) => m.altText != null && m.altText!.isNotEmpty)
-                                .toList() ??
-                            [],
-                      ),
-
-                    if (state.quotePost != null)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: QuotePostCard(
-                          author: Author(
-                            did: state.quotePost!.authorDid,
-                            handle: state.quotePost!.authorHandle,
-                            displayName: state.quotePost!.authorDisplayName,
-                            avatar: state.quotePost!.authorAvatar,
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: ComposerTextField(
+                            controller: _textController,
+                            maxLength: kMaxPostLength,
+                            hintText: state.replyPost != null
+                                ? 'Write your reply...'
+                                : "What's on your mind?",
+                            showRemainingCounter: false,
                           ),
-                          text: state.quotePost!.text,
-                          imageCount: state.quotePost!.hasImages ? 1 : 0,
                         ),
-                      ),
-
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                      child: Text(
-                        '${kMaxPostLength - _characterCount}',
-                        textAlign: TextAlign.end,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: _isOverLimit
-                              ? colorScheme.error
-                              : _isNearLimit
-                              ? colorScheme.tertiary
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-
-                    if (state.error != null)
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: colorScheme.errorContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline, color: colorScheme.error),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  state.error!,
-                                  style: TextStyle(color: colorScheme.onErrorContainer),
+                              Flexible(
+                                child: CharacterCountMeter(
+                                  currentCount: _characterCount,
+                                  maxCount: kMaxPostLength,
+                                  warningThreshold: kWarningThreshold,
                                 ),
+                              ),
+                              const SizedBox(width: 12),
+                              AnimatedSwitcher(
+                                duration: _kComposerAnimationDuration,
+                                child: _pendingThreadText != null
+                                    ? const Tooltip(
+                                        message: 'Continue this thread after posting',
+                                        child: Chip(
+                                          key: ValueKey('thread-indicator'),
+                                          avatar: Icon(Icons.forum_outlined, size: 16),
+                                          label: Text('Next post ready'),
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                  ],
-                ),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Card(
+                            elevation: 0,
+                            color: colorScheme.surfaceContainerLow,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: MediaPickerRow(
+                              mediaPaths: mediaPaths,
+                              onAddMedia: _pickMedia,
+                              onRemoveMedia: _removeMedia,
+                              onTapMedia: _openAltTextEditor,
+                              altTextIndicators:
+                                  state.draft?.media
+                                      .map((m) => m.altText != null && m.altText!.isNotEmpty)
+                                      .toList() ??
+                                  [],
+                            ),
+                          ),
+                        ),
+                        if (state.quotePost != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: QuotePostCard(
+                              author: Author(
+                                did: state.quotePost!.authorDid,
+                                handle: state.quotePost!.authorHandle,
+                                displayName: state.quotePost!.authorDisplayName,
+                                avatar: state.quotePost!.authorAvatar,
+                              ),
+                              text: state.quotePost!.text,
+                              imageCount: state.quotePost!.hasImages ? 1 : 0,
+                            ),
+                          ),
+                        AnimatedSwitcher(
+                          duration: _kComposerAnimationDuration,
+                          child: state.error != null
+                              ? Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.errorContainer,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.error_outline, color: colorScheme.error),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            state.error!,
+                                            style: TextStyle(color: colorScheme.onErrorContainer),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (state.isPublishing)
+                    Container(
+                      color: colorScheme.surface.withAlpha(200),
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                ],
               ),
-
-              if (state.isPublishing)
-                Container(
-                  color: colorScheme.surface.withAlpha(200),
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-            ],
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

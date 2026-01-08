@@ -84,6 +84,16 @@ void main() {
       expect(find.text('-3'), findsOneWidget);
     });
 
+    testWidgets('can hide inline counter when requested', (tester) async {
+      await tester.pumpApp(
+        SingleChildScrollView(
+          child: ComposerTextField(controller: controller, showRemainingCounter: false),
+        ),
+      );
+
+      expect(find.text('300'), findsNothing);
+    });
+
     testWidgets('accepts text with mentions', (tester) async {
       await tester.pumpApp(
         SingleChildScrollView(child: ComposerTextField(controller: controller)),

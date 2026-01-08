@@ -11,6 +11,7 @@ class ComposerTextField extends StatelessWidget {
     this.maxLength = 300,
     this.hintText = "What's happening?",
     this.onChanged,
+    this.showRemainingCounter = true,
     super.key,
   });
 
@@ -25,6 +26,9 @@ class ComposerTextField extends StatelessWidget {
 
   /// Callback fired when text changes.
   final ValueChanged<String>? onChanged;
+
+  /// Whether to render the inline remaining-character counter.
+  final bool showRemainingCounter;
 
   @override
   Widget build(BuildContext context) {
@@ -55,29 +59,30 @@ class ComposerTextField extends StatelessWidget {
               hashtagColor: colorScheme.secondary,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: ValueListenableBuilder<TextEditingValue>(
-              valueListenable: controller,
-              builder: (context, value, _) {
-                final remaining = maxLength - value.text.length;
-                final isOverLimit = remaining < 0;
-                final isNearLimit = remaining <= 20 && remaining >= 0;
+          if (showRemainingCounter)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (context, value, _) {
+                  final remaining = maxLength - value.text.length;
+                  final isOverLimit = remaining < 0;
+                  final isNearLimit = remaining <= 20 && remaining >= 0;
 
-                return Text(
-                  '$remaining',
-                  textAlign: TextAlign.end,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: isOverLimit
-                        ? colorScheme.error
-                        : isNearLimit
-                        ? colorScheme.tertiary
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                );
-              },
+                  return Text(
+                    '$remaining',
+                    textAlign: TextAlign.end,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: isOverLimit
+                          ? colorScheme.error
+                          : isNearLimit
+                          ? colorScheme.tertiary
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
         ],
       ),
     );

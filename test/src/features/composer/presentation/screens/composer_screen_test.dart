@@ -9,6 +9,7 @@ import 'package:lazurite/src/features/composer/application/composer_providers.da
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/character_count_meter.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/quote_post_card.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/publish_button.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/reply_context_card.dart';
@@ -156,7 +157,8 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await navigateToCompose(tester);
 
-      expect(find.text('300'), findsWidgets);
+      expect(find.byType(CharacterCountMeter), findsOneWidget);
+      expect(find.text('300'), findsOneWidget);
     });
 
     testWidgets('character counter updates as user types', (tester) async {
@@ -165,7 +167,7 @@ void main() {
 
       await enterText(tester, 'Hello');
 
-      expect(find.text('295'), findsWidgets);
+      expect(find.text('295'), findsOneWidget);
     });
 
     testWidgets('publish button enabled when text is entered', (tester) async {
@@ -187,7 +189,7 @@ void main() {
       await enterText(tester, longText);
       await tester.pump();
 
-      expect(find.text('-5'), findsWidgets);
+      expect(find.text('-5'), findsOneWidget);
     });
 
     testWidgets('publish button disabled when over limit', (tester) async {
@@ -261,6 +263,20 @@ void main() {
 
       final textField = tester.widget<ExtendedTextField>(find.byType(ExtendedTextField));
       expect(textField.controller?.text, 'a' * 300);
+    });
+
+    testWidgets('shows thread indicator chip after split', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await navigateToCompose(tester);
+
+      final longText = 'a' * 305;
+      await enterText(tester, longText);
+      await tester.pump();
+
+      await tester.tap(find.text('Split'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Next post ready'), findsOneWidget);
     });
 
     testWidgets('preserves reply root when continuing existing thread', (tester) async {
