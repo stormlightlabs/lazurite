@@ -156,9 +156,12 @@ class FeedContentRepository {
       final Map<String, dynamic> response;
 
       if (feedUri != null) {
+        final isListFeed = _isListFeedUri(feedUri);
+        final endpoint = isListFeed ? 'app.bsky.feed.getListFeed' : 'app.bsky.feed.getFeed';
+        final paramKey = isListFeed ? 'list' : 'feed';
         response = await _api.call(
-          'app.bsky.feed.getFeed',
-          params: {'feed': feedUri, 'limit': 50, if (cursor != null) 'cursor': cursor},
+          endpoint,
+          params: {paramKey: feedUri, 'limit': 50, if (cursor != null) 'cursor': cursor},
         );
       } else if (_api.isAuthenticated) {
         response = await _api.call(
@@ -286,5 +289,13 @@ class FeedContentRepository {
     if (count > 0) {
       _logger.info('Cleaned up $count stale feed content items');
     }
+  }
+
+  bool _isListFeedUri(String feedUri) {
+    if (!feedUri.startsWith('at://')) return false;
+    final withoutScheme = feedUri.substring(5);
+    final segments = withoutScheme.split('/');
+    if (segments.length < 2) return false;
+    return segments[1] == 'app.bsky.graph.list';
   }
 }

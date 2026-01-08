@@ -41,11 +41,7 @@ void feedSyncController(Ref ref) {
 
   void setActiveFeed(AuthState state) {
     final notifier = ref.read(activeFeedProvider.notifier);
-    if (state is AuthStateAuthenticated) {
-      notifier.switchToHome();
-    } else {
-      notifier.switchToDiscover();
-    }
+    notifier.resetToDefault(isAuthenticated: state is AuthStateAuthenticated);
   }
 
   ref.listen(appLifecycleProvider, (previous, next) {

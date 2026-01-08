@@ -144,17 +144,10 @@ void main() {
       when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value([pinnedFeed]));
 
       final container = createContainer(authenticated: true);
-
-      expect(container.read(activeFeedProvider), FeedRepository.kHomeFeedUri);
-
-      final states = <String>[];
-      final subscription = container.listen(activeFeedProvider, (_, next) {
-        states.add(next);
-      });
+      final subscription = container.listen(pinnedFeedsProvider, (previous, next) {});
       addTearDown(subscription.close);
 
       await container.read(pinnedFeedsProvider.future);
-      await Future.delayed(Duration.zero);
 
       expect(
         container.read(activeFeedProvider),
@@ -162,16 +155,16 @@ void main() {
       );
     });
 
-    test('initial state is home feed when authenticated with no pinned feeds', () async {
+    test('initial state falls back to discover when authenticated with no pinned feeds', () async {
       when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value([]));
 
       final container = createContainer(authenticated: true);
 
-      final subscription = container.listen(pinnedFeedsProvider, (_, _) {});
+      final subscription = container.listen(pinnedFeedsProvider, (previous, next) {});
       addTearDown(subscription.close);
       await container.read(pinnedFeedsProvider.future);
 
-      expect(container.read(activeFeedProvider), FeedRepository.kHomeFeedUri);
+      expect(container.read(activeFeedProvider), FeedRepository.kDiscoverFeedUri);
     });
 
     test('initial state is discover feed when unauthenticated', () {
@@ -192,25 +185,54 @@ void main() {
       );
     });
 
-    test('switchToHome changes to home feed', () {
-      final container = createContainer(authenticated: true);
-
-      final notifier = container.read(activeFeedProvider.notifier);
-      notifier.switchFeed('at://did:plc:test/app.bsky.feed.generator/custom');
-      expect(
-        container.read(activeFeedProvider),
-        'at://did:plc:test/app.bsky.feed.generator/custom',
-      );
-
-      notifier.switchToHome();
-      expect(container.read(activeFeedProvider), FeedRepository.kHomeFeedUri);
-    });
-
     test('switchToDiscover changes to discover feed', () {
       final container = createContainer(authenticated: true);
 
       final notifier = container.read(activeFeedProvider.notifier);
       notifier.switchToDiscover();
+
+      expect(container.read(activeFeedProvider), FeedRepository.kDiscoverFeedUri);
+    });
+
+    test('resetToDefault selects top pinned feed when authenticated', () async {
+      final pinnedFeed = SavedFeed(
+        uri: 'at://did:plc:test/app.bsky.feed.generator/top-feed',
+        displayName: 'Top Feed',
+        description: null,
+        avatar: null,
+        creatorDid: 'did:plc:creator',
+        likeCount: 10,
+        sortOrder: 0,
+        isPinned: true,
+        lastSynced: DateTime.now(),
+      );
+
+      when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value([pinnedFeed]));
+
+      final container = createContainer(authenticated: true);
+      final subscription = container.listen(pinnedFeedsProvider, (previous, next) {});
+      addTearDown(subscription.close);
+      await container.read(pinnedFeedsProvider.future);
+
+      final notifier = container.read(activeFeedProvider.notifier);
+      notifier.resetToDefault(isAuthenticated: true);
+
+      expect(
+        container.read(activeFeedProvider),
+        'at://did:plc:test/app.bsky.feed.generator/top-feed',
+      );
+    });
+
+    test('resetToDefault falls back to discover when unauthenticated', () async {
+      when(() => mockRepository.watchPinnedFeeds()).thenAnswer((_) => Stream.value([]));
+
+      final container = createContainer(authenticated: false);
+      final subscription = container.listen(pinnedFeedsProvider, (_, _) {});
+      addTearDown(subscription.close);
+      await container.read(pinnedFeedsProvider.future);
+
+      final notifier = container.read(activeFeedProvider.notifier);
+      notifier.resetToDefault(isAuthenticated: false);
 
       expect(container.read(activeFeedProvider), FeedRepository.kDiscoverFeedUri);
     });

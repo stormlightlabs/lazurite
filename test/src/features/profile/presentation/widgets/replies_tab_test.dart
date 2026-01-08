@@ -19,6 +19,8 @@ void main() {
     bool isReply = false,
     bool hasImages = false,
     bool hasVideo = false,
+    bool isRepost = false,
+    bool isQuote = false,
   }) {
     return FeedItem(
       uri: uri,
@@ -35,6 +37,8 @@ void main() {
       isReply: isReply,
       hasImages: hasImages,
       hasVideo: hasVideo,
+      isRepost: isRepost,
+      isQuote: isQuote,
     );
   }
 
@@ -70,6 +74,22 @@ void main() {
 
       expect(find.text('This is a reply'), findsOneWidget);
       expect(find.text('Regular post not a reply'), findsNothing);
+    });
+
+    testWidgets('excludes reposted or quoted items from replies', (tester) async {
+      await tester.pumpWidget(
+        createSubject(
+          items: [
+            createFeedItem(text: 'My reply', isReply: true),
+            createFeedItem(text: 'Boosted reply', isReply: true, isRepost: true),
+            createFeedItem(text: 'Quoted reply', isReply: true, isQuote: true),
+          ],
+        ),
+      );
+
+      expect(find.text('My reply'), findsOneWidget);
+      expect(find.text('Boosted reply'), findsNothing);
+      expect(find.text('Quoted reply'), findsNothing);
     });
 
     testWidgets('shows loading indicator when hasMore is true', (tester) async {

@@ -181,11 +181,11 @@ abstract final class ThemeFactory {
   /// Builds the text theme with custom fonts.
   ///
   /// - Crimson Pro for display styles
-  /// - Merriweather Sans for body/label styles
+  /// - Overpass for body/label styles
   /// - Fira Code for code (available via bodySmall)
   static TextTheme _buildTextTheme(Color color) {
     final displayStyle = GoogleFonts.crimsonPro(color: color);
-    final bodyStyle = GoogleFonts.merriweatherSans(color: color);
+    final bodyStyle = GoogleFonts.overpass(color: color);
     final monoStyle = GoogleFonts.firaCode(color: color);
 
     return TextTheme(

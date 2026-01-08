@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/app/theming/color_scheme_derivation.dart';
 import 'package:lazurite/src/app/theming/custom_theme_draft.dart';
+import 'package:lazurite/src/app/theming/packs/catppuccin_theme_pack.dart';
+import 'package:lazurite/src/app/theming/packs/nord_theme_pack.dart';
+import 'package:lazurite/src/app/theming/packs/one_dark_theme_pack.dart';
 import 'package:lazurite/src/app/theming/packs/oxocarbon_theme_pack.dart';
+import 'package:lazurite/src/app/theming/packs/rose_pine_theme_pack.dart';
 import 'package:lazurite/src/app/theming/theme_factory.dart';
 import 'package:lazurite/src/app/theming/theme_pack.dart';
 import 'package:lazurite/src/app/theming/theme_variant.dart';
@@ -74,7 +78,13 @@ class ThemeState {
 
 /// Provides the list of available theme packs.
 @Riverpod(keepAlive: true)
-List<ThemePack> availableThemePacks(Ref ref) => [oxocarbonPack];
+List<ThemePack> availableThemePacks(Ref ref) => [
+      oxocarbonPack,
+      catppuccinPack,
+      rosePinePack,
+      nordPack,
+      oneDarkPack,
+    ];
 
 /// Provides access to the LocalSettingsDao.
 @Riverpod(keepAlive: true)

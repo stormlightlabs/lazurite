@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/routes.dart';
+import 'package:lazurite/src/core/constants/layout_constants.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/feed_post_card.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
@@ -178,6 +179,8 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
               await ref.read(profileProvider(widget.did).notifier).refresh();
               await ref.read(authorFeedProvider(widget.did).notifier).refresh();
             },
+            edgeOffset: kRefreshIndicatorEdgeOffset,
+            displacement: kRefreshIndicatorDisplacement,
             child: NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) {
                 return [

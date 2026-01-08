@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/core/constants/layout_constants.dart';
 import 'package:lazurite/src/features/composer/application/composer_providers.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/draft_preview_card.dart';
@@ -36,6 +37,8 @@ class DraftListScreen extends ConsumerWidget {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () => _handleRefresh(ref),
+        edgeOffset: kRefreshIndicatorEdgeOffset,
+        displacement: kRefreshIndicatorDisplacement,
         child: CustomScrollView(
           slivers: [
             SliverAppBar(

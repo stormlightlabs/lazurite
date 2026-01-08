@@ -7,7 +7,6 @@ import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
-import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
 
 /// Tab widget for selecting between pinned feeds.
 ///
@@ -43,19 +42,23 @@ class FeedSelectorTab extends ConsumerWidget {
 
     return pinnedFeedsAsync.when(
       data: (feeds) {
-        final displayFeeds = feeds.isEmpty
-            ? [
-                SavedFeedData(
-                  uri: FeedRepository.kHomeFeedUri,
-                  displayName: 'Home',
-                  creatorDid: '',
-                  likeCount: 0,
-                  sortOrder: 0,
-                  isPinned: true,
-                  lastSynced: DateTime.now(),
+        final manageButton = _ManageFeedsButton();
+
+        if (feeds.isEmpty) {
+          return SizedBox(
+            height: 48,
+            child: Row(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Text('Pin feeds to choose them here'),
                 ),
-              ]
-            : feeds;
+                manageButton,
+                const SizedBox(width: 8),
+              ],
+            ),
+          );
+        }
 
         return SizedBox(
           height: 48,
@@ -65,10 +68,10 @@ class FeedSelectorTab extends ConsumerWidget {
                 child: ListView.separated(
                   padding: const EdgeInsets.only(left: 16),
                   scrollDirection: Axis.horizontal,
-                  itemCount: displayFeeds.length,
+                  itemCount: feeds.length,
                   separatorBuilder: (context, index) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
-                    final feed = displayFeeds[index];
+                    final feed = feeds[index];
                     final isActive = feed.uri == activeFeedUri;
 
                     return FilterChip(
@@ -87,42 +90,7 @@ class FeedSelectorTab extends ConsumerWidget {
                   },
                 ),
               ),
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  Tooltip(
-                    message: 'Manage Feeds',
-                    child: ScaleButton(
-                      child: IconButton(
-                        icon: const Icon(Icons.tune),
-                        onPressed: () {
-                          context.push(AppRoutes.feeds);
-                        },
-                      ),
-                    ),
-                  ),
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final hasPending = ref.watch(hasPendingSyncProvider).asData?.value ?? false;
-                      if (hasPending) {
-                        return Positioned(
-                          right: 8,
-                          top: 8,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.blue,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                ],
-              ),
+              manageButton,
               const SizedBox(width: 8),
             ],
           ),
@@ -130,6 +98,39 @@ class FeedSelectorTab extends ConsumerWidget {
       },
       loading: () => const SizedBox(height: 48, child: Center(child: CircularProgressIndicator())),
       error: (err, stack) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _ManageFeedsButton extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasPending = ref.watch(hasPendingSyncProvider).asData?.value ?? false;
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Tooltip(
+          message: 'Manage Feeds',
+          child: ScaleButton(
+            child: IconButton(
+              icon: const Icon(Icons.tune),
+              onPressed: () {
+                context.push(AppRoutes.feeds);
+              },
+            ),
+          ),
+        ),
+        if (hasPending)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+            ),
+          ),
+      ],
     );
   }
 }

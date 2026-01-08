@@ -758,9 +758,9 @@ class FeedRepository {
   /// Returns display name for special feeds (non-at:// URIs).
   String _getSpecialFeedDisplayName(String feedUri) {
     switch (feedUri) {
-      case 'following':
+      case kFollowingFeedUri:
         return 'Following';
-      case 'timeline':
+      case kTimelineFeedUri:
         return 'Home';
       default:
         return feedUri;
@@ -770,9 +770,9 @@ class FeedRepository {
   /// Returns description for special feeds (non-at:// URIs).
   String _getSpecialFeedDescription(String feedUri) {
     switch (feedUri) {
-      case 'following':
+      case kFollowingFeedUri:
         return 'Posts from people you follow';
-      case 'timeline':
+      case kTimelineFeedUri:
         return 'Your home timeline';
       default:
         return 'Special feed: $feedUri';
@@ -931,6 +931,8 @@ class FeedRepository {
 
   /// URI for the Home timeline (authenticated users).
   static const kHomeFeedUri = 'home';
+  static const kFollowingFeedUri = 'following';
+  static const kTimelineFeedUri = 'timeline';
 
   /// URI for the What's Hot feed (public).
   static const kDiscoverFeedUri =

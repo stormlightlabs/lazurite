@@ -569,6 +569,7 @@ class FeedItem {
             (embed?['media'] as Map<String, dynamic>?)?[r'$type'] == 'app.bsky.embed.images#view';
     final hasVideo = embedType == 'app.bsky.embed.video#view';
     final viewer = json['viewer'] as Map<String, dynamic>?;
+    final isQuote = _isQuoteEmbed(embedType);
 
     return FeedItem(
       uri: json['uri'] as String,
@@ -591,6 +592,7 @@ class FeedItem {
       viewerLikeUri: viewer?['like'] as String?,
       viewerRepostUri: viewer?['repost'] as String?,
       viewerBookmarked: viewer?['bookmarked'] as bool? ?? false,
+      isQuote: isQuote,
     );
   }
 
@@ -608,6 +610,9 @@ class FeedItem {
             (embed?['media'] as Map<String, dynamic>?)?[r'$type'] == 'app.bsky.embed.images#view';
     final hasVideo = embedType == 'app.bsky.embed.video#view';
     final viewer = post['viewer'] as Map<String, dynamic>?;
+    final reason = json['reason'] as Map<String, dynamic>?;
+    final isRepost = (reason?[r'$type'] as String?)?.contains('reasonRepost') ?? false;
+    final isQuote = _isQuoteEmbed(embedType);
 
     return FeedItem(
       uri: post['uri'] as String,
@@ -630,6 +635,8 @@ class FeedItem {
       viewerLikeUri: viewer?['like'] as String?,
       viewerRepostUri: viewer?['repost'] as String?,
       viewerBookmarked: viewer?['bookmarked'] as bool? ?? false,
+      isRepost: isRepost,
+      isQuote: isQuote,
     );
   }
 
@@ -654,6 +661,8 @@ class FeedItem {
     this.viewerLikeUri,
     this.viewerRepostUri,
     this.viewerBookmarked = false,
+    this.isRepost = false,
+    this.isQuote = false,
   });
 
   final String uri;
@@ -695,6 +704,17 @@ class FeedItem {
   /// Whether viewer has bookmarked this post.
   final bool viewerBookmarked;
 
+  /// Whether this feed item is a repost of someone else's content.
+  final bool isRepost;
+
+  /// Whether this feed item quotes another record.
+  final bool isQuote;
+
   /// Whether this post has any media (images or video).
   bool get hasMedia => hasImages || hasVideo;
+
+  static bool _isQuoteEmbed(String? embedType) {
+    if (embedType == null) return false;
+    return embedType.startsWith('app.bsky.embed.record');
+  }
 }

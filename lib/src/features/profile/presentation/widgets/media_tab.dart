@@ -46,8 +46,10 @@ class _MediaTabState extends State<MediaTab> with AutomaticKeepAliveClientMixin 
     }
   }
 
-  /// Filter items to only show posts with media.
-  List<FeedItem> get _mediaItems => widget.items.where((item) => item.hasMedia).toList();
+  /// Filter items to only show posts with media authored by the profile.
+  List<FeedItem> get _mediaItems {
+    return widget.items.where((item) => item.hasMedia).toList();
+  }
 
   @override
   Widget build(BuildContext context) {

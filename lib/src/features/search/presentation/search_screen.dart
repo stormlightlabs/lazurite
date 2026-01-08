@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/core/constants/layout_constants.dart';
 import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_embeds.dart';
@@ -253,6 +254,8 @@ class _PostResultsView extends ConsumerWidget {
           onRefresh: () async {
             await ref.read(searchProvider(query).notifier).refresh();
           },
+          edgeOffset: kRefreshIndicatorEdgeOffset,
+          displacement: kRefreshIndicatorDisplacement,
           child: ListView.separated(
             controller: scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
@@ -302,6 +305,8 @@ class _ActorResultsView extends ConsumerWidget {
           onRefresh: () async {
             await ref.read(actorSearchProvider(query).notifier).refresh();
           },
+          edgeOffset: kRefreshIndicatorEdgeOffset,
+          displacement: kRefreshIndicatorDisplacement,
           child: ListView.separated(
             controller: scrollController,
             physics: const AlwaysScrollableScrollPhysics(),

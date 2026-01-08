@@ -173,24 +173,25 @@ class DiscoverFeedsNotifier extends _$DiscoverFeedsNotifier {
 @riverpod
 class ActiveFeed extends _$ActiveFeed {
   bool _hasUserSwitched = false;
+  String? _lastResolvedFeed;
 
   @override
   String build() {
     final authState = ref.watch(authProvider);
 
     if (authState is AuthStateAuthenticated) {
-      ref.listen(pinnedFeedsProvider, (previous, next) {
-        if (_hasUserSwitched) return;
+      ref.listen(pinnedFeedsProvider, _handlePinnedFeedsChanged);
+      final pinnedFeeds = ref.watch(pinnedFeedsProvider).asData?.value;
 
-        next.whenData((feeds) {
-          if (feeds.isNotEmpty && state == FeedRepository.kHomeFeedUri) {
-            state = feeds.first.uri;
-          }
-        });
-      });
+      if (!_hasUserSwitched && pinnedFeeds != null && pinnedFeeds.isNotEmpty) {
+        _lastResolvedFeed = pinnedFeeds.first.uri;
+        return _lastResolvedFeed!;
+      }
 
-      return FeedRepository.kHomeFeedUri;
+      return _lastResolvedFeed ?? FeedRepository.kDiscoverFeedUri;
     }
+    _hasUserSwitched = false;
+    _lastResolvedFeed = null;
     return FeedRepository.kDiscoverFeedUri;
   }
 
@@ -199,19 +200,58 @@ class ActiveFeed extends _$ActiveFeed {
   /// Updates the active feed URI, which will trigger feed content reload in FeedContentNotifier.
   void switchFeed(String feedUri) {
     _hasUserSwitched = true;
+    _lastResolvedFeed = feedUri;
     state = feedUri;
-  }
-
-  /// Switches to the home feed.
-  void switchToHome() {
-    _hasUserSwitched = true;
-    state = FeedRepository.kHomeFeedUri;
   }
 
   /// Switches to the discover feed.
   void switchToDiscover() {
     _hasUserSwitched = true;
+    _lastResolvedFeed = FeedRepository.kDiscoverFeedUri;
     state = FeedRepository.kDiscoverFeedUri;
+  }
+
+  /// Resets to the default feed based on authentication status.
+  void resetToDefault({required bool isAuthenticated}) {
+    _hasUserSwitched = false;
+
+    if (isAuthenticated) {
+      final feeds = ref.read(pinnedFeedsProvider).asData?.value;
+      if (feeds != null && feeds.isNotEmpty) {
+        _updateState(feeds.first.uri);
+        return;
+      }
+    }
+
+    _updateState(FeedRepository.kDiscoverFeedUri);
+  }
+
+  void _handlePinnedFeedsChanged(
+    AsyncValue<List<SavedFeedData>>? previous,
+    AsyncValue<List<SavedFeedData>> next,
+  ) {
+    next.whenData((feeds) {
+      if (feeds.isEmpty) {
+        if (!_hasUserSwitched) {
+          _updateState(FeedRepository.kDiscoverFeedUri);
+        }
+        return;
+      }
+
+      final currentExists = feeds.any((feed) => feed.uri == state);
+      if (!currentExists) {
+        _hasUserSwitched = false;
+      }
+
+      if (!_hasUserSwitched) {
+        _updateState(feeds.first.uri);
+      }
+    });
+  }
+
+  void _updateState(String feedUri) {
+    _lastResolvedFeed = feedUri;
+    state = feedUri;
   }
 }
 

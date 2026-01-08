@@ -46,8 +46,10 @@ class _RepliesTabState extends State<RepliesTab> with AutomaticKeepAliveClientMi
     }
   }
 
-  /// Filter items to only show replies.
-  List<FeedItem> get _replies => widget.items.where((item) => item.isReply).toList();
+  /// Filter items to only show replies authored by the profile.
+  List<FeedItem> get _replies {
+    return widget.items.where((item) => item.isReply && !item.isRepost && !item.isQuote).toList();
+  }
 
   @override
   Widget build(BuildContext context) {

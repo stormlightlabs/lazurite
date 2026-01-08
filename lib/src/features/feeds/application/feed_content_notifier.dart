@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'package:lazurite/src/core/utils/logger.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/settings/application/muted_word_filter_provider.dart';
 import 'package:lazurite/src/features/settings/application/settings_providers.dart';
@@ -21,6 +24,9 @@ part 'feed_content_notifier.g.dart';
 /// Supports refresh, load more, and clear operations.
 @riverpod
 class FeedContentNotifier extends _$FeedContentNotifier {
+  Logger get _logger => ref.read(loggerProvider('FeedContentNotifier'));
+  bool get _isAuthenticated => ref.read(authProvider) is AuthStateAuthenticated;
+
   @override
   Stream<List<FeedPost>> build(String feedUri) {
     final repository = ref.watch(feedContentRepositoryProvider);
@@ -143,9 +149,21 @@ class FeedContentNotifier extends _$FeedContentNotifier {
   ///
   /// Uses the internal home feed key for the home feed, otherwise uses the full URI.
   String _feedKeyFromUri(String feedUri) {
-    return feedUri == FeedRepository.kHomeFeedUri
-        ? FeedContentRepository.kInternalHomeFeedKey
-        : feedUri;
+    if (feedUri == FeedRepository.kHomeFeedUri ||
+        feedUri == FeedRepository.kFollowingFeedUri ||
+        feedUri == FeedRepository.kTimelineFeedUri) {
+      return FeedContentRepository.kInternalHomeFeedKey;
+    }
+    return feedUri;
+  }
+
+  String? _resolveRemoteFeedUri() {
+    if (feedUri == FeedRepository.kHomeFeedUri ||
+        feedUri == FeedRepository.kFollowingFeedUri ||
+        feedUri == FeedRepository.kTimelineFeedUri) {
+      return null;
+    }
+    return feedUri;
   }
 
   /// Refreshes the current feed content.
@@ -154,8 +172,17 @@ class FeedContentNotifier extends _$FeedContentNotifier {
   Future<void> refresh() async {
     final repository = ref.read(feedContentRepositoryProvider);
 
-    final actualFeedUri = feedUri == FeedRepository.kHomeFeedUri ? null : feedUri;
-    await repository.fetchAndCacheFeed(feedUri: actualFeedUri);
+    final actualFeedUri = _resolveRemoteFeedUri();
+    if (actualFeedUri == null && !_isAuthenticated) {
+      _logger.debug('Skipping refresh for timeline feed while unauthenticated');
+      return;
+    }
+
+    try {
+      await repository.fetchAndCacheFeed(feedUri: actualFeedUri);
+    } catch (error, stack) {
+      _logger.error('Failed to refresh feed content', error, stack);
+    }
   }
 
   /// Loads more posts for the current feed.
@@ -165,11 +192,20 @@ class FeedContentNotifier extends _$FeedContentNotifier {
     final repository = ref.read(feedContentRepositoryProvider);
 
     final feedKey = _feedKeyFromUri(feedUri);
+    final actualFeedUri = _resolveRemoteFeedUri();
+    if (actualFeedUri == null && !_isAuthenticated) {
+      _logger.debug('Skipping loadMore for timeline feed while unauthenticated');
+      return;
+    }
+
     final cursor = await repository.getCursor(feedKey);
 
     if (cursor != null) {
-      final actualFeedUri = feedUri == FeedRepository.kHomeFeedUri ? null : feedUri;
-      await repository.fetchAndCacheFeed(cursor: cursor, feedUri: actualFeedUri);
+      try {
+        await repository.fetchAndCacheFeed(cursor: cursor, feedUri: actualFeedUri);
+      } catch (error, stack) {
+        _logger.error('Failed to load more feed content', error, stack);
+      }
     }
   }
 

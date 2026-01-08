@@ -19,6 +19,8 @@ void main() {
     bool isReply = false,
     bool hasImages = false,
     bool hasVideo = false,
+    bool isRepost = false,
+    bool isQuote = false,
   }) {
     return FeedItem(
       uri: uri,
@@ -35,6 +37,8 @@ void main() {
       isReply: isReply,
       hasImages: hasImages,
       hasVideo: hasVideo,
+      isRepost: isRepost,
+      isQuote: isQuote,
     );
   }
 
@@ -96,6 +100,20 @@ void main() {
       await tester.pump();
 
       expect(find.text('Post 5'), findsOneWidget);
+    });
+
+    testWidgets('shows reposted media posts', (tester) async {
+      await tester.pumpWidget(
+        createSubject(
+          items: [
+            createFeedItem(text: 'Original media', hasImages: true),
+            createFeedItem(text: 'Boosted media', hasImages: true, isRepost: true),
+          ],
+        ),
+      );
+
+      expect(find.text('Original media'), findsOneWidget);
+      expect(find.text('Boosted media'), findsOneWidget);
     });
   });
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/src/core/constants/layout_constants.dart';
 
 /// A common wrapper for pull-to-refresh functionality.
 ///
@@ -25,6 +26,8 @@ class PullToRefreshWrapper extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       color: color ?? Theme.of(context).colorScheme.primary,
+      edgeOffset: kRefreshIndicatorEdgeOffset,
+      displacement: kRefreshIndicatorDisplacement,
       child: child,
     );
   }
