@@ -54,7 +54,7 @@ void main() {
     mockRepository = MockNotificationsRepository();
 
     registerFallbackValue(DateTime.now());
-    when(() => mockMarkAsSeenService.markAsSeen(any(), any(named: 'ownerDid'))).thenReturn(null);
+    when(() => mockMarkAsSeenService.markAsSeen(any(), any())).thenReturn(null);
   });
 
   group('GroupedNotificationItem', () {

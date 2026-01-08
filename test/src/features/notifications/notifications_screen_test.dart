@@ -37,11 +37,11 @@ void main() {
 
     if (throwError) {
       when(
-        () => mockRepository.watchNotifications(any(named: 'ownerDid')),
+        () => mockRepository.watchNotifications(any()),
       ).thenAnswer((_) => Stream.error(Exception('Network error')));
     } else {
       when(
-        () => mockRepository.watchNotifications(any(named: 'ownerDid')),
+        () => mockRepository.watchNotifications(any()),
       ).thenAnswer((_) => Stream.value(notifications));
     }
 
@@ -60,9 +60,7 @@ void main() {
     when(() => mockLogger.info(any(), any())).thenReturn(null);
     when(() => mockLogger.error(any(), any(), any())).thenReturn(null);
 
-    when(
-      () => mockRepository.watchNotifications(any(named: 'ownerDid')),
-    ).thenAnswer((_) => Stream.value([]));
+    when(() => mockRepository.watchNotifications(any())).thenAnswer((_) => Stream.value([]));
     when(
       () => mockRepository.fetchNotifications(
         cursor: any(named: 'cursor'),
@@ -73,8 +71,9 @@ void main() {
     when(
       () => mockRepository.fetchNotifications(ownerDid: any(named: 'ownerDid')),
     ).thenAnswer((_) async {});
-    when(() => mockRepository.getCursor(any(named: 'ownerDid'))).thenAnswer((_) async => null);
-    when(() => mockRepository.markAllAsRead(any(named: 'ownerDid'))).thenAnswer((_) async {});
+    when(() => mockRepository.getCursor(any())).thenAnswer((_) async => null);
+    when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
+    when(() => mockRepository.markAllAsRead(any())).thenAnswer((_) async {});
     when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
     when(() => mockMarkAsSeenService.flush()).thenAnswer((_) async {});
 
@@ -167,7 +166,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.done_all));
       await tester.pump();
 
-      verify(() => mockRepository.markAllAsRead(any(named: 'ownerDid'))).called(1);
+      verify(() => mockRepository.markAllAsRead(any())).called(1);
     });
   });
 }

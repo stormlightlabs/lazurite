@@ -46,7 +46,6 @@ class MarkAsSeenService {
     });
 
     if (_currentOwnerDid != null && _currentOwnerDid != ownerDid) {
-      // Owner changed, flush previous batch immediately
       flush();
     }
 
@@ -79,7 +78,6 @@ class MarkAsSeenService {
     final seenAt = _latestSeenTimestamp!;
     final ownerDid = _currentOwnerDid!;
 
-    // Clear state before async operation to handle re-entry or new batches
     _latestSeenTimestamp = null;
     _currentOwnerDid = null;
 

@@ -146,8 +146,6 @@ class FeedContentRepository {
     String? feedUri,
   }) async {
     final feedKey = _feedKeyFromUri(feedUri);
-    // Sanity check: Ensure authenticated user matches ownerDid
-    // if (_api.did != ownerDid) throw Exception('Owner mismatch');
 
     _logger.info('Fetching feed content', {
       'cursor': cursor,

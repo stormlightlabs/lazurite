@@ -59,29 +59,25 @@ void main() {
       };
 
       final feed1Metadata = {
-        'view': {
-          'uri': 'at://did:plc:abc/app.bsky.feed.generator/test1',
-          'cid': 'bafytest1',
-          'did': 'did:web:feedgen.test1',
-          'displayName': 'Test Feed 1',
-          'description': 'Description 1',
-          'avatar': 'avatar1.jpg',
-          'creator': {'did': 'did:plc:abc', 'handle': 'creator1.test'},
-          'likeCount': 100,
-        },
+        'uri': 'at://did:plc:abc/app.bsky.feed.generator/test1',
+        'cid': 'bafytest1',
+        'did': 'did:web:feedgen.test1',
+        'displayName': 'Test Feed 1',
+        'description': 'Description 1',
+        'avatar': 'avatar1.jpg',
+        'creator': {'did': 'did:plc:abc', 'handle': 'creator1.test'},
+        'likeCount': 100,
       };
 
       final feed2Metadata = {
-        'view': {
-          'uri': 'at://did:plc:def/app.bsky.feed.generator/test2',
-          'cid': 'bafytest2',
-          'did': 'did:web:feedgen.test2',
-          'displayName': 'Test Feed 2',
-          'description': 'Description 2',
-          'avatar': 'avatar2.jpg',
-          'creator': {'did': 'did:plc:def', 'handle': 'creator2.test'},
-          'likeCount': 50,
-        },
+        'uri': 'at://did:plc:def/app.bsky.feed.generator/test2',
+        'cid': 'bafytest2',
+        'did': 'did:web:feedgen.test2',
+        'displayName': 'Test Feed 2',
+        'description': 'Description 2',
+        'avatar': 'avatar2.jpg',
+        'creator': {'did': 'did:plc:def', 'handle': 'creator2.test'},
+        'likeCount': 50,
       };
 
       when(
@@ -89,18 +85,12 @@ void main() {
       ).thenAnswer((_) async => prefsResponse);
 
       when(
-        () => mockApi.call(
-          'app.bsky.feed.getFeedGenerator',
-          params: {'feed': 'at://did:plc:abc/app.bsky.feed.generator/test1'},
-        ),
-      ).thenAnswer((_) async => feed1Metadata);
-
-      when(
-        () => mockApi.call(
-          'app.bsky.feed.getFeedGenerator',
-          params: {'feed': 'at://did:plc:def/app.bsky.feed.generator/test2'},
-        ),
-      ).thenAnswer((_) async => feed2Metadata);
+        () => mockApi.call('app.bsky.feed.getFeedGenerators', params: any(named: 'params')),
+      ).thenAnswer(
+        (_) async => {
+          'feeds': [feed1Metadata, feed2Metadata],
+        },
+      );
 
       await repository.syncPreferences(ownerDid);
 
@@ -173,16 +163,14 @@ void main() {
       };
 
       final feed2Metadata = {
-        'view': {
-          'uri': 'at://did:plc:def/app.bsky.feed.generator/test2',
-          'cid': 'bafytest2',
-          'did': 'did:web:feedgen.test2',
-          'displayName': 'Test Feed 2',
-          'description': 'Description 2',
-          'avatar': 'avatar2.jpg',
-          'creator': {'did': 'did:plc:def', 'handle': 'creator2.test'},
-          'likeCount': 50,
-        },
+        'uri': 'at://did:plc:def/app.bsky.feed.generator/test2',
+        'cid': 'bafytest2',
+        'did': 'did:web:feedgen.test2',
+        'displayName': 'Test Feed 2',
+        'description': 'Description 2',
+        'avatar': 'avatar2.jpg',
+        'creator': {'did': 'did:plc:def', 'handle': 'creator2.test'},
+        'likeCount': 50,
       };
 
       when(
@@ -190,18 +178,12 @@ void main() {
       ).thenAnswer((_) async => prefsResponse);
 
       when(
-        () => mockApi.call(
-          'app.bsky.feed.getFeedGenerator',
-          params: {'feed': 'at://did:plc:abc/app.bsky.feed.generator/test1'},
-        ),
-      ).thenThrow(Exception('Feed not found'));
-
-      when(
-        () => mockApi.call(
-          'app.bsky.feed.getFeedGenerator',
-          params: {'feed': 'at://did:plc:def/app.bsky.feed.generator/test2'},
-        ),
-      ).thenAnswer((_) async => feed2Metadata);
+        () => mockApi.call('app.bsky.feed.getFeedGenerators', params: any(named: 'params')),
+      ).thenAnswer(
+        (_) async => {
+          'feeds': [feed2Metadata],
+        },
+      );
 
       await repository.syncPreferences(ownerDid);
 
@@ -640,16 +622,14 @@ void main() {
       };
 
       final feedMetadata = {
-        'view': {
-          'uri': newFeedUri,
-          'cid': 'bafynew',
-          'did': 'did:web:feedgen.test',
-          'displayName': 'New Remote Feed',
-          'description': 'Added on another device',
-          'avatar': 'avatar.jpg',
-          'creator': {'did': 'did:plc:new', 'handle': 'new.user'},
-          'likeCount': 42,
-        },
+        'uri': newFeedUri,
+        'cid': 'bafynew',
+        'did': 'did:web:feedgen.test',
+        'displayName': 'New Remote Feed',
+        'description': 'Added on another device',
+        'avatar': 'avatar.jpg',
+        'creator': {'did': 'did:plc:new', 'handle': 'new.user'},
+        'likeCount': 42,
       };
 
       when(
@@ -657,8 +637,12 @@ void main() {
       ).thenAnswer((_) async => remotePrefs);
 
       when(
-        () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': newFeedUri}),
-      ).thenAnswer((_) async => feedMetadata);
+        () => mockApi.call('app.bsky.feed.getFeedGenerators', params: any(named: 'params')),
+      ).thenAnswer(
+        (_) async => {
+          'feeds': [feedMetadata],
+        },
+      );
 
       await repository.syncPreferences(ownerDid);
 

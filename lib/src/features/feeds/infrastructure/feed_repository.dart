@@ -93,12 +93,6 @@ class FeedRepository {
       return;
     }
 
-    // Sanity check: ensure we are syncing for the logged-in user
-    // Note: session.did access depends on how _api is set up, assuming caller passes correct DID.
-    // If mismatch, we risks mixing data, but strict DAO scoping prevents reading wrong data.
-    // Writing wrong data is the risk.
-    // Assuming XrpcClient is session-bound or we trust the caller.
-
     try {
       _logger.debug('Calling app.bsky.actor.getPreferences API');
       final response = await _api.call('app.bsky.actor.getPreferences');
@@ -146,7 +140,6 @@ class FeedRepository {
     final feedsToRemove = <String>[];
     final feedsToSyncToRemote = <String>[];
 
-    // Identify new remote feeds needing metadata
     final newRemoteFeeds = <String>[];
     for (final uri in remoteSavedUris) {
       if (uri.startsWith('at://') &&
@@ -156,7 +149,6 @@ class FeedRepository {
       }
     }
 
-    // Batch fetch metadata for new feeds
     final Map<String, FeedGenerator> fetchedMetadata = {};
     if (newRemoteFeeds.isNotEmpty) {
       try {
@@ -175,7 +167,6 @@ class FeedRepository {
       final local = localFeeds.where((f) => f.uri == remoteUri).firstOrNull;
 
       if (!remoteUri.startsWith('at://')) {
-        // Handle special feeds...
         if (local == null) {
           feedsToInsert.add(
             SavedFeedsCompanion.insert(
@@ -193,7 +184,6 @@ class FeedRepository {
           );
         } else if (local.localUpdatedAt == null ||
             !local.localUpdatedAt!.isAfter(local.lastSynced)) {
-          // Unchanged or old local: Update from remote
           feedsToUpdate.add(
             _FeedUpdate(
               uri: remoteUri,
@@ -204,16 +194,13 @@ class FeedRepository {
             ),
           );
         } else {
-          // Local is newer
           feedsToSyncToRemote.add(remoteUri);
         }
         continue;
       }
 
       if (local == null) {
-        // New remote feed
         if (remoteUri.contains('/app.bsky.graph.list/')) {
-          // List requires individual fetch
           try {
             final listMetadata = await getListMetadata(remoteUri);
             await _profileDao.upsertProfile(
@@ -241,7 +228,6 @@ class FeedRepository {
             _logger.warning('Failed to fetch list $remoteUri', {'error': e});
           }
         } else {
-          // Feed Generator - check batched metadata
           final metadata = fetchedMetadata[remoteUri];
           if (metadata != null) {
             await _profileDao.upsertProfile(
@@ -263,14 +249,11 @@ class FeedRepository {
               ),
             );
           } else {
-            // Fallback individual fetch if missed in batch (e.g. error) or try individually?
-            // If it failed in batch, it likely fails here too, but let's just skip/warn.
             _logger.warning('Missing metadata for $remoteUri');
           }
         }
       } else if (local.localUpdatedAt == null ||
           !local.localUpdatedAt!.isAfter(local.lastSynced)) {
-        // Remote state wins
         feedsToUpdate.add(
           _FeedUpdate(
             uri: remoteUri,
@@ -281,12 +264,10 @@ class FeedRepository {
           ),
         );
       } else {
-        // Local state wins
         feedsToSyncToRemote.add(remoteUri);
       }
     }
 
-    // Detect removals
     for (final local in localFeeds) {
       if (!remoteSavedSet.contains(local.uri)) {
         if (local.localUpdatedAt != null && local.localUpdatedAt!.isAfter(local.lastSynced)) {
@@ -297,7 +278,6 @@ class FeedRepository {
       }
     }
 
-    // Apply changes
     if (feedsToInsert.isNotEmpty) {
       await _dao.upsertFeeds(feedsToInsert);
     }
@@ -315,7 +295,6 @@ class FeedRepository {
       await _dao.deleteFeed(uri, ownerDid);
     }
 
-    // Queue local changes
     for (final uri in feedsToSyncToRemote) {
       final existing = await _syncQueueDao.getPendingItems(ownerDid);
       if (!existing.any((e) => e.payload == uri && e.type == 'save')) {
@@ -393,7 +372,7 @@ class FeedRepository {
       await _executeRemoteSaveFeed(feedUri, pin);
       if (queueId != null) await _syncQueueDao.deleteItem(queueId);
     } catch (e) {
-      // Failed sync, leave in queue
+      _logger.error('Failed to save feed', {'error': e});
     }
   }
 
@@ -462,7 +441,7 @@ class FeedRepository {
       await _executeRemoteRemoveFeed(feedUri);
       if (queueId != null) await _syncQueueDao.deleteItem(queueId);
     } catch (e) {
-      // Failed sync
+      _logger.error('Failed to remove feed', {'error': e});
     }
   }
 
@@ -507,7 +486,6 @@ class FeedRepository {
     int? queueId;
     try {
       queueId = await _dao.db.transaction(() async {
-        // Optimized update: only update if changed? For now just iterate.
         for (var i = 0; i < orderedUris.length; i++) {
           await _dao.updateSortOrder(orderedUris[i], i, ownerDid);
         }
@@ -526,7 +504,7 @@ class FeedRepository {
       await _executeRemoteReorderFeeds(orderedUris);
       if (queueId != null) await _syncQueueDao.deleteItem(queueId);
     } catch (e) {
-      // Failed sync
+      _logger.error('Failed to reorder feeds', {'error': e});
     }
   }
 
@@ -893,7 +871,6 @@ class FeedRepository {
     final migration = await _migrateDeprecatedFeed(ownerDid); // Pass ownerDid if needed
 
     if (_api.isAuthenticated) {
-      // Cleanup for authenticated users
       await _dao.deleteFeed(kHomeFeedUri, ownerDid);
       await _dao.deleteFeed(kForYouFeedUri, ownerDid);
       await _dao.deleteFeed(kDiscoverFeedUri, ownerDid);
@@ -963,8 +940,6 @@ class FeedRepository {
   Future<List<FeedGenerator>> getFeedGenerators(List<String> uris) async {
     if (uris.isEmpty) return [];
 
-    // Chunk requests to avoid hitting URL length limits or API constraints
-    // Assuming 25 is a safe batch size
     const batchSize = 25;
     final results = <FeedGenerator>[];
 
@@ -982,7 +957,6 @@ class FeedRepository {
         results.addAll(views.map((v) => FeedGenerator.fromJson(v)));
       } catch (e) {
         _logger.error('Batch fetch failed for slice $i-$end', {'error': e});
-        // Don't rethrow, partial success is better
       }
     }
 

@@ -56,7 +56,7 @@ void main() {
 
     group('processOutbox', () {
       test('does nothing when queue is empty', () async {
-        when(() => mockOutboxDao.getPending(any(named: 'ownerDid'))).thenAnswer((_) async => []);
+        when(() => mockOutboxDao.getPending(any())).thenAnswer((_) async => []);
 
         await repository.processOutbox('did:plc:owner');
 
@@ -77,9 +77,7 @@ void main() {
           ownerDid: 'did:plc:owner',
         );
 
-        when(
-          () => mockOutboxDao.getPending(any(named: 'ownerDid')),
-        ).thenAnswer((_) async => [pendingItem]);
+        when(() => mockOutboxDao.getPending(any())).thenAnswer((_) async => [pendingItem]);
         when(
           () => mockOutboxDao.updateStatus(
             outboxId: any(named: 'outboxId'),
@@ -121,9 +119,7 @@ void main() {
           ownerDid: 'did:plc:owner',
         );
 
-        when(
-          () => mockOutboxDao.getPending(any(named: 'ownerDid')),
-        ).thenAnswer((_) async => [pendingItem]);
+        when(() => mockOutboxDao.getPending(any())).thenAnswer((_) async => [pendingItem]);
         when(
           () => mockOutboxDao.updateStatus(
             outboxId: any(named: 'outboxId'),
@@ -176,9 +172,7 @@ void main() {
           ownerDid: 'did:plc:owner',
         );
 
-        when(
-          () => mockOutboxDao.getPending(any(named: 'ownerDid')),
-        ).thenAnswer((_) async => [pendingItem]);
+        when(() => mockOutboxDao.getPending(any())).thenAnswer((_) async => [pendingItem]);
         when(
           () => mockOutboxDao.updateStatus(
             outboxId: any(named: 'outboxId'),
@@ -260,9 +254,7 @@ void main() {
           ),
         ];
 
-        when(
-          () => mockOutboxDao.getPending(any(named: 'ownerDid')),
-        ).thenAnswer((_) async => items);
+        when(() => mockOutboxDao.getPending(any())).thenAnswer((_) async => items);
         when(
           () => mockOutboxDao.updateStatus(
             outboxId: any(named: 'outboxId'),
@@ -341,9 +333,7 @@ void main() {
     group('deleteOutboxItem', () {
       test('removes item from outbox and deletes local message', () async {
         when(() => mockOutboxDao.deleteItem(any())).thenAnswer((_) async => 1);
-        when(
-          () => mockMessagesDao.deleteMessage(any(), any(named: 'ownerDid')),
-        ).thenAnswer((_) async => 1);
+        when(() => mockMessagesDao.deleteMessage(any(), any())).thenAnswer((_) async => 1);
 
         await repository.deleteOutboxItem('outbox1', 'did:plc:owner');
 
@@ -354,7 +344,7 @@ void main() {
 
     group('getPendingCount', () {
       test('returns count from DAO', () async {
-        when(() => mockOutboxDao.countPending(any(named: 'ownerDid'))).thenAnswer((_) async => 5);
+        when(() => mockOutboxDao.countPending(any())).thenAnswer((_) async => 5);
 
         final count = await repository.getPendingCount('did:plc:owner');
 

@@ -22,7 +22,6 @@ void preferenceSyncController(Ref ref) {
   Future<void> runSync([String? ownerDid]) async {
     logger.debug('runSync() called', {'ownerDid': ownerDid});
 
-    // If ownerDid is not provided, try to get it from current state
     final authState = ref.read(authProvider);
     final effectiveOwnerDid =
         ownerDid ?? ((authState is AuthStateAuthenticated) ? authState.session.did : null);
@@ -74,11 +73,9 @@ void preferenceSyncController(Ref ref) {
         final prevSession = previous.session;
         final nextSession = next.session;
         if (prevSession.accessJwt != nextSession.accessJwt && prevSession.did == nextSession.did) {
-          // Same user, session refresh
           logger.debug('Session refreshed - triggering sync to fetch preferences');
           unawaited(runSync(nextSession.did));
         } else if (prevSession.did != nextSession.did) {
-          // User switched without full logout/login cycle (e.g. account switcher)
           logger.info('User switched - clearing old prefs and syncing new');
           unawaited(ref.read(blueskyPreferencesRepositoryProvider).clearAll(prevSession.did));
           unawaited(runSync(nextSession.did));

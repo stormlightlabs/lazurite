@@ -134,7 +134,6 @@ GoRouter createRouter(Ref ref) {
                 name: AppRouteNames.search,
                 builder: (context, state) {
                   final initialQuery = state.uri.queryParameters['q'];
-                  // If type is 'people', set tab index to 1.
                   final initialTabIndex = state.uri.queryParameters['type'] == 'people' ? 1 : 0;
                   return SearchScreen(
                     initialQuery: initialQuery,

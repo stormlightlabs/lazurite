@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/feed_preview_modal.dart';
@@ -18,10 +21,21 @@ void main() {
   const ownerDid = 'did:web:tester';
   late MockFeedRepository mockFeedRepository;
   late MockFeedContentRepository mockFeedContentRepository;
+  late Session testSession;
 
   setUp(() {
     mockFeedRepository = MockFeedRepository();
     mockFeedContentRepository = MockFeedContentRepository();
+    testSession = Session(
+      did: ownerDid,
+      handle: 'handle',
+      pdsUrl: 'https://pds',
+      accessJwt: 'access',
+      refreshJwt: 'refresh',
+      scope: 'scope',
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+      dpopKey: const <String, dynamic>{},
+    );
   });
 
   testWidgets('FeedPreviewModal displays info and posts', (tester) async {
@@ -67,6 +81,7 @@ void main() {
         overrides: [
           feedRepositoryProvider.overrideWithValue(mockFeedRepository),
           feedContentRepositoryProvider.overrideWithValue(mockFeedContentRepository),
+          authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
           labelFilterServiceProvider.overrideWith((ref) => null),
           mutedWordFilterServiceProvider.overrideWith((ref) => null),
           feedViewPrefProvider.overrideWith((ref) => Stream.value(FeedViewPref.defaultPref)),
@@ -115,6 +130,7 @@ void main() {
         overrides: [
           feedRepositoryProvider.overrideWithValue(mockFeedRepository),
           feedContentRepositoryProvider.overrideWithValue(mockFeedContentRepository),
+          authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
           labelFilterServiceProvider.overrideWith((ref) => null),
           mutedWordFilterServiceProvider.overrideWith((ref) => null),
           feedViewPrefProvider.overrideWith((ref) => Stream.value(FeedViewPref.defaultPref)),
@@ -132,4 +148,13 @@ void main() {
 
     verify(() => mockFeedRepository.saveFeed(feedUri, ownerDid, pin: false)).called(1);
   });
+}
+
+class _TestAuthNotifier extends AuthNotifier {
+  _TestAuthNotifier(this._session);
+
+  final Session _session;
+
+  @override
+  AuthState build() => AuthState.authenticated(_session);
 }

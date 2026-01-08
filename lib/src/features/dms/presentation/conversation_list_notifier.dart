@@ -135,7 +135,6 @@ class ConversationListNotifier extends _$ConversationListNotifier {
 
     final repository = ref.read(dmsRepositoryProvider);
     try {
-      // Fetch latest messages to get the last message ID.
       await repository.fetchMessages(convoId, ownerDid: ownerDid, limit: 1);
       final messages = await repository.watchMessages(convoId, ownerDid).first;
       if (messages.isNotEmpty) {

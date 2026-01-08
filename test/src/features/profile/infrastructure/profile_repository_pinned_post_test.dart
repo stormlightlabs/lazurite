@@ -11,6 +11,7 @@ void main() {
   late AppDatabase db;
   late MockLogger mockLogger;
   late ProfileRepository repository;
+  const ownerDid = 'did:web:test';
 
   setUp(() {
     mockApi = MockXrpcClient();
@@ -42,7 +43,7 @@ void main() {
         },
       );
 
-      final profile = await repository.getProfile('test.bsky.social', any());
+      final profile = await repository.getProfile('test.bsky.social', ownerDid);
 
       expect(profile.pinnedPostUri, 'at://did:plc:test123/app.bsky.feed.post/pinned123');
 
@@ -55,7 +56,7 @@ void main() {
         () => mockApi.call(any(), params: any(named: 'params')),
       ).thenAnswer((_) async => {'did': 'did:plc:test123', 'handle': 'test.bsky.social'});
 
-      final profile = await repository.getProfile('test.bsky.social', any());
+      final profile = await repository.getProfile('test.bsky.social', ownerDid);
 
       expect(profile.pinnedPostUri, isNull);
     });

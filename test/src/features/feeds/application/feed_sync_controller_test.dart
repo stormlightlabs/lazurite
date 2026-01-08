@@ -5,6 +5,7 @@ import '../../../../helpers/mocks.dart';
 
 void main() {
   late MockFeedRepository mockRepository;
+  const ownerDid = 'did:web:test';
 
   setUp(() {
     mockRepository = MockFeedRepository();
@@ -15,39 +16,39 @@ void main() {
 
   group('FeedRepository sync behavior', () {
     test('syncOnResume calls syncPreferences', () async {
-      await mockRepository.syncOnResume(any());
+      await mockRepository.syncOnResume(ownerDid);
 
-      verify(() => mockRepository.syncOnResume(any())).called(1);
+      verify(() => mockRepository.syncOnResume(ownerDid)).called(1);
     });
 
     test('seedDefaultFeeds is callable', () async {
-      await mockRepository.seedDefaultFeeds(any());
+      await mockRepository.seedDefaultFeeds(ownerDid);
 
-      verify(() => mockRepository.seedDefaultFeeds(any())).called(1);
+      verify(() => mockRepository.seedDefaultFeeds(ownerDid)).called(1);
     });
 
     test('syncPreferences is callable', () async {
-      await mockRepository.syncPreferences(any());
+      await mockRepository.syncPreferences(ownerDid);
 
-      verify(() => mockRepository.syncPreferences(any())).called(1);
+      verify(() => mockRepository.syncPreferences(ownerDid)).called(1);
     });
   });
 
   group('sync flow integration', () {
     test('simulates login sync flow', () async {
-      await mockRepository.seedDefaultFeeds(any());
-      await mockRepository.syncOnResume(any());
+      await mockRepository.seedDefaultFeeds(ownerDid);
+      await mockRepository.syncOnResume(ownerDid);
 
-      verify(() => mockRepository.seedDefaultFeeds(any())).called(1);
-      verify(() => mockRepository.syncOnResume(any())).called(1);
+      verify(() => mockRepository.seedDefaultFeeds(ownerDid)).called(1);
+      verify(() => mockRepository.syncOnResume(ownerDid)).called(1);
     });
 
     test('simulates app resume flow', () async {
-      await mockRepository.seedDefaultFeeds(any());
-      await mockRepository.syncOnResume(any());
+      await mockRepository.seedDefaultFeeds(ownerDid);
+      await mockRepository.syncOnResume(ownerDid);
 
-      verify(() => mockRepository.seedDefaultFeeds(any())).called(1);
-      verify(() => mockRepository.syncOnResume(any())).called(1);
+      verify(() => mockRepository.seedDefaultFeeds(ownerDid)).called(1);
+      verify(() => mockRepository.syncOnResume(ownerDid)).called(1);
     });
   });
 }

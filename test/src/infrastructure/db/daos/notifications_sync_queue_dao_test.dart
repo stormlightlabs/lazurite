@@ -44,16 +44,19 @@ void main() {
     });
 
     test('getLatestSeenAt returns most recent timestamp', () async {
-      final now = DateTime.now();
-      final earlier = now.subtract(const Duration(hours: 1));
-      final earliest = now.subtract(const Duration(hours: 2));
+      final now = DateTime.now().toUtc();
+      final nowRound = now.copyWith(microsecond: 0);
+
+      final earlier = nowRound.subtract(const Duration(hours: 1));
+      final earliest = nowRound.subtract(const Duration(hours: 2));
 
       await dao.enqueueMarkSeen(earliest, ownerDid);
       await dao.enqueueMarkSeen(earlier, ownerDid);
-      await dao.enqueueMarkSeen(now, ownerDid);
+      await dao.enqueueMarkSeen(nowRound, ownerDid);
 
       final latest = await dao.getLatestSeenAt(ownerDid);
-      expect(latest, now);
+
+      expect(latest?.toUtc(), nowRound);
     });
 
     test('getLatestSeenAt returns null when queue is empty', () async {
@@ -62,8 +65,9 @@ void main() {
     });
 
     test('getLatestSeenAt excludes maxed-out retry items', () async {
-      final now = DateTime.now();
-      final older = now.subtract(const Duration(hours: 1));
+      final now = DateTime.now().toUtc();
+      final nowRound = now.copyWith(microsecond: 0);
+      final older = nowRound.subtract(const Duration(hours: 1));
 
       await dao.enqueueMarkSeen(older, ownerDid);
 
@@ -72,7 +76,7 @@ void main() {
           .insert(
             NotificationsSyncQueueCompanion.insert(
               type: 'mark_seen',
-              seenAt: now.toIso8601String(),
+              seenAt: nowRound.toIso8601String(),
               createdAt: DateTime.now(),
               retryCount: const Value(kMaxNotificationSyncRetries),
               ownerDid: ownerDid,
@@ -80,7 +84,7 @@ void main() {
           );
 
       final latest = await dao.getLatestSeenAt(ownerDid);
-      expect(latest, older);
+      expect(latest?.toUtc(), older);
     });
 
     test('deleteItem removes specific item', () async {

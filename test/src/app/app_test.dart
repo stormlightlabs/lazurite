@@ -48,9 +48,7 @@ void main() {
     );
     when(() => mockSessionStorage.getSession()).thenAnswer((_) async => testSession);
     when(() => mockSearchRepository.watchRecentSearches()).thenAnswer((_) => Stream.value([]));
-    when(
-      () => mockProfileRepository.getProfile(any(named: 'actor'), any(named: 'ownerDid')),
-    ).thenAnswer(
+    when(() => mockProfileRepository.getProfile(any(), any())).thenAnswer(
       (_) async => ProfileData(
         did: 'did:web:test',
         handle: 'handle',
@@ -82,9 +80,7 @@ void main() {
         feedUri: any(named: 'feedUri'),
       ),
     ).thenAnswer((_) async {});
-    when(
-      () => mockFeedContentRepository.getCursor(any(named: 'feedKey'), any(named: 'ownerDid')),
-    ).thenAnswer((_) async => null);
+    when(() => mockFeedContentRepository.getCursor(any(), any())).thenAnswer((_) async => null);
   });
 
   List<Override> getTestOverrides() {

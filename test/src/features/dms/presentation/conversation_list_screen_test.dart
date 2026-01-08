@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/dms/domain/dm_conversation.dart';
 import 'package:lazurite/src/features/dms/domain/dm_message.dart' as dmm;
 import 'package:lazurite/src/features/dms/presentation/conversation_list_screen.dart';
@@ -9,6 +12,7 @@ import 'package:lazurite/src/features/dms/presentation/widgets/conversation_list
 import 'package:lazurite/src/features/dms/providers.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../helpers/mocks.dart';
 import '../../../../helpers/pump_app.dart';
@@ -16,6 +20,8 @@ import '../../../../helpers/pump_app.dart';
 void main() {
   group('ConversationListScreen', () {
     late MockDmsRepository mockRepository;
+    late Session testSession;
+    late List<Override> baseOverrides;
 
     setUp(() {
       mockRepository = MockDmsRepository();
@@ -25,15 +31,9 @@ void main() {
           ownerDid: any(named: 'ownerDid'),
         ),
       ).thenAnswer((_) async => null);
-      when(
-        () => mockRepository.muteConversation(any(), any(named: 'ownerDid')),
-      ).thenAnswer((_) async {});
-      when(
-        () => mockRepository.unmuteConversation(any(), any(named: 'ownerDid')),
-      ).thenAnswer((_) async {});
-      when(
-        () => mockRepository.leaveConversation(any(), any(named: 'ownerDid')),
-      ).thenAnswer((_) async {});
+      when(() => mockRepository.muteConversation(any(), any())).thenAnswer((_) async {});
+      when(() => mockRepository.unmuteConversation(any(), any())).thenAnswer((_) async {});
+      when(() => mockRepository.leaveConversation(any(), any())).thenAnswer((_) async {});
       when(
         () => mockRepository.fetchMessages(
           any(),
@@ -41,12 +41,28 @@ void main() {
           ownerDid: any(named: 'ownerDid'),
         ),
       ).thenAnswer((_) async => null);
+      when(() => mockRepository.watchMessages(any(), any())).thenAnswer((_) => Stream.value([]));
       when(
-        () => mockRepository.watchMessages(any(), any(named: 'ownerDid')),
-      ).thenAnswer((_) => Stream.value([]));
-      when(
-        () => mockRepository.updateReadState(convoId: any(), messageId: any(), ownerDid: any()),
+        () => mockRepository.updateReadState(
+          convoId: any(named: 'convoId'),
+          messageId: any(named: 'messageId'),
+          ownerDid: any(named: 'ownerDid'),
+        ),
       ).thenAnswer((_) async {});
+      testSession = Session(
+        did: 'did:web:test',
+        handle: 'handle',
+        pdsUrl: 'https://pds',
+        accessJwt: 'access',
+        refreshJwt: 'refresh',
+        scope: 'scope',
+        expiresAt: DateTime.now().add(const Duration(hours: 1)),
+        dpopKey: const <String, dynamic>{},
+      );
+      baseOverrides = [
+        dmsRepositoryProvider.overrideWithValue(mockRepository),
+        authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+      ];
     });
 
     const profile = Profile(
@@ -68,31 +84,21 @@ void main() {
       final controller = StreamController<List<DmConversation>>();
       addTearDown(controller.close);
 
-      when(
-        () => mockRepository.watchConversations(any(named: 'ownerDid')),
-      ).thenAnswer((_) => controller.stream);
+      when(() => mockRepository.watchConversations(any())).thenAnswer((_) => controller.stream);
 
-      await tester.pumpApp(
-        const ConversationListScreen(),
-        overrides: [dmsRepositoryProvider.overrideWithValue(mockRepository)],
-      );
+      await tester.pumpApp(const ConversationListScreen(), overrides: baseOverrides);
 
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
     testWidgets('renders empty state when no conversations', (tester) async {
-      when(
-        () => mockRepository.watchConversations(any(named: 'ownerDid')),
-      ).thenAnswer((_) => Stream.value([]));
+      when(() => mockRepository.watchConversations(any())).thenAnswer((_) => Stream.value([]));
       when(
         () => mockRepository.fetchConversations(ownerDid: any(named: 'ownerDid')),
       ).thenAnswer((_) async => null);
 
-      await tester.pumpApp(
-        const ConversationListScreen(),
-        overrides: [dmsRepositoryProvider.overrideWithValue(mockRepository)],
-      );
+      await tester.pumpApp(const ConversationListScreen(), overrides: baseOverrides);
       await tester.pumpAndSettle();
 
       expect(find.text('No messages yet'), findsOneWidget);
@@ -101,13 +107,10 @@ void main() {
 
     testWidgets('renders conversation list', (tester) async {
       when(
-        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+        () => mockRepository.watchConversations(any()),
       ).thenAnswer((_) => Stream.value([conversation]));
 
-      await tester.pumpApp(
-        const ConversationListScreen(),
-        overrides: [dmsRepositoryProvider.overrideWithValue(mockRepository)],
-      );
+      await tester.pumpApp(const ConversationListScreen(), overrides: baseOverrides);
       await tester.pumpAndSettle();
 
       expect(find.byType(ConversationListItem), findsOneWidget);
@@ -117,13 +120,10 @@ void main() {
     testWidgets('renders message requests section', (tester) async {
       final requestConvo = conversation.copyWith(isAccepted: false, convoId: '456');
       when(
-        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+        () => mockRepository.watchConversations(any()),
       ).thenAnswer((_) => Stream.value([requestConvo, conversation]));
 
-      await tester.pumpApp(
-        const ConversationListScreen(),
-        overrides: [dmsRepositoryProvider.overrideWithValue(mockRepository)],
-      );
+      await tester.pumpApp(const ConversationListScreen(), overrides: baseOverrides);
       await tester.pumpAndSettle();
 
       expect(find.text('Message Requests'), findsOneWidget);
@@ -133,16 +133,13 @@ void main() {
 
     testWidgets('triggers refresh on pull to refresh', (tester) async {
       when(
-        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+        () => mockRepository.watchConversations(any()),
       ).thenAnswer((_) => Stream.value([conversation]));
       when(
         () => mockRepository.fetchConversations(ownerDid: any(named: 'ownerDid')),
       ).thenAnswer((_) async => 'new-cursor');
 
-      await tester.pumpApp(
-        const ConversationListScreen(),
-        overrides: [dmsRepositoryProvider.overrideWithValue(mockRepository)],
-      );
+      await tester.pumpApp(const ConversationListScreen(), overrides: baseOverrides);
       await tester.pumpAndSettle();
 
       await tester.drag(find.byType(CustomScrollView), const Offset(0, 300));
@@ -153,13 +150,10 @@ void main() {
 
     testWidgets('shows FAB', (tester) async {
       when(
-        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+        () => mockRepository.watchConversations(any()),
       ).thenAnswer((_) => Stream.value([conversation]));
 
-      await tester.pumpApp(
-        const ConversationListScreen(),
-        overrides: [dmsRepositoryProvider.overrideWithValue(mockRepository)],
-      );
+      await tester.pumpApp(const ConversationListScreen(), overrides: baseOverrides);
       await tester.pumpAndSettle();
 
       expect(find.byType(FloatingActionButton), findsOneWidget);
@@ -167,7 +161,7 @@ void main() {
 
     testWidgets('triggers mark as read on swipe right', (tester) async {
       when(
-        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+        () => mockRepository.watchConversations(any()),
       ).thenAnswer((_) => Stream.value([conversation]));
 
       final message = dmm.AppDmMessage(
@@ -180,13 +174,10 @@ void main() {
       );
 
       when(
-        () => mockRepository.watchMessages('123', any(named: 'ownerDid')),
+        () => mockRepository.watchMessages('123', any()),
       ).thenAnswer((_) => Stream.value([message]));
 
-      await tester.pumpApp(
-        const ConversationListScreen(),
-        overrides: [dmsRepositoryProvider.overrideWithValue(mockRepository)],
-      );
+      await tester.pumpApp(const ConversationListScreen(), overrides: baseOverrides);
       await tester.pumpAndSettle();
 
       await tester.drag(find.byType(ConversationListItem), const Offset(500, 0));
@@ -206,13 +197,10 @@ void main() {
 
     testWidgets('triggers leave conversation on swipe left and confirm', (tester) async {
       when(
-        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+        () => mockRepository.watchConversations(any()),
       ).thenAnswer((_) => Stream.value([conversation]));
 
-      await tester.pumpApp(
-        const ConversationListScreen(),
-        overrides: [dmsRepositoryProvider.overrideWithValue(mockRepository)],
-      );
+      await tester.pumpApp(const ConversationListScreen(), overrides: baseOverrides);
       await tester.pumpAndSettle();
 
       await tester.drag(find.byType(ConversationListItem), const Offset(-500, 0));
@@ -223,18 +211,15 @@ void main() {
       await tester.tap(find.text('Leave'));
       await tester.pumpAndSettle();
 
-      verify(() => mockRepository.leaveConversation('123', any(named: 'ownerDid'))).called(1);
+      verify(() => mockRepository.leaveConversation('123', any())).called(1);
     });
 
     testWidgets('triggers mute/unmute on long press', (tester) async {
       when(
-        () => mockRepository.watchConversations(any(named: 'ownerDid')),
+        () => mockRepository.watchConversations(any()),
       ).thenAnswer((_) => Stream.value([conversation]));
 
-      await tester.pumpApp(
-        const ConversationListScreen(),
-        overrides: [dmsRepositoryProvider.overrideWithValue(mockRepository)],
-      );
+      await tester.pumpApp(const ConversationListScreen(), overrides: baseOverrides);
       await tester.pumpAndSettle();
 
       await tester.longPress(find.byType(ConversationListItem));
@@ -245,7 +230,16 @@ void main() {
       await tester.tap(find.text('Mute'));
       await tester.pumpAndSettle();
 
-      verify(() => mockRepository.muteConversation('123', any(named: 'ownerDid'))).called(1);
+      verify(() => mockRepository.muteConversation('123', any())).called(1);
     });
   });
+}
+
+class _TestAuthNotifier extends AuthNotifier {
+  _TestAuthNotifier(this._session);
+
+  final Session _session;
+
+  @override
+  AuthState build() => AuthState.authenticated(_session);
 }

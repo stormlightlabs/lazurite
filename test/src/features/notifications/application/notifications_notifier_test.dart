@@ -41,9 +41,7 @@ void main() {
     when(() => mockLogger.info(any(), any())).thenReturn(null);
     when(() => mockLogger.error(any(), any(), any())).thenReturn(null);
 
-    when(
-      () => mockRepository.watchNotifications(any(named: 'ownerDid')),
-    ).thenAnswer((_) => Stream.value([]));
+    when(() => mockRepository.watchNotifications(any())).thenAnswer((_) => Stream.value([]));
     when(
       () => mockRepository.fetchNotifications(
         cursor: any(named: 'cursor'),
@@ -54,8 +52,9 @@ void main() {
     when(
       () => mockRepository.fetchNotifications(ownerDid: any(named: 'ownerDid')),
     ).thenAnswer((_) async {});
-    when(() => mockRepository.getCursor(any(named: 'ownerDid'))).thenAnswer((_) async => null);
-    when(() => mockRepository.markAllAsRead(any(named: 'ownerDid'))).thenAnswer((_) async {});
+    when(() => mockRepository.getCursor(any())).thenAnswer((_) async => null);
+    when(() => mockRepository.markAsSeenLocally(any(), any())).thenAnswer((_) async {});
+    when(() => mockRepository.markAllAsRead(any())).thenAnswer((_) async {});
     when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
     when(() => mockMarkAsSeenService.flush()).thenAnswer((_) async {});
 
@@ -71,7 +70,7 @@ void main() {
 
       await Future.delayed(Duration.zero);
 
-      verify(() => mockRepository.watchNotifications(any(named: 'ownerDid'))).called(1);
+      verify(() => mockRepository.watchNotifications(any())).called(1);
     });
 
     test('refresh calls repository fetchNotifications when authenticated', () async {
@@ -93,9 +92,7 @@ void main() {
     });
 
     test('loadMore fetches next page using cursor', () async {
-      when(
-        () => mockRepository.getCursor(any(named: 'ownerDid')),
-      ).thenAnswer((_) async => 'next_cursor');
+      when(() => mockRepository.getCursor(any())).thenAnswer((_) async => 'next_cursor');
       when(
         () => mockRepository.fetchNotifications(
           cursor: 'next_cursor',
@@ -108,7 +105,7 @@ void main() {
 
       await container.read(notificationsProvider.notifier).loadMore();
 
-      verify(() => mockRepository.getCursor(any(named: 'ownerDid'))).called(1);
+      verify(() => mockRepository.getCursor(any())).called(1);
       verify(
         () => mockRepository.fetchNotifications(
           cursor: 'next_cursor',
@@ -118,14 +115,14 @@ void main() {
     });
 
     test('loadMore does nothing without cursor', () async {
-      when(() => mockRepository.getCursor(any(named: 'ownerDid'))).thenAnswer((_) async => null);
+      when(() => mockRepository.getCursor(any())).thenAnswer((_) async => null);
 
       final container = createContainer();
       addTearDown(container.dispose);
 
       await container.read(notificationsProvider.notifier).loadMore();
 
-      verify(() => mockRepository.getCursor(any(named: 'ownerDid'))).called(1);
+      verify(() => mockRepository.getCursor(any())).called(1);
       verifyNever(
         () => mockRepository.fetchNotifications(
           cursor: any(named: 'cursor'),
@@ -140,7 +137,7 @@ void main() {
 
       await container.read(notificationsProvider.notifier).loadMore();
 
-      verifyNever(() => mockRepository.getCursor(any(named: 'ownerDid')));
+      verifyNever(() => mockRepository.getCursor(any()));
     });
 
     test('markAllAsRead flushes service and syncs with server', () async {
@@ -151,16 +148,14 @@ void main() {
 
       verifyInOrder([
         () => mockMarkAsSeenService.flush(),
-        () => mockRepository.markAllAsRead(any(named: 'ownerDid')),
-        () => mockRepository.updateSeen(any()),
+        () => mockRepository.markAllAsRead(any()),
+        () => mockRepository.markAsSeenLocally(any(), any()),
       ]);
     });
 
     test('markAllAsRead rethrows errors', () async {
       when(() => mockMarkAsSeenService.flush()).thenAnswer((_) async {});
-      when(
-        () => mockRepository.markAllAsRead(any(named: 'ownerDid')),
-      ).thenThrow(Exception('DB error'));
+      when(() => mockRepository.markAllAsRead(any())).thenThrow(Exception('DB error'));
 
       final container = createContainer();
       addTearDown(container.dispose);
@@ -194,7 +189,7 @@ void main() {
       );
 
       when(
-        () => mockRepository.watchNotifications(any(named: 'ownerDid')),
+        () => mockRepository.watchNotifications(any()),
       ).thenAnswer((_) => Stream.value([testNotification]));
 
       final container = createContainer();
@@ -204,7 +199,7 @@ void main() {
 
       await Future.delayed(Duration.zero);
 
-      verify(() => mockRepository.watchNotifications(any(named: 'ownerDid'))).called(1);
+      verify(() => mockRepository.watchNotifications(any())).called(1);
     });
   });
 }

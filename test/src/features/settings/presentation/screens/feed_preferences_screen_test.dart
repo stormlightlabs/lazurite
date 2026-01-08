@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/settings/application/settings_providers.dart';
 import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/feed_preferences_screen.dart';
@@ -11,15 +14,26 @@ class MockBlueskyPreferencesRepository extends Mock implements BlueskyPreference
 
 void main() {
   late MockBlueskyPreferencesRepository mockRepository;
+  late Session testSession;
 
   setUp(() {
     mockRepository = MockBlueskyPreferencesRepository();
+    testSession = Session(
+      did: 'did:web:test',
+      handle: 'handle',
+      pdsUrl: 'https://pds',
+      accessJwt: 'access',
+      refreshJwt: 'refresh',
+      scope: 'scope',
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+      dpopKey: const <String, dynamic>{},
+    );
 
     when(
-      () => mockRepository.watchFeedViewPref(any()),
+      () => mockRepository.watchFeedViewPref(testSession.did),
     ).thenAnswer((_) => Stream.value(FeedViewPref.defaultPref));
     when(
-      () => mockRepository.watchThreadViewPref(any()),
+      () => mockRepository.watchThreadViewPref(testSession.did),
     ).thenAnswer((_) => Stream.value(ThreadViewPref.defaultPref));
     when(() => mockRepository.updateFeedViewPref(any(), any())).thenAnswer((_) async {});
     when(() => mockRepository.updateThreadViewPref(any(), any())).thenAnswer((_) async {});
@@ -34,16 +48,17 @@ void main() {
     FeedViewPref feedPref = FeedViewPref.defaultPref,
     ThreadViewPref threadPref = ThreadViewPref.defaultPref,
   }) {
-    when(() => mockRepository.watchFeedViewPref(any())).thenAnswer((_) => Stream.value(feedPref));
     when(
-      () => mockRepository.watchThreadViewPref(any()),
+      () => mockRepository.watchFeedViewPref(testSession.did),
+    ).thenAnswer((_) => Stream.value(feedPref));
+    when(
+      () => mockRepository.watchThreadViewPref(testSession.did),
     ).thenAnswer((_) => Stream.value(threadPref));
 
     return ProviderScope(
       overrides: [
         blueskyPreferencesRepositoryProvider.overrideWithValue(mockRepository),
-        feedViewPrefProvider.overrideWith((ref) => mockRepository.watchFeedViewPref(any())),
-        threadViewPrefProvider.overrideWith((ref) => mockRepository.watchThreadViewPref(any())),
+        authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
       ],
       child: const MaterialApp(home: FeedPreferencesScreen()),
     );
@@ -213,4 +228,13 @@ void main() {
       expect(prioritizeSwitch.value, isFalse);
     });
   });
+}
+
+class _TestAuthNotifier extends AuthNotifier {
+  _TestAuthNotifier(this._session);
+
+  final Session _session;
+
+  @override
+  AuthState build() => AuthState.authenticated(_session);
 }

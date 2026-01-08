@@ -293,9 +293,6 @@ class SearchActorItem {
   }
 
   static String? _parseAllowIncoming(Map<String, dynamic> json) {
-    // associated.chat.allowIncoming
-    // It can be 'all', 'following', or 'none'.
-    // If associated is missing, we default to null (unknown).
     final associated = json['associated'];
     if (associated is Map<String, dynamic>) {
       final chat = associated['chat'];

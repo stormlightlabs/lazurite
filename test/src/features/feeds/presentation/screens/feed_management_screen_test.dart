@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_controller.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
@@ -26,6 +29,16 @@ void main() {
   testWidgets('FeedManagementScreen lists saved feeds and allows actions', (tester) async {
     final mockRepository = MockFeedRepository();
     final mockDatabase = MockAppDatabase();
+    final session = Session(
+      did: 'did:web:test',
+      handle: 'handle',
+      pdsUrl: 'https://pds',
+      accessJwt: 'access',
+      refreshJwt: 'refresh',
+      scope: 'scope',
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+      dpopKey: const <String, dynamic>{},
+    );
 
     final kFeeds = [
       SavedFeedData(
@@ -59,6 +72,7 @@ void main() {
           allFeedsProvider.overrideWith(() => MockAllFeedsNotifier(kFeeds)),
           feedRepositoryProvider.overrideWithValue(mockRepository),
           appDatabaseProvider.overrideWithValue(mockDatabase),
+          authProvider.overrideWith(() => _TestAuthNotifier(session)),
           feedSyncControllerProvider.overrideWith((ref) {}),
           feedContentCleanupControllerProvider.overrideWith((ref) {}),
           hasPendingSyncProvider.overrideWith((ref) => Stream.value(false)),
@@ -76,17 +90,29 @@ void main() {
     expect(find.text('Saved'), findsOneWidget);
 
     await tester.tap(find.widgetWithIcon(IconButton, Icons.push_pin).first);
-    verify(() => mockRepository.saveFeed('at://did:1/feed/saved1', any(), pin: false)).called(1);
+    verify(
+      () => mockRepository.saveFeed('at://did:1/feed/saved1', session.did, pin: false),
+    ).called(1);
 
     final deleteButtons = find.widgetWithIcon(IconButton, Icons.delete_outline);
     await tester.tap(deleteButtons.last);
 
-    verify(() => mockRepository.removeFeed('at://did:1/feed/saved2', any())).called(1);
+    verify(() => mockRepository.removeFeed('at://did:1/feed/saved2', session.did)).called(1);
   });
 
   testWidgets('FeedManagementScreen renders drag handles for reordering', (tester) async {
     final mockRepository = MockFeedRepository();
     final mockDatabase = MockAppDatabase();
+    final session = Session(
+      did: 'did:web:test',
+      handle: 'handle',
+      pdsUrl: 'https://pds',
+      accessJwt: 'access',
+      refreshJwt: 'refresh',
+      scope: 'scope',
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+      dpopKey: const <String, dynamic>{},
+    );
 
     final kFeeds = [
       SavedFeedData(
@@ -121,6 +147,7 @@ void main() {
           allFeedsProvider.overrideWith(() => MockAllFeedsNotifier(kFeeds)),
           feedRepositoryProvider.overrideWithValue(mockRepository),
           appDatabaseProvider.overrideWithValue(mockDatabase),
+          authProvider.overrideWith(() => _TestAuthNotifier(session)),
           feedSyncControllerProvider.overrideWith((ref) {}),
           feedContentCleanupControllerProvider.overrideWith((ref) {}),
           hasPendingSyncProvider.overrideWith((ref) => Stream.value(false)),
@@ -135,4 +162,13 @@ void main() {
     expect(find.byIcon(Icons.drag_handle), findsNWidgets(2));
     expect(find.byType(ListTile), findsNWidgets(2));
   });
+}
+
+class _TestAuthNotifier extends AuthNotifier {
+  _TestAuthNotifier(this._session);
+
+  final Session _session;
+
+  @override
+  AuthState build() => AuthState.authenticated(_session);
 }

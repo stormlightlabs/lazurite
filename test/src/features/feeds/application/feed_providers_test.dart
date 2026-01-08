@@ -17,7 +17,7 @@ void main() {
     mockRepository = MockFeedRepository();
   });
 
-  ProviderContainer createContainer({bool authenticated = false}) {
+  ProviderContainer createContainer({bool authenticated = true}) {
     return ProviderContainer(
       overrides: [
         feedRepositoryProvider.overrideWithValue(mockRepository),
@@ -240,7 +240,6 @@ void main() {
       final container = createContainer(authenticated: false);
       final subscription = container.listen(pinnedFeedsProvider, (_, _) {});
       addTearDown(subscription.close);
-      await container.read(pinnedFeedsProvider.future);
 
       final notifier = container.read(activeFeedProvider.notifier);
       notifier.resetToDefault(isAuthenticated: false);

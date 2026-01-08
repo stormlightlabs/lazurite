@@ -122,16 +122,14 @@ void main() {
       };
 
       final feedMetadata = {
-        'view': {
-          'uri': 'at://did:plc:def/app.bsky.feed.generator/test',
-          'cid': 'bafytest2',
-          'did': 'did:web:feedgen.test',
-          'displayName': 'Test Feed',
-          'description': 'A test feed',
-          'avatar': 'avatar2.jpg',
-          'creator': {'did': 'did:plc:def', 'handle': 'creator2.test'},
-          'likeCount': 50,
-        },
+        'uri': 'at://did:plc:def/app.bsky.feed.generator/test',
+        'cid': 'bafytest2',
+        'did': 'did:web:feedgen.test',
+        'displayName': 'Test Feed',
+        'description': 'A test feed',
+        'avatar': 'avatar2.jpg',
+        'creator': {'did': 'did:plc:def', 'handle': 'creator2.test'},
+        'likeCount': 50,
       };
 
       when(
@@ -146,11 +144,12 @@ void main() {
       ).thenAnswer((_) async => listMetadata);
 
       when(
-        () => mockApi.call(
-          'app.bsky.feed.getFeedGenerator',
-          params: {'feed': 'at://did:plc:def/app.bsky.feed.generator/test'},
-        ),
-      ).thenAnswer((_) async => feedMetadata);
+        () => mockApi.call('app.bsky.feed.getFeedGenerators', params: any(named: 'params')),
+      ).thenAnswer(
+        (_) async => {
+          'feeds': [feedMetadata],
+        },
+      );
 
       await repository.syncPreferences(ownerDid);
 
@@ -185,13 +184,11 @@ void main() {
       };
 
       final feedMetadata = {
-        'view': {
-          'uri': 'at://did:plc:def/app.bsky.feed.generator/test',
-          'cid': 'bafytest',
-          'did': 'did:web:feedgen.test',
-          'displayName': 'Test Feed',
-          'creator': {'did': 'did:plc:def', 'handle': 'creator.test'},
-        },
+        'uri': 'at://did:plc:def/app.bsky.feed.generator/test',
+        'cid': 'bafytest',
+        'did': 'did:web:feedgen.test',
+        'displayName': 'Test Feed',
+        'creator': {'did': 'did:plc:def', 'handle': 'creator.test'},
       };
 
       when(
@@ -199,11 +196,12 @@ void main() {
       ).thenAnswer((_) async => prefsResponse);
 
       when(
-        () => mockApi.call(
-          'app.bsky.feed.getFeedGenerator',
-          params: {'feed': 'at://did:plc:def/app.bsky.feed.generator/test'},
-        ),
-      ).thenAnswer((_) async => feedMetadata);
+        () => mockApi.call('app.bsky.feed.getFeedGenerators', params: any(named: 'params')),
+      ).thenAnswer(
+        (_) async => {
+          'feeds': [feedMetadata],
+        },
+      );
 
       await repository.syncPreferences(ownerDid);
 

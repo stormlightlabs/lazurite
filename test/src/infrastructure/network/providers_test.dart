@@ -74,9 +74,7 @@ void main() {
       when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
       when(() => mockSessionStorage.clearSession()).thenAnswer((_) async {});
       when(() => mockDatabase.feedContentDao).thenReturn(mockFeedContentDao);
-      when(
-        () => mockFeedContentDao.clearFeedContent(any(), any(named: 'ownerDid')),
-      ).thenAnswer((_) async {});
+      when(() => mockFeedContentDao.clearFeedContent(any(), any())).thenAnswer((_) async {});
     });
 
     test('returns null when user is not authenticated', () {
@@ -139,7 +137,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(notifier.logoutInvoked, isTrue);
-      verify(() => mockFeedContentDao.clearFeedContent('home', any(named: 'ownerDid'))).called(1);
+      verify(() => mockFeedContentDao.clearFeedContent('home', any())).called(1);
     });
   });
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_screen.dart';
@@ -40,6 +43,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          authProvider.overrideWith(() => _FakeAuthNotifier(ownerDid: ownerDid)),
           activeFeedProvider.overrideWithValue(activeFeed),
           feedContentRepositoryProvider.overrideWithValue(mockContentRepository),
           pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
@@ -63,6 +67,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          authProvider.overrideWith(() => _FakeAuthNotifier(ownerDid: ownerDid)),
           activeFeedProvider.overrideWithValue(activeFeed),
           feedContentRepositoryProvider.overrideWithValue(mockContentRepository),
           pinnedFeedsProvider.overrideWith(() => MockPinnedFeedsNotifier()),
@@ -82,4 +87,26 @@ void main() {
       () => mockContentRepository.fetchAndCacheFeed(feedUri: activeFeed, ownerDid: ownerDid),
     ).called(2);
   });
+}
+
+class _FakeAuthNotifier extends AuthNotifier {
+  _FakeAuthNotifier({required this.ownerDid});
+
+  final String ownerDid;
+
+  @override
+  AuthState build() {
+    return AuthState.authenticated(
+      Session(
+        did: ownerDid,
+        scope: 'test',
+        handle: 'test.bsky.social',
+        accessJwt: 'access',
+        refreshJwt: 'refresh',
+        pdsUrl: 'https://bsky.social',
+        dpopKey: {'kty': 'OKP'},
+        expiresAt: DateTime.now().add(const Duration(minutes: 30)),
+      ),
+    );
+  }
 }

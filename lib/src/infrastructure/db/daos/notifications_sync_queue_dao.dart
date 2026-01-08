@@ -36,8 +36,12 @@ class NotificationsSyncQueueDao extends DatabaseAccessor<AppDatabase>
   /// Get the latest 'seenAt' timestamp from the queue for a user.
   Future<DateTime?> getLatestSeenAt(String ownerDid) async {
     final query = select(notificationsSyncQueue)
-      ..where((t) => t.ownerDid.equals(ownerDid))
-      ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+      ..where(
+        (t) =>
+            t.ownerDid.equals(ownerDid) &
+            t.retryCount.isSmallerThanValue(kMaxNotificationSyncRetries),
+      )
+      ..orderBy([(t) => OrderingTerm.desc(t.createdAt), (t) => OrderingTerm.desc(t.id)])
       ..limit(1);
 
     final item = await query.getSingleOrNull();

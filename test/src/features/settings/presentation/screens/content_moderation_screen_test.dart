@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/settings/application/settings_providers.dart';
 import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/content_moderation_screen.dart';
@@ -11,18 +14,29 @@ class MockBlueskyPreferencesRepository extends Mock implements BlueskyPreference
 
 void main() {
   late MockBlueskyPreferencesRepository mockRepository;
+  late Session testSession;
 
   setUp(() {
     mockRepository = MockBlueskyPreferencesRepository();
+    testSession = Session(
+      did: 'did:web:test',
+      handle: 'handle',
+      pdsUrl: 'https://pds',
+      accessJwt: 'access',
+      refreshJwt: 'refresh',
+      scope: 'scope',
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+      dpopKey: const <String, dynamic>{},
+    );
 
     when(
-      () => mockRepository.watchAdultContentPref(any()),
+      () => mockRepository.watchAdultContentPref(testSession.did),
     ).thenAnswer((_) => Stream.value(const AdultContentPref(enabled: false)));
     when(
-      () => mockRepository.watchContentLabelPrefs(any()),
+      () => mockRepository.watchContentLabelPrefs(testSession.did),
     ).thenAnswer((_) => Stream.value(ContentLabelPrefs.empty));
     when(
-      () => mockRepository.watchLabelersPref(any()),
+      () => mockRepository.watchLabelersPref(testSession.did),
     ).thenAnswer((_) => Stream.value(LabelersPref.empty));
     when(() => mockRepository.updateAdultContentPref(any(), any())).thenAnswer((_) async {});
     when(() => mockRepository.updateContentLabelPrefs(any(), any())).thenAnswer((_) async {});
@@ -39,25 +53,19 @@ void main() {
     LabelersPref labelersPref = LabelersPref.empty,
   }) {
     when(
-      () => mockRepository.watchAdultContentPref(any()),
+      () => mockRepository.watchAdultContentPref(testSession.did),
     ).thenAnswer((_) => Stream.value(adultPref));
     when(
-      () => mockRepository.watchContentLabelPrefs(any()),
+      () => mockRepository.watchContentLabelPrefs(testSession.did),
     ).thenAnswer((_) => Stream.value(labelPrefs));
     when(
-      () => mockRepository.watchLabelersPref(any()),
+      () => mockRepository.watchLabelersPref(testSession.did),
     ).thenAnswer((_) => Stream.value(labelersPref));
 
     return ProviderScope(
       overrides: [
         blueskyPreferencesRepositoryProvider.overrideWithValue(mockRepository),
-        adultContentPrefProvider.overrideWith(
-          (ref) => mockRepository.watchAdultContentPref(any()),
-        ),
-        contentLabelPrefsProvider.overrideWith(
-          (ref) => mockRepository.watchContentLabelPrefs(any()),
-        ),
-        labelersPrefProvider.overrideWith((ref) => mockRepository.watchLabelersPref(any())),
+        authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
       ],
       child: const MaterialApp(home: ContentModerationScreen()),
     );
@@ -206,4 +214,13 @@ void main() {
       );
     });
   });
+}
+
+class _TestAuthNotifier extends AuthNotifier {
+  _TestAuthNotifier(this._session);
+
+  final Session _session;
+
+  @override
+  AuthState build() => AuthState.authenticated(_session);
 }

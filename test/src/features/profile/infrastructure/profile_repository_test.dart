@@ -12,6 +12,7 @@ void main() {
   late AppDatabase db;
   late MockLogger mockLogger;
   late ProfileRepository repository;
+  const ownerDid = 'did:web:test';
 
   setUp(() {
     mockApi = MockXrpcClient();
@@ -37,7 +38,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => _mockProfileResponse(withViewer: true));
 
-        final profile = await repository.getProfile('testuser.bsky.social', any());
+        final profile = await repository.getProfile('testuser.bsky.social', ownerDid);
 
         expect(profile.did, 'did:plc:test123');
         expect(profile.handle, 'testuser.bsky.social');
@@ -63,7 +64,7 @@ void main() {
 
         final relationship = await db.profileRelationshipDao.getRelationship(
           'did:plc:test123',
-          any(),
+          ownerDid,
         );
         expect(relationship, isNotNull);
         expect(relationship!.following, true);
@@ -75,7 +76,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => {'did': 'did:plc:minimal', 'handle': 'minimal.bsky.social'});
 
-        final profile = await repository.getProfile('minimal.bsky.social', any());
+        final profile = await repository.getProfile('minimal.bsky.social', ownerDid);
 
         expect(profile.did, 'did:plc:minimal');
         expect(profile.handle, 'minimal.bsky.social');
@@ -88,7 +89,7 @@ void main() {
         final exception = Exception('Network error');
         when(() => mockApi.call(any(), params: any(named: 'params'))).thenThrow(exception);
 
-        expect(() => repository.getProfile('testuser', any()), throwsA(isA<Exception>()));
+        expect(() => repository.getProfile('testuser', ownerDid), throwsA(isA<Exception>()));
 
         verify(() => mockLogger.error(any(), exception, any())).called(1);
       });
@@ -100,7 +101,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => _mockProfileResponse());
 
-        await repository.getProfile('testuser.bsky.social', any());
+        await repository.getProfile('testuser.bsky.social', ownerDid);
 
         final result = await repository.getCachedProfile('did:plc:test123');
 
@@ -120,7 +121,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => _mockProfileResponse());
 
-        await repository.getProfile('testuser.bsky.social', any());
+        await repository.getProfile('testuser.bsky.social', ownerDid);
 
         final result = await repository.watchProfile('did:plc:test123').first;
         expect(result, isNotNull);
@@ -176,7 +177,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => _mockProfileResponse(withViewer: true));
 
-        final profile = await repository.getProfile('testuser', any());
+        final profile = await repository.getProfile('testuser', ownerDid);
 
         expect(profile.viewerFollowing, isTrue);
         expect(profile.viewerFollowUri, 'at://did:plc:viewer/app.bsky.graph.follow/abc123');
@@ -187,7 +188,7 @@ void main() {
           () => mockApi.call(any(), params: any(named: 'params')),
         ).thenAnswer((_) async => _mockProfileResponse());
 
-        final profile = await repository.getProfile('testuser', any());
+        final profile = await repository.getProfile('testuser', ownerDid);
 
         expect(profile.viewerFollowing, isFalse);
         expect(profile.viewerFollowUri, isNull);

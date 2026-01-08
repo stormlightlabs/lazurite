@@ -122,7 +122,6 @@ class OutboxRepository {
 
     final item = await _outboxDao.getById(outboxId);
     if (item != null) {
-      // Ensure we only retry if owner matches
       if (item.ownerDid != ownerDid) {
         _logger.warning('Skipping retry: owner mismatch', {
           'itemOwner': item.ownerDid,

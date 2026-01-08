@@ -53,11 +53,9 @@ void main() {
     mockNotificationsRepository = MockNotificationsRepository();
     mockDmsRepository = MockDmsRepository();
     when(
-      () => mockNotificationsRepository.watchNotifications(any(named: 'ownerDid')),
+      () => mockNotificationsRepository.watchNotifications(any()),
     ).thenAnswer((_) => Stream.value([]));
-    when(
-      () => mockNotificationsRepository.getCursor(any(named: 'ownerDid')),
-    ).thenAnswer((_) async => null);
+    when(() => mockNotificationsRepository.getCursor(any())).thenAnswer((_) async => null);
     when(
       () => mockNotificationsRepository.fetchNotifications(
         cursor: any(named: 'cursor'),
@@ -67,9 +65,7 @@ void main() {
     when(
       () => mockNotificationsRepository.fetchNotifications(ownerDid: any(named: 'ownerDid')),
     ).thenAnswer((_) async {});
-    when(
-      () => mockDmsRepository.watchConversations(any(named: 'ownerDid')),
-    ).thenAnswer((_) => Stream.value([]));
+    when(() => mockDmsRepository.watchConversations(any())).thenAnswer((_) => Stream.value([]));
     when(
       () => mockDmsRepository.fetchConversations(
         cursor: any(named: 'cursor'),
@@ -91,9 +87,7 @@ void main() {
     );
     when(() => mockSessionStorage.getSession()).thenAnswer((_) async => testSession);
     when(() => mockSearchRepository.watchRecentSearches()).thenAnswer((_) => Stream.value([]));
-    when(
-      () => mockProfileRepository.getProfile(any(named: 'actor'), any(named: 'ownerDid')),
-    ).thenAnswer(
+    when(() => mockProfileRepository.getProfile(any(), any())).thenAnswer(
       (_) async => ProfileData(
         did: 'did:web:test',
         handle: 'handle',
@@ -125,9 +119,7 @@ void main() {
         ownerDid: any(named: 'ownerDid'),
       ),
     ).thenAnswer((_) async {});
-    when(
-      () => mockFeedContentRepository.getCursor(any(named: 'feedKey'), any(named: 'ownerDid')),
-    ).thenAnswer((_) async => null);
+    when(() => mockFeedContentRepository.getCursor(any(), any())).thenAnswer((_) async => null);
   });
 
   List<Override> getTestOverrides() {
