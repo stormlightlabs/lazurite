@@ -9267,6 +9267,1519 @@ class NotificationsSyncQueueCompanion extends UpdateCompanion<NotificationsSyncQ
   }
 }
 
+class $DmConvosTable extends DmConvos with TableInfo<$DmConvosTable, DmConvo> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DmConvosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _convoIdMeta = const VerificationMeta('convoId');
+  @override
+  late final GeneratedColumn<String> convoId = GeneratedColumn<String>(
+    'convo_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _membersJsonMeta = const VerificationMeta('membersJson');
+  @override
+  late final GeneratedColumn<String> membersJson = GeneratedColumn<String>(
+    'members_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastMessageTextMeta = const VerificationMeta('lastMessageText');
+  @override
+  late final GeneratedColumn<String> lastMessageText = GeneratedColumn<String>(
+    'last_message_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastMessageAtMeta = const VerificationMeta('lastMessageAt');
+  @override
+  late final GeneratedColumn<DateTime> lastMessageAt = GeneratedColumn<DateTime>(
+    'last_message_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastReadMessageIdMeta = const VerificationMeta(
+    'lastReadMessageId',
+  );
+  @override
+  late final GeneratedColumn<String> lastReadMessageId = GeneratedColumn<String>(
+    'last_read_message_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _unreadCountMeta = const VerificationMeta('unreadCount');
+  @override
+  late final GeneratedColumn<int> unreadCount = GeneratedColumn<int>(
+    'unread_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isMutedMeta = const VerificationMeta('isMuted');
+  @override
+  late final GeneratedColumn<bool> isMuted = GeneratedColumn<bool>(
+    'is_muted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("is_muted" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isAcceptedMeta = const VerificationMeta('isAccepted');
+  @override
+  late final GeneratedColumn<bool> isAccepted = GeneratedColumn<bool>(
+    'is_accepted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("is_accepted" IN (0, 1))'),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _cachedAtMeta = const VerificationMeta('cachedAt');
+  @override
+  late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
+    'cached_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    convoId,
+    membersJson,
+    lastMessageText,
+    lastMessageAt,
+    lastReadMessageId,
+    unreadCount,
+    isMuted,
+    isAccepted,
+    cachedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'dm_convos';
+  @override
+  VerificationContext validateIntegrity(Insertable<DmConvo> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('convo_id')) {
+      context.handle(_convoIdMeta, convoId.isAcceptableOrUnknown(data['convo_id']!, _convoIdMeta));
+    } else if (isInserting) {
+      context.missing(_convoIdMeta);
+    }
+    if (data.containsKey('members_json')) {
+      context.handle(
+        _membersJsonMeta,
+        membersJson.isAcceptableOrUnknown(data['members_json']!, _membersJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_membersJsonMeta);
+    }
+    if (data.containsKey('last_message_text')) {
+      context.handle(
+        _lastMessageTextMeta,
+        lastMessageText.isAcceptableOrUnknown(data['last_message_text']!, _lastMessageTextMeta),
+      );
+    }
+    if (data.containsKey('last_message_at')) {
+      context.handle(
+        _lastMessageAtMeta,
+        lastMessageAt.isAcceptableOrUnknown(data['last_message_at']!, _lastMessageAtMeta),
+      );
+    }
+    if (data.containsKey('last_read_message_id')) {
+      context.handle(
+        _lastReadMessageIdMeta,
+        lastReadMessageId.isAcceptableOrUnknown(
+          data['last_read_message_id']!,
+          _lastReadMessageIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('unread_count')) {
+      context.handle(
+        _unreadCountMeta,
+        unreadCount.isAcceptableOrUnknown(data['unread_count']!, _unreadCountMeta),
+      );
+    }
+    if (data.containsKey('is_muted')) {
+      context.handle(_isMutedMeta, isMuted.isAcceptableOrUnknown(data['is_muted']!, _isMutedMeta));
+    }
+    if (data.containsKey('is_accepted')) {
+      context.handle(
+        _isAcceptedMeta,
+        isAccepted.isAcceptableOrUnknown(data['is_accepted']!, _isAcceptedMeta),
+      );
+    }
+    if (data.containsKey('cached_at')) {
+      context.handle(
+        _cachedAtMeta,
+        cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cachedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {convoId};
+  @override
+  DmConvo map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DmConvo(
+      convoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}convo_id'],
+      )!,
+      membersJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}members_json'],
+      )!,
+      lastMessageText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_message_text'],
+      ),
+      lastMessageAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_message_at'],
+      ),
+      lastReadMessageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_read_message_id'],
+      ),
+      unreadCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}unread_count'],
+      )!,
+      isMuted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_muted'],
+      )!,
+      isAccepted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_accepted'],
+      )!,
+      cachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}cached_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DmConvosTable createAlias(String alias) {
+    return $DmConvosTable(attachedDatabase, alias);
+  }
+}
+
+class DmConvo extends DataClass implements Insertable<DmConvo> {
+  /// Conversation ID (unique identifier from API).
+  final String convoId;
+
+  /// JSON array of participant DIDs.
+  final String membersJson;
+
+  /// Preview text from the last message.
+  final String? lastMessageText;
+
+  /// Timestamp of the last message.
+  final DateTime? lastMessageAt;
+
+  /// ID of the last message the user has read.
+  final String? lastReadMessageId;
+
+  /// Number of unread messages.
+  final int unreadCount;
+
+  /// Whether the conversation is muted.
+  final bool isMuted;
+
+  /// Whether the conversation request has been accepted.
+  final bool isAccepted;
+
+  /// When this conversation was cached locally.
+  final DateTime cachedAt;
+  const DmConvo({
+    required this.convoId,
+    required this.membersJson,
+    this.lastMessageText,
+    this.lastMessageAt,
+    this.lastReadMessageId,
+    required this.unreadCount,
+    required this.isMuted,
+    required this.isAccepted,
+    required this.cachedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['convo_id'] = Variable<String>(convoId);
+    map['members_json'] = Variable<String>(membersJson);
+    if (!nullToAbsent || lastMessageText != null) {
+      map['last_message_text'] = Variable<String>(lastMessageText);
+    }
+    if (!nullToAbsent || lastMessageAt != null) {
+      map['last_message_at'] = Variable<DateTime>(lastMessageAt);
+    }
+    if (!nullToAbsent || lastReadMessageId != null) {
+      map['last_read_message_id'] = Variable<String>(lastReadMessageId);
+    }
+    map['unread_count'] = Variable<int>(unreadCount);
+    map['is_muted'] = Variable<bool>(isMuted);
+    map['is_accepted'] = Variable<bool>(isAccepted);
+    map['cached_at'] = Variable<DateTime>(cachedAt);
+    return map;
+  }
+
+  DmConvosCompanion toCompanion(bool nullToAbsent) {
+    return DmConvosCompanion(
+      convoId: Value(convoId),
+      membersJson: Value(membersJson),
+      lastMessageText: lastMessageText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastMessageText),
+      lastMessageAt: lastMessageAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastMessageAt),
+      lastReadMessageId: lastReadMessageId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastReadMessageId),
+      unreadCount: Value(unreadCount),
+      isMuted: Value(isMuted),
+      isAccepted: Value(isAccepted),
+      cachedAt: Value(cachedAt),
+    );
+  }
+
+  factory DmConvo.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DmConvo(
+      convoId: serializer.fromJson<String>(json['convoId']),
+      membersJson: serializer.fromJson<String>(json['membersJson']),
+      lastMessageText: serializer.fromJson<String?>(json['lastMessageText']),
+      lastMessageAt: serializer.fromJson<DateTime?>(json['lastMessageAt']),
+      lastReadMessageId: serializer.fromJson<String?>(json['lastReadMessageId']),
+      unreadCount: serializer.fromJson<int>(json['unreadCount']),
+      isMuted: serializer.fromJson<bool>(json['isMuted']),
+      isAccepted: serializer.fromJson<bool>(json['isAccepted']),
+      cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'convoId': serializer.toJson<String>(convoId),
+      'membersJson': serializer.toJson<String>(membersJson),
+      'lastMessageText': serializer.toJson<String?>(lastMessageText),
+      'lastMessageAt': serializer.toJson<DateTime?>(lastMessageAt),
+      'lastReadMessageId': serializer.toJson<String?>(lastReadMessageId),
+      'unreadCount': serializer.toJson<int>(unreadCount),
+      'isMuted': serializer.toJson<bool>(isMuted),
+      'isAccepted': serializer.toJson<bool>(isAccepted),
+      'cachedAt': serializer.toJson<DateTime>(cachedAt),
+    };
+  }
+
+  DmConvo copyWith({
+    String? convoId,
+    String? membersJson,
+    Value<String?> lastMessageText = const Value.absent(),
+    Value<DateTime?> lastMessageAt = const Value.absent(),
+    Value<String?> lastReadMessageId = const Value.absent(),
+    int? unreadCount,
+    bool? isMuted,
+    bool? isAccepted,
+    DateTime? cachedAt,
+  }) => DmConvo(
+    convoId: convoId ?? this.convoId,
+    membersJson: membersJson ?? this.membersJson,
+    lastMessageText: lastMessageText.present ? lastMessageText.value : this.lastMessageText,
+    lastMessageAt: lastMessageAt.present ? lastMessageAt.value : this.lastMessageAt,
+    lastReadMessageId: lastReadMessageId.present
+        ? lastReadMessageId.value
+        : this.lastReadMessageId,
+    unreadCount: unreadCount ?? this.unreadCount,
+    isMuted: isMuted ?? this.isMuted,
+    isAccepted: isAccepted ?? this.isAccepted,
+    cachedAt: cachedAt ?? this.cachedAt,
+  );
+  DmConvo copyWithCompanion(DmConvosCompanion data) {
+    return DmConvo(
+      convoId: data.convoId.present ? data.convoId.value : this.convoId,
+      membersJson: data.membersJson.present ? data.membersJson.value : this.membersJson,
+      lastMessageText: data.lastMessageText.present
+          ? data.lastMessageText.value
+          : this.lastMessageText,
+      lastMessageAt: data.lastMessageAt.present ? data.lastMessageAt.value : this.lastMessageAt,
+      lastReadMessageId: data.lastReadMessageId.present
+          ? data.lastReadMessageId.value
+          : this.lastReadMessageId,
+      unreadCount: data.unreadCount.present ? data.unreadCount.value : this.unreadCount,
+      isMuted: data.isMuted.present ? data.isMuted.value : this.isMuted,
+      isAccepted: data.isAccepted.present ? data.isAccepted.value : this.isAccepted,
+      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DmConvo(')
+          ..write('convoId: $convoId, ')
+          ..write('membersJson: $membersJson, ')
+          ..write('lastMessageText: $lastMessageText, ')
+          ..write('lastMessageAt: $lastMessageAt, ')
+          ..write('lastReadMessageId: $lastReadMessageId, ')
+          ..write('unreadCount: $unreadCount, ')
+          ..write('isMuted: $isMuted, ')
+          ..write('isAccepted: $isAccepted, ')
+          ..write('cachedAt: $cachedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    convoId,
+    membersJson,
+    lastMessageText,
+    lastMessageAt,
+    lastReadMessageId,
+    unreadCount,
+    isMuted,
+    isAccepted,
+    cachedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DmConvo &&
+          other.convoId == this.convoId &&
+          other.membersJson == this.membersJson &&
+          other.lastMessageText == this.lastMessageText &&
+          other.lastMessageAt == this.lastMessageAt &&
+          other.lastReadMessageId == this.lastReadMessageId &&
+          other.unreadCount == this.unreadCount &&
+          other.isMuted == this.isMuted &&
+          other.isAccepted == this.isAccepted &&
+          other.cachedAt == this.cachedAt);
+}
+
+class DmConvosCompanion extends UpdateCompanion<DmConvo> {
+  final Value<String> convoId;
+  final Value<String> membersJson;
+  final Value<String?> lastMessageText;
+  final Value<DateTime?> lastMessageAt;
+  final Value<String?> lastReadMessageId;
+  final Value<int> unreadCount;
+  final Value<bool> isMuted;
+  final Value<bool> isAccepted;
+  final Value<DateTime> cachedAt;
+  final Value<int> rowid;
+  const DmConvosCompanion({
+    this.convoId = const Value.absent(),
+    this.membersJson = const Value.absent(),
+    this.lastMessageText = const Value.absent(),
+    this.lastMessageAt = const Value.absent(),
+    this.lastReadMessageId = const Value.absent(),
+    this.unreadCount = const Value.absent(),
+    this.isMuted = const Value.absent(),
+    this.isAccepted = const Value.absent(),
+    this.cachedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DmConvosCompanion.insert({
+    required String convoId,
+    required String membersJson,
+    this.lastMessageText = const Value.absent(),
+    this.lastMessageAt = const Value.absent(),
+    this.lastReadMessageId = const Value.absent(),
+    this.unreadCount = const Value.absent(),
+    this.isMuted = const Value.absent(),
+    this.isAccepted = const Value.absent(),
+    required DateTime cachedAt,
+    this.rowid = const Value.absent(),
+  }) : convoId = Value(convoId),
+       membersJson = Value(membersJson),
+       cachedAt = Value(cachedAt);
+  static Insertable<DmConvo> custom({
+    Expression<String>? convoId,
+    Expression<String>? membersJson,
+    Expression<String>? lastMessageText,
+    Expression<DateTime>? lastMessageAt,
+    Expression<String>? lastReadMessageId,
+    Expression<int>? unreadCount,
+    Expression<bool>? isMuted,
+    Expression<bool>? isAccepted,
+    Expression<DateTime>? cachedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (convoId != null) 'convo_id': convoId,
+      if (membersJson != null) 'members_json': membersJson,
+      if (lastMessageText != null) 'last_message_text': lastMessageText,
+      if (lastMessageAt != null) 'last_message_at': lastMessageAt,
+      if (lastReadMessageId != null) 'last_read_message_id': lastReadMessageId,
+      if (unreadCount != null) 'unread_count': unreadCount,
+      if (isMuted != null) 'is_muted': isMuted,
+      if (isAccepted != null) 'is_accepted': isAccepted,
+      if (cachedAt != null) 'cached_at': cachedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DmConvosCompanion copyWith({
+    Value<String>? convoId,
+    Value<String>? membersJson,
+    Value<String?>? lastMessageText,
+    Value<DateTime?>? lastMessageAt,
+    Value<String?>? lastReadMessageId,
+    Value<int>? unreadCount,
+    Value<bool>? isMuted,
+    Value<bool>? isAccepted,
+    Value<DateTime>? cachedAt,
+    Value<int>? rowid,
+  }) {
+    return DmConvosCompanion(
+      convoId: convoId ?? this.convoId,
+      membersJson: membersJson ?? this.membersJson,
+      lastMessageText: lastMessageText ?? this.lastMessageText,
+      lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+      lastReadMessageId: lastReadMessageId ?? this.lastReadMessageId,
+      unreadCount: unreadCount ?? this.unreadCount,
+      isMuted: isMuted ?? this.isMuted,
+      isAccepted: isAccepted ?? this.isAccepted,
+      cachedAt: cachedAt ?? this.cachedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (convoId.present) {
+      map['convo_id'] = Variable<String>(convoId.value);
+    }
+    if (membersJson.present) {
+      map['members_json'] = Variable<String>(membersJson.value);
+    }
+    if (lastMessageText.present) {
+      map['last_message_text'] = Variable<String>(lastMessageText.value);
+    }
+    if (lastMessageAt.present) {
+      map['last_message_at'] = Variable<DateTime>(lastMessageAt.value);
+    }
+    if (lastReadMessageId.present) {
+      map['last_read_message_id'] = Variable<String>(lastReadMessageId.value);
+    }
+    if (unreadCount.present) {
+      map['unread_count'] = Variable<int>(unreadCount.value);
+    }
+    if (isMuted.present) {
+      map['is_muted'] = Variable<bool>(isMuted.value);
+    }
+    if (isAccepted.present) {
+      map['is_accepted'] = Variable<bool>(isAccepted.value);
+    }
+    if (cachedAt.present) {
+      map['cached_at'] = Variable<DateTime>(cachedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DmConvosCompanion(')
+          ..write('convoId: $convoId, ')
+          ..write('membersJson: $membersJson, ')
+          ..write('lastMessageText: $lastMessageText, ')
+          ..write('lastMessageAt: $lastMessageAt, ')
+          ..write('lastReadMessageId: $lastReadMessageId, ')
+          ..write('unreadCount: $unreadCount, ')
+          ..write('isMuted: $isMuted, ')
+          ..write('isAccepted: $isAccepted, ')
+          ..write('cachedAt: $cachedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DmMessagesTable extends DmMessages with TableInfo<$DmMessagesTable, DmMessage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DmMessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _messageIdMeta = const VerificationMeta('messageId');
+  @override
+  late final GeneratedColumn<String> messageId = GeneratedColumn<String>(
+    'message_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _convoIdMeta = const VerificationMeta('convoId');
+  @override
+  late final GeneratedColumn<String> convoId = GeneratedColumn<String>(
+    'convo_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _senderDidMeta = const VerificationMeta('senderDid');
+  @override
+  late final GeneratedColumn<String> senderDid = GeneratedColumn<String>(
+    'sender_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES profiles (did)'),
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta('content');
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sentAtMeta = const VerificationMeta('sentAt');
+  @override
+  late final GeneratedColumn<DateTime> sentAt = GeneratedColumn<DateTime>(
+    'sent_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cachedAtMeta = const VerificationMeta('cachedAt');
+  @override
+  late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
+    'cached_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    messageId,
+    convoId,
+    senderDid,
+    content,
+    sentAt,
+    status,
+    cachedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'dm_messages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DmMessage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('message_id')) {
+      context.handle(
+        _messageIdMeta,
+        messageId.isAcceptableOrUnknown(data['message_id']!, _messageIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_messageIdMeta);
+    }
+    if (data.containsKey('convo_id')) {
+      context.handle(_convoIdMeta, convoId.isAcceptableOrUnknown(data['convo_id']!, _convoIdMeta));
+    } else if (isInserting) {
+      context.missing(_convoIdMeta);
+    }
+    if (data.containsKey('sender_did')) {
+      context.handle(
+        _senderDidMeta,
+        senderDid.isAcceptableOrUnknown(data['sender_did']!, _senderDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_senderDidMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(_contentMeta, content.isAcceptableOrUnknown(data['content']!, _contentMeta));
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('sent_at')) {
+      context.handle(_sentAtMeta, sentAt.isAcceptableOrUnknown(data['sent_at']!, _sentAtMeta));
+    } else if (isInserting) {
+      context.missing(_sentAtMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta, status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('cached_at')) {
+      context.handle(
+        _cachedAtMeta,
+        cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cachedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {messageId};
+  @override
+  DmMessage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DmMessage(
+      messageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message_id'],
+      )!,
+      convoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}convo_id'],
+      )!,
+      senderDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sender_did'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      sentAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}sent_at'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      cachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}cached_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DmMessagesTable createAlias(String alias) {
+    return $DmMessagesTable(attachedDatabase, alias);
+  }
+}
+
+class DmMessage extends DataClass implements Insertable<DmMessage> {
+  /// Message ID (unique identifier from API).
+  final String messageId;
+
+  /// Conversation this message belongs to.
+  final String convoId;
+
+  /// DID of the message sender.
+  final String senderDid;
+
+  /// Message text content.
+  final String content;
+
+  /// When the message was sent.
+  final DateTime sentAt;
+
+  /// Message status: sent, read, deleted.
+  final String status;
+
+  /// When this message was cached locally.
+  final DateTime cachedAt;
+  const DmMessage({
+    required this.messageId,
+    required this.convoId,
+    required this.senderDid,
+    required this.content,
+    required this.sentAt,
+    required this.status,
+    required this.cachedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['message_id'] = Variable<String>(messageId);
+    map['convo_id'] = Variable<String>(convoId);
+    map['sender_did'] = Variable<String>(senderDid);
+    map['content'] = Variable<String>(content);
+    map['sent_at'] = Variable<DateTime>(sentAt);
+    map['status'] = Variable<String>(status);
+    map['cached_at'] = Variable<DateTime>(cachedAt);
+    return map;
+  }
+
+  DmMessagesCompanion toCompanion(bool nullToAbsent) {
+    return DmMessagesCompanion(
+      messageId: Value(messageId),
+      convoId: Value(convoId),
+      senderDid: Value(senderDid),
+      content: Value(content),
+      sentAt: Value(sentAt),
+      status: Value(status),
+      cachedAt: Value(cachedAt),
+    );
+  }
+
+  factory DmMessage.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DmMessage(
+      messageId: serializer.fromJson<String>(json['messageId']),
+      convoId: serializer.fromJson<String>(json['convoId']),
+      senderDid: serializer.fromJson<String>(json['senderDid']),
+      content: serializer.fromJson<String>(json['content']),
+      sentAt: serializer.fromJson<DateTime>(json['sentAt']),
+      status: serializer.fromJson<String>(json['status']),
+      cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'messageId': serializer.toJson<String>(messageId),
+      'convoId': serializer.toJson<String>(convoId),
+      'senderDid': serializer.toJson<String>(senderDid),
+      'content': serializer.toJson<String>(content),
+      'sentAt': serializer.toJson<DateTime>(sentAt),
+      'status': serializer.toJson<String>(status),
+      'cachedAt': serializer.toJson<DateTime>(cachedAt),
+    };
+  }
+
+  DmMessage copyWith({
+    String? messageId,
+    String? convoId,
+    String? senderDid,
+    String? content,
+    DateTime? sentAt,
+    String? status,
+    DateTime? cachedAt,
+  }) => DmMessage(
+    messageId: messageId ?? this.messageId,
+    convoId: convoId ?? this.convoId,
+    senderDid: senderDid ?? this.senderDid,
+    content: content ?? this.content,
+    sentAt: sentAt ?? this.sentAt,
+    status: status ?? this.status,
+    cachedAt: cachedAt ?? this.cachedAt,
+  );
+  DmMessage copyWithCompanion(DmMessagesCompanion data) {
+    return DmMessage(
+      messageId: data.messageId.present ? data.messageId.value : this.messageId,
+      convoId: data.convoId.present ? data.convoId.value : this.convoId,
+      senderDid: data.senderDid.present ? data.senderDid.value : this.senderDid,
+      content: data.content.present ? data.content.value : this.content,
+      sentAt: data.sentAt.present ? data.sentAt.value : this.sentAt,
+      status: data.status.present ? data.status.value : this.status,
+      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DmMessage(')
+          ..write('messageId: $messageId, ')
+          ..write('convoId: $convoId, ')
+          ..write('senderDid: $senderDid, ')
+          ..write('content: $content, ')
+          ..write('sentAt: $sentAt, ')
+          ..write('status: $status, ')
+          ..write('cachedAt: $cachedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(messageId, convoId, senderDid, content, sentAt, status, cachedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DmMessage &&
+          other.messageId == this.messageId &&
+          other.convoId == this.convoId &&
+          other.senderDid == this.senderDid &&
+          other.content == this.content &&
+          other.sentAt == this.sentAt &&
+          other.status == this.status &&
+          other.cachedAt == this.cachedAt);
+}
+
+class DmMessagesCompanion extends UpdateCompanion<DmMessage> {
+  final Value<String> messageId;
+  final Value<String> convoId;
+  final Value<String> senderDid;
+  final Value<String> content;
+  final Value<DateTime> sentAt;
+  final Value<String> status;
+  final Value<DateTime> cachedAt;
+  final Value<int> rowid;
+  const DmMessagesCompanion({
+    this.messageId = const Value.absent(),
+    this.convoId = const Value.absent(),
+    this.senderDid = const Value.absent(),
+    this.content = const Value.absent(),
+    this.sentAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.cachedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DmMessagesCompanion.insert({
+    required String messageId,
+    required String convoId,
+    required String senderDid,
+    required String content,
+    required DateTime sentAt,
+    required String status,
+    required DateTime cachedAt,
+    this.rowid = const Value.absent(),
+  }) : messageId = Value(messageId),
+       convoId = Value(convoId),
+       senderDid = Value(senderDid),
+       content = Value(content),
+       sentAt = Value(sentAt),
+       status = Value(status),
+       cachedAt = Value(cachedAt);
+  static Insertable<DmMessage> custom({
+    Expression<String>? messageId,
+    Expression<String>? convoId,
+    Expression<String>? senderDid,
+    Expression<String>? content,
+    Expression<DateTime>? sentAt,
+    Expression<String>? status,
+    Expression<DateTime>? cachedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (messageId != null) 'message_id': messageId,
+      if (convoId != null) 'convo_id': convoId,
+      if (senderDid != null) 'sender_did': senderDid,
+      if (content != null) 'content': content,
+      if (sentAt != null) 'sent_at': sentAt,
+      if (status != null) 'status': status,
+      if (cachedAt != null) 'cached_at': cachedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DmMessagesCompanion copyWith({
+    Value<String>? messageId,
+    Value<String>? convoId,
+    Value<String>? senderDid,
+    Value<String>? content,
+    Value<DateTime>? sentAt,
+    Value<String>? status,
+    Value<DateTime>? cachedAt,
+    Value<int>? rowid,
+  }) {
+    return DmMessagesCompanion(
+      messageId: messageId ?? this.messageId,
+      convoId: convoId ?? this.convoId,
+      senderDid: senderDid ?? this.senderDid,
+      content: content ?? this.content,
+      sentAt: sentAt ?? this.sentAt,
+      status: status ?? this.status,
+      cachedAt: cachedAt ?? this.cachedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (messageId.present) {
+      map['message_id'] = Variable<String>(messageId.value);
+    }
+    if (convoId.present) {
+      map['convo_id'] = Variable<String>(convoId.value);
+    }
+    if (senderDid.present) {
+      map['sender_did'] = Variable<String>(senderDid.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (sentAt.present) {
+      map['sent_at'] = Variable<DateTime>(sentAt.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (cachedAt.present) {
+      map['cached_at'] = Variable<DateTime>(cachedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DmMessagesCompanion(')
+          ..write('messageId: $messageId, ')
+          ..write('convoId: $convoId, ')
+          ..write('senderDid: $senderDid, ')
+          ..write('content: $content, ')
+          ..write('sentAt: $sentAt, ')
+          ..write('status: $status, ')
+          ..write('cachedAt: $cachedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DmOutboxTable extends DmOutbox with TableInfo<$DmOutboxTable, DmOutboxData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DmOutboxTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _outboxIdMeta = const VerificationMeta('outboxId');
+  @override
+  late final GeneratedColumn<String> outboxId = GeneratedColumn<String>(
+    'outbox_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _convoIdMeta = const VerificationMeta('convoId');
+  @override
+  late final GeneratedColumn<String> convoId = GeneratedColumn<String>(
+    'convo_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _messageTextMeta = const VerificationMeta('messageText');
+  @override
+  late final GeneratedColumn<String> messageText = GeneratedColumn<String>(
+    'message_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _retryCountMeta = const VerificationMeta('retryCount');
+  @override
+  late final GeneratedColumn<int> retryCount = GeneratedColumn<int>(
+    'retry_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastAttemptAtMeta = const VerificationMeta('lastAttemptAt');
+  @override
+  late final GeneratedColumn<DateTime> lastAttemptAt = GeneratedColumn<DateTime>(
+    'last_attempt_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _errorMessageMeta = const VerificationMeta('errorMessage');
+  @override
+  late final GeneratedColumn<String> errorMessage = GeneratedColumn<String>(
+    'error_message',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    outboxId,
+    convoId,
+    messageText,
+    status,
+    retryCount,
+    createdAt,
+    lastAttemptAt,
+    errorMessage,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'dm_outbox';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DmOutboxData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('outbox_id')) {
+      context.handle(
+        _outboxIdMeta,
+        outboxId.isAcceptableOrUnknown(data['outbox_id']!, _outboxIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_outboxIdMeta);
+    }
+    if (data.containsKey('convo_id')) {
+      context.handle(_convoIdMeta, convoId.isAcceptableOrUnknown(data['convo_id']!, _convoIdMeta));
+    } else if (isInserting) {
+      context.missing(_convoIdMeta);
+    }
+    if (data.containsKey('message_text')) {
+      context.handle(
+        _messageTextMeta,
+        messageText.isAcceptableOrUnknown(data['message_text']!, _messageTextMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_messageTextMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta, status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('retry_count')) {
+      context.handle(
+        _retryCountMeta,
+        retryCount.isAcceptableOrUnknown(data['retry_count']!, _retryCountMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('last_attempt_at')) {
+      context.handle(
+        _lastAttemptAtMeta,
+        lastAttemptAt.isAcceptableOrUnknown(data['last_attempt_at']!, _lastAttemptAtMeta),
+      );
+    }
+    if (data.containsKey('error_message')) {
+      context.handle(
+        _errorMessageMeta,
+        errorMessage.isAcceptableOrUnknown(data['error_message']!, _errorMessageMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {outboxId};
+  @override
+  DmOutboxData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DmOutboxData(
+      outboxId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}outbox_id'],
+      )!,
+      convoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}convo_id'],
+      )!,
+      messageText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message_text'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      retryCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}retry_count'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      lastAttemptAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_attempt_at'],
+      ),
+      errorMessage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error_message'],
+      ),
+    );
+  }
+
+  @override
+  $DmOutboxTable createAlias(String alias) {
+    return $DmOutboxTable(attachedDatabase, alias);
+  }
+}
+
+class DmOutboxData extends DataClass implements Insertable<DmOutboxData> {
+  /// Local UUID for this outbox item.
+  final String outboxId;
+
+  /// Conversation to send the message to.
+  final String convoId;
+
+  /// Message text content.
+  final String messageText;
+
+  /// Status: pending, sending, failed.
+  final String status;
+
+  /// Number of send attempts.
+  final int retryCount;
+
+  /// When the message was queued.
+  final DateTime createdAt;
+
+  /// When the last send attempt was made.
+  final DateTime? lastAttemptAt;
+
+  /// Error message from the last failed attempt.
+  final String? errorMessage;
+  const DmOutboxData({
+    required this.outboxId,
+    required this.convoId,
+    required this.messageText,
+    required this.status,
+    required this.retryCount,
+    required this.createdAt,
+    this.lastAttemptAt,
+    this.errorMessage,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['outbox_id'] = Variable<String>(outboxId);
+    map['convo_id'] = Variable<String>(convoId);
+    map['message_text'] = Variable<String>(messageText);
+    map['status'] = Variable<String>(status);
+    map['retry_count'] = Variable<int>(retryCount);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || lastAttemptAt != null) {
+      map['last_attempt_at'] = Variable<DateTime>(lastAttemptAt);
+    }
+    if (!nullToAbsent || errorMessage != null) {
+      map['error_message'] = Variable<String>(errorMessage);
+    }
+    return map;
+  }
+
+  DmOutboxCompanion toCompanion(bool nullToAbsent) {
+    return DmOutboxCompanion(
+      outboxId: Value(outboxId),
+      convoId: Value(convoId),
+      messageText: Value(messageText),
+      status: Value(status),
+      retryCount: Value(retryCount),
+      createdAt: Value(createdAt),
+      lastAttemptAt: lastAttemptAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAttemptAt),
+      errorMessage: errorMessage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(errorMessage),
+    );
+  }
+
+  factory DmOutboxData.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DmOutboxData(
+      outboxId: serializer.fromJson<String>(json['outboxId']),
+      convoId: serializer.fromJson<String>(json['convoId']),
+      messageText: serializer.fromJson<String>(json['messageText']),
+      status: serializer.fromJson<String>(json['status']),
+      retryCount: serializer.fromJson<int>(json['retryCount']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      lastAttemptAt: serializer.fromJson<DateTime?>(json['lastAttemptAt']),
+      errorMessage: serializer.fromJson<String?>(json['errorMessage']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'outboxId': serializer.toJson<String>(outboxId),
+      'convoId': serializer.toJson<String>(convoId),
+      'messageText': serializer.toJson<String>(messageText),
+      'status': serializer.toJson<String>(status),
+      'retryCount': serializer.toJson<int>(retryCount),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'lastAttemptAt': serializer.toJson<DateTime?>(lastAttemptAt),
+      'errorMessage': serializer.toJson<String?>(errorMessage),
+    };
+  }
+
+  DmOutboxData copyWith({
+    String? outboxId,
+    String? convoId,
+    String? messageText,
+    String? status,
+    int? retryCount,
+    DateTime? createdAt,
+    Value<DateTime?> lastAttemptAt = const Value.absent(),
+    Value<String?> errorMessage = const Value.absent(),
+  }) => DmOutboxData(
+    outboxId: outboxId ?? this.outboxId,
+    convoId: convoId ?? this.convoId,
+    messageText: messageText ?? this.messageText,
+    status: status ?? this.status,
+    retryCount: retryCount ?? this.retryCount,
+    createdAt: createdAt ?? this.createdAt,
+    lastAttemptAt: lastAttemptAt.present ? lastAttemptAt.value : this.lastAttemptAt,
+    errorMessage: errorMessage.present ? errorMessage.value : this.errorMessage,
+  );
+  DmOutboxData copyWithCompanion(DmOutboxCompanion data) {
+    return DmOutboxData(
+      outboxId: data.outboxId.present ? data.outboxId.value : this.outboxId,
+      convoId: data.convoId.present ? data.convoId.value : this.convoId,
+      messageText: data.messageText.present ? data.messageText.value : this.messageText,
+      status: data.status.present ? data.status.value : this.status,
+      retryCount: data.retryCount.present ? data.retryCount.value : this.retryCount,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lastAttemptAt: data.lastAttemptAt.present ? data.lastAttemptAt.value : this.lastAttemptAt,
+      errorMessage: data.errorMessage.present ? data.errorMessage.value : this.errorMessage,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DmOutboxData(')
+          ..write('outboxId: $outboxId, ')
+          ..write('convoId: $convoId, ')
+          ..write('messageText: $messageText, ')
+          ..write('status: $status, ')
+          ..write('retryCount: $retryCount, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastAttemptAt: $lastAttemptAt, ')
+          ..write('errorMessage: $errorMessage')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    outboxId,
+    convoId,
+    messageText,
+    status,
+    retryCount,
+    createdAt,
+    lastAttemptAt,
+    errorMessage,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DmOutboxData &&
+          other.outboxId == this.outboxId &&
+          other.convoId == this.convoId &&
+          other.messageText == this.messageText &&
+          other.status == this.status &&
+          other.retryCount == this.retryCount &&
+          other.createdAt == this.createdAt &&
+          other.lastAttemptAt == this.lastAttemptAt &&
+          other.errorMessage == this.errorMessage);
+}
+
+class DmOutboxCompanion extends UpdateCompanion<DmOutboxData> {
+  final Value<String> outboxId;
+  final Value<String> convoId;
+  final Value<String> messageText;
+  final Value<String> status;
+  final Value<int> retryCount;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> lastAttemptAt;
+  final Value<String?> errorMessage;
+  final Value<int> rowid;
+  const DmOutboxCompanion({
+    this.outboxId = const Value.absent(),
+    this.convoId = const Value.absent(),
+    this.messageText = const Value.absent(),
+    this.status = const Value.absent(),
+    this.retryCount = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.lastAttemptAt = const Value.absent(),
+    this.errorMessage = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DmOutboxCompanion.insert({
+    required String outboxId,
+    required String convoId,
+    required String messageText,
+    required String status,
+    this.retryCount = const Value.absent(),
+    required DateTime createdAt,
+    this.lastAttemptAt = const Value.absent(),
+    this.errorMessage = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : outboxId = Value(outboxId),
+       convoId = Value(convoId),
+       messageText = Value(messageText),
+       status = Value(status),
+       createdAt = Value(createdAt);
+  static Insertable<DmOutboxData> custom({
+    Expression<String>? outboxId,
+    Expression<String>? convoId,
+    Expression<String>? messageText,
+    Expression<String>? status,
+    Expression<int>? retryCount,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? lastAttemptAt,
+    Expression<String>? errorMessage,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (outboxId != null) 'outbox_id': outboxId,
+      if (convoId != null) 'convo_id': convoId,
+      if (messageText != null) 'message_text': messageText,
+      if (status != null) 'status': status,
+      if (retryCount != null) 'retry_count': retryCount,
+      if (createdAt != null) 'created_at': createdAt,
+      if (lastAttemptAt != null) 'last_attempt_at': lastAttemptAt,
+      if (errorMessage != null) 'error_message': errorMessage,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DmOutboxCompanion copyWith({
+    Value<String>? outboxId,
+    Value<String>? convoId,
+    Value<String>? messageText,
+    Value<String>? status,
+    Value<int>? retryCount,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? lastAttemptAt,
+    Value<String?>? errorMessage,
+    Value<int>? rowid,
+  }) {
+    return DmOutboxCompanion(
+      outboxId: outboxId ?? this.outboxId,
+      convoId: convoId ?? this.convoId,
+      messageText: messageText ?? this.messageText,
+      status: status ?? this.status,
+      retryCount: retryCount ?? this.retryCount,
+      createdAt: createdAt ?? this.createdAt,
+      lastAttemptAt: lastAttemptAt ?? this.lastAttemptAt,
+      errorMessage: errorMessage ?? this.errorMessage,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (outboxId.present) {
+      map['outbox_id'] = Variable<String>(outboxId.value);
+    }
+    if (convoId.present) {
+      map['convo_id'] = Variable<String>(convoId.value);
+    }
+    if (messageText.present) {
+      map['message_text'] = Variable<String>(messageText.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (retryCount.present) {
+      map['retry_count'] = Variable<int>(retryCount.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (lastAttemptAt.present) {
+      map['last_attempt_at'] = Variable<DateTime>(lastAttemptAt.value);
+    }
+    if (errorMessage.present) {
+      map['error_message'] = Variable<String>(errorMessage.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DmOutboxCompanion(')
+          ..write('outboxId: $outboxId, ')
+          ..write('convoId: $convoId, ')
+          ..write('messageText: $messageText, ')
+          ..write('status: $status, ')
+          ..write('retryCount: $retryCount, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastAttemptAt: $lastAttemptAt, ')
+          ..write('errorMessage: $errorMessage, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -9295,6 +10808,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $NotificationsSyncQueueTable notificationsSyncQueue = $NotificationsSyncQueueTable(
     this,
   );
+  late final $DmConvosTable dmConvos = $DmConvosTable(this);
+  late final $DmMessagesTable dmMessages = $DmMessagesTable(this);
+  late final $DmOutboxTable dmOutbox = $DmOutboxTable(this);
   late final Index feedContentSortIdx = Index(
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
@@ -9306,6 +10822,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index notificationsIndexedAtIdx = Index(
     'notifications_indexed_at_idx',
     'CREATE INDEX notifications_indexed_at_idx ON notifications (indexed_at)',
+  );
+  late final Index dmMessagesConvoIdx = Index(
+    'dm_messages_convo_idx',
+    'CREATE INDEX dm_messages_convo_idx ON dm_messages (convo_id, sent_at)',
   );
   late final FeedContentDao feedContentDao = FeedContentDao(this as AppDatabase);
   late final ProfileDao profileDao = ProfileDao(this as AppDatabase);
@@ -9333,6 +10853,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final NotificationsSyncQueueDao notificationsSyncQueueDao = NotificationsSyncQueueDao(
     this as AppDatabase,
   );
+  late final DmConvosDao dmConvosDao = DmConvosDao(this as AppDatabase);
+  late final DmMessagesDao dmMessagesDao = DmMessagesDao(this as AppDatabase);
+  late final DmOutboxDao dmOutboxDao = DmOutboxDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -9360,9 +10883,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     notifications,
     notificationCursors,
     notificationsSyncQueue,
+    dmConvos,
+    dmMessages,
+    dmOutbox,
     feedContentSortIdx,
     searchCacheSortIdx,
     notificationsIndexedAtIdx,
+    dmMessagesConvoIdx,
   ];
 }
 
@@ -9468,6 +10995,23 @@ final class $$ProfilesTableReferences
     ).filter((f) => f.actorDid.did.sqlEquals($_itemColumn<String>('did')!));
 
     final cache = $_typedResult.readTableOrNull(_notificationsRefsTable($_db));
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$DmMessagesTable, List<DmMessage>> _dmMessagesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.dmMessages,
+    aliasName: $_aliasNameGenerator(db.profiles.did, db.dmMessages.senderDid),
+  );
+
+  $$DmMessagesTableProcessedTableManager get dmMessagesRefs {
+    final manager = $$DmMessagesTableTableManager(
+      $_db,
+      $_db.dmMessages,
+    ).filter((f) => f.senderDid.did.sqlEquals($_itemColumn<String>('did')!));
+
+    final cache = $_typedResult.readTableOrNull(_dmMessagesRefsTable($_db));
     return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
   }
 }
@@ -9593,6 +11137,25 @@ class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTab
               $$NotificationsTableFilterComposer(
                 $db: $db,
                 $table: $db.notifications,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> dmMessagesRefs(Expression<bool> Function($$DmMessagesTableFilterComposer f) f) {
+    final $$DmMessagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.did,
+      referencedTable: $db.dmMessages,
+      getReferencedColumn: (t) => t.senderDid,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$DmMessagesTableFilterComposer(
+                $db: $db,
+                $table: $db.dmMessages,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
@@ -9784,6 +11347,27 @@ class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $Profile
     );
     return f(composer);
   }
+
+  Expression<T> dmMessagesRefs<T extends Object>(
+    Expression<T> Function($$DmMessagesTableAnnotationComposer a) f,
+  ) {
+    final $$DmMessagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.did,
+      referencedTable: $db.dmMessages,
+      getReferencedColumn: (t) => t.senderDid,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$DmMessagesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.dmMessages,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProfilesTableTableManager
@@ -9804,6 +11388,7 @@ class $$ProfilesTableTableManager
             bool savedFeedsRefs,
             bool profileRelationshipsRefs,
             bool notificationsRefs,
+            bool dmMessagesRefs,
           })
         > {
   $$ProfilesTableTableManager(_$AppDatabase db, $ProfilesTable table)
@@ -9888,6 +11473,7 @@ class $$ProfilesTableTableManager
                 savedFeedsRefs = false,
                 profileRelationshipsRefs = false,
                 notificationsRefs = false,
+                dmMessagesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -9896,6 +11482,7 @@ class $$ProfilesTableTableManager
                     if (savedFeedsRefs) db.savedFeeds,
                     if (profileRelationshipsRefs) db.profileRelationships,
                     if (notificationsRefs) db.notifications,
+                    if (dmMessagesRefs) db.dmMessages,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -9941,6 +11528,16 @@ class $$ProfilesTableTableManager
                               referencedItems.where((e) => e.actorDid == item.did),
                           typedResults: items,
                         ),
+                      if (dmMessagesRefs)
+                        await $_getPrefetchedData<Profile, $ProfilesTable, DmMessage>(
+                          currentTable: table,
+                          referencedTable: $$ProfilesTableReferences._dmMessagesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProfilesTableReferences(db, table, p0).dmMessagesRefs,
+                          referencedItemsForCurrentItem: (item, referencedItems) =>
+                              referencedItems.where((e) => e.senderDid == item.did),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -9966,6 +11563,7 @@ typedef $$ProfilesTableProcessedTableManager =
         bool savedFeedsRefs,
         bool profileRelationshipsRefs,
         bool notificationsRefs,
+        bool dmMessagesRefs,
       })
     >;
 typedef $$PostsTableCreateCompanionBuilder =
@@ -15223,6 +16821,767 @@ typedef $$NotificationsSyncQueueTableProcessedTableManager =
       NotificationsSyncQueueData,
       PrefetchHooks Function()
     >;
+typedef $$DmConvosTableCreateCompanionBuilder =
+    DmConvosCompanion Function({
+      required String convoId,
+      required String membersJson,
+      Value<String?> lastMessageText,
+      Value<DateTime?> lastMessageAt,
+      Value<String?> lastReadMessageId,
+      Value<int> unreadCount,
+      Value<bool> isMuted,
+      Value<bool> isAccepted,
+      required DateTime cachedAt,
+      Value<int> rowid,
+    });
+typedef $$DmConvosTableUpdateCompanionBuilder =
+    DmConvosCompanion Function({
+      Value<String> convoId,
+      Value<String> membersJson,
+      Value<String?> lastMessageText,
+      Value<DateTime?> lastMessageAt,
+      Value<String?> lastReadMessageId,
+      Value<int> unreadCount,
+      Value<bool> isMuted,
+      Value<bool> isAccepted,
+      Value<DateTime> cachedAt,
+      Value<int> rowid,
+    });
+
+class $$DmConvosTableFilterComposer extends Composer<_$AppDatabase, $DmConvosTable> {
+  $$DmConvosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get convoId =>
+      $composableBuilder(column: $table.convoId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get membersJson =>
+      $composableBuilder(column: $table.membersJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastMessageText => $composableBuilder(
+    column: $table.lastMessageText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastMessageAt =>
+      $composableBuilder(column: $table.lastMessageAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastReadMessageId => $composableBuilder(
+    column: $table.lastReadMessageId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get unreadCount =>
+      $composableBuilder(column: $table.unreadCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isMuted =>
+      $composableBuilder(column: $table.isMuted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isAccepted =>
+      $composableBuilder(column: $table.isAccepted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$DmConvosTableOrderingComposer extends Composer<_$AppDatabase, $DmConvosTable> {
+  $$DmConvosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get convoId =>
+      $composableBuilder(column: $table.convoId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get membersJson =>
+      $composableBuilder(column: $table.membersJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastMessageText => $composableBuilder(
+    column: $table.lastMessageText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastMessageAt => $composableBuilder(
+    column: $table.lastMessageAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastReadMessageId => $composableBuilder(
+    column: $table.lastReadMessageId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get unreadCount =>
+      $composableBuilder(column: $table.unreadCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isMuted =>
+      $composableBuilder(column: $table.isMuted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isAccepted =>
+      $composableBuilder(column: $table.isAccepted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$DmConvosTableAnnotationComposer extends Composer<_$AppDatabase, $DmConvosTable> {
+  $$DmConvosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get convoId =>
+      $composableBuilder(column: $table.convoId, builder: (column) => column);
+
+  GeneratedColumn<String> get membersJson =>
+      $composableBuilder(column: $table.membersJson, builder: (column) => column);
+
+  GeneratedColumn<String> get lastMessageText =>
+      $composableBuilder(column: $table.lastMessageText, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastMessageAt =>
+      $composableBuilder(column: $table.lastMessageAt, builder: (column) => column);
+
+  GeneratedColumn<String> get lastReadMessageId =>
+      $composableBuilder(column: $table.lastReadMessageId, builder: (column) => column);
+
+  GeneratedColumn<int> get unreadCount =>
+      $composableBuilder(column: $table.unreadCount, builder: (column) => column);
+
+  GeneratedColumn<bool> get isMuted =>
+      $composableBuilder(column: $table.isMuted, builder: (column) => column);
+
+  GeneratedColumn<bool> get isAccepted =>
+      $composableBuilder(column: $table.isAccepted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
+}
+
+class $$DmConvosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DmConvosTable,
+          DmConvo,
+          $$DmConvosTableFilterComposer,
+          $$DmConvosTableOrderingComposer,
+          $$DmConvosTableAnnotationComposer,
+          $$DmConvosTableCreateCompanionBuilder,
+          $$DmConvosTableUpdateCompanionBuilder,
+          (DmConvo, BaseReferences<_$AppDatabase, $DmConvosTable, DmConvo>),
+          DmConvo,
+          PrefetchHooks Function()
+        > {
+  $$DmConvosTableTableManager(_$AppDatabase db, $DmConvosTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$DmConvosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$DmConvosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DmConvosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> convoId = const Value.absent(),
+                Value<String> membersJson = const Value.absent(),
+                Value<String?> lastMessageText = const Value.absent(),
+                Value<DateTime?> lastMessageAt = const Value.absent(),
+                Value<String?> lastReadMessageId = const Value.absent(),
+                Value<int> unreadCount = const Value.absent(),
+                Value<bool> isMuted = const Value.absent(),
+                Value<bool> isAccepted = const Value.absent(),
+                Value<DateTime> cachedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DmConvosCompanion(
+                convoId: convoId,
+                membersJson: membersJson,
+                lastMessageText: lastMessageText,
+                lastMessageAt: lastMessageAt,
+                lastReadMessageId: lastReadMessageId,
+                unreadCount: unreadCount,
+                isMuted: isMuted,
+                isAccepted: isAccepted,
+                cachedAt: cachedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String convoId,
+                required String membersJson,
+                Value<String?> lastMessageText = const Value.absent(),
+                Value<DateTime?> lastMessageAt = const Value.absent(),
+                Value<String?> lastReadMessageId = const Value.absent(),
+                Value<int> unreadCount = const Value.absent(),
+                Value<bool> isMuted = const Value.absent(),
+                Value<bool> isAccepted = const Value.absent(),
+                required DateTime cachedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => DmConvosCompanion.insert(
+                convoId: convoId,
+                membersJson: membersJson,
+                lastMessageText: lastMessageText,
+                lastMessageAt: lastMessageAt,
+                lastReadMessageId: lastReadMessageId,
+                unreadCount: unreadCount,
+                isMuted: isMuted,
+                isAccepted: isAccepted,
+                cachedAt: cachedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DmConvosTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DmConvosTable,
+      DmConvo,
+      $$DmConvosTableFilterComposer,
+      $$DmConvosTableOrderingComposer,
+      $$DmConvosTableAnnotationComposer,
+      $$DmConvosTableCreateCompanionBuilder,
+      $$DmConvosTableUpdateCompanionBuilder,
+      (DmConvo, BaseReferences<_$AppDatabase, $DmConvosTable, DmConvo>),
+      DmConvo,
+      PrefetchHooks Function()
+    >;
+typedef $$DmMessagesTableCreateCompanionBuilder =
+    DmMessagesCompanion Function({
+      required String messageId,
+      required String convoId,
+      required String senderDid,
+      required String content,
+      required DateTime sentAt,
+      required String status,
+      required DateTime cachedAt,
+      Value<int> rowid,
+    });
+typedef $$DmMessagesTableUpdateCompanionBuilder =
+    DmMessagesCompanion Function({
+      Value<String> messageId,
+      Value<String> convoId,
+      Value<String> senderDid,
+      Value<String> content,
+      Value<DateTime> sentAt,
+      Value<String> status,
+      Value<DateTime> cachedAt,
+      Value<int> rowid,
+    });
+
+final class $$DmMessagesTableReferences
+    extends BaseReferences<_$AppDatabase, $DmMessagesTable, DmMessage> {
+  $$DmMessagesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ProfilesTable _senderDidTable(_$AppDatabase db) =>
+      db.profiles.createAlias($_aliasNameGenerator(db.dmMessages.senderDid, db.profiles.did));
+
+  $$ProfilesTableProcessedTableManager get senderDid {
+    final $_column = $_itemColumn<String>('sender_did')!;
+
+    final manager = $$ProfilesTableTableManager(
+      $_db,
+      $_db.profiles,
+    ).filter((f) => f.did.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_senderDidTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$DmMessagesTableFilterComposer extends Composer<_$AppDatabase, $DmMessagesTable> {
+  $$DmMessagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get messageId =>
+      $composableBuilder(column: $table.messageId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get convoId =>
+      $composableBuilder(column: $table.convoId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get sentAt =>
+      $composableBuilder(column: $table.sentAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => ColumnFilters(column));
+
+  $$ProfilesTableFilterComposer get senderDid {
+    final $$ProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.senderDid,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.did,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$ProfilesTableFilterComposer(
+                $db: $db,
+                $table: $db.profiles,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$DmMessagesTableOrderingComposer extends Composer<_$AppDatabase, $DmMessagesTable> {
+  $$DmMessagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get messageId =>
+      $composableBuilder(column: $table.messageId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get convoId =>
+      $composableBuilder(column: $table.convoId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get sentAt =>
+      $composableBuilder(column: $table.sentAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => ColumnOrderings(column));
+
+  $$ProfilesTableOrderingComposer get senderDid {
+    final $$ProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.senderDid,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.did,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$ProfilesTableOrderingComposer(
+                $db: $db,
+                $table: $db.profiles,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$DmMessagesTableAnnotationComposer extends Composer<_$AppDatabase, $DmMessagesTable> {
+  $$DmMessagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get messageId =>
+      $composableBuilder(column: $table.messageId, builder: (column) => column);
+
+  GeneratedColumn<String> get convoId =>
+      $composableBuilder(column: $table.convoId, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get sentAt =>
+      $composableBuilder(column: $table.sentAt, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
+
+  $$ProfilesTableAnnotationComposer get senderDid {
+    final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.senderDid,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.did,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$ProfilesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.profiles,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$DmMessagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DmMessagesTable,
+          DmMessage,
+          $$DmMessagesTableFilterComposer,
+          $$DmMessagesTableOrderingComposer,
+          $$DmMessagesTableAnnotationComposer,
+          $$DmMessagesTableCreateCompanionBuilder,
+          $$DmMessagesTableUpdateCompanionBuilder,
+          (DmMessage, $$DmMessagesTableReferences),
+          DmMessage,
+          PrefetchHooks Function({bool senderDid})
+        > {
+  $$DmMessagesTableTableManager(_$AppDatabase db, $DmMessagesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$DmMessagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$DmMessagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DmMessagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> messageId = const Value.absent(),
+                Value<String> convoId = const Value.absent(),
+                Value<String> senderDid = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<DateTime> sentAt = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<DateTime> cachedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DmMessagesCompanion(
+                messageId: messageId,
+                convoId: convoId,
+                senderDid: senderDid,
+                content: content,
+                sentAt: sentAt,
+                status: status,
+                cachedAt: cachedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String messageId,
+                required String convoId,
+                required String senderDid,
+                required String content,
+                required DateTime sentAt,
+                required String status,
+                required DateTime cachedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => DmMessagesCompanion.insert(
+                messageId: messageId,
+                convoId: convoId,
+                senderDid: senderDid,
+                content: content,
+                sentAt: sentAt,
+                status: status,
+                cachedAt: cachedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), $$DmMessagesTableReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: ({senderDid = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (senderDid) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.senderDid,
+                                referencedTable: $$DmMessagesTableReferences._senderDidTable(db),
+                                referencedColumn: $$DmMessagesTableReferences
+                                    ._senderDidTable(db)
+                                    .did,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DmMessagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DmMessagesTable,
+      DmMessage,
+      $$DmMessagesTableFilterComposer,
+      $$DmMessagesTableOrderingComposer,
+      $$DmMessagesTableAnnotationComposer,
+      $$DmMessagesTableCreateCompanionBuilder,
+      $$DmMessagesTableUpdateCompanionBuilder,
+      (DmMessage, $$DmMessagesTableReferences),
+      DmMessage,
+      PrefetchHooks Function({bool senderDid})
+    >;
+typedef $$DmOutboxTableCreateCompanionBuilder =
+    DmOutboxCompanion Function({
+      required String outboxId,
+      required String convoId,
+      required String messageText,
+      required String status,
+      Value<int> retryCount,
+      required DateTime createdAt,
+      Value<DateTime?> lastAttemptAt,
+      Value<String?> errorMessage,
+      Value<int> rowid,
+    });
+typedef $$DmOutboxTableUpdateCompanionBuilder =
+    DmOutboxCompanion Function({
+      Value<String> outboxId,
+      Value<String> convoId,
+      Value<String> messageText,
+      Value<String> status,
+      Value<int> retryCount,
+      Value<DateTime> createdAt,
+      Value<DateTime?> lastAttemptAt,
+      Value<String?> errorMessage,
+      Value<int> rowid,
+    });
+
+class $$DmOutboxTableFilterComposer extends Composer<_$AppDatabase, $DmOutboxTable> {
+  $$DmOutboxTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get outboxId =>
+      $composableBuilder(column: $table.outboxId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get convoId =>
+      $composableBuilder(column: $table.convoId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get messageText =>
+      $composableBuilder(column: $table.messageText, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get retryCount =>
+      $composableBuilder(column: $table.retryCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastAttemptAt =>
+      $composableBuilder(column: $table.lastAttemptAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get errorMessage =>
+      $composableBuilder(column: $table.errorMessage, builder: (column) => ColumnFilters(column));
+}
+
+class $$DmOutboxTableOrderingComposer extends Composer<_$AppDatabase, $DmOutboxTable> {
+  $$DmOutboxTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get outboxId =>
+      $composableBuilder(column: $table.outboxId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get convoId =>
+      $composableBuilder(column: $table.convoId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get messageText =>
+      $composableBuilder(column: $table.messageText, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get retryCount =>
+      $composableBuilder(column: $table.retryCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastAttemptAt => $composableBuilder(
+    column: $table.lastAttemptAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DmOutboxTableAnnotationComposer extends Composer<_$AppDatabase, $DmOutboxTable> {
+  $$DmOutboxTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get outboxId =>
+      $composableBuilder(column: $table.outboxId, builder: (column) => column);
+
+  GeneratedColumn<String> get convoId =>
+      $composableBuilder(column: $table.convoId, builder: (column) => column);
+
+  GeneratedColumn<String> get messageText =>
+      $composableBuilder(column: $table.messageText, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get retryCount =>
+      $composableBuilder(column: $table.retryCount, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastAttemptAt =>
+      $composableBuilder(column: $table.lastAttemptAt, builder: (column) => column);
+
+  GeneratedColumn<String> get errorMessage =>
+      $composableBuilder(column: $table.errorMessage, builder: (column) => column);
+}
+
+class $$DmOutboxTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DmOutboxTable,
+          DmOutboxData,
+          $$DmOutboxTableFilterComposer,
+          $$DmOutboxTableOrderingComposer,
+          $$DmOutboxTableAnnotationComposer,
+          $$DmOutboxTableCreateCompanionBuilder,
+          $$DmOutboxTableUpdateCompanionBuilder,
+          (DmOutboxData, BaseReferences<_$AppDatabase, $DmOutboxTable, DmOutboxData>),
+          DmOutboxData,
+          PrefetchHooks Function()
+        > {
+  $$DmOutboxTableTableManager(_$AppDatabase db, $DmOutboxTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$DmOutboxTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$DmOutboxTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DmOutboxTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> outboxId = const Value.absent(),
+                Value<String> convoId = const Value.absent(),
+                Value<String> messageText = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> retryCount = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> lastAttemptAt = const Value.absent(),
+                Value<String?> errorMessage = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DmOutboxCompanion(
+                outboxId: outboxId,
+                convoId: convoId,
+                messageText: messageText,
+                status: status,
+                retryCount: retryCount,
+                createdAt: createdAt,
+                lastAttemptAt: lastAttemptAt,
+                errorMessage: errorMessage,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String outboxId,
+                required String convoId,
+                required String messageText,
+                required String status,
+                Value<int> retryCount = const Value.absent(),
+                required DateTime createdAt,
+                Value<DateTime?> lastAttemptAt = const Value.absent(),
+                Value<String?> errorMessage = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DmOutboxCompanion.insert(
+                outboxId: outboxId,
+                convoId: convoId,
+                messageText: messageText,
+                status: status,
+                retryCount: retryCount,
+                createdAt: createdAt,
+                lastAttemptAt: lastAttemptAt,
+                errorMessage: errorMessage,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DmOutboxTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DmOutboxTable,
+      DmOutboxData,
+      $$DmOutboxTableFilterComposer,
+      $$DmOutboxTableOrderingComposer,
+      $$DmOutboxTableAnnotationComposer,
+      $$DmOutboxTableCreateCompanionBuilder,
+      $$DmOutboxTableUpdateCompanionBuilder,
+      (DmOutboxData, BaseReferences<_$AppDatabase, $DmOutboxTable, DmOutboxData>),
+      DmOutboxData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -15266,4 +17625,8 @@ class $AppDatabaseManager {
       $$NotificationCursorsTableTableManager(_db, _db.notificationCursors);
   $$NotificationsSyncQueueTableTableManager get notificationsSyncQueue =>
       $$NotificationsSyncQueueTableTableManager(_db, _db.notificationsSyncQueue);
+  $$DmConvosTableTableManager get dmConvos => $$DmConvosTableTableManager(_db, _db.dmConvos);
+  $$DmMessagesTableTableManager get dmMessages =>
+      $$DmMessagesTableTableManager(_db, _db.dmMessages);
+  $$DmOutboxTableTableManager get dmOutbox => $$DmOutboxTableTableManager(_db, _db.dmOutbox);
 }

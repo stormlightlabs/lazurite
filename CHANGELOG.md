@@ -4,6 +4,11 @@
 
 ### Added
 
+#### [2026-01-08]
+
+- Notifications with cached feeds, unread badges, mark-as-seen syncing, grouping polish,
+  and deep links to threads/profiles.
+
 #### [2026-01-07]
 
 - Material 3 motion with persisted settings UI, transitions, and accessibility

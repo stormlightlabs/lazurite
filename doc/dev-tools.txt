@@ -1,24 +1,40 @@
 *dev-tools.txt*                                                 ATProto DevTools
 ================================================================================
+
+References:
+- .sandbox/spec_debug_devtools_2026_01_08.md - Complete technical specification
+- doc/roadmap.txt section M.5 - High-level milestone breakdown and tasks
+
+Two distinct features:
+1. Internal Debug Mode (kDebugMode only) - For developers during development
+2. User-Facing DevTools (production)
+
+================================================================================
 DevTools - Scope & safety boundaries                                 *dev-scope*
 ================================================================================
 
-Read-only by default (MVP):
+Internal Debug Mode (kDebugMode only):
+- Debug overlay with system info, network inspector, performance metrics
+- Only available in Flutter debug builds (kDebugMode)
+- Never show or export auth secrets (tokens/DPoP keys)
 
-- View your own repo (logged-in DID) + optionally view other public repos.
+User-Facing DevTools (production builds):
+- Repository inspection and exploration
+- Available in both debug and release builds
+- Settings → "Developer Tools" toggle (default off for new users)
+- Read-only by default: view your own repo + optionally other public repos
+- Write mode triple-gated: Settings toggle + biometric auth + per-action confirmation
 
-Hard rules:
-
-- Never show or export auth secrets (tokens/DPoP keys) stored in secure storage.
-- Default to "My DID". "Other DID" requires an explicit toggle and a
-  confirmation.
-- Record JSON rendering must be robust to hostile / weird shapes (defensive UI).
+Hard rules (both modes):
+- Never show or export auth secrets (tokens/DPoP keys) stored in secure storage
+- Default to "My DID". "Other DID" requires explicit toggle and confirmation
+- Record JSON rendering must be robust to hostile/weird shapes (defensive UI)
 
 Host routing:
 
-- These are PDS repo endpoints; call the user’s PDS directly:
+- These are PDS repo endpoints; call the user's PDS directly:
   - describeRepo / listRecords / getRecord.
-    (Do NOT use `atproto-proxy` here; that header is for proxying to other
+    (Do NOT use `atproto-proxy` header; that header is for proxying to other
     services, e.g. labelers/chat.)
 
 ================================================================================
@@ -82,7 +98,7 @@ DevTools - Storage (Drift)                                         *dev-storage*
 ================================================================================
 
 Keep devtools cache-light (bounded, LRU):
-  - store “recently viewed records” + “pinned collections” locally
+  - store "recently viewed records" + "pinned collections" locally
   - cache record JSON for offline inspection (bounded by size + LRU)
 
 Tables:
@@ -106,12 +122,26 @@ Tables:
       id INTEGER PRIMARY KEY CHECK (id=1),
       enabled INTEGER NOT NULL,
       allowOtherRepos INTEGER NOT NULL,
-      maxCachedJsonBytes INTEGER NOT NULL
+      enableRecordEditing INTEGER NOT NULL,
+      maxCachedJsonBytes INTEGER NOT NULL,
+      showDebugFAB INTEGER NOT NULL
+  )
+- dev_network_logs(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      method TEXT NOT NULL,
+      url TEXT NOT NULL,
+      statusCode INTEGER,
+      durationMs INTEGER,
+      requestBody TEXT,
+      responseBody TEXT,
+      timestamp INTEGER NOT NULL
   )
 
 Indexes:
 - dev_recent_records(did, viewedAt DESC)
 - dev_recent_records(did, collection, viewedAt DESC)
+- dev_network_logs(timestamp DESC)
+- dev_network_logs(method, timestamp DESC)
 
 Rationale:
 - listRecords is already paged and cheap; caching is for "instant back" +
@@ -129,217 +159,51 @@ Providers:
   <DevtoolsRecordsController, RecordsState, (did, collection, filter)>
 - AsyncNotifierProviderFamily
   <DevtoolsRecordController, RecordState, (did, collection, rkey)>
+- StateNotifierProvider
+  <DebugOverlayController, DebugOverlayState> (internal debug mode only)
+- AsyncNotifierProvider
+  <NetworkInspectorNotifier, NetworkLogsState> (internal debug mode only)
 
 Routes:
-- /devtools
-- /devtools/repo/:did
-- /devtools/repo/:did/collections/:nsid
-- /devtools/repo/:did/collections/:nsid/records/:rkey
-- /devtools/record?uri=<at-uri>   (optional convenience)
+- /debug - Debug overlay home (system info + quick access) [kDebugMode only]
+- /debug/network - Network inspector [kDebugMode only]
+- /debug/performance - Performance metrics [kDebugMode only]
+- /devtools - ATProto DevTools home [production, gated by Settings toggle]
+- /devtools/:did/collections - Collections browser
+- /devtools/:did/:collection - Records list
+- /devtools/:did/:collection/:rkey - Record detail
 
 Gating:
-- Devtools routes hidden unless devtools.enabled == true.
-- On mobile: hide "Other DID" unless allowOtherRepos == true.
+- Debug overlay (/debug/*) only rendered when kDebugMode == true
+- DevTools routes (/devtools/*) gated by dev_settings.enabled toggle
+- "Other DID" inspection requires allowOtherRepos == true
+- Record editing requires enableRecordEditing == true + biometric auth
 
 ================================================================================
-Devtools - Record Explorer                                      *dev-record-exp*
+Implementation Notes                                                    *dev-imp*
 ================================================================================
-Developer Mode plumbing + entry points
---------------------------------------------------------------------------------
 
-Tasks (core):
-- [ ] Add Settings → "Developer Mode" toggle (persist in dev_settings).
-- [ ] Add hidden/advanced enable gesture (optional) mirroring Bluesky’s style:
-  long-press version number / build row to reveal dev toggle.
-- [ ] Add /devtools route group behind the toggle.
-- [ ] Add "Copy my DID" action (top of DevTools Home).
+For detailed task breakdown, see doc/roadmap.txt section M.5.
 
-Screens:
-- DevToolsHomePage
-  - shows: My DID, My PDS host, quick actions
-    (copy DID, open collections, recent)
-- DevToolsSettingsSection (inside SettingsPage)
+Key implementation patterns:
 
-Widgets:
-- DevtoolsGateBanner ("Developer mode is enabled" + disable button)
-- CopyIconButton (generic, reusable: copies value + toast)
-- LabeledValueRow (label + monospaced value + copy)
+Debug Overlay (kDebugMode only):
+- DebugOverlayHost wraps MaterialApp, only built when kDebugMode
+- GestureDetector for 2-finger long-press (mobile) + KeyboardListener for ALT+F12
+- DebugDrawer with tabs: System Info, ATProto Session, Network, Performance
+- DebugNetworkInterceptor captures XRPC calls via Dio
+- LRU eviction: 1000 logs in-memory, 24h in DB
 
-Tests:
-- [ ] Widget test: devtools routes hidden when disabled.
-- [ ] Provider test: dev_settings toggles drive navigation availability.
+User-Facing DevTools (production):
+- Settings → "Developer Tools" toggle persists in dev_settings table
+- DevToolsHomePage shows DID, PDS host, quick actions
+- Collections browser with search, pinning, rich previews
+- Records list with cursor pagination, filters
+- Record inspector with JSON tree, syntax highlighting, copy buttons
+- Write mode triple-gated: toggle + biometric + per-action confirmation
 
-Definition of done:
-- You can enable dev mode, navigate to DevTools Home, and copy your DID.
-
---------------------------------------------------------------------------------
-Repo overview + collections browser (describeRepo)
---------------------------------------------------------------------------------
-
-API tasks:
-- [ ] Implement com.atproto.repo.describeRepo client call.
-- [ ] Parse + display collections list (NSIDs).
-- [ ] Support repo selector:
-  - default: logged-in DID
-  - optional: input DID/handle if allowOtherRepos is enabled.
-
-Screens:
-- RepoOverviewPage (optional; can fold into DevToolsHomePage)
-- CollectionsPage(did)
-  - search field + pinned section + full list
-  - tap → RecordsPage(did, nsid)
-
-Widgets:
-- CollectionListTile (nsid + record count if available later)
-- PinButton (pin/unpin collection)
-- SearchField (Material 3, debounced)
-
-Storage tasks:
-- [ ] Persist pinned collections in dev_pins.
-
-Tests:
-- [ ] describeRepo response → collections sorted + filterable.
-- [ ] collections list renders long NSIDs without overflow.
-
-Definition of done:
-- Collections list is correct for your DID and navigates to record listing.
-
---------------------------------------------------------------------------------
-Record list (listRecords) with paging + filters
---------------------------------------------------------------------------------
-
-API tasks:
-- [ ] Implement com.atproto.repo.listRecords with cursor paging.
-- [ ] Implement list state:
-  - initial load
-  - load next page (cursor)
-  - refresh (reset cursor)
-- [ ] Add basic filters (client-side, MVP):
-  - rkey prefix filter
-  - "has blobs" (best-effort: scan record for blob refs)
-  - "recently changed" (if server provides timestamps in record view;
-    otherwise local)
-
-Screens:
-- [ ] RecordsPage(did, nsid)
-  - list with infinite scroll
-  - filter row (chips)
-  - item tap → RecordDetailPage
-
-Desktop enhancement:
-- [ ] RecordsPage becomes middle pane in split layout.
-
-Widgets:
-- [ ] RecordRow (rkey, uri, cid, compact preview)
-- [ ] CursorPagingFooter (loading / error / end)
-- [ ] FilterChipsRow
-- [ ] InlineRetryTile
-
-Storage tasks:
-- [ ] Add "recent record views" when user opens a record
-      (write dev_recent_records).
-
-Tests:
-- [ ] Provider tests: cursor progression + dedupe by (uri).
-- [ ] UI test: scrolling triggers next-page call exactly once per threshold.
-
-Definition of done:
-- You can scroll through records in a collection without duplicates and with
-  stable paging.
-
---------------------------------------------------------------------------------
-Record inspector (getRecord) + export/copy tooling
---------------------------------------------------------------------------------
-
-API tasks:
-- [ ] Implement com.atproto.repo.getRecord.
-- [ ] Support optional "cid" fetch (if user wants a specific version) when
-      available.
-- [ ] Add "Proof" panel (optional, behind advanced toggle):
-  com.atproto.sync.getRecord blocks fetch.
-
-Screens:
-- [ ] RecordDetailPage(did, nsid, rkey)
-  - Header: AT URI + CID + timestamps (if present)
-  - Body: JSON tree viewer
-  - Actions: copy URI/CID/JSON, export JSON, open external
-
-Desktop:
-- [ ] Right pane inspector with:
-  - JSON tree
-  - raw JSON tab
-  - "copy path" for selected JSON node (nice-to-have)
-
-Widgets:
-- [ ] JsonTreeView (collapsible nodes; must handle big objects)
-- [ ] InspectorHeader (monospace URI + quick-copy icons)
-- [ ] ExportButton (desktop: save file; mobile: share)
-- [ ] JsonSearchBar (search within JSON text; desktop-first)
-
-Storage tasks:
-- [ ] Cache JSON to dev_recent_records.json up to maxCachedJsonBytes, LRU evict.
-
-Tests:
-- [ ] large nested JSON renders with collapsible nodes.
-- [ ] export produces valid UTF-8 JSON and matches fetched payload.
-
-Definition of done:
-- Any record can be inspected, copied, and exported reliably on mobile and desktop.
-
---------------------------------------------------------------------------------
-Manage records (write mode) - desktop-first, gated
---------------------------------------------------------------------------------
-
-"Login to manage records in your repository"
-It is intentionally gated because it can brick user data if sloppy.
-
-Gate UX:
-- Toggle: "Enable record editing (dangerous)"
-- Require: biometric / device auth re-check (mobile) OR
-           typed confirmation phrase (desktop)
-- Scope: only logged-in DID (no editing other repos)
-
-API tasks:
-- [ ] Create: com.atproto.repo.createRecord (new rkey or server-generated).
-- [ ] Update/Upsert: com.atproto.repo.putRecord.
-- [ ] Delete: com.atproto.repo.deleteRecord.
-- [ ] Batch ops (advanced): com.atproto.repo.applyWrites (transaction).
-
-Screens:
-- [ ] RecordEditorPage
-  - JSON editor (text)
-  - validate / format
-  - dry-run diff preview (client-side)
-- [ ] ApplyWritesReviewDialog (shows creates/updates/deletes summary)
-
-Widgets:
-- [ ] JsonCodeEditor (desktop: code editor-like; mobile: basic text editor)
-- [ ] DiffViewer (desktop; minimal unified diff)
-- [ ] DangerousActionButton (explicit styling + confirm step)
-
-Tests:
-- [ ] Contract tests against a test PDS (or recorded fixtures):
-  - create → list shows new record
-  - put → get shows updated record
-  - delete → get fails / not found
-- [ ] Safety tests:
-  - cannot edit when gate is off
-  - cannot edit repo != logged-in DID
-
-Definition of done:
-- You can safely create/update/delete your own records with clear review UX.
-
---------------------------------------------------------------------------------
-Definition of Done
---------------------------------------------------------------------------------
-
-Read-only explorer is "done" when:
-- Dev mode toggles the entire feature set on/off.
-- Collections are discovered via describeRepo.
-- Records list is paged via listRecords with cursor.
-- Record inspector loads via getRecord and exports/copies correctly.
-- Desktop inspector + mobile drill-down both feel first-class (not "ported UI").
-
-Write mode is "done" when:
-- All mutation endpoints are wired with explicit gating and review UX.
-- No accidental cross-repo editing is possible.
+Security:
+- Never log or display access tokens, refresh tokens, or DPoP keys
+- Redact Authorization headers in network logs (show "Bearer ***")
+- Defensive JSON rendering: limit depth to 50 levels, truncate long strings
+- Write mode scoped to logged-in DID only (no editing other repos)

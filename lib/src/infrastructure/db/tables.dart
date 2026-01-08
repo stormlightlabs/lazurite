@@ -459,3 +459,103 @@ class NotificationCursors extends Table {
   @override
   Set<Column> get primaryKey => {feedKey};
 }
+
+/// Stores direct message conversations from chat.bsky.convo.listConvos.
+///
+/// Caches conversation metadata for offline display and efficient querying.
+/// Member profiles are stored separately in Profiles table.
+class DmConvos extends Table {
+  /// Conversation ID (unique identifier from API).
+  TextColumn get convoId => text()();
+
+  /// JSON array of participant DIDs.
+  TextColumn get membersJson => text()();
+
+  /// Preview text from the last message.
+  TextColumn get lastMessageText => text().nullable()();
+
+  /// Timestamp of the last message.
+  DateTimeColumn get lastMessageAt => dateTime().nullable()();
+
+  /// ID of the last message the user has read.
+  TextColumn get lastReadMessageId => text().nullable()();
+
+  /// Number of unread messages.
+  IntColumn get unreadCount => integer().withDefault(const Constant(0))();
+
+  /// Whether the conversation is muted.
+  BoolColumn get isMuted => boolean().withDefault(const Constant(false))();
+
+  /// Whether the conversation request has been accepted.
+  BoolColumn get isAccepted => boolean().withDefault(const Constant(true))();
+
+  /// When this conversation was cached locally.
+  DateTimeColumn get cachedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {convoId};
+}
+
+/// Stores direct messages from chat.bsky.convo.getMessages.
+///
+/// Caches message content for offline display. Sender profiles are
+/// stored separately in Profiles table and joined via senderDid.
+@TableIndex(name: 'dm_messages_convo_idx', columns: {#convoId, #sentAt})
+class DmMessages extends Table {
+  /// Message ID (unique identifier from API).
+  TextColumn get messageId => text()();
+
+  /// Conversation this message belongs to.
+  TextColumn get convoId => text()();
+
+  /// DID of the message sender.
+  TextColumn get senderDid => text().references(Profiles, #did)();
+
+  /// Message text content.
+  TextColumn get content => text()();
+
+  /// When the message was sent.
+  DateTimeColumn get sentAt => dateTime()();
+
+  /// Message status: sent, read, deleted.
+  TextColumn get status => text()();
+
+  /// When this message was cached locally.
+  DateTimeColumn get cachedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {messageId};
+}
+
+/// Stores pending message sends for reliable offline delivery.
+///
+/// Messages are queued here before sending, allowing retry on failure
+/// and ensuring messages are never lost. Uses exponential backoff for retries.
+class DmOutbox extends Table {
+  /// Local UUID for this outbox item.
+  TextColumn get outboxId => text()();
+
+  /// Conversation to send the message to.
+  TextColumn get convoId => text()();
+
+  /// Message text content.
+  TextColumn get messageText => text()();
+
+  /// Status: pending, sending, failed.
+  TextColumn get status => text()();
+
+  /// Number of send attempts.
+  IntColumn get retryCount => integer().withDefault(const Constant(0))();
+
+  /// When the message was queued.
+  DateTimeColumn get createdAt => dateTime()();
+
+  /// When the last send attempt was made.
+  DateTimeColumn get lastAttemptAt => dateTime().nullable()();
+
+  /// Error message from the last failed attempt.
+  TextColumn get errorMessage => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {outboxId};
+}

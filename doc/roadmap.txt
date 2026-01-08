@@ -1,77 +1,6 @@
 *roadmap.txt*                         Material You Bluesky Client (Flutter/Dart)
 
 ================================================================================
-L. Notifications                                                        *bsky-L*
-================================================================================
-
-Endpoints (all registered):
-- app.bsky.notification.listNotifications (GET)
-- app.bsky.notification.getUnreadCount (GET)
-- app.bsky.notification.updateSeen (POST)
-
-Phase 1: Core Notification Display
-- [x] Drift tables:
-      - Notifications (uri, actorDid, type, reasonJson, reasonSubjectUri,
-        indexedAt, isRead, seenAt, cachedAt)
-      - NotificationCursors (feedKey, cursor)
-- [x] Domain models:
-      - Notification, NotificationType enum, Reason
-- [x] NotificationsRepository:
-      - fetchNotifications with cursor pagination
-      - watchNotifications stream from cache
-      - parse API responses and join with Profiles
-- [x] NotificationsNotifier:
-      - AsyncNotifier with pagination support
-      - refresh() and loadMore() methods
-- [x] NotificationsScreen:
-      - list display with pull-to-refresh
-      - infinite scroll with cursor-based pagination
-      - tap navigation to thread/profile
-- [x] Widgets:
-      - NotificationListItem (actor, type icon, content preview, timestamp)
-      - NotificationTypeIcon (like, repost, follow, mention, reply, quote)
-
-Phase 2: Unread Count and Mark as Seen
-- [x] UnreadCountNotifier:
-      - watchUnreadCount stream
-      - refresh from getUnreadCount API
-- [x] UnreadBadge widget:
-      - display count on tab icon
-      - hide when zero, show "99+" for large counts
-- [x] Mark as seen:
-      - viewport-based detection (scroll into view)
-      - batch updateSeen API calls (every 2s or 10 notifications)
-      - optimistic local cache updates
-      - offline queue for sync when online
-- [x] Mark all as read action in app bar
-
-Phase 3: Notification Grouping and Polish
-- [x] GroupedNotification model and grouping algorithm
-- [x] GroupedNotificationItem widget (actor list, "and N others")
-      - [x] Expand/collapse for grouped notifications
-      - [x] Empty state illustration
-      - [x] Loading states and skeleton screens
-      - [x] Relative timestamps ("2h ago")
-
-Tests:
-- [x] Repository: fetch, parse, cache, pagination
-- [x] Notifier: state transitions, refresh, load more
-- [x] Grouping algorithm with various notification types
-- [x] Mark as seen batching and offline queue
-- [x] Unread count updates
-- [x] Widget tests: list, items, badges
-- [x] Integration: fetch → display → tap → navigate
-- [x] Offline: cached display, queued seen state sync
-
-Deliverables:
-- [x] Notifications tab functional with real data
-- [x] Unread badge in tab navigation
-- [x] Smooth pagination and pull-to-refresh
-- [x] Mark as seen syncs to Bluesky
-- [x] Notification grouping for compact display
-- [x] Deep linking to threads and profiles
-
-================================================================================
 M. DMs (read + write) + outbox + read-state                             *bsky-M*
 ================================================================================
 
@@ -90,29 +19,29 @@ Endpoints (all registered):
 - chat.bsky.convo.updateRead (POST)
 
 Phase 1: Data Layer and API Integration
-- [ ] Drift tables:
+- [x] Drift tables:
       - DmConvos (convoId, membersJson, lastMessageText, lastMessageAt,
         lastReadMessageId, unreadCount, isMuted, isAccepted, cachedAt)
-      - DmMessages (messageId, convoId, senderDid, text, sentAt, status, cachedAt)
-      - DmOutbox (outboxId, convoId, text, status, retryCount, createdAt,
+      - DmMessages (messageId, convoId, senderDid, content, sentAt, status, cachedAt)
+      - DmOutbox (outboxId, convoId, messageText, status, retryCount, createdAt,
         lastAttemptAt, errorMessage)
-- [ ] DAOs:
+- [x] DAOs:
       - DmConvosDao (CRUD, watch stream, update read state)
       - DmMessagesDao (CRUD, watch by convoId, update status)
       - DmOutboxDao (CRUD, watch pending, update retry count)
-- [ ] Domain models:
+- [x] Domain models:
       - DmConversation (with computed properties for UI)
-      - DmMessage (with delivery status enum)
+      - AppDmMessage (with delivery status enum)
       - OutboxItem (with retry logic methods)
-- [ ] DmsRepository:
+- [x] DmsRepository:
       - fetchConversations with cursor pagination
       - watchConversations stream from cache
       - fetchMessages with cursor pagination
       - watchMessages stream by convoId
       - acceptConversation API call
       - updateReadState API call
-      - inject `atproto-proxy: did:web:api.bsky.chat#bsky_chat` header
-- [ ] OutboxRepository:
+      - inject `atproto-proxy` header (via ProxyInterceptor)
+- [x] OutboxRepository:
       - enqueueSend (persist to outbox + display optimistically)
       - processOutbox (sequential per-convo processing)
       - retryMessage (user-initiated retry)
@@ -252,10 +181,90 @@ Deliverables:
 - [ ] Offline messages queue and sync
 - [ ] Proxy header injected correctly
 - [ ] Performance acceptable with 100+ conversations
-- [ ] Test coverage exceeds 95%
 
 ================================================================================
-N. Hardening (mobile)                                                   *bsky-N*
+N. Developer Tools & Repository Inspector                               *bsky-N*
+================================================================================
+
+Context:
+- Two distinct features: (1) Internal debug mode (kDebugMode only) for dev
+  diagnostics, and (2) User-facing DevTools (production builds)
+- Internal debug overlay provides system info, network inspector, performance
+  metrics during development.
+- User-facing devtools allow users to explore their ATProto repository, inspect
+  records, and understand underlying data structure.
+
+Phase 0: Internal Debug Mode Foundation (kDebugMode only)
+- [ ] Create DebugOverlayHost widget (wraps MaterialApp, kDebugMode gated)
+- [ ] Implement gesture detection: 2-finger long-press + ALT+F12 shortcut
+- [ ] Build DebugDrawer with tabs: System Info, ATProto Session, Network, Performance
+- [ ] System Info Tab: Flutter version, platform, screen size, memory, FPS
+- [ ] ATProto Session Tab: DID, handle, PDS host, session status (no tokens)
+- [ ] Create DebugNetworkInterceptor for Dio to log XRPC calls
+- [ ] Network Inspector Tab: display last 20 XRPC calls, expandable bodies
+- [ ] Add dev_network_logs table with LRU eviction (1000 in-memory, 24h in DB)
+- [ ] Add dev_settings table (debugModeEnabled, allowOtherRepos, etc.)
+
+Phase 1: User-Facing DevTools Entry Points (Production builds)
+- [ ] Add Settings → "Developer Tools" toggle (works in release builds)
+- [ ] Create /devtools route group (always available, not kDebugMode gated)
+- [ ] DevToolsHomePage: show DID, PDS host, quick actions
+- [ ] "Copy my DID" action
+- [ ] Link debug overlay to full DevTools (/devtools routes)
+- [ ] Add dev_pins table for pinned collections/records
+- [ ] Add dev_recent_records table for LRU cache
+
+Phase 2: Repository Browser (Read-Only)
+- [ ] Implement DevtoolsRepository wrapping XrpcClient
+- [ ] com.atproto.repo.describeRepo: list collections for a DID
+- [ ] CollectionsPage: search, pin/unpin, tap to view records
+- [ ] com.atproto.repo.listRecords: cursor-based pagination
+- [ ] RecordsPage: infinite scroll, filters (rkey prefix, date, blob presence)
+- [ ] Rich preview cards for known record types (post, profile, follow)
+- [ ] Fallback JSON tree for unknown types
+
+Phase 3: Record Inspector
+- [ ] com.atproto.repo.getRecord: fetch single record
+- [ ] RecordDetailPage: JSON tree viewer with collapsible nodes
+- [ ] Syntax highlighting for JSON
+- [ ] Copy buttons at every level (URI, CID, path values)
+- [ ] Metadata header: AT URI, CID, indexedAt
+- [ ] Inline blob display (images/videos)
+- [ ] Export actions: JSON file, share sheet
+
+Phase 4: Write Mode (Triple-Gated, Optional)
+- [ ] Settings toggle: "Enable record editing (dangerous)"
+- [ ] Biometric/device auth required before enabling
+- [ ] RecordEditorPage: JSON text editor with validation
+- [ ] com.atproto.repo.createRecord: create new records
+- [ ] com.atproto.repo.putRecord: update existing records
+- [ ] com.atproto.repo.deleteRecord: delete with typed confirmation
+- [ ] Diff preview for updates
+- [ ] Batch operations UI: com.atproto.repo.applyWrites with review
+
+Tests:
+- [ ] Widget test: debug overlay hidden in release mode (when not manually enabled)
+- [ ] Widget test: 2-finger long-press shows overlay in kDebugMode
+- [ ] Integration test: network interceptor logs XRPC calls
+- [ ] Unit test: describeRepo, listRecords, getRecord parse correctly
+- [ ] Provider test: collectionsProvider fetches and caches
+- [ ] Provider test: recordsProvider paginates without duplicates
+- [ ] Security test: tokens never logged or displayed
+- [ ] Security test: record editing disabled when gates are off
+- [ ] Security test: cannot edit other users' repos
+
+Deliverables:
+- [ ] Internal debug overlay (kDebugMode only) with system info, network logs
+- [ ] User-facing DevTools (production) for repository inspection
+- [ ] Collections browser with search and pinning
+- [ ] Records list with rich previews and pagination
+- [ ] Record inspector with JSON tree and metadata
+- [ ] Write mode (optional, triple-gated) for "power users"
+- [ ] Desktop 3-pane layout and mobile drill-down both feel first-class
+- [ ] UI is transparent, "power-user" focused
+
+================================================================================
+O. Hardening (mobile)                                                   *bsky-O*
 ================================================================================
 
 Phase 1: Code Quality and Architecture
@@ -379,7 +388,7 @@ Initial Release (Lazurite-0.1.0-alpha)
 *todo*
 
 ================================================================================
-O. Smart folders (local-only saved views)                               *bsky-O*
+P. Smart folders (local-only saved views)                               *bsky-P*
 ================================================================================
 
 Definition:
@@ -409,7 +418,7 @@ Deliverables:
 - "Saved views" that feel like feeds, entirely local and fast.
 
 ================================================================================
-P. Desktop pass                                                         *bsky-P*
+Q. Desktop pass                                                         *bsky-Q*
 ================================================================================
 
 Tasks:
@@ -435,7 +444,7 @@ Deliverables:
 - Desktop build that is genuinely usable (not just "it runs").
 
 ================================================================================
-Q. Push Notification Backend                                            *bsky-Q*
+R. Push Notification Backend                                            *bsky-R*
 ================================================================================
 
 Context:

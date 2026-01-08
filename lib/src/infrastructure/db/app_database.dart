@@ -21,6 +21,9 @@ import 'daos/search_cache_dao.dart';
 import 'daos/search_dao.dart';
 import 'daos/notifications_dao.dart';
 import 'daos/notifications_sync_queue_dao.dart';
+import 'daos/dm_convos_dao.dart';
+import 'daos/dm_messages_dao.dart';
+import 'daos/dm_outbox_dao.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -49,6 +52,9 @@ part 'app_database.g.dart';
     Notifications,
     NotificationCursors,
     NotificationsSyncQueue,
+    DmConvos,
+    DmMessages,
+    DmOutbox,
   ],
   daos: [
     FeedContentDao,
@@ -67,6 +73,9 @@ part 'app_database.g.dart';
     AnimationPreferencesDao,
     NotificationsDao,
     NotificationsSyncQueueDao,
+    DmConvosDao,
+    DmMessagesDao,
+    DmOutboxDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
