@@ -23,11 +23,11 @@ Phase 1: Core Notification Display
 - [x] NotificationsNotifier:
       - AsyncNotifier with pagination support
       - refresh() and loadMore() methods
-- [ ] NotificationsScreen:
+- [x] NotificationsScreen:
       - list display with pull-to-refresh
       - infinite scroll with cursor-based pagination
       - tap navigation to thread/profile
-- [ ] Widgets:
+- [x] Widgets:
       - NotificationListItem (actor, type icon, content preview, timestamp)
       - NotificationTypeIcon (like, repost, follow, mention, reply, quote)
 

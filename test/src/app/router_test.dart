@@ -21,6 +21,7 @@ import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_con
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
+import 'package:lazurite/src/features/notifications/application/notifications_providers.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
@@ -38,6 +39,7 @@ void main() {
   late MockProfileRepository mockProfileRepository;
   late MockAppDatabase mockDatabase;
   late MockFeedContentRepository mockFeedContentRepository;
+  late MockNotificationsRepository mockNotificationsRepository;
   late Session testSession;
 
   setUp(() {
@@ -46,6 +48,15 @@ void main() {
     mockProfileRepository = MockProfileRepository();
     mockDatabase = MockAppDatabase();
     mockFeedContentRepository = MockFeedContentRepository();
+    mockNotificationsRepository = MockNotificationsRepository();
+    when(
+      () => mockNotificationsRepository.watchNotifications(),
+    ).thenAnswer((_) => Stream.value([]));
+    when(() => mockNotificationsRepository.getCursor()).thenAnswer((_) async => null);
+    when(
+      () => mockNotificationsRepository.fetchNotifications(cursor: any(named: 'cursor')),
+    ).thenAnswer((_) async {});
+    when(() => mockNotificationsRepository.fetchNotifications()).thenAnswer((_) async {});
     testSession = Session(
       did: 'did:web:test',
       handle: 'handle',
@@ -100,6 +111,7 @@ void main() {
       activeFeedProvider.overrideWith(() => MockActiveFeed()),
       draftsProvider.overrideWith((ref) => Stream.value([])),
       lazurite_anim.animationControllerProvider.overrideWith(MockAnimationController.new),
+      notificationsRepositoryProvider.overrideWithValue(mockNotificationsRepository),
     ];
   }
 
@@ -189,7 +201,7 @@ void main() {
 
       await tester.tap(find.text('Notifications'));
       await tester.pumpAndSettle();
-      expect(find.text('Your notifications will appear here'), findsOneWidget);
+      expect(find.text('No notifications yet'), findsOneWidget);
 
       await tester.tap(find.text('Home'));
       await tester.pumpAndSettle();
