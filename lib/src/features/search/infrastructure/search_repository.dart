@@ -257,6 +257,17 @@ class SearchRepository {
 
 /// An actor (user) from search results.
 class SearchActorItem {
+  SearchActorItem({
+    required this.did,
+    required this.handle,
+    this.displayName,
+    this.description,
+    this.avatar,
+    this.followersCount = 0,
+    this.followsCount = 0,
+    this.indexedAt,
+    this.allowIncoming,
+  });
   factory SearchActorItem.fromJson(Map<String, dynamic> json) {
     final did = json['did'];
     final handle = json['handle'];
@@ -277,19 +288,23 @@ class SearchActorItem {
       followersCount: json['followersCount'] as int? ?? 0,
       followsCount: json['followsCount'] as int? ?? 0,
       indexedAt: DateTime.tryParse(json['indexedAt'] as String? ?? ''),
+      allowIncoming: _parseAllowIncoming(json),
     );
   }
 
-  SearchActorItem({
-    required this.did,
-    required this.handle,
-    this.displayName,
-    this.description,
-    this.avatar,
-    this.followersCount = 0,
-    this.followsCount = 0,
-    this.indexedAt,
-  });
+  static String? _parseAllowIncoming(Map<String, dynamic> json) {
+    // associated.chat.allowIncoming
+    // It can be 'all', 'following', or 'none'.
+    // If associated is missing, we default to null (unknown).
+    final associated = json['associated'];
+    if (associated is Map<String, dynamic>) {
+      final chat = associated['chat'];
+      if (chat is Map<String, dynamic>) {
+        return chat['allowIncoming'] as String?;
+      }
+    }
+    return null;
+  }
 
   final String did;
   final String handle;
@@ -299,4 +314,5 @@ class SearchActorItem {
   final int followersCount;
   final int followsCount;
   final DateTime? indexedAt;
+  final String? allowIncoming;
 }

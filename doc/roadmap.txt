@@ -49,20 +49,20 @@ Phase 1: Data Layer and API Integration
       - atomic operations: outbox insert + message display, outbox delete + ack
 
 Phase 2: Conversation List Screen
-- [ ] ConversationListScreen:
+- [x] ConversationListScreen:
       - display conversations sorted by lastMessageAt
       - pull-to-refresh for new conversations
       - pagination with cursor support
       - separate "Requests" section for unaccepted convos
       - tap to open conversation detail
       - empty state when no conversations
-- [ ] ConversationListItem widget:
+- [x] ConversationListItem widget:
       - participant avatar and display name
       - last message preview (first line)
       - timestamp (relative, e.g., "2h ago")
       - unread indicator (dot or badge with count)
       - message request indicator if not accepted
-- [ ] ConversationListNotifier:
+- [x] ConversationListNotifier:
       - watchConversations stream
       - refresh() and loadMore() methods
       - acceptConversation() action
@@ -159,8 +159,8 @@ Tests:
       - enqueue multiple → process in order → preserve ordering
       - double-send prevention: send in progress → don't send again
 - [ ] DAOs: CRUD operations, streams, queries
-- [ ] Notifiers: state transitions, refresh, load more
-- [ ] Widget tests: list items, message bubbles, composer, delivery status
+- [x] Notifiers: state transitions, refresh, load more
+- [x] Widget tests: list items, message bubbles, composer, delivery status
 - [ ] Integration tests:
       - fetch convos → display → tap → open detail
       - compose → send → outbox → server → display
@@ -170,8 +170,8 @@ Tests:
 - [ ] Offline scenarios: compose offline, send when online, display cached
 
 Deliverables:
-- [ ] Conversation list functional with unread indicators
-- [ ] Message requests require acceptance
+- [x] Conversation list functional with unread indicators
+- [x] Message requests require acceptance
 - [ ] Conversation detail with message history
 - [ ] Compose and send text messages
 - [ ] Outbox ensures reliable delivery (never lose messages)

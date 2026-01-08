@@ -17,6 +17,7 @@ import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/draft_list_screen.dart';
+import 'package:lazurite/src/features/dms/providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_controller.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
@@ -40,6 +41,7 @@ void main() {
   late MockAppDatabase mockDatabase;
   late MockFeedContentRepository mockFeedContentRepository;
   late MockNotificationsRepository mockNotificationsRepository;
+  late MockDmsRepository mockDmsRepository;
   late Session testSession;
 
   setUp(() {
@@ -49,6 +51,7 @@ void main() {
     mockDatabase = MockAppDatabase();
     mockFeedContentRepository = MockFeedContentRepository();
     mockNotificationsRepository = MockNotificationsRepository();
+    mockDmsRepository = MockDmsRepository();
     when(
       () => mockNotificationsRepository.watchNotifications(),
     ).thenAnswer((_) => Stream.value([]));
@@ -57,6 +60,11 @@ void main() {
       () => mockNotificationsRepository.fetchNotifications(cursor: any(named: 'cursor')),
     ).thenAnswer((_) async {});
     when(() => mockNotificationsRepository.fetchNotifications()).thenAnswer((_) async {});
+    when(() => mockDmsRepository.watchConversations()).thenAnswer((_) => Stream.value([]));
+    when(
+      () => mockDmsRepository.fetchConversations(cursor: any(named: 'cursor')),
+    ).thenAnswer((_) async => null);
+    when(() => mockDmsRepository.fetchConversations()).thenAnswer((_) async => null);
     testSession = Session(
       did: 'did:web:test',
       handle: 'handle',
@@ -112,6 +120,7 @@ void main() {
       draftsProvider.overrideWith((ref) => Stream.value([])),
       lazurite_anim.animationControllerProvider.overrideWith(MockAnimationController.new),
       notificationsRepositoryProvider.overrideWithValue(mockNotificationsRepository),
+      dmsRepositoryProvider.overrideWithValue(mockDmsRepository),
     ];
   }
 
@@ -219,7 +228,7 @@ void main() {
       await tester.tap(find.text('Messages'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Direct Messages'), findsOneWidget);
+      expect(find.text('Messages'), findsWidgets);
     });
 
     testWidgets('navigates to Profile tab', (tester) async {

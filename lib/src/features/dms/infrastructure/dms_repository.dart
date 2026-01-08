@@ -282,6 +282,54 @@ class DmsRepository {
     }
   }
 
+  /// Mutes a conversation.
+  Future<void> muteConversation(String convoId) async {
+    _logger.info('Muting conversation', {'convoId': convoId});
+
+    try {
+      await _client.call('chat.bsky.convo.muteConvo', body: {'convoId': convoId});
+
+      await _convosDao.muteConvo(convoId, isMuted: true);
+
+      _logger.debug('Successfully muted conversation', {});
+    } catch (error, stack) {
+      _logger.error('Failed to mute conversation', error, stack);
+      rethrow;
+    }
+  }
+
+  /// Unmutes a conversation.
+  Future<void> unmuteConversation(String convoId) async {
+    _logger.info('Unmuting conversation', {'convoId': convoId});
+
+    try {
+      await _client.call('chat.bsky.convo.unmuteConvo', body: {'convoId': convoId});
+
+      await _convosDao.muteConvo(convoId, isMuted: false);
+
+      _logger.debug('Successfully unmuted conversation', {});
+    } catch (error, stack) {
+      _logger.error('Failed to unmute conversation', error, stack);
+      rethrow;
+    }
+  }
+
+  /// Leaves a conversation.
+  Future<void> leaveConversation(String convoId) async {
+    _logger.info('Leaving conversation', {'convoId': convoId});
+
+    try {
+      await _client.call('chat.bsky.convo.leaveConvo', body: {'convoId': convoId});
+
+      await _convosDao.deleteConvo(convoId);
+
+      _logger.debug('Successfully left conversation', {});
+    } catch (error, stack) {
+      _logger.error('Failed to leave conversation', error, stack);
+      rethrow;
+    }
+  }
+
   /// Clears all cached conversations and messages.
   Future<void> clearAll() async {
     await _messagesDao.clearMessages();

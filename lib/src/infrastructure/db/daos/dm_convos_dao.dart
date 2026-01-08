@@ -26,9 +26,11 @@ class DmConvosDao extends DatabaseAccessor<AppDatabase> with _$DmConvosDaoMixin 
     });
   }
 
-  /// Gets a stream of all conversations sorted by last message time.
-  Stream<List<DmConvoWithMembers>> watchConversations() {
-    return select(dmConvos).watch().asyncMap((convos) async {
+  /// Gets a stream of all conversations sorted by last message time for a specific user.
+  Stream<List<DmConvoWithMembers>> watchConversations(String ownerDid) {
+    return (select(dmConvos)..where((t) => t.ownerDid.equals(ownerDid))).watch().asyncMap((
+      convos,
+    ) async {
       final result = <DmConvoWithMembers>[];
       for (final convo in convos) {
         final memberDids = _parseMemberDids(convo.membersJson);
@@ -54,10 +56,10 @@ class DmConvosDao extends DatabaseAccessor<AppDatabase> with _$DmConvosDaoMixin 
   }
 
   /// Gets a single conversation by ID.
-  Future<DmConvoWithMembers?> getConvo(String convoId) async {
+  Future<DmConvoWithMembers?> getConvo(String convoId, String ownerDid) async {
     final convo = await (select(
       dmConvos,
-    )..where((c) => c.convoId.equals(convoId))).getSingleOrNull();
+    )..where((c) => c.convoId.equals(convoId) & c.ownerDid.equals(ownerDid))).getSingleOrNull();
     if (convo == null) return null;
 
     final memberDids = _parseMemberDids(convo.membersJson);
@@ -69,10 +71,13 @@ class DmConvosDao extends DatabaseAccessor<AppDatabase> with _$DmConvosDaoMixin 
   /// Updates the read state for a conversation.
   Future<void> updateReadState({
     required String convoId,
+    required String ownerDid,
     required String lastReadMessageId,
     required int unreadCount,
   }) async {
-    await (update(dmConvos)..where((c) => c.convoId.equals(convoId))).write(
+    await (update(
+      dmConvos,
+    )..where((c) => c.convoId.equals(convoId) & c.ownerDid.equals(ownerDid))).write(
       DmConvosCompanion(
         lastReadMessageId: Value(lastReadMessageId),
         unreadCount: Value(unreadCount),
@@ -83,10 +88,13 @@ class DmConvosDao extends DatabaseAccessor<AppDatabase> with _$DmConvosDaoMixin 
   /// Updates the last message preview for a conversation.
   Future<void> updateLastMessage({
     required String convoId,
+    required String ownerDid,
     required String? lastMessageText,
     required DateTime? lastMessageAt,
   }) async {
-    await (update(dmConvos)..where((c) => c.convoId.equals(convoId))).write(
+    await (update(
+      dmConvos,
+    )..where((c) => c.convoId.equals(convoId) & c.ownerDid.equals(ownerDid))).write(
       DmConvosCompanion(
         lastMessageText: Value(lastMessageText),
         lastMessageAt: Value(lastMessageAt),
@@ -96,15 +104,27 @@ class DmConvosDao extends DatabaseAccessor<AppDatabase> with _$DmConvosDaoMixin 
   }
 
   /// Marks a conversation as accepted.
-  Future<void> acceptConvo(String convoId) async {
-    await (update(dmConvos)..where((c) => c.convoId.equals(convoId))).write(
-      const DmConvosCompanion(isAccepted: Value(true)),
-    );
+  Future<void> acceptConvo(String convoId, String ownerDid) async {
+    await (update(dmConvos)..where((c) => c.convoId.equals(convoId) & c.ownerDid.equals(ownerDid)))
+        .write(const DmConvosCompanion(isAccepted: Value(true)));
   }
 
-  /// Clears all cached conversations.
-  Future<void> clearConversations() async {
-    await delete(dmConvos).go();
+  /// Mutes or unmutes a conversation.
+  Future<void> muteConvo(String convoId, String ownerDid, {required bool isMuted}) async {
+    await (update(dmConvos)..where((c) => c.convoId.equals(convoId) & c.ownerDid.equals(ownerDid)))
+        .write(DmConvosCompanion(isMuted: Value(isMuted)));
+  }
+
+  /// Deletes a conversation from the cache.
+  Future<void> deleteConvo(String convoId, String ownerDid) async {
+    await (delete(
+      dmConvos,
+    )..where((c) => c.convoId.equals(convoId) & c.ownerDid.equals(ownerDid))).go();
+  }
+
+  /// Clears all cached conversations for a specific user.
+  Future<void> clearConversations(String ownerDid) async {
+    await (delete(dmConvos)..where((c) => c.ownerDid.equals(ownerDid))).go();
   }
 
   /// Parses member DIDs from JSON array string.

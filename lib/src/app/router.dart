@@ -10,7 +10,7 @@ import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/draft_list_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/draft_recovery_listener.dart';
-import 'package:lazurite/src/features/dms/presentation/dms_screen.dart';
+import 'package:lazurite/src/features/dms/presentation/conversation_list_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_screen.dart';
@@ -132,8 +132,15 @@ GoRouter createRouter(Ref ref) {
               GoRoute(
                 path: AppRoutes.search,
                 name: AppRouteNames.search,
-                builder: (context, state) =>
-                    SearchScreen(initialQuery: state.uri.queryParameters['q']),
+                builder: (context, state) {
+                  final initialQuery = state.uri.queryParameters['q'];
+                  // If type is 'people', set tab index to 1.
+                  final initialTabIndex = state.uri.queryParameters['type'] == 'people' ? 1 : 0;
+                  return SearchScreen(
+                    initialQuery: initialQuery,
+                    initialTabIndex: initialTabIndex,
+                  );
+                },
                 routes: [
                   GoRoute(
                     path: 't/:uri',
@@ -199,7 +206,7 @@ GoRouter createRouter(Ref ref) {
               GoRoute(
                 path: AppRoutes.dms,
                 name: AppRouteNames.dms,
-                builder: (context, state) => const DmsScreen(),
+                builder: (context, state) => const ConversationListScreen(),
                 routes: [
                   GoRoute(
                     path: AppRoutes.convo,

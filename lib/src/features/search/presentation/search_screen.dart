@@ -15,10 +15,13 @@ import 'package:lazurite/src/features/search/presentation/widgets/search_bar_wid
 /// Search screen with search input, recent searches, and results.
 class SearchScreen extends ConsumerStatefulWidget {
   /// Creates a search screen.
-  const SearchScreen({this.initialQuery, super.key});
+  const SearchScreen({this.initialQuery, this.initialTabIndex = 0, super.key});
 
   /// Optional initial query from route.
   final String? initialQuery;
+
+  /// Optional initial tab index (0 for Posts, 1 for People).
+  final int initialTabIndex;
 
   @override
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
@@ -38,7 +41,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this, initialIndex: widget.initialTabIndex);
     if (widget.initialQuery != null) {
       _currentQuery = widget.initialQuery!;
       _debouncedQuery = widget.initialQuery!;
@@ -535,6 +538,21 @@ class _ActorSearchResultCard extends StatelessWidget {
                           color: theme.colorScheme.onSurface.withAlpha(153),
                         ),
                       ),
+                      if (actor.allowIncoming != null && actor.allowIncoming != 'none') ...[
+                        const SizedBox(width: 8),
+                        Tooltip(
+                          message: actor.allowIncoming == 'all'
+                              ? 'Open to DMs'
+                              : 'DMs allowed from followers',
+                          child: Icon(
+                            actor.allowIncoming == 'all'
+                                ? Icons.mail_outline
+                                : Icons.mark_email_read_outlined,
+                            size: 14,
+                            color: theme.colorScheme.primary.withAlpha(200),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],

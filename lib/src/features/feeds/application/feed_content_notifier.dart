@@ -38,8 +38,6 @@ class FeedContentNotifier extends _$FeedContentNotifier {
     logger.debug('Watching feed content stream', {'feedKey': feedKey, 'feedUri': feedUri});
 
     return repository.watchFeedContent(feedKey: feedKey).map((items) {
-      logger.debug('Stream emitted', {'itemCount': items.length, 'feedKey': feedKey});
-
       final pref = feedViewPref.maybeWhen(
         data: (data) => data,
         orElse: () => FeedViewPref.defaultPref,
@@ -50,10 +48,6 @@ class FeedContentNotifier extends _$FeedContentNotifier {
         filtered = _applyMutedWordFilter(filtered, mutedWordFilter);
       }
 
-      logger.debug('After filtering', {
-        'originalCount': items.length,
-        'filteredCount': filtered.length,
-      });
       return filtered;
     });
   }
