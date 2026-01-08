@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/routes.dart';
+import 'package:lazurite/src/core/animations/animation_utils.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
@@ -82,12 +83,16 @@ class FeedSelectorTab extends ConsumerWidget {
                 return Stack(
                   alignment: Alignment.center,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.tune),
-                      tooltip: 'Manage Feeds',
-                      onPressed: () {
-                        context.push(AppRoutes.feeds);
-                      },
+                    Tooltip(
+                      message: 'Manage Feeds',
+                      child: ScaleButton(
+                        child: IconButton(
+                          icon: const Icon(Icons.tune),
+                          onPressed: () {
+                            context.push(AppRoutes.feeds);
+                          },
+                        ),
+                      ),
                     ),
                     Consumer(
                       builder: (context, ref, child) {

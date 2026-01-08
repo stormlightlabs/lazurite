@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/app/theming/packs/oxocarbon_theme_pack.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('ThemeFactory integration via oxocarbon variants', () {
     group('oxocarbonDarkVariant ColorScheme', () {
       late ColorScheme cs;

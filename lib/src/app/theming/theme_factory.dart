@@ -10,17 +10,35 @@ import 'package:lazurite/src/app/theming/theme_variant.dart';
 abstract final class ThemeFactory {
   /// Builds a complete [ThemeData] from a [ThemeVariant].
   ///
-  /// The resulting theme uses Material 3 design with all component themes
-  /// derived from the variant's [ColorScheme] roles.
+  /// The resulting theme uses Material 3 design with all component themes derived from the
+  /// variant's [ColorScheme] roles.
   static ThemeData buildThemeData(ThemeVariant variant) {
-    final colorScheme = variant.derivedScheme;
+    return _buildThemeDataFromScheme(
+      variant.derivedScheme,
+      variant.brightness,
+      variant.spec.surfaceDim,
+    );
+  }
+
+  /// Builds a complete [ThemeData] directly from a [ColorScheme].
+  ///
+  /// Used for dynamic colors where we don't have a [ThemeVariant].
+  static ThemeData buildThemeDataFromScheme(ColorScheme scheme) {
+    return _buildThemeDataFromScheme(scheme, scheme.brightness, null);
+  }
+
+  static ThemeData _buildThemeDataFromScheme(
+    ColorScheme colorScheme,
+    Brightness brightness,
+    Color? scaffoldBackgroundColor,
+  ) {
     final textTheme = _buildTextTheme(colorScheme.onSurface);
 
     return ThemeData(
       useMaterial3: true,
-      brightness: variant.brightness,
+      brightness: brightness,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: variant.spec.surfaceDim ?? colorScheme.surface,
+      scaffoldBackgroundColor: scaffoldBackgroundColor ?? colorScheme.surface,
       textTheme: textTheme,
       appBarTheme: _buildAppBarTheme(colorScheme, textTheme),
       navigationBarTheme: _buildNavigationBarTheme(colorScheme, textTheme),

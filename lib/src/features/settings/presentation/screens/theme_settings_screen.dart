@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -102,6 +103,13 @@ class ThemeSettingsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (Platform.isAndroid)
+          SwitchListTile(
+            title: const Text('Use system colors'),
+            subtitle: const Text('Generate theme from wallpaper (Android 12+)'),
+            value: themeState.dynamicColorEnabled,
+            onChanged: (_) => ref.read(themeControllerProvider.notifier).toggleDynamicColor(),
+          ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/src/core/animations/animation_utils.dart';
 
 /// Publish button with loading and disabled states.
 class PublishButton extends StatelessWidget {
@@ -39,10 +40,13 @@ class PublishButton extends StatelessWidget {
       );
     }
 
-    return FilledButton(
-      onPressed: isDisabled ? null : onPressed,
-      style: FilledButton.styleFrom(minimumSize: const Size(80, 40)),
-      child: Text(label),
+    return ScaleButton(
+      enabled: !isDisabled,
+      child: FilledButton(
+        onPressed: isDisabled ? null : onPressed,
+        style: FilledButton.styleFrom(minimumSize: const Size(80, 40)),
+        child: Text(label),
+      ),
     );
   }
 }

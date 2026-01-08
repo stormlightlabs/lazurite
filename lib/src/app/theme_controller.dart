@@ -17,6 +17,7 @@ abstract final class ThemeSettingsKeys {
   static const themeMode = 'themeMode';
   static const themePackId = 'themePackId';
   static const customThemeId = 'customThemeId';
+  static const dynamicColorEnabled = 'dynamicColorEnabled';
 }
 
 /// State for the theme controller.
@@ -27,6 +28,7 @@ class ThemeState {
     required this.lightTheme,
     required this.darkTheme,
     this.customThemeId,
+    this.dynamicColorEnabled = false,
   });
 
   /// The current theme mode (light, dark, system).
@@ -44,6 +46,9 @@ class ThemeState {
   /// ID of the active custom theme, if any.
   final String? customThemeId;
 
+  /// Whether dynamic colors are enabled.
+  final bool dynamicColorEnabled;
+
   /// Whether a custom theme is currently active.
   bool get isUsingCustomTheme => customThemeId != null;
 
@@ -54,6 +59,7 @@ class ThemeState {
     ThemeData? darkTheme,
     String? customThemeId,
     bool clearCustomTheme = false,
+    bool? dynamicColorEnabled,
   }) {
     return ThemeState(
       themeMode: themeMode ?? this.themeMode,
@@ -61,6 +67,7 @@ class ThemeState {
       lightTheme: lightTheme ?? this.lightTheme,
       darkTheme: darkTheme ?? this.darkTheme,
       customThemeId: clearCustomTheme ? null : (customThemeId ?? this.customThemeId),
+      dynamicColorEnabled: dynamicColorEnabled ?? this.dynamicColorEnabled,
     );
   }
 }
@@ -85,10 +92,13 @@ class ThemeController extends _$ThemeController {
   List<ThemePack> get _packs => ref.read(availableThemePacksProvider);
   CustomThemeRepository get _customThemeRepo => ref.read(customThemeRepositoryProvider);
 
+  ColorScheme? _systemLightScheme;
+  ColorScheme? _systemDarkScheme;
+
   @override
   ThemeState build() {
     _loadPersistedSettings();
-    return _buildState(_defaultMode, _defaultPackId);
+    return _buildState(_defaultMode, _defaultPackId, false);
   }
 
   /// Loads persisted settings and updates state.
@@ -96,25 +106,81 @@ class ThemeController extends _$ThemeController {
     final modeStr = await _dao.get(ThemeSettingsKeys.themeMode);
     final packId = await _dao.get(ThemeSettingsKeys.themePackId);
     final customThemeId = await _dao.get(ThemeSettingsKeys.customThemeId);
+    final dynamicColorEnabledStr = await _dao.get(ThemeSettingsKeys.dynamicColorEnabled);
 
     final mode = _parseThemeMode(modeStr) ?? _defaultMode;
     final resolvedPackId = _resolvePackId(packId);
+    final dynamicColorEnabled = dynamicColorEnabledStr == 'true';
 
     if (customThemeId != null) {
       final customTheme = await _customThemeRepo.getById(customThemeId);
       if (customTheme != null) {
-        state = _buildStateWithCustomTheme(mode, customTheme);
+        state = _buildStateWithCustomTheme(mode, customTheme, dynamicColorEnabled);
         return;
       }
     }
 
-    state = _buildState(mode, resolvedPackId);
+    state = _buildState(mode, resolvedPackId, dynamicColorEnabled);
   }
 
   /// Sets the theme mode and persists to database.
   Future<void> setThemeMode(ThemeMode mode) async {
     state = state.copyWith(themeMode: mode);
     await _dao.set(ThemeSettingsKeys.themeMode, mode.name);
+  }
+
+  /// Toggles dynamic color support.
+  Future<void> toggleDynamicColor() async {
+    final newValue = !state.dynamicColorEnabled;
+    if (state.isUsingCustomTheme && state.customThemeId != null) {
+      if (newValue) {
+        state = _rebuildStateWithDynamicColor(state.copyWith(dynamicColorEnabled: newValue));
+      } else {
+        final customTheme = await _customThemeRepo.getById(state.customThemeId!);
+        if (customTheme != null) {
+          state = _buildStateWithCustomTheme(state.themeMode, customTheme, newValue);
+        } else {
+          state = _buildState(state.themeMode, state.currentPackId, newValue);
+        }
+      }
+    } else {
+      state = _rebuildStateWithDynamicColor(state.copyWith(dynamicColorEnabled: newValue));
+    }
+
+    await _dao.set(ThemeSettingsKeys.dynamicColorEnabled, newValue.toString());
+  }
+
+  /// Updates available system schemes (called from UI).
+  void setSystemSchemes(ColorScheme? light, ColorScheme? dark) {
+    if (_systemLightScheme == light && _systemDarkScheme == dark) return;
+
+    _systemLightScheme = light;
+    _systemDarkScheme = dark;
+
+    if (state.dynamicColorEnabled) {
+      state = _rebuildStateWithDynamicColor(state);
+    }
+  }
+
+  ThemeState _rebuildStateWithDynamicColor(ThemeState currentState) {
+    if (currentState.dynamicColorEnabled &&
+        _systemLightScheme != null &&
+        _systemDarkScheme != null) {
+      return currentState.copyWith(
+        lightTheme: buildThemeDataFromScheme(_systemLightScheme!),
+        darkTheme: buildThemeDataFromScheme(_systemDarkScheme!),
+      );
+    }
+
+    if (!currentState.isUsingCustomTheme) {
+      return _buildState(
+        currentState.themeMode,
+        currentState.currentPackId,
+        currentState.dynamicColorEnabled,
+      );
+    }
+
+    return currentState;
   }
 
   /// Sets the theme pack by ID and persists to database.
@@ -124,7 +190,7 @@ class ThemeController extends _$ThemeController {
     final resolvedPackId = _resolvePackId(packId);
     if (resolvedPackId == state.currentPackId && !state.isUsingCustomTheme) return;
 
-    state = _buildState(state.themeMode, resolvedPackId);
+    state = _buildState(state.themeMode, resolvedPackId, state.dynamicColorEnabled);
     await _dao.set(ThemeSettingsKeys.themePackId, resolvedPackId);
     await _dao.remove(ThemeSettingsKeys.customThemeId);
   }
@@ -136,7 +202,7 @@ class ThemeController extends _$ThemeController {
     final customTheme = await _customThemeRepo.getById(customThemeId);
     if (customTheme == null) return;
 
-    state = _buildStateWithCustomTheme(state.themeMode, customTheme);
+    state = _buildStateWithCustomTheme(state.themeMode, customTheme, state.dynamicColorEnabled);
     await _dao.set(ThemeSettingsKeys.themePackId, customTheme.basePackId);
     await _dao.set(ThemeSettingsKeys.customThemeId, customThemeId);
   }
@@ -145,7 +211,7 @@ class ThemeController extends _$ThemeController {
   Future<void> clearCustomTheme() async {
     if (!state.isUsingCustomTheme) return;
 
-    state = _buildState(state.themeMode, state.currentPackId);
+    state = _buildState(state.themeMode, state.currentPackId, state.dynamicColorEnabled);
     await _dao.remove(ThemeSettingsKeys.customThemeId);
   }
 
@@ -155,8 +221,30 @@ class ThemeController extends _$ThemeController {
     setThemeMode(newMode);
   }
 
+  /// Builds ThemeData (can be overridden for testing).
+  @visibleForTesting
+  ThemeData buildThemeData(ThemeVariant variant) {
+    return ThemeFactory.buildThemeData(variant);
+  }
+
+  /// Builds ThemeData from scheme (can be overridden for testing).
+  @visibleForTesting
+  ThemeData buildThemeDataFromScheme(ColorScheme scheme) {
+    return ThemeFactory.buildThemeDataFromScheme(scheme);
+  }
+
   /// Builds theme state from mode and pack ID.
-  ThemeState _buildState(ThemeMode mode, String packId) {
+  ThemeState _buildState(ThemeMode mode, String packId, bool dynamicColorEnabled) {
+    if (dynamicColorEnabled && _systemLightScheme != null && _systemDarkScheme != null) {
+      return ThemeState(
+        themeMode: mode,
+        currentPackId: packId,
+        dynamicColorEnabled: true,
+        lightTheme: buildThemeDataFromScheme(_systemLightScheme!),
+        darkTheme: buildThemeDataFromScheme(_systemDarkScheme!),
+      );
+    }
+
     final pack = _getPackById(packId);
     final lightVariant = pack.lightVariant;
     final darkVariant = pack.darkVariant;
@@ -164,17 +252,33 @@ class ThemeController extends _$ThemeController {
     return ThemeState(
       themeMode: mode,
       currentPackId: packId,
+      dynamicColorEnabled: dynamicColorEnabled,
       lightTheme: lightVariant != null
-          ? ThemeFactory.buildThemeData(lightVariant)
-          : ThemeFactory.buildThemeData(oxocarbonLightVariant),
+          ? buildThemeData(lightVariant)
+          : buildThemeData(oxocarbonLightVariant),
       darkTheme: darkVariant != null
-          ? ThemeFactory.buildThemeData(darkVariant)
-          : ThemeFactory.buildThemeData(oxocarbonDarkVariant),
+          ? buildThemeData(darkVariant)
+          : buildThemeData(oxocarbonDarkVariant),
     );
   }
 
   /// Builds theme state with custom theme overrides applied.
-  ThemeState _buildStateWithCustomTheme(ThemeMode mode, CustomThemeDraft customTheme) {
+  ThemeState _buildStateWithCustomTheme(
+    ThemeMode mode,
+    CustomThemeDraft customTheme,
+    bool dynamicColorEnabled,
+  ) {
+    if (dynamicColorEnabled && _systemLightScheme != null && _systemDarkScheme != null) {
+      return ThemeState(
+        themeMode: mode,
+        currentPackId: customTheme.basePackId,
+        customThemeId: customTheme.id,
+        dynamicColorEnabled: true,
+        lightTheme: buildThemeDataFromScheme(_systemLightScheme!),
+        darkTheme: buildThemeDataFromScheme(_systemDarkScheme!),
+      );
+    }
+
     final basePack = _getPackById(customTheme.basePackId);
     final lightVariant = _applyOverridesToVariant(basePack.lightVariant, customTheme.overrides);
     final darkVariant = _applyOverridesToVariant(basePack.darkVariant, customTheme.overrides);
@@ -183,12 +287,13 @@ class ThemeController extends _$ThemeController {
       themeMode: mode,
       currentPackId: customTheme.basePackId,
       customThemeId: customTheme.id,
+      dynamicColorEnabled: dynamicColorEnabled,
       lightTheme: lightVariant != null
-          ? ThemeFactory.buildThemeData(lightVariant)
-          : ThemeFactory.buildThemeData(oxocarbonLightVariant),
+          ? buildThemeData(lightVariant)
+          : buildThemeData(oxocarbonLightVariant),
       darkTheme: darkVariant != null
-          ? ThemeFactory.buildThemeData(darkVariant)
-          : ThemeFactory.buildThemeData(oxocarbonDarkVariant),
+          ? buildThemeData(darkVariant)
+          : buildThemeData(oxocarbonDarkVariant),
     );
   }
 

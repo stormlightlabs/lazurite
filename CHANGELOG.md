@@ -6,11 +6,23 @@
 
 #### [2026-01-07]
 
+- Material 3 motion with persisted settings UI, transitions, and accessibility
+  compliance.
+
+- Persisted CustomThemeDrafts with editor previews, validation, and JSON import/export
+  so users can safely tweak and share themes.
+
+- Bundled Catppuccin, Nord, Rosé Pine, Oxocarbon, and One Dark/Light packs mapped to
+  Material 3 roles with lint coverage for every variant.
+
+- Appearance settings screen with pack/variant selectors, live preview cards, and a
+  theme JSON export for quick switching.
+
 - Post composer with local drafts, media uploads (4 images + alt text),
   reply/quote support, rich text facets (mentions, links), and global FAB
 
-- Comprehensive settings system with theme persistence, content moderation, feed & thread
-  preferences, muted words filtering, and bidirectional Bluesky pref sync.
+- Comprehensive settings system with theme persistence, content moderation, feed &
+  thread preferences, muted words filtering, and bidirectional Bluesky pref sync.
 
 #### [2026-01-06]
 

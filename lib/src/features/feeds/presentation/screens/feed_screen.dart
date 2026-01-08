@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lazurite/src/core/animations/animation_utils.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/core/widgets/pull_to_refresh_wrapper.dart';
@@ -52,52 +53,59 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     _ensureFeedLoaded(activeFeedUri);
 
     return Scaffold(
-      body: feedContentState.when(
-        data: (items) {
-          return PullToRefreshWrapper(
-            onRefresh: () async {
-              await ref.read(feedContentProvider(activeFeedUri).notifier).refresh();
-            },
-            child: CustomScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverAppBar(
-                  title: Text('Lazurite', style: Theme.of(context).textTheme.displaySmall),
-                  floating: true,
-                  snap: true,
-                  bottom: const PreferredSize(
-                    preferredSize: Size.fromHeight(56),
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: 8.0),
-                      child: FeedSelectorTab(),
+      body: AnimatedContentSwitcher(
+        child: feedContentState.when(
+          data: (items) {
+            return PullToRefreshWrapper(
+              key: const ValueKey('feed_list'),
+              onRefresh: () async {
+                await ref.read(feedContentProvider(activeFeedUri).notifier).refresh();
+              },
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverAppBar(
+                    title: Text('Lazurite', style: Theme.of(context).textTheme.displaySmall),
+                    floating: true,
+                    snap: true,
+                    bottom: const PreferredSize(
+                      preferredSize: Size.fromHeight(56),
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 8.0),
+                        child: FeedSelectorTab(),
+                      ),
                     ),
                   ),
-                ),
-                if (items.isEmpty)
-                  const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: Text('No posts yet')),
-                  )
-                else
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      if (index.isOdd) {
-                        return const Divider(height: 1);
-                      }
-                      final itemIndex = index ~/ 2;
-                      return FeedPostCard(item: items[itemIndex]);
-                    }, childCount: items.length * 2 - 1),
-                  ),
-              ],
-            ),
-          );
-        },
-        loading: () => const LoadingView(),
-        error: (err, stack) => ErrorView(
-          title: 'Failed to load feed',
-          message: err.toString(),
-          onRetry: () => ref.read(feedContentProvider(activeFeedUri).notifier).refresh(),
+                  if (items.isEmpty)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(child: Text('No posts yet')),
+                    )
+                  else
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        if (index.isOdd) {
+                          return const Divider(height: 1);
+                        }
+                        final itemIndex = index ~/ 2;
+                        return AnimatedItem(
+                          index: itemIndex,
+                          child: FeedPostCard(item: items[itemIndex]),
+                        );
+                      }, childCount: items.length * 2 - 1),
+                    ),
+                ],
+              ),
+            );
+          },
+          loading: () => const LoadingView(key: ValueKey('loading')),
+          error: (err, stack) => ErrorView(
+            key: const ValueKey('error'),
+            title: 'Failed to load feed',
+            message: err.toString(),
+            onRetry: () => ref.read(feedContentProvider(activeFeedUri).notifier).refresh(),
+          ),
         ),
       ),
     );

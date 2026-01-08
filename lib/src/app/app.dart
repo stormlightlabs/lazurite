@@ -1,3 +1,4 @@
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/app/providers.dart';
@@ -21,14 +22,22 @@ class App extends ConsumerWidget {
     ref.watch(feedSyncControllerProvider);
     ref.watch(preferenceSyncControllerProvider);
 
-    return MaterialApp.router(
-      key: ValueKey(authState is AuthStateAuthenticated),
-      title: 'Lazurite',
-      theme: themeState.lightTheme,
-      darkTheme: themeState.darkTheme,
-      themeMode: themeState.themeMode,
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
+    return DynamicColorBuilder(
+      builder: (lightDynamic, darkDynamic) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(themeControllerProvider.notifier).setSystemSchemes(lightDynamic, darkDynamic);
+        });
+
+        return MaterialApp.router(
+          key: ValueKey(authState is AuthStateAuthenticated),
+          title: 'Lazurite',
+          theme: themeState.lightTheme,
+          darkTheme: themeState.darkTheme,
+          themeMode: themeState.themeMode,
+          routerConfig: router,
+          debugShowCheckedModeBanner: false,
+        );
+      },
     );
   }
 }
