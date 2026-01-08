@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../../../core/utils/logger.dart';
 import '../../../infrastructure/db/app_database.dart';
 import '../../../infrastructure/db/daos/notifications_dao.dart';
+import '../../../infrastructure/db/daos/notifications_sync_queue_dao.dart';
 import '../../../infrastructure/network/xrpc_client.dart';
 import '../domain/notification.dart';
 import '../domain/notification_type.dart';
@@ -14,10 +15,11 @@ import '../domain/notification_type.dart';
 /// Handles fetching, caching, and streaming notifications from
 /// app.bsky.notification.listNotifications API.
 class NotificationsRepository {
-  NotificationsRepository(this._client, this._dao, this._logger);
+  NotificationsRepository(this._client, this._dao, this._syncQueue, this._logger);
 
   final XrpcClient _client;
   final NotificationsDao _dao;
+  final NotificationsSyncQueueDao _syncQueue;
   final Logger _logger;
 
   /// Feed key for notifications cursor storage.
@@ -168,6 +170,96 @@ class NotificationsRepository {
   /// Emits updates whenever notifications are inserted, updated, or deleted.
   Stream<int> watchUnreadCount() {
     return _dao.watchUnreadCount();
+  }
+
+  /// Fetches the current unread count from the API.
+  ///
+  /// Returns the number of unread notifications according to the server.
+  Future<int> getUnreadCount() async {
+    _logger.info('Fetching unread count from API', {});
+
+    try {
+      final response = await _client.call('app.bsky.notification.getUnreadCount');
+      final count = response['count'] as int? ?? 0;
+
+      _logger.debug('Received unread count', {'count': count});
+      return count;
+    } catch (error, stack) {
+      _logger.error('Failed to fetch unread count', error, stack);
+      rethrow;
+    }
+  }
+
+  /// Marks notifications as seen on the server.
+  ///
+  /// All notifications before [seenAt] timestamp will be marked as seen.
+  /// This updates the server state and should be followed by local cache updates.
+  Future<void> updateSeen(DateTime seenAt) async {
+    _logger.info('Updating seen state', {'seenAt': seenAt.toIso8601String()});
+
+    try {
+      await _client.call(
+        'app.bsky.notification.updateSeen',
+        body: {'seenAt': seenAt.toIso8601String()},
+      );
+
+      _logger.debug('Successfully updated seen state', {});
+    } catch (error, stack) {
+      _logger.error('Failed to update seen state', error, stack);
+      rethrow;
+    }
+  }
+
+  /// Marks specific notifications as seen locally.
+  ///
+  /// Updates the local cache to mark notifications before [seenAt] as read.
+  Future<void> markAsSeenLocally(DateTime seenAt) async {
+    _logger.debug('Marking notifications as seen locally', {'seenAt': seenAt.toIso8601String()});
+
+    await _dao.markAsSeenBefore(seenAt);
+  }
+
+  /// Processes the sync queue to retry failed mark-as-seen operations.
+  ///
+  /// Cleans up old failed items, then attempts to sync the latest queued
+  /// timestamp. Since marking at timestamp T marks all notifications before T,
+  /// we only need to sync the most recent timestamp and can then clear all
+  /// older queue items.
+  Future<void> processSyncQueue() async {
+    _logger.debug('Processing notification sync queue', {});
+
+    final threshold = DateTime.now().subtract(const Duration(days: 30));
+    final cleanedCount = await _syncQueue.cleanupOldFailedItems(threshold);
+    if (cleanedCount > 0) {
+      _logger.info('Cleaned up old failed sync items', {'count': cleanedCount});
+    }
+
+    final latestSeenAt = await _syncQueue.getLatestSeenAt();
+    if (latestSeenAt == null) {
+      _logger.debug('No items in sync queue', {});
+      return;
+    }
+
+    _logger.info('Processing sync queue', {'latestSeenAt': latestSeenAt.toIso8601String()});
+
+    final retryableItems = await _syncQueue.getRetryableItems();
+
+    try {
+      await markAsSeenLocally(latestSeenAt);
+      await updateSeen(latestSeenAt);
+
+      final deletedCount = await _syncQueue.deleteItemsUpTo(latestSeenAt);
+      _logger.info('Successfully synced notifications', {
+        'seenAt': latestSeenAt.toIso8601String(),
+        'clearedQueueItems': deletedCount,
+      });
+    } catch (error, stack) {
+      _logger.error('Failed to process sync queue', error, stack);
+
+      for (final item in retryableItems) {
+        await _syncQueue.incrementRetryCount(item.id);
+      }
+    }
   }
 
   /// Encodes labels array to JSON string.

@@ -45,7 +45,7 @@ final class NotificationsNotifierProvider
   NotificationsNotifier create() => NotificationsNotifier();
 }
 
-String _$notificationsNotifierHash() => r'f649a987823757ab8225852f70cebd4bbcc6a150';
+String _$notificationsNotifierHash() => r'4c8135e870f771092ea4d88fbdde28fd426b7d3f';
 
 /// Notifier for managing notification list state.
 ///

@@ -267,6 +267,26 @@ class PreferenceSyncQueue extends Table {
   IntColumn get retryCount => integer().withDefault(const Constant(0))();
 }
 
+/// Stores queued notification mark-as-seen operations for offline synchronization.
+///
+/// When marking notifications as seen fails (e.g., due to network errors),
+/// operations are queued here for retry when the connection is restored.
+class NotificationsSyncQueue extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Type of operation: 'mark_seen'.
+  TextColumn get type => text()();
+
+  /// The timestamp to mark as seen (ISO8601 string).
+  TextColumn get seenAt => text()();
+
+  /// When the item was queued.
+  DateTimeColumn get createdAt => dateTime()();
+
+  /// Number of times we've tried to process this item.
+  IntColumn get retryCount => integer().withDefault(const Constant(0))();
+}
+
 class Drafts extends Table {
   TextColumn get id => text()();
   TextColumn get content => text().withDefault(const Constant(''))();
@@ -414,6 +434,9 @@ class Notifications extends Table {
 
   /// Whether the notification has been read.
   BoolColumn get isRead => boolean().withDefault(const Constant(false))();
+
+  /// When the notification was marked as seen (null if not seen yet).
+  DateTimeColumn get seenAt => dateTime().nullable()();
 
   /// When this notification was cached locally.
   DateTimeColumn get cachedAt => dateTime()();

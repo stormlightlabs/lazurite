@@ -5,6 +5,7 @@ import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/notifications/application/mark_as_seen_service.dart';
 import 'package:lazurite/src/features/notifications/application/notifications_providers.dart';
 import 'package:lazurite/src/features/notifications/domain/notification.dart';
 import 'package:lazurite/src/features/notifications/domain/notification_type.dart';
@@ -15,8 +16,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../helpers/mocks.dart';
 
+class MockMarkAsSeenService extends Mock implements MarkAsSeenService {}
+
 void main() {
   late MockNotificationsRepository mockRepository;
+  late MockMarkAsSeenService mockMarkAsSeenService;
   late MockLogger mockLogger;
 
   Widget createSubject({
@@ -26,6 +30,7 @@ void main() {
   }) {
     final overrides = <Override>[
       notificationsRepositoryProvider.overrideWithValue(mockRepository),
+      markAsSeenServiceProvider.overrideWithValue(mockMarkAsSeenService),
       loggerProvider('NotificationsNotifier').overrideWithValue(mockLogger),
       authProvider.overrideWith(() => _FakeAuthNotifier(authenticated: authenticated)),
     ];
@@ -48,6 +53,7 @@ void main() {
 
   setUp(() {
     mockRepository = MockNotificationsRepository();
+    mockMarkAsSeenService = MockMarkAsSeenService();
     mockLogger = MockLogger();
 
     when(() => mockLogger.debug(any(), any())).thenReturn(null);
@@ -64,6 +70,10 @@ void main() {
     when(() => mockRepository.fetchNotifications()).thenAnswer((_) async {});
     when(() => mockRepository.getCursor()).thenAnswer((_) async => null);
     when(() => mockRepository.markAllAsRead()).thenAnswer((_) async {});
+    when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
+    when(() => mockMarkAsSeenService.flush()).thenAnswer((_) async {});
+
+    registerFallbackValue(DateTime.now());
   });
 
   group('NotificationsScreen', () {

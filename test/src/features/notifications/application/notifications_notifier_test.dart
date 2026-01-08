@@ -4,6 +4,7 @@ import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/notifications/application/mark_as_seen_service.dart';
 import 'package:lazurite/src/features/notifications/application/notifications_notifier.dart';
 import 'package:lazurite/src/features/notifications/application/notifications_providers.dart';
 import 'package:lazurite/src/features/notifications/domain/notification.dart';
@@ -13,14 +14,18 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../../helpers/mocks.dart';
 
+class MockMarkAsSeenService extends Mock implements MarkAsSeenService {}
+
 void main() {
   late MockNotificationsRepository mockRepository;
+  late MockMarkAsSeenService mockMarkAsSeenService;
   late MockLogger mockLogger;
 
   ProviderContainer createContainer({bool authenticated = true}) {
     return ProviderContainer(
       overrides: [
         notificationsRepositoryProvider.overrideWithValue(mockRepository),
+        markAsSeenServiceProvider.overrideWithValue(mockMarkAsSeenService),
         loggerProvider('NotificationsNotifier').overrideWithValue(mockLogger),
         authProvider.overrideWith(() => _FakeAuthNotifier(authenticated: authenticated)),
       ],
@@ -29,6 +34,7 @@ void main() {
 
   setUp(() {
     mockRepository = MockNotificationsRepository();
+    mockMarkAsSeenService = MockMarkAsSeenService();
     mockLogger = MockLogger();
 
     when(() => mockLogger.debug(any(), any())).thenReturn(null);
@@ -45,6 +51,10 @@ void main() {
     when(() => mockRepository.fetchNotifications()).thenAnswer((_) async {});
     when(() => mockRepository.getCursor()).thenAnswer((_) async => null);
     when(() => mockRepository.markAllAsRead()).thenAnswer((_) async {});
+    when(() => mockRepository.updateSeen(any())).thenAnswer((_) async {});
+    when(() => mockMarkAsSeenService.flush()).thenAnswer((_) async {});
+
+    registerFallbackValue(DateTime.now());
   });
 
   group('NotificationsNotifier', () {
@@ -113,13 +123,30 @@ void main() {
       verifyNever(() => mockRepository.getCursor());
     });
 
-    test('markAllAsRead calls repository', () async {
+    test('markAllAsRead flushes service and syncs with server', () async {
       final container = createContainer();
       addTearDown(container.dispose);
 
       await container.read(notificationsProvider.notifier).markAllAsRead();
 
-      verify(() => mockRepository.markAllAsRead()).called(1);
+      verifyInOrder([
+        () => mockMarkAsSeenService.flush(),
+        () => mockRepository.markAllAsRead(),
+        () => mockRepository.updateSeen(any()),
+      ]);
+    });
+
+    test('markAllAsRead rethrows errors', () async {
+      when(() => mockMarkAsSeenService.flush()).thenAnswer((_) async {});
+      when(() => mockRepository.markAllAsRead()).thenThrow(Exception('DB error'));
+
+      final container = createContainer();
+      addTearDown(container.dispose);
+
+      expect(
+        () => container.read(notificationsProvider.notifier).markAllAsRead(),
+        throwsException,
+      );
     });
 
     test('refresh rethrows errors', () async {

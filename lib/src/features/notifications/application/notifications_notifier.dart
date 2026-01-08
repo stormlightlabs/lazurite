@@ -70,10 +70,25 @@ class NotificationsNotifier extends _$NotificationsNotifier {
     }
   }
 
-  /// Marks all notifications as read locally.
+  /// Marks all notifications as read.
+  ///
+  /// This flushes any pending mark as seen operations, then marks all
+  /// notifications as read locally and syncs with the server.
   Future<void> markAllAsRead() async {
     final repository = ref.read(notificationsRepositoryProvider);
-    await repository.markAllAsRead();
-    _logger.info('Marked all notifications as read', {});
+    final markAsSeenService = ref.read(markAsSeenServiceProvider);
+
+    try {
+      await markAsSeenService.flush();
+
+      await repository.markAllAsRead();
+
+      await repository.updateSeen(DateTime.now());
+
+      _logger.info('Marked all notifications as read', {});
+    } catch (error, stack) {
+      _logger.error('Failed to mark all as read', error, stack);
+      rethrow;
+    }
   }
 }

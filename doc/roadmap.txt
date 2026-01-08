@@ -38,27 +38,20 @@ Phase 2: Unread Count and Mark as Seen
 - [x] UnreadBadge widget:
       - display count on tab icon
       - hide when zero, show "99+" for large counts
-- [ ] Mark as seen:
+- [x] Mark as seen:
       - viewport-based detection (scroll into view)
       - batch updateSeen API calls (every 2s or 10 notifications)
       - optimistic local cache updates
       - offline queue for sync when online
-- [ ] Mark all as read action in app bar
+- [x] Mark all as read action in app bar
 
 Phase 3: Notification Grouping and Polish
 - [ ] GroupedNotification model and grouping algorithm
 - [ ] GroupedNotificationItem widget (actor list, "and N others")
-- [ ] Expand/collapse for grouped notifications
-- [ ] Empty state illustration
-- [ ] Loading states and skeleton screens
-- [ ] Relative timestamps ("2h ago")
-
-Phase 4: Local Notifications
-- [ ] flutter_local_notifications integration
-- [ ] Foreground notification banner
-- [ ] Background notification display
-- [ ] Deep link handling from notification tap
-- [ ] Platform-specific configuration (Android channels, iOS presentation)
+      - [ ] Expand/collapse for grouped notifications
+      - [ ] Empty state illustration
+      - [ ] Loading states and skeleton screens
+      - [ ] Relative timestamps ("2h ago")
 
 Tests:
 - [ ] Repository: fetch, parse, cache, pagination
@@ -214,6 +207,12 @@ Context:
 - Backend must validate signatures and relay to FCM/APNs
 
 Tasks:
+- [ ] Local Notifications
+      - [ ] flutter_local_notifications integration
+      - [ ] Foreground notification banner
+      - [ ] Background notification display
+      - [ ] Deep link handling from notification tap
+      - [ ] Platform-specific configuration (Android channels, iOS presentation)
 - [ ] Backend service:
       - POST /register-device (store device token with user DID)
       - POST /push-notification (receive signed notifications from Bluesky)

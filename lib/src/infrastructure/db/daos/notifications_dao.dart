@@ -81,6 +81,16 @@ class NotificationsDao extends DatabaseAccessor<AppDatabase> with _$Notification
     );
   }
 
+  /// Marks notifications as read if they were indexed before the given timestamp.
+  ///
+  /// This is used for batching mark as seen operations - all notifications
+  /// before [seenAt] are marked as read locally.
+  Future<void> markAsSeenBefore(DateTime seenAt) async {
+    await (update(notifications)
+          ..where((t) => t.indexedAt.isSmallerOrEqualValue(seenAt) & t.isRead.equals(false)))
+        .write(NotificationsCompanion(isRead: const Value(true), seenAt: Value(seenAt)));
+  }
+
   /// Gets a stream of the unread notification count.
   ///
   /// Emits updates whenever notifications are inserted, updated, or deleted.

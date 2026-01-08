@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/avatar.dart';
+import '../../../../core/widgets/visibility_detector.dart';
+import '../../application/notifications_providers.dart';
 import '../../domain/notification.dart';
 import '../../domain/notification_type.dart';
 import 'notification_type_icon.dart';
@@ -11,7 +14,9 @@ import 'notification_type_icon.dart';
 ///
 /// Displays the actor's avatar, display name, notification type, timestamp,
 /// and provides tap navigation to the related content.
-class NotificationListItem extends StatelessWidget {
+///
+/// Automatically marks the notification as seen when it scrolls into view.
+class NotificationListItem extends ConsumerWidget {
   const NotificationListItem({required this.notification, this.onTap, super.key});
 
   /// The notification to display.
@@ -21,13 +26,13 @@ class NotificationListItem extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     final backgroundColor = notification.isRead ? null : colorScheme.surfaceContainerHighest;
 
-    return Card(
+    final card = Card(
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       elevation: 1,
@@ -98,6 +103,18 @@ class NotificationListItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    if (notification.isRead) {
+      return card;
+    }
+
+    return VisibilityDetector(
+      onVisible: () {
+        final service = ref.read(markAsSeenServiceProvider);
+        service.markAsSeen(notification.indexedAt);
+      },
+      child: card,
     );
   }
 

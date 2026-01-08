@@ -58,12 +58,9 @@ void main() {
       addTearDown(container.dispose);
 
       int? emittedValue;
-      container.listen(
-        unreadCountProvider,
-        (previous, next) {
-          next.whenData((value) => emittedValue = value);
-        },
-      );
+      container.listen(unreadCountProvider, (previous, next) {
+        next.whenData((value) => emittedValue = value);
+      });
 
       await pumpEventQueue();
 
@@ -78,12 +75,9 @@ void main() {
       addTearDown(container.dispose);
 
       int? emittedValue;
-      container.listen(
-        unreadCountProvider,
-        (previous, next) {
-          next.whenData((value) => emittedValue = value);
-        },
-      );
+      container.listen(unreadCountProvider, (previous, next) {
+        next.whenData((value) => emittedValue = value);
+      });
 
       await pumpEventQueue();
 
@@ -102,12 +96,9 @@ void main() {
       });
 
       final emittedValues = <int>[];
-      container.listen(
-        unreadCountProvider,
-        (previous, next) {
-          next.whenData((value) => emittedValues.add(value));
-        },
-      );
+      container.listen(unreadCountProvider, (previous, next) {
+        next.whenData((value) => emittedValues.add(value));
+      });
 
       controller.add(3);
       await pumpEventQueue();
@@ -128,12 +119,9 @@ void main() {
       addTearDown(container.dispose);
 
       int? emittedValue;
-      container.listen(
-        unreadCountProvider,
-        (previous, next) {
-          next.whenData((value) => emittedValue = value);
-        },
-      );
+      container.listen(unreadCountProvider, (previous, next) {
+        next.whenData((value) => emittedValue = value);
+      });
 
       await pumpEventQueue();
 
@@ -148,12 +136,9 @@ void main() {
       addTearDown(container.dispose);
 
       int? emittedValue;
-      container.listen(
-        unreadCountProvider,
-        (previous, next) {
-          next.whenData((value) => emittedValue = value);
-        },
-      );
+      container.listen(unreadCountProvider, (previous, next) {
+        next.whenData((value) => emittedValue = value);
+      });
 
       await pumpEventQueue();
 

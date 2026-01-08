@@ -20,6 +20,7 @@ import 'daos/saved_feeds_dao.dart';
 import 'daos/search_cache_dao.dart';
 import 'daos/search_dao.dart';
 import 'daos/notifications_dao.dart';
+import 'daos/notifications_sync_queue_dao.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -47,6 +48,7 @@ part 'app_database.g.dart';
     AnimationPreferencesTable,
     Notifications,
     NotificationCursors,
+    NotificationsSyncQueue,
   ],
   daos: [
     FeedContentDao,
@@ -64,6 +66,7 @@ part 'app_database.g.dart';
     CustomThemeDao,
     AnimationPreferencesDao,
     NotificationsDao,
+    NotificationsSyncQueueDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {

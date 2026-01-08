@@ -8204,6 +8204,15 @@ class $NotificationsTable extends Notifications with TableInfo<$NotificationsTab
     defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("is_read" IN (0, 1))'),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _seenAtMeta = const VerificationMeta('seenAt');
+  @override
+  late final GeneratedColumn<DateTime> seenAt = GeneratedColumn<DateTime>(
+    'seen_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _cachedAtMeta = const VerificationMeta('cachedAt');
   @override
   late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
@@ -8222,6 +8231,7 @@ class $NotificationsTable extends Notifications with TableInfo<$NotificationsTab
     recordJson,
     indexedAt,
     isRead,
+    seenAt,
     cachedAt,
   ];
   @override
@@ -8277,6 +8287,9 @@ class $NotificationsTable extends Notifications with TableInfo<$NotificationsTab
     if (data.containsKey('is_read')) {
       context.handle(_isReadMeta, isRead.isAcceptableOrUnknown(data['is_read']!, _isReadMeta));
     }
+    if (data.containsKey('seen_at')) {
+      context.handle(_seenAtMeta, seenAt.isAcceptableOrUnknown(data['seen_at']!, _seenAtMeta));
+    }
     if (data.containsKey('cached_at')) {
       context.handle(
         _cachedAtMeta,
@@ -8319,6 +8332,10 @@ class $NotificationsTable extends Notifications with TableInfo<$NotificationsTab
         DriftSqlType.bool,
         data['${effectivePrefix}is_read'],
       )!,
+      seenAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}seen_at'],
+      ),
       cachedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}cached_at'],
@@ -8354,6 +8371,9 @@ class Notification extends DataClass implements Insertable<Notification> {
   /// Whether the notification has been read.
   final bool isRead;
 
+  /// When the notification was marked as seen (null if not seen yet).
+  final DateTime? seenAt;
+
   /// When this notification was cached locally.
   final DateTime cachedAt;
   const Notification({
@@ -8364,6 +8384,7 @@ class Notification extends DataClass implements Insertable<Notification> {
     this.recordJson,
     required this.indexedAt,
     required this.isRead,
+    this.seenAt,
     required this.cachedAt,
   });
   @override
@@ -8380,6 +8401,9 @@ class Notification extends DataClass implements Insertable<Notification> {
     }
     map['indexed_at'] = Variable<DateTime>(indexedAt);
     map['is_read'] = Variable<bool>(isRead);
+    if (!nullToAbsent || seenAt != null) {
+      map['seen_at'] = Variable<DateTime>(seenAt);
+    }
     map['cached_at'] = Variable<DateTime>(cachedAt);
     return map;
   }
@@ -8395,6 +8419,7 @@ class Notification extends DataClass implements Insertable<Notification> {
       recordJson: recordJson == null && nullToAbsent ? const Value.absent() : Value(recordJson),
       indexedAt: Value(indexedAt),
       isRead: Value(isRead),
+      seenAt: seenAt == null && nullToAbsent ? const Value.absent() : Value(seenAt),
       cachedAt: Value(cachedAt),
     );
   }
@@ -8409,6 +8434,7 @@ class Notification extends DataClass implements Insertable<Notification> {
       recordJson: serializer.fromJson<String?>(json['recordJson']),
       indexedAt: serializer.fromJson<DateTime>(json['indexedAt']),
       isRead: serializer.fromJson<bool>(json['isRead']),
+      seenAt: serializer.fromJson<DateTime?>(json['seenAt']),
       cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
     );
   }
@@ -8423,6 +8449,7 @@ class Notification extends DataClass implements Insertable<Notification> {
       'recordJson': serializer.toJson<String?>(recordJson),
       'indexedAt': serializer.toJson<DateTime>(indexedAt),
       'isRead': serializer.toJson<bool>(isRead),
+      'seenAt': serializer.toJson<DateTime?>(seenAt),
       'cachedAt': serializer.toJson<DateTime>(cachedAt),
     };
   }
@@ -8435,6 +8462,7 @@ class Notification extends DataClass implements Insertable<Notification> {
     Value<String?> recordJson = const Value.absent(),
     DateTime? indexedAt,
     bool? isRead,
+    Value<DateTime?> seenAt = const Value.absent(),
     DateTime? cachedAt,
   }) => Notification(
     uri: uri ?? this.uri,
@@ -8444,6 +8472,7 @@ class Notification extends DataClass implements Insertable<Notification> {
     recordJson: recordJson.present ? recordJson.value : this.recordJson,
     indexedAt: indexedAt ?? this.indexedAt,
     isRead: isRead ?? this.isRead,
+    seenAt: seenAt.present ? seenAt.value : this.seenAt,
     cachedAt: cachedAt ?? this.cachedAt,
   );
   Notification copyWithCompanion(NotificationsCompanion data) {
@@ -8457,6 +8486,7 @@ class Notification extends DataClass implements Insertable<Notification> {
       recordJson: data.recordJson.present ? data.recordJson.value : this.recordJson,
       indexedAt: data.indexedAt.present ? data.indexedAt.value : this.indexedAt,
       isRead: data.isRead.present ? data.isRead.value : this.isRead,
+      seenAt: data.seenAt.present ? data.seenAt.value : this.seenAt,
       cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
     );
   }
@@ -8471,14 +8501,24 @@ class Notification extends DataClass implements Insertable<Notification> {
           ..write('recordJson: $recordJson, ')
           ..write('indexedAt: $indexedAt, ')
           ..write('isRead: $isRead, ')
+          ..write('seenAt: $seenAt, ')
           ..write('cachedAt: $cachedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(uri, actorDid, type, reasonSubjectUri, recordJson, indexedAt, isRead, cachedAt);
+  int get hashCode => Object.hash(
+    uri,
+    actorDid,
+    type,
+    reasonSubjectUri,
+    recordJson,
+    indexedAt,
+    isRead,
+    seenAt,
+    cachedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -8490,6 +8530,7 @@ class Notification extends DataClass implements Insertable<Notification> {
           other.recordJson == this.recordJson &&
           other.indexedAt == this.indexedAt &&
           other.isRead == this.isRead &&
+          other.seenAt == this.seenAt &&
           other.cachedAt == this.cachedAt);
 }
 
@@ -8501,6 +8542,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
   final Value<String?> recordJson;
   final Value<DateTime> indexedAt;
   final Value<bool> isRead;
+  final Value<DateTime?> seenAt;
   final Value<DateTime> cachedAt;
   final Value<int> rowid;
   const NotificationsCompanion({
@@ -8511,6 +8553,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
     this.recordJson = const Value.absent(),
     this.indexedAt = const Value.absent(),
     this.isRead = const Value.absent(),
+    this.seenAt = const Value.absent(),
     this.cachedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -8522,6 +8565,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
     this.recordJson = const Value.absent(),
     required DateTime indexedAt,
     this.isRead = const Value.absent(),
+    this.seenAt = const Value.absent(),
     required DateTime cachedAt,
     this.rowid = const Value.absent(),
   }) : uri = Value(uri),
@@ -8537,6 +8581,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
     Expression<String>? recordJson,
     Expression<DateTime>? indexedAt,
     Expression<bool>? isRead,
+    Expression<DateTime>? seenAt,
     Expression<DateTime>? cachedAt,
     Expression<int>? rowid,
   }) {
@@ -8548,6 +8593,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
       if (recordJson != null) 'record_json': recordJson,
       if (indexedAt != null) 'indexed_at': indexedAt,
       if (isRead != null) 'is_read': isRead,
+      if (seenAt != null) 'seen_at': seenAt,
       if (cachedAt != null) 'cached_at': cachedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -8561,6 +8607,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
     Value<String?>? recordJson,
     Value<DateTime>? indexedAt,
     Value<bool>? isRead,
+    Value<DateTime?>? seenAt,
     Value<DateTime>? cachedAt,
     Value<int>? rowid,
   }) {
@@ -8572,6 +8619,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
       recordJson: recordJson ?? this.recordJson,
       indexedAt: indexedAt ?? this.indexedAt,
       isRead: isRead ?? this.isRead,
+      seenAt: seenAt ?? this.seenAt,
       cachedAt: cachedAt ?? this.cachedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -8601,6 +8649,9 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
     if (isRead.present) {
       map['is_read'] = Variable<bool>(isRead.value);
     }
+    if (seenAt.present) {
+      map['seen_at'] = Variable<DateTime>(seenAt.value);
+    }
     if (cachedAt.present) {
       map['cached_at'] = Variable<DateTime>(cachedAt.value);
     }
@@ -8620,6 +8671,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
           ..write('recordJson: $recordJson, ')
           ..write('indexedAt: $indexedAt, ')
           ..write('isRead: $isRead, ')
+          ..write('seenAt: $seenAt, ')
           ..write('cachedAt: $cachedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -8881,6 +8933,340 @@ class NotificationCursorsCompanion extends UpdateCompanion<NotificationCursor> {
   }
 }
 
+class $NotificationsSyncQueueTable extends NotificationsSyncQueue
+    with TableInfo<$NotificationsSyncQueueTable, NotificationsSyncQueueData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NotificationsSyncQueueTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _seenAtMeta = const VerificationMeta('seenAt');
+  @override
+  late final GeneratedColumn<String> seenAt = GeneratedColumn<String>(
+    'seen_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _retryCountMeta = const VerificationMeta('retryCount');
+  @override
+  late final GeneratedColumn<int> retryCount = GeneratedColumn<int>(
+    'retry_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, type, seenAt, createdAt, retryCount];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'notifications_sync_queue';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NotificationsSyncQueueData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('type')) {
+      context.handle(_typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('seen_at')) {
+      context.handle(_seenAtMeta, seenAt.isAcceptableOrUnknown(data['seen_at']!, _seenAtMeta));
+    } else if (isInserting) {
+      context.missing(_seenAtMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('retry_count')) {
+      context.handle(
+        _retryCountMeta,
+        retryCount.isAcceptableOrUnknown(data['retry_count']!, _retryCountMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NotificationsSyncQueueData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NotificationsSyncQueueData(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      seenAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}seen_at'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      retryCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}retry_count'],
+      )!,
+    );
+  }
+
+  @override
+  $NotificationsSyncQueueTable createAlias(String alias) {
+    return $NotificationsSyncQueueTable(attachedDatabase, alias);
+  }
+}
+
+class NotificationsSyncQueueData extends DataClass
+    implements Insertable<NotificationsSyncQueueData> {
+  final int id;
+
+  /// Type of operation: 'mark_seen'.
+  final String type;
+
+  /// The timestamp to mark as seen (ISO8601 string).
+  final String seenAt;
+
+  /// When the item was queued.
+  final DateTime createdAt;
+
+  /// Number of times we've tried to process this item.
+  final int retryCount;
+  const NotificationsSyncQueueData({
+    required this.id,
+    required this.type,
+    required this.seenAt,
+    required this.createdAt,
+    required this.retryCount,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['type'] = Variable<String>(type);
+    map['seen_at'] = Variable<String>(seenAt);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['retry_count'] = Variable<int>(retryCount);
+    return map;
+  }
+
+  NotificationsSyncQueueCompanion toCompanion(bool nullToAbsent) {
+    return NotificationsSyncQueueCompanion(
+      id: Value(id),
+      type: Value(type),
+      seenAt: Value(seenAt),
+      createdAt: Value(createdAt),
+      retryCount: Value(retryCount),
+    );
+  }
+
+  factory NotificationsSyncQueueData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NotificationsSyncQueueData(
+      id: serializer.fromJson<int>(json['id']),
+      type: serializer.fromJson<String>(json['type']),
+      seenAt: serializer.fromJson<String>(json['seenAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      retryCount: serializer.fromJson<int>(json['retryCount']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'type': serializer.toJson<String>(type),
+      'seenAt': serializer.toJson<String>(seenAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'retryCount': serializer.toJson<int>(retryCount),
+    };
+  }
+
+  NotificationsSyncQueueData copyWith({
+    int? id,
+    String? type,
+    String? seenAt,
+    DateTime? createdAt,
+    int? retryCount,
+  }) => NotificationsSyncQueueData(
+    id: id ?? this.id,
+    type: type ?? this.type,
+    seenAt: seenAt ?? this.seenAt,
+    createdAt: createdAt ?? this.createdAt,
+    retryCount: retryCount ?? this.retryCount,
+  );
+  NotificationsSyncQueueData copyWithCompanion(NotificationsSyncQueueCompanion data) {
+    return NotificationsSyncQueueData(
+      id: data.id.present ? data.id.value : this.id,
+      type: data.type.present ? data.type.value : this.type,
+      seenAt: data.seenAt.present ? data.seenAt.value : this.seenAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      retryCount: data.retryCount.present ? data.retryCount.value : this.retryCount,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotificationsSyncQueueData(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('seenAt: $seenAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('retryCount: $retryCount')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, type, seenAt, createdAt, retryCount);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NotificationsSyncQueueData &&
+          other.id == this.id &&
+          other.type == this.type &&
+          other.seenAt == this.seenAt &&
+          other.createdAt == this.createdAt &&
+          other.retryCount == this.retryCount);
+}
+
+class NotificationsSyncQueueCompanion extends UpdateCompanion<NotificationsSyncQueueData> {
+  final Value<int> id;
+  final Value<String> type;
+  final Value<String> seenAt;
+  final Value<DateTime> createdAt;
+  final Value<int> retryCount;
+  const NotificationsSyncQueueCompanion({
+    this.id = const Value.absent(),
+    this.type = const Value.absent(),
+    this.seenAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.retryCount = const Value.absent(),
+  });
+  NotificationsSyncQueueCompanion.insert({
+    this.id = const Value.absent(),
+    required String type,
+    required String seenAt,
+    required DateTime createdAt,
+    this.retryCount = const Value.absent(),
+  }) : type = Value(type),
+       seenAt = Value(seenAt),
+       createdAt = Value(createdAt);
+  static Insertable<NotificationsSyncQueueData> custom({
+    Expression<int>? id,
+    Expression<String>? type,
+    Expression<String>? seenAt,
+    Expression<DateTime>? createdAt,
+    Expression<int>? retryCount,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (type != null) 'type': type,
+      if (seenAt != null) 'seen_at': seenAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (retryCount != null) 'retry_count': retryCount,
+    });
+  }
+
+  NotificationsSyncQueueCompanion copyWith({
+    Value<int>? id,
+    Value<String>? type,
+    Value<String>? seenAt,
+    Value<DateTime>? createdAt,
+    Value<int>? retryCount,
+  }) {
+    return NotificationsSyncQueueCompanion(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      seenAt: seenAt ?? this.seenAt,
+      createdAt: createdAt ?? this.createdAt,
+      retryCount: retryCount ?? this.retryCount,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (seenAt.present) {
+      map['seen_at'] = Variable<String>(seenAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (retryCount.present) {
+      map['retry_count'] = Variable<int>(retryCount.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotificationsSyncQueueCompanion(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('seenAt: $seenAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('retryCount: $retryCount')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8906,6 +9292,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $AnimationPreferencesTableTable(this);
   late final $NotificationsTable notifications = $NotificationsTable(this);
   late final $NotificationCursorsTable notificationCursors = $NotificationCursorsTable(this);
+  late final $NotificationsSyncQueueTable notificationsSyncQueue = $NotificationsSyncQueueTable(
+    this,
+  );
   late final Index feedContentSortIdx = Index(
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
@@ -8941,6 +9330,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this as AppDatabase,
   );
   late final NotificationsDao notificationsDao = NotificationsDao(this as AppDatabase);
+  late final NotificationsSyncQueueDao notificationsSyncQueueDao = NotificationsSyncQueueDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -8967,6 +9359,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     animationPreferencesTable,
     notifications,
     notificationCursors,
+    notificationsSyncQueue,
     feedContentSortIdx,
     searchCacheSortIdx,
     notificationsIndexedAtIdx,
@@ -14171,6 +14564,7 @@ typedef $$NotificationsTableCreateCompanionBuilder =
       Value<String?> recordJson,
       required DateTime indexedAt,
       Value<bool> isRead,
+      Value<DateTime?> seenAt,
       required DateTime cachedAt,
       Value<int> rowid,
     });
@@ -14183,6 +14577,7 @@ typedef $$NotificationsTableUpdateCompanionBuilder =
       Value<String?> recordJson,
       Value<DateTime> indexedAt,
       Value<bool> isRead,
+      Value<DateTime?> seenAt,
       Value<DateTime> cachedAt,
       Value<int> rowid,
     });
@@ -14235,6 +14630,9 @@ class $$NotificationsTableFilterComposer extends Composer<_$AppDatabase, $Notifi
   ColumnFilters<bool> get isRead =>
       $composableBuilder(column: $table.isRead, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<DateTime> get seenAt =>
+      $composableBuilder(column: $table.seenAt, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<DateTime> get cachedAt =>
       $composableBuilder(column: $table.cachedAt, builder: (column) => ColumnFilters(column));
 
@@ -14286,6 +14684,9 @@ class $$NotificationsTableOrderingComposer extends Composer<_$AppDatabase, $Noti
   ColumnOrderings<bool> get isRead =>
       $composableBuilder(column: $table.isRead, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<DateTime> get seenAt =>
+      $composableBuilder(column: $table.seenAt, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get cachedAt =>
       $composableBuilder(column: $table.cachedAt, builder: (column) => ColumnOrderings(column));
 
@@ -14334,6 +14735,9 @@ class $$NotificationsTableAnnotationComposer extends Composer<_$AppDatabase, $No
 
   GeneratedColumn<bool> get isRead =>
       $composableBuilder(column: $table.isRead, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get seenAt =>
+      $composableBuilder(column: $table.seenAt, builder: (column) => column);
 
   GeneratedColumn<DateTime> get cachedAt =>
       $composableBuilder(column: $table.cachedAt, builder: (column) => column);
@@ -14393,6 +14797,7 @@ class $$NotificationsTableTableManager
                 Value<String?> recordJson = const Value.absent(),
                 Value<DateTime> indexedAt = const Value.absent(),
                 Value<bool> isRead = const Value.absent(),
+                Value<DateTime?> seenAt = const Value.absent(),
                 Value<DateTime> cachedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NotificationsCompanion(
@@ -14403,6 +14808,7 @@ class $$NotificationsTableTableManager
                 recordJson: recordJson,
                 indexedAt: indexedAt,
                 isRead: isRead,
+                seenAt: seenAt,
                 cachedAt: cachedAt,
                 rowid: rowid,
               ),
@@ -14415,6 +14821,7 @@ class $$NotificationsTableTableManager
                 Value<String?> recordJson = const Value.absent(),
                 required DateTime indexedAt,
                 Value<bool> isRead = const Value.absent(),
+                Value<DateTime?> seenAt = const Value.absent(),
                 required DateTime cachedAt,
                 Value<int> rowid = const Value.absent(),
               }) => NotificationsCompanion.insert(
@@ -14425,6 +14832,7 @@ class $$NotificationsTableTableManager
                 recordJson: recordJson,
                 indexedAt: indexedAt,
                 isRead: isRead,
+                seenAt: seenAt,
                 cachedAt: cachedAt,
                 rowid: rowid,
               ),
@@ -14638,6 +15046,183 @@ typedef $$NotificationCursorsTableProcessedTableManager =
       NotificationCursor,
       PrefetchHooks Function()
     >;
+typedef $$NotificationsSyncQueueTableCreateCompanionBuilder =
+    NotificationsSyncQueueCompanion Function({
+      Value<int> id,
+      required String type,
+      required String seenAt,
+      required DateTime createdAt,
+      Value<int> retryCount,
+    });
+typedef $$NotificationsSyncQueueTableUpdateCompanionBuilder =
+    NotificationsSyncQueueCompanion Function({
+      Value<int> id,
+      Value<String> type,
+      Value<String> seenAt,
+      Value<DateTime> createdAt,
+      Value<int> retryCount,
+    });
+
+class $$NotificationsSyncQueueTableFilterComposer
+    extends Composer<_$AppDatabase, $NotificationsSyncQueueTable> {
+  $$NotificationsSyncQueueTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get seenAt =>
+      $composableBuilder(column: $table.seenAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get retryCount =>
+      $composableBuilder(column: $table.retryCount, builder: (column) => ColumnFilters(column));
+}
+
+class $$NotificationsSyncQueueTableOrderingComposer
+    extends Composer<_$AppDatabase, $NotificationsSyncQueueTable> {
+  $$NotificationsSyncQueueTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get seenAt =>
+      $composableBuilder(column: $table.seenAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get retryCount =>
+      $composableBuilder(column: $table.retryCount, builder: (column) => ColumnOrderings(column));
+}
+
+class $$NotificationsSyncQueueTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NotificationsSyncQueueTable> {
+  $$NotificationsSyncQueueTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get seenAt =>
+      $composableBuilder(column: $table.seenAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get retryCount =>
+      $composableBuilder(column: $table.retryCount, builder: (column) => column);
+}
+
+class $$NotificationsSyncQueueTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NotificationsSyncQueueTable,
+          NotificationsSyncQueueData,
+          $$NotificationsSyncQueueTableFilterComposer,
+          $$NotificationsSyncQueueTableOrderingComposer,
+          $$NotificationsSyncQueueTableAnnotationComposer,
+          $$NotificationsSyncQueueTableCreateCompanionBuilder,
+          $$NotificationsSyncQueueTableUpdateCompanionBuilder,
+          (
+            NotificationsSyncQueueData,
+            BaseReferences<
+              _$AppDatabase,
+              $NotificationsSyncQueueTable,
+              NotificationsSyncQueueData
+            >,
+          ),
+          NotificationsSyncQueueData,
+          PrefetchHooks Function()
+        > {
+  $$NotificationsSyncQueueTableTableManager(_$AppDatabase db, $NotificationsSyncQueueTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NotificationsSyncQueueTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NotificationsSyncQueueTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NotificationsSyncQueueTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String> seenAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> retryCount = const Value.absent(),
+              }) => NotificationsSyncQueueCompanion(
+                id: id,
+                type: type,
+                seenAt: seenAt,
+                createdAt: createdAt,
+                retryCount: retryCount,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String type,
+                required String seenAt,
+                required DateTime createdAt,
+                Value<int> retryCount = const Value.absent(),
+              }) => NotificationsSyncQueueCompanion.insert(
+                id: id,
+                type: type,
+                seenAt: seenAt,
+                createdAt: createdAt,
+                retryCount: retryCount,
+              ),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$NotificationsSyncQueueTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NotificationsSyncQueueTable,
+      NotificationsSyncQueueData,
+      $$NotificationsSyncQueueTableFilterComposer,
+      $$NotificationsSyncQueueTableOrderingComposer,
+      $$NotificationsSyncQueueTableAnnotationComposer,
+      $$NotificationsSyncQueueTableCreateCompanionBuilder,
+      $$NotificationsSyncQueueTableUpdateCompanionBuilder,
+      (
+        NotificationsSyncQueueData,
+        BaseReferences<_$AppDatabase, $NotificationsSyncQueueTable, NotificationsSyncQueueData>,
+      ),
+      NotificationsSyncQueueData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -14679,4 +15264,6 @@ class $AppDatabaseManager {
       $$NotificationsTableTableManager(_db, _db.notifications);
   $$NotificationCursorsTableTableManager get notificationCursors =>
       $$NotificationCursorsTableTableManager(_db, _db.notificationCursors);
+  $$NotificationsSyncQueueTableTableManager get notificationsSyncQueue =>
+      $$NotificationsSyncQueueTableTableManager(_db, _db.notificationsSyncQueue);
 }

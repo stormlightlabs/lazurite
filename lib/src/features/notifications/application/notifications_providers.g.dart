@@ -57,4 +57,56 @@ final class NotificationsRepositoryProvider
   }
 }
 
-String _$notificationsRepositoryHash() => r'1113fe5d3e5c760d184360288cc340e5dc86ea08';
+String _$notificationsRepositoryHash() => r'4720900eecda437b9f4be3df1b0f85112169290b';
+
+/// Provides the MarkAsSeenService instance.
+///
+/// This service batches mark as seen operations to avoid excessive API calls.
+
+@ProviderFor(markAsSeenService)
+final markAsSeenServiceProvider = MarkAsSeenServiceProvider._();
+
+/// Provides the MarkAsSeenService instance.
+///
+/// This service batches mark as seen operations to avoid excessive API calls.
+
+final class MarkAsSeenServiceProvider
+    extends $FunctionalProvider<MarkAsSeenService, MarkAsSeenService, MarkAsSeenService>
+    with $Provider<MarkAsSeenService> {
+  /// Provides the MarkAsSeenService instance.
+  ///
+  /// This service batches mark as seen operations to avoid excessive API calls.
+  MarkAsSeenServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'markAsSeenServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$markAsSeenServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<MarkAsSeenService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  MarkAsSeenService create(Ref ref) {
+    return markAsSeenService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(MarkAsSeenService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<MarkAsSeenService>(value),
+    );
+  }
+}
+
+String _$markAsSeenServiceHash() => r'a963d364ce0b5d226d42add1152044bc846e502b';
