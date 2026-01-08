@@ -19,6 +19,7 @@ import 'daos/profile_relationship_dao.dart';
 import 'daos/saved_feeds_dao.dart';
 import 'daos/search_cache_dao.dart';
 import 'daos/search_dao.dart';
+import 'daos/notifications_dao.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -44,6 +45,8 @@ part 'app_database.g.dart';
     BlueskyPreferences,
     CustomThemes,
     AnimationPreferencesTable,
+    Notifications,
+    NotificationCursors,
   ],
   daos: [
     FeedContentDao,
@@ -60,6 +63,7 @@ part 'app_database.g.dart';
     BlueskyPreferencesDao,
     CustomThemeDao,
     AnimationPreferencesDao,
+    NotificationsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {

@@ -56,4 +56,4 @@ final class FeedSyncControllerProvider extends $FunctionalProvider<void, void, v
   }
 }
 
-String _$feedSyncControllerHash() => r'820b6997311c71ae8be6fb73b38406c8d674421e';
+String _$feedSyncControllerHash() => r'a6ef5c6d7e5ee562e735cf8ba62d237f824e93e4';

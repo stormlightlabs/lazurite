@@ -387,3 +387,52 @@ class AnimationPreferencesTable extends Table {
   @override
   Set<Column> get primaryKey => {key};
 }
+
+/// Caches notifications from app.bsky.notification.listNotifications.
+///
+/// Stores notification metadata for offline display and efficient querying.
+/// Links to Profiles via actorDid for author information.
+@TableIndex(name: 'notifications_indexed_at_idx', columns: {#indexedAt})
+class Notifications extends Table {
+  /// Notification AT URI (primary key).
+  TextColumn get uri => text()();
+
+  /// DID of the user who triggered the notification.
+  TextColumn get actorDid => text().references(Profiles, #did)();
+
+  /// Notification type (like, repost, follow, mention, reply, quote, starterpack-joined).
+  TextColumn get type => text()();
+
+  /// URI of the subject (post/profile) this notification is about.
+  TextColumn get reasonSubjectUri => text().nullable()();
+
+  /// Associated record JSON (for displaying notification context).
+  TextColumn get recordJson => text().nullable()();
+
+  /// When the notification was indexed on the server.
+  DateTimeColumn get indexedAt => dateTime()();
+
+  /// Whether the notification has been read.
+  BoolColumn get isRead => boolean().withDefault(const Constant(false))();
+
+  /// When this notification was cached locally.
+  DateTimeColumn get cachedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {uri};
+}
+
+/// Stores pagination cursor for notifications feed.
+class NotificationCursors extends Table {
+  /// Feed key identifier (e.g., 'notifications').
+  TextColumn get feedKey => text()();
+
+  /// Pagination cursor from API.
+  TextColumn get cursor => text()();
+
+  /// When the cursor was last updated.
+  DateTimeColumn get lastUpdated => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {feedKey};
+}

@@ -385,7 +385,7 @@ final class ActiveFeedProvider extends $NotifierProvider<ActiveFeed, String> {
   }
 }
 
-String _$activeFeedHash() => r'b9ed5333846f3c60e39d025ad528618be03002b2';
+String _$activeFeedHash() => r'37de39d7b43cf52c4aa886da362bf217116c6874';
 
 /// Notifier for tracking the currently active feed.
 ///

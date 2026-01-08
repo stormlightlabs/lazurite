@@ -79,12 +79,12 @@ class ThemeState {
 /// Provides the list of available theme packs.
 @Riverpod(keepAlive: true)
 List<ThemePack> availableThemePacks(Ref ref) => [
-      oxocarbonPack,
-      catppuccinPack,
-      rosePinePack,
-      nordPack,
-      oneDarkPack,
-    ];
+  oxocarbonPack,
+  catppuccinPack,
+  rosePinePack,
+  nordPack,
+  oneDarkPack,
+];
 
 /// Provides access to the LocalSettingsDao.
 @Riverpod(keepAlive: true)

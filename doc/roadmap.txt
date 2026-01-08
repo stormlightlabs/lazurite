@@ -10,17 +10,17 @@ Endpoints (all registered):
 - app.bsky.notification.updateSeen (POST)
 
 Phase 1: Core Notification Display
-- [ ] Drift tables:
+- [x] Drift tables:
       - Notifications (uri, actorDid, type, reasonJson, reasonSubjectUri,
         indexedAt, isRead, seenAt, cachedAt)
       - NotificationCursors (feedKey, cursor)
-- [ ] Domain models:
+- [x] Domain models:
       - Notification, NotificationType enum, Reason
-- [ ] NotificationsRepository:
+- [x] NotificationsRepository:
       - fetchNotifications with cursor pagination
       - watchNotifications stream from cache
       - parse API responses and join with Profiles
-- [ ] NotificationsNotifier:
+- [x] NotificationsNotifier:
       - AsyncNotifier with pagination support
       - refresh() and loadMore() methods
 - [ ] NotificationsScreen:

@@ -52,7 +52,7 @@ final class AvailableThemePacksProvider
   }
 }
 
-String _$availableThemePacksHash() => r'8a4bf9ee64da0c0622cf017dd887bbc4c0760d00';
+String _$availableThemePacksHash() => r'b9d693e0186fc9513e549dcc48aaafecbbf42099';
 
 /// Provides access to the LocalSettingsDao.
 
@@ -135,7 +135,7 @@ final class ThemeControllerProvider extends $NotifierProvider<ThemeController, T
   }
 }
 
-String _$themeControllerHash() => r'9508b4cf36c873d3719bf12cf07504242a45df09';
+String _$themeControllerHash() => r'7d678caa471ef68ad4b065d0046df8bcafec6c74';
 
 /// Controls the app theme with pack selection and persistence.
 

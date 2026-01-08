@@ -10,6 +10,7 @@ import 'package:lazurite/src/features/composer/domain/facet_parser.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_content_repository.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
+import 'package:lazurite/src/features/notifications/infrastructure/notifications_repository.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
 import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
@@ -19,6 +20,7 @@ import 'package:lazurite/src/infrastructure/auth/oauth_client.dart';
 import 'package:lazurite/src/infrastructure/auth/server_metadata.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
+import 'package:lazurite/src/infrastructure/db/daos/notifications_dao.dart';
 import 'package:lazurite/src/infrastructure/identity/identity_repository.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 import 'package:lazurite/src/infrastructure/preferences/bluesky_preferences_repository.dart';
@@ -65,6 +67,10 @@ class MockSearchRepository extends Mock implements SearchRepository {}
 class MockThreadRepository extends Mock implements ThreadRepository {}
 
 class MockBlueskyPreferencesRepository extends Mock implements BlueskyPreferencesRepository {}
+
+class MockNotificationsRepository extends Mock implements NotificationsRepository {}
+
+class MockNotificationsDao extends Mock implements NotificationsDao {}
 
 class MockPinnedFeedsNotifier extends Mock implements PinnedFeedsNotifier {
   @override

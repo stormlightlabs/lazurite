@@ -8133,6 +8133,754 @@ class AnimationPreferencesTableCompanion extends UpdateCompanion<AnimationPrefer
   }
 }
 
+class $NotificationsTable extends Notifications with TableInfo<$NotificationsTable, Notification> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NotificationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _uriMeta = const VerificationMeta('uri');
+  @override
+  late final GeneratedColumn<String> uri = GeneratedColumn<String>(
+    'uri',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _actorDidMeta = const VerificationMeta('actorDid');
+  @override
+  late final GeneratedColumn<String> actorDid = GeneratedColumn<String>(
+    'actor_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES profiles (did)'),
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reasonSubjectUriMeta = const VerificationMeta('reasonSubjectUri');
+  @override
+  late final GeneratedColumn<String> reasonSubjectUri = GeneratedColumn<String>(
+    'reason_subject_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _recordJsonMeta = const VerificationMeta('recordJson');
+  @override
+  late final GeneratedColumn<String> recordJson = GeneratedColumn<String>(
+    'record_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _indexedAtMeta = const VerificationMeta('indexedAt');
+  @override
+  late final GeneratedColumn<DateTime> indexedAt = GeneratedColumn<DateTime>(
+    'indexed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isReadMeta = const VerificationMeta('isRead');
+  @override
+  late final GeneratedColumn<bool> isRead = GeneratedColumn<bool>(
+    'is_read',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("is_read" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _cachedAtMeta = const VerificationMeta('cachedAt');
+  @override
+  late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
+    'cached_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    uri,
+    actorDid,
+    type,
+    reasonSubjectUri,
+    recordJson,
+    indexedAt,
+    isRead,
+    cachedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'notifications';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Notification> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('uri')) {
+      context.handle(_uriMeta, uri.isAcceptableOrUnknown(data['uri']!, _uriMeta));
+    } else if (isInserting) {
+      context.missing(_uriMeta);
+    }
+    if (data.containsKey('actor_did')) {
+      context.handle(
+        _actorDidMeta,
+        actorDid.isAcceptableOrUnknown(data['actor_did']!, _actorDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_actorDidMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(_typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('reason_subject_uri')) {
+      context.handle(
+        _reasonSubjectUriMeta,
+        reasonSubjectUri.isAcceptableOrUnknown(data['reason_subject_uri']!, _reasonSubjectUriMeta),
+      );
+    }
+    if (data.containsKey('record_json')) {
+      context.handle(
+        _recordJsonMeta,
+        recordJson.isAcceptableOrUnknown(data['record_json']!, _recordJsonMeta),
+      );
+    }
+    if (data.containsKey('indexed_at')) {
+      context.handle(
+        _indexedAtMeta,
+        indexedAt.isAcceptableOrUnknown(data['indexed_at']!, _indexedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_indexedAtMeta);
+    }
+    if (data.containsKey('is_read')) {
+      context.handle(_isReadMeta, isRead.isAcceptableOrUnknown(data['is_read']!, _isReadMeta));
+    }
+    if (data.containsKey('cached_at')) {
+      context.handle(
+        _cachedAtMeta,
+        cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cachedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {uri};
+  @override
+  Notification map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Notification(
+      uri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}uri'])!,
+      actorDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}actor_did'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      reasonSubjectUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason_subject_uri'],
+      ),
+      recordJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}record_json'],
+      ),
+      indexedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}indexed_at'],
+      )!,
+      isRead: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_read'],
+      )!,
+      cachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}cached_at'],
+      )!,
+    );
+  }
+
+  @override
+  $NotificationsTable createAlias(String alias) {
+    return $NotificationsTable(attachedDatabase, alias);
+  }
+}
+
+class Notification extends DataClass implements Insertable<Notification> {
+  /// Notification AT URI (primary key).
+  final String uri;
+
+  /// DID of the user who triggered the notification.
+  final String actorDid;
+
+  /// Notification type (like, repost, follow, mention, reply, quote, starterpack-joined).
+  final String type;
+
+  /// URI of the subject (post/profile) this notification is about.
+  final String? reasonSubjectUri;
+
+  /// Associated record JSON (for displaying notification context).
+  final String? recordJson;
+
+  /// When the notification was indexed on the server.
+  final DateTime indexedAt;
+
+  /// Whether the notification has been read.
+  final bool isRead;
+
+  /// When this notification was cached locally.
+  final DateTime cachedAt;
+  const Notification({
+    required this.uri,
+    required this.actorDid,
+    required this.type,
+    this.reasonSubjectUri,
+    this.recordJson,
+    required this.indexedAt,
+    required this.isRead,
+    required this.cachedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['uri'] = Variable<String>(uri);
+    map['actor_did'] = Variable<String>(actorDid);
+    map['type'] = Variable<String>(type);
+    if (!nullToAbsent || reasonSubjectUri != null) {
+      map['reason_subject_uri'] = Variable<String>(reasonSubjectUri);
+    }
+    if (!nullToAbsent || recordJson != null) {
+      map['record_json'] = Variable<String>(recordJson);
+    }
+    map['indexed_at'] = Variable<DateTime>(indexedAt);
+    map['is_read'] = Variable<bool>(isRead);
+    map['cached_at'] = Variable<DateTime>(cachedAt);
+    return map;
+  }
+
+  NotificationsCompanion toCompanion(bool nullToAbsent) {
+    return NotificationsCompanion(
+      uri: Value(uri),
+      actorDid: Value(actorDid),
+      type: Value(type),
+      reasonSubjectUri: reasonSubjectUri == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reasonSubjectUri),
+      recordJson: recordJson == null && nullToAbsent ? const Value.absent() : Value(recordJson),
+      indexedAt: Value(indexedAt),
+      isRead: Value(isRead),
+      cachedAt: Value(cachedAt),
+    );
+  }
+
+  factory Notification.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Notification(
+      uri: serializer.fromJson<String>(json['uri']),
+      actorDid: serializer.fromJson<String>(json['actorDid']),
+      type: serializer.fromJson<String>(json['type']),
+      reasonSubjectUri: serializer.fromJson<String?>(json['reasonSubjectUri']),
+      recordJson: serializer.fromJson<String?>(json['recordJson']),
+      indexedAt: serializer.fromJson<DateTime>(json['indexedAt']),
+      isRead: serializer.fromJson<bool>(json['isRead']),
+      cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'uri': serializer.toJson<String>(uri),
+      'actorDid': serializer.toJson<String>(actorDid),
+      'type': serializer.toJson<String>(type),
+      'reasonSubjectUri': serializer.toJson<String?>(reasonSubjectUri),
+      'recordJson': serializer.toJson<String?>(recordJson),
+      'indexedAt': serializer.toJson<DateTime>(indexedAt),
+      'isRead': serializer.toJson<bool>(isRead),
+      'cachedAt': serializer.toJson<DateTime>(cachedAt),
+    };
+  }
+
+  Notification copyWith({
+    String? uri,
+    String? actorDid,
+    String? type,
+    Value<String?> reasonSubjectUri = const Value.absent(),
+    Value<String?> recordJson = const Value.absent(),
+    DateTime? indexedAt,
+    bool? isRead,
+    DateTime? cachedAt,
+  }) => Notification(
+    uri: uri ?? this.uri,
+    actorDid: actorDid ?? this.actorDid,
+    type: type ?? this.type,
+    reasonSubjectUri: reasonSubjectUri.present ? reasonSubjectUri.value : this.reasonSubjectUri,
+    recordJson: recordJson.present ? recordJson.value : this.recordJson,
+    indexedAt: indexedAt ?? this.indexedAt,
+    isRead: isRead ?? this.isRead,
+    cachedAt: cachedAt ?? this.cachedAt,
+  );
+  Notification copyWithCompanion(NotificationsCompanion data) {
+    return Notification(
+      uri: data.uri.present ? data.uri.value : this.uri,
+      actorDid: data.actorDid.present ? data.actorDid.value : this.actorDid,
+      type: data.type.present ? data.type.value : this.type,
+      reasonSubjectUri: data.reasonSubjectUri.present
+          ? data.reasonSubjectUri.value
+          : this.reasonSubjectUri,
+      recordJson: data.recordJson.present ? data.recordJson.value : this.recordJson,
+      indexedAt: data.indexedAt.present ? data.indexedAt.value : this.indexedAt,
+      isRead: data.isRead.present ? data.isRead.value : this.isRead,
+      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Notification(')
+          ..write('uri: $uri, ')
+          ..write('actorDid: $actorDid, ')
+          ..write('type: $type, ')
+          ..write('reasonSubjectUri: $reasonSubjectUri, ')
+          ..write('recordJson: $recordJson, ')
+          ..write('indexedAt: $indexedAt, ')
+          ..write('isRead: $isRead, ')
+          ..write('cachedAt: $cachedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(uri, actorDid, type, reasonSubjectUri, recordJson, indexedAt, isRead, cachedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Notification &&
+          other.uri == this.uri &&
+          other.actorDid == this.actorDid &&
+          other.type == this.type &&
+          other.reasonSubjectUri == this.reasonSubjectUri &&
+          other.recordJson == this.recordJson &&
+          other.indexedAt == this.indexedAt &&
+          other.isRead == this.isRead &&
+          other.cachedAt == this.cachedAt);
+}
+
+class NotificationsCompanion extends UpdateCompanion<Notification> {
+  final Value<String> uri;
+  final Value<String> actorDid;
+  final Value<String> type;
+  final Value<String?> reasonSubjectUri;
+  final Value<String?> recordJson;
+  final Value<DateTime> indexedAt;
+  final Value<bool> isRead;
+  final Value<DateTime> cachedAt;
+  final Value<int> rowid;
+  const NotificationsCompanion({
+    this.uri = const Value.absent(),
+    this.actorDid = const Value.absent(),
+    this.type = const Value.absent(),
+    this.reasonSubjectUri = const Value.absent(),
+    this.recordJson = const Value.absent(),
+    this.indexedAt = const Value.absent(),
+    this.isRead = const Value.absent(),
+    this.cachedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NotificationsCompanion.insert({
+    required String uri,
+    required String actorDid,
+    required String type,
+    this.reasonSubjectUri = const Value.absent(),
+    this.recordJson = const Value.absent(),
+    required DateTime indexedAt,
+    this.isRead = const Value.absent(),
+    required DateTime cachedAt,
+    this.rowid = const Value.absent(),
+  }) : uri = Value(uri),
+       actorDid = Value(actorDid),
+       type = Value(type),
+       indexedAt = Value(indexedAt),
+       cachedAt = Value(cachedAt);
+  static Insertable<Notification> custom({
+    Expression<String>? uri,
+    Expression<String>? actorDid,
+    Expression<String>? type,
+    Expression<String>? reasonSubjectUri,
+    Expression<String>? recordJson,
+    Expression<DateTime>? indexedAt,
+    Expression<bool>? isRead,
+    Expression<DateTime>? cachedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (uri != null) 'uri': uri,
+      if (actorDid != null) 'actor_did': actorDid,
+      if (type != null) 'type': type,
+      if (reasonSubjectUri != null) 'reason_subject_uri': reasonSubjectUri,
+      if (recordJson != null) 'record_json': recordJson,
+      if (indexedAt != null) 'indexed_at': indexedAt,
+      if (isRead != null) 'is_read': isRead,
+      if (cachedAt != null) 'cached_at': cachedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NotificationsCompanion copyWith({
+    Value<String>? uri,
+    Value<String>? actorDid,
+    Value<String>? type,
+    Value<String?>? reasonSubjectUri,
+    Value<String?>? recordJson,
+    Value<DateTime>? indexedAt,
+    Value<bool>? isRead,
+    Value<DateTime>? cachedAt,
+    Value<int>? rowid,
+  }) {
+    return NotificationsCompanion(
+      uri: uri ?? this.uri,
+      actorDid: actorDid ?? this.actorDid,
+      type: type ?? this.type,
+      reasonSubjectUri: reasonSubjectUri ?? this.reasonSubjectUri,
+      recordJson: recordJson ?? this.recordJson,
+      indexedAt: indexedAt ?? this.indexedAt,
+      isRead: isRead ?? this.isRead,
+      cachedAt: cachedAt ?? this.cachedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (uri.present) {
+      map['uri'] = Variable<String>(uri.value);
+    }
+    if (actorDid.present) {
+      map['actor_did'] = Variable<String>(actorDid.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (reasonSubjectUri.present) {
+      map['reason_subject_uri'] = Variable<String>(reasonSubjectUri.value);
+    }
+    if (recordJson.present) {
+      map['record_json'] = Variable<String>(recordJson.value);
+    }
+    if (indexedAt.present) {
+      map['indexed_at'] = Variable<DateTime>(indexedAt.value);
+    }
+    if (isRead.present) {
+      map['is_read'] = Variable<bool>(isRead.value);
+    }
+    if (cachedAt.present) {
+      map['cached_at'] = Variable<DateTime>(cachedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotificationsCompanion(')
+          ..write('uri: $uri, ')
+          ..write('actorDid: $actorDid, ')
+          ..write('type: $type, ')
+          ..write('reasonSubjectUri: $reasonSubjectUri, ')
+          ..write('recordJson: $recordJson, ')
+          ..write('indexedAt: $indexedAt, ')
+          ..write('isRead: $isRead, ')
+          ..write('cachedAt: $cachedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NotificationCursorsTable extends NotificationCursors
+    with TableInfo<$NotificationCursorsTable, NotificationCursor> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NotificationCursorsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _feedKeyMeta = const VerificationMeta('feedKey');
+  @override
+  late final GeneratedColumn<String> feedKey = GeneratedColumn<String>(
+    'feed_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cursorMeta = const VerificationMeta('cursor');
+  @override
+  late final GeneratedColumn<String> cursor = GeneratedColumn<String>(
+    'cursor',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastUpdatedMeta = const VerificationMeta('lastUpdated');
+  @override
+  late final GeneratedColumn<DateTime> lastUpdated = GeneratedColumn<DateTime>(
+    'last_updated',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [feedKey, cursor, lastUpdated];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'notification_cursors';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NotificationCursor> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('feed_key')) {
+      context.handle(_feedKeyMeta, feedKey.isAcceptableOrUnknown(data['feed_key']!, _feedKeyMeta));
+    } else if (isInserting) {
+      context.missing(_feedKeyMeta);
+    }
+    if (data.containsKey('cursor')) {
+      context.handle(_cursorMeta, cursor.isAcceptableOrUnknown(data['cursor']!, _cursorMeta));
+    } else if (isInserting) {
+      context.missing(_cursorMeta);
+    }
+    if (data.containsKey('last_updated')) {
+      context.handle(
+        _lastUpdatedMeta,
+        lastUpdated.isAcceptableOrUnknown(data['last_updated']!, _lastUpdatedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {feedKey};
+  @override
+  NotificationCursor map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NotificationCursor(
+      feedKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}feed_key'],
+      )!,
+      cursor: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cursor'],
+      )!,
+      lastUpdated: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_updated'],
+      ),
+    );
+  }
+
+  @override
+  $NotificationCursorsTable createAlias(String alias) {
+    return $NotificationCursorsTable(attachedDatabase, alias);
+  }
+}
+
+class NotificationCursor extends DataClass implements Insertable<NotificationCursor> {
+  /// Feed key identifier (e.g., 'notifications').
+  final String feedKey;
+
+  /// Pagination cursor from API.
+  final String cursor;
+
+  /// When the cursor was last updated.
+  final DateTime? lastUpdated;
+  const NotificationCursor({required this.feedKey, required this.cursor, this.lastUpdated});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['feed_key'] = Variable<String>(feedKey);
+    map['cursor'] = Variable<String>(cursor);
+    if (!nullToAbsent || lastUpdated != null) {
+      map['last_updated'] = Variable<DateTime>(lastUpdated);
+    }
+    return map;
+  }
+
+  NotificationCursorsCompanion toCompanion(bool nullToAbsent) {
+    return NotificationCursorsCompanion(
+      feedKey: Value(feedKey),
+      cursor: Value(cursor),
+      lastUpdated: lastUpdated == null && nullToAbsent ? const Value.absent() : Value(lastUpdated),
+    );
+  }
+
+  factory NotificationCursor.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NotificationCursor(
+      feedKey: serializer.fromJson<String>(json['feedKey']),
+      cursor: serializer.fromJson<String>(json['cursor']),
+      lastUpdated: serializer.fromJson<DateTime?>(json['lastUpdated']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'feedKey': serializer.toJson<String>(feedKey),
+      'cursor': serializer.toJson<String>(cursor),
+      'lastUpdated': serializer.toJson<DateTime?>(lastUpdated),
+    };
+  }
+
+  NotificationCursor copyWith({
+    String? feedKey,
+    String? cursor,
+    Value<DateTime?> lastUpdated = const Value.absent(),
+  }) => NotificationCursor(
+    feedKey: feedKey ?? this.feedKey,
+    cursor: cursor ?? this.cursor,
+    lastUpdated: lastUpdated.present ? lastUpdated.value : this.lastUpdated,
+  );
+  NotificationCursor copyWithCompanion(NotificationCursorsCompanion data) {
+    return NotificationCursor(
+      feedKey: data.feedKey.present ? data.feedKey.value : this.feedKey,
+      cursor: data.cursor.present ? data.cursor.value : this.cursor,
+      lastUpdated: data.lastUpdated.present ? data.lastUpdated.value : this.lastUpdated,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotificationCursor(')
+          ..write('feedKey: $feedKey, ')
+          ..write('cursor: $cursor, ')
+          ..write('lastUpdated: $lastUpdated')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(feedKey, cursor, lastUpdated);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NotificationCursor &&
+          other.feedKey == this.feedKey &&
+          other.cursor == this.cursor &&
+          other.lastUpdated == this.lastUpdated);
+}
+
+class NotificationCursorsCompanion extends UpdateCompanion<NotificationCursor> {
+  final Value<String> feedKey;
+  final Value<String> cursor;
+  final Value<DateTime?> lastUpdated;
+  final Value<int> rowid;
+  const NotificationCursorsCompanion({
+    this.feedKey = const Value.absent(),
+    this.cursor = const Value.absent(),
+    this.lastUpdated = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NotificationCursorsCompanion.insert({
+    required String feedKey,
+    required String cursor,
+    this.lastUpdated = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : feedKey = Value(feedKey),
+       cursor = Value(cursor);
+  static Insertable<NotificationCursor> custom({
+    Expression<String>? feedKey,
+    Expression<String>? cursor,
+    Expression<DateTime>? lastUpdated,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (feedKey != null) 'feed_key': feedKey,
+      if (cursor != null) 'cursor': cursor,
+      if (lastUpdated != null) 'last_updated': lastUpdated,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NotificationCursorsCompanion copyWith({
+    Value<String>? feedKey,
+    Value<String>? cursor,
+    Value<DateTime?>? lastUpdated,
+    Value<int>? rowid,
+  }) {
+    return NotificationCursorsCompanion(
+      feedKey: feedKey ?? this.feedKey,
+      cursor: cursor ?? this.cursor,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (feedKey.present) {
+      map['feed_key'] = Variable<String>(feedKey.value);
+    }
+    if (cursor.present) {
+      map['cursor'] = Variable<String>(cursor.value);
+    }
+    if (lastUpdated.present) {
+      map['last_updated'] = Variable<DateTime>(lastUpdated.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotificationCursorsCompanion(')
+          ..write('feedKey: $feedKey, ')
+          ..write('cursor: $cursor, ')
+          ..write('lastUpdated: $lastUpdated, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8156,6 +8904,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CustomThemesTable customThemes = $CustomThemesTable(this);
   late final $AnimationPreferencesTableTable animationPreferencesTable =
       $AnimationPreferencesTableTable(this);
+  late final $NotificationsTable notifications = $NotificationsTable(this);
+  late final $NotificationCursorsTable notificationCursors = $NotificationCursorsTable(this);
   late final Index feedContentSortIdx = Index(
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
@@ -8163,6 +8913,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index searchCacheSortIdx = Index(
     'search_cache_sort_idx',
     'CREATE INDEX search_cache_sort_idx ON search_cache_items (query_key, sort_key)',
+  );
+  late final Index notificationsIndexedAtIdx = Index(
+    'notifications_indexed_at_idx',
+    'CREATE INDEX notifications_indexed_at_idx ON notifications (indexed_at)',
   );
   late final FeedContentDao feedContentDao = FeedContentDao(this as AppDatabase);
   late final ProfileDao profileDao = ProfileDao(this as AppDatabase);
@@ -8186,6 +8940,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final AnimationPreferencesDao animationPreferencesDao = AnimationPreferencesDao(
     this as AppDatabase,
   );
+  late final NotificationsDao notificationsDao = NotificationsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -8210,8 +8965,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     blueskyPreferences,
     customThemes,
     animationPreferencesTable,
+    notifications,
+    notificationCursors,
     feedContentSortIdx,
     searchCacheSortIdx,
+    notificationsIndexedAtIdx,
   ];
 }
 
@@ -8300,6 +9058,23 @@ final class $$ProfilesTableReferences
     ).filter((f) => f.profileDid.did.sqlEquals($_itemColumn<String>('did')!));
 
     final cache = $_typedResult.readTableOrNull(_profileRelationshipsRefsTable($_db));
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$NotificationsTable, List<Notification>> _notificationsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.notifications,
+    aliasName: $_aliasNameGenerator(db.profiles.did, db.notifications.actorDid),
+  );
+
+  $$NotificationsTableProcessedTableManager get notificationsRefs {
+    final manager = $$NotificationsTableTableManager(
+      $_db,
+      $_db.notifications,
+    ).filter((f) => f.actorDid.did.sqlEquals($_itemColumn<String>('did')!));
+
+    final cache = $_typedResult.readTableOrNull(_notificationsRefsTable($_db));
     return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
   }
 }
@@ -8404,6 +9179,27 @@ class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTab
               $$ProfileRelationshipsTableFilterComposer(
                 $db: $db,
                 $table: $db.profileRelationships,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> notificationsRefs(
+    Expression<bool> Function($$NotificationsTableFilterComposer f) f,
+  ) {
+    final $$NotificationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.did,
+      referencedTable: $db.notifications,
+      getReferencedColumn: (t) => t.actorDid,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$NotificationsTableFilterComposer(
+                $db: $db,
+                $table: $db.notifications,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
@@ -8574,6 +9370,27 @@ class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $Profile
     );
     return f(composer);
   }
+
+  Expression<T> notificationsRefs<T extends Object>(
+    Expression<T> Function($$NotificationsTableAnnotationComposer a) f,
+  ) {
+    final $$NotificationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.did,
+      referencedTable: $db.notifications,
+      getReferencedColumn: (t) => t.actorDid,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$NotificationsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.notifications,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProfilesTableTableManager
@@ -8593,6 +9410,7 @@ class $$ProfilesTableTableManager
             bool postsRefs,
             bool savedFeedsRefs,
             bool profileRelationshipsRefs,
+            bool notificationsRefs,
           })
         > {
   $$ProfilesTableTableManager(_$AppDatabase db, $ProfilesTable table)
@@ -8672,13 +9490,19 @@ class $$ProfilesTableTableManager
               .map((e) => (e.readTable(table), $$ProfilesTableReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback:
-              ({postsRefs = false, savedFeedsRefs = false, profileRelationshipsRefs = false}) {
+              ({
+                postsRefs = false,
+                savedFeedsRefs = false,
+                profileRelationshipsRefs = false,
+                notificationsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (postsRefs) db.posts,
                     if (savedFeedsRefs) db.savedFeeds,
                     if (profileRelationshipsRefs) db.profileRelationships,
+                    if (notificationsRefs) db.notifications,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -8714,6 +9538,16 @@ class $$ProfilesTableTableManager
                               referencedItems.where((e) => e.profileDid == item.did),
                           typedResults: items,
                         ),
+                      if (notificationsRefs)
+                        await $_getPrefetchedData<Profile, $ProfilesTable, Notification>(
+                          currentTable: table,
+                          referencedTable: $$ProfilesTableReferences._notificationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProfilesTableReferences(db, table, p0).notificationsRefs,
+                          referencedItemsForCurrentItem: (item, referencedItems) =>
+                              referencedItems.where((e) => e.actorDid == item.did),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -8734,7 +9568,12 @@ typedef $$ProfilesTableProcessedTableManager =
       $$ProfilesTableUpdateCompanionBuilder,
       (Profile, $$ProfilesTableReferences),
       Profile,
-      PrefetchHooks Function({bool postsRefs, bool savedFeedsRefs, bool profileRelationshipsRefs})
+      PrefetchHooks Function({
+        bool postsRefs,
+        bool savedFeedsRefs,
+        bool profileRelationshipsRefs,
+        bool notificationsRefs,
+      })
     >;
 typedef $$PostsTableCreateCompanionBuilder =
     PostsCompanion Function({
@@ -13323,6 +14162,482 @@ typedef $$AnimationPreferencesTableTableProcessedTableManager =
       AnimationPreferencesTableData,
       PrefetchHooks Function()
     >;
+typedef $$NotificationsTableCreateCompanionBuilder =
+    NotificationsCompanion Function({
+      required String uri,
+      required String actorDid,
+      required String type,
+      Value<String?> reasonSubjectUri,
+      Value<String?> recordJson,
+      required DateTime indexedAt,
+      Value<bool> isRead,
+      required DateTime cachedAt,
+      Value<int> rowid,
+    });
+typedef $$NotificationsTableUpdateCompanionBuilder =
+    NotificationsCompanion Function({
+      Value<String> uri,
+      Value<String> actorDid,
+      Value<String> type,
+      Value<String?> reasonSubjectUri,
+      Value<String?> recordJson,
+      Value<DateTime> indexedAt,
+      Value<bool> isRead,
+      Value<DateTime> cachedAt,
+      Value<int> rowid,
+    });
+
+final class $$NotificationsTableReferences
+    extends BaseReferences<_$AppDatabase, $NotificationsTable, Notification> {
+  $$NotificationsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ProfilesTable _actorDidTable(_$AppDatabase db) =>
+      db.profiles.createAlias($_aliasNameGenerator(db.notifications.actorDid, db.profiles.did));
+
+  $$ProfilesTableProcessedTableManager get actorDid {
+    final $_column = $_itemColumn<String>('actor_did')!;
+
+    final manager = $$ProfilesTableTableManager(
+      $_db,
+      $_db.profiles,
+    ).filter((f) => f.did.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_actorDidTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$NotificationsTableFilterComposer extends Composer<_$AppDatabase, $NotificationsTable> {
+  $$NotificationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get uri =>
+      $composableBuilder(column: $table.uri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get reasonSubjectUri => $composableBuilder(
+    column: $table.reasonSubjectUri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recordJson =>
+      $composableBuilder(column: $table.recordJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get indexedAt =>
+      $composableBuilder(column: $table.indexedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isRead =>
+      $composableBuilder(column: $table.isRead, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => ColumnFilters(column));
+
+  $$ProfilesTableFilterComposer get actorDid {
+    final $$ProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.actorDid,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.did,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$ProfilesTableFilterComposer(
+                $db: $db,
+                $table: $db.profiles,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$NotificationsTableOrderingComposer extends Composer<_$AppDatabase, $NotificationsTable> {
+  $$NotificationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get uri =>
+      $composableBuilder(column: $table.uri, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get reasonSubjectUri => $composableBuilder(
+    column: $table.reasonSubjectUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recordJson =>
+      $composableBuilder(column: $table.recordJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get indexedAt =>
+      $composableBuilder(column: $table.indexedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isRead =>
+      $composableBuilder(column: $table.isRead, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => ColumnOrderings(column));
+
+  $$ProfilesTableOrderingComposer get actorDid {
+    final $$ProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.actorDid,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.did,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$ProfilesTableOrderingComposer(
+                $db: $db,
+                $table: $db.profiles,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$NotificationsTableAnnotationComposer extends Composer<_$AppDatabase, $NotificationsTable> {
+  $$NotificationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get uri =>
+      $composableBuilder(column: $table.uri, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get reasonSubjectUri =>
+      $composableBuilder(column: $table.reasonSubjectUri, builder: (column) => column);
+
+  GeneratedColumn<String> get recordJson =>
+      $composableBuilder(column: $table.recordJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get indexedAt =>
+      $composableBuilder(column: $table.indexedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isRead =>
+      $composableBuilder(column: $table.isRead, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
+
+  $$ProfilesTableAnnotationComposer get actorDid {
+    final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.actorDid,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.did,
+      builder:
+          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+              $$ProfilesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.profiles,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+              ),
+    );
+    return composer;
+  }
+}
+
+class $$NotificationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NotificationsTable,
+          Notification,
+          $$NotificationsTableFilterComposer,
+          $$NotificationsTableOrderingComposer,
+          $$NotificationsTableAnnotationComposer,
+          $$NotificationsTableCreateCompanionBuilder,
+          $$NotificationsTableUpdateCompanionBuilder,
+          (Notification, $$NotificationsTableReferences),
+          Notification,
+          PrefetchHooks Function({bool actorDid})
+        > {
+  $$NotificationsTableTableManager(_$AppDatabase db, $NotificationsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NotificationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NotificationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NotificationsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> uri = const Value.absent(),
+                Value<String> actorDid = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String?> reasonSubjectUri = const Value.absent(),
+                Value<String?> recordJson = const Value.absent(),
+                Value<DateTime> indexedAt = const Value.absent(),
+                Value<bool> isRead = const Value.absent(),
+                Value<DateTime> cachedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NotificationsCompanion(
+                uri: uri,
+                actorDid: actorDid,
+                type: type,
+                reasonSubjectUri: reasonSubjectUri,
+                recordJson: recordJson,
+                indexedAt: indexedAt,
+                isRead: isRead,
+                cachedAt: cachedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String uri,
+                required String actorDid,
+                required String type,
+                Value<String?> reasonSubjectUri = const Value.absent(),
+                Value<String?> recordJson = const Value.absent(),
+                required DateTime indexedAt,
+                Value<bool> isRead = const Value.absent(),
+                required DateTime cachedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => NotificationsCompanion.insert(
+                uri: uri,
+                actorDid: actorDid,
+                type: type,
+                reasonSubjectUri: reasonSubjectUri,
+                recordJson: recordJson,
+                indexedAt: indexedAt,
+                isRead: isRead,
+                cachedAt: cachedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), $$NotificationsTableReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: ({actorDid = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (actorDid) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.actorDid,
+                                referencedTable: $$NotificationsTableReferences._actorDidTable(db),
+                                referencedColumn: $$NotificationsTableReferences
+                                    ._actorDidTable(db)
+                                    .did,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$NotificationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NotificationsTable,
+      Notification,
+      $$NotificationsTableFilterComposer,
+      $$NotificationsTableOrderingComposer,
+      $$NotificationsTableAnnotationComposer,
+      $$NotificationsTableCreateCompanionBuilder,
+      $$NotificationsTableUpdateCompanionBuilder,
+      (Notification, $$NotificationsTableReferences),
+      Notification,
+      PrefetchHooks Function({bool actorDid})
+    >;
+typedef $$NotificationCursorsTableCreateCompanionBuilder =
+    NotificationCursorsCompanion Function({
+      required String feedKey,
+      required String cursor,
+      Value<DateTime?> lastUpdated,
+      Value<int> rowid,
+    });
+typedef $$NotificationCursorsTableUpdateCompanionBuilder =
+    NotificationCursorsCompanion Function({
+      Value<String> feedKey,
+      Value<String> cursor,
+      Value<DateTime?> lastUpdated,
+      Value<int> rowid,
+    });
+
+class $$NotificationCursorsTableFilterComposer
+    extends Composer<_$AppDatabase, $NotificationCursorsTable> {
+  $$NotificationCursorsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get feedKey =>
+      $composableBuilder(column: $table.feedKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get cursor =>
+      $composableBuilder(column: $table.cursor, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastUpdated =>
+      $composableBuilder(column: $table.lastUpdated, builder: (column) => ColumnFilters(column));
+}
+
+class $$NotificationCursorsTableOrderingComposer
+    extends Composer<_$AppDatabase, $NotificationCursorsTable> {
+  $$NotificationCursorsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get feedKey =>
+      $composableBuilder(column: $table.feedKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get cursor =>
+      $composableBuilder(column: $table.cursor, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastUpdated =>
+      $composableBuilder(column: $table.lastUpdated, builder: (column) => ColumnOrderings(column));
+}
+
+class $$NotificationCursorsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NotificationCursorsTable> {
+  $$NotificationCursorsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get feedKey =>
+      $composableBuilder(column: $table.feedKey, builder: (column) => column);
+
+  GeneratedColumn<String> get cursor =>
+      $composableBuilder(column: $table.cursor, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastUpdated =>
+      $composableBuilder(column: $table.lastUpdated, builder: (column) => column);
+}
+
+class $$NotificationCursorsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NotificationCursorsTable,
+          NotificationCursor,
+          $$NotificationCursorsTableFilterComposer,
+          $$NotificationCursorsTableOrderingComposer,
+          $$NotificationCursorsTableAnnotationComposer,
+          $$NotificationCursorsTableCreateCompanionBuilder,
+          $$NotificationCursorsTableUpdateCompanionBuilder,
+          (
+            NotificationCursor,
+            BaseReferences<_$AppDatabase, $NotificationCursorsTable, NotificationCursor>,
+          ),
+          NotificationCursor,
+          PrefetchHooks Function()
+        > {
+  $$NotificationCursorsTableTableManager(_$AppDatabase db, $NotificationCursorsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NotificationCursorsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NotificationCursorsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NotificationCursorsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> feedKey = const Value.absent(),
+                Value<String> cursor = const Value.absent(),
+                Value<DateTime?> lastUpdated = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NotificationCursorsCompanion(
+                feedKey: feedKey,
+                cursor: cursor,
+                lastUpdated: lastUpdated,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String feedKey,
+                required String cursor,
+                Value<DateTime?> lastUpdated = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NotificationCursorsCompanion.insert(
+                feedKey: feedKey,
+                cursor: cursor,
+                lastUpdated: lastUpdated,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$NotificationCursorsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NotificationCursorsTable,
+      NotificationCursor,
+      $$NotificationCursorsTableFilterComposer,
+      $$NotificationCursorsTableOrderingComposer,
+      $$NotificationCursorsTableAnnotationComposer,
+      $$NotificationCursorsTableCreateCompanionBuilder,
+      $$NotificationCursorsTableUpdateCompanionBuilder,
+      (
+        NotificationCursor,
+        BaseReferences<_$AppDatabase, $NotificationCursorsTable, NotificationCursor>,
+      ),
+      NotificationCursor,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -13360,4 +14675,8 @@ class $AppDatabaseManager {
       $$CustomThemesTableTableManager(_db, _db.customThemes);
   $$AnimationPreferencesTableTableTableManager get animationPreferencesTable =>
       $$AnimationPreferencesTableTableTableManager(_db, _db.animationPreferencesTable);
+  $$NotificationsTableTableManager get notifications =>
+      $$NotificationsTableTableManager(_db, _db.notifications);
+  $$NotificationCursorsTableTableManager get notificationCursors =>
+      $$NotificationCursorsTableTableManager(_db, _db.notificationCursors);
 }
