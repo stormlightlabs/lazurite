@@ -6,18 +6,24 @@
 
 #### [2026-01-07]
 
-Comprehensive settings system with theme persistence, content moderation, feed & thread
-preferences, muted words filtering, and bidirectional Bluesky pref sync.
+- Post composer with local drafts, media uploads (4 images + alt text),
+  reply/quote support, rich text facets (mentions, links), and global FAB
+
+- Comprehensive settings system with theme persistence, content moderation, feed & thread
+  preferences, muted words filtering, and bidirectional Bluesky pref sync.
 
 #### [2026-01-06]
 
 - Migrated NavigationBar, FilterChips, Cards, and text emphasis to M3 role-based theming
   with surfaceContainer hierarchy and outlineVariant dividers.
+
 - Created ThemePack/ThemeVariant/ThemeSpec domain types with ThemeFactory centralizing
   component themes using full M3 ColorScheme roles.
+
 - Complete profile and thread rendering with verification badges, viewer relationship &
   interaction states, all embed types, content labels with warnings, thread structure
   with parent/reply chains, and pinned posts.
+
 - Safe syncing, cached search, and feed discovery flow polish.
 
 #### [2026-01-05]

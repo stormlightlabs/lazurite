@@ -123,6 +123,8 @@ class _MediaThumbnail extends StatelessWidget {
                   ? Image.file(
                       file,
                       fit: BoxFit.cover,
+                      cacheWidth: 160,
+                      cacheHeight: 160,
                       errorBuilder: (_, _, _) => _BrokenImagePlaceholder(colorScheme: colorScheme),
                     )
                   : _BrokenImagePlaceholder(colorScheme: colorScheme),

@@ -221,10 +221,23 @@ GoRouter createRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.compose,
         name: AppRouteNames.compose,
-        builder: (context, state) => ComposerScreen(
-          draftId: state.uri.queryParameters['draftId'],
-          replyTo: state.uri.queryParameters['replyTo'],
-          quoteTo: state.uri.queryParameters['quoteTo'],
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: ComposerScreen(
+            draftId: state.uri.queryParameters['draftId'],
+            replyTo: state.uri.queryParameters['replyTo'],
+            quoteTo: state.uri.queryParameters['quoteTo'],
+          ),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(0.0, 1.0);
+            const end = Offset.zero;
+            const curve = Curves.easeInOutCubic;
+
+            final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            final offsetAnimation = animation.drive(tween);
+
+            return SlideTransition(position: offsetAnimation, child: child);
+          },
         ),
       ),
       GoRoute(

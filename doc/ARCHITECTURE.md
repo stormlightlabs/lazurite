@@ -5,7 +5,8 @@
 ### Separation of Concerns
 
 - UI layer (presentation) vs Data layer (infrastructure), with clear boundaries
-- Feature-first organization inside those layers (each feature owns its domain/data/presentation)
+- Feature-first organization inside those layers
+  (each feature owns its domain/data/presentation)
 - Reactive data flow using Riverpod providers and Drift streams
 
 ### ATProto Best Practices
@@ -22,7 +23,8 @@
 
 ## Feed Architecture
 
-The feed system manages both feed metadata and content through two coordinated repositories.
+The feed system manages both feed metadata and content through two coordinated
+repositories.
 
 ### Feed Metadata (`FeedRepository`)
 
@@ -40,7 +42,8 @@ The feed system manages both feed metadata and content through two coordinated r
 
 **Data Model:** `SavedFeeds` table
 
-- uri, displayName, description, avatar, creatorDid, likeCount, sortOrder, isPinned, lastSynced
+- uri, displayName, description, avatar, creatorDid, likeCount, sortOrder, isPinned,
+  lastSynced
 
 **Feed URI Constants:**
 
@@ -65,7 +68,8 @@ The feed system manages both feed metadata and content through two coordinated r
 
 - `Posts` table - post content and engagement metrics
 - `Profiles` table - author profile data
-- `FeedContentItems` table - feed-to-post relationships with sortKey and reason (repost info)
+- `FeedContentItems` table - feed-to-post relationships with sortKey and reason
+  (repost info)
 - `FeedCursors` table - pagination cursors per feed
 
 **Data Flow:**
@@ -94,7 +98,8 @@ class FeedPost {
 }
 ```
 
-The `reason` field contains JSON describing why the post appears in the feed (e.g., "Reposted by @user").
+The `reason` field contains JSON describing why the post appears in the feed
+(e.g., "Reposted by @user").
 
 ## Network Architecture
 
@@ -154,23 +159,49 @@ Chat requests use the `atproto-proxy` header:
 
 1. Session Logout: Clears session storage, sets AuthState.unauthenticated
 2. Session Invalidation (InvalidToken): Clears all cached content + logout
-3. Stale Feed Cleanup: `FeedContentCleanupController` removes items not updated in 7 days
+3. Stale Feed Cleanup: `FeedContentCleanupController` removes items not updated in 7
+   days
 
-### Database Schema
+## Application Lifecycle
 
-**Current Version:** 7
+Managed via `AppLifecycle` provider and direct `WidgetsBindingObserver` where critical
+responsiveness is needed (e.g., autosave).
 
-**Migration History:**
+### Lifecycle State Flow
 
-- v7: Renamed `timeline_items` → `feed_content_items`, renamed index `timeline_sort_idx` → `feed_content_sort_idx`
-- v6: Added drafts and draft_media tables
-- v5: Added preference_sync_queue table
+```mermaid
+graph TD
+    A[App Launched] --> B[Resumed/Foreground]
+    B -->|User minimizes/switches| C[Inactive]
+    C -->|OS pauses execution| D[Paused/Background]
+    D -->|User returns| B
+    D -->|OS kills app| E[Detached/Terminated]
 
-### Future Improvements
+    subgraph "On Resume"
+    B -.-> F[Feed Sync]
+    B -.-> G[Preference Sync]
+    end
 
-- Add cache version migrations for schema changes
-- Consider per-user partitioned caches (keyed by DID)
-- Implement smart folders with materialized views for complex filtering
+    subgraph "On Pause/Inactive"
+    C -.-> H[Composer Autosave]
+    D -.-> H
+    end
+```
+
+### Implementation Strategy
+
+1. **Global Observers**: `AppLifecycle` provider (Riverpod) for reactive state
+  management.
+    - **Feed Sync**: `FeedSyncController` listens for `AppLifecycleState.resumed` to
+    trigger `feedRepository.syncOnResume()`, ensuring content is fresh when the user
+    returns.
+    - **Preference Sync**: `PreferenceSyncController` fetches remote preferences and
+    processes the background sync queue on `resumed`.
+2. **Feature-Specific Implementation**:
+    - **Composer Autosave**: Uses `WidgetsBindingObserver` directly in `ComposerScreen`
+    state to trigger `forceSave` immediately on `paused` or `inactive` signals.
+    This bypasses the slight delay of provider updates to ensure drafts are saved before
+    the OS can kill the process.
 
 ## Feature Implementation Patterns
 
@@ -181,7 +212,8 @@ Chat requests use the `atproto-proxy` header:
 3. `createRecord(collection: app.bsky.feed.post)`
 4. On success: mark draft as published (or delete)
 
-**Important:** Blobs are "temporary" until referenced by a record (time window constraint).
+**Important:** Blobs are "temporary" until referenced by a record
+(time window constraint).
 
 ### Smart Folders (Future)
 
@@ -197,7 +229,8 @@ Chat requests use the `atproto-proxy` header:
 **Execution Strategy:**
 
 - Start non-materialized: `SELECT posts WHERE <rules> ORDER BY indexedAt DESC`
-- Upgrade to materialized if needed: On cache insert, evaluate rules and populate folder items
+- Upgrade to materialized if needed: On cache insert, evaluate rules and populate folder
+  items
 
 ## Testing Strategy
 
