@@ -149,3 +149,50 @@ final class LocalPreferencesRepositoryProvider
 }
 
 String _$localPreferencesRepositoryHash() => r'22a9fb73d3a0501795ddaf0165efa12512fac8a7';
+
+/// Provides the custom theme repository for managing user-created themes.
+
+@ProviderFor(customThemeRepository)
+final customThemeRepositoryProvider = CustomThemeRepositoryProvider._();
+
+/// Provides the custom theme repository for managing user-created themes.
+
+final class CustomThemeRepositoryProvider
+    extends
+        $FunctionalProvider<CustomThemeRepository, CustomThemeRepository, CustomThemeRepository>
+    with $Provider<CustomThemeRepository> {
+  /// Provides the custom theme repository for managing user-created themes.
+  CustomThemeRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'customThemeRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$customThemeRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<CustomThemeRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  CustomThemeRepository create(Ref ref) {
+    return customThemeRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CustomThemeRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CustomThemeRepository>(value),
+    );
+  }
+}
+
+String _$customThemeRepositoryHash() => r'8bb2ee308687db010816d8d0bb41425da0d2c416';

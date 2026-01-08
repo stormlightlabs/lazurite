@@ -26,6 +26,7 @@ import 'package:lazurite/src/features/settings/presentation/screens/content_mode
 import 'package:lazurite/src/features/settings/presentation/screens/feed_preferences_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/muted_words_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/settings_screen.dart';
+import 'package:lazurite/src/features/settings/presentation/screens/theme_editor_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/theme_settings_screen.dart';
 import 'package:lazurite/src/features/splash/presentation/splash_screen.dart';
 import 'package:lazurite/src/features/thread/presentation/thread_screen.dart';
@@ -264,6 +265,14 @@ GoRouter createRouter(Ref ref) {
             path: 'appearance',
             name: AppRouteNames.appearance,
             builder: (context, state) => const ThemeSettingsScreen(),
+            routes: [
+              GoRoute(
+                path: 'editor',
+                name: 'theme_editor',
+                builder: (context, state) =>
+                    ThemeEditorScreen(customThemeId: state.uri.queryParameters['id']),
+              ),
+            ],
           ),
           GoRoute(
             path: 'about',

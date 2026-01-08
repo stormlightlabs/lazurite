@@ -120,14 +120,14 @@ Scope:
 - Keep everything else derived to protect role system integrity
 
 Tasks:
-- [ ] Add CustomThemeDraft model persisted in DB/prefs
+- [x] Add CustomThemeDraft model persisted in DB/prefs
       - Based on a base pack with role overrides
       - Validated on load (fallback to base pack if invalid)
-- [ ] Editor UI:
+- [x] Editor UI:
       - Color pickers or brightness/tone sliders for adjustable roles
       - Live preview (reuse ThemePreviewCard from T4)
       - Reset-to-pack defaults button
-- [ ] Export/Import JSON:
+- [x] Export/Import JSON:
       - Schema: { id, basePack, roleOverrides, typography }
       - Validate on import and reject/warn if roles are missing or conflicting
       - Allow sharing custom themes as JSON files
@@ -152,7 +152,7 @@ Design:
 - Respect platform accessibility (disableAnimations, reduceMotion)
 
 Tasks:
-- [ ] Add animations package dependency
+- [x] Add animations package dependency
 - [ ] Create AnimationController service with Riverpod
       - Animation mode enum: full/reduced/minimal/system
       - Speed multiplier setting
@@ -191,7 +191,7 @@ Definition of Done                                                   *theme-dod*
 - [x] Theme packs ship: Oxocarbon (refined), Catppuccin, Nord, Rosé Pine,
       One Dark/Light
 - [x] Theme picker UI in settings
-- [ ] Users can customize themes
+- [x] Users can customize themes
 - [ ] Material Design 3 motion patterns implemented
 - [ ] Animation accessibility controls available in settings
 - [ ] Animations respect platform reduce motion preferences

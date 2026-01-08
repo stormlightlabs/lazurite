@@ -7428,6 +7428,454 @@ class BlueskyPreferencesCompanion extends UpdateCompanion<BlueskyPreference> {
   }
 }
 
+class $CustomThemesTable extends CustomThemes with TableInfo<$CustomThemesTable, CustomTheme> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomThemesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _basePackIdMeta = const VerificationMeta('basePackId');
+  @override
+  late final GeneratedColumn<String> basePackId = GeneratedColumn<String>(
+    'base_pack_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _overridesJsonMeta = const VerificationMeta('overridesJson');
+  @override
+  late final GeneratedColumn<String> overridesJson = GeneratedColumn<String>(
+    'overrides_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typographyScaleMeta = const VerificationMeta('typographyScale');
+  @override
+  late final GeneratedColumn<String> typographyScale = GeneratedColumn<String>(
+    'typography_scale',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('normal'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    basePackId,
+    overridesJson,
+    typographyScale,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'custom_themes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CustomTheme> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('base_pack_id')) {
+      context.handle(
+        _basePackIdMeta,
+        basePackId.isAcceptableOrUnknown(data['base_pack_id']!, _basePackIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_basePackIdMeta);
+    }
+    if (data.containsKey('overrides_json')) {
+      context.handle(
+        _overridesJsonMeta,
+        overridesJson.isAcceptableOrUnknown(data['overrides_json']!, _overridesJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_overridesJsonMeta);
+    }
+    if (data.containsKey('typography_scale')) {
+      context.handle(
+        _typographyScaleMeta,
+        typographyScale.isAcceptableOrUnknown(data['typography_scale']!, _typographyScaleMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CustomTheme map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomTheme(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      basePackId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}base_pack_id'],
+      )!,
+      overridesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}overrides_json'],
+      )!,
+      typographyScale: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}typography_scale'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CustomThemesTable createAlias(String alias) {
+    return $CustomThemesTable(attachedDatabase, alias);
+  }
+}
+
+class CustomTheme extends DataClass implements Insertable<CustomTheme> {
+  /// Unique identifier for this custom theme.
+  final String id;
+
+  /// User-provided display name.
+  final String name;
+
+  /// ID of the base theme pack this customization extends.
+  final String basePackId;
+
+  /// Color role overrides serialized as JSON.
+  final String overridesJson;
+
+  /// Typography scale preference (small/normal/large).
+  final String typographyScale;
+
+  /// When this theme was first created.
+  final DateTime createdAt;
+
+  /// When this theme was last modified.
+  final DateTime updatedAt;
+  const CustomTheme({
+    required this.id,
+    required this.name,
+    required this.basePackId,
+    required this.overridesJson,
+    required this.typographyScale,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['base_pack_id'] = Variable<String>(basePackId);
+    map['overrides_json'] = Variable<String>(overridesJson);
+    map['typography_scale'] = Variable<String>(typographyScale);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  CustomThemesCompanion toCompanion(bool nullToAbsent) {
+    return CustomThemesCompanion(
+      id: Value(id),
+      name: Value(name),
+      basePackId: Value(basePackId),
+      overridesJson: Value(overridesJson),
+      typographyScale: Value(typographyScale),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory CustomTheme.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomTheme(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      basePackId: serializer.fromJson<String>(json['basePackId']),
+      overridesJson: serializer.fromJson<String>(json['overridesJson']),
+      typographyScale: serializer.fromJson<String>(json['typographyScale']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'basePackId': serializer.toJson<String>(basePackId),
+      'overridesJson': serializer.toJson<String>(overridesJson),
+      'typographyScale': serializer.toJson<String>(typographyScale),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  CustomTheme copyWith({
+    String? id,
+    String? name,
+    String? basePackId,
+    String? overridesJson,
+    String? typographyScale,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => CustomTheme(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    basePackId: basePackId ?? this.basePackId,
+    overridesJson: overridesJson ?? this.overridesJson,
+    typographyScale: typographyScale ?? this.typographyScale,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  CustomTheme copyWithCompanion(CustomThemesCompanion data) {
+    return CustomTheme(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      basePackId: data.basePackId.present ? data.basePackId.value : this.basePackId,
+      overridesJson: data.overridesJson.present ? data.overridesJson.value : this.overridesJson,
+      typographyScale: data.typographyScale.present
+          ? data.typographyScale.value
+          : this.typographyScale,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomTheme(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('basePackId: $basePackId, ')
+          ..write('overridesJson: $overridesJson, ')
+          ..write('typographyScale: $typographyScale, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, basePackId, overridesJson, typographyScale, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomTheme &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.basePackId == this.basePackId &&
+          other.overridesJson == this.overridesJson &&
+          other.typographyScale == this.typographyScale &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class CustomThemesCompanion extends UpdateCompanion<CustomTheme> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> basePackId;
+  final Value<String> overridesJson;
+  final Value<String> typographyScale;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const CustomThemesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.basePackId = const Value.absent(),
+    this.overridesJson = const Value.absent(),
+    this.typographyScale = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CustomThemesCompanion.insert({
+    required String id,
+    required String name,
+    required String basePackId,
+    required String overridesJson,
+    this.typographyScale = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       basePackId = Value(basePackId),
+       overridesJson = Value(overridesJson),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<CustomTheme> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? basePackId,
+    Expression<String>? overridesJson,
+    Expression<String>? typographyScale,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (basePackId != null) 'base_pack_id': basePackId,
+      if (overridesJson != null) 'overrides_json': overridesJson,
+      if (typographyScale != null) 'typography_scale': typographyScale,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CustomThemesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? basePackId,
+    Value<String>? overridesJson,
+    Value<String>? typographyScale,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return CustomThemesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      basePackId: basePackId ?? this.basePackId,
+      overridesJson: overridesJson ?? this.overridesJson,
+      typographyScale: typographyScale ?? this.typographyScale,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (basePackId.present) {
+      map['base_pack_id'] = Variable<String>(basePackId.value);
+    }
+    if (overridesJson.present) {
+      map['overrides_json'] = Variable<String>(overridesJson.value);
+    }
+    if (typographyScale.present) {
+      map['typography_scale'] = Variable<String>(typographyScale.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomThemesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('basePackId: $basePackId, ')
+          ..write('overridesJson: $overridesJson, ')
+          ..write('typographyScale: $typographyScale, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -7448,6 +7896,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PostInteractionsTable postInteractions = $PostInteractionsTable(this);
   late final $LocalSettingsTable localSettings = $LocalSettingsTable(this);
   late final $BlueskyPreferencesTable blueskyPreferences = $BlueskyPreferencesTable(this);
+  late final $CustomThemesTable customThemes = $CustomThemesTable(this);
   late final Index feedContentSortIdx = Index(
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
@@ -7474,6 +7923,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final BlueskyPreferencesDao blueskyPreferencesDao = BlueskyPreferencesDao(
     this as AppDatabase,
   );
+  late final CustomThemeDao customThemeDao = CustomThemeDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7496,6 +7946,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     postInteractions,
     localSettings,
     blueskyPreferences,
+    customThemes,
     feedContentSortIdx,
     searchCacheSortIdx,
   ];
@@ -12245,6 +12696,211 @@ typedef $$BlueskyPreferencesTableProcessedTableManager =
       BlueskyPreference,
       PrefetchHooks Function()
     >;
+typedef $$CustomThemesTableCreateCompanionBuilder =
+    CustomThemesCompanion Function({
+      required String id,
+      required String name,
+      required String basePackId,
+      required String overridesJson,
+      Value<String> typographyScale,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$CustomThemesTableUpdateCompanionBuilder =
+    CustomThemesCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> basePackId,
+      Value<String> overridesJson,
+      Value<String> typographyScale,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$CustomThemesTableFilterComposer extends Composer<_$AppDatabase, $CustomThemesTable> {
+  $$CustomThemesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get basePackId =>
+      $composableBuilder(column: $table.basePackId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get overridesJson =>
+      $composableBuilder(column: $table.overridesJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get typographyScale => $composableBuilder(
+    column: $table.typographyScale,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$CustomThemesTableOrderingComposer extends Composer<_$AppDatabase, $CustomThemesTable> {
+  $$CustomThemesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get basePackId =>
+      $composableBuilder(column: $table.basePackId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get overridesJson => $composableBuilder(
+    column: $table.overridesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get typographyScale => $composableBuilder(
+    column: $table.typographyScale,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CustomThemesTableAnnotationComposer extends Composer<_$AppDatabase, $CustomThemesTable> {
+  $$CustomThemesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get basePackId =>
+      $composableBuilder(column: $table.basePackId, builder: (column) => column);
+
+  GeneratedColumn<String> get overridesJson =>
+      $composableBuilder(column: $table.overridesJson, builder: (column) => column);
+
+  GeneratedColumn<String> get typographyScale =>
+      $composableBuilder(column: $table.typographyScale, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$CustomThemesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CustomThemesTable,
+          CustomTheme,
+          $$CustomThemesTableFilterComposer,
+          $$CustomThemesTableOrderingComposer,
+          $$CustomThemesTableAnnotationComposer,
+          $$CustomThemesTableCreateCompanionBuilder,
+          $$CustomThemesTableUpdateCompanionBuilder,
+          (CustomTheme, BaseReferences<_$AppDatabase, $CustomThemesTable, CustomTheme>),
+          CustomTheme,
+          PrefetchHooks Function()
+        > {
+  $$CustomThemesTableTableManager(_$AppDatabase db, $CustomThemesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$CustomThemesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CustomThemesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CustomThemesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> basePackId = const Value.absent(),
+                Value<String> overridesJson = const Value.absent(),
+                Value<String> typographyScale = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CustomThemesCompanion(
+                id: id,
+                name: name,
+                basePackId: basePackId,
+                overridesJson: overridesJson,
+                typographyScale: typographyScale,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String basePackId,
+                required String overridesJson,
+                Value<String> typographyScale = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => CustomThemesCompanion.insert(
+                id: id,
+                name: name,
+                basePackId: basePackId,
+                overridesJson: overridesJson,
+                typographyScale: typographyScale,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CustomThemesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CustomThemesTable,
+      CustomTheme,
+      $$CustomThemesTableFilterComposer,
+      $$CustomThemesTableOrderingComposer,
+      $$CustomThemesTableAnnotationComposer,
+      $$CustomThemesTableCreateCompanionBuilder,
+      $$CustomThemesTableUpdateCompanionBuilder,
+      (CustomTheme, BaseReferences<_$AppDatabase, $CustomThemesTable, CustomTheme>),
+      CustomTheme,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -12278,4 +12934,6 @@ class $AppDatabaseManager {
       $$LocalSettingsTableTableManager(_db, _db.localSettings);
   $$BlueskyPreferencesTableTableManager get blueskyPreferences =>
       $$BlueskyPreferencesTableTableManager(_db, _db.blueskyPreferences);
+  $$CustomThemesTableTableManager get customThemes =>
+      $$CustomThemesTableTableManager(_db, _db.customThemes);
 }

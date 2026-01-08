@@ -66,6 +66,7 @@ dependencies:
   flutter_image_compress: ^2.3.0
   equatable: ^2.0.8
   extended_text_field: ^16.0.2
+  animations: ^2.1.1
 
 dev_dependencies:
   flutter_test:

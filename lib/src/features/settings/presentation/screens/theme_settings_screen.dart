@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/theme_controller.dart';
 
 import '../widgets/theme_preview_card.dart';
@@ -31,6 +32,8 @@ class ThemeSettingsScreen extends ConsumerWidget {
           _buildThemeModeSection(context, ref, themeState),
           const Divider(),
           _buildThemePackSection(context, ref, themeState, packs),
+          const Divider(),
+          _buildCustomizeSection(context, themeState),
           const Divider(),
           _buildPreviewSection(context, currentPack),
           const Divider(),
@@ -127,6 +130,42 @@ class ThemeSettingsScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildCustomizeSection(BuildContext context, ThemeState themeState) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text(
+            'CUSTOMIZE',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.palette_outlined),
+          title: const Text('Create Custom Theme'),
+          subtitle: const Text('Adjust colors and typography'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push('/settings/appearance/editor'),
+        ),
+        if (themeState.isUsingCustomTheme)
+          ListTile(
+            leading: const Icon(Icons.edit_outlined),
+            title: const Text('Edit Current Custom Theme'),
+            subtitle: Text('ID: ${themeState.customThemeId}'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () =>
+                context.push('/settings/appearance/editor?id=${themeState.customThemeId}'),
+          ),
       ],
     );
   }

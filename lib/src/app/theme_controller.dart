@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/app/theming/color_scheme_derivation.dart';
+import 'package:lazurite/src/app/theming/custom_theme_draft.dart';
 import 'package:lazurite/src/app/theming/packs/oxocarbon_theme_pack.dart';
 import 'package:lazurite/src/app/theming/theme_factory.dart';
 import 'package:lazurite/src/app/theming/theme_pack.dart';
+import 'package:lazurite/src/app/theming/theme_variant.dart';
 import 'package:lazurite/src/infrastructure/db/daos/local_settings_dao.dart';
+import 'package:lazurite/src/infrastructure/theming/custom_theme_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'theme_controller.g.dart';
@@ -12,6 +16,7 @@ part 'theme_controller.g.dart';
 abstract final class ThemeSettingsKeys {
   static const themeMode = 'themeMode';
   static const themePackId = 'themePackId';
+  static const customThemeId = 'customThemeId';
 }
 
 /// State for the theme controller.
@@ -21,6 +26,7 @@ class ThemeState {
     required this.currentPackId,
     required this.lightTheme,
     required this.darkTheme,
+    this.customThemeId,
   });
 
   /// The current theme mode (light, dark, system).
@@ -35,17 +41,26 @@ class ThemeState {
   /// Pre-built dark theme for the current pack.
   final ThemeData darkTheme;
 
+  /// ID of the active custom theme, if any.
+  final String? customThemeId;
+
+  /// Whether a custom theme is currently active.
+  bool get isUsingCustomTheme => customThemeId != null;
+
   ThemeState copyWith({
     ThemeMode? themeMode,
     String? currentPackId,
     ThemeData? lightTheme,
     ThemeData? darkTheme,
+    String? customThemeId,
+    bool clearCustomTheme = false,
   }) {
     return ThemeState(
       themeMode: themeMode ?? this.themeMode,
       currentPackId: currentPackId ?? this.currentPackId,
       lightTheme: lightTheme ?? this.lightTheme,
       darkTheme: darkTheme ?? this.darkTheme,
+      customThemeId: clearCustomTheme ? null : (customThemeId ?? this.customThemeId),
     );
   }
 }
@@ -68,6 +83,7 @@ class ThemeController extends _$ThemeController {
 
   LocalSettingsDao get _dao => ref.read(localSettingsDaoProvider);
   List<ThemePack> get _packs => ref.read(availableThemePacksProvider);
+  CustomThemeRepository get _customThemeRepo => ref.read(customThemeRepositoryProvider);
 
   @override
   ThemeState build() {
@@ -79,9 +95,18 @@ class ThemeController extends _$ThemeController {
   Future<void> _loadPersistedSettings() async {
     final modeStr = await _dao.get(ThemeSettingsKeys.themeMode);
     final packId = await _dao.get(ThemeSettingsKeys.themePackId);
+    final customThemeId = await _dao.get(ThemeSettingsKeys.customThemeId);
 
     final mode = _parseThemeMode(modeStr) ?? _defaultMode;
     final resolvedPackId = _resolvePackId(packId);
+
+    if (customThemeId != null) {
+      final customTheme = await _customThemeRepo.getById(customThemeId);
+      if (customTheme != null) {
+        state = _buildStateWithCustomTheme(mode, customTheme);
+        return;
+      }
+    }
 
     state = _buildState(mode, resolvedPackId);
   }
@@ -93,12 +118,35 @@ class ThemeController extends _$ThemeController {
   }
 
   /// Sets the theme pack by ID and persists to database.
+  ///
+  /// This also clears any active custom theme.
   Future<void> setThemePack(String packId) async {
     final resolvedPackId = _resolvePackId(packId);
-    if (resolvedPackId == state.currentPackId) return;
+    if (resolvedPackId == state.currentPackId && !state.isUsingCustomTheme) return;
 
     state = _buildState(state.themeMode, resolvedPackId);
     await _dao.set(ThemeSettingsKeys.themePackId, resolvedPackId);
+    await _dao.remove(ThemeSettingsKeys.customThemeId);
+  }
+
+  /// Sets a custom theme as active.
+  ///
+  /// The custom theme's overrides are applied to its base pack.
+  Future<void> setCustomTheme(String customThemeId) async {
+    final customTheme = await _customThemeRepo.getById(customThemeId);
+    if (customTheme == null) return;
+
+    state = _buildStateWithCustomTheme(state.themeMode, customTheme);
+    await _dao.set(ThemeSettingsKeys.themePackId, customTheme.basePackId);
+    await _dao.set(ThemeSettingsKeys.customThemeId, customThemeId);
+  }
+
+  /// Clears the active custom theme, reverting to the base pack.
+  Future<void> clearCustomTheme() async {
+    if (!state.isUsingCustomTheme) return;
+
+    state = _buildState(state.themeMode, state.currentPackId);
+    await _dao.remove(ThemeSettingsKeys.customThemeId);
   }
 
   /// Toggles between light and dark modes (ignores system).
@@ -122,6 +170,49 @@ class ThemeController extends _$ThemeController {
       darkTheme: darkVariant != null
           ? ThemeFactory.buildThemeData(darkVariant)
           : ThemeFactory.buildThemeData(oxocarbonDarkVariant),
+    );
+  }
+
+  /// Builds theme state with custom theme overrides applied.
+  ThemeState _buildStateWithCustomTheme(ThemeMode mode, CustomThemeDraft customTheme) {
+    final basePack = _getPackById(customTheme.basePackId);
+    final lightVariant = _applyOverridesToVariant(basePack.lightVariant, customTheme.overrides);
+    final darkVariant = _applyOverridesToVariant(basePack.darkVariant, customTheme.overrides);
+
+    return ThemeState(
+      themeMode: mode,
+      currentPackId: customTheme.basePackId,
+      customThemeId: customTheme.id,
+      lightTheme: lightVariant != null
+          ? ThemeFactory.buildThemeData(lightVariant)
+          : ThemeFactory.buildThemeData(oxocarbonLightVariant),
+      darkTheme: darkVariant != null
+          ? ThemeFactory.buildThemeData(darkVariant)
+          : ThemeFactory.buildThemeData(oxocarbonDarkVariant),
+    );
+  }
+
+  /// Applies overrides to a theme variant, creating a new variant.
+  ThemeVariant? _applyOverridesToVariant(ThemeVariant? variant, ThemeRoleOverrides overrides) {
+    if (variant == null) return null;
+    if (!overrides.hasOverrides) return variant;
+
+    final modifiedSpec = variant.spec.copyWith(
+      primary: overrides.primary,
+      secondary: overrides.secondary,
+      tertiary: overrides.tertiary,
+      surface: overrides.surface,
+      surfaceContainerLow: overrides.surfaceContainerLow,
+      surfaceContainerHigh: overrides.surfaceContainerHigh,
+      outlineVariant: overrides.outlineVariant,
+    );
+
+    return ThemeVariant(
+      id: '${variant.id}-custom',
+      name: variant.name,
+      brightness: variant.brightness,
+      spec: modifiedSpec,
+      derivedScheme: deriveColorScheme(modifiedSpec, variant.brightness),
     );
   }
 

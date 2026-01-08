@@ -4,33 +4,80 @@
 L. Notifications                                                        *bsky-L*
 ================================================================================
 
-Endpoints:
+Endpoints (all registered):
 - app.bsky.notification.listNotifications (GET)
 - app.bsky.notification.getUnreadCount (GET)
+- app.bsky.notification.updateSeen (POST)
 
-Tasks:
-- Routes to add:
-      - [ ] /notifs/t/:postKey  (ThreadPage reuse)
-      - [ ] /notifs/u/:did      (ProfilePage reuse)
-- Screens to add:
-      - [ ] NotificationsPage (Notifications tab: paged list + local seen state):
-            - [ ] list notifications
-            - [ ] local seen state
-            - [ ] tap routes to thread/profile
-- Widgets to add:
-      - [ ] NotificationRow (icon + actor + snippet + time)
-      - [ ] UnreadDot / SeenStyle
-      - [ ] NotificationFilterChips (replies/mentions/reposts)
-- [ ] Badge count support (in-app + push).
-- [ ] Tapping a notification routes to thread/profile as appropriate.
+Phase 1: Core Notification Display
+- [ ] Drift tables:
+      - Notifications (uri, actorDid, type, reasonJson, reasonSubjectUri,
+        indexedAt, isRead, seenAt, cachedAt)
+      - NotificationCursors (feedKey, cursor)
+- [ ] Domain models:
+      - Notification, NotificationType enum, Reason
+- [ ] NotificationsRepository:
+      - fetchNotifications with cursor pagination
+      - watchNotifications stream from cache
+      - parse API responses and join with Profiles
+- [ ] NotificationsNotifier:
+      - AsyncNotifier with pagination support
+      - refresh() and loadMore() methods
+- [ ] NotificationsScreen:
+      - list display with pull-to-refresh
+      - infinite scroll with cursor-based pagination
+      - tap navigation to thread/profile
+- [ ] Widgets:
+      - NotificationListItem (actor, type icon, content preview, timestamp)
+      - NotificationTypeIcon (like, repost, follow, mention, reply, quote)
+
+Phase 2: Unread Count and Mark as Seen
+- [ ] UnreadCountNotifier:
+      - watchUnreadCount stream
+      - refresh from getUnreadCount API
+- [ ] UnreadBadge widget:
+      - display count on tab icon
+      - hide when zero, show "99+" for large counts
+- [ ] Mark as seen:
+      - viewport-based detection (scroll into view)
+      - batch updateSeen API calls (every 2s or 10 notifications)
+      - optimistic local cache updates
+      - offline queue for sync when online
+- [ ] Mark all as read action in app bar
+
+Phase 3: Notification Grouping and Polish
+- [ ] GroupedNotification model and grouping algorithm
+- [ ] GroupedNotificationItem widget (actor list, "and N others")
+- [ ] Expand/collapse for grouped notifications
+- [ ] Empty state illustration
+- [ ] Loading states and skeleton screens
+- [ ] Relative timestamps ("2h ago")
+
+Phase 4: Local Notifications
+- [ ] flutter_local_notifications integration
+- [ ] Foreground notification banner
+- [ ] Background notification display
+- [ ] Deep link handling from notification tap
+- [ ] Platform-specific configuration (Android channels, iOS presentation)
 
 Tests:
-- [ ] Unread count updates and "mark read" local behavior.
+- [ ] Repository: fetch, parse, cache, pagination
+- [ ] Notifier: state transitions, refresh, load more
+- [ ] Grouping algorithm with various notification types
+- [ ] Mark as seen batching and offline queue
+- [ ] Unread count updates
+- [ ] Widget tests: list, items, badges
+- [ ] Integration: fetch → display → tap → navigate
+- [ ] Offline: cached display, queued seen state sync
 
 Deliverables:
-- Notifications shipped with consistent navigation.
-- Notifications tab becomes meaningful
-- Badge integration
+- Notifications tab functional with real data
+- Unread badge in tab navigation
+- Smooth pagination and pull-to-refresh
+- Mark as seen syncs to Bluesky
+- Notification grouping for compact display
+- Deep linking to threads and profiles
+- >95% test coverage
 
 ================================================================================
 M. DMs (read + write) + outbox + read-state                             *bsky-M*
@@ -156,6 +203,49 @@ Tests:
 
 Deliverables:
 - Desktop build that is genuinely usable (not just "it runs").
+
+================================================================================
+Q. Push Notification Backend                                            *bsky-Q*
+================================================================================
+
+Context:
+- Bluesky does NOT send push notifications directly to third-party clients
+- app.bsky.notification.registerPush forwards signed requests to your backend
+- Backend must validate signatures and relay to FCM/APNs
+
+Tasks:
+- [ ] Backend service:
+      - POST /register-device (store device token with user DID)
+      - POST /push-notification (receive signed notifications from Bluesky)
+      - POST /unregister-device (remove token on logout)
+      - Validate Bluesky signatures using public key
+      - Queue and batch push sends
+      - Rate limiting and error handling
+- [ ] FCM/APNs integration:
+      - FCM configuration for Android
+      - APNs configuration for iOS
+      - Handle token refresh and invalidation
+- [ ] Client integration:
+      - Generate FCM/APNs tokens on app start
+      - Register tokens via app.bsky.notification.registerPush
+      - Include platform identifier (fcm/apns) and service endpoint
+      - Re-register on token refresh
+      - Unregister on logout
+- [ ] Infrastructure:
+      - Deploy backend (AWS Lambda, Cloud Functions, etc.)
+      - Database for device token storage
+      - Monitoring and alerting
+      - Delivery metrics tracking
+
+Tests:
+- [ ] Backend: signature validation, token storage, FCM/APNs send
+- [ ] Client: token generation, registration, unregistration
+- [ ] Integration: end-to-end push delivery from Bluesky → backend → device
+
+Deliverables:
+- Push notifications working end-to-end
+- Backend service deployed and monitored
+- Token management robust across app lifecycle
 
 ================================================================================
 Parking Lot                                                          *bsky-plot*

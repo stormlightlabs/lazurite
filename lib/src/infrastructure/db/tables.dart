@@ -339,3 +339,33 @@ class BlueskyPreferences extends Table {
   @override
   Set<Column> get primaryKey => {type};
 }
+
+/// Stores user-customized themes.
+///
+/// Custom themes are based on a built-in theme pack with color role overrides.
+/// The overrides and other data are stored as JSON for flexibility.
+class CustomThemes extends Table {
+  /// Unique identifier for this custom theme.
+  TextColumn get id => text()();
+
+  /// User-provided display name.
+  TextColumn get name => text()();
+
+  /// ID of the base theme pack this customization extends.
+  TextColumn get basePackId => text()();
+
+  /// Color role overrides serialized as JSON.
+  TextColumn get overridesJson => text()();
+
+  /// Typography scale preference (small/normal/large).
+  TextColumn get typographyScale => text().withDefault(const Constant('normal'))();
+
+  /// When this theme was first created.
+  DateTimeColumn get createdAt => dateTime()();
+
+  /// When this theme was last modified.
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

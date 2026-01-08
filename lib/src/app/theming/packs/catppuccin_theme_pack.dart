@@ -16,9 +16,6 @@ import 'package:lazurite/src/app/theming/theme_variant.dart';
 /// Macchiato - Dark - Medium
 /// Mocha - Dark - Darkest
 abstract final class CatppuccinPalette {
-  // ─────────────────────────────────────────────────────────────────────────
-  // Latte (Light)
-  // ─────────────────────────────────────────────────────────────────────────
   static const Color latteBase = Color(0xFFEFF1F5);
   static const Color latteMantle = Color(0xFFE6E9EF);
   static const Color latteCrust = Color(0xFFDCE0E8);

@@ -4,6 +4,8 @@
 /// roles, enabling swappable theme packs with consistent component theming.
 library;
 
+export 'color_scheme_derivation.dart';
+export 'custom_theme_draft.dart';
 export 'packs/catppuccin_theme_pack.dart';
 export 'packs/nord_theme_pack.dart';
 export 'packs/one_dark_theme_pack.dart';

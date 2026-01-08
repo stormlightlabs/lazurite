@@ -135,7 +135,7 @@ final class ThemeControllerProvider extends $NotifierProvider<ThemeController, T
   }
 }
 
-String _$themeControllerHash() => r'f0f00483e1635ed8719674c871e102aa2345536d';
+String _$themeControllerHash() => r'9508b4cf36c873d3719bf12cf07504242a45df09';
 
 /// Controls the app theme with pack selection and persistence.
 
