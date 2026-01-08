@@ -163,6 +163,13 @@ class NotificationsRepository {
     return _dao.markAllAsRead();
   }
 
+  /// Returns a stream of the unread notification count.
+  ///
+  /// Emits updates whenever notifications are inserted, updated, or deleted.
+  Stream<int> watchUnreadCount() {
+    return _dao.watchUnreadCount();
+  }
+
   /// Encodes labels array to JSON string.
   String? _encodeLabels(dynamic labels) {
     if (labels == null) return null;

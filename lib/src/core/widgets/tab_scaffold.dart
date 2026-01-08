@@ -5,6 +5,8 @@ import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/global_compose_fab.dart';
+import 'package:lazurite/src/features/notifications/application/unread_count_notifier.dart';
+import 'package:lazurite/src/features/notifications/presentation/widgets/unread_badge.dart';
 
 /// Bottom navigation scaffold that wraps the tab content.
 ///
@@ -29,8 +31,15 @@ class _TabScaffoldState extends ConsumerState<TabScaffold> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final isAuthenticated = authState is AuthStateAuthenticated;
+    final unreadCountAsync = ref.watch(unreadCountProvider);
 
     _ensureHomeBranchWhenUnauthenticated(isAuthenticated);
+
+    final unreadCount = unreadCountAsync.when(
+      data: (count) => count,
+      loading: () => 0,
+      error: (_, _) => 0,
+    );
 
     return Scaffold(
       body: widget.navigationShell,
@@ -48,7 +57,9 @@ class _TabScaffoldState extends ConsumerState<TabScaffold> {
             widget.navigationShell.goBranch(0, initialLocation: true);
           }
         },
-        destinations: isAuthenticated ? _authenticatedDestinations : _unauthenticatedDestinations,
+        destinations: isAuthenticated
+            ? _buildAuthenticatedDestinations(unreadCount)
+            : _unauthenticatedDestinations,
       ),
       floatingActionButton: _shouldShowFab(context, isAuthenticated)
           ? const GlobalComposeFab()
@@ -94,33 +105,36 @@ class _TabScaffoldState extends ConsumerState<TabScaffold> {
   }
 }
 
-const _authenticatedDestinations = [
-  NavigationDestination(
-    icon: Icon(Icons.home_outlined),
-    selectedIcon: Icon(Icons.home),
-    label: 'Home',
-  ),
-  NavigationDestination(
-    icon: Icon(Icons.search_outlined),
-    selectedIcon: Icon(Icons.search),
-    label: 'Search',
-  ),
-  NavigationDestination(
-    icon: Icon(Icons.notifications_outlined),
-    selectedIcon: Icon(Icons.notifications),
-    label: 'Notifications',
-  ),
-  NavigationDestination(
-    icon: Icon(Icons.mail_outlined),
-    selectedIcon: Icon(Icons.mail),
-    label: 'Messages',
-  ),
-  NavigationDestination(
-    icon: Icon(Icons.person_outlined),
-    selectedIcon: Icon(Icons.person),
-    label: 'Profile',
-  ),
-];
+/// Builds authenticated navigation destinations with unread count badge.
+List<NavigationDestination> _buildAuthenticatedDestinations(int unreadCount) {
+  return [
+    const NavigationDestination(
+      icon: Icon(Icons.home_outlined),
+      selectedIcon: Icon(Icons.home),
+      label: 'Home',
+    ),
+    const NavigationDestination(
+      icon: Icon(Icons.search_outlined),
+      selectedIcon: Icon(Icons.search),
+      label: 'Search',
+    ),
+    NavigationDestination(
+      icon: UnreadBadge(count: unreadCount, child: const Icon(Icons.notifications_outlined)),
+      selectedIcon: UnreadBadge(count: unreadCount, child: const Icon(Icons.notifications)),
+      label: 'Notifications',
+    ),
+    const NavigationDestination(
+      icon: Icon(Icons.mail_outlined),
+      selectedIcon: Icon(Icons.mail),
+      label: 'Messages',
+    ),
+    const NavigationDestination(
+      icon: Icon(Icons.person_outlined),
+      selectedIcon: Icon(Icons.person),
+      label: 'Profile',
+    ),
+  ];
+}
 
 const _unauthenticatedDestinations = [
   NavigationDestination(

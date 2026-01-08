@@ -32,10 +32,10 @@ Phase 1: Core Notification Display
       - NotificationTypeIcon (like, repost, follow, mention, reply, quote)
 
 Phase 2: Unread Count and Mark as Seen
-- [ ] UnreadCountNotifier:
+- [x] UnreadCountNotifier:
       - watchUnreadCount stream
       - refresh from getUnreadCount API
-- [ ] UnreadBadge widget:
+- [x] UnreadBadge widget:
       - display count on tab icon
       - hide when zero, show "99+" for large counts
 - [ ] Mark as seen:

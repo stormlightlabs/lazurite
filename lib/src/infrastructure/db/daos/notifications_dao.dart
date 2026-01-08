@@ -80,6 +80,15 @@ class NotificationsDao extends DatabaseAccessor<AppDatabase> with _$Notification
       const NotificationsCompanion(isRead: Value(true)),
     );
   }
+
+  /// Gets a stream of the unread notification count.
+  ///
+  /// Emits updates whenever notifications are inserted, updated, or deleted.
+  Stream<int> watchUnreadCount() {
+    final query = selectOnly(notifications)..addColumns([notifications.uri.count()]);
+    query.where(notifications.isRead.equals(false));
+    return query.map((row) => row.read(notifications.uri.count()) ?? 0).watchSingle();
+  }
 }
 
 /// Represents a notification with its actor profile.

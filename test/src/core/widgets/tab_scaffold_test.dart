@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,8 @@ import 'package:lazurite/src/core/widgets/tab_scaffold.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/global_compose_fab.dart';
+import 'package:lazurite/src/features/notifications/application/unread_count_notifier.dart';
+import 'package:lazurite/src/features/notifications/presentation/widgets/unread_badge.dart';
 
 import '../../../helpers/pump_app.dart';
 
@@ -93,6 +97,15 @@ class _TestAuthNotifier extends AuthNotifier {
   }
 }
 
+class _TestUnreadCountNotifier extends UnreadCountNotifier {
+  _TestUnreadCountNotifier(this._stream);
+
+  final Stream<int> _stream;
+
+  @override
+  Stream<int> build() => _stream;
+}
+
 void main() {
   group('TabScaffold - Authenticated', () {
     testWidgets('renders NavigationBar with 5 destinations when authenticated', (tester) async {
@@ -103,6 +116,7 @@ void main() {
           authProvider.overrideWith(
             () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
           ),
+          unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
         ],
       );
       expect(find.byType(NavigationBar), findsOneWidget);
@@ -117,6 +131,7 @@ void main() {
           authProvider.overrideWith(
             () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
           ),
+          unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
         ],
       );
       expect(find.text('Home Content'), findsOneWidget);
@@ -136,6 +151,7 @@ void main() {
           authProvider.overrideWith(
             () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
           ),
+          unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
         ],
       );
       expect(find.byIcon(Icons.home), findsOneWidget);
@@ -155,7 +171,10 @@ void main() {
 
         await tester.pumpRouterApp(
           router: router,
-          overrides: [authProvider.overrideWith(() => authNotifier)],
+          overrides: [
+            authProvider.overrideWith(() => authNotifier),
+            unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
+          ],
         );
 
         expect(find.byType(NavigationDestination), findsNWidgets(2));
@@ -179,7 +198,10 @@ void main() {
 
         await tester.pumpRouterApp(
           router: router,
-          overrides: [authProvider.overrideWith(() => authNotifier)],
+          overrides: [
+            authProvider.overrideWith(() => authNotifier),
+            unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
+          ],
         );
 
         expect(find.byType(NavigationDestination), findsNWidgets(5));
@@ -203,7 +225,10 @@ void main() {
 
         await tester.pumpRouterApp(
           router: router,
-          overrides: [authProvider.overrideWith(() => authNotifier)],
+          overrides: [
+            authProvider.overrideWith(() => authNotifier),
+            unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
+          ],
         );
 
         await tester.tap(find.text('Messages'));
@@ -271,6 +296,7 @@ void main() {
           authProvider.overrideWith(
             () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
           ),
+          unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
         ],
       );
 
@@ -285,6 +311,7 @@ void main() {
           authProvider.overrideWith(
             () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
           ),
+          unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
         ],
       );
 
@@ -302,6 +329,7 @@ void main() {
           authProvider.overrideWith(
             () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
           ),
+          unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
         ],
       );
 
@@ -319,6 +347,7 @@ void main() {
           authProvider.overrideWith(
             () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
           ),
+          unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
         ],
       );
 
@@ -372,6 +401,7 @@ void main() {
           authProvider.overrideWith(
             () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
           ),
+          unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
         ],
       );
 
@@ -391,6 +421,7 @@ void main() {
           authProvider.overrideWith(
             () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
           ),
+          unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
         ],
       );
 
@@ -407,6 +438,225 @@ void main() {
       await tester.tap(find.text('Profile'));
       await tester.pumpAndSettle();
       expect(find.byType(GlobalComposeFab), findsOneWidget);
+    });
+  });
+
+  group('TabScaffold - Unread Badge', () {
+    testWidgets('uses UnreadBadge widget for notifications tab', (tester) async {
+      final router = _createTestRouter();
+      final unreadCountController = StreamController<int>();
+
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+          unreadCountProvider.overrideWith(
+            () => _TestUnreadCountNotifier(unreadCountController.stream),
+          ),
+        ],
+      );
+
+      unreadCountController.add(5);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(UnreadBadge), findsAtLeastNWidgets(1));
+      expect(find.text('5'), findsOneWidget);
+
+      await unreadCountController.close();
+    });
+
+    testWidgets('shows badge with count on notifications tab when unread count > 0', (
+      tester,
+    ) async {
+      final router = _createTestRouter();
+      final unreadCountController = StreamController<int>();
+
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+          unreadCountProvider.overrideWith(
+            () => _TestUnreadCountNotifier(unreadCountController.stream),
+          ),
+        ],
+      );
+
+      unreadCountController.add(5);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Badge), findsAtLeastNWidgets(1));
+      expect(find.text('5'), findsOneWidget);
+
+      await unreadCountController.close();
+    });
+
+    testWidgets('hides badge when unread count is 0', (tester) async {
+      final router = _createTestRouter();
+      final unreadCountController = StreamController<int>();
+
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+          unreadCountProvider.overrideWith(
+            () => _TestUnreadCountNotifier(unreadCountController.stream),
+          ),
+        ],
+      );
+
+      unreadCountController.add(0);
+      await tester.pumpAndSettle();
+
+      final badges = tester.widgetList<Badge>(find.byType(Badge));
+      for (final badge in badges) {
+        expect(badge.isLabelVisible, false);
+      }
+
+      await unreadCountController.close();
+    });
+
+    testWidgets('updates badge count reactively', (tester) async {
+      final router = _createTestRouter();
+      final unreadCountController = StreamController<int>();
+
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+          unreadCountProvider.overrideWith(
+            () => _TestUnreadCountNotifier(unreadCountController.stream),
+          ),
+        ],
+      );
+
+      unreadCountController.add(3);
+      await tester.pumpAndSettle();
+      expect(find.text('3'), findsOneWidget);
+
+      unreadCountController.add(10);
+      await tester.pumpAndSettle();
+      expect(find.text('10'), findsOneWidget);
+      expect(find.text('3'), findsNothing);
+
+      unreadCountController.add(0);
+      await tester.pumpAndSettle();
+      final badges = tester.widgetList<Badge>(find.byType(Badge));
+      for (final badge in badges) {
+        expect(badge.isLabelVisible, false);
+      }
+
+      await unreadCountController.close();
+    });
+
+    testWidgets('badge appears on both selected and unselected notification icons', (
+      tester,
+    ) async {
+      final router = _createTestRouter();
+      final unreadCountController = StreamController<int>();
+
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+          unreadCountProvider.overrideWith(
+            () => _TestUnreadCountNotifier(unreadCountController.stream),
+          ),
+        ],
+      );
+
+      unreadCountController.add(7);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Notifications'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Badge), findsAtLeastNWidgets(1));
+      expect(find.text('7'), findsOneWidget);
+
+      await unreadCountController.close();
+    });
+
+    testWidgets('no badge shown when unauthenticated', (tester) async {
+      final router = _createTestRouter();
+      final unreadCountController = StreamController<int>();
+
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(() => _TestAuthNotifier(const AuthState.unauthenticated())),
+          unreadCountProvider.overrideWith(
+            () => _TestUnreadCountNotifier(unreadCountController.stream),
+          ),
+        ],
+      );
+
+      unreadCountController.add(5);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Notifications'), findsNothing);
+      expect(find.byType(Badge), findsNothing);
+
+      await unreadCountController.close();
+    });
+
+    testWidgets('displays "99+" for counts greater than 99', (tester) async {
+      final router = _createTestRouter();
+      final unreadCountController = StreamController<int>();
+
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+          unreadCountProvider.overrideWith(
+            () => _TestUnreadCountNotifier(unreadCountController.stream),
+          ),
+        ],
+      );
+
+      unreadCountController.add(150);
+      await tester.pumpAndSettle();
+
+      expect(find.text('99+'), findsOneWidget);
+      expect(find.text('150'), findsNothing);
+
+      await unreadCountController.close();
+    });
+
+    testWidgets('displays exact count for 99 notifications', (tester) async {
+      final router = _createTestRouter();
+      final unreadCountController = StreamController<int>();
+
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+          unreadCountProvider.overrideWith(
+            () => _TestUnreadCountNotifier(unreadCountController.stream),
+          ),
+        ],
+      );
+
+      unreadCountController.add(99);
+      await tester.pumpAndSettle();
+
+      expect(find.text('99'), findsOneWidget);
+      expect(find.text('99+'), findsNothing);
+
+      await unreadCountController.close();
     });
   });
 }
