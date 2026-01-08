@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/animations/animation_utils.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
-import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/core/widgets/pull_to_refresh_wrapper.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/notifications/application/notifications_notifier.dart';
+import 'package:lazurite/src/features/notifications/presentation/widgets/notification_list_item_skeleton.dart';
 
-import 'widgets/notification_list_item.dart';
+import 'widgets/grouped_notification_item.dart';
 
 /// Notifications screen displaying the user's notifications.
 ///
@@ -102,7 +102,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     delegate: SliverChildBuilderDelegate((context, index) {
                       return AnimatedItem(
                         index: index,
-                        child: NotificationListItem(notification: notifications[index]),
+                        child: GroupedNotificationItem(group: notifications[index]),
                       );
                     }, childCount: notifications.length),
                   ),
@@ -111,7 +111,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               ),
             );
           },
-          loading: () => const LoadingView(key: ValueKey('loading')),
+          loading: () => Scaffold(
+            key: const ValueKey('loading'),
+            appBar: AppBar(title: const Text('Notifications')),
+            body: ListView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 5,
+              itemBuilder: (context, index) => const NotificationListItemSkeleton(),
+            ),
+          ),
           error: (err, stack) => ErrorView(
             key: const ValueKey('error'),
             title: 'Failed to load notifications',

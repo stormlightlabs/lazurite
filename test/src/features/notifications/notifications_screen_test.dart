@@ -101,8 +101,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('alice.bsky'), findsWidgets);
-      expect(find.text('liked your post'), findsOneWidget);
+      expect(find.text('alice.bsky liked your post'), findsOneWidget);
     });
 
     testWidgets('shows sign in message when not authenticated', (tester) async {
@@ -118,7 +117,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Notifications'), findsOneWidget);
+      expect(find.text('Notifications'), findsWidgets);
     });
 
     testWidgets('calls refresh on initial load', (tester) async {

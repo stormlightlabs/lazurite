@@ -46,94 +46,331 @@ Phase 2: Unread Count and Mark as Seen
 - [x] Mark all as read action in app bar
 
 Phase 3: Notification Grouping and Polish
-- [ ] GroupedNotification model and grouping algorithm
-- [ ] GroupedNotificationItem widget (actor list, "and N others")
-      - [ ] Expand/collapse for grouped notifications
-      - [ ] Empty state illustration
-      - [ ] Loading states and skeleton screens
-      - [ ] Relative timestamps ("2h ago")
+- [x] GroupedNotification model and grouping algorithm
+- [x] GroupedNotificationItem widget (actor list, "and N others")
+      - [x] Expand/collapse for grouped notifications
+      - [x] Empty state illustration
+      - [x] Loading states and skeleton screens
+      - [x] Relative timestamps ("2h ago")
 
 Tests:
-- [ ] Repository: fetch, parse, cache, pagination
-- [ ] Notifier: state transitions, refresh, load more
-- [ ] Grouping algorithm with various notification types
-- [ ] Mark as seen batching and offline queue
-- [ ] Unread count updates
-- [ ] Widget tests: list, items, badges
-- [ ] Integration: fetch → display → tap → navigate
-- [ ] Offline: cached display, queued seen state sync
+- [x] Repository: fetch, parse, cache, pagination
+- [x] Notifier: state transitions, refresh, load more
+- [x] Grouping algorithm with various notification types
+- [x] Mark as seen batching and offline queue
+- [x] Unread count updates
+- [x] Widget tests: list, items, badges
+- [x] Integration: fetch → display → tap → navigate
+- [x] Offline: cached display, queued seen state sync
 
 Deliverables:
-- Notifications tab functional with real data
-- Unread badge in tab navigation
-- Smooth pagination and pull-to-refresh
-- Mark as seen syncs to Bluesky
-- Notification grouping for compact display
-- Deep linking to threads and profiles
-- >95% test coverage
+- [x] Notifications tab functional with real data
+- [x] Unread badge in tab navigation
+- [x] Smooth pagination and pull-to-refresh
+- [x] Mark as seen syncs to Bluesky
+- [x] Notification grouping for compact display
+- [x] Deep linking to threads and profiles
 
 ================================================================================
 M. DMs (read + write) + outbox + read-state                             *bsky-M*
 ================================================================================
 
 DM fundamentals:
-- Chat endpoints are called via user’s PDS and proxied to did:web:api.bsky.chat
+- Chat endpoints are called via user's PDS and proxied to did:web:api.bsky.chat
   via service proxy header, per chat endpoint docs and XRPC proxy spec.
+- Outbox pattern ensures reliable delivery: queue locally, retry with backoff,
+  never double-send without explicit server acknowledgement.
+- Read state tracked bidirectionally: local updateRead + remote unread counts.
 
-Endpoints:
+Endpoints (all registered):
 - chat.bsky.convo.listConvos (GET)
 - chat.bsky.convo.getMessages (GET)
 - chat.bsky.convo.sendMessage (POST)
 - chat.bsky.convo.acceptConvo (POST)
 - chat.bsky.convo.updateRead (POST)
 
-Tasks:
-- [ ] Dio proxying:
-      - add `atproto-proxy` header for all chat.* calls (service proxying).
+Phase 1: Data Layer and API Integration
 - [ ] Drift tables:
-      - dm_convos, dm_members, dm_messages
-      - dm_outbox (local queued sends)
-- [ ] Inbox UI:
-      - convo list, unread indicators, accept requests flow
-- [ ] Convo UI:
-      - message list paging
-      - compose/send
-      - mark read on view (updateRead)
-- [ ] Outbox worker:
-      - persist pending messages immediately
-      - retry sends safely (bounded; user-visible failure state)
-      - never double-send without explicit server acknowledgement
+      - DmConvos (convoId, membersJson, lastMessageText, lastMessageAt,
+        lastReadMessageId, unreadCount, isMuted, isAccepted, cachedAt)
+      - DmMessages (messageId, convoId, senderDid, text, sentAt, status, cachedAt)
+      - DmOutbox (outboxId, convoId, text, status, retryCount, createdAt,
+        lastAttemptAt, errorMessage)
+- [ ] DAOs:
+      - DmConvosDao (CRUD, watch stream, update read state)
+      - DmMessagesDao (CRUD, watch by convoId, update status)
+      - DmOutboxDao (CRUD, watch pending, update retry count)
+- [ ] Domain models:
+      - DmConversation (with computed properties for UI)
+      - DmMessage (with delivery status enum)
+      - OutboxItem (with retry logic methods)
+- [ ] DmsRepository:
+      - fetchConversations with cursor pagination
+      - watchConversations stream from cache
+      - fetchMessages with cursor pagination
+      - watchMessages stream by convoId
+      - acceptConversation API call
+      - updateReadState API call
+      - inject `atproto-proxy: did:web:api.bsky.chat#bsky_chat` header
+- [ ] OutboxRepository:
+      - enqueueSend (persist to outbox + display optimistically)
+      - processOutbox (sequential per-convo processing)
+      - retryMessage (user-initiated retry)
+      - _sendMessage with exponential backoff (5 max retries)
+      - atomic operations: outbox insert + message display, outbox delete + ack
+
+Phase 2: Conversation List Screen
+- [ ] ConversationListScreen:
+      - display conversations sorted by lastMessageAt
+      - pull-to-refresh for new conversations
+      - pagination with cursor support
+      - separate "Requests" section for unaccepted convos
+      - tap to open conversation detail
+      - empty state when no conversations
+- [ ] ConversationListItem widget:
+      - participant avatar and display name
+      - last message preview (first line)
+      - timestamp (relative, e.g., "2h ago")
+      - unread indicator (dot or badge with count)
+      - message request indicator if not accepted
+- [ ] ConversationListNotifier:
+      - watchConversations stream
+      - refresh() and loadMore() methods
+      - acceptConversation() action
+
+Phase 3: Conversation Detail Screen
+- [ ] ConversationDetailScreen:
+      - display messages in chronological order (newest at bottom)
+      - pull-to-refresh for older messages (pagination)
+      - scroll to bottom on new messages
+      - auto-mark as read on view (updateRead)
+      - compose input with send button
+      - optimistic send (show immediately with pending state)
+- [ ] MessageBubble widget:
+      - sender avatar (other party only)
+      - message text content
+      - timestamp (relative or absolute)
+      - delivery status indicator (sending, sent, failed, read)
+      - group consecutive messages by same sender
+- [ ] MessageComposer widget:
+      - multi-line text input (auto-expanding)
+      - send button (disabled when empty)
+      - character limit (10,000 chars)
+      - character counter when approaching limit
+- [ ] DeliveryStatusIndicator widget:
+      - pending: clock icon
+      - sending: spinner
+      - sent: single checkmark
+      - read: double checkmark
+      - failed: error icon with retry button
+- [ ] ConversationDetailNotifier:
+      - watchMessages stream for convoId
+      - sendMessage (enqueue in outbox + trigger worker)
+      - markAsRead on conversation open
+
+Phase 4: Outbox Worker and Reliability
+- [ ] OutboxWorker:
+      - periodic processing (every 10 seconds)
+      - trigger on app foreground resume
+      - process pending items oldest-first
+      - one message per conversation at a time (preserve order)
+      - exponential backoff (2^retryCount seconds: 2s, 4s, 8s, 16s, 32s)
+      - max 5 retries, then mark permanently failed
+      - transient errors: network, timeout → retry
+      - permanent errors: auth, validation → mark failed, notify user
+- [ ] Error handling:
+      - network errors: "No internet. Message will send when online."
+      - server errors: "Failed to send. Tap to retry."
+      - auth errors: "Session expired. Please sign in."
+      - validation errors: "Message too long (15,000 / 10,000 chars)"
+- [ ] Atomic operations:
+      - use database transactions for send operations
+      - prevent double-sends (wait for server acknowledgment)
+      - handle app crash during send (resume on restart)
+
+Phase 5: Message Requests and Accept Flow
+- [ ] MessageRequestCard widget:
+      - display sender profile (avatar, display name, handle)
+      - message preview
+      - accept and decline buttons
+- [ ] Accept flow:
+      - call chat.bsky.convo.acceptConvo
+      - move conversation to main list
+      - enable sending messages
+- [ ] Decline flow:
+      - hide conversation (client-side only)
+      - user can still accept later
+
+Phase 6: Polish and Optimization
+- [ ] Animations and transitions:
+      - smooth scroll to bottom
+      - optimistic send animation
+      - delivery status transitions
+- [ ] Performance:
+      - ListView.builder for lazy rendering
+      - limit in-memory messages (100 visible)
+      - cache message heights for smooth scrolling
+      - avatar caching with LRU eviction
+- [ ] Accessibility:
+      - semantic labels for all interactive elements
+      - screen reader support
+      - keyboard navigation (Cmd/Ctrl+Enter to send)
+- [ ] Haptic feedback on send
+- [ ] Read receipts display (when other party reads)
 
 Tests:
-- [ ] Proxy header unit test: chat.* requests include atproto-proxy.
-- [ ] Outbox tests: enqueue -> send -> mark delivered; retry on transient errors
-- [ ] UI tests: offline send creates pending bubble; online later resolves.
+- [ ] Repository: fetch convos, fetch messages, accept, update read, parse responses
+- [ ] OutboxRepository: enqueue, process, retry with backoff, handle errors
+- [ ] Proxy header unit test: verify chat.* requests include atproto-proxy header
+- [ ] Outbox reliability tests:
+      - enqueue → send → mark delivered
+      - enqueue → send fails → retry with backoff
+      - enqueue → send fails 5x → mark permanently failed
+      - enqueue → app crash → resume on restart → deliver
+      - enqueue multiple → process in order → preserve ordering
+      - double-send prevention: send in progress → don't send again
+- [ ] DAOs: CRUD operations, streams, queries
+- [ ] Notifiers: state transitions, refresh, load more
+- [ ] Widget tests: list items, message bubbles, composer, delivery status
+- [ ] Integration tests:
+      - fetch convos → display → tap → open detail
+      - compose → send → outbox → server → display
+      - send offline → queue → network restore → deliver
+      - receive message → display → mark read → sync
+      - message request → accept → move to main list
+- [ ] Offline scenarios: compose offline, send when online, display cached
 
 Deliverables:
-- DMs usable end-to-end: read, accept, send, read-state, robust retries.
+- [ ] Conversation list functional with unread indicators
+- [ ] Message requests require acceptance
+- [ ] Conversation detail with message history
+- [ ] Compose and send text messages
+- [ ] Outbox ensures reliable delivery (never lose messages)
+- [ ] Failed sends retry automatically (bounded, user can retry)
+- [ ] No double-sends occur
+- [ ] Read state syncs bidirectionally
+- [ ] Offline messages queue and sync
+- [ ] Proxy header injected correctly
+- [ ] Performance acceptable with 100+ conversations
+- [ ] Test coverage exceeds 95%
 
 ================================================================================
 N. Hardening (mobile)                                                   *bsky-N*
 ================================================================================
 
-Tasks:
+Phase 1: Code Quality and Architecture
+- [ ] Feature architecture standardization:
+      - Audit all features for missing domain/infrastructure/application layers
+      - Establish clear guidelines for layer responsibilities
+      - Refactor features missing layers (priority: auth, settings, profile, search, thread)
+      - Document architecture patterns in doc/architecture.md
+- [ ] Type safety improvements:
+      - Audit unsafe casts (334 instances found)
+      - Replace unsafe casts with proper null checks or code generation
+      - Add typed JSON parsing where appropriate
+      - Consider json_serializable or freezed for critical models
+- [ ] Large file refactoring:
+      - Split feed_repository.dart (1083 lines) into focused modules
+      - Split profile_repository.dart (720 lines) into focused modules
+      - Split composer_screen.dart (481 lines) if warranted
+      - Target: no file over 500 lines unless justified
+- [ ] Error handling standardization:
+      - Define standard error types for common failures (network, auth, validation)
+      - Standardize error display messages (no raw .toString() in UI)
+      - Document error handling patterns in doc/error-handling.md
+      - Add comprehensive error handling tests
+
+Phase 2: Database and Persistence
+- [ ] Database migration strategy:
+      - Design migration system for schema version changes
+      - Document migration approach in doc/database-migrations.md
+      - Test migration scenarios (upgrade, rollback, data preservation)
+      - Add migration integration tests before v1.0
+- [ ] Database performance:
+      - DB query profiling with realistic data volumes
+      - Add indexes as needed based on profiling
+      - Optimize hot paths (feed queries, notification queries)
+      - Test with N=10k cached posts, N=1k notifications
+
+Phase 3: Performance Optimization
 - [ ] Performance:
-      - image caching strategy; list virtualization sanity
-      - DB query profiling; add indexes as needed
+      - Image caching strategy review and optimization
+      - List virtualization sanity checks (ListView.builder usage)
+      - Profile critical paths with Flutter DevTools
+      - Optimize animation controller usage in lists (skeleton widgets)
+      - Memory leak detection (especially in stateful widgets)
+- [ ] Network efficiency:
+      - Audit pagination cursor handling
+      - Review cache invalidation strategies
+      - Optimize background sync frequencies
+
+Phase 4: Quality Assurance
+- [ ] Test coverage:
+      - Achieve >95% coverage target across all features
+      - Add missing integration tests (notifications grouping, DMs outbox)
+      - Add E2E tests for critical flows
+      - Widget test coverage for all custom widgets
 - [ ] Accessibility:
-      - semantic labels, dynamic type, contrast checks
+      - Semantic labels for all interactive elements
+      - Dynamic type support and testing
+      - Contrast ratio checks (WCAG AA compliance)
+      - Screen reader testing on iOS and Android
+      - Keyboard navigation testing (tab focus order)
+- [ ] Scroll performance tests:
+      - Sanity test on mid-range Android emulator profile
+      - iOS scroll performance validation
+      - Measure frame render times under load
+- [ ] Observability:
+      - [x] Structured logging framework
+      - [ ] Crash reporting integration (Sentry/Firebase Crashlytics)
+      - [ ] Performance monitoring hooks
+      - [ ] Analytics event tracking foundation
+
+Phase 5: Security and Moderation
+- [ ] Security audit:
+      - Review secure storage usage (credentials, tokens)
+      - Validate input sanitization (XSS prevention)
+      - Audit network request security (HTTPS enforcement)
+      - Review dependency vulnerabilities
 - [ ] Moderation basics:
-      - respect labels/filters returned by AppView/PDS (foundation)
-- [ ] Observability hooks:
-      - [x] structured logging
-      - [ ] crash reporting integration points
+      - Respect labels/filters returned by AppView/PDS
+      - Hide/blur content based on moderation labels
+      - User-configurable content filters
+      - Block/mute functionality
+
+Phase 6: Documentation and Polish
+- [ ] Documentation completion:
+      - Architecture documentation (doc/architecture.md)
+      - Error handling patterns (doc/error-handling.md)
+      - Database migration guide (doc/database-migrations.md)
+      - Testing guide updates (doc/testing.md)
+      - API response schema documentation
+- [ ] Code cleanup:
+      - Remove any remaining dead code
+      - Ensure all files are tracked and used
+      - Verify clean file system (no orphaned files)
+      - Final linting pass with strict analysis options
 
 Tests:
-- [ ] Scroll perf sanity test on mid-range Android emulator profile.
-- [ ] A11y audit checklist pass.
+- [ ] Scroll perf sanity test on mid-range Android emulator profile
+- [ ] iOS scroll performance validation
+- [ ] A11y audit checklist pass
+- [ ] Security audit checklist pass
+- [ ] Database migration tests (upgrade, rollback, data preservation)
+- [ ] Error handling integration tests
+- [ ] Memory leak detection tests
+- [ ] Network failure resilience tests
 
 Deliverables:
-- Mobile app feels stable and responsive for daily use.
+- [ ] Mobile app feels stable and responsive for daily use
+- [ ] All features follow consistent architecture patterns
+- [ ] Database migration strategy ready for production
+- [ ] Type-safe codebase with minimal unsafe casts
+- [ ] Comprehensive error handling with user-friendly messages
+- [ ] Security best practices validated
+- [ ] Accessibility requirements met (WCAG AA)
+- [ ] Performance benchmarks passing
+- [ ] Documentation complete and current
 
 ================================================================================
 Initial Release (Lazurite-0.1.0-alpha)

@@ -4,7 +4,7 @@ import '../../../core/utils/logger.dart';
 import '../../../core/utils/logger_provider.dart';
 import '../../../features/auth/application/auth_providers.dart';
 import '../../../features/auth/domain/auth_state.dart';
-import '../domain/notification.dart';
+import '../domain/grouped_notification.dart';
 import 'notifications_providers.dart';
 
 part 'notifications_notifier.g.dart';
@@ -12,7 +12,8 @@ part 'notifications_notifier.g.dart';
 /// Notifier for managing notification list state.
 ///
 /// Watches the notifications stream and provides methods for
-/// refresh and load more pagination.
+/// refresh and load more pagination. Returns grouped notifications
+/// for compact display.
 @riverpod
 class NotificationsNotifier extends _$NotificationsNotifier {
   Logger get _logger => ref.read(loggerProvider('NotificationsNotifier'));
@@ -20,10 +21,10 @@ class NotificationsNotifier extends _$NotificationsNotifier {
   bool get _isAuthenticated => ref.read(authProvider) is AuthStateAuthenticated;
 
   @override
-  Stream<List<AppNotification>> build() {
+  Stream<List<GroupedNotification>> build() {
     final repository = ref.watch(notificationsRepositoryProvider);
-    _logger.debug('Building notifications stream', {});
-    return repository.watchNotifications();
+    _logger.debug('Building grouped notifications stream', {});
+    return repository.watchNotifications().map(GroupedNotification.groupNotifications);
   }
 
   /// Refreshes notifications from the API.
