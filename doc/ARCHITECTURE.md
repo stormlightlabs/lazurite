@@ -21,6 +21,42 @@
 - Secure storage (flutter_secure_storage) for tokens/keys, never in Drift
 - Offline-first with optimistic updates and sync queues
 
+### Multi-Account Data Isolation
+
+All user-scoped data is keyed by `ownerDid` to prevent data bleeding between accounts:
+
+**Scoped Tables:**
+
+- `SavedFeeds` - User's saved feed generators
+- `FeedContentItems` - Cached posts from feeds
+- `FeedCursors` - Pagination cursors per feed
+- `Notifications` - User notifications
+- `BlueskyPreferences` - Content moderation settings
+- `DmConvos` / `DmMessages` - Direct message conversations
+
+**Implementation Pattern:**
+
+DAOs accept `ownerDid` as a required parameter and filter all queries by it.
+
+```dart
+Stream<List<T>> watchData(String ownerDid) =>
+  (select(table)..where((t) => t.ownerDid.equals(ownerDid))).watch();
+```
+
+Notifiers resolve `ownerDid` from the current auth state, defaulting to `'anonymous'`
+for unauthenticated users viewing public content (e.g., Discover feed).
+
+```dart
+final ownerDid = (authState is AuthStateAuthenticated)
+    ? authState.session.did
+    : 'anonymous';
+```
+
+**Logout Behavior:**
+User data is NOT wiped on logout. Instead, `ownerDid` filtering ensures the next
+logged-in user only sees their own data. This allows fast account switching while
+maintaining isolation.
+
 ## Feed Architecture
 
 The feed system manages both feed metadata and content through two coordinated
