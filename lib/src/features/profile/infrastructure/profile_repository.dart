@@ -25,6 +25,10 @@ class ProfileRepository {
     _logger.info('Fetching profile', {'actor': actor, 'ownerDid': ownerDid});
     try {
       final response = await _api.call('app.bsky.actor.getProfile', params: {'actor': actor});
+      _logger.debug('getProfile response', {
+        'handle': response['handle'],
+        'viewer': response['viewer'],
+      });
 
       final pinnedRaw = response['pinnedPost'];
       if (pinnedRaw != null) {
@@ -55,6 +59,14 @@ class ProfileRepository {
           pinnedPostUri: Value(profile.pinnedPostUri),
         ),
       );
+
+      _logger.debug('Caching relationship', {
+        'ownerDid': ownerDid,
+        'profileDid': profile.did,
+        'following': profile.viewerFollowing,
+        'followedBy': profile.viewerFollowedBy,
+        'followingUri': profile.viewerFollowUri,
+      });
 
       await _relationshipsDao.upsertRelationship(
         ProfileRelationshipsCompanion.insert(
@@ -470,6 +482,7 @@ class ProfileData {
     String? viewerFollowUri,
     bool? viewerMuted,
     bool? viewerBlockedBy,
+    bool? viewerFollowedBy,
     dynamic viewerBlockingUri = _sentinel, // Use dynamic to detect sentinel
   }) {
     return ProfileData(
@@ -496,7 +509,7 @@ class ProfileData {
       viewerBlockingUri: viewerBlockingUri == _sentinel
           ? this.viewerBlockingUri
           : viewerBlockingUri as String?,
-      viewerFollowedBy: viewerFollowedBy,
+      viewerFollowedBy: viewerFollowedBy ?? this.viewerFollowedBy,
       viewerMutedByList: viewerMutedByList,
       viewerBlockingByList: viewerBlockingByList,
     );

@@ -59,7 +59,6 @@ Tests:
 - [x] Widget test: debug overlay hidden in release mode
       (when not manually enabled)
 - [x] Widget test: 2-finger long-press shows overlay in kDebugMode
-- [ ] Integration test: network interceptor logs XRPC calls
 - [x] Unit test: describeRepo, listRecords, getRecord parse correctly
 - [x] Provider test: collectionsProvider fetches and caches
 - [x] Provider test: recordsProvider paginates without duplicates
@@ -79,22 +78,16 @@ O. Hardening (mobile)                                                   *bsky-O*
 
 Phase 1: Code Quality and Architecture
 - [ ] Feature architecture standardization:
-      - Audit all features for missing domain/infrastructure/application layers
-      - Establish clear guidelines for layer responsibilities
-      - Refactor features missing layers (priority: auth, settings, profile,
-        search, thread)
-      - Document architecture patterns in doc/architecture.md
-      - Document testing patterns in doc/testing.md
+      - [ ] Audit all features for missing domain/infrastructure/application
+            layers
+            - [ ] Refactor features missing layers (priority: auth, settings,
+                  profile, search, thread)
+      - [ ] Document architecture patterns in doc/architecture.md
+            - [ ] Establish clear guidelines for layer responsibilities
+      - [x] Document testing patterns in doc/testing.md
 - [ ] Type safety improvements:
-      - Audit unsafe casts (334 instances found)
-      - Replace unsafe casts with proper null checks or code generation
+      - Use freezed for critical models
       - Add typed JSON parsing where appropriate
-      - Consider json_serializable or freezed for critical models
-- [ ] Large file refactoring:
-      - Split feed_repository.dart (1083 lines) into focused modules
-      - Split profile_repository.dart (720 lines) into focused modules
-      - Split composer_screen.dart (481 lines) if warranted
-      - Target: no file over 500 lines
 - [ ] Error handling standardization:
       - Define standard error types for common failures (network, auth,
         validation)

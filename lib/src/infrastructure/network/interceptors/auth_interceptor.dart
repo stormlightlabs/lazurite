@@ -61,6 +61,8 @@ class AuthInterceptor extends Interceptor {
   static const _invalidTokenRetriedKey = '_invalidTokenRetried';
 
   /// Retries a request with a new session.
+  ///
+  /// Adheres to RFC 9449: htu must not include query or fragment
   Future<void> _retryRequestWithSession(
     DioException err,
     Session newSession,
@@ -70,10 +72,11 @@ class AuthInterceptor extends Interceptor {
     options.headers['Authorization'] = 'DPoP ${newSession.accessJwt}';
 
     try {
+      final origin = _getOrigin(options.uri);
       final dpopKey = JsonWebKey.fromJson(newSession.dpopKey);
-      final url = options.uri.toString();
+      final url = options.uri.replace(query: null, fragment: null).toString();
       final method = options.method;
-      final nonce = _nonceStore.get(newSession.pdsUrl);
+      final nonce = _nonceStore.get(origin);
 
       final proof = await DPoPUtils.createProof(
         url: url,
@@ -84,6 +87,10 @@ class AuthInterceptor extends Interceptor {
       );
 
       options.headers['DPoP'] = proof;
+      _logger.debug('Added DPoP header to retry', {
+        'host': options.uri.host,
+        'hasNonce': nonce != null,
+      });
     } catch (e) {
       _logger.warning('Failed to create DPoP proof for retry', e);
     }
@@ -130,6 +137,7 @@ class AuthInterceptor extends Interceptor {
     }
   }
 
+  /// Adheres to RFC 9449: htu must not include query or fragment
   @override
   Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     final requiresAuth = options.extra[requiresAuthKey] == true;
@@ -146,14 +154,20 @@ class AuthInterceptor extends Interceptor {
     }
 
     if (session != null) {
+      final origin = _getOrigin(options.uri);
       final token = session.accessJwt;
       options.headers['Authorization'] = 'DPoP $token';
+      _logger.debug('Attached token to request', {
+        'path': options.uri.path,
+        'host': options.uri.host,
+        'tokenPrefix': token.substring(0, token.length > 10 ? 10 : token.length),
+      });
 
       try {
         final dpopKey = JsonWebKey.fromJson(session.dpopKey);
-        final url = options.uri.toString();
+        final url = options.uri.replace(query: null, fragment: null).toString();
         final method = options.method;
-        final nonce = _nonceStore.get(session.pdsUrl);
+        final nonce = _nonceStore.get(origin);
 
         final proof = await DPoPUtils.createProof(
           url: url,
@@ -164,6 +178,10 @@ class AuthInterceptor extends Interceptor {
         );
 
         options.headers['DPoP'] = proof;
+        _logger.debug('Added DPoP header to request', {
+          'host': options.uri.host,
+          'hasNonce': nonce != null,
+        });
       } catch (e) {
         _logger.warning('Failed to create DPoP proof for request', e);
       }
@@ -176,14 +194,13 @@ class AuthInterceptor extends Interceptor {
 
   @override
   Future<void> onResponse(Response response, ResponseInterceptorHandler handler) async {
-    final requiresAuth = response.requestOptions.extra[requiresAuthKey] == true;
-    if (requiresAuth) {
-      final session = await getSession();
-      if (session != null) {
-        final nonce = DPoPNonceStore.extractFromHeaders(response.headers.map);
-        if (nonce != null) {
-          _nonceStore.store(session.pdsUrl, nonce);
-        }
+    final session = await getSession();
+    if (session != null) {
+      final nonce = DPoPNonceStore.extractFromHeaders(response.headers.map);
+      if (nonce != null) {
+        final origin = _getOrigin(response.requestOptions.uri);
+        _nonceStore.store(origin, nonce);
+        _logger.debug('Stored DPoP nonce for $origin');
       }
     }
 
@@ -194,15 +211,17 @@ class AuthInterceptor extends Interceptor {
   Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
     final requiresAuth = err.requestOptions.extra[requiresAuthKey] == true;
 
-    if (requiresAuth) {
-      final session = await getSession();
-      if (session != null && err.response != null) {
-        final nonce = DPoPNonceStore.extractFromHeaders(err.response!.headers.map);
-        if (nonce != null) {
-          _nonceStore.store(session.pdsUrl, nonce);
-        }
+    final session = await getSession();
+    if (session != null && err.response != null) {
+      final nonce = DPoPNonceStore.extractFromHeaders(err.response!.headers.map);
+      if (nonce != null) {
+        final origin = _getOrigin(err.requestOptions.uri);
+        _nonceStore.store(origin, nonce);
+        _logger.debug('Stored DPoP nonce for $origin from error response');
       }
+    }
 
+    if (requiresAuth) {
       if (await _tryRefreshAfterInvalidToken(err, handler)) {
         return;
       }
@@ -289,5 +308,13 @@ class AuthInterceptor extends Interceptor {
       return data['error'] as String?;
     }
     return null;
+  }
+
+  String _getOrigin(Uri uri) {
+    try {
+      return uri.hasScheme ? uri.origin : uri.toString();
+    } catch (_) {
+      return uri.toString();
+    }
   }
 }

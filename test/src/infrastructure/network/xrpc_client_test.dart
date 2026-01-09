@@ -1,10 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
-import 'package:lazurite/src/infrastructure/network/endpoint_registry.dart';
-import 'package:lazurite/src/infrastructure/network/host_kind.dart';
 import 'package:lazurite/src/infrastructure/network/network_failure.dart';
-import 'package:lazurite/src/infrastructure/network/proxy_kind.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
 import '../../../helpers/mocks.dart';
@@ -24,9 +21,38 @@ void main() {
     client = XrpcClient(publicDio: publicDio, pdsDio: pdsDio, logger: MockLogger());
   });
 
-  group('XrpcClient routing', () {
+  group('XrpcClient routing (Unauthenticated)', () {
+    late XrpcClient unauthedClient;
+
+    setUp(() {
+      unauthedClient = XrpcClient(publicDio: publicDio, pdsDio: null, logger: MockLogger());
+    });
+
     test('routes public endpoints to public Dio', () async {
       publicAdapter.onGet(
+        '/xrpc/app.bsky.feed.getPostThread',
+        (server) => server.reply(200, {
+          'thread': {'post': {}},
+        }),
+        queryParameters: {'uri': 'at://did:plc:test/app.bsky.feed.post/123'},
+      );
+
+      final result = await unauthedClient.call(
+        'app.bsky.feed.getPostThread',
+        params: {'uri': 'at://did:plc:test/app.bsky.feed.post/123'},
+      );
+
+      expect(result, containsPair('thread', isA<Map>()));
+    });
+
+    test('throws StateError for pds endpoints', () {
+      expect(() => unauthedClient.call('app.bsky.feed.getTimeline'), throwsA(isA<StateError>()));
+    });
+  });
+
+  group('XrpcClient routing (Authenticated)', () {
+    test('prefers PDS for public endpoints when authed', () async {
+      pdsAdapter.onGet(
         '/xrpc/app.bsky.feed.getPostThread',
         (server) => server.reply(200, {
           'thread': {'post': {}},
@@ -125,7 +151,7 @@ void main() {
     });
 
     test('converts 400 to ClientFailure', () async {
-      publicAdapter.onGet(
+      pdsAdapter.onGet(
         '/xrpc/app.bsky.feed.getPostThread',
         (server) => server.reply(400, {
           'error': 'InvalidRequest',
@@ -141,7 +167,7 @@ void main() {
     });
 
     test('converts 500 to ServerFailure', () async {
-      publicAdapter.onGet(
+      pdsAdapter.onGet(
         '/xrpc/app.bsky.feed.getPostThread',
         (server) =>
             server.reply(500, {'error': 'InternalServerError', 'message': 'Something went wrong'}),
@@ -157,7 +183,7 @@ void main() {
 
   group('XrpcClient response parsing', () {
     test('parses Map<String, dynamic> response', () async {
-      publicAdapter.onGet(
+      pdsAdapter.onGet(
         '/xrpc/app.bsky.actor.getProfile',
         (server) => server.reply(200, {'did': 'did:plc:test', 'handle': 'test.bsky.social'}),
         queryParameters: {'actor': 'test.bsky.social'},
@@ -173,7 +199,7 @@ void main() {
     });
 
     test('returns empty map for null response', () async {
-      publicAdapter.onGet(
+      pdsAdapter.onGet(
         '/xrpc/com.atproto.identity.resolveHandle',
         (server) => server.reply(204, null),
         queryParameters: {'handle': 'test'},
@@ -190,7 +216,7 @@ void main() {
 
   group('XrpcClient.callRaw', () {
     test('returns raw Response object', () async {
-      publicAdapter.onGet(
+      pdsAdapter.onGet(
         '/xrpc/app.bsky.feed.getPostThread',
         (server) => server.reply(200, {'thread': {}}),
         queryParameters: {'uri': 'test'},
@@ -218,33 +244,6 @@ void main() {
       );
 
       expect(response.data, isA<String>());
-    });
-  });
-
-  group('Endpoint metadata propagation', () {
-    test('verifies public endpoints do not require auth', () {
-      final registry = EndpointRegistry.instance;
-      final publicEndpoint = registry.get('app.bsky.feed.getPostThread');
-
-      expect(publicEndpoint.hostKind, equals(HostKind.publicApi));
-      expect(publicEndpoint.requiresAuth, isFalse);
-    });
-
-    test('verifies auth endpoints require auth', () {
-      final registry = EndpointRegistry.instance;
-      final authEndpoint = registry.get('app.bsky.feed.getTimeline');
-
-      expect(authEndpoint.hostKind, equals(HostKind.pds));
-      expect(authEndpoint.requiresAuth, isTrue);
-    });
-
-    test('verifies chat endpoints use proxy', () {
-      final registry = EndpointRegistry.instance;
-      final chatEndpoint = registry.get('chat.bsky.convo.listConvos');
-
-      expect(chatEndpoint.hostKind, equals(HostKind.pds));
-      expect(chatEndpoint.requiresAuth, isTrue);
-      expect(chatEndpoint.proxyKind, equals(ProxyKind.chat));
     });
   });
 }

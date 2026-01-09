@@ -48,7 +48,7 @@ class FollowButton extends StatelessWidget {
           minimumSize: const Size(100, 36),
           side: BorderSide(color: colorScheme.outline),
         ),
-        child: const Text('Following'),
+        child: const Text('Unfollow'),
       );
     }
 

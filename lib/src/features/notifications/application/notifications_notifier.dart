@@ -30,6 +30,13 @@ class NotificationsNotifier extends _$NotificationsNotifier {
     }
 
     _logger.debug('Building grouped notifications stream', {'ownerDid': ownerDid});
+
+    Future.microtask(
+      () => refresh().catchError((error, stack) {
+        _logger.error('Failed to refresh notifications on build', error, stack);
+      }),
+    );
+
     return repository.watchNotifications(ownerDid).map(GroupedNotification.groupNotifications);
   }
 

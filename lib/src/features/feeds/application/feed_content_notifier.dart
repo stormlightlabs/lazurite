@@ -45,6 +45,8 @@ class FeedContentNotifier extends _$FeedContentNotifier {
       'ownerDid': ownerDid,
     });
 
+    Future.microtask(() => refresh());
+
     return repository.watchFeedContent(feedKey: feedKey, ownerDid: ownerDid).map((items) {
       final pref = feedViewPref.maybeWhen(
         data: (data) => data,
@@ -172,20 +174,23 @@ class FeedContentNotifier extends _$FeedContentNotifier {
   ///
   /// Fetches the latest posts from the active feed and caches them locally.
   Future<void> refresh() async {
+    if (!ref.mounted) return;
     final repository = ref.read(feedContentRepositoryProvider);
     final authState = ref.read(authProvider);
     final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : 'anonymous';
+    final logger = _logger;
+    final isAuthenticated = _isAuthenticated;
 
     final actualFeedUri = _resolveRemoteFeedUri();
-    if (actualFeedUri == null && !_isAuthenticated) {
-      _logger.debug('Skipping refresh for timeline feed while unauthenticated');
+    if (actualFeedUri == null && !isAuthenticated) {
+      logger.debug('Skipping refresh for timeline feed while unauthenticated');
       return;
     }
 
     try {
       await repository.fetchAndCacheFeed(feedUri: actualFeedUri, ownerDid: ownerDid);
     } catch (error, stack) {
-      _logger.error('Failed to refresh feed content', error, stack);
+      logger.error('Failed to refresh feed content', error, stack);
     }
   }
 
@@ -193,18 +198,22 @@ class FeedContentNotifier extends _$FeedContentNotifier {
   ///
   /// Fetches the next page using the stored cursor for the active feed.
   Future<void> loadMore() async {
+    if (!ref.mounted) return;
     final repository = ref.read(feedContentRepositoryProvider);
     final authState = ref.read(authProvider);
     final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : 'anonymous';
+    final logger = _logger;
+    final isAuthenticated = _isAuthenticated;
 
     final feedKey = _feedKeyFromUri(feedUri);
     final actualFeedUri = _resolveRemoteFeedUri();
-    if (actualFeedUri == null && !_isAuthenticated) {
-      _logger.debug('Skipping loadMore for timeline feed while unauthenticated');
+    if (actualFeedUri == null && !isAuthenticated) {
+      logger.debug('Skipping loadMore for timeline feed while unauthenticated');
       return;
     }
 
     final cursor = await repository.getCursor(feedKey, ownerDid);
+    if (!ref.mounted) return;
 
     if (cursor != null) {
       try {
@@ -214,7 +223,7 @@ class FeedContentNotifier extends _$FeedContentNotifier {
           ownerDid: ownerDid,
         );
       } catch (error, stack) {
-        _logger.error('Failed to load more feed content', error, stack);
+        logger.error('Failed to load more feed content', error, stack);
       }
     }
   }
@@ -223,6 +232,7 @@ class FeedContentNotifier extends _$FeedContentNotifier {
   ///
   /// Removes all cached items and cursor for the active feed.
   Future<void> clearFeedContent() async {
+    if (!ref.mounted) return;
     final repository = ref.read(feedContentRepositoryProvider);
     final authState = ref.read(authProvider);
     final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : 'anonymous';

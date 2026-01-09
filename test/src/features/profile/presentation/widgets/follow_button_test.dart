@@ -16,7 +16,7 @@ void main() {
     testWidgets('shows "Following" when following', (tester) async {
       await tester.pumpApp(const FollowButton(isFollowing: true));
 
-      expect(find.text('Following'), findsOneWidget);
+      expect(find.text('Unfollow'), findsOneWidget);
       expect(find.byType(OutlinedButton), findsOneWidget);
     });
 

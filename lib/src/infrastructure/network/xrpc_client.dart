@@ -54,6 +54,8 @@ class XrpcClient {
     final dio = _selectDio(meta);
     final options = _buildOptions(meta);
 
+    _logger.debug('Making XRPC call: $nsid', {'host': meta.hostKind.name});
+
     try {
       final Response<dynamic> response;
 
@@ -130,17 +132,18 @@ class XrpcClient {
 
   /// Selects the appropriate Dio client based on endpoint metadata.
   Dio _selectDio(EndpointMeta meta) {
+    if (_pdsDio != null) {
+      return _pdsDio;
+    }
+
     switch (meta.hostKind) {
       case HostKind.publicApi:
         return _publicDio;
       case HostKind.pds:
-        if (_pdsDio == null) {
-          throw StateError(
-            'Cannot make authenticated request: PDS client not configured. '
-            'Ensure user is logged in.',
-          );
-        }
-        return _pdsDio;
+        throw StateError(
+          'Cannot make authenticated request: PDS client not configured. '
+          'Ensure user is logged in.',
+        );
     }
   }
 

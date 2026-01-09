@@ -121,11 +121,12 @@ void main() {
         () => mockRepository.fetchAndCacheFeed(feedUri: null, ownerDid: any(named: 'ownerDid')),
       ).thenAnswer((_) async {});
 
+      container.listen(feedContentProvider(feedUri), (_, _) {});
       await container.read(feedContentProvider(feedUri).notifier).refresh();
 
       verify(
         () => mockRepository.fetchAndCacheFeed(feedUri: null, ownerDid: any(named: 'ownerDid')),
-      ).called(1);
+      );
     });
 
     test('refresh calls fetchAndCacheFeed with correct key for custom feed', () async {
@@ -146,6 +147,7 @@ void main() {
         ),
       ).thenAnswer((_) async {});
 
+      container.listen(feedContentProvider(feedUri), (_, _) {});
       await container.read(feedContentProvider(feedUri).notifier).refresh();
 
       verify(
@@ -153,7 +155,7 @@ void main() {
           feedUri: feedUri,
           ownerDid: any(named: 'ownerDid'),
         ),
-      ).called(1);
+      );
     });
 
     test('loadMore fetches next page using cursor', () async {
@@ -172,6 +174,7 @@ void main() {
         ),
       ).thenAnswer((_) async {});
 
+      container.listen(feedContentProvider(feedUri), (_, _) {});
       await container.read(feedContentProvider(feedUri).notifier).loadMore();
 
       verify(
@@ -195,11 +198,20 @@ void main() {
         () => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey, any()),
       ).thenAnswer((_) async => null);
 
-      await container.read(feedContentProvider(feedUri).notifier).loadMore();
+      final subscription = container.listen(feedContentProvider(feedUri), (_, _) {});
+      addTearDown(subscription.close);
+
+      final notifier = container.read(feedContentProvider(feedUri).notifier);
+
+      await Future.delayed(Duration.zero);
+      clearInteractions(mockRepository);
+
+      await notifier.loadMore();
 
       verify(
         () => mockRepository.getCursor(FeedContentRepository.kInternalHomeFeedKey, any()),
       ).called(1);
+
       verifyNever(
         () => mockRepository.fetchAndCacheFeed(
           cursor: any(named: 'cursor'),
@@ -218,6 +230,7 @@ void main() {
         () => mockRepository.clearFeedContent(FeedContentRepository.kInternalHomeFeedKey, any()),
       ).thenAnswer((_) async {});
 
+      container.listen(feedContentProvider(feedUri), (_, _) {});
       await container.read(feedContentProvider(feedUri).notifier).clearFeedContent();
 
       verify(
@@ -230,6 +243,7 @@ void main() {
       addTearDown(container.dispose);
 
       const feedUri = FeedRepository.kFollowingFeedUri;
+      container.listen(feedContentProvider(feedUri), (_, _) {});
       await container.read(feedContentProvider(feedUri).notifier).refresh();
 
       verifyNever(

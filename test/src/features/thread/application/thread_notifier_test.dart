@@ -53,6 +53,7 @@ void main() {
 
       await container.read(threadProvider(postUri).future);
 
+      container.listen(threadProvider(postUri), (_, _) {});
       await container.read(threadProvider(postUri).notifier).refresh();
 
       verify(() => mockRepository.getPostThread(postUri, any())).called(2);

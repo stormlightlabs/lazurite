@@ -146,7 +146,7 @@ void main() {
       final retryIndex = interceptorTypes.indexWhere((t) => t.contains('Retry'));
 
       if (loggingIndex >= 0) {
-        expect(loggingIndex, lessThan(authIndex));
+        expect(authIndex, lessThan(loggingIndex));
       }
       expect(authIndex, lessThan(proxyIndex));
       expect(proxyIndex, lessThan(retryIndex));

@@ -18,8 +18,27 @@ part 'providers.g.dart';
 /// This client is configured for the public AppView at public.api.bsky.app.
 @Riverpod(keepAlive: true)
 Dio dioPublic(Ref ref) {
+  final authState = ref.watch(authProvider);
+  final session = authState is AuthStateAuthenticated ? authState.session : null;
   final db = ref.watch(appDatabaseProvider);
-  return createPublicDio(interceptors: [if (kDebugMode) DebugNetworkInterceptor(db.devToolsDao)]);
+
+  return createPublicDio(
+    getSession: () => _readCurrentSession(ref),
+    refreshSession: () => ref.read(authProvider.notifier).refreshActiveSession(),
+    nonceStore: ref.read(dpopNonceStoreProvider),
+    onSessionInvalidated: () {
+      if (session != null) {
+        try {
+          db.feedContentDao.clearFeedContent('home', session.did);
+        } catch (e) {
+          /* Ignore if database not available */
+        }
+      }
+
+      ref.read(authProvider.notifier).logout();
+    },
+    interceptors: [if (kDebugMode) DebugNetworkInterceptor(db.devToolsDao)],
+  );
 }
 
 /// Provides the PDS Dio client for authenticated API access.

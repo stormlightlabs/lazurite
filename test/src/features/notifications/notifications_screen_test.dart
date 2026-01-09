@@ -129,7 +129,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      verify(() => mockRepository.fetchNotifications(ownerDid: any(named: 'ownerDid'))).called(1);
+      verify(() => mockRepository.fetchNotifications(ownerDid: any(named: 'ownerDid')));
     });
 
     testWidgets('mark all as read button is visible when authenticated', (tester) async {

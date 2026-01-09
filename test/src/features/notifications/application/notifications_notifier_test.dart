@@ -70,14 +70,20 @@ void main() {
 
       await Future.delayed(Duration.zero);
 
-      verify(() => mockRepository.watchNotifications(any())).called(1);
+      verify(() => mockRepository.watchNotifications(any()));
     });
 
     test('refresh calls repository fetchNotifications when authenticated', () async {
       final container = createContainer();
       addTearDown(container.dispose);
 
-      await container.read(notificationsProvider.notifier).refresh();
+      container.listen(notificationsProvider, (_, _) {});
+      final notifier = container.read(notificationsProvider.notifier);
+
+      await Future.delayed(Duration.zero);
+      clearInteractions(mockRepository);
+
+      await notifier.refresh();
 
       verify(() => mockRepository.fetchNotifications(ownerDid: any(named: 'ownerDid'))).called(1);
     });
@@ -85,6 +91,8 @@ void main() {
     test('refresh skips fetch when not authenticated', () async {
       final container = createContainer(authenticated: false);
       addTearDown(container.dispose);
+
+      container.listen(notificationsProvider, (_, _) {});
 
       await container.read(notificationsProvider.notifier).refresh();
 
@@ -103,7 +111,13 @@ void main() {
       final container = createContainer();
       addTearDown(container.dispose);
 
-      await container.read(notificationsProvider.notifier).loadMore();
+      container.listen(notificationsProvider, (_, _) {});
+      final notifier = container.read(notificationsProvider.notifier);
+
+      await Future.delayed(Duration.zero);
+      clearInteractions(mockRepository);
+
+      await notifier.loadMore();
 
       verify(() => mockRepository.getCursor(any())).called(1);
       verify(
@@ -120,7 +134,13 @@ void main() {
       final container = createContainer();
       addTearDown(container.dispose);
 
-      await container.read(notificationsProvider.notifier).loadMore();
+      container.listen(notificationsProvider, (_, _) {});
+      final notifier = container.read(notificationsProvider.notifier);
+
+      await Future.delayed(Duration.zero);
+      clearInteractions(mockRepository);
+
+      await notifier.loadMore();
 
       verify(() => mockRepository.getCursor(any())).called(1);
       verifyNever(
@@ -135,6 +155,8 @@ void main() {
       final container = createContainer(authenticated: false);
       addTearDown(container.dispose);
 
+      container.listen(notificationsProvider, (_, _) {});
+
       await container.read(notificationsProvider.notifier).loadMore();
 
       verifyNever(() => mockRepository.getCursor(any()));
@@ -143,6 +165,8 @@ void main() {
     test('markAllAsRead flushes service and syncs with server', () async {
       final container = createContainer();
       addTearDown(container.dispose);
+
+      container.listen(notificationsProvider, (_, _) {});
 
       await container.read(notificationsProvider.notifier).markAllAsRead();
 
@@ -160,6 +184,8 @@ void main() {
       final container = createContainer();
       addTearDown(container.dispose);
 
+      container.listen(notificationsProvider, (_, _) {});
+
       expect(
         () => container.read(notificationsProvider.notifier).markAllAsRead(),
         throwsException,
@@ -174,9 +200,15 @@ void main() {
       final container = createContainer();
       addTearDown(container.dispose);
 
-      expect(() => container.read(notificationsProvider.notifier).refresh(), throwsException);
+      container.listen(notificationsProvider, (_, _) {});
+      final notifier = container.read(notificationsProvider.notifier);
 
-      verify(() => mockLogger.error(any(), any(), any())).called(1);
+      await Future.delayed(Duration.zero);
+      clearInteractions(mockLogger);
+
+      expect(() => notifier.refresh(), throwsException);
+
+      verify(() => mockLogger.error(any(), any(), any()));
     });
 
     test('stream emits notifications from repository', () async {
@@ -199,7 +231,7 @@ void main() {
 
       await Future.delayed(Duration.zero);
 
-      verify(() => mockRepository.watchNotifications(any())).called(1);
+      verify(() => mockRepository.watchNotifications(any()));
     });
   });
 }

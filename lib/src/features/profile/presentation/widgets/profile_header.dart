@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_labels.dart';
+import 'package:lazurite/src/features/profile/presentation/widgets/profile_relationship_indicator.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/verification_badge.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
@@ -73,38 +74,22 @@ class ProfileHeader extends StatelessWidget {
           ],
         ),
 
-        if (profile.viewerMuted || (profile.viewerBlockingUri != null))
-          Padding(
-            padding: const EdgeInsets.only(top: 8, right: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (profile.viewerMuted)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text('Muted', style: TextStyle(fontSize: 12)),
-                  ),
-                if (profile.viewerBlockingUri != null) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Blocked',
-                      style: TextStyle(fontSize: 12, color: colorScheme.onErrorContainer),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+        Padding(
+          padding: const EdgeInsets.only(top: 8, right: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              ProfileRelationshipIndicator(
+                viewerMuted: profile.viewerMuted,
+                viewerBlocked: profile.viewerBlockingUri != null,
+                viewerBlockedBy: profile.viewerBlockedBy,
+                viewerFollowedBy: profile.viewerFollowedBy,
+                mutedByList: profile.viewerMutedByList,
+                blockingByList: profile.viewerBlockingByList,
+              ),
+            ],
           ),
+        ),
 
         const SizedBox(height: 48),
 

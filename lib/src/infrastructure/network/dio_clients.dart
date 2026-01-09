@@ -14,7 +14,14 @@ const publicApiBaseUrl = 'https://public.api.bsky.app';
 /// The [listFormat] is set to [ListFormat.multi] to serialize array query
 /// parameters as repeated parameter names (e.g., ?feeds=uri1&feeds=uri2), which is
 /// the format expected by AT Protocol endpoints.
-Dio createPublicDio({bool enableLogging = true, List<Interceptor> interceptors = const []}) {
+Dio createPublicDio({
+  SessionGetter? getSession,
+  SessionRefresher? refreshSession,
+  DPoPNonceStore? nonceStore,
+  SessionInvalidatedCallback? onSessionInvalidated,
+  bool enableLogging = true,
+  List<Interceptor> interceptors = const [],
+}) {
   final dio = Dio(
     BaseOptions(
       baseUrl: publicApiBaseUrl,
@@ -27,6 +34,13 @@ Dio createPublicDio({bool enableLogging = true, List<Interceptor> interceptors =
   );
 
   dio.interceptors.addAll([
+    if (getSession != null && refreshSession != null)
+      AuthInterceptor(
+        getSession: getSession,
+        refreshSession: refreshSession,
+        nonceStore: nonceStore,
+        onSessionInvalidated: onSessionInvalidated,
+      ),
     if (enableLogging) LoggingInterceptor(),
     ...interceptors,
     RetryInterceptor(),
@@ -64,13 +78,13 @@ Dio createPdsDio({
   );
 
   dio.interceptors.addAll([
-    if (enableLogging) LoggingInterceptor(),
     AuthInterceptor(
       getSession: getSession,
       refreshSession: refreshSession,
       nonceStore: nonceStore,
       onSessionInvalidated: onSessionInvalidated,
     ),
+    if (enableLogging) LoggingInterceptor(),
     ProxyInterceptor(),
     ...interceptors,
     RetryInterceptor(),

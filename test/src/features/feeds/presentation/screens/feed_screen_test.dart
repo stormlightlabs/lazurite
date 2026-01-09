@@ -56,9 +56,7 @@ void main() {
 
     await tester.pump();
     await tester.pump(Duration.zero);
-    verify(
-      () => mockContentRepository.fetchAndCacheFeed(feedUri: activeFeed, ownerDid: ownerDid),
-    ).called(1);
+    verify(() => mockContentRepository.fetchAndCacheFeed(feedUri: activeFeed, ownerDid: ownerDid));
   });
 
   testWidgets('FeedScreen refresh triggers fetch', (tester) async {
@@ -83,9 +81,7 @@ void main() {
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, 300));
     await tester.pumpAndSettle();
-    verify(
-      () => mockContentRepository.fetchAndCacheFeed(feedUri: activeFeed, ownerDid: ownerDid),
-    ).called(2);
+    verify(() => mockContentRepository.fetchAndCacheFeed(feedUri: activeFeed, ownerDid: ownerDid));
   });
 }
 

@@ -192,7 +192,9 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
                         if (widget.isCurrentUser) {
                           context.push('/profile/followers/$encodedDid');
                         } else {
-                          final currentLocation = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+                          final currentLocation = GoRouter.of(
+                            context,
+                          ).routerDelegate.currentConfiguration.uri.path;
                           String basePath = AppRoutes.home;
                           if (currentLocation.startsWith(AppRoutes.search)) {
                             basePath = AppRoutes.search;
@@ -207,7 +209,9 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
                         if (widget.isCurrentUser) {
                           context.push('/profile/following/$encodedDid');
                         } else {
-                          final currentLocation = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+                          final currentLocation = GoRouter.of(
+                            context,
+                          ).routerDelegate.currentConfiguration.uri.path;
                           String basePath = AppRoutes.home;
                           if (currentLocation.startsWith(AppRoutes.search)) {
                             basePath = AppRoutes.search;
@@ -310,22 +314,35 @@ class _PostsTabState extends State<_PostsTab> with AutomaticKeepAliveClientMixin
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (widget.items.isEmpty && !widget.isLoading && widget.pinnedPostUri == null) {
+    final showPinned = widget.pinnedPostUri != null;
+    final isEmpty = widget.items.isEmpty && !widget.isLoading;
+
+    if (isEmpty && !showPinned) {
       return const Center(child: Text('No posts yet'));
     }
 
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount:
-          widget.items.length + (widget.hasMore ? 1 : 0) + (widget.pinnedPostUri != null ? 1 : 0),
+          widget.items.length +
+          (widget.hasMore ? 1 : 0) +
+          (showPinned ? 1 : 0) +
+          (isEmpty ? 1 : 0),
       itemBuilder: (context, index) {
         int itemIndex = index;
 
-        if (widget.pinnedPostUri != null) {
+        if (showPinned) {
           if (index == 0) {
             return PinnedPostCard(widget.pinnedPostUri!);
           }
           itemIndex--;
+        }
+
+        if (isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 64),
+            child: Center(child: Text('No posts yet')),
+          );
         }
 
         if (itemIndex >= widget.items.length) {

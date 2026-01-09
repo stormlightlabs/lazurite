@@ -16,6 +16,42 @@ This happens when Drift database streams aren't properly mocked in widget tests.
 
 **Solution:** Override providers that create database streams with mocks returning `Stream.value([])`.
 
+### Testing AutoDispose Providers
+
+When testing providers marked with `@riverpod` (which are `autoDispose` by default) or explicitly `.autoDispose`:
+
+**Rule:** Always maintain an active listener using `container.listen()` when testing `autoDispose` providers, especially when awaiting async operations.
+
+**Anti-Pattern:**
+
+```dart
+// DON'T: Provider may be disposed immediately if it has no listeners
+await container.read(provider.notifier).method();
+```
+
+**Correct Pattern:**
+
+```dart
+// D0: Keep provider alive
+container.listen(provider, (_, _) {});
+await container.read(provider.notifier).method();
+```
+
+### Handling Async Initialization
+
+Providers that use `Future.microtask` in their `build()` method to trigger side effects (like fetching data) can cause unhandled exceptions in tests if not handled properly.
+
+**Risk:** If the microtask fails (e.g., initial fetch fails), the error might be unhandled and crash the test process.
+
+**Solution:**
+
+- Wrap `refresh()` calls in `build()` with `.catchError()` or `try/catch`.
+- Ensure tests verify the behavior when these initial calls fail.
+
+### Mocking Streams
+
+**Rule:** Never use `Stream.empty()` for List streams. Use `Stream.value([])` to ensure the first value is emitted immediately. `Stream.empty()` never emits, which can cause `await container.read(provider.future)` to hang indefinitely if the provider waits for the first value.
+
 ### By Type
 
 #### Widget Tests with Database Streams
@@ -97,6 +133,7 @@ is disposed in `tearDown()`, as the provider may be disposed before the future c
 3. **Using `Stream.empty()`** - Use `Stream.value([])` to emit an empty list
 4. **Missing navigation overrides** - Router tests must mock providers for all navigable screens
 5. **Testing stream providers with `.future`** - Use `container.listen()` to avoid disposal errors
+6. **Premature Disposal** - Accessing `autoDispose` providers without listeners causes them to be disposed immediately. Always use `container.listen()` to keep them alive in tests.
 
 ## Organization
 
@@ -140,6 +177,3 @@ expect(darkCs.secondaryContainer, const Color(0xFF0A4A79));
 // DON'T: Call ThemeFactory.buildThemeData() - triggers font loading
 final theme = ThemeFactory.buildThemeData(oxocarbonDarkVariant); // Fails!
 ```
-
-**FIXME**: Bundle Crimson Pro, Atkinson Hyperlegible, and Fira Code as assets to enable
-full `ThemeData` testing. See `flutter_test_config.dart`.

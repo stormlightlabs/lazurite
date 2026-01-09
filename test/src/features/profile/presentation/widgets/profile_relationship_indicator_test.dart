@@ -65,9 +65,7 @@ void main() {
 
     testWidgets('displays follows you indicator', (tester) async {
       await tester.pumpApp(
-        const Material(
-          child: ProfileRelationshipIndicator(viewerFollowedBy: 'at://did:plc:test/follow/123'),
-        ),
+        const Material(child: ProfileRelationshipIndicator(viewerFollowedBy: true)),
       );
 
       expect(find.text('Follows you'), findsOneWidget);
@@ -77,10 +75,7 @@ void main() {
     testWidgets('displays multiple states when applicable', (tester) async {
       await tester.pumpApp(
         const Material(
-          child: ProfileRelationshipIndicator(
-            viewerMuted: true,
-            viewerFollowedBy: 'at://did:plc:test/follow/123',
-          ),
+          child: ProfileRelationshipIndicator(viewerMuted: true, viewerFollowedBy: true),
         ),
       );
 

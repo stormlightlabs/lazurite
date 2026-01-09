@@ -9,7 +9,7 @@ class ProfileRelationshipIndicator extends StatelessWidget {
     this.viewerMuted = false,
     this.viewerBlocked = false,
     this.viewerBlockedBy = false,
-    this.viewerFollowedBy,
+    this.viewerFollowedBy = false,
     this.mutedByList,
     this.blockingByList,
     super.key,
@@ -24,8 +24,8 @@ class ProfileRelationshipIndicator extends StatelessWidget {
   /// Whether this profile has blocked the viewer.
   final bool viewerBlockedBy;
 
-  /// URI if this profile follows the viewer (non-null means "follows you").
-  final String? viewerFollowedBy;
+  /// Whether this profile follows the viewer.
+  final bool viewerFollowedBy;
 
   /// Reference to the list that muted this profile (if muted via list).
   final String? mutedByList;
@@ -74,7 +74,7 @@ class ProfileRelationshipIndicator extends StatelessWidget {
       );
     }
 
-    if (viewerFollowedBy != null) {
+    if (viewerFollowedBy) {
       indicators.add(
         _IndicatorChip(
           icon: Icons.person_add,

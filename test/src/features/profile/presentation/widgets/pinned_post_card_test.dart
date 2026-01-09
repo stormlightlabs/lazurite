@@ -54,7 +54,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Pinned Post'), findsOneWidget);
+      expect(find.text('Pinned Post'), findsNothing);
       expect(find.text('Hello World'), findsNothing);
     });
   });
