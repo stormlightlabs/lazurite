@@ -32,6 +32,7 @@ abstract final class AppRoutes {
   static const String draftDetail = ':draftId';
   static const String feeds = '/feeds';
   static const String discoverFeeds = 'discover';
+  static const String devtools = '/devtools';
 }
 
 /// Route names for named navigation.
@@ -63,4 +64,5 @@ abstract final class AppRouteNames {
   static const String draftDetail = 'draftDetail';
   static const String feeds = 'feeds';
   static const String discoverFeeds = 'discoverFeeds';
+  static const String devToolsHome = 'devToolsHome';
 }

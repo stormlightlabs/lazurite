@@ -31,9 +31,9 @@ Phase 0: Internal Debug Mode Foundation (kDebugMode only)
 Phase 1: User-Facing "DevTools"
 - [x] Add dev_pins table for pinned collections/records
 - [x] Add dev_recent_records table for LRU cache
-- [ ] Create /devtools route group (always available, not kDebugMode gated)
-- [ ] DevToolsHomePage: show DID, PDS host, quick actions
-      - [ ] "Copy my DID" action
+- [x] Create /devtools route group (always available, not kDebugMode gated)
+- [x] DevToolsHomePage: show DID, PDS host, quick actions
+      - [x] "Copy my DID" action
 - [ ] Add Settings → "Developer Tools" toggle (works in release builds)
 - [ ] Link debug overlay to full DevTools (/devtools routes)
 

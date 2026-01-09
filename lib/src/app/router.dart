@@ -10,6 +10,7 @@ import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/draft_list_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/draft_recovery_listener.dart';
+import 'package:lazurite/src/features/developer_tools/presentation/screens/dev_tools_home_page.dart';
 import 'package:lazurite/src/features/dms/presentation/conversation_detail_screen.dart';
 import 'package:lazurite/src/features/dms/presentation/conversation_list_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
@@ -401,6 +402,11 @@ GoRouter createRouter(Ref ref) {
             builder: (context, state) => const FeedDiscoveryScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.devtools,
+        name: AppRouteNames.devToolsHome,
+        builder: (context, state) => const DevToolsHomePage(),
       ),
     ],
   );

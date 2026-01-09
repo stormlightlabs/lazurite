@@ -17,6 +17,7 @@ import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/draft_list_screen.dart';
+import 'package:lazurite/src/features/developer_tools/presentation/screens/dev_tools_home_page.dart';
 import 'package:lazurite/src/features/dms/providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_cleanup_controller.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_providers.dart';
@@ -334,6 +335,23 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(DraftListScreen), findsOneWidget);
+    });
+
+    testWidgets('navigates to devtools screen', (tester) async {
+      await tester.pumpRouterApp(
+        overrides: [
+          ...getTestOverrides(),
+          authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+        ],
+      );
+
+      final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      final router = app.routerConfig as GoRouter;
+
+      unawaited(router.push('/devtools'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DevToolsHomePage), findsOneWidget);
     });
   });
 
