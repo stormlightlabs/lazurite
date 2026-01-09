@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,8 +26,9 @@ class _DebugOverlayHostState extends ConsumerState<DebugOverlayHost> {
   /// Duration required for a long-press to trigger the overlay.
   static const _longPressDuration = Duration(seconds: 2);
 
-  /// Tracks if we're in the middle of a valid 2-finger long-press.
-  bool _twoFingerPressActive = false;
+  /// Map of active pointer IDs.
+  final _activePointers = <int>{};
+  Timer? _longPressTimer;
 
   /// Focus node for keyboard shortcuts.
   final _focusNode = FocusNode();
@@ -33,6 +36,7 @@ class _DebugOverlayHostState extends ConsumerState<DebugOverlayHost> {
   @override
   void dispose() {
     _focusNode.dispose();
+    _longPressTimer?.cancel();
     super.dispose();
   }
 
@@ -48,10 +52,10 @@ class _DebugOverlayHostState extends ConsumerState<DebugOverlayHost> {
       focusNode: _focusNode,
       autofocus: true,
       onKeyEvent: _handleKeyEvent,
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onLongPressStart: _handleLongPressStart,
-        onLongPressEnd: _handleLongPressEnd,
+      child: Listener(
+        onPointerDown: _handlePointerDown,
+        onPointerUp: _handlePointerUp,
+        onPointerCancel: _handlePointerUp,
         child: Stack(
           children: [
             widget.child,
@@ -84,18 +88,30 @@ class _DebugOverlayHostState extends ConsumerState<DebugOverlayHost> {
     }
   }
 
-  void _handleLongPressStart(LongPressStartDetails details) {
-    // TODO: use RawGestureDetector for full 2-finger long-press support
-    _twoFingerPressActive = true;
-    Future.delayed(_longPressDuration, () {
-      if (_twoFingerPressActive && mounted) {
-        ref.read(debugOverlayControllerProvider.notifier).toggle();
-        _twoFingerPressActive = false;
-      }
-    });
+  void _handlePointerDown(PointerDownEvent event) {
+    _activePointers.add(event.pointer);
+    _checkPointers();
   }
 
-  void _handleLongPressEnd(LongPressEndDetails details) {
-    _twoFingerPressActive = false;
+  void _handlePointerUp(PointerEvent event) {
+    _activePointers.remove(event.pointer);
+    _checkPointers();
+  }
+
+  void _checkPointers() {
+    if (_activePointers.length == 2) {
+      if (_longPressTimer == null || !_longPressTimer!.isActive) {
+        _longPressTimer = Timer(_longPressDuration, () {
+          if (mounted && _activePointers.length == 2) {
+            ref.read(debugOverlayControllerProvider.notifier).toggle();
+            // Reset to avoid repeated toggles without lifting fingers
+            _activePointers.clear();
+          }
+        });
+      }
+    } else {
+      _longPressTimer?.cancel();
+      _longPressTimer = null;
+    }
   }
 }

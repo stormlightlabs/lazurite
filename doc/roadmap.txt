@@ -17,7 +17,7 @@ Phase 0: Internal Debug Mode Foundation (kDebugMode only)
 - [x] Create DebugOverlayHost widget (wraps MaterialApp, kDebugMode gated)
 - [x] Implement gesture detection:
       - [x] 2-finger long-press
-      - [ ] triple-tap on logo
+      - [x] triple-tap on logo
       - [x] ALT+F12 shortcut
 - [x] Build DebugDrawer with tabs: System Info, ATProto Session
 - [x] System Info Tab: Flutter version, platform, screen size, memory, FPS

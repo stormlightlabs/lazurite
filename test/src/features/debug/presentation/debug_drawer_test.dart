@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/debug/application/system_info_provider.dart';
 import 'package:lazurite/src/features/debug/presentation/debug_drawer.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,7 +12,26 @@ void main() {
   group('DebugDrawer', () {
     Widget createSubject({List<Override> overrides = const []}) {
       return ProviderScope(
-        overrides: overrides,
+        overrides: [
+          systemInfoProvider.overrideWith(
+            (ref) => Future.value(
+              const SystemInfo(
+                flutterVersion: '3.0.0',
+                buildMode: 'Debug',
+                platform: 'TestOS',
+                osVersion: '1.0',
+                screenSize: Size(1000, 2000),
+                pixelRatio: 1.0,
+                safeAreaInsets: EdgeInsets.zero,
+                appVersion: '1.0.0',
+                buildNumber: '1',
+                memoryUsage: 1024 * 1024 * 50,
+                currentFps: 60.0,
+              ),
+            ),
+          ),
+          ...overrides,
+        ],
         child: const MaterialApp(
           home: Scaffold(body: SizedBox(width: 320, height: 600, child: DebugDrawer())),
         ),
@@ -176,6 +196,9 @@ void main() {
 
       testWidgets('displays performance section', (tester) async {
         await tester.pumpWidget(createSubject());
+        await tester.pump();
+
+        await tester.drag(find.byType(ListView), const Offset(0, -500));
         await tester.pump();
 
         expect(find.text('Performance'), findsOneWidget);

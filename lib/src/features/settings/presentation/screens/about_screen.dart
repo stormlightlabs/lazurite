@@ -1,39 +1,71 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lazurite/src/features/debug/debug.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../debug/application/system_info_provider.dart';
 import '../widgets/settings_section.dart';
 
 /// About screen displaying app information, links, credits, and legal.
 ///
 /// Shows app version with tap-to-copy functionality, external links to project resources,
 /// credits for inspirations and frameworks, and stubs for legal documents.
-class AboutScreen extends ConsumerWidget {
+class AboutScreen extends ConsumerStatefulWidget {
   const AboutScreen({super.key});
 
   static const String appName = 'Lazurite';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
-    appBar: AppBar(title: const Text('About')),
-    body: ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      children: [
-        _buildHeader(context, ref),
-        const Divider(),
-        _buildLinksSection(context),
-        const Divider(),
-        _buildCreditsSection(context),
-        const Divider(),
-        _buildLegalSection(context),
-        const Divider(),
-        _buildFooter(context),
-      ],
-    ),
-  );
+  ConsumerState<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends ConsumerState<AboutScreen> {
+  int _tapCount = 0;
+  DateTime? _lastTapTime;
+
+  void _handleLogoTap() {
+    final now = DateTime.now();
+    if (_lastTapTime != null &&
+        now.difference(_lastTapTime!) > const Duration(milliseconds: 500)) {
+      _tapCount = 0;
+    }
+
+    _tapCount++;
+    _lastTapTime = now;
+
+    if (_tapCount == 3) {
+      ref.read(debugOverlayControllerProvider.notifier).toggle();
+      _tapCount = 0;
+      if (kDebugMode) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Debug Overlay Toggled')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('About')),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        children: [
+          _buildHeader(context, ref),
+          const Divider(),
+          _buildLinksSection(context),
+          const Divider(),
+          _buildCreditsSection(context),
+          const Divider(),
+          _buildLegalSection(context),
+          const Divider(),
+          _buildFooter(context),
+        ],
+      ),
+    );
+  }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -43,15 +75,19 @@ class AboutScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
-          SvgPicture.asset(
-            'assets/logo.svg',
-            width: 80,
-            height: 80,
-            colorFilter: ColorFilter.mode(theme.colorScheme.primary, BlendMode.srcIn),
+          GestureDetector(
+            onTap: _handleLogoTap,
+            behavior: HitTestBehavior.opaque,
+            child: SvgPicture.asset(
+              'assets/logo.svg',
+              width: 80,
+              height: 80,
+              colorFilter: ColorFilter.mode(theme.colorScheme.primary, BlendMode.srcIn),
+            ),
           ),
           const SizedBox(height: 16),
           Text(
-            appName,
+            AboutScreen.appName,
             style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
