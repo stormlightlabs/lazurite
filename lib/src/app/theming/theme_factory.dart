@@ -186,6 +186,7 @@ abstract final class ThemeFactory {
   static TextTheme _buildTextTheme(Color color) {
     final displayStyle = GoogleFonts.crimsonPro(color: color);
     final bodyStyle = GoogleFonts.overpass(color: color);
+    // ignore: unused_local_variable
     final monoStyle = GoogleFonts.firaCode(color: color);
 
     return TextTheme(
@@ -216,7 +217,7 @@ abstract final class ThemeFactory {
         fontWeight: FontWeight.w400,
         letterSpacing: 0.25,
       ),
-      bodySmall: monoStyle.copyWith(fontSize: 12, fontWeight: FontWeight.w400, letterSpacing: 0.4),
+      bodySmall: bodyStyle.copyWith(fontSize: 12, fontWeight: FontWeight.w400, letterSpacing: 0.4),
       labelLarge: bodyStyle.copyWith(
         fontSize: 14,
         fontWeight: FontWeight.w500,

@@ -10,23 +10,24 @@ part of 'system_info_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provides current system information.
 ///
-/// This provider collects platform and device information for display
-/// in the debug overlay's System Info tab.
+/// This provider collects platform and device information for display in the
+/// debug overlay's System Info tab.
 
 @ProviderFor(systemInfo)
 final systemInfoProvider = SystemInfoProvider._();
 
 /// Provides current system information.
 ///
-/// This provider collects platform and device information for display
-/// in the debug overlay's System Info tab.
+/// This provider collects platform and device information for display in the
+/// debug overlay's System Info tab.
 
-final class SystemInfoProvider extends $FunctionalProvider<SystemInfo, SystemInfo, SystemInfo>
-    with $Provider<SystemInfo> {
+final class SystemInfoProvider
+    extends $FunctionalProvider<AsyncValue<SystemInfo>, SystemInfo, FutureOr<SystemInfo>>
+    with $FutureModifier<SystemInfo>, $FutureProvider<SystemInfo> {
   /// Provides current system information.
   ///
-  /// This provider collects platform and device information for display
-  /// in the debug overlay's System Info tab.
+  /// This provider collects platform and device information for display in the
+  /// debug overlay's System Info tab.
   SystemInfoProvider._()
     : super(
         from: null,
@@ -43,21 +44,13 @@ final class SystemInfoProvider extends $FunctionalProvider<SystemInfo, SystemInf
 
   @$internal
   @override
-  $ProviderElement<SystemInfo> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $FutureProviderElement<SystemInfo> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
 
   @override
-  SystemInfo create(Ref ref) {
+  FutureOr<SystemInfo> create(Ref ref) {
     return systemInfo(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(SystemInfo value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<SystemInfo>(value),
-    );
   }
 }
 
-String _$systemInfoHash() => r'890621785c05180fa804c5f9db9c80e496ed3a9f';
+String _$systemInfoHash() => r'e15ed26cbe812794000a8602487f07c06b65210f';

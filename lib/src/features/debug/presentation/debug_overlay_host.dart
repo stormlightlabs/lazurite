@@ -85,7 +85,7 @@ class _DebugOverlayHostState extends ConsumerState<DebugOverlayHost> {
   }
 
   void _handleLongPressStart(LongPressStartDetails details) {
-    // TODO: use RawGestureDetector for full 2-finger support.
+    // TODO: use RawGestureDetector for full 2-finger long-press support
     _twoFingerPressActive = true;
     Future.delayed(_longPressDuration, () {
       if (_twoFingerPressActive && mounted) {

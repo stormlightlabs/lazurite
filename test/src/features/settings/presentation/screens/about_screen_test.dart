@@ -1,10 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/features/debug/application/system_info_provider.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/about_screen.dart';
 
 void main() {
-  Widget buildTestWidget() {
-    return const MaterialApp(home: AboutScreen());
+  Widget buildTestWidget({SystemInfo? systemInfo}) {
+    final info =
+        systemInfo ??
+        const SystemInfo(
+          flutterVersion: '3.0.0',
+          buildMode: 'Debug',
+          platform: 'TestOS',
+          osVersion: '1.0',
+          screenSize: Size.zero,
+          pixelRatio: 1.0,
+          safeAreaInsets: EdgeInsets.zero,
+          appVersion: '1.0.0',
+          buildNumber: '1',
+          gitVersion: null,
+        );
+
+    return ProviderScope(
+      overrides: [systemInfoProvider.overrideWith((ref) => Future.value(info))],
+      child: const MaterialApp(home: AboutScreen()),
+    );
   }
 
   group('AboutScreen', () {
@@ -18,6 +38,26 @@ void main() {
       expect(find.text('Tap version to copy'), findsOneWidget);
     });
 
+    testWidgets('renders git version if available', (tester) async {
+      const info = SystemInfo(
+        flutterVersion: '3.0.0',
+        buildMode: 'Debug',
+        platform: 'TestOS',
+        osVersion: '1.0',
+        screenSize: Size.zero,
+        pixelRatio: 1.0,
+        safeAreaInsets: EdgeInsets.zero,
+        appVersion: '1.0.0',
+        buildNumber: '1',
+        gitVersion: 'v1.0.0-g123456',
+      );
+
+      await tester.pumpWidget(buildTestWidget(systemInfo: info));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1.0.0 (Build 1)\nv1.0.0-g123456'), findsOneWidget);
+    });
+
     testWidgets('shows snackbar when version is tapped', (tester) async {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -29,13 +69,17 @@ void main() {
     });
 
     testWidgets('displays links section with all links', (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
       expect(find.text('LINKS'), findsOneWidget);
       expect(find.text('Website'), findsOneWidget);
-      expect(find.text('GitHub Repository'), findsOneWidget);
-      expect(find.text('Tangled Project'), findsOneWidget);
+      expect(find.text('GitHub Repo'), findsOneWidget);
+      expect(find.text('Tangled Repo'), findsOneWidget);
       expect(find.text('Report Issues'), findsOneWidget);
     });
 

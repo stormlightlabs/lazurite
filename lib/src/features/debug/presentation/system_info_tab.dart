@@ -16,64 +16,78 @@ class SystemInfoTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final systemInfo = ref.watch(systemInfoProvider);
+    final systemInfoAsync = ref.watch(systemInfoProvider);
     final theme = Theme.of(context);
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildSection(
-          theme: theme,
-          title: 'Build',
-          items: [
-            _InfoItem(label: 'Flutter Version', value: systemInfo.flutterVersion),
-            _InfoItem(label: 'Build Mode', value: systemInfo.buildMode),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildSection(
-          theme: theme,
-          title: 'Platform',
-          items: [
-            _InfoItem(label: 'Platform', value: systemInfo.platform),
-            _InfoItem(label: 'OS Version', value: systemInfo.osVersion),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildSection(
-          theme: theme,
-          title: 'Display',
-          items: [
-            _InfoItem(
-              label: 'Screen Size',
-              value:
-                  '${systemInfo.screenSize.width.toStringAsFixed(0)} × '
-                  '${systemInfo.screenSize.height.toStringAsFixed(0)}',
+    return systemInfoAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Text('Error: $error', style: TextStyle(color: theme.colorScheme.error)),
+      ),
+      data: (systemInfo) {
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _buildSection(
+              theme: theme,
+              title: 'Build',
+              items: [
+                _InfoItem(
+                  label: 'Apps Version',
+                  value: '${systemInfo.appVersion}+${systemInfo.buildNumber}',
+                ),
+                if (systemInfo.gitVersion != null)
+                  _InfoItem(label: 'Git Version', value: systemInfo.gitVersion!),
+                _InfoItem(label: 'Flutter Version', value: systemInfo.flutterVersion),
+                _InfoItem(label: 'Build Mode', value: systemInfo.buildMode),
+              ],
             ),
-            _InfoItem(label: 'Pixel Ratio', value: systemInfo.pixelRatio.toStringAsFixed(2)),
-            _InfoItem(label: 'Safe Area', value: _formatInsets(systemInfo.safeAreaInsets)),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildSection(
-          theme: theme,
-          title: 'Performance',
-          items: [
-            _InfoItem(
-              label: 'Memory (RSS)',
-              value: systemInfo.memoryUsage != null
-                  ? _formatBytes(systemInfo.memoryUsage!)
-                  : 'N/A',
+            const SizedBox(height: 16),
+            _buildSection(
+              theme: theme,
+              title: 'Platform',
+              items: [
+                _InfoItem(label: 'Platform', value: systemInfo.platform),
+                _InfoItem(label: 'OS Version', value: systemInfo.osVersion),
+              ],
             ),
-            _InfoItem(
-              label: 'FPS',
-              value: systemInfo.currentFps != null
-                  ? '${systemInfo.currentFps!.toStringAsFixed(1)} fps'
-                  : 'N/A',
+            const SizedBox(height: 16),
+            _buildSection(
+              theme: theme,
+              title: 'Display',
+              items: [
+                _InfoItem(
+                  label: 'Screen Size',
+                  value:
+                      '${systemInfo.screenSize.width.toStringAsFixed(0)} × '
+                      '${systemInfo.screenSize.height.toStringAsFixed(0)}',
+                ),
+                _InfoItem(label: 'Pixel Ratio', value: systemInfo.pixelRatio.toStringAsFixed(2)),
+                _InfoItem(label: 'Safe Area', value: _formatInsets(systemInfo.safeAreaInsets)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildSection(
+              theme: theme,
+              title: 'Performance',
+              items: [
+                _InfoItem(
+                  label: 'Memory (RSS)',
+                  value: systemInfo.memoryUsage != null
+                      ? _formatBytes(systemInfo.memoryUsage!)
+                      : 'N/A',
+                ),
+                _InfoItem(
+                  label: 'FPS',
+                  value: systemInfo.currentFps != null
+                      ? '${systemInfo.currentFps!.toStringAsFixed(1)} fps'
+                      : 'N/A',
+                ),
+              ],
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 

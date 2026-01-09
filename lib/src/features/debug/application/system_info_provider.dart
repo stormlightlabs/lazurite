@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'system_info_provider.g.dart';
@@ -16,6 +17,9 @@ class SystemInfo {
     required this.screenSize,
     required this.pixelRatio,
     required this.safeAreaInsets,
+    required this.appVersion,
+    required this.buildNumber,
+    this.gitVersion,
     this.memoryUsage,
     this.currentFps,
   });
@@ -41,6 +45,15 @@ class SystemInfo {
   /// Safe area insets.
   final EdgeInsets safeAreaInsets;
 
+  /// App version (e.g. 1.0.0).
+  final String appVersion;
+
+  /// Build number (e.g. 1).
+  final String buildNumber;
+
+  /// Git version string (from --dart-define=GIT_VERSION=...).
+  final String? gitVersion;
+
   /// Memory usage in bytes (if available).
   final int? memoryUsage;
 
@@ -53,7 +66,7 @@ class SystemInfo {
 /// This provider collects platform and device information for display in the
 /// debug overlay's System Info tab.
 @riverpod
-SystemInfo systemInfo(Ref ref) {
+Future<SystemInfo> systemInfo(Ref ref) async {
   final window = WidgetsBinding.instance.platformDispatcher.views.first;
   final size = window.physicalSize / window.devicePixelRatio;
   final padding = window.padding;
@@ -81,15 +94,20 @@ SystemInfo systemInfo(Ref ref) {
     memoryUsage = null;
   }
 
-  // TODO: Get from Flutter's dart:developer or package info
+  final packageInfo = await PackageInfo.fromPlatform();
+  const gitVersion = String.fromEnvironment('GIT_VERSION');
+
   return SystemInfo(
-    flutterVersion: '3.27.1',
+    flutterVersion: const String.fromEnvironment('FLUTTER_VERSION', defaultValue: 'Unknown'),
     buildMode: buildMode,
     platform: defaultTargetPlatform.name,
     osVersion: osVersion,
     screenSize: size,
     pixelRatio: window.devicePixelRatio,
     safeAreaInsets: EdgeInsets.fromViewPadding(padding, window.devicePixelRatio),
+    appVersion: packageInfo.version,
+    buildNumber: packageInfo.buildNumber,
+    gitVersion: gitVersion.isEmpty ? null : gitVersion,
     memoryUsage: memoryUsage,
     currentFps: null,
   );

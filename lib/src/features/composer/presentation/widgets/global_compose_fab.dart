@@ -22,7 +22,7 @@ class GlobalComposeFab extends StatelessWidget {
       backgroundColor: theme.colorScheme.primary,
       foregroundColor: theme.colorScheme.onPrimary,
       elevation: 6,
-      child: const Icon(CupertinoIcons.pencil_ellipsis_rectangle),
+      child: const Icon(CupertinoIcons.pencil),
     );
   }
 }

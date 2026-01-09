@@ -1,46 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../debug/application/system_info_provider.dart';
 import '../widgets/settings_section.dart';
 
 /// About screen displaying app information, links, credits, and legal.
 ///
-/// Shows app version with tap-to-copy functionality, external links to
-/// project resources, credits for inspirations and frameworks, and stubs
-/// for legal documents.
-class AboutScreen extends StatelessWidget {
+/// Shows app version with tap-to-copy functionality, external links to project resources,
+/// credits for inspirations and frameworks, and stubs for legal documents.
+class AboutScreen extends ConsumerWidget {
   const AboutScreen({super.key});
 
   static const String appName = 'Lazurite';
-  static const String version = '1.0.0';
-  static const String buildNumber = '1';
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('About')),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        children: [
-          _buildHeader(context),
-          const Divider(),
-          _buildLinksSection(context),
-          const Divider(),
-          _buildCreditsSection(context),
-          const Divider(),
-          _buildLegalSection(context),
-          const Divider(),
-          _buildFooter(context),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
+    appBar: AppBar(title: const Text('About')),
+    body: ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: [
+        _buildHeader(context, ref),
+        const Divider(),
+        _buildLinksSection(context),
+        const Divider(),
+        _buildCreditsSection(context),
+        const Divider(),
+        _buildLegalSection(context),
+        const Divider(),
+        _buildFooter(context),
+      ],
+    ),
+  );
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    const versionText = '$version (Build $buildNumber)';
+    final systemInfoAsync = ref.watch(systemInfoProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
@@ -58,21 +55,35 @@ class AboutScreen extends StatelessWidget {
             style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () => _copyVersionToClipboard(context, versionText),
-            child: Text(
-              versionText,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Tap version to copy',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withAlpha(153),
-            ),
+          systemInfoAsync.when(
+            data: (systemInfo) {
+              final versionText =
+                  '${systemInfo.appVersion} (Build ${systemInfo.buildNumber})'
+                  '${systemInfo.gitVersion != null ? '\n${systemInfo.gitVersion}' : ''}';
+              return Column(
+                children: [
+                  GestureDetector(
+                    onTap: () => _copyVersionToClipboard(context, versionText),
+                    child: Text(
+                      versionText,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tap version to copy',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant.withAlpha(153),
+                    ),
+                  ),
+                ],
+              );
+            },
+            loading: () => const Text('Loading version...'),
+            error: (e, s) => const Text('Unknown version'),
           ),
         ],
       ),
@@ -86,25 +97,35 @@ class AboutScreen extends StatelessWidget {
         const SettingsSection(title: 'Links'),
         _buildLinkTile(
           context,
-          icon: Icons.language_outlined,
+          icon: const Icon(Icons.language_outlined),
           title: 'Website',
           url: 'https://lazurite.stormlightlabs.org',
         ),
         _buildLinkTile(
           context,
-          icon: Icons.code_outlined,
-          title: 'GitHub Repository',
+          icon: SvgPicture.asset(
+            'assets/gh.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(Theme.of(context).iconTheme.color!, BlendMode.srcIn),
+          ),
+          title: 'GitHub Repo',
           url: 'https://github.com/stormlightlabs/lazurite',
         ),
         _buildLinkTile(
           context,
-          icon: Icons.article_outlined,
-          title: 'Tangled Project',
+          icon: SvgPicture.asset(
+            'assets/tangled.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(Theme.of(context).iconTheme.color!, BlendMode.srcIn),
+          ),
+          title: 'Tangled Repo',
           url: 'https://tangled.org/desertthunder.dev/lazurite',
         ),
         _buildLinkTile(
           context,
-          icon: Icons.bug_report_outlined,
+          icon: const Icon(Icons.bug_report_outlined),
           title: 'Report Issues',
           url: 'https://tangled.org/desertthunder.dev/lazurite/issues',
         ),
@@ -124,15 +145,25 @@ class AboutScreen extends StatelessWidget {
           onTap: () => _launchUrl(context, 'https://bsky.app'),
         ),
         ListTile(
-          leading: const Icon(Icons.flutter_dash_outlined),
+          leading: SvgPicture.asset(
+            'assets/flutter.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(Theme.of(context).iconTheme.color!, BlendMode.srcIn),
+          ),
           title: const Text('Built with Flutter'),
           subtitle: const Text('Cross-platform UI framework'),
           onTap: () => _launchUrl(context, 'https://flutter.dev'),
         ),
-        const ListTile(
-          leading: Icon(Icons.palette_outlined),
-          title: Text('Typography inspiration'),
-          subtitle: Text('Anisota by Dame.is (@dame.is)'),
+        ListTile(
+          leading: SvgPicture.asset(
+            'assets/typography.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(Theme.of(context).iconTheme.color!, BlendMode.srcIn),
+          ),
+          title: const Text('Typography inspiration'),
+          subtitle: const Text('Anisota by Dame.is (@dame.is)'),
         ),
         const ListTile(
           leading: Icon(Icons.favorite_outline),
@@ -195,17 +226,15 @@ class AboutScreen extends StatelessWidget {
 
   Widget _buildLinkTile(
     BuildContext context, {
-    required IconData icon,
+    required Widget icon,
     required String title,
     required String url,
-  }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      trailing: const Icon(Icons.open_in_new),
-      onTap: () => _launchUrl(context, url),
-    );
-  }
+  }) => ListTile(
+    leading: icon,
+    title: Text(title),
+    trailing: const Icon(Icons.open_in_new),
+    onTap: () => _launchUrl(context, url),
+  );
 
   void _copyVersionToClipboard(BuildContext context, String versionText) {
     Clipboard.setData(ClipboardData(text: versionText));

@@ -17,7 +17,7 @@ void main() {
 
     testWidgets('renders with edit icon', (tester) async {
       await tester.pumpApp(const GlobalComposeFab());
-      expect(find.byIcon(CupertinoIcons.pencil_ellipsis_rectangle), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.pencil), findsOneWidget);
     });
 
     testWidgets('navigates to compose route when tapped', (tester) async {
