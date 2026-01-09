@@ -67,6 +67,7 @@ dependencies:
   equatable: ^2.0.8
   extended_text_field: ^16.0.2
   animations: ^2.1.1
+  flutter_svg: ^2.0.10+1
   dynamic_color: ^1.8.1
 
 dev_dependencies:
@@ -95,10 +96,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -100,10 +100,7 @@ void main() {
         final exception = Exception('Search API error');
         when(() => mockApi.call(any(), params: any(named: 'params'))).thenThrow(exception);
 
-        await expectLater(
-          repository.searchPosts('error'),
-          throwsA(isA<Exception>()),
-        );
+        await expectLater(repository.searchPosts('error'), throwsA(isA<Exception>()));
 
         verify(() => mockLogger.error(any(), exception, any())).called(1);
       });

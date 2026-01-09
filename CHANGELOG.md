@@ -6,6 +6,9 @@
 
 #### [2026-01-08]
 
+- Direct messaging with conversation list, message detail, outbox-based delivery,
+  message requests, and read state synchronization
+
 - Notifications with cached feeds, unread badges, mark-as-seen syncing, grouping polish,
   and deep links to threads/profiles.
 

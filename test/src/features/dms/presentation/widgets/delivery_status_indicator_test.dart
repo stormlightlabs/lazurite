@@ -94,5 +94,37 @@ void main() {
 
       expect(find.byIcon(Icons.block), findsOneWidget);
     });
+
+    testWidgets('uses AnimatedSwitcher for status transitions', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: DeliveryStatusIndicator(status: MessageStatus.pending)),
+        ),
+      );
+
+      expect(find.byType(AnimatedSwitcher), findsOneWidget);
+    });
+
+    testWidgets('animates between status changes', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: DeliveryStatusIndicator(status: MessageStatus.pending)),
+        ),
+      );
+
+      expect(find.byIcon(Icons.access_time), findsOneWidget);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: DeliveryStatusIndicator(status: MessageStatus.sent)),
+        ),
+      );
+
+      // Pump to trigger animation
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.check), findsOneWidget);
+    });
   });
 }

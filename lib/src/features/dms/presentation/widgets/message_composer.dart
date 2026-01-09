@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Message input widget for composing and sending messages.
 ///
@@ -51,6 +52,7 @@ class _MessageComposerState extends State<MessageComposer> {
   void _handleSend() {
     if (!_canSend || _isOverLimit) return;
 
+    HapticFeedback.mediumImpact();
     final text = _controller.text.trim();
     widget.onSend(text);
     _controller.clear();

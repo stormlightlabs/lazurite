@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../domain/dm_message.dart';
 
 /// Displays the delivery status of a message.
@@ -20,14 +21,16 @@ class DeliveryStatusIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return switch (status) {
+    final statusWidget = switch (status) {
       MessageStatus.pending => Icon(
         Icons.access_time,
+        key: const ValueKey('pending'),
         size: size,
         color: theme.colorScheme.onSurfaceVariant,
         semanticLabel: 'Pending',
       ),
       MessageStatus.sending => SizedBox(
+        key: const ValueKey('sending'),
         width: size,
         height: size,
         child: CircularProgressIndicator(
@@ -37,17 +40,20 @@ class DeliveryStatusIndicator extends StatelessWidget {
       ),
       MessageStatus.sent => Icon(
         Icons.check,
+        key: const ValueKey('sent'),
         size: size,
         color: theme.colorScheme.onSurfaceVariant,
         semanticLabel: 'Sent',
       ),
       MessageStatus.read => Icon(
         Icons.done_all,
+        key: const ValueKey('read'),
         size: size,
         color: theme.colorScheme.primary,
         semanticLabel: 'Read',
       ),
       MessageStatus.failed => GestureDetector(
+        key: const ValueKey('failed'),
         onTap: onRetry,
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -70,10 +76,20 @@ class DeliveryStatusIndicator extends StatelessWidget {
       ),
       MessageStatus.deleted => Icon(
         Icons.block,
+        key: const ValueKey('deleted'),
         size: size,
         color: theme.colorScheme.onSurfaceVariant,
         semanticLabel: 'Deleted',
       ),
     };
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(scale: animation, child: child),
+      ),
+      child: statusWidget,
+    );
   }
 }

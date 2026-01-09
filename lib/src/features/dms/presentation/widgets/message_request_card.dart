@@ -29,6 +29,13 @@ class MessageRequestCard extends StatelessWidget {
   /// Called when the user taps the card to view the conversation.
   final VoidCallback? onTap;
 
+  String _buildSemanticLabel() {
+    final otherParty = conversation.otherParty;
+    final name = otherParty.displayName ?? otherParty.handle;
+    final message = conversation.lastMessageText ?? 'No message preview';
+    return 'Message request from $name. $message. Double tap to view, or use buttons to accept or decline.';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -36,104 +43,107 @@ class MessageRequestCard extends StatelessWidget {
     final otherParty = conversation.otherParty;
     final lastMessageAt = conversation.lastMessageAt;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Avatar(imageUrl: otherParty.avatar, radius: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          otherParty.displayName ?? otherParty.handle,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+    return Semantics(
+      label: _buildSemanticLabel(),
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Avatar(imageUrl: otherParty.avatar, radius: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            otherParty.displayName ?? otherParty.handle,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          const SizedBox(height: 2),
+                          Text(
+                            '@${otherParty.handle}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (lastMessageAt != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormatter.formatRelative(lastMessageAt),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '@${otherParty.handle}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (conversation.lastMessageText != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 16,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            conversation.lastMessageText!,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurface,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-                  if (lastMessageAt != null) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      DateFormatter.formatRelative(lastMessageAt),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                  const SizedBox(height: 16),
+                ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: onDecline,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.onSurfaceVariant,
+                        ),
+                        child: const Text('Decline'),
                       ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(onPressed: onAccept, child: const Text('Accept')),
                     ),
                   ],
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (conversation.lastMessageText != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.chat_bubble_outline,
-                        size: 16,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          conversation.lastMessageText!,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurface,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-                const SizedBox(height: 16),
               ],
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: onDecline,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: colorScheme.onSurfaceVariant,
-                      ),
-                      child: const Text('Decline'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(onPressed: onAccept, child: const Text('Accept')),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),

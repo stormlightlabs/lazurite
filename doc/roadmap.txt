@@ -1,194 +1,13 @@
-*roadmap.txt*                         Material You Bluesky Client (Flutter/Dart)
-
-================================================================================
-M. DMs (read + write) + outbox + read-state                             *bsky-M*
-================================================================================
-
-DM fundamentals:
-- Chat endpoints are called via user's PDS and proxied to did:web:api.bsky.chat
-  via service proxy header, per chat endpoint docs and XRPC proxy spec.
-- Outbox pattern ensures reliable delivery: queue locally, retry with backoff,
-  never double-send without explicit server acknowledgement.
-- Read state tracked bidirectionally: local updateRead + remote unread counts.
-
-Endpoints (all registered):
-- chat.bsky.convo.listConvos (GET)
-- chat.bsky.convo.getMessages (GET)
-- chat.bsky.convo.sendMessage (POST)
-- chat.bsky.convo.acceptConvo (POST)
-- chat.bsky.convo.updateRead (POST)
-
-Phase 1: Data Layer and API Integration
-- [x] Drift tables:
-      - DmConvos (convoId, membersJson, lastMessageText, lastMessageAt,
-        lastReadMessageId, unreadCount, isMuted, isAccepted, cachedAt)
-      - DmMessages (messageId, convoId, senderDid, content, sentAt, status, cachedAt)
-      - DmOutbox (outboxId, convoId, messageText, status, retryCount, createdAt,
-        lastAttemptAt, errorMessage)
-- [x] DAOs:
-      - DmConvosDao (CRUD, watch stream, update read state)
-      - DmMessagesDao (CRUD, watch by convoId, update status)
-      - DmOutboxDao (CRUD, watch pending, update retry count)
-- [x] Domain models:
-      - DmConversation (with computed properties for UI)
-      - AppDmMessage (with delivery status enum)
-      - OutboxItem (with retry logic methods)
-- [x] DmsRepository:
-      - fetchConversations with cursor pagination
-      - watchConversations stream from cache
-      - fetchMessages with cursor pagination
-      - watchMessages stream by convoId
-      - acceptConversation API call
-      - updateReadState API call
-      - inject `atproto-proxy` header (via ProxyInterceptor)
-- [x] OutboxRepository:
-      - enqueueSend (persist to outbox + display optimistically)
-      - processOutbox (sequential per-convo processing)
-      - retryMessage (user-initiated retry)
-      - _sendMessage with exponential backoff (5 max retries)
-      - atomic operations: outbox insert + message display, outbox delete + ack
-
-Phase 2: Conversation List Screen
-- [x] ConversationListScreen:
-      - display conversations sorted by lastMessageAt
-      - pull-to-refresh for new conversations
-      - pagination with cursor support
-      - separate "Requests" section for unaccepted convos
-      - tap to open conversation detail
-      - empty state when no conversations
-- [x] ConversationListItem widget:
-      - participant avatar and display name
-      - last message preview (first line)
-      - timestamp (relative, e.g., "2h ago")
-      - unread indicator (dot or badge with count)
-      - message request indicator if not accepted
-- [x] ConversationListNotifier:
-      - watchConversations stream
-      - refresh() and loadMore() methods
-      - acceptConversation() action
-
-Phase 3: Conversation Detail Screen
-- [x] ConversationDetailScreen:
-      - display messages in chronological order (newest at bottom)
-      - pull-to-refresh for older messages (pagination)
-      - scroll to bottom on new messages
-      - auto-mark as read on view (updateRead)
-      - compose input with send button
-      - optimistic send (show immediately with pending state)
-- [x] MessageBubble widget:
-      - sender avatar (other party only)
-      - message text content
-      - timestamp (relative or absolute)
-      - delivery status indicator (sending, sent, failed, read)
-      - group consecutive messages by same sender
-- [x] MessageComposer widget:
-      - multi-line text input (auto-expanding)
-      - send button (disabled when empty)
-      - character limit (10,000 chars)
-      - character counter when approaching limit
-- [x] DeliveryStatusIndicator widget:
-      - pending: clock icon
-      - sending: spinner
-      - sent: single checkmark
-      - read: double checkmark
-      - failed: error icon with retry button
-- [x] ConversationDetailNotifier:
-      - watchMessages stream for convoId
-      - sendMessage (enqueue in outbox + trigger worker)
-      - markAsRead on conversation open
-
-Phase 4: Outbox Worker and Reliability
-- [x] OutboxWorker:
-      - periodic processing (every 10 seconds)
-      - trigger on app foreground resume
-      - process pending items oldest-first
-      - one message per conversation at a time (preserve order)
-      - exponential backoff (2^retryCount seconds: 2s, 4s, 8s, 16s, 32s)
-      - max 5 retries, then mark permanently failed
-      - transient errors: network, timeout → retry
-      - permanent errors: auth, validation → mark failed, notify user
-- [x] Error handling:
-      - network errors: "No internet. Message will send when online."
-      - server errors: "Failed to send. Tap to retry."
-      - auth errors: "Session expired. Please sign in."
-      - validation errors: "Message too long (15,000 / 10,000 chars)"
-- [x] Atomic operations:
-      - use database transactions for send operations
-      - prevent double-sends (wait for server acknowledgment)
-      - handle app crash during send (resume on restart)
-
-Phase 5: Message Requests and Accept Flow
-- [x] MessageRequestCard widget:
-      - display sender profile (avatar, display name, handle)
-      - message preview
-      - accept and decline buttons
-- [x] Accept flow:
-      - call chat.bsky.convo.acceptConvo
-      - move conversation to main list
-      - enable sending messages
-- [x] Decline flow:
-      - hide conversation (client-side only)
-      - user can still accept later
-
-Phase 6: Polish and Optimization
-- [ ] Animations and transitions:
-      - smooth scroll to bottom
-      - optimistic send animation
-      - delivery status transitions
-- [ ] Performance:
-      - ListView.builder for lazy rendering
-      - limit in-memory messages (100 visible)
-      - cache message heights for smooth scrolling
-      - avatar caching with LRU eviction
-- [ ] Accessibility:
-      - semantic labels for all interactive elements
-      - screen reader support
-      - keyboard navigation (Cmd/Ctrl+Enter to send)
-- [ ] Haptic feedback on send
-- [ ] Read receipts display (when other party reads)
-
-Tests:
-- [x] Repository: fetch convos, fetch messages, accept, update read, parse responses
-- [x] OutboxRepository: enqueue, process, retry with backoff, handle errors
-- [x] Proxy header unit test: verify chat.* requests include atproto-proxy header
-- [x] Outbox reliability tests:
-      - enqueue → send → mark delivered
-      - enqueue → send fails → retry with backoff
-      - enqueue → send fails 5x → mark permanently failed
-      - enqueue → app crash → resume on restart → deliver
-      - enqueue multiple → process in order → preserve ordering
-      - double-send prevention: send in progress → don't send again
-- [x] DAOs: CRUD operations, streams, queries
-- [x] Notifiers: state transitions, refresh, load more
-- [x] Widget tests: list items, message bubbles, composer, delivery status
-- [ ] Integration tests:
-      - fetch convos → display → tap → open detail
-      - compose → send → outbox → server → display
-      - send offline → queue → network restore → deliver
-      - receive message → display → mark read → sync
-      - message request → accept → move to main list
-- [ ] Offline scenarios: compose offline, send when online, display cached
-
-Deliverables:
-- [x] Conversation list functional with unread indicators
-- [x] Message requests require acceptance
-- [x] Conversation detail with message history
-- [x] Compose and send text messages
-- [x] Outbox ensures reliable delivery (never lose messages)
-- [x] Failed sends retry automatically (bounded, user can retry)
-- [x] No double-sends occur
-- [x] Read state syncs bidirectionally
-- [x] Offline messages queue and sync
-- [x] Proxy header injected correctly
-- [ ] Performance acceptable with 100+ conversations
+*roadmap.txt*                         Material You (Flutter/Dart) Bluesky Client
 
 ================================================================================
 N. Developer Tools & Repository Inspector                               *bsky-N*
 ================================================================================
 
 Context:
-- Two distinct features: (1) Internal debug mode (kDebugMode only) for dev
-  diagnostics, and (2) User-facing DevTools (production builds)
+- Two distinct features:
+      (1) Internal debug mode (kDebugMode only) for dev diagnostics
+      (2) User-facing DevTools (production builds)
 - Internal debug overlay provides system info, network inspector, performance
   metrics during development.
 - User-facing devtools allow users to explore their ATProto repository, inspect
@@ -196,14 +15,19 @@ Context:
 
 Phase 0: Internal Debug Mode Foundation (kDebugMode only)
 - [ ] Create DebugOverlayHost widget (wraps MaterialApp, kDebugMode gated)
-- [ ] Implement gesture detection: 2-finger long-press + ALT+F12 shortcut
-- [ ] Build DebugDrawer with tabs: System Info, ATProto Session, Network, Performance
+- [ ] Implement gesture detection:
+      - 2-finger long-press on logo
+      - triple-tap on logo
+      - ALT+F12 shortcut
+- [ ] Build DebugDrawer with tabs: System Info, ATProto Session, Network,
+      Performance
 - [ ] System Info Tab: Flutter version, platform, screen size, memory, FPS
 - [ ] ATProto Session Tab: DID, handle, PDS host, session status (no tokens)
 - [ ] Create DebugNetworkInterceptor for Dio to log XRPC calls
-- [ ] Network Inspector Tab: display last 20 XRPC calls, expandable bodies
-- [ ] Add dev_network_logs table with LRU eviction (1000 in-memory, 24h in DB)
+- [ ] Network Inspector Tab: display last 20 XRPC calls, expandable bodies to
+      view request/response details
 - [ ] Add dev_settings table (debugModeEnabled, allowOtherRepos, etc.)
+- [ ] Add dev_network_logs table with LRU eviction (1000 in-memory, 24h in DB)
 
 Phase 1: User-Facing DevTools Entry Points (Production builds)
 - [ ] Add Settings → "Developer Tools" toggle (works in release builds)
@@ -232,26 +56,15 @@ Phase 3: Record Inspector
 - [ ] Inline blob display (images/videos)
 - [ ] Export actions: JSON file, share sheet
 
-Phase 4: Write Mode (Triple-Gated, Optional)
-- [ ] Settings toggle: "Enable record editing (dangerous)"
-- [ ] Biometric/device auth required before enabling
-- [ ] RecordEditorPage: JSON text editor with validation
-- [ ] com.atproto.repo.createRecord: create new records
-- [ ] com.atproto.repo.putRecord: update existing records
-- [ ] com.atproto.repo.deleteRecord: delete with typed confirmation
-- [ ] Diff preview for updates
-- [ ] Batch operations UI: com.atproto.repo.applyWrites with review
-
 Tests:
-- [ ] Widget test: debug overlay hidden in release mode (when not manually enabled)
+- [ ] Widget test: debug overlay hidden in release mode
+      (when not manually enabled)
 - [ ] Widget test: 2-finger long-press shows overlay in kDebugMode
 - [ ] Integration test: network interceptor logs XRPC calls
 - [ ] Unit test: describeRepo, listRecords, getRecord parse correctly
 - [ ] Provider test: collectionsProvider fetches and caches
 - [ ] Provider test: recordsProvider paginates without duplicates
 - [ ] Security test: tokens never logged or displayed
-- [ ] Security test: record editing disabled when gates are off
-- [ ] Security test: cannot edit other users' repos
 
 Deliverables:
 - [ ] Internal debug overlay (kDebugMode only) with system info, network logs
@@ -259,7 +72,6 @@ Deliverables:
 - [ ] Collections browser with search and pinning
 - [ ] Records list with rich previews and pagination
 - [ ] Record inspector with JSON tree and metadata
-- [ ] Write mode (optional, triple-gated) for "power users"
 - [ ] Desktop 3-pane layout and mobile drill-down both feel first-class
 - [ ] UI is transparent, "power-user" focused
 
@@ -271,8 +83,10 @@ Phase 1: Code Quality and Architecture
 - [ ] Feature architecture standardization:
       - Audit all features for missing domain/infrastructure/application layers
       - Establish clear guidelines for layer responsibilities
-      - Refactor features missing layers (priority: auth, settings, profile, search, thread)
+      - Refactor features missing layers (priority: auth, settings, profile,
+        search, thread)
       - Document architecture patterns in doc/architecture.md
+      - Document testing patterns in doc/testing.md
 - [ ] Type safety improvements:
       - Audit unsafe casts (334 instances found)
       - Replace unsafe casts with proper null checks or code generation
@@ -282,12 +96,13 @@ Phase 1: Code Quality and Architecture
       - Split feed_repository.dart (1083 lines) into focused modules
       - Split profile_repository.dart (720 lines) into focused modules
       - Split composer_screen.dart (481 lines) if warranted
-      - Target: no file over 500 lines unless justified
+      - Target: no file over 500 lines
 - [ ] Error handling standardization:
-      - Define standard error types for common failures (network, auth, validation)
+      - Define standard error types for common failures (network, auth,
+        validation)
       - Standardize error display messages (no raw .toString() in UI)
-      - Document error handling patterns in doc/error-handling.md
-      - Add comprehensive error handling tests
+      - Document error handling patterns in doc/errors.md
+      - Add error handling tests
 
 Phase 2: Database and Persistence
 - [ ] Database migration strategy:
@@ -303,7 +118,7 @@ Phase 2: Database and Persistence
 
 Phase 3: Performance Optimization
 - [ ] Performance:
-      - Image caching strategy review and optimization
+      - Decide on image caching strategy
       - List virtualization sanity checks (ListView.builder usage)
       - Profile critical paths with Flutter DevTools
       - Optimize animation controller usage in lists (skeleton widgets)
@@ -503,6 +318,28 @@ Tasks:
       - [ ] Post published
       - [ ] Media attached
       - [ ] Publish failed
+- [x] DM Accessibility
+      - [x] screen reader support (semantic labels)
+      - [ ] keyboard navigation (Cmd/Ctrl+Enter to send)
+- [ ] DM Integration tests:
+      - [ ] fetch convos → display → tap → open detail
+      - [ ] compose → send → outbox → server → display
+      - [ ] send offline → queue → network restore → deliver
+      - [ ] receive message → display → mark read → sync
+      - [ ] message request → accept → move to main list
+- [ ] DM Offline scenarios:
+      - [ ] compose offline, send when online, display cached
+- [ ] DevTools Write Mode (Triple-Gated):
+      - [ ] Settings toggle: "Enable record editing (dangerous)"
+      - [ ] Biometric/device auth required before enabling
+      - [ ] RecordEditorPage: JSON text editor with validation
+      - [ ] com.atproto.repo.createRecord: create new records
+      - [ ] com.atproto.repo.putRecord: update existing records
+      - [ ] com.atproto.repo.deleteRecord: delete with typed confirmation
+      - [ ] Diff preview for updates
+      - [ ] Batch operations UI: com.atproto.repo.applyWrites with review
+      - [ ] Security test: record editing disabled when gates are off
+      - [ ] Security test: cannot edit other users' repos
 Tests:
 - [ ] System theme: follows OS brightness changes
 - [ ] Multi-device: preference changes merge correctly

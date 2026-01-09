@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/avatar.dart';
 import '../../../../infrastructure/db/app_database.dart';
@@ -38,6 +39,20 @@ class MessageBubble extends StatelessWidget {
   /// Callback for retrying a failed message.
   final VoidCallback? onRetry;
 
+  String _buildSemanticLabel() {
+    final sender = isFromMe ? 'You' : (senderProfile?.displayName ?? 'Unknown');
+    final time = DateFormatter.formatRelative(message.sentAt);
+    final statusLabel = switch (message.status) {
+      MessageStatus.pending => 'pending',
+      MessageStatus.sending => 'sending',
+      MessageStatus.sent => 'sent',
+      MessageStatus.read => 'read',
+      MessageStatus.failed => 'failed to send',
+      MessageStatus.deleted => 'deleted',
+    };
+    return '$sender said: ${message.content}. $time. Status: $statusLabel';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -48,67 +63,70 @@ class MessageBubble extends StatelessWidget {
         ? theme.colorScheme.onPrimaryContainer
         : theme.colorScheme.onSurface;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: isFromMe ? 48 : 8,
-        right: isFromMe ? 8 : 48,
-        top: 4,
-        bottom: 4,
-      ),
-      child: Row(
-        mainAxisAlignment: isFromMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isFromMe && showAvatar) ...[
-            Avatar(imageUrl: senderProfile?.avatar, radius: 16),
-            const SizedBox(width: 8),
-          ] else if (!isFromMe) ...[
-            const SizedBox(width: 40), // Space for hidden avatar
-          ],
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: bubbleColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isFromMe ? 16 : 4),
-                  bottomRight: Radius.circular(isFromMe ? 4 : 16),
+    return Semantics(
+      label: _buildSemanticLabel(),
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: isFromMe ? 48 : 8,
+          right: isFromMe ? 8 : 48,
+          top: 4,
+          bottom: 4,
+        ),
+        child: Row(
+          mainAxisAlignment: isFromMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!isFromMe && showAvatar) ...[
+              Avatar(imageUrl: senderProfile?.avatar, radius: 16),
+              const SizedBox(width: 8),
+            ] else if (!isFromMe) ...[
+              const SizedBox(width: 40), // Space for hidden avatar
+            ],
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: bubbleColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(16),
+                    topRight: const Radius.circular(16),
+                    bottomLeft: Radius.circular(isFromMe ? 16 : 4),
+                    bottomRight: Radius.circular(isFromMe ? 4 : 16),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: isFromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      message.content,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: textColor),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          DateFormatter.formatRelative(message.sentAt),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: textColor.withAlpha(153),
+                          ),
+                        ),
+                        if (isFromMe) ...[
+                          const SizedBox(width: 4),
+                          DeliveryStatusIndicator(
+                            status: message.status,
+                            onRetry: message.isFailed ? onRetry : null,
+                            size: 14,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: isFromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message.content,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: textColor),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        DateFormatter.formatRelative(message.sentAt),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: textColor.withAlpha(153),
-                        ),
-                      ),
-                      if (isFromMe) ...[
-                        const SizedBox(width: 4),
-                        DeliveryStatusIndicator(
-                          status: message.status,
-                          onRetry: message.isFailed ? onRetry : null,
-                          size: 14,
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

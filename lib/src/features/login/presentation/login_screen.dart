@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/widgets/app_app_bar.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
@@ -92,7 +93,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Icon(Icons.cloud_outlined, size: 80, color: theme.colorScheme.primary),
+                SvgPicture.asset(
+                  'assets/logo.svg',
+                  width: 80,
+                  height: 80,
+                  colorFilter: ColorFilter.mode(theme.colorScheme.primary, BlendMode.srcIn),
+                ),
                 const SizedBox(height: 24),
                 Text(
                   'Sign in to Bluesky',

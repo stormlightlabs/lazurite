@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
@@ -69,10 +70,11 @@ void main() {
       expect(find.text('Continue with Bluesky'), findsOneWidget);
     });
 
-    testWidgets('renders cloud icon', (tester) async {
+    testWidgets('renders app logo', (tester) async {
       await tester.pumpApp(const LoginScreen(), overrides: testOverrides());
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.cloud_outlined), findsOneWidget);
+      // SvgPicture renders the logo from assets/logo.svg
+      expect(find.byType(SvgPicture), findsOneWidget);
     });
 
     testWidgets('renders sign in header text', (tester) async {

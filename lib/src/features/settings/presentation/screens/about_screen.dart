@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/settings_section.dart';
@@ -45,7 +46,12 @@ class AboutScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
-          Icon(Icons.interests_outlined, size: 80, color: theme.colorScheme.primary),
+          SvgPicture.asset(
+            'assets/logo.svg',
+            width: 80,
+            height: 80,
+            colorFilter: ColorFilter.mode(theme.colorScheme.primary, BlendMode.srcIn),
+          ),
           const SizedBox(height: 16),
           Text(
             appName,

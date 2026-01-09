@@ -160,5 +160,17 @@ void main() {
 
       expect(find.byIcon(Icons.access_time), findsOneWidget);
     });
+
+    testWidgets('has Semantics wrapper for accessibility', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MessageBubble(message: createMessage(content: 'Test message'), isFromMe: true),
+          ),
+        ),
+      );
+
+      expect(find.byType(Semantics), findsWidgets);
+    });
   });
 }
