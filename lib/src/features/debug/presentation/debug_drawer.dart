@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../application/debug_overlay_controller.dart';
 import 'atproto_session_tab.dart';
@@ -36,6 +37,7 @@ class DebugDrawer extends ConsumerWidget {
                   children: [SystemInfoTab(), AtprotoSessionTab(), NetworkInspectorTab()],
                 ),
               ),
+              _buildFooter(context, ref, theme),
             ],
           ),
         ),
@@ -83,6 +85,30 @@ class DebugDrawer extends ConsumerWidget {
       labelColor: theme.colorScheme.primary,
       unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
       indicatorColor: theme.colorScheme.primary,
+    );
+  }
+
+  Widget _buildFooter(BuildContext context, WidgetRef ref, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.2))),
+      ),
+      child: FilledButton.tonal(
+        onPressed: () {
+          ref.read(debugOverlayControllerProvider.notifier).hide();
+          context.push('/devtools');
+        },
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.developer_mode, size: 20),
+            SizedBox(width: 8),
+            Flexible(child: Text('Open Full DevTools', overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+      ),
     );
   }
 }

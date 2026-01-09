@@ -206,6 +206,14 @@ void main() {
         expect(find.text('FPS'), findsOneWidget);
       });
     });
+
+    testWidgets('displays Open Full DevTools button', (tester) async {
+      await tester.pumpWidget(createSubject());
+      await tester.pump();
+
+      expect(find.text('Open Full DevTools'), findsOneWidget);
+      expect(find.byIcon(Icons.developer_mode), findsOneWidget);
+    });
   });
 }
 

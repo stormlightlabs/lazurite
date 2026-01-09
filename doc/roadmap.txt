@@ -34,17 +34,17 @@ Phase 1: User-Facing "DevTools"
 - [x] Create /devtools route group (always available, not kDebugMode gated)
 - [x] DevToolsHomePage: show DID, PDS host, quick actions
       - [x] "Copy my DID" action
-- [ ] Add Settings → "Developer Tools" toggle (works in release builds)
-- [ ] Link debug overlay to full DevTools (/devtools routes)
+- [x] Add Settings → "Developer Tools" toggle (works in release builds)
+- [x] Link debug overlay to full DevTools (/devtools routes)
 
 Phase 2: Repository Browser (Read-Only)
 - [ ] Implement DevtoolsRepository wrapping XrpcClient
-- [ ] com.atproto.repo.describeRepo: list collections for a DID
+      - [ ] com.atproto.repo.describeRepo: list collections for a DID
+      - [ ] com.atproto.repo.listRecords: cursor-based pagination
 - [ ] CollectionsPage: search, pin/unpin, tap to view records
-- [ ] com.atproto.repo.listRecords: cursor-based pagination
 - [ ] RecordsPage: infinite scroll, filters (rkey prefix, date, blob presence)
-- [ ] Rich preview cards for known record types (post, profile, follow)
-- [ ] Fallback JSON tree for unknown types
+      - [ ] Rich preview cards for known record types (post, profile, follow)
+      - [ ] Fallback JSON tree for unknown types
 
 Phase 3: Record Inspector
 - [ ] com.atproto.repo.getRecord: fetch single record
@@ -66,8 +66,8 @@ Tests:
 - [ ] Security test: tokens never logged or displayed
 
 Deliverables:
-- [/] Internal debug overlay (kDebugMode only) with system info, network logs (logs pending)
-- [ ] User-facing DevTools (production) for repository inspection
+- [x] Internal debug overlay (kDebugMode only) with system info, network logs
+- [/] User-facing DevTools (production) for repository inspection (home page complete)
 - [ ] Collections browser with search and pinning
 - [ ] Records list with rich previews and pagination
 - [ ] Record inspector with JSON tree and metadata

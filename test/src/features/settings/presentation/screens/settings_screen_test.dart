@@ -60,6 +60,11 @@ void main() {
                 builder: (ctx, state) =>
                     const Scaffold(body: Center(child: Text('Feed Management'))),
               ),
+              GoRoute(
+                path: '/devtools',
+                builder: (ctx, state) =>
+                    const Scaffold(body: Center(child: Text('Developer Tools Screen'))),
+              ),
             ],
           );
           return MaterialApp.router(routerConfig: router);
@@ -114,6 +119,7 @@ void main() {
       expect(find.text('APP'), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
       expect(find.text('Accessibility'), findsOneWidget);
+      expect(find.text('Developer Tools'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
     });
 
@@ -210,6 +216,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(logoutCalled, isTrue);
+    });
+
+    testWidgets('navigates to developer tools when Developer Tools is tapped', (tester) async {
+      await tester.pumpWidget(
+        buildTestApp([authProvider.overrideWith(() => _TestAuthNotifier.unauthenticated())]),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Developer Tools'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Developer Tools Screen'), findsOneWidget);
     });
   });
 }

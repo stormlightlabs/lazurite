@@ -97,6 +97,14 @@ class SettingsScreen extends ConsumerWidget {
         },
       ),
       SettingsTile(
+        leading: const Icon(Icons.developer_mode),
+        title: 'Developer Tools',
+        subtitle: 'Repository inspector and debug tools',
+        onTap: () {
+          context.push('/devtools');
+        },
+      ),
+      SettingsTile(
         leading: const Icon(Icons.info_outline),
         title: 'About',
         subtitle: 'App version and information',
