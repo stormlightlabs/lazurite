@@ -4,6 +4,7 @@ import '../../../core/utils/logger.dart';
 import '../../../infrastructure/db/app_database.dart';
 import '../../../infrastructure/db/daos/dm_messages_dao.dart';
 import '../../../infrastructure/db/daos/dm_outbox_dao.dart';
+import '../../../infrastructure/network/network_failure.dart';
 import '../../../infrastructure/network/xrpc_client.dart';
 import '../domain/outbox_item.dart';
 
@@ -186,32 +187,38 @@ class OutboxRepository {
     } catch (error, stack) {
       _logger.error('Failed to send message', error, stack);
 
+      final (isTransient, userMessage) = _classifyError(error);
+
       await _outboxDao.incrementRetryCount(item.outboxId, ownerDid);
       final updatedItem = await _outboxDao.getById(item.outboxId, ownerDid);
 
-      if (updatedItem != null && updatedItem.retryCount >= OutboxItem.maxRetries) {
+      final shouldMarkFailed =
+          !isTransient || (updatedItem != null && updatedItem.retryCount >= OutboxItem.maxRetries);
+
+      if (shouldMarkFailed) {
         await _outboxDao.updateStatus(
           outboxId: item.outboxId,
           status: 'failed',
-          errorMessage: error.toString(),
+          errorMessage: userMessage,
         );
         await _messagesDao.updateMessageStatus(
           messageId: 'pending:${item.outboxId}',
           status: 'failed',
           ownerDid: ownerDid,
         );
-        _logger.error('Message permanently failed after max retries', error, stack);
+        _logger.error('Message permanently failed: $userMessage', error, stack);
       } else {
         await _outboxDao.updateStatus(
           outboxId: item.outboxId,
           status: 'pending',
-          errorMessage: error.toString(),
+          errorMessage: userMessage,
         );
         await _messagesDao.updateMessageStatus(
           messageId: 'pending:${item.outboxId}',
           status: 'pending',
           ownerDid: ownerDid,
         );
+        _logger.debug('Transient error, will retry: $userMessage');
       }
     }
   }
@@ -228,5 +235,36 @@ class OutboxRepository {
       lastAttemptAt: data.lastAttemptAt,
       errorMessage: data.errorMessage,
     );
+  }
+
+  /// Classifies an error as transient or permanent with a user-friendly message.
+  ///
+  /// Returns a tuple of (isTransient, userMessage).
+  (bool, String) _classifyError(Object error) {
+    return switch (error) {
+      ConnectionFailure() => (true, 'No internet connection. Message will send when online.'),
+      AuthFailure() => (false, 'Session expired. Please sign in again.'),
+      RateLimitFailure() => (true, 'Sending too fast. Message will retry shortly.'),
+      ServerFailure() => (true, 'Failed to send message. Tap to retry.'),
+      ClientFailure(:final statusCode, :final message) => (
+        false,
+        _getValidationMessage(statusCode, message),
+      ),
+      _ => (true, 'Failed to send message. Tap to retry.'),
+    };
+  }
+
+  /// Gets a user-friendly validation error message.
+  String _getValidationMessage(int statusCode, String? serverMessage) {
+    if (serverMessage?.contains('too long') ?? false) {
+      return 'Message too long (max 10,000 characters).';
+    }
+    if (statusCode == 400) {
+      return 'Message could not be sent. Please edit and retry.';
+    }
+    if (statusCode == 404) {
+      return 'Conversation not found.';
+    }
+    return serverMessage ?? 'Failed to send message.';
   }
 }

@@ -48,7 +48,7 @@ final class SearchRepositoryProvider
   }
 }
 
-String _$searchRepositoryHash() => r'29255e3b3504388c42730a5d7af777347b983e90';
+String _$searchRepositoryHash() => r'702c5f8c0c426bc164763afb827aa32770e151a6';
 
 @ProviderFor(SearchNotifier)
 final searchProvider = SearchNotifierFamily._();

@@ -352,5 +352,106 @@ void main() {
         verify(() => mockOutboxDao.countPending('did:plc:owner')).called(1);
       });
     });
+
+    group('error classification', () {
+      DmOutboxData createPendingItem() {
+        return DmOutboxData(
+          outboxId: 'outbox1',
+          convoId: 'convo1',
+          messageText: 'Hello!',
+          status: 'pending',
+          retryCount: 0,
+          createdAt: DateTime.now(),
+          lastAttemptAt: null,
+          errorMessage: null,
+          ownerDid: 'did:plc:owner',
+        );
+      }
+
+      void setupCommonMocks(DmOutboxData item) {
+        when(() => mockOutboxDao.getPending(any())).thenAnswer((_) async => [item]);
+        when(
+          () => mockOutboxDao.updateStatus(
+            outboxId: any(named: 'outboxId'),
+            status: any(named: 'status'),
+            errorMessage: any(named: 'errorMessage'),
+          ),
+        ).thenAnswer((_) async {});
+        when(
+          () => mockMessagesDao.updateMessageStatus(
+            messageId: any(named: 'messageId'),
+            status: any(named: 'status'),
+            ownerDid: any(named: 'ownerDid'),
+          ),
+        ).thenAnswer((_) async {});
+        when(() => mockOutboxDao.incrementRetryCount(any(), any())).thenAnswer((_) async {});
+      }
+
+      test('stores user-friendly network error message', () async {
+        final item = createPendingItem();
+        setupCommonMocks(item);
+
+        when(
+          () => mockApi.call(any(), body: any(named: 'body')),
+        ).thenThrow(Exception('Network error'));
+        when(
+          () => mockOutboxDao.getById(any(), any()),
+        ).thenAnswer((_) async => item.copyWith(retryCount: 1));
+
+        await repository.processOutbox('did:plc:owner');
+
+        verify(
+          () => mockOutboxDao.updateStatus(
+            outboxId: 'outbox1',
+            status: 'pending',
+            errorMessage: 'Failed to send message. Tap to retry.',
+          ),
+        ).called(1);
+      });
+
+      test('marks auth errors as permanently failed', () async {
+        final item = createPendingItem();
+        setupCommonMocks(item);
+
+        when(
+          () => mockApi.call(any(), body: any(named: 'body')),
+        ).thenThrow(Exception('Auth expired'));
+        when(
+          () => mockOutboxDao.getById(any(), any()),
+        ).thenAnswer((_) async => item.copyWith(retryCount: OutboxItem.maxRetries));
+
+        await repository.processOutbox('did:plc:owner');
+
+        verify(
+          () => mockOutboxDao.updateStatus(
+            outboxId: 'outbox1',
+            status: 'failed',
+            errorMessage: any(named: 'errorMessage'),
+          ),
+        ).called(1);
+      });
+
+      test('transient errors remain pending for retry', () async {
+        final item = createPendingItem();
+        setupCommonMocks(item);
+
+        when(
+          () => mockApi.call(any(), body: any(named: 'body')),
+        ).thenThrow(Exception('Connection timeout'));
+        when(
+          () => mockOutboxDao.getById(any(), any()),
+        ).thenAnswer((_) async => item.copyWith(retryCount: 1));
+
+        await repository.processOutbox('did:plc:owner');
+
+        verify(
+          () => mockOutboxDao.updateStatus(
+            outboxId: 'outbox1',
+            status: 'pending',
+            errorMessage: any(named: 'errorMessage'),
+          ),
+        ).called(1);
+      });
+    });
   });
 }

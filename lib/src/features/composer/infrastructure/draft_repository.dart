@@ -47,7 +47,9 @@ class DraftRepository {
   Stream<composer.Draft?> watchDraft(String id) async* {
     final session = await _sessionStorage.getSession();
     final ownerDid = session!.did;
-    yield* _dao.watchDraft(id, ownerDid).map((record) => record == null ? null : _toDomain(record));
+    yield* _dao
+        .watchDraft(id, ownerDid)
+        .map((record) => record == null ? null : _toDomain(record));
   }
 
   Future<composer.Draft> getDraft(String id) async {
@@ -163,7 +165,11 @@ class DraftRepository {
       ),
     ]);
 
-    await _dao.updateDraftFields(draftId, ownerDid, DraftsCompanion(updatedAt: Value(DateTime.now())));
+    await _dao.updateDraftFields(
+      draftId,
+      ownerDid,
+      DraftsCompanion(updatedAt: Value(DateTime.now())),
+    );
   }
 
   bool _isImageMimeType(String mimeType) {
@@ -174,14 +180,22 @@ class DraftRepository {
     final session = await _sessionStorage.getSession();
     final ownerDid = session!.did;
     await _dao.deleteMedia(mediaId);
-    await _dao.updateDraftFields(draftId, ownerDid, DraftsCompanion(updatedAt: Value(DateTime.now())));
+    await _dao.updateDraftFields(
+      draftId,
+      ownerDid,
+      DraftsCompanion(updatedAt: Value(DateTime.now())),
+    );
   }
 
   Future<void> updateMediaAltText(String draftId, int mediaId, String altText) async {
     final session = await _sessionStorage.getSession();
     final ownerDid = session!.did;
     await _dao.updateMedia(mediaId, DraftMediaCompanion(altText: Value(altText)));
-    await _dao.updateDraftFields(draftId, ownerDid, DraftsCompanion(updatedAt: Value(DateTime.now())));
+    await _dao.updateDraftFields(
+      draftId,
+      ownerDid,
+      DraftsCompanion(updatedAt: Value(DateTime.now())),
+    );
   }
 
   /// Publishes a draft with optional progress tracking.
@@ -213,7 +227,11 @@ class DraftRepository {
 
       final facetsJson = await _facetParser.parse(domain.text);
       if (facetsJson != null && facetsJson != domain.facetsJson) {
-        await _dao.updateDraftFields(draftId, ownerDid, DraftsCompanion(facetsJson: Value(facetsJson)));
+        await _dao.updateDraftFields(
+          draftId,
+          ownerDid,
+          DraftsCompanion(facetsJson: Value(facetsJson)),
+        );
       }
 
       for (final media in domain.media) {

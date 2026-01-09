@@ -25,7 +25,13 @@ void main() {
     when(() => mockSession.did).thenReturn(testOwnerDid);
     when(() => mockSession.handle).thenReturn('test.handle');
     when(() => mockSessionStorage.getSession()).thenAnswer((_) async => mockSession);
-    repository = SearchRepository(mockApi, db.searchDao, db.searchCacheDao, mockSessionStorage, mockLogger);
+    repository = SearchRepository(
+      mockApi,
+      db.searchDao,
+      db.searchCacheDao,
+      mockSessionStorage,
+      mockLogger,
+    );
   });
 
   tearDown(() async {

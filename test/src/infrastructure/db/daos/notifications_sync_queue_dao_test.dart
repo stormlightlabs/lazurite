@@ -239,7 +239,10 @@ void main() {
         final now = DateTime.now();
         await dao.enqueueMarkSeen(now, ownerDid);
 
-        final deleted = await dao.cleanupOldFailedItems(now.subtract(const Duration(days: 30)), ownerDid);
+        final deleted = await dao.cleanupOldFailedItems(
+          now.subtract(const Duration(days: 30)),
+          ownerDid,
+        );
         expect(deleted, 0);
 
         final remaining = await dao.getRetryableItems(ownerDid);

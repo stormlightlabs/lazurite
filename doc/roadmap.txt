@@ -98,7 +98,7 @@ Phase 3: Conversation Detail Screen
       - markAsRead on conversation open
 
 Phase 4: Outbox Worker and Reliability
-- [ ] OutboxWorker:
+- [x] OutboxWorker:
       - periodic processing (every 10 seconds)
       - trigger on app foreground resume
       - process pending items oldest-first
@@ -107,12 +107,12 @@ Phase 4: Outbox Worker and Reliability
       - max 5 retries, then mark permanently failed
       - transient errors: network, timeout → retry
       - permanent errors: auth, validation → mark failed, notify user
-- [ ] Error handling:
+- [x] Error handling:
       - network errors: "No internet. Message will send when online."
       - server errors: "Failed to send. Tap to retry."
       - auth errors: "Session expired. Please sign in."
       - validation errors: "Message too long (15,000 / 10,000 chars)"
-- [ ] Atomic operations:
+- [x] Atomic operations:
       - use database transactions for send operations
       - prevent double-sends (wait for server acknowledgment)
       - handle app crash during send (resume on restart)
@@ -148,17 +148,17 @@ Phase 6: Polish and Optimization
 - [ ] Read receipts display (when other party reads)
 
 Tests:
-- [ ] Repository: fetch convos, fetch messages, accept, update read, parse responses
-- [ ] OutboxRepository: enqueue, process, retry with backoff, handle errors
-- [ ] Proxy header unit test: verify chat.* requests include atproto-proxy header
-- [ ] Outbox reliability tests:
+- [x] Repository: fetch convos, fetch messages, accept, update read, parse responses
+- [x] OutboxRepository: enqueue, process, retry with backoff, handle errors
+- [x] Proxy header unit test: verify chat.* requests include atproto-proxy header
+- [x] Outbox reliability tests:
       - enqueue → send → mark delivered
       - enqueue → send fails → retry with backoff
       - enqueue → send fails 5x → mark permanently failed
       - enqueue → app crash → resume on restart → deliver
       - enqueue multiple → process in order → preserve ordering
       - double-send prevention: send in progress → don't send again
-- [ ] DAOs: CRUD operations, streams, queries
+- [x] DAOs: CRUD operations, streams, queries
 - [x] Notifiers: state transitions, refresh, load more
 - [x] Widget tests: list items, message bubbles, composer, delivery status
 - [ ] Integration tests:
@@ -172,14 +172,14 @@ Tests:
 Deliverables:
 - [x] Conversation list functional with unread indicators
 - [x] Message requests require acceptance
-- [ ] Conversation detail with message history
-- [ ] Compose and send text messages
-- [ ] Outbox ensures reliable delivery (never lose messages)
-- [ ] Failed sends retry automatically (bounded, user can retry)
-- [ ] No double-sends occur
-- [ ] Read state syncs bidirectionally
-- [ ] Offline messages queue and sync
-- [ ] Proxy header injected correctly
+- [x] Conversation detail with message history
+- [x] Compose and send text messages
+- [x] Outbox ensures reliable delivery (never lose messages)
+- [x] Failed sends retry automatically (bounded, user can retry)
+- [x] No double-sends occur
+- [x] Read state syncs bidirectionally
+- [x] Offline messages queue and sync
+- [x] Proxy header injected correctly
 - [ ] Performance acceptable with 100+ conversations
 
 ================================================================================
