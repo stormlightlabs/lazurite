@@ -100,7 +100,10 @@ void main() {
         final exception = Exception('Search API error');
         when(() => mockApi.call(any(), params: any(named: 'params'))).thenThrow(exception);
 
-        expect(() => repository.searchPosts('error'), throwsA(isA<Exception>()));
+        await expectLater(
+          repository.searchPosts('error'),
+          throwsA(isA<Exception>()),
+        );
 
         verify(() => mockLogger.error(any(), exception, any())).called(1);
       });
@@ -191,6 +194,7 @@ void main() {
             .into(db.searchCacheCursors)
             .insert(
               SearchCacheCursorsCompanion.insert(
+                ownerDid: testOwnerDid,
                 queryKey: 'old_query',
                 cursor: 'old_cursor',
                 lastUpdated: Value(old),
@@ -213,6 +217,7 @@ void main() {
             .into(db.searchCacheItems)
             .insert(
               SearchCacheItemsCompanion.insert(
+                ownerDid: testOwnerDid,
                 queryKey: 'old_query',
                 postUri: 'at://did:plc:old/app.bsky.feed.post/old',
                 sortKey: '0000000000',

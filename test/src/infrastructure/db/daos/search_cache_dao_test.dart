@@ -8,6 +8,8 @@ void main() {
   late AppDatabase database;
   late SearchCacheDao dao;
 
+  const testOwnerDid = 'did:plc:test';
+
   setUp(() {
     database = AppDatabase(NativeDatabase.memory());
     dao = database.searchCacheDao;
@@ -21,6 +23,7 @@ void main() {
     group('insertSearchBatch', () {
       test('inserts posts, profiles, and cache items', () async {
         await dao.insertSearchBatch(
+          ownerDid: testOwnerDid,
           queryKey: 'flutter',
           newPosts: [
             PostsCompanion.insert(
@@ -35,6 +38,7 @@ void main() {
           ],
           newItems: [
             SearchCacheItemsCompanion.insert(
+              ownerDid: testOwnerDid,
               queryKey: 'flutter',
               postUri: 'at://did:plc:user1/app.bsky.feed.post/1',
               sortKey: '0000000000',
@@ -43,7 +47,7 @@ void main() {
           newCursor: 'next_page',
         );
 
-        final results = await dao.getSearchResults('flutter');
+        final results = await dao.getSearchResults('flutter', testOwnerDid);
         expect(results, hasLength(1));
         expect(results.first.post.uri, 'at://did:plc:user1/app.bsky.feed.post/1');
         expect(results.first.author.handle, 'flutterdev.bsky.social');
@@ -51,6 +55,7 @@ void main() {
 
       test('updates cursor when provided', () async {
         await dao.insertSearchBatch(
+          ownerDid: testOwnerDid,
           queryKey: 'dart',
           newPosts: [],
           newProfiles: [],
@@ -58,12 +63,13 @@ void main() {
           newCursor: 'cursor123',
         );
 
-        final cursor = await dao.getCursor('dart');
+        final cursor = await dao.getCursor('dart', testOwnerDid);
         expect(cursor, 'cursor123');
       });
 
       test('does not update cursor when null', () async {
         await dao.insertSearchBatch(
+          ownerDid: testOwnerDid,
           queryKey: 'test',
           newPosts: [],
           newProfiles: [],
@@ -72,6 +78,7 @@ void main() {
         );
 
         await dao.insertSearchBatch(
+          ownerDid: testOwnerDid,
           queryKey: 'test',
           newPosts: [],
           newProfiles: [],
@@ -79,7 +86,7 @@ void main() {
           newCursor: null,
         );
 
-        final cursor = await dao.getCursor('test');
+        final cursor = await dao.getCursor('test', testOwnerDid);
         expect(cursor, 'initial');
       });
     });
@@ -87,6 +94,7 @@ void main() {
     group('getSearchResults', () {
       test('returns results ordered by sortKey', () async {
         await dao.insertSearchBatch(
+          ownerDid: testOwnerDid,
           queryKey: 'order_test',
           newPosts: [
             PostsCompanion.insert(
@@ -108,11 +116,13 @@ void main() {
           ],
           newItems: [
             SearchCacheItemsCompanion.insert(
+              ownerDid: testOwnerDid,
               queryKey: 'order_test',
               postUri: 'at://did:plc:user1/app.bsky.feed.post/1',
               sortKey: '0000000000',
             ),
             SearchCacheItemsCompanion.insert(
+              ownerDid: testOwnerDid,
               queryKey: 'order_test',
               postUri: 'at://did:plc:user2/app.bsky.feed.post/2',
               sortKey: '0000000001',
@@ -121,14 +131,14 @@ void main() {
           newCursor: null,
         );
 
-        final results = await dao.getSearchResults('order_test');
+        final results = await dao.getSearchResults('order_test', testOwnerDid);
         expect(results, hasLength(2));
         expect(results[0].post.uri, 'at://did:plc:user1/app.bsky.feed.post/1');
         expect(results[1].post.uri, 'at://did:plc:user2/app.bsky.feed.post/2');
       });
 
       test('returns empty list for unknown query', () async {
-        final results = await dao.getSearchResults('unknown_query');
+        final results = await dao.getSearchResults('unknown_query', testOwnerDid);
         expect(results, isEmpty);
       });
     });
@@ -136,6 +146,7 @@ void main() {
     group('watchSearchResults', () {
       test('emits updates when cache changes', () async {
         await dao.insertSearchBatch(
+          ownerDid: testOwnerDid,
           queryKey: 'watch_test',
           newPosts: [
             PostsCompanion.insert(
@@ -148,6 +159,7 @@ void main() {
           newProfiles: [ProfilesCompanion.insert(did: 'did:plc:user1', handle: 'user1.bsky')],
           newItems: [
             SearchCacheItemsCompanion.insert(
+              ownerDid: testOwnerDid,
               queryKey: 'watch_test',
               postUri: 'at://did:plc:user1/app.bsky.feed.post/1',
               sortKey: '0000000000',
@@ -156,7 +168,7 @@ void main() {
           newCursor: null,
         );
 
-        final results = await dao.watchSearchResults('watch_test').first;
+        final results = await dao.watchSearchResults('watch_test', testOwnerDid).first;
         expect(results, hasLength(1));
         expect(results.first.post.uri, 'at://did:plc:user1/app.bsky.feed.post/1');
       });
@@ -164,12 +176,13 @@ void main() {
 
     group('getCursor', () {
       test('returns null for unknown query', () async {
-        final cursor = await dao.getCursor('nonexistent');
+        final cursor = await dao.getCursor('nonexistent', testOwnerDid);
         expect(cursor, isNull);
       });
 
       test('returns cursor for known query', () async {
         await dao.insertSearchBatch(
+          ownerDid: testOwnerDid,
           queryKey: 'cursor_test',
           newPosts: [],
           newProfiles: [],
@@ -177,7 +190,7 @@ void main() {
           newCursor: 'my_cursor',
         );
 
-        final cursor = await dao.getCursor('cursor_test');
+        final cursor = await dao.getCursor('cursor_test', testOwnerDid);
         expect(cursor, 'my_cursor');
       });
     });
@@ -185,6 +198,7 @@ void main() {
     group('clearSearchCache', () {
       test('clears cache for specific query', () async {
         await dao.insertSearchBatch(
+          ownerDid: testOwnerDid,
           queryKey: 'query1',
           newPosts: [
             PostsCompanion.insert(
@@ -197,6 +211,7 @@ void main() {
           newProfiles: [ProfilesCompanion.insert(did: 'did:plc:user1', handle: 'user1.bsky')],
           newItems: [
             SearchCacheItemsCompanion.insert(
+              ownerDid: testOwnerDid,
               queryKey: 'query1',
               postUri: 'at://did:plc:user1/app.bsky.feed.post/1',
               sortKey: '0000000000',
@@ -206,6 +221,7 @@ void main() {
         );
 
         await dao.insertSearchBatch(
+          ownerDid: testOwnerDid,
           queryKey: 'query2',
           newPosts: [
             PostsCompanion.insert(
@@ -218,6 +234,7 @@ void main() {
           newProfiles: [ProfilesCompanion.insert(did: 'did:plc:user2', handle: 'user2.bsky')],
           newItems: [
             SearchCacheItemsCompanion.insert(
+              ownerDid: testOwnerDid,
               queryKey: 'query2',
               postUri: 'at://did:plc:user2/app.bsky.feed.post/2',
               sortKey: '0000000000',
@@ -226,12 +243,12 @@ void main() {
           newCursor: 'cursor2',
         );
 
-        await dao.clearSearchCache('query1');
+        await dao.clearSearchCache('query1', testOwnerDid);
 
-        expect(await dao.getSearchResults('query1'), isEmpty);
-        expect(await dao.getCursor('query1'), isNull);
-        expect(await dao.getSearchResults('query2'), hasLength(1));
-        expect(await dao.getCursor('query2'), 'cursor2');
+        expect(await dao.getSearchResults('query1', testOwnerDid), isEmpty);
+        expect(await dao.getCursor('query1', testOwnerDid), isNull);
+        expect(await dao.getSearchResults('query2', testOwnerDid), hasLength(1));
+        expect(await dao.getCursor('query2', testOwnerDid), 'cursor2');
       });
     });
 
@@ -244,6 +261,7 @@ void main() {
             .into(database.searchCacheCursors)
             .insert(
               SearchCacheCursorsCompanion.insert(
+                ownerDid: testOwnerDid,
                 queryKey: 'old_query',
                 cursor: 'old_cursor',
                 lastUpdated: Value(old),
@@ -266,6 +284,7 @@ void main() {
             .into(database.searchCacheItems)
             .insert(
               SearchCacheItemsCompanion.insert(
+                ownerDid: testOwnerDid,
                 queryKey: 'old_query',
                 postUri: 'at://did:plc:old/app.bsky.feed.post/old',
                 sortKey: '0000000000',
@@ -273,6 +292,7 @@ void main() {
             );
 
         await dao.insertSearchBatch(
+          ownerDid: testOwnerDid,
           queryKey: 'fresh_query',
           newPosts: [
             PostsCompanion.insert(
@@ -285,6 +305,7 @@ void main() {
           newProfiles: [ProfilesCompanion.insert(did: 'did:plc:fresh', handle: 'fresh.bsky')],
           newItems: [
             SearchCacheItemsCompanion.insert(
+              ownerDid: testOwnerDid,
               queryKey: 'fresh_query',
               postUri: 'at://did:plc:fresh/app.bsky.feed.post/fresh',
               sortKey: '0000000000',
@@ -294,16 +315,17 @@ void main() {
         );
 
         final threshold = now.subtract(const Duration(days: 7));
-        final deleted = await dao.deleteStaleCacheItems(threshold);
+        final deleted = await dao.deleteStaleCacheItems(threshold, testOwnerDid);
 
         expect(deleted, 1);
-        expect(await dao.getSearchResults('old_query'), isEmpty);
-        expect(await dao.getCursor('old_query'), isNull);
-        expect(await dao.getSearchResults('fresh_query'), hasLength(1));
+        expect(await dao.getSearchResults('old_query', testOwnerDid), isEmpty);
+        expect(await dao.getCursor('old_query', testOwnerDid), isNull);
+        expect(await dao.getSearchResults('fresh_query', testOwnerDid), hasLength(1));
       });
 
       test('returns 0 when no stale items', () async {
         await dao.insertSearchBatch(
+          ownerDid: testOwnerDid,
           queryKey: 'recent',
           newPosts: [],
           newProfiles: [],
@@ -312,7 +334,7 @@ void main() {
         );
 
         final threshold = DateTime.now().subtract(const Duration(days: 7));
-        final deleted = await dao.deleteStaleCacheItems(threshold);
+        final deleted = await dao.deleteStaleCacheItems(threshold, testOwnerDid);
 
         expect(deleted, 0);
       });

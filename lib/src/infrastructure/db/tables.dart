@@ -115,13 +115,19 @@ class RecentSearches extends Table {
   DateTimeColumn get searchedAt => dateTime()();
 }
 
-/// Stores cached search result items.
+/// Stores cached search result items per user.
 ///
 /// Links search queries to Posts for offline access and performance.
-@TableIndex(name: 'search_cache_sort_idx', columns: {#queryKey, #sortKey})
+/// Search results are scoped by ownerDid because different users may see
+/// different results for the same query due to blocks, mutes, and other
+/// per-user relationship states.
+@TableIndex(name: 'search_cache_sort_idx', columns: {#queryKey, #ownerDid, #sortKey})
 class SearchCacheItems extends Table {
   /// Normalized search query as cache key.
   TextColumn get queryKey => text()();
+
+  /// The DID of the user who owns this cached search result.
+  TextColumn get ownerDid => text()();
 
   /// Reference to cached post.
   TextColumn get postUri => text().references(Posts, #uri)();
@@ -130,13 +136,18 @@ class SearchCacheItems extends Table {
   TextColumn get sortKey => text()();
 
   @override
-  Set<Column> get primaryKey => {queryKey, postUri};
+  Set<Column> get primaryKey => {queryKey, ownerDid, postUri};
 }
 
-/// Stores pagination cursors for cached search queries.
+/// Stores pagination cursors for cached search queries per user.
+///
+/// Cursors are scoped by ownerDid to match the per-user search cache isolation.
 class SearchCacheCursors extends Table {
   /// Normalized search query as cache key.
   TextColumn get queryKey => text()();
+
+  /// The DID of the user who owns this cached cursor.
+  TextColumn get ownerDid => text()();
 
   /// Pagination cursor from API.
   TextColumn get cursor => text()();
@@ -145,7 +156,7 @@ class SearchCacheCursors extends Table {
   DateTimeColumn get lastUpdated => dateTime().nullable()();
 
   @override
-  Set<Column> get primaryKey => {queryKey};
+  Set<Column> get primaryKey => {queryKey, ownerDid};
 }
 
 /// Stores follow relationships for caching viewer state.

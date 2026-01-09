@@ -26,9 +26,16 @@ class SearchRepository {
     return query.trim().toLowerCase();
   }
 
+  /// Gets the current user's DID from session storage.
+  Future<String> _getOwnerDid() async {
+    final session = await _sessionStorage.getSession();
+    return session!.did;
+  }
+
   /// Searches posts with cursor pagination and caches results.
   Future<PaginatedResult<Post>> searchPosts(String query, {String? cursor}) async {
     final queryKey = normalizeQuery(query);
+    final ownerDid = await _getOwnerDid();
     _logger.info('Searching posts', {'query': query, 'queryKey': queryKey, 'cursor': cursor});
 
     try {
@@ -53,13 +60,19 @@ class SearchRepository {
 
       _logger.debug('Found ${posts.length} posts');
 
-      await _cacheSearchResults(queryKey, rawPosts, nextCursor, isLoadMore: cursor != null);
+      await _cacheSearchResults(
+        queryKey,
+        ownerDid,
+        rawPosts,
+        nextCursor,
+        isLoadMore: cursor != null,
+      );
 
       return PaginatedResult(items: posts, cursor: nextCursor);
     } catch (e, stack) {
       _logger.error('Search failed', e, stack);
       if (cursor == null) {
-        final cachedResults = await _cacheDao.getSearchResults(queryKey);
+        final cachedResults = await _cacheDao.getSearchResults(queryKey, ownerDid);
         if (cachedResults.isNotEmpty) {
           final cachedPosts = _mapCachedResults(cachedResults);
           _logger.warning('Serving cached search results due to offline failure', {
@@ -76,6 +89,7 @@ class SearchRepository {
   /// Caches search results in the database.
   Future<void> _cacheSearchResults(
     String queryKey,
+    String ownerDid,
     List<dynamic> rawPosts,
     String? cursor, {
     required bool isLoadMore,
@@ -86,7 +100,7 @@ class SearchRepository {
 
     int startIndex = 0;
     if (isLoadMore) {
-      final existing = await _cacheDao.getSearchResults(queryKey);
+      final existing = await _cacheDao.getSearchResults(queryKey, ownerDid);
       startIndex = existing.length;
     }
 
@@ -145,12 +159,18 @@ class SearchRepository {
 
       final sortKey = (startIndex + i).toString().padLeft(10, '0');
       cacheItems.add(
-        SearchCacheItemsCompanion.insert(queryKey: queryKey, postUri: uri, sortKey: sortKey),
+        SearchCacheItemsCompanion.insert(
+          queryKey: queryKey,
+          ownerDid: ownerDid,
+          postUri: uri,
+          sortKey: sortKey,
+        ),
       );
     }
 
     await _cacheDao.insertSearchBatch(
       queryKey: queryKey,
+      ownerDid: ownerDid,
       newPosts: postsCompanions,
       newProfiles: profilesCompanions,
       newItems: cacheItems,
@@ -167,29 +187,34 @@ class SearchRepository {
   }
 
   /// Gets cached search results for a query.
-  Future<List<SearchPost>> getCachedResults(String query) {
-    return _cacheDao.getSearchResults(normalizeQuery(query));
+  Future<List<SearchPost>> getCachedResults(String query) async {
+    final ownerDid = await _getOwnerDid();
+    return _cacheDao.getSearchResults(normalizeQuery(query), ownerDid);
   }
 
   /// Watches cached search results for a query.
-  Stream<List<SearchPost>> watchCachedResults(String query) {
-    return _cacheDao.watchSearchResults(normalizeQuery(query));
+  Stream<List<SearchPost>> watchCachedResults(String query) async* {
+    final ownerDid = await _getOwnerDid();
+    yield* _cacheDao.watchSearchResults(normalizeQuery(query), ownerDid);
   }
 
   /// Gets the cached cursor for a query.
-  Future<String?> getCachedCursor(String query) {
-    return _cacheDao.getCursor(normalizeQuery(query));
+  Future<String?> getCachedCursor(String query) async {
+    final ownerDid = await _getOwnerDid();
+    return _cacheDao.getCursor(normalizeQuery(query), ownerDid);
   }
 
   /// Clears cached results for a specific query.
-  Future<void> clearCachedResults(String query) {
-    return _cacheDao.clearSearchCache(normalizeQuery(query));
+  Future<void> clearCachedResults(String query) async {
+    final ownerDid = await _getOwnerDid();
+    return _cacheDao.clearSearchCache(normalizeQuery(query), ownerDid);
   }
 
   /// Cleans up stale search cache (not updated in 7 days).
   Future<void> cleanupSearchCache() async {
+    final ownerDid = await _getOwnerDid();
     final threshold = DateTime.now().subtract(const Duration(days: 7));
-    final count = await _cacheDao.deleteStaleCacheItems(threshold);
+    final count = await _cacheDao.deleteStaleCacheItems(threshold, ownerDid);
     if (count > 0) {
       _logger.info('Cleaned up $count stale search cache items');
     }

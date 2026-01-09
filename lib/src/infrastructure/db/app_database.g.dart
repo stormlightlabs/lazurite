@@ -2761,6 +2761,15 @@ class $SearchCacheItemsTable extends SearchCacheItems
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _postUriMeta = const VerificationMeta('postUri');
   @override
   late final GeneratedColumn<String> postUri = GeneratedColumn<String>(
@@ -2781,7 +2790,7 @@ class $SearchCacheItemsTable extends SearchCacheItems
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [queryKey, postUri, sortKey];
+  List<GeneratedColumn> get $columns => [queryKey, ownerDid, postUri, sortKey];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2802,6 +2811,14 @@ class $SearchCacheItemsTable extends SearchCacheItems
     } else if (isInserting) {
       context.missing(_queryKeyMeta);
     }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
+    }
     if (data.containsKey('post_uri')) {
       context.handle(_postUriMeta, postUri.isAcceptableOrUnknown(data['post_uri']!, _postUriMeta));
     } else if (isInserting) {
@@ -2816,7 +2833,7 @@ class $SearchCacheItemsTable extends SearchCacheItems
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {queryKey, postUri};
+  Set<GeneratedColumn> get $primaryKey => {queryKey, ownerDid, postUri};
   @override
   SearchCacheItem map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -2824,6 +2841,10 @@ class $SearchCacheItemsTable extends SearchCacheItems
       queryKey: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}query_key'],
+      )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
       )!,
       postUri: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -2846,16 +2867,25 @@ class SearchCacheItem extends DataClass implements Insertable<SearchCacheItem> {
   /// Normalized search query as cache key.
   final String queryKey;
 
+  /// The DID of the user who owns this cached search result.
+  final String ownerDid;
+
   /// Reference to cached post.
   final String postUri;
 
   /// Ordering within results (index-based).
   final String sortKey;
-  const SearchCacheItem({required this.queryKey, required this.postUri, required this.sortKey});
+  const SearchCacheItem({
+    required this.queryKey,
+    required this.ownerDid,
+    required this.postUri,
+    required this.sortKey,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['query_key'] = Variable<String>(queryKey);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['post_uri'] = Variable<String>(postUri);
     map['sort_key'] = Variable<String>(sortKey);
     return map;
@@ -2864,6 +2894,7 @@ class SearchCacheItem extends DataClass implements Insertable<SearchCacheItem> {
   SearchCacheItemsCompanion toCompanion(bool nullToAbsent) {
     return SearchCacheItemsCompanion(
       queryKey: Value(queryKey),
+      ownerDid: Value(ownerDid),
       postUri: Value(postUri),
       sortKey: Value(sortKey),
     );
@@ -2873,6 +2904,7 @@ class SearchCacheItem extends DataClass implements Insertable<SearchCacheItem> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SearchCacheItem(
       queryKey: serializer.fromJson<String>(json['queryKey']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       postUri: serializer.fromJson<String>(json['postUri']),
       sortKey: serializer.fromJson<String>(json['sortKey']),
     );
@@ -2882,20 +2914,27 @@ class SearchCacheItem extends DataClass implements Insertable<SearchCacheItem> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'queryKey': serializer.toJson<String>(queryKey),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'postUri': serializer.toJson<String>(postUri),
       'sortKey': serializer.toJson<String>(sortKey),
     };
   }
 
-  SearchCacheItem copyWith({String? queryKey, String? postUri, String? sortKey}) =>
-      SearchCacheItem(
-        queryKey: queryKey ?? this.queryKey,
-        postUri: postUri ?? this.postUri,
-        sortKey: sortKey ?? this.sortKey,
-      );
+  SearchCacheItem copyWith({
+    String? queryKey,
+    String? ownerDid,
+    String? postUri,
+    String? sortKey,
+  }) => SearchCacheItem(
+    queryKey: queryKey ?? this.queryKey,
+    ownerDid: ownerDid ?? this.ownerDid,
+    postUri: postUri ?? this.postUri,
+    sortKey: sortKey ?? this.sortKey,
+  );
   SearchCacheItem copyWithCompanion(SearchCacheItemsCompanion data) {
     return SearchCacheItem(
       queryKey: data.queryKey.present ? data.queryKey.value : this.queryKey,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       postUri: data.postUri.present ? data.postUri.value : this.postUri,
       sortKey: data.sortKey.present ? data.sortKey.value : this.sortKey,
     );
@@ -2905,6 +2944,7 @@ class SearchCacheItem extends DataClass implements Insertable<SearchCacheItem> {
   String toString() {
     return (StringBuffer('SearchCacheItem(')
           ..write('queryKey: $queryKey, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('postUri: $postUri, ')
           ..write('sortKey: $sortKey')
           ..write(')'))
@@ -2912,43 +2952,50 @@ class SearchCacheItem extends DataClass implements Insertable<SearchCacheItem> {
   }
 
   @override
-  int get hashCode => Object.hash(queryKey, postUri, sortKey);
+  int get hashCode => Object.hash(queryKey, ownerDid, postUri, sortKey);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is SearchCacheItem &&
           other.queryKey == this.queryKey &&
+          other.ownerDid == this.ownerDid &&
           other.postUri == this.postUri &&
           other.sortKey == this.sortKey);
 }
 
 class SearchCacheItemsCompanion extends UpdateCompanion<SearchCacheItem> {
   final Value<String> queryKey;
+  final Value<String> ownerDid;
   final Value<String> postUri;
   final Value<String> sortKey;
   final Value<int> rowid;
   const SearchCacheItemsCompanion({
     this.queryKey = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.postUri = const Value.absent(),
     this.sortKey = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SearchCacheItemsCompanion.insert({
     required String queryKey,
+    required String ownerDid,
     required String postUri,
     required String sortKey,
     this.rowid = const Value.absent(),
   }) : queryKey = Value(queryKey),
+       ownerDid = Value(ownerDid),
        postUri = Value(postUri),
        sortKey = Value(sortKey);
   static Insertable<SearchCacheItem> custom({
     Expression<String>? queryKey,
+    Expression<String>? ownerDid,
     Expression<String>? postUri,
     Expression<String>? sortKey,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (queryKey != null) 'query_key': queryKey,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (postUri != null) 'post_uri': postUri,
       if (sortKey != null) 'sort_key': sortKey,
       if (rowid != null) 'rowid': rowid,
@@ -2957,12 +3004,14 @@ class SearchCacheItemsCompanion extends UpdateCompanion<SearchCacheItem> {
 
   SearchCacheItemsCompanion copyWith({
     Value<String>? queryKey,
+    Value<String>? ownerDid,
     Value<String>? postUri,
     Value<String>? sortKey,
     Value<int>? rowid,
   }) {
     return SearchCacheItemsCompanion(
       queryKey: queryKey ?? this.queryKey,
+      ownerDid: ownerDid ?? this.ownerDid,
       postUri: postUri ?? this.postUri,
       sortKey: sortKey ?? this.sortKey,
       rowid: rowid ?? this.rowid,
@@ -2974,6 +3023,9 @@ class SearchCacheItemsCompanion extends UpdateCompanion<SearchCacheItem> {
     final map = <String, Expression>{};
     if (queryKey.present) {
       map['query_key'] = Variable<String>(queryKey.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (postUri.present) {
       map['post_uri'] = Variable<String>(postUri.value);
@@ -2991,6 +3043,7 @@ class SearchCacheItemsCompanion extends UpdateCompanion<SearchCacheItem> {
   String toString() {
     return (StringBuffer('SearchCacheItemsCompanion(')
           ..write('queryKey: $queryKey, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('postUri: $postUri, ')
           ..write('sortKey: $sortKey, ')
           ..write('rowid: $rowid')
@@ -3009,6 +3062,15 @@ class $SearchCacheCursorsTable extends SearchCacheCursors
   @override
   late final GeneratedColumn<String> queryKey = GeneratedColumn<String>(
     'query_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -3033,7 +3095,7 @@ class $SearchCacheCursorsTable extends SearchCacheCursors
     requiredDuringInsert: false,
   );
   @override
-  List<GeneratedColumn> get $columns => [queryKey, cursor, lastUpdated];
+  List<GeneratedColumn> get $columns => [queryKey, ownerDid, cursor, lastUpdated];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3054,6 +3116,14 @@ class $SearchCacheCursorsTable extends SearchCacheCursors
     } else if (isInserting) {
       context.missing(_queryKeyMeta);
     }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
+    }
     if (data.containsKey('cursor')) {
       context.handle(_cursorMeta, cursor.isAcceptableOrUnknown(data['cursor']!, _cursorMeta));
     } else if (isInserting) {
@@ -3069,7 +3139,7 @@ class $SearchCacheCursorsTable extends SearchCacheCursors
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {queryKey};
+  Set<GeneratedColumn> get $primaryKey => {queryKey, ownerDid};
   @override
   SearchCacheCursor map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -3077,6 +3147,10 @@ class $SearchCacheCursorsTable extends SearchCacheCursors
       queryKey: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}query_key'],
+      )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
       )!,
       cursor: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -3099,16 +3173,25 @@ class SearchCacheCursor extends DataClass implements Insertable<SearchCacheCurso
   /// Normalized search query as cache key.
   final String queryKey;
 
+  /// The DID of the user who owns this cached cursor.
+  final String ownerDid;
+
   /// Pagination cursor from API.
   final String cursor;
 
   /// When the cache was last updated (for 7-day retention).
   final DateTime? lastUpdated;
-  const SearchCacheCursor({required this.queryKey, required this.cursor, this.lastUpdated});
+  const SearchCacheCursor({
+    required this.queryKey,
+    required this.ownerDid,
+    required this.cursor,
+    this.lastUpdated,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['query_key'] = Variable<String>(queryKey);
+    map['owner_did'] = Variable<String>(ownerDid);
     map['cursor'] = Variable<String>(cursor);
     if (!nullToAbsent || lastUpdated != null) {
       map['last_updated'] = Variable<DateTime>(lastUpdated);
@@ -3119,6 +3202,7 @@ class SearchCacheCursor extends DataClass implements Insertable<SearchCacheCurso
   SearchCacheCursorsCompanion toCompanion(bool nullToAbsent) {
     return SearchCacheCursorsCompanion(
       queryKey: Value(queryKey),
+      ownerDid: Value(ownerDid),
       cursor: Value(cursor),
       lastUpdated: lastUpdated == null && nullToAbsent ? const Value.absent() : Value(lastUpdated),
     );
@@ -3128,6 +3212,7 @@ class SearchCacheCursor extends DataClass implements Insertable<SearchCacheCurso
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SearchCacheCursor(
       queryKey: serializer.fromJson<String>(json['queryKey']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
       cursor: serializer.fromJson<String>(json['cursor']),
       lastUpdated: serializer.fromJson<DateTime?>(json['lastUpdated']),
     );
@@ -3137,6 +3222,7 @@ class SearchCacheCursor extends DataClass implements Insertable<SearchCacheCurso
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'queryKey': serializer.toJson<String>(queryKey),
+      'ownerDid': serializer.toJson<String>(ownerDid),
       'cursor': serializer.toJson<String>(cursor),
       'lastUpdated': serializer.toJson<DateTime?>(lastUpdated),
     };
@@ -3144,16 +3230,19 @@ class SearchCacheCursor extends DataClass implements Insertable<SearchCacheCurso
 
   SearchCacheCursor copyWith({
     String? queryKey,
+    String? ownerDid,
     String? cursor,
     Value<DateTime?> lastUpdated = const Value.absent(),
   }) => SearchCacheCursor(
     queryKey: queryKey ?? this.queryKey,
+    ownerDid: ownerDid ?? this.ownerDid,
     cursor: cursor ?? this.cursor,
     lastUpdated: lastUpdated.present ? lastUpdated.value : this.lastUpdated,
   );
   SearchCacheCursor copyWithCompanion(SearchCacheCursorsCompanion data) {
     return SearchCacheCursor(
       queryKey: data.queryKey.present ? data.queryKey.value : this.queryKey,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       cursor: data.cursor.present ? data.cursor.value : this.cursor,
       lastUpdated: data.lastUpdated.present ? data.lastUpdated.value : this.lastUpdated,
     );
@@ -3163,6 +3252,7 @@ class SearchCacheCursor extends DataClass implements Insertable<SearchCacheCurso
   String toString() {
     return (StringBuffer('SearchCacheCursor(')
           ..write('queryKey: $queryKey, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('cursor: $cursor, ')
           ..write('lastUpdated: $lastUpdated')
           ..write(')'))
@@ -3170,42 +3260,49 @@ class SearchCacheCursor extends DataClass implements Insertable<SearchCacheCurso
   }
 
   @override
-  int get hashCode => Object.hash(queryKey, cursor, lastUpdated);
+  int get hashCode => Object.hash(queryKey, ownerDid, cursor, lastUpdated);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is SearchCacheCursor &&
           other.queryKey == this.queryKey &&
+          other.ownerDid == this.ownerDid &&
           other.cursor == this.cursor &&
           other.lastUpdated == this.lastUpdated);
 }
 
 class SearchCacheCursorsCompanion extends UpdateCompanion<SearchCacheCursor> {
   final Value<String> queryKey;
+  final Value<String> ownerDid;
   final Value<String> cursor;
   final Value<DateTime?> lastUpdated;
   final Value<int> rowid;
   const SearchCacheCursorsCompanion({
     this.queryKey = const Value.absent(),
+    this.ownerDid = const Value.absent(),
     this.cursor = const Value.absent(),
     this.lastUpdated = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SearchCacheCursorsCompanion.insert({
     required String queryKey,
+    required String ownerDid,
     required String cursor,
     this.lastUpdated = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : queryKey = Value(queryKey),
+       ownerDid = Value(ownerDid),
        cursor = Value(cursor);
   static Insertable<SearchCacheCursor> custom({
     Expression<String>? queryKey,
+    Expression<String>? ownerDid,
     Expression<String>? cursor,
     Expression<DateTime>? lastUpdated,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (queryKey != null) 'query_key': queryKey,
+      if (ownerDid != null) 'owner_did': ownerDid,
       if (cursor != null) 'cursor': cursor,
       if (lastUpdated != null) 'last_updated': lastUpdated,
       if (rowid != null) 'rowid': rowid,
@@ -3214,12 +3311,14 @@ class SearchCacheCursorsCompanion extends UpdateCompanion<SearchCacheCursor> {
 
   SearchCacheCursorsCompanion copyWith({
     Value<String>? queryKey,
+    Value<String>? ownerDid,
     Value<String>? cursor,
     Value<DateTime?>? lastUpdated,
     Value<int>? rowid,
   }) {
     return SearchCacheCursorsCompanion(
       queryKey: queryKey ?? this.queryKey,
+      ownerDid: ownerDid ?? this.ownerDid,
       cursor: cursor ?? this.cursor,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       rowid: rowid ?? this.rowid,
@@ -3231,6 +3330,9 @@ class SearchCacheCursorsCompanion extends UpdateCompanion<SearchCacheCursor> {
     final map = <String, Expression>{};
     if (queryKey.present) {
       map['query_key'] = Variable<String>(queryKey.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
     }
     if (cursor.present) {
       map['cursor'] = Variable<String>(cursor.value);
@@ -3248,6 +3350,7 @@ class SearchCacheCursorsCompanion extends UpdateCompanion<SearchCacheCursor> {
   String toString() {
     return (StringBuffer('SearchCacheCursorsCompanion(')
           ..write('queryKey: $queryKey, ')
+          ..write('ownerDid: $ownerDid, ')
           ..write('cursor: $cursor, ')
           ..write('lastUpdated: $lastUpdated, ')
           ..write('rowid: $rowid')
@@ -11589,7 +11692,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final Index searchCacheSortIdx = Index(
     'search_cache_sort_idx',
-    'CREATE INDEX search_cache_sort_idx ON search_cache_items (query_key, sort_key)',
+    'CREATE INDEX search_cache_sort_idx ON search_cache_items (query_key, owner_did, sort_key)',
   );
   late final Index notificationsIndexedAtIdx = Index(
     'notifications_indexed_at_idx',
@@ -13756,6 +13859,7 @@ typedef $$RecentSearchesTableProcessedTableManager =
 typedef $$SearchCacheItemsTableCreateCompanionBuilder =
     SearchCacheItemsCompanion Function({
       required String queryKey,
+      required String ownerDid,
       required String postUri,
       required String sortKey,
       Value<int> rowid,
@@ -13763,6 +13867,7 @@ typedef $$SearchCacheItemsTableCreateCompanionBuilder =
 typedef $$SearchCacheItemsTableUpdateCompanionBuilder =
     SearchCacheItemsCompanion Function({
       Value<String> queryKey,
+      Value<String> ownerDid,
       Value<String> postUri,
       Value<String> sortKey,
       Value<int> rowid,
@@ -13800,6 +13905,9 @@ class $$SearchCacheItemsTableFilterComposer
   ColumnFilters<String> get queryKey =>
       $composableBuilder(column: $table.queryKey, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get sortKey =>
       $composableBuilder(column: $table.sortKey, builder: (column) => ColumnFilters(column));
 
@@ -13835,6 +13943,9 @@ class $$SearchCacheItemsTableOrderingComposer
   ColumnOrderings<String> get queryKey =>
       $composableBuilder(column: $table.queryKey, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get sortKey =>
       $composableBuilder(column: $table.sortKey, builder: (column) => ColumnOrderings(column));
 
@@ -13869,6 +13980,9 @@ class $$SearchCacheItemsTableAnnotationComposer
   });
   GeneratedColumn<String> get queryKey =>
       $composableBuilder(column: $table.queryKey, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get sortKey =>
       $composableBuilder(column: $table.sortKey, builder: (column) => column);
@@ -13922,11 +14036,13 @@ class $$SearchCacheItemsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> queryKey = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> postUri = const Value.absent(),
                 Value<String> sortKey = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SearchCacheItemsCompanion(
                 queryKey: queryKey,
+                ownerDid: ownerDid,
                 postUri: postUri,
                 sortKey: sortKey,
                 rowid: rowid,
@@ -13934,11 +14050,13 @@ class $$SearchCacheItemsTableTableManager
           createCompanionCallback:
               ({
                 required String queryKey,
+                required String ownerDid,
                 required String postUri,
                 required String sortKey,
                 Value<int> rowid = const Value.absent(),
               }) => SearchCacheItemsCompanion.insert(
                 queryKey: queryKey,
+                ownerDid: ownerDid,
                 postUri: postUri,
                 sortKey: sortKey,
                 rowid: rowid,
@@ -14009,6 +14127,7 @@ typedef $$SearchCacheItemsTableProcessedTableManager =
 typedef $$SearchCacheCursorsTableCreateCompanionBuilder =
     SearchCacheCursorsCompanion Function({
       required String queryKey,
+      required String ownerDid,
       required String cursor,
       Value<DateTime?> lastUpdated,
       Value<int> rowid,
@@ -14016,6 +14135,7 @@ typedef $$SearchCacheCursorsTableCreateCompanionBuilder =
 typedef $$SearchCacheCursorsTableUpdateCompanionBuilder =
     SearchCacheCursorsCompanion Function({
       Value<String> queryKey,
+      Value<String> ownerDid,
       Value<String> cursor,
       Value<DateTime?> lastUpdated,
       Value<int> rowid,
@@ -14032,6 +14152,9 @@ class $$SearchCacheCursorsTableFilterComposer
   });
   ColumnFilters<String> get queryKey =>
       $composableBuilder(column: $table.queryKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get cursor =>
       $composableBuilder(column: $table.cursor, builder: (column) => ColumnFilters(column));
@@ -14052,6 +14175,9 @@ class $$SearchCacheCursorsTableOrderingComposer
   ColumnOrderings<String> get queryKey =>
       $composableBuilder(column: $table.queryKey, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get cursor =>
       $composableBuilder(column: $table.cursor, builder: (column) => ColumnOrderings(column));
 
@@ -14070,6 +14196,9 @@ class $$SearchCacheCursorsTableAnnotationComposer
   });
   GeneratedColumn<String> get queryKey =>
       $composableBuilder(column: $table.queryKey, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
 
   GeneratedColumn<String> get cursor =>
       $composableBuilder(column: $table.cursor, builder: (column) => column);
@@ -14110,11 +14239,13 @@ class $$SearchCacheCursorsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> queryKey = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
                 Value<String> cursor = const Value.absent(),
                 Value<DateTime?> lastUpdated = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SearchCacheCursorsCompanion(
                 queryKey: queryKey,
+                ownerDid: ownerDid,
                 cursor: cursor,
                 lastUpdated: lastUpdated,
                 rowid: rowid,
@@ -14122,11 +14253,13 @@ class $$SearchCacheCursorsTableTableManager
           createCompanionCallback:
               ({
                 required String queryKey,
+                required String ownerDid,
                 required String cursor,
                 Value<DateTime?> lastUpdated = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SearchCacheCursorsCompanion.insert(
                 queryKey: queryKey,
+                ownerDid: ownerDid,
                 cursor: cursor,
                 lastUpdated: lastUpdated,
                 rowid: rowid,
