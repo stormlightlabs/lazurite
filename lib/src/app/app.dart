@@ -5,6 +5,7 @@ import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/app/theme_controller.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/debug/debug.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
 import 'package:lazurite/src/features/settings/application/preference_sync_controller.dart';
 
@@ -36,6 +37,7 @@ class App extends ConsumerWidget {
           themeMode: themeState.themeMode,
           routerConfig: router,
           debugShowCheckedModeBanner: false,
+          builder: (context, child) => DebugOverlayHost(child: child ?? const SizedBox.shrink()),
         );
       },
     );

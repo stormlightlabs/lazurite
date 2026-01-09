@@ -148,8 +148,9 @@ void main() {
       await tester.pumpWidget(ProviderScope(overrides: getTestOverrides(), child: const App()));
       await tester.pumpAndSettle();
 
-      final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
-      expect(materialApp.themeMode, ThemeMode.dark);
+      final context = tester.element(find.byType(Scaffold).first);
+      final theme = Theme.of(context);
+      expect(theme.brightness, Brightness.dark);
     });
   });
 }

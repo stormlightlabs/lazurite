@@ -120,7 +120,6 @@ void main() {
         ),
       );
 
-      // Pump to trigger animation
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pumpAndSettle();
 

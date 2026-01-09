@@ -14,15 +14,14 @@ Context:
   records, and understand underlying data structure.
 
 Phase 0: Internal Debug Mode Foundation (kDebugMode only)
-- [ ] Create DebugOverlayHost widget (wraps MaterialApp, kDebugMode gated)
-- [ ] Implement gesture detection:
-      - 2-finger long-press on logo
-      - triple-tap on logo
-      - ALT+F12 shortcut
-- [ ] Build DebugDrawer with tabs: System Info, ATProto Session, Network,
-      Performance
-- [ ] System Info Tab: Flutter version, platform, screen size, memory, FPS
-- [ ] ATProto Session Tab: DID, handle, PDS host, session status (no tokens)
+- [x] Create DebugOverlayHost widget (wraps MaterialApp, kDebugMode gated)
+- [x] Implement gesture detection:
+      - [x] 2-finger long-press
+      - [ ] triple-tap on logo
+      - [x] ALT+F12 shortcut
+- [x] Build DebugDrawer with tabs: System Info, ATProto Session
+- [x] System Info Tab: Flutter version, platform, screen size, memory, FPS
+- [x] ATProto Session Tab: DID, handle, PDS host, session status (no tokens)
 - [ ] Create DebugNetworkInterceptor for Dio to log XRPC calls
 - [ ] Network Inspector Tab: display last 20 XRPC calls, expandable bodies to
       view request/response details
@@ -57,9 +56,9 @@ Phase 3: Record Inspector
 - [ ] Export actions: JSON file, share sheet
 
 Tests:
-- [ ] Widget test: debug overlay hidden in release mode
+- [x] Widget test: debug overlay hidden in release mode
       (when not manually enabled)
-- [ ] Widget test: 2-finger long-press shows overlay in kDebugMode
+- [x] Widget test: 2-finger long-press shows overlay in kDebugMode
 - [ ] Integration test: network interceptor logs XRPC calls
 - [ ] Unit test: describeRepo, listRecords, getRecord parse correctly
 - [ ] Provider test: collectionsProvider fetches and caches
@@ -67,7 +66,7 @@ Tests:
 - [ ] Security test: tokens never logged or displayed
 
 Deliverables:
-- [ ] Internal debug overlay (kDebugMode only) with system info, network logs
+- [/] Internal debug overlay (kDebugMode only) with system info, network logs (logs pending)
 - [ ] User-facing DevTools (production) for repository inspection
 - [ ] Collections browser with search and pinning
 - [ ] Records list with rich previews and pagination

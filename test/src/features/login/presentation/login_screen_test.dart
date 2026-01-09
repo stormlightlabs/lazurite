@@ -73,7 +73,6 @@ void main() {
     testWidgets('renders app logo', (tester) async {
       await tester.pumpApp(const LoginScreen(), overrides: testOverrides());
       await tester.pumpAndSettle();
-      // SvgPicture renders the logo from assets/logo.svg
       expect(find.byType(SvgPicture), findsOneWidget);
     });
 
