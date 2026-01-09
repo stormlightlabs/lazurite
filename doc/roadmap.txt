@@ -38,40 +38,39 @@ Phase 1: User-Facing "DevTools"
 - [x] Link debug overlay to full DevTools (/devtools routes)
 
 Phase 2: Repository Browser (Read-Only)
-- [ ] Implement DevtoolsRepository wrapping XrpcClient
-      - [ ] com.atproto.repo.describeRepo: list collections for a DID
-      - [ ] com.atproto.repo.listRecords: cursor-based pagination
-- [ ] CollectionsPage: search, pin/unpin, tap to view records
-- [ ] RecordsPage: infinite scroll, filters (rkey prefix, date, blob presence)
-      - [ ] Rich preview cards for known record types (post, profile, follow)
-      - [ ] Fallback JSON tree for unknown types
+- [x] Implement DevtoolsRepository wrapping XrpcClient
+      - [x] com.atproto.repo.describeRepo: list collections for a DID
+      - [x] com.atproto.repo.listRecords: cursor-based pagination
+- [x] CollectionsPage: search, pin/unpin, tap to view records
+- [x] RecordsPage: infinite scroll, filters (rkey prefix, date, blob presence)
+      - [x] Rich preview cards for known record types (post, profile, follow)
+      - [x] Fallback JSON tree for unknown types
 
 Phase 3: Record Inspector
-- [ ] com.atproto.repo.getRecord: fetch single record
+- [x] com.atproto.repo.getRecord: fetch single record
 - [ ] RecordDetailPage: JSON tree viewer with collapsible nodes
-- [ ] Syntax highlighting for JSON
-- [ ] Copy buttons at every level (URI, CID, path values)
-- [ ] Metadata header: AT URI, CID, indexedAt
-- [ ] Inline blob display (images/videos)
-- [ ] Export actions: JSON file, share sheet
+      - [ ] Syntax highlighting for JSON
+      - [ ] Copy buttons at every level (URI, CID, path values)
+      - [ ] Metadata header: AT URI, CID, indexedAt
+      - [ ] Inline blob display (images/videos)
+      - [ ] Export actions: JSON file, share sheet
 
 Tests:
 - [x] Widget test: debug overlay hidden in release mode
       (when not manually enabled)
 - [x] Widget test: 2-finger long-press shows overlay in kDebugMode
 - [ ] Integration test: network interceptor logs XRPC calls
-- [ ] Unit test: describeRepo, listRecords, getRecord parse correctly
-- [ ] Provider test: collectionsProvider fetches and caches
-- [ ] Provider test: recordsProvider paginates without duplicates
+- [x] Unit test: describeRepo, listRecords, getRecord parse correctly
+- [x] Provider test: collectionsProvider fetches and caches
+- [x] Provider test: recordsProvider paginates without duplicates
 - [ ] Security test: tokens never logged or displayed
 
 Deliverables:
 - [x] Internal debug overlay (kDebugMode only) with system info, network logs
-- [/] User-facing DevTools (production) for repository inspection (home page complete)
-- [ ] Collections browser with search and pinning
-- [ ] Records list with rich previews and pagination
+- [x] User-facing DevTools (production) for repository inspection
+- [x] Collections browser with search and pinning
+- [x] Records list with rich previews and pagination
 - [ ] Record inspector with JSON tree and metadata
-- [ ] Desktop 3-pane layout and mobile drill-down both feel first-class
 - [ ] UI is transparent, "power-user" focused
 
 ================================================================================
@@ -317,7 +316,6 @@ Tasks:
       - [ ] Post published
       - [ ] Media attached
       - [ ] Publish failed
-
 - [x] DM Accessibility
       - [x] screen reader support (semantic labels)
       - [ ] keyboard navigation (Cmd/Ctrl+Enter to send)

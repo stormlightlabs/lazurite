@@ -182,6 +182,16 @@ class EndpointRegistry {
       method: HttpMethod.get,
       hostKind: HostKind.publicApi,
     ),
+    'com.atproto.repo.describeRepo': const EndpointMeta(
+      nsid: 'com.atproto.repo.describeRepo',
+      method: HttpMethod.get,
+      hostKind: HostKind.publicApi,
+    ),
+    'com.atproto.repo.listRecords': const EndpointMeta(
+      nsid: 'com.atproto.repo.listRecords',
+      method: HttpMethod.get,
+      hostKind: HostKind.publicApi,
+    ),
 
     'com.atproto.identity.resolveHandle': const EndpointMeta(
       nsid: 'com.atproto.identity.resolveHandle',
