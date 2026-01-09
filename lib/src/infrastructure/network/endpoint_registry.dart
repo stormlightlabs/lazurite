@@ -62,11 +62,22 @@ class EndpointRegistry {
     'app.bsky.feed.getFeed': const EndpointMeta(
       nsid: 'app.bsky.feed.getFeed',
       method: HttpMethod.get,
-      hostKind: HostKind.publicApi,
-      requiresAuth: false,
+      hostKind: HostKind.pds,
+      requiresAuth: true,
+    ),
+    'app.bsky.feed.getListFeed': const EndpointMeta(
+      nsid: 'app.bsky.feed.getListFeed',
+      method: HttpMethod.get,
+      hostKind: HostKind.pds,
+      requiresAuth: true,
     ),
     'app.bsky.feed.getFeedGenerator': const EndpointMeta(
       nsid: 'app.bsky.feed.getFeedGenerator',
+      method: HttpMethod.get,
+      hostKind: HostKind.publicApi,
+    ),
+    'app.bsky.feed.getFeedGenerators': const EndpointMeta(
+      nsid: 'app.bsky.feed.getFeedGenerators',
       method: HttpMethod.get,
       hostKind: HostKind.publicApi,
     ),
@@ -117,6 +128,11 @@ class EndpointRegistry {
     ),
     'app.bsky.graph.getFollows': const EndpointMeta(
       nsid: 'app.bsky.graph.getFollows',
+      method: HttpMethod.get,
+      hostKind: HostKind.publicApi,
+    ),
+    'app.bsky.graph.getList': const EndpointMeta(
+      nsid: 'app.bsky.graph.getList',
       method: HttpMethod.get,
       hostKind: HostKind.publicApi,
     ),
@@ -180,17 +196,20 @@ class EndpointRegistry {
     'com.atproto.repo.getRecord': const EndpointMeta(
       nsid: 'com.atproto.repo.getRecord',
       method: HttpMethod.get,
-      hostKind: HostKind.publicApi,
+      hostKind: HostKind.pds,
+      requiresAuth: true,
     ),
     'com.atproto.repo.describeRepo': const EndpointMeta(
       nsid: 'com.atproto.repo.describeRepo',
       method: HttpMethod.get,
-      hostKind: HostKind.publicApi,
+      hostKind: HostKind.pds,
+      requiresAuth: true,
     ),
     'com.atproto.repo.listRecords': const EndpointMeta(
       nsid: 'com.atproto.repo.listRecords',
       method: HttpMethod.get,
-      hostKind: HostKind.publicApi,
+      hostKind: HostKind.pds,
+      requiresAuth: true,
     ),
 
     'com.atproto.identity.resolveHandle': const EndpointMeta(

@@ -18,7 +18,8 @@ class DevtoolsRepository {
   /// Calls com.atproto.repo.describeRepo to get available collections
   /// for the specified DID.
   ///
-  /// Returns a list of collections with their NSIDs and record counts.
+  /// Returns a list of collections with their NSIDs. Note that the API
+  /// only returns collection NSIDs (as strings), not record counts.
   Future<List<RepoCollection>> describeRepo(String did) async {
     _logger.info('Describing repo for DID: $did');
 
@@ -31,9 +32,7 @@ class DevtoolsRepository {
         return [];
       }
 
-      return collections
-          .map((json) => RepoCollection.fromJson(json as Map<String, dynamic>))
-          .toList();
+      return collections.map((nsid) => RepoCollection.fromNsid(nsid as String)).toList();
     } catch (e, stack) {
       _logger.error('Failed to describe repo for DID: $did', e, stack);
       rethrow;

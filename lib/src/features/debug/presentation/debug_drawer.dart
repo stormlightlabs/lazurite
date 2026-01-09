@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/router.dart';
 import '../application/debug_overlay_controller.dart';
 import 'atproto_session_tab.dart';
 import 'network_inspector_tab.dart';
@@ -20,28 +21,34 @@ class DebugDrawer extends ConsumerWidget {
     final overlayState = ref.watch(debugOverlayControllerProvider);
     final theme = Theme.of(context);
 
-    return Material(
-      elevation: 16,
-      color: theme.colorScheme.surface,
-      child: SafeArea(
-        left: false,
-        child: DefaultTabController(
-          length: 3,
-          initialIndex: overlayState.activeTabIndex,
-          child: Column(
-            children: [
-              _buildHeader(context, ref, theme),
-              _buildTabBar(theme),
-              const Expanded(
-                child: TabBarView(
-                  children: [SystemInfoTab(), AtprotoSessionTab(), NetworkInspectorTab()],
+    return Overlay(
+      initialEntries: [
+        OverlayEntry(
+          builder: (_) => Material(
+            elevation: 16,
+            color: theme.colorScheme.surface,
+            child: SafeArea(
+              left: false,
+              child: DefaultTabController(
+                length: 3,
+                initialIndex: overlayState.activeTabIndex,
+                child: Column(
+                  children: [
+                    _buildHeader(context, ref, theme),
+                    _buildTabBar(theme),
+                    const Expanded(
+                      child: TabBarView(
+                        children: [SystemInfoTab(), AtprotoSessionTab(), NetworkInspectorTab()],
+                      ),
+                    ),
+                    _buildFooter(context, ref, theme),
+                  ],
                 ),
               ),
-              _buildFooter(context, ref, theme),
-            ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -97,7 +104,7 @@ class DebugDrawer extends ConsumerWidget {
       child: FilledButton.tonal(
         onPressed: () {
           ref.read(debugOverlayControllerProvider.notifier).hide();
-          context.push('/devtools');
+          rootNavigatorKey.currentContext?.go('/devtools');
         },
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,

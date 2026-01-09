@@ -10,6 +10,10 @@ const publicApiBaseUrl = 'https://public.api.bsky.app';
 ///
 /// This client is used for unauthenticated reads like fetching profiles, threads, and
 /// search results.
+///
+/// The [listFormat] is set to [ListFormat.multi] to serialize array query
+/// parameters as repeated parameter names (e.g., ?feeds=uri1&feeds=uri2), which is
+/// the format expected by AT Protocol endpoints.
 Dio createPublicDio({bool enableLogging = true, List<Interceptor> interceptors = const []}) {
   final dio = Dio(
     BaseOptions(
@@ -18,6 +22,7 @@ Dio createPublicDio({bool enableLogging = true, List<Interceptor> interceptors =
       receiveTimeout: const Duration(seconds: 30),
       sendTimeout: const Duration(seconds: 30),
       headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+      listFormat: ListFormat.multi,
     ),
   );
 
@@ -34,6 +39,10 @@ Dio createPublicDio({bool enableLogging = true, List<Interceptor> interceptors =
 ///
 /// This client is used for authenticated operations and requires the PDS URL to be provided
 /// (i.e. resolved from user's DID document).
+///
+/// The [listFormat] is set to [ListFormat.multi] to serialize array query
+/// parameters as repeated parameter names (e.g., ?feeds=uri1&feeds=uri2), which is
+/// the format expected by AT Protocol endpoints.
 Dio createPdsDio({
   required String pdsUrl,
   required SessionGetter getSession,
@@ -50,6 +59,7 @@ Dio createPdsDio({
       receiveTimeout: const Duration(seconds: 30),
       sendTimeout: const Duration(seconds: 30),
       headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+      listFormat: ListFormat.multi,
     ),
   );
 

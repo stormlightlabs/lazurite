@@ -132,6 +132,14 @@ class FeedRepository {
     List<String> remotePinnedUris,
     String ownerDid,
   ) async {
+    _logger.debug(
+      'Merging preferences: ${remoteSavedUris.length} saved, ${remotePinnedUris.length} pinned',
+    );
+    final pinnedStr = remotePinnedUris.join(', ');
+    _logger.debug(
+      'Pinned URIs: ${pinnedStr.length > 500 ? pinnedStr.substring(0, 500) : pinnedStr}',
+    );
+
     final localFeeds = await _dao.getAllFeeds(ownerDid);
     final now = DateTime.now();
     final remoteSavedSet = remoteSavedUris.toSet();
@@ -151,14 +159,18 @@ class FeedRepository {
 
     final Map<String, FeedGenerator> fetchedMetadata = {};
     if (newRemoteFeeds.isNotEmpty) {
+      _logger.debug('Need to fetch metadata for ${newRemoteFeeds.length} new feeds');
       try {
         final batchResults = await getFeedGenerators(newRemoteFeeds);
+        _logger.debug('Batch fetch returned ${batchResults.length} results');
         for (final feed in batchResults) {
           fetchedMetadata[feed.uri] = feed;
         }
-      } catch (e) {
-        _logger.warning('Failed to batch fetch feed metadata', {'error': e});
+      } catch (e, stack) {
+        _logger.error('Failed to batch fetch feed metadata', {'error': e, 'stack': stack});
       }
+    } else {
+      _logger.debug('No new feeds need metadata fetching');
     }
 
     for (var i = 0; i < remoteSavedUris.length; i++) {
@@ -248,6 +260,11 @@ class FeedRepository {
                 localUpdatedAt: const Value(null),
               ),
             );
+            _logger.debug('Prepared feed for insert', {
+              'uri': remoteUri,
+              'name': metadata.displayName,
+              'isPinned': remoteIsPinned,
+            });
           } else {
             _logger.warning('Missing metadata for $remoteUri');
           }
@@ -278,21 +295,36 @@ class FeedRepository {
       }
     }
 
+    _logger.debug(
+      'Database operations: ${feedsToInsert.length} inserts, ${feedsToUpdate.length} updates, ${feedsToRemove.length} deletes',
+    );
+
     if (feedsToInsert.isNotEmpty) {
+      final pinnedInserts = feedsToInsert.where((f) => f.isPinned.value == true).length;
+      _logger.debug('Inserting ${feedsToInsert.length} feeds ($pinnedInserts pinned)');
       await _dao.upsertFeeds(feedsToInsert);
     }
-    for (final update in feedsToUpdate) {
-      await _dao.updateSyncState(
-        uri: update.uri,
-        ownerDid: ownerDid,
-        sortOrder: update.sortOrder,
-        isPinned: update.isPinned,
-        lastSynced: update.lastSynced,
-        clearLocalModification: update.clearLocalUpdatedAt,
-      );
+
+    if (feedsToUpdate.isNotEmpty) {
+      final pinnedUpdates = feedsToUpdate.where((u) => u.isPinned).length;
+      _logger.debug('Updating ${feedsToUpdate.length} feeds ($pinnedUpdates pinned)');
+      for (final update in feedsToUpdate) {
+        await _dao.updateSyncState(
+          uri: update.uri,
+          ownerDid: ownerDid,
+          sortOrder: update.sortOrder,
+          isPinned: update.isPinned,
+          lastSynced: update.lastSynced,
+          clearLocalModification: update.clearLocalUpdatedAt,
+        );
+      }
     }
-    for (final uri in feedsToRemove) {
-      await _dao.deleteFeed(uri, ownerDid);
+
+    if (feedsToRemove.isNotEmpty) {
+      _logger.debug('Deleting ${feedsToRemove.length} feeds');
+      for (final uri in feedsToRemove) {
+        await _dao.deleteFeed(uri, ownerDid);
+      }
     }
 
     for (final uri in feedsToSyncToRemote) {
@@ -300,6 +332,18 @@ class FeedRepository {
       if (!existing.any((e) => e.payload == uri && e.type == 'save')) {
         await _syncQueueDao.enqueueFeedSync(type: 'save', feedUri: uri, ownerDid: ownerDid);
       }
+    }
+
+    final allFeeds = await _dao.getAllFeeds(ownerDid);
+    final pinnedFeeds = allFeeds.where((f) => f.isPinned).toList();
+    _logger.debug('Sync completed: ${allFeeds.length} total, ${pinnedFeeds.length} pinned');
+    if (pinnedFeeds.isNotEmpty) {
+      final pinnedNames = pinnedFeeds.map((f) => '${f.displayName} (${f.uri})').join(', ');
+      _logger.debug(
+        'Pinned feeds: ${pinnedNames.length > 500 ? pinnedNames.substring(0, 500) : pinnedNames}',
+      );
+    } else {
+      _logger.warning('No pinned feeds found after sync!');
     }
   }
 
@@ -940,6 +984,8 @@ class FeedRepository {
   Future<List<FeedGenerator>> getFeedGenerators(List<String> uris) async {
     if (uris.isEmpty) return [];
 
+    _logger.debug('Batch fetching feed generators', {'count': uris.length});
+
     const batchSize = 25;
     final results = <FeedGenerator>[];
 
@@ -947,19 +993,45 @@ class FeedRepository {
       final end = (i + batchSize < uris.length) ? i + batchSize : uris.length;
       final batch = uris.sublist(i, end);
 
+      _logger.debug('Fetching batch $i-$end', {'batchSize': batch.length, 'uris': batch});
+
       try {
         final response = await _api.call(
           'app.bsky.feed.getFeedGenerators',
           params: {'feeds': batch},
         );
 
-        final views = (response['feeds'] as List).cast<Map<String, dynamic>>();
-        results.addAll(views.map((v) => FeedGenerator.fromJson(v)));
-      } catch (e) {
-        _logger.error('Batch fetch failed for slice $i-$end', {'error': e});
+        final feedsArray = response['feeds'];
+        if (feedsArray is! List) {
+          _logger.error('Invalid response structure', {
+            'expected': 'List',
+            'got': feedsArray.runtimeType,
+            'response': response,
+          });
+          continue;
+        }
+
+        final views = feedsArray.cast<Map<String, dynamic>>();
+        final batchResults = views.map((v) => FeedGenerator.fromJson(v)).toList();
+        results.addAll(batchResults);
+
+        _logger.debug('Batch $i-$end successful', {
+          'requested': batch.length,
+          'received': batchResults.length,
+        });
+      } catch (e, stack) {
+        _logger.error('Batch fetch failed for slice $i-$end', {
+          'error': e,
+          'stack': stack,
+          'batchUris': batch,
+        });
       }
     }
 
+    _logger.debug('Batch fetch complete', {
+      'totalRequested': uris.length,
+      'totalReceived': results.length,
+    });
     return results;
   }
 }

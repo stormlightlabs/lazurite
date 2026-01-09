@@ -49,11 +49,21 @@ class DevToolsHomePage extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           _buildInfoCard(context, title: 'PDS Host', value: pdsUrl),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Text('Quick Actions', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
-          const Card(
-            child: Padding(padding: EdgeInsets.all(16.0), child: Text('Coming soon...')),
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              leading: const Icon(Icons.folder_outlined),
+              title: const Text('Browse My Repository'),
+              subtitle: const Text('Explore collections and records'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: authState is AuthStateAuthenticated
+                  ? () => context.push('/devtools/collections')
+                  : null,
+              enabled: authState is AuthStateAuthenticated,
+            ),
           ),
         ],
       ),

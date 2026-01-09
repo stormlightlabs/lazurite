@@ -40,7 +40,8 @@ void main() {
       expect(find.text('https://pds.example.com'), findsOneWidget);
 
       expect(find.text('Quick Actions'), findsOneWidget);
-      expect(find.text('Coming soon...'), findsOneWidget);
+      expect(find.text('Browse My Repository'), findsOneWidget);
+      expect(find.text('Explore collections and records'), findsOneWidget);
     });
 
     testWidgets('copies DID to clipboard', (tester) async {

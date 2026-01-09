@@ -2,38 +2,32 @@
 ///
 /// A collection is a type of record in a user's repository (e.g.,
 /// app.bsky.feed.post, app.bsky.actor.profile).
+///
+/// Note: The com.atproto.repo.describeRepo API only returns collection NSIDs,
+/// not record counts.
 class RepoCollection {
-  const RepoCollection({required this.nsid, required this.count});
+  const RepoCollection({required this.nsid});
 
-  /// Creates a collection from JSON response.
-  factory RepoCollection.fromJson(Map<String, dynamic> json) {
-    return RepoCollection(
-      nsid: json['nsid'] as String? ?? json['collection'] as String,
-      count: json['count'] as int? ?? 0,
-    );
+  /// Creates a collection from an NSID string.
+  factory RepoCollection.fromNsid(String nsid) {
+    return RepoCollection(nsid: nsid);
   }
 
   /// Collection NSID (e.g., "app.bsky.feed.post").
   final String nsid;
 
-  /// Number of records in this collection.
-  final int count;
-
   Map<String, dynamic> toJson() {
-    return {'nsid': nsid, 'count': count};
+    return {'nsid': nsid};
   }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is RepoCollection &&
-          runtimeType == other.runtimeType &&
-          nsid == other.nsid &&
-          count == other.count;
+      other is RepoCollection && runtimeType == other.runtimeType && nsid == other.nsid;
 
   @override
-  int get hashCode => Object.hash(nsid, count);
+  int get hashCode => nsid.hashCode;
 
   @override
-  String toString() => 'RepoCollection(nsid: $nsid, count: $count)';
+  String toString() => 'RepoCollection(nsid: $nsid)';
 }

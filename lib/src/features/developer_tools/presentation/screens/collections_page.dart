@@ -149,10 +149,6 @@ class _CollectionTile extends ConsumerWidget {
 
     return ListTile(
       title: Text(collection.nsid),
-      subtitle: Text(
-        '${collection.count} ${collection.count == 1 ? 'record' : 'records'}',
-        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

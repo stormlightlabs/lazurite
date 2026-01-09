@@ -229,5 +229,27 @@ void main() {
         expect(meta.proxyKind, equals(ProxyKind.chat), reason: '$nsid should use chat proxy');
       }
     });
+
+    test('feed generator endpoints are registered', () {
+      final feedEndpoints = ['app.bsky.feed.getFeedGenerator', 'app.bsky.feed.getFeedGenerators'];
+
+      for (final nsid in feedEndpoints) {
+        final meta = registry.get(nsid);
+        expect(meta.hostKind, equals(HostKind.publicApi), reason: '$nsid should use publicApi');
+        expect(meta.requiresAuth, isFalse, reason: '$nsid should not require auth');
+        expect(meta.method, equals(HttpMethod.get), reason: '$nsid should be GET');
+      }
+    });
+
+    test('graph list endpoints are registered', () {
+      final listEndpoints = ['app.bsky.graph.getList'];
+
+      for (final nsid in listEndpoints) {
+        final meta = registry.get(nsid);
+        expect(meta.hostKind, equals(HostKind.publicApi), reason: '$nsid should use publicApi');
+        expect(meta.requiresAuth, isFalse, reason: '$nsid should not require auth');
+        expect(meta.method, equals(HttpMethod.get), reason: '$nsid should be GET');
+      }
+    });
   });
 }

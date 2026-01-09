@@ -71,7 +71,10 @@ class SavedFeedsDao extends DatabaseAccessor<AppDatabase> with _$SavedFeedsDaoMi
     return (select(savedFeeds)
           ..where((t) => t.ownerDid.equals(ownerDid))
           ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]))
-        .watch();
+        .watch()
+        .map((list) {
+          return list;
+        });
   }
 
   /// Gets all pinned feeds ordered by sortOrder.
@@ -89,7 +92,10 @@ class SavedFeedsDao extends DatabaseAccessor<AppDatabase> with _$SavedFeedsDaoMi
           ..where((t) => t.ownerDid.equals(ownerDid))
           ..where((t) => t.isPinned.equals(true))
           ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]))
-        .watch();
+        .watch()
+        .map((list) {
+          return list;
+        });
   }
 
   /// Gets feeds that haven't been synced recently (stale metadata).

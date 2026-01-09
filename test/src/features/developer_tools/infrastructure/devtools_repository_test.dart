@@ -27,11 +27,7 @@ void main() {
 
       test('returns list of collections on success', () async {
         final responseData = {
-          'collections': [
-            {'nsid': 'app.bsky.feed.post', 'count': 42},
-            {'nsid': 'app.bsky.actor.profile', 'count': 1},
-            {'nsid': 'app.bsky.graph.follow', 'count': 100},
-          ],
+          'collections': ['app.bsky.feed.post', 'app.bsky.actor.profile', 'app.bsky.graph.follow'],
         };
 
         when(
@@ -42,11 +38,8 @@ void main() {
 
         expect(result, hasLength(3));
         expect(result[0].nsid, 'app.bsky.feed.post');
-        expect(result[0].count, 42);
         expect(result[1].nsid, 'app.bsky.actor.profile');
-        expect(result[1].count, 1);
         expect(result[2].nsid, 'app.bsky.graph.follow');
-        expect(result[2].count, 100);
 
         verify(
           () => mockXrpc.call('com.atproto.repo.describeRepo', params: {'repo': testDid}),

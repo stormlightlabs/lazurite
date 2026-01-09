@@ -67,12 +67,14 @@ class AllFeedsNotifier extends _$AllFeedsNotifier {
     final authState = ref.watch(authProvider);
     final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
 
-    if (ownerDid == null) return const Stream.empty();
+    if (ownerDid == null) {
+      return const Stream.empty();
+    }
 
     final repository = ref.watch(feedRepositoryProvider);
-    return repository
-        .watchAllFeeds(ownerDid)
-        .map((list) => list.map(SavedFeedData.fromEntity).toList());
+    return repository.watchAllFeeds(ownerDid).map((list) {
+      return list.map(SavedFeedData.fromEntity).toList();
+    });
   }
 }
 
@@ -84,12 +86,14 @@ class PinnedFeedsNotifier extends _$PinnedFeedsNotifier {
     final authState = ref.watch(authProvider);
     final ownerDid = (authState is AuthStateAuthenticated) ? authState.session.did : null;
 
-    if (ownerDid == null) return const Stream.empty();
+    if (ownerDid == null) {
+      return const Stream.empty();
+    }
 
     final repository = ref.watch(feedRepositoryProvider);
-    return repository
-        .watchPinnedFeeds(ownerDid)
-        .map((list) => list.map(SavedFeedData.fromEntity).toList());
+    return repository.watchPinnedFeeds(ownerDid).map((list) {
+      return list.map(SavedFeedData.fromEntity).toList();
+    });
   }
 }
 
