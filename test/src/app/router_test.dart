@@ -26,6 +26,9 @@ import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dar
 import 'package:lazurite/src/features/notifications/application/notifications_providers.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
+import 'package:lazurite/src/features/profile/presentation/followers_page.dart';
+import 'package:lazurite/src/features/profile/presentation/following_page.dart';
+import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
 import 'package:lazurite/src/features/settings/domain/animation_preferences.dart';
 import 'package:lazurite/src/features/splash/presentation/splash_screen.dart';
@@ -352,6 +355,168 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(DevToolsHomePage), findsOneWidget);
+    });
+
+    group('Profile detail routing regression', () {
+      testWidgets('navigates to profile detail from search tab', (tester) async {
+        await tester.pumpRouterApp(
+          overrides: [
+            ...getTestOverrides(),
+            authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+          ],
+        );
+
+        final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+        final router = app.routerConfig as GoRouter;
+
+        final encodedDid = Uri.encodeComponent('did:plc:test123');
+        unawaited(router.push('/search/u/$encodedDid'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ProfilePage), findsOneWidget);
+        final profilePage = tester.widget<ProfilePage>(find.byType(ProfilePage));
+        expect(profilePage.did, 'did:plc:test123');
+      });
+
+      testWidgets('navigates to profile detail from home tab', (tester) async {
+        await tester.pumpRouterApp(
+          overrides: [
+            ...getTestOverrides(),
+            authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+          ],
+        );
+
+        final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+        final router = app.routerConfig as GoRouter;
+
+        final encodedDid = Uri.encodeComponent('did:plc:test456');
+        unawaited(router.push('/home/u/$encodedDid'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ProfilePage), findsOneWidget);
+        final profilePage = tester.widget<ProfilePage>(find.byType(ProfilePage));
+        expect(profilePage.did, 'did:plc:test456');
+      });
+
+      testWidgets('navigates to profile detail from notifications tab', (tester) async {
+        await tester.pumpRouterApp(
+          overrides: [
+            ...getTestOverrides(),
+            authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+          ],
+        );
+
+        final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+        final router = app.routerConfig as GoRouter;
+
+        final encodedDid = Uri.encodeComponent('did:plc:test789');
+        unawaited(router.push('/notifications/u/$encodedDid'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ProfilePage), findsOneWidget);
+        final profilePage = tester.widget<ProfilePage>(find.byType(ProfilePage));
+        expect(profilePage.did, 'did:plc:test789');
+      });
+
+      testWidgets('navigates to followers from search profile detail', (tester) async {
+        await tester.pumpRouterApp(
+          overrides: [
+            ...getTestOverrides(),
+            authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+          ],
+        );
+
+        final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+        final router = app.routerConfig as GoRouter;
+
+        final encodedDid = Uri.encodeComponent('did:plc:testfollowers');
+        unawaited(router.push('/search/u/$encodedDid/followers'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(FollowersPage), findsOneWidget);
+        final followersPage = tester.widget<FollowersPage>(find.byType(FollowersPage));
+        expect(followersPage.did, 'did:plc:testfollowers');
+      });
+
+      testWidgets('navigates to following from home profile detail', (tester) async {
+        await tester.pumpRouterApp(
+          overrides: [
+            ...getTestOverrides(),
+            authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+          ],
+        );
+
+        final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+        final router = app.routerConfig as GoRouter;
+
+        final encodedDid = Uri.encodeComponent('did:plc:testfollowing');
+        unawaited(router.push('/home/u/$encodedDid/following'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(FollowingPage), findsOneWidget);
+        final followingPage = tester.widget<FollowingPage>(find.byType(FollowingPage));
+        expect(followingPage.did, 'did:plc:testfollowing');
+      });
+
+      testWidgets('navigates to followers from notifications profile detail', (tester) async {
+        await tester.pumpRouterApp(
+          overrides: [
+            ...getTestOverrides(),
+            authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+          ],
+        );
+
+        final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+        final router = app.routerConfig as GoRouter;
+
+        final encodedDid = Uri.encodeComponent('did:plc:notiffollowers');
+        unawaited(router.push('/notifications/u/$encodedDid/followers'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(FollowersPage), findsOneWidget);
+        final followersPage = tester.widget<FollowersPage>(find.byType(FollowersPage));
+        expect(followersPage.did, 'did:plc:notiffollowers');
+      });
+
+      testWidgets('navigates to followers from current user profile', (tester) async {
+        await tester.pumpRouterApp(
+          overrides: [
+            ...getTestOverrides(),
+            authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+          ],
+        );
+
+        final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+        final router = app.routerConfig as GoRouter;
+
+        final encodedDid = Uri.encodeComponent(testSession.did);
+        unawaited(router.push('/profile/followers/$encodedDid'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(FollowersPage), findsOneWidget);
+        final followersPage = tester.widget<FollowersPage>(find.byType(FollowersPage));
+        expect(followersPage.did, testSession.did);
+      });
+
+      testWidgets('navigates to following from current user profile', (tester) async {
+        await tester.pumpRouterApp(
+          overrides: [
+            ...getTestOverrides(),
+            authProvider.overrideWith(() => _TestAuthNotifier(testSession)),
+          ],
+        );
+
+        final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+        final router = app.routerConfig as GoRouter;
+
+        final encodedDid = Uri.encodeComponent(testSession.did);
+        unawaited(router.push('/profile/following/$encodedDid'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(FollowingPage), findsOneWidget);
+        final followingPage = tester.widget<FollowingPage>(find.byType(FollowingPage));
+        expect(followingPage.did, testSession.did);
+      });
     });
   });
 

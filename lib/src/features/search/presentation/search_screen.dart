@@ -483,7 +483,8 @@ class _ActorSearchResultCard extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        GoRouter.of(context).push('/profile/${actor.did}');
+        final encodedDid = Uri.encodeComponent(actor.did);
+        GoRouter.of(context).push('/search/u/$encodedDid');
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),

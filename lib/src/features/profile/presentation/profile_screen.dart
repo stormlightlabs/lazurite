@@ -189,11 +189,33 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
                       profile: profile,
                       onFollowersPressed: () {
                         final encodedDid = Uri.encodeComponent(profile.did);
-                        context.push('/profile/followers/$encodedDid');
+                        if (widget.isCurrentUser) {
+                          context.push('/profile/followers/$encodedDid');
+                        } else {
+                          final currentLocation = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+                          String basePath = AppRoutes.home;
+                          if (currentLocation.startsWith(AppRoutes.search)) {
+                            basePath = AppRoutes.search;
+                          } else if (currentLocation.startsWith(AppRoutes.notifications)) {
+                            basePath = AppRoutes.notifications;
+                          }
+                          context.push('$basePath/u/$encodedDid/followers');
+                        }
                       },
                       onFollowingPressed: () {
                         final encodedDid = Uri.encodeComponent(profile.did);
-                        context.push('/profile/following/$encodedDid');
+                        if (widget.isCurrentUser) {
+                          context.push('/profile/following/$encodedDid');
+                        } else {
+                          final currentLocation = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+                          String basePath = AppRoutes.home;
+                          if (currentLocation.startsWith(AppRoutes.search)) {
+                            basePath = AppRoutes.search;
+                          } else if (currentLocation.startsWith(AppRoutes.notifications)) {
+                            basePath = AppRoutes.notifications;
+                          }
+                          context.push('$basePath/u/$encodedDid/following');
+                        }
                       },
                       followButton: widget.isCurrentUser ? null : _followButton(profile),
                     ),

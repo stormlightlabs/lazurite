@@ -136,6 +136,28 @@ GoRouter createRouter(Ref ref) {
                       state: state,
                       controller: animationController,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'followers',
+                        name: '${AppRouteNames.home}_${AppRouteNames.followers}',
+                        pageBuilder: (context, state) => LazuritePageTransitions.build(
+                          child: FollowersPage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                          type: LazuriteTransitionType.sharedAxisHorizontal,
+                          state: state,
+                          controller: animationController,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'following',
+                        name: '${AppRouteNames.home}_${AppRouteNames.following}',
+                        pageBuilder: (context, state) => LazuritePageTransitions.build(
+                          child: FollowingPage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                          type: LazuriteTransitionType.sharedAxisHorizontal,
+                          state: state,
+                          controller: animationController,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -176,6 +198,28 @@ GoRouter createRouter(Ref ref) {
                       state: state,
                       controller: animationController,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'followers',
+                        name: '${AppRouteNames.search}_${AppRouteNames.followers}',
+                        pageBuilder: (context, state) => LazuritePageTransitions.build(
+                          child: FollowersPage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                          type: LazuriteTransitionType.sharedAxisHorizontal,
+                          state: state,
+                          controller: animationController,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'following',
+                        name: '${AppRouteNames.search}_${AppRouteNames.following}',
+                        pageBuilder: (context, state) => LazuritePageTransitions.build(
+                          child: FollowingPage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                          type: LazuriteTransitionType.sharedAxisHorizontal,
+                          state: state,
+                          controller: animationController,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -209,6 +253,28 @@ GoRouter createRouter(Ref ref) {
                       state: state,
                       controller: animationController,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'followers',
+                        name: '${AppRouteNames.notifications}_${AppRouteNames.followers}',
+                        pageBuilder: (context, state) => LazuritePageTransitions.build(
+                          child: FollowersPage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                          type: LazuriteTransitionType.sharedAxisHorizontal,
+                          state: state,
+                          controller: animationController,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'following',
+                        name: '${AppRouteNames.notifications}_${AppRouteNames.following}',
+                        pageBuilder: (context, state) => LazuritePageTransitions.build(
+                          child: FollowingPage(did: Uri.decodeComponent(state.pathParameters['did']!)),
+                          type: LazuriteTransitionType.sharedAxisHorizontal,
+                          state: state,
+                          controller: animationController,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
