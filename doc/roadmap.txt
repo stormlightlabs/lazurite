@@ -118,15 +118,15 @@ Phase 4: Outbox Worker and Reliability
       - handle app crash during send (resume on restart)
 
 Phase 5: Message Requests and Accept Flow
-- [ ] MessageRequestCard widget:
+- [x] MessageRequestCard widget:
       - display sender profile (avatar, display name, handle)
       - message preview
       - accept and decline buttons
-- [ ] Accept flow:
+- [x] Accept flow:
       - call chat.bsky.convo.acceptConvo
       - move conversation to main list
       - enable sending messages
-- [ ] Decline flow:
+- [x] Decline flow:
       - hide conversation (client-side only)
       - user can still accept later
 

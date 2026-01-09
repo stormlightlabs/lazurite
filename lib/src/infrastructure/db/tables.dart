@@ -349,9 +349,15 @@ class DraftMedia extends Table {
   ];
 }
 
-/// Stores local app settings as key-value pairs.
+/// Stores device-level app settings as key-value pairs.
 ///
-/// Used for theme mode, theme pack ID, font scale, and other user preferences.
+/// Used for theme mode, theme pack ID, font scale, and similar UI preferences.
+/// These settings are intentionally global (not scoped by ownerDid) because they
+/// represent device-level preferences that apply across all user accounts.
+///
+/// For example, if a user prefers dark mode or a specific font size, these
+/// settings persist when switching between accounts on the same device.
+///
 /// Key-value design allows adding new settings without schema migrations.
 class LocalSettings extends Table {
   /// Setting key (e.g., 'themeMode', 'themePackId').
@@ -389,9 +395,15 @@ class BlueskyPreferences extends Table {
   Set<Column> get primaryKey => {type, ownerDid};
 }
 
-/// Stores user-customized themes.
+/// Stores device-level custom theme definitions.
 ///
 /// Custom themes are based on a built-in theme pack with color role overrides.
+/// These themes are intentionally global (not scoped by ownerDid) as they
+/// represent device-level visual customizations that apply to all user accounts.
+///
+/// Users can create and share custom themes across their accounts on the device,
+/// providing a consistent visual experience regardless of which account is active.
+///
 /// The overrides and other data are stored as JSON for flexibility.
 class CustomThemes extends Table {
   /// Unique identifier for this custom theme.
@@ -419,7 +431,14 @@ class CustomThemes extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Stores animation preferences for accessibility and motion control.
+/// Stores device-level animation preferences for accessibility and motion control.
+///
+/// These preferences are intentionally global (not scoped by ownerDid) because
+/// they reflect device-level accessibility needs that should apply consistently
+/// across all user accounts.
+/// For instance, if a user has motion sensitivity or
+/// prefers reduced animations, this preference should persist when switching
+/// between accounts on the same device.
 ///
 /// Uses key-value storage for flexibility, similar to LocalSettings.
 /// Keys: 'mode' (AnimationMode enum as string), 'speedMultiplier' (double as string).

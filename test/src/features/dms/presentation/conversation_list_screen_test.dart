@@ -9,6 +9,7 @@ import 'package:lazurite/src/features/dms/domain/dm_conversation.dart';
 import 'package:lazurite/src/features/dms/domain/dm_message.dart' as dmm;
 import 'package:lazurite/src/features/dms/presentation/conversation_list_screen.dart';
 import 'package:lazurite/src/features/dms/presentation/widgets/conversation_list_item.dart';
+import 'package:lazurite/src/features/dms/presentation/widgets/message_request_card.dart';
 import 'package:lazurite/src/features/dms/providers.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:mocktail/mocktail.dart';
@@ -128,7 +129,8 @@ void main() {
 
       expect(find.text('Message Requests'), findsOneWidget);
       expect(find.text('All Messages'), findsOneWidget);
-      expect(find.byType(ConversationListItem), findsNWidgets(2));
+      expect(find.byType(MessageRequestCard), findsOneWidget);
+      expect(find.byType(ConversationListItem), findsOneWidget);
     });
 
     testWidgets('triggers refresh on pull to refresh', (tester) async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/features/dms/presentation/widgets/message_request_card.dart';
 
 import '../../../core/animations/animation_utils.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -19,6 +20,7 @@ class ConversationListScreen extends ConsumerStatefulWidget {
 
 class _ConversationListScreenState extends ConsumerState<ConversationListScreen> {
   final ScrollController _scrollController = ScrollController();
+  final Set<String> _declinedConvoIds = {};
 
   @override
   void initState() {
@@ -36,6 +38,25 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
       ref.read(conversationListProvider.notifier).loadMore();
     }
+  }
+
+  void _declineConversation(String convoId) {
+    setState(() {
+      _declinedConvoIds.add(convoId);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Message request declined'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {
+            setState(() {
+              _declinedConvoIds.remove(convoId);
+            });
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -61,7 +82,9 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
               );
             }
 
-            final requests = conversations.where((c) => !c.isAccepted).toList();
+            final requests = conversations
+                .where((c) => !c.isAccepted && !_declinedConvoIds.contains(c.convoId))
+                .toList();
             final active = conversations.where((c) => c.isAccepted).toList();
 
             return PullToRefreshWrapper(
@@ -86,9 +109,15 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                     SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final convo = requests[index];
-                        return ConversationListItem(
+                        return MessageRequestCard(
                           conversation: convo,
                           onTap: () => context.push('/messages/${convo.convoId}'),
+                          onAccept: () async {
+                            await ref
+                                .read(conversationListProvider.notifier)
+                                .acceptConversation(convo.convoId);
+                          },
+                          onDecline: () => _declineConversation(convo.convoId),
                         );
                       }, childCount: requests.length),
                     ),
