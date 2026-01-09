@@ -58,6 +58,8 @@ part 'app_database.g.dart';
     DmOutbox,
     DevSettings,
     DevNetworkLogs,
+    DevPins,
+    DevRecentRecords,
   ],
   daos: [
     FeedContentDao,

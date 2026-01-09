@@ -12570,6 +12570,603 @@ class DevNetworkLogsCompanion extends UpdateCompanion<DevNetworkLog> {
   }
 }
 
+class $DevPinsTable extends DevPins with TableInfo<$DevPinsTable, DevPin> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DevPinsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+  );
+  static const VerificationMeta _uriMeta = const VerificationMeta('uri');
+  @override
+  late final GeneratedColumn<String> uri = GeneratedColumn<String>(
+    'uri',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'label',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, uri, label, type, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'dev_pins';
+  @override
+  VerificationContext validateIntegrity(Insertable<DevPin> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('uri')) {
+      context.handle(_uriMeta, uri.isAcceptableOrUnknown(data['uri']!, _uriMeta));
+    } else if (isInserting) {
+      context.missing(_uriMeta);
+    }
+    if (data.containsKey('label')) {
+      context.handle(_labelMeta, label.isAcceptableOrUnknown(data['label']!, _labelMeta));
+    }
+    if (data.containsKey('type')) {
+      context.handle(_typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DevPin map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DevPin(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      uri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}uri'])!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      ),
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DevPinsTable createAlias(String alias) {
+    return $DevPinsTable(attachedDatabase, alias);
+  }
+}
+
+class DevPin extends DataClass implements Insertable<DevPin> {
+  final int id;
+
+  /// The AT URI of the collection or record being pinned.
+  final String uri;
+
+  /// Optional custom label for the pin.
+  final String? label;
+
+  /// Type of item: 'collection' or 'record'.
+  final String type;
+
+  /// When this pin was created.
+  final DateTime createdAt;
+  const DevPin({
+    required this.id,
+    required this.uri,
+    this.label,
+    required this.type,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['uri'] = Variable<String>(uri);
+    if (!nullToAbsent || label != null) {
+      map['label'] = Variable<String>(label);
+    }
+    map['type'] = Variable<String>(type);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  DevPinsCompanion toCompanion(bool nullToAbsent) {
+    return DevPinsCompanion(
+      id: Value(id),
+      uri: Value(uri),
+      label: label == null && nullToAbsent ? const Value.absent() : Value(label),
+      type: Value(type),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory DevPin.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DevPin(
+      id: serializer.fromJson<int>(json['id']),
+      uri: serializer.fromJson<String>(json['uri']),
+      label: serializer.fromJson<String?>(json['label']),
+      type: serializer.fromJson<String>(json['type']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'uri': serializer.toJson<String>(uri),
+      'label': serializer.toJson<String?>(label),
+      'type': serializer.toJson<String>(type),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  DevPin copyWith({
+    int? id,
+    String? uri,
+    Value<String?> label = const Value.absent(),
+    String? type,
+    DateTime? createdAt,
+  }) => DevPin(
+    id: id ?? this.id,
+    uri: uri ?? this.uri,
+    label: label.present ? label.value : this.label,
+    type: type ?? this.type,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  DevPin copyWithCompanion(DevPinsCompanion data) {
+    return DevPin(
+      id: data.id.present ? data.id.value : this.id,
+      uri: data.uri.present ? data.uri.value : this.uri,
+      label: data.label.present ? data.label.value : this.label,
+      type: data.type.present ? data.type.value : this.type,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DevPin(')
+          ..write('id: $id, ')
+          ..write('uri: $uri, ')
+          ..write('label: $label, ')
+          ..write('type: $type, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, uri, label, type, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DevPin &&
+          other.id == this.id &&
+          other.uri == this.uri &&
+          other.label == this.label &&
+          other.type == this.type &&
+          other.createdAt == this.createdAt);
+}
+
+class DevPinsCompanion extends UpdateCompanion<DevPin> {
+  final Value<int> id;
+  final Value<String> uri;
+  final Value<String?> label;
+  final Value<String> type;
+  final Value<DateTime> createdAt;
+  const DevPinsCompanion({
+    this.id = const Value.absent(),
+    this.uri = const Value.absent(),
+    this.label = const Value.absent(),
+    this.type = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  DevPinsCompanion.insert({
+    this.id = const Value.absent(),
+    required String uri,
+    this.label = const Value.absent(),
+    required String type,
+    required DateTime createdAt,
+  }) : uri = Value(uri),
+       type = Value(type),
+       createdAt = Value(createdAt);
+  static Insertable<DevPin> custom({
+    Expression<int>? id,
+    Expression<String>? uri,
+    Expression<String>? label,
+    Expression<String>? type,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (uri != null) 'uri': uri,
+      if (label != null) 'label': label,
+      if (type != null) 'type': type,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  DevPinsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? uri,
+    Value<String?>? label,
+    Value<String>? type,
+    Value<DateTime>? createdAt,
+  }) {
+    return DevPinsCompanion(
+      id: id ?? this.id,
+      uri: uri ?? this.uri,
+      label: label ?? this.label,
+      type: type ?? this.type,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (uri.present) {
+      map['uri'] = Variable<String>(uri.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DevPinsCompanion(')
+          ..write('id: $id, ')
+          ..write('uri: $uri, ')
+          ..write('label: $label, ')
+          ..write('type: $type, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DevRecentRecordsTable extends DevRecentRecords
+    with TableInfo<$DevRecentRecordsTable, DevRecentRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DevRecentRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+  );
+  static const VerificationMeta _uriMeta = const VerificationMeta('uri');
+  @override
+  late final GeneratedColumn<String> uri = GeneratedColumn<String>(
+    'uri',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _cidMeta = const VerificationMeta('cid');
+  @override
+  late final GeneratedColumn<String> cid = GeneratedColumn<String>(
+    'cid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _viewedAtMeta = const VerificationMeta('viewedAt');
+  @override
+  late final GeneratedColumn<DateTime> viewedAt = GeneratedColumn<DateTime>(
+    'viewed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, uri, cid, viewedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'dev_recent_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DevRecentRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('uri')) {
+      context.handle(_uriMeta, uri.isAcceptableOrUnknown(data['uri']!, _uriMeta));
+    } else if (isInserting) {
+      context.missing(_uriMeta);
+    }
+    if (data.containsKey('cid')) {
+      context.handle(_cidMeta, cid.isAcceptableOrUnknown(data['cid']!, _cidMeta));
+    }
+    if (data.containsKey('viewed_at')) {
+      context.handle(
+        _viewedAtMeta,
+        viewedAt.isAcceptableOrUnknown(data['viewed_at']!, _viewedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_viewedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DevRecentRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DevRecentRecord(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      uri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}uri'])!,
+      cid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}cid']),
+      viewedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}viewed_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DevRecentRecordsTable createAlias(String alias) {
+    return $DevRecentRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class DevRecentRecord extends DataClass implements Insertable<DevRecentRecord> {
+  final int id;
+
+  /// The AT URI of the record.
+  final String uri;
+
+  /// The CID of the record at the time it was viewed.
+  final String? cid;
+
+  /// When this record was last viewed.
+  final DateTime viewedAt;
+  const DevRecentRecord({required this.id, required this.uri, this.cid, required this.viewedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['uri'] = Variable<String>(uri);
+    if (!nullToAbsent || cid != null) {
+      map['cid'] = Variable<String>(cid);
+    }
+    map['viewed_at'] = Variable<DateTime>(viewedAt);
+    return map;
+  }
+
+  DevRecentRecordsCompanion toCompanion(bool nullToAbsent) {
+    return DevRecentRecordsCompanion(
+      id: Value(id),
+      uri: Value(uri),
+      cid: cid == null && nullToAbsent ? const Value.absent() : Value(cid),
+      viewedAt: Value(viewedAt),
+    );
+  }
+
+  factory DevRecentRecord.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DevRecentRecord(
+      id: serializer.fromJson<int>(json['id']),
+      uri: serializer.fromJson<String>(json['uri']),
+      cid: serializer.fromJson<String?>(json['cid']),
+      viewedAt: serializer.fromJson<DateTime>(json['viewedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'uri': serializer.toJson<String>(uri),
+      'cid': serializer.toJson<String?>(cid),
+      'viewedAt': serializer.toJson<DateTime>(viewedAt),
+    };
+  }
+
+  DevRecentRecord copyWith({
+    int? id,
+    String? uri,
+    Value<String?> cid = const Value.absent(),
+    DateTime? viewedAt,
+  }) => DevRecentRecord(
+    id: id ?? this.id,
+    uri: uri ?? this.uri,
+    cid: cid.present ? cid.value : this.cid,
+    viewedAt: viewedAt ?? this.viewedAt,
+  );
+  DevRecentRecord copyWithCompanion(DevRecentRecordsCompanion data) {
+    return DevRecentRecord(
+      id: data.id.present ? data.id.value : this.id,
+      uri: data.uri.present ? data.uri.value : this.uri,
+      cid: data.cid.present ? data.cid.value : this.cid,
+      viewedAt: data.viewedAt.present ? data.viewedAt.value : this.viewedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DevRecentRecord(')
+          ..write('id: $id, ')
+          ..write('uri: $uri, ')
+          ..write('cid: $cid, ')
+          ..write('viewedAt: $viewedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, uri, cid, viewedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DevRecentRecord &&
+          other.id == this.id &&
+          other.uri == this.uri &&
+          other.cid == this.cid &&
+          other.viewedAt == this.viewedAt);
+}
+
+class DevRecentRecordsCompanion extends UpdateCompanion<DevRecentRecord> {
+  final Value<int> id;
+  final Value<String> uri;
+  final Value<String?> cid;
+  final Value<DateTime> viewedAt;
+  const DevRecentRecordsCompanion({
+    this.id = const Value.absent(),
+    this.uri = const Value.absent(),
+    this.cid = const Value.absent(),
+    this.viewedAt = const Value.absent(),
+  });
+  DevRecentRecordsCompanion.insert({
+    this.id = const Value.absent(),
+    required String uri,
+    this.cid = const Value.absent(),
+    required DateTime viewedAt,
+  }) : uri = Value(uri),
+       viewedAt = Value(viewedAt);
+  static Insertable<DevRecentRecord> custom({
+    Expression<int>? id,
+    Expression<String>? uri,
+    Expression<String>? cid,
+    Expression<DateTime>? viewedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (uri != null) 'uri': uri,
+      if (cid != null) 'cid': cid,
+      if (viewedAt != null) 'viewed_at': viewedAt,
+    });
+  }
+
+  DevRecentRecordsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? uri,
+    Value<String?>? cid,
+    Value<DateTime>? viewedAt,
+  }) {
+    return DevRecentRecordsCompanion(
+      id: id ?? this.id,
+      uri: uri ?? this.uri,
+      cid: cid ?? this.cid,
+      viewedAt: viewedAt ?? this.viewedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (uri.present) {
+      map['uri'] = Variable<String>(uri.value);
+    }
+    if (cid.present) {
+      map['cid'] = Variable<String>(cid.value);
+    }
+    if (viewedAt.present) {
+      map['viewed_at'] = Variable<DateTime>(viewedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DevRecentRecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('uri: $uri, ')
+          ..write('cid: $cid, ')
+          ..write('viewedAt: $viewedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -12603,6 +13200,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DmOutboxTable dmOutbox = $DmOutboxTable(this);
   late final $DevSettingsTable devSettings = $DevSettingsTable(this);
   late final $DevNetworkLogsTable devNetworkLogs = $DevNetworkLogsTable(this);
+  late final $DevPinsTable devPins = $DevPinsTable(this);
+  late final $DevRecentRecordsTable devRecentRecords = $DevRecentRecordsTable(this);
   late final Index feedContentSortIdx = Index(
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
@@ -12685,6 +13284,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     dmOutbox,
     devSettings,
     devNetworkLogs,
+    devPins,
+    devRecentRecords,
     feedContentSortIdx,
     recentSearchesUniqueIdx,
     searchCacheSortIdx,
@@ -19890,6 +20491,314 @@ typedef $$DevNetworkLogsTableProcessedTableManager =
       DevNetworkLog,
       PrefetchHooks Function()
     >;
+typedef $$DevPinsTableCreateCompanionBuilder =
+    DevPinsCompanion Function({
+      Value<int> id,
+      required String uri,
+      Value<String?> label,
+      required String type,
+      required DateTime createdAt,
+    });
+typedef $$DevPinsTableUpdateCompanionBuilder =
+    DevPinsCompanion Function({
+      Value<int> id,
+      Value<String> uri,
+      Value<String?> label,
+      Value<String> type,
+      Value<DateTime> createdAt,
+    });
+
+class $$DevPinsTableFilterComposer extends Composer<_$AppDatabase, $DevPinsTable> {
+  $$DevPinsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get uri =>
+      $composableBuilder(column: $table.uri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$DevPinsTableOrderingComposer extends Composer<_$AppDatabase, $DevPinsTable> {
+  $$DevPinsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get uri =>
+      $composableBuilder(column: $table.uri, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$DevPinsTableAnnotationComposer extends Composer<_$AppDatabase, $DevPinsTable> {
+  $$DevPinsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get uri =>
+      $composableBuilder(column: $table.uri, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$DevPinsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DevPinsTable,
+          DevPin,
+          $$DevPinsTableFilterComposer,
+          $$DevPinsTableOrderingComposer,
+          $$DevPinsTableAnnotationComposer,
+          $$DevPinsTableCreateCompanionBuilder,
+          $$DevPinsTableUpdateCompanionBuilder,
+          (DevPin, BaseReferences<_$AppDatabase, $DevPinsTable, DevPin>),
+          DevPin,
+          PrefetchHooks Function()
+        > {
+  $$DevPinsTableTableManager(_$AppDatabase db, $DevPinsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$DevPinsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$DevPinsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DevPinsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> uri = const Value.absent(),
+                Value<String?> label = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => DevPinsCompanion(
+                id: id,
+                uri: uri,
+                label: label,
+                type: type,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String uri,
+                Value<String?> label = const Value.absent(),
+                required String type,
+                required DateTime createdAt,
+              }) => DevPinsCompanion.insert(
+                id: id,
+                uri: uri,
+                label: label,
+                type: type,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DevPinsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DevPinsTable,
+      DevPin,
+      $$DevPinsTableFilterComposer,
+      $$DevPinsTableOrderingComposer,
+      $$DevPinsTableAnnotationComposer,
+      $$DevPinsTableCreateCompanionBuilder,
+      $$DevPinsTableUpdateCompanionBuilder,
+      (DevPin, BaseReferences<_$AppDatabase, $DevPinsTable, DevPin>),
+      DevPin,
+      PrefetchHooks Function()
+    >;
+typedef $$DevRecentRecordsTableCreateCompanionBuilder =
+    DevRecentRecordsCompanion Function({
+      Value<int> id,
+      required String uri,
+      Value<String?> cid,
+      required DateTime viewedAt,
+    });
+typedef $$DevRecentRecordsTableUpdateCompanionBuilder =
+    DevRecentRecordsCompanion Function({
+      Value<int> id,
+      Value<String> uri,
+      Value<String?> cid,
+      Value<DateTime> viewedAt,
+    });
+
+class $$DevRecentRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $DevRecentRecordsTable> {
+  $$DevRecentRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get uri =>
+      $composableBuilder(column: $table.uri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get cid =>
+      $composableBuilder(column: $table.cid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get viewedAt =>
+      $composableBuilder(column: $table.viewedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$DevRecentRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DevRecentRecordsTable> {
+  $$DevRecentRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get uri =>
+      $composableBuilder(column: $table.uri, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get cid =>
+      $composableBuilder(column: $table.cid, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get viewedAt =>
+      $composableBuilder(column: $table.viewedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$DevRecentRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DevRecentRecordsTable> {
+  $$DevRecentRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get uri =>
+      $composableBuilder(column: $table.uri, builder: (column) => column);
+
+  GeneratedColumn<String> get cid =>
+      $composableBuilder(column: $table.cid, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get viewedAt =>
+      $composableBuilder(column: $table.viewedAt, builder: (column) => column);
+}
+
+class $$DevRecentRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DevRecentRecordsTable,
+          DevRecentRecord,
+          $$DevRecentRecordsTableFilterComposer,
+          $$DevRecentRecordsTableOrderingComposer,
+          $$DevRecentRecordsTableAnnotationComposer,
+          $$DevRecentRecordsTableCreateCompanionBuilder,
+          $$DevRecentRecordsTableUpdateCompanionBuilder,
+          (
+            DevRecentRecord,
+            BaseReferences<_$AppDatabase, $DevRecentRecordsTable, DevRecentRecord>,
+          ),
+          DevRecentRecord,
+          PrefetchHooks Function()
+        > {
+  $$DevRecentRecordsTableTableManager(_$AppDatabase db, $DevRecentRecordsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DevRecentRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DevRecentRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DevRecentRecordsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> uri = const Value.absent(),
+                Value<String?> cid = const Value.absent(),
+                Value<DateTime> viewedAt = const Value.absent(),
+              }) => DevRecentRecordsCompanion(id: id, uri: uri, cid: cid, viewedAt: viewedAt),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String uri,
+                Value<String?> cid = const Value.absent(),
+                required DateTime viewedAt,
+              }) =>
+                  DevRecentRecordsCompanion.insert(id: id, uri: uri, cid: cid, viewedAt: viewedAt),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DevRecentRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DevRecentRecordsTable,
+      DevRecentRecord,
+      $$DevRecentRecordsTableFilterComposer,
+      $$DevRecentRecordsTableOrderingComposer,
+      $$DevRecentRecordsTableAnnotationComposer,
+      $$DevRecentRecordsTableCreateCompanionBuilder,
+      $$DevRecentRecordsTableUpdateCompanionBuilder,
+      (DevRecentRecord, BaseReferences<_$AppDatabase, $DevRecentRecordsTable, DevRecentRecord>),
+      DevRecentRecord,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -19941,4 +20850,7 @@ class $AppDatabaseManager {
       $$DevSettingsTableTableManager(_db, _db.devSettings);
   $$DevNetworkLogsTableTableManager get devNetworkLogs =>
       $$DevNetworkLogsTableTableManager(_db, _db.devNetworkLogs);
+  $$DevPinsTableTableManager get devPins => $$DevPinsTableTableManager(_db, _db.devPins);
+  $$DevRecentRecordsTableTableManager get devRecentRecords =>
+      $$DevRecentRecordsTableTableManager(_db, _db.devRecentRecords);
 }

@@ -52,7 +52,7 @@ final class DioPublicProvider extends $FunctionalProvider<Dio, Dio, Dio> with $P
   }
 }
 
-String _$dioPublicHash() => r'b7ad12dfcf7bebb3ca8f836e21c9c41e9a698edc';
+String _$dioPublicHash() => r'32be6de7d8ba289bb1cf4af536dbb9263494bbae';
 
 /// Provides the PDS Dio client for authenticated API access.
 ///
@@ -101,7 +101,7 @@ final class DioPdsProvider extends $FunctionalProvider<Dio?, Dio?, Dio?> with $P
   }
 }
 
-String _$dioPdsHash() => r'58b56b8b3713905fbe532dff9f7e5e80f3c47288';
+String _$dioPdsHash() => r'10c062ffcf5d155b80cf9b090b1d3dc1137ab469';
 
 /// Provides the XRPC client for making API requests.
 ///

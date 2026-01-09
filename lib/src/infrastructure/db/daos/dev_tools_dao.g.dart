@@ -6,4 +6,6 @@ part of 'dev_tools_dao.dart';
 mixin _$DevToolsDaoMixin on DatabaseAccessor<AppDatabase> {
   $DevSettingsTable get devSettings => attachedDatabase.devSettings;
   $DevNetworkLogsTable get devNetworkLogs => attachedDatabase.devNetworkLogs;
+  $DevPinsTable get devPins => attachedDatabase.devPins;
+  $DevRecentRecordsTable get devRecentRecords => attachedDatabase.devRecentRecords;
 }

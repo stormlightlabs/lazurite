@@ -29,11 +29,11 @@ Phase 0: Internal Debug Mode Foundation (kDebugMode only)
 - [x] Add dev_network_logs table with LRU eviction (1000 in-memory, 24h in DB)
 
 Phase 1: User-Facing "DevTools"
-- [ ] Add dev_pins table for pinned collections/records
-- [ ] Add dev_recent_records table for LRU cache
+- [x] Add dev_pins table for pinned collections/records
+- [x] Add dev_recent_records table for LRU cache
 - [ ] Create /devtools route group (always available, not kDebugMode gated)
 - [ ] DevToolsHomePage: show DID, PDS host, quick actions
-- [ ] "Copy my DID" action
+      - [ ] "Copy my DID" action
 - [ ] Add Settings → "Developer Tools" toggle (works in release builds)
 - [ ] Link debug overlay to full DevTools (/devtools routes)
 

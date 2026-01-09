@@ -659,3 +659,34 @@ class DevNetworkLogs extends Table {
   IntColumn get durationMs => integer()();
   TextColumn get error => text().nullable()();
 }
+
+/// Stores pinned collections and records for easy access in DevTools.
+class DevPins extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// The AT URI of the collection or record being pinned.
+  TextColumn get uri => text().unique()();
+
+  /// Optional custom label for the pin.
+  TextColumn get label => text().nullable()();
+
+  /// Type of item: 'collection' or 'record'.
+  TextColumn get type => text()();
+
+  /// When this pin was created.
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+/// LRU cache of recently viewed records in the Repository inspector.
+class DevRecentRecords extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// The AT URI of the record.
+  TextColumn get uri => text().unique()();
+
+  /// The CID of the record at the time it was viewed.
+  TextColumn get cid => text().nullable()();
+
+  /// When this record was last viewed.
+  DateTimeColumn get viewedAt => dateTime()();
+}
