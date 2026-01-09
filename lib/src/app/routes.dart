@@ -33,6 +33,9 @@ abstract final class AppRoutes {
   static const String feeds = '/feeds';
   static const String discoverFeeds = 'discover';
   static const String devtools = '/devtools';
+  static const String devtoolsCollections = 'collections';
+  static const String devtoolsRecords = ':collection';
+  static const String devtoolsRecord = ':rkey';
 }
 
 /// Route names for named navigation.
@@ -65,4 +68,7 @@ abstract final class AppRouteNames {
   static const String feeds = 'feeds';
   static const String discoverFeeds = 'discoverFeeds';
   static const String devToolsHome = 'devToolsHome';
+  static const String devToolsCollections = 'devToolsCollections';
+  static const String devToolsRecords = 'devToolsRecords';
+  static const String devToolsRecord = 'devToolsRecord';
 }

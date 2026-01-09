@@ -10,7 +10,10 @@ import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/draft_list_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/draft_recovery_listener.dart';
+import 'package:lazurite/src/features/developer_tools/presentation/screens/collections_page.dart';
 import 'package:lazurite/src/features/developer_tools/presentation/screens/dev_tools_home_page.dart';
+import 'package:lazurite/src/features/developer_tools/presentation/screens/record_detail_page.dart';
+import 'package:lazurite/src/features/developer_tools/presentation/screens/records_page.dart';
 import 'package:lazurite/src/features/dms/presentation/conversation_detail_screen.dart';
 import 'package:lazurite/src/features/dms/presentation/conversation_list_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
@@ -38,6 +41,15 @@ import 'package:lazurite/src/features/thread/presentation/thread_screen.dart';
 
 /// Global navigator key for the root navigator.
 final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+
+/// Helper to get DID from auth state for DevTools routes.
+String _getDidFromAuth(Ref ref) {
+  final authState = ref.read(authProvider);
+  if (authState is AuthStateAuthenticated) {
+    return authState.session.did;
+  }
+  return '';
+}
 
 /// Creates and configures the app router.
 ///
@@ -407,6 +419,48 @@ GoRouter createRouter(Ref ref) {
         path: AppRoutes.devtools,
         name: AppRouteNames.devToolsHome,
         builder: (context, state) => const DevToolsHomePage(),
+        routes: [
+          GoRoute(
+            path: AppRoutes.devtoolsCollections,
+            name: AppRouteNames.devToolsCollections,
+            pageBuilder: (context, state) => LazuritePageTransitions.build(
+              child: const CollectionsPage(),
+              type: LazuriteTransitionType.sharedAxisHorizontal,
+              state: state,
+              controller: animationController,
+            ),
+            routes: [
+              GoRoute(
+                path: AppRoutes.devtoolsRecords,
+                name: AppRouteNames.devToolsRecords,
+                pageBuilder: (context, state) => LazuritePageTransitions.build(
+                  child: RecordsPage(
+                    did: _getDidFromAuth(ref),
+                    collection: Uri.decodeComponent(state.pathParameters['collection']!),
+                  ),
+                  type: LazuriteTransitionType.sharedAxisHorizontal,
+                  state: state,
+                  controller: animationController,
+                ),
+                routes: [
+                  GoRoute(
+                    path: AppRoutes.devtoolsRecord,
+                    name: AppRouteNames.devToolsRecord,
+                    pageBuilder: (context, state) => LazuritePageTransitions.build(
+                      child: RecordDetailPage(
+                        collection: Uri.decodeComponent(state.pathParameters['collection']!),
+                        rkey: Uri.decodeComponent(state.pathParameters['rkey']!),
+                      ),
+                      type: LazuriteTransitionType.sharedAxisHorizontal,
+                      state: state,
+                      controller: animationController,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     ],
   );

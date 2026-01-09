@@ -60,6 +60,22 @@ Stream<List<String>> pinnedUris(Ref ref) {
   return db.devToolsDao.watchPins().map((pins) => pins.map((p) => p.uri).toList());
 }
 
+/// Provides a single record by collection and rkey for the current user.
+///
+/// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
+/// [rkey] is the record key.
+/// Returns null if not authenticated or record not found.
+@riverpod
+Future<RepoRecord?> recordDetail(Ref ref, String collection, String rkey) async {
+  final authState = ref.watch(authProvider);
+  if (authState is! AuthStateAuthenticated) {
+    return null;
+  }
+
+  final repo = ref.watch(devtoolsRepositoryProvider);
+  return repo.getRecord(repo: authState.session.did, collection: collection, rkey: rkey);
+}
+
 /// State class for managing paginated records.
 class RecordsState {
   const RecordsState({

@@ -70,6 +70,7 @@ dependencies:
   flutter_svg: ^2.0.10+1
   dynamic_color: ^1.8.1
   package_info_plus: ^9.0.0
+  flutter_json: ^0.0.6
 
 dev_dependencies:
   flutter_test:

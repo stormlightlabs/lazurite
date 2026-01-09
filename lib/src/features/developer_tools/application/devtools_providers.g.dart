@@ -242,6 +242,104 @@ final class PinnedUrisProvider
 
 String _$pinnedUrisHash() => r'dbe9bd345d2600ce0cd40c65deceba8141a827c6';
 
+/// Provides a single record by collection and rkey for the current user.
+///
+/// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
+/// [rkey] is the record key.
+/// Returns null if not authenticated or record not found.
+
+@ProviderFor(recordDetail)
+final recordDetailProvider = RecordDetailFamily._();
+
+/// Provides a single record by collection and rkey for the current user.
+///
+/// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
+/// [rkey] is the record key.
+/// Returns null if not authenticated or record not found.
+
+final class RecordDetailProvider
+    extends $FunctionalProvider<AsyncValue<RepoRecord?>, RepoRecord?, FutureOr<RepoRecord?>>
+    with $FutureModifier<RepoRecord?>, $FutureProvider<RepoRecord?> {
+  /// Provides a single record by collection and rkey for the current user.
+  ///
+  /// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
+  /// [rkey] is the record key.
+  /// Returns null if not authenticated or record not found.
+  RecordDetailProvider._({
+    required RecordDetailFamily super.from,
+    required (String, String) super.argument,
+  }) : super(
+         retry: null,
+         name: r'recordDetailProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$recordDetailHash();
+
+  @override
+  String toString() {
+    return r'recordDetailProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<RepoRecord?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<RepoRecord?> create(Ref ref) {
+    final argument = this.argument as (String, String);
+    return recordDetail(ref, argument.$1, argument.$2);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RecordDetailProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$recordDetailHash() => r'34d48a10bfaae231d25dcc6a1d6d175b007cb906';
+
+/// Provides a single record by collection and rkey for the current user.
+///
+/// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
+/// [rkey] is the record key.
+/// Returns null if not authenticated or record not found.
+
+final class RecordDetailFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<RepoRecord?>, (String, String)> {
+  RecordDetailFamily._()
+    : super(
+        retry: null,
+        name: r'recordDetailProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provides a single record by collection and rkey for the current user.
+  ///
+  /// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
+  /// [rkey] is the record key.
+  /// Returns null if not authenticated or record not found.
+
+  RecordDetailProvider call(String collection, String rkey) =>
+      RecordDetailProvider._(argument: (collection, rkey), from: this);
+
+  @override
+  String toString() => r'recordDetailProvider';
+}
+
 /// Provides paginated records for a specific collection.
 ///
 /// Manages infinite scroll with cursor-based pagination.
@@ -296,7 +394,7 @@ final class RecordsProvider extends $AsyncNotifierProvider<Records, RecordsState
   }
 }
 
-String _$recordsHash() => r'394b8e4921fa44831bf2ada0705c265b008fe3c1';
+String _$recordsHash() => r'276711cc187ecfe00faa0c8340ab6394d498beef';
 
 /// Provides paginated records for a specific collection.
 ///

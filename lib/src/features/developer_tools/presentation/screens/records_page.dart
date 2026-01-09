@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/features/developer_tools/application/devtools_providers.dart';
 import 'package:lazurite/src/features/developer_tools/domain/repo_record.dart';
@@ -227,10 +228,13 @@ class _RecordTile extends ConsumerWidget {
               alignment: Alignment.centerRight,
               child: TextButton.icon(
                 onPressed: () {
-                  // TODO: Navigate to record detail page
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('Record detail coming soon...')));
+                  context.goNamed(
+                    AppRouteNames.devToolsRecord,
+                    pathParameters: {
+                      'collection': Uri.encodeComponent(record.collection),
+                      'rkey': Uri.encodeComponent(record.rkey),
+                    },
+                  );
                 },
                 icon: const Icon(Icons.visibility, size: 18),
                 label: const Text('View Details'),

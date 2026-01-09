@@ -48,12 +48,12 @@ Phase 2: Repository Browser (Read-Only)
 
 Phase 3: Record Inspector
 - [x] com.atproto.repo.getRecord: fetch single record
-- [ ] RecordDetailPage: JSON tree viewer with collapsible nodes
-      - [ ] Syntax highlighting for JSON
-      - [ ] Copy buttons at every level (URI, CID, path values)
-      - [ ] Metadata header: AT URI, CID, indexedAt
-      - [ ] Inline blob display (images/videos)
-      - [ ] Export actions: JSON file, share sheet
+- [x] RecordDetailPage: JSON tree viewer with collapsible nodes
+      - [x] Syntax highlighting for JSON
+      - [x] Copy buttons at every level (URI, CID, path values)
+      - [x] Metadata header: AT URI, CID, indexedAt
+      - [x] Inline blob display (images/videos)
+      - [x] Export actions: JSON file, share sheet
 
 Tests:
 - [x] Widget test: debug overlay hidden in release mode
@@ -70,8 +70,8 @@ Deliverables:
 - [x] User-facing DevTools (production) for repository inspection
 - [x] Collections browser with search and pinning
 - [x] Records list with rich previews and pagination
-- [ ] Record inspector with JSON tree and metadata
-- [ ] UI is transparent, "power-user" focused
+- [x] Record inspector with JSON tree and metadata
+- [x] UI is transparent, "power-user" focused
 
 ================================================================================
 O. Hardening (mobile)                                                   *bsky-O*

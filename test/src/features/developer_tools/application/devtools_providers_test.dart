@@ -1,8 +1,8 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/developer_tools/application/devtools_providers.dart';
 import 'package:lazurite/src/features/developer_tools/domain/repo_record.dart';
 import 'package:lazurite/src/features/developer_tools/infrastructure/devtools_repository.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockDevtoolsRepository extends Mock implements DevtoolsRepository {}
@@ -215,6 +215,23 @@ void main() {
       expect(state.records, hasLength(2));
       expect(state.error, isA<Exception>());
       expect(state.isLoading, false);
+    });
+  });
+
+  group('recordDetailProvider', () {
+    late ProviderContainer container;
+    late MockDevtoolsRepository mockRepository;
+
+    setUp(() {
+      mockRepository = MockDevtoolsRepository();
+
+      container = ProviderContainer(
+        overrides: [devtoolsRepositoryProvider.overrideWithValue(mockRepository)],
+      );
+    });
+
+    tearDown(() {
+      container.dispose();
     });
   });
 }

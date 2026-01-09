@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/features/developer_tools/application/devtools_providers.dart';
 import 'package:lazurite/src/features/developer_tools/domain/repo_collection.dart';
 
@@ -173,10 +174,10 @@ class _CollectionTile extends ConsumerWidget {
         ],
       ),
       onTap: () {
-        // TODO: Navigate to RecordsPage
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Opening ${collection.nsid}...')));
+        context.goNamed(
+          AppRouteNames.devToolsRecords,
+          pathParameters: {'collection': Uri.encodeComponent(collection.nsid)},
+        );
       },
     );
   }
