@@ -90,9 +90,18 @@ class PinnedFeedsNotifier extends _$PinnedFeedsNotifier {
       return const Stream.empty();
     }
 
+    final logger = ref.watch(loggerProvider('PinnedFeedsNotifier'));
     final repository = ref.watch(feedRepositoryProvider);
     return repository.watchPinnedFeeds(ownerDid).map((list) {
-      return list.map(SavedFeedData.fromEntity).toList();
+      final data = list.map(SavedFeedData.fromEntity).toList();
+      if (data.isNotEmpty) {
+        logger.debug(
+          'Emitting ${data.length} feeds, first: ${data.first.displayName} (sortOrder=${data.first.sortOrder})',
+        );
+      } else {
+        logger.debug('Emitting empty list');
+      }
+      return data;
     });
   }
 }
@@ -218,6 +227,7 @@ class ActiveFeed extends _$ActiveFeed {
   @override
   String build() {
     final authState = ref.watch(authProvider);
+    final logger = ref.watch(loggerProvider('ActiveFeed'));
 
     if (authState is AuthStateAuthenticated) {
       ref.listen(pinnedFeedsProvider, _handlePinnedFeedsChanged);
@@ -225,9 +235,13 @@ class ActiveFeed extends _$ActiveFeed {
 
       if (!_hasUserSwitched && pinnedFeeds != null && pinnedFeeds.isNotEmpty) {
         _lastResolvedFeed = pinnedFeeds.first.uri;
+        logger.debug('Initial build: using first pinned feed ${pinnedFeeds.first.displayName}');
         return _lastResolvedFeed!;
       }
 
+      logger.debug(
+        'Initial build: falling back to ${_lastResolvedFeed ?? FeedRepository.kDiscoverFeedUri}',
+      );
       return _lastResolvedFeed ?? FeedRepository.kDiscoverFeedUri;
     }
     _hasUserSwitched = false;
@@ -270,8 +284,10 @@ class ActiveFeed extends _$ActiveFeed {
     AsyncValue<List<SavedFeedData>>? previous,
     AsyncValue<List<SavedFeedData>> next,
   ) {
+    final logger = ref.read(loggerProvider('ActiveFeed'));
     next.whenData((feeds) {
       if (feeds.isEmpty) {
+        logger.debug('Pinned feeds empty, switching to Discover');
         if (!_hasUserSwitched) {
           _updateState(FeedRepository.kDiscoverFeedUri);
         }
@@ -280,10 +296,15 @@ class ActiveFeed extends _$ActiveFeed {
 
       final currentExists = feeds.any((feed) => feed.uri == state);
       if (!currentExists) {
+        logger.debug('Current feed no longer exists, resetting hasUserSwitched');
         _hasUserSwitched = false;
       }
 
       if (!_hasUserSwitched) {
+        final firstFeed = feeds.first;
+        logger.debug(
+          'Switching to first pinned feed: ${firstFeed.displayName} (sortOrder=${firstFeed.sortOrder}, uri=${firstFeed.uri})',
+        );
         _updateState(feeds.first.uri);
       }
     });

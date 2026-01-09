@@ -166,6 +166,14 @@ class FeedRepository {
         for (final feed in batchResults) {
           fetchedMetadata[feed.uri] = feed;
         }
+
+        if (batchResults.length < newRemoteFeeds.length) {
+          final missingUris = newRemoteFeeds.where((uri) => !fetchedMetadata.containsKey(uri));
+          _logger.warning(
+            'Batch fetch incomplete: ${batchResults.length}/${newRemoteFeeds.length} feeds returned',
+            {'missingUris': missingUris.take(5).join(', ')},
+          );
+        }
       } catch (e, stack) {
         _logger.error('Failed to batch fetch feed metadata', {'error': e, 'stack': stack});
       }
@@ -308,16 +316,25 @@ class FeedRepository {
     if (feedsToUpdate.isNotEmpty) {
       final pinnedUpdates = feedsToUpdate.where((u) => u.isPinned).length;
       _logger.debug('Updating ${feedsToUpdate.length} feeds ($pinnedUpdates pinned)');
-      for (final update in feedsToUpdate) {
-        await _dao.updateSyncState(
-          uri: update.uri,
-          ownerDid: ownerDid,
-          sortOrder: update.sortOrder,
-          isPinned: update.isPinned,
-          lastSynced: update.lastSynced,
-          clearLocalModification: update.clearLocalUpdatedAt,
-        );
-      }
+
+      await _dao.db.transaction(() async {
+        for (final update in feedsToUpdate) {
+          final rowsAffected = await _dao.updateSyncState(
+            uri: update.uri,
+            ownerDid: ownerDid,
+            sortOrder: update.sortOrder,
+            isPinned: update.isPinned,
+            lastSynced: update.lastSynced,
+            clearLocalModification: update.clearLocalUpdatedAt,
+          );
+
+          if (rowsAffected == 0) {
+            _logger.warning(
+              'Failed to update feed ${update.uri} - feed does not exist in database',
+            );
+          }
+        }
+      });
     }
 
     if (feedsToRemove.isNotEmpty) {
@@ -337,10 +354,31 @@ class FeedRepository {
     final allFeeds = await _dao.getAllFeeds(ownerDid);
     final pinnedFeeds = allFeeds.where((f) => f.isPinned).toList();
     _logger.debug('Sync completed: ${allFeeds.length} total, ${pinnedFeeds.length} pinned');
+
+    if (allFeeds.length < remoteSavedUris.length) {
+      _logger.warning(
+        'Feed count mismatch: expected ${remoteSavedUris.length} total, got ${allFeeds.length}',
+      );
+    }
+
     if (pinnedFeeds.isNotEmpty) {
-      final pinnedNames = pinnedFeeds.map((f) => '${f.displayName} (${f.uri})').join(', ');
+      final pinnedDetails = pinnedFeeds
+          .map((f) => '${f.displayName} (sortOrder=${f.sortOrder}, ${f.uri})')
+          .join(', ');
       _logger.debug(
-        'Pinned feeds: ${pinnedNames.length > 500 ? pinnedNames.substring(0, 500) : pinnedNames}',
+        'Pinned feeds: ${pinnedDetails.length > 500 ? pinnedDetails.substring(0, 500) : pinnedDetails}',
+      );
+
+      final expectedPinned = remotePinnedUris.toSet().length;
+      if (pinnedFeeds.length != expectedPinned) {
+        _logger.warning(
+          'Pinned count mismatch: expected $expectedPinned, got ${pinnedFeeds.length}',
+        );
+      }
+
+      final firstFeed = pinnedFeeds.first;
+      _logger.debug(
+        'First pinned feed: ${firstFeed.displayName} (sortOrder=${firstFeed.sortOrder}, uri=${firstFeed.uri})',
       );
     } else {
       _logger.warning('No pinned feeds found after sync!');

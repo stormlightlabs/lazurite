@@ -49,7 +49,8 @@ DI wiring is centralized in `lib/src/core` to keep `main.dart` lean.
 
 Place unit tests beside their feature mirror (e.g., `lib/src/features/feed` → `test/src/features/feed`). Test files end with `_test.dart` and group cases with `group()` labels describing behavior.
 
-Run `just test` before pushing; add `flutter test --coverage` when validating regressions that touch networking or auth.
+Run `just test` before pushing; add `flutter test --coverage` when validating regressions that touch networking or auth. As stated above, use `test-quiet` for quieter output (this is
+equivalent to running `flutter test --reporter=failures-only`)
 
 We prefer fake data builders from `test/helpers` and avoid real network calls.
 The infrastructure layer already exposes abstraction seams for mocking.

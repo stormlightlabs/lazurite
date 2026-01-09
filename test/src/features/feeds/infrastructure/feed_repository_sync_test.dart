@@ -766,4 +766,63 @@ void main() {
       expect(feed!.isPinned, true, reason: 'Local pin status should be preserved (newer)');
     });
   });
+
+  group('Stream Emission Optimization', () {
+    test('batch updates during sync emit stream only once', () async {
+      final feedUris = List.generate(
+        50,
+        (i) => 'at://did:plc:test$i/app.bsky.feed.generator/feed$i',
+      );
+
+      for (var i = 0; i < feedUris.length; i++) {
+        await db.savedFeedsDao.upsertFeed(
+          SavedFeedsCompanion.insert(
+            uri: feedUris[i],
+            displayName: 'Feed $i',
+            creatorDid: 'did:plc:test$i',
+            sortOrder: i,
+            isPinned: Value(i < 10),
+            ownerDid: ownerDid,
+            lastSynced: DateTime.now().subtract(const Duration(hours: 1)),
+          ),
+        );
+      }
+
+      final remotePrefs = {
+        'preferences': [
+          {
+            '\$type': 'app.bsky.actor.defs#savedFeedsPref',
+            'saved': feedUris,
+            'pinned': feedUris.sublist(0, 10),
+          },
+        ],
+      };
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => remotePrefs);
+
+      final emissionCount = <int>[];
+      final subscription = db.savedFeedsDao.watchAllFeeds(ownerDid).listen((feeds) {
+        emissionCount.add(feeds.length);
+      });
+
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final emissionsBeforeSync = emissionCount.length;
+
+      await repository.syncPreferences(ownerDid);
+
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      final emissionsAfterSync = emissionCount.length - emissionsBeforeSync;
+
+      expect(
+        emissionsAfterSync,
+        1,
+        reason: 'Batch updates should emit stream only once, not once per feed',
+      );
+
+      await subscription.cancel();
+    });
+  });
 }
