@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'daos/animation_preferences_dao.dart';
 import 'daos/bluesky_preferences_dao.dart';
 import 'daos/custom_theme_dao.dart';
+import 'daos/dev_tools_dao.dart';
 import 'daos/dm_convos_dao.dart';
 import 'daos/dm_messages_dao.dart';
 import 'daos/dm_outbox_dao.dart';
@@ -55,6 +56,8 @@ part 'app_database.g.dart';
     DmConvos,
     DmMessages,
     DmOutbox,
+    DevSettings,
+    DevNetworkLogs,
   ],
   daos: [
     FeedContentDao,
@@ -76,13 +79,14 @@ part 'app_database.g.dart';
     DmConvosDao,
     DmMessagesDao,
     DmOutboxDao,
+    DevToolsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 1;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(

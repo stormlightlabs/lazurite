@@ -205,7 +205,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Find logo. It's the first SvgPicture in the list (Header).
       final logoFinder = find.byType(SvgPicture).first;
 
       await tester.tap(logoFinder);
@@ -215,7 +214,6 @@ void main() {
       await tester.tap(logoFinder);
       await tester.pump();
 
-      // Verify toggle was called (mock controller manually tracks calls or we check state change if implementation updates state)
       expect(mockController.toggleCalled, isTrue);
     });
   });
@@ -233,11 +231,12 @@ class MockDebugOverlayController extends DebugOverlayController {
     state = state.copyWith(isVisible: !state.isVisible);
   }
 
-  // Stubs for other members to satisfy interface if needed, or stick to what's used.
   @override
   void show() {}
+
   @override
   void hide() {}
+
   @override
   void setTab(int index) {}
 }

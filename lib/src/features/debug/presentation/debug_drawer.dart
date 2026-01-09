@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../application/debug_overlay_controller.dart';
 import 'atproto_session_tab.dart';
+import 'network_inspector_tab.dart';
 import 'system_info_tab.dart';
 
 /// A drawer displaying debug information in tabs.
@@ -24,13 +25,17 @@ class DebugDrawer extends ConsumerWidget {
       child: SafeArea(
         left: false,
         child: DefaultTabController(
-          length: 2,
+          length: 3,
           initialIndex: overlayState.activeTabIndex,
           child: Column(
             children: [
               _buildHeader(context, ref, theme),
               _buildTabBar(theme),
-              const Expanded(child: TabBarView(children: [SystemInfoTab(), AtprotoSessionTab()])),
+              const Expanded(
+                child: TabBarView(
+                  children: [SystemInfoTab(), AtprotoSessionTab(), NetworkInspectorTab()],
+                ),
+              ),
             ],
           ),
         ),
@@ -73,6 +78,7 @@ class DebugDrawer extends ConsumerWidget {
       tabs: const [
         Tab(icon: Icon(Icons.info_outline), text: 'System'),
         Tab(icon: Icon(Icons.account_circle_outlined), text: 'Session'),
+        Tab(icon: Icon(Icons.http), text: 'Network'),
       ],
       labelColor: theme.colorScheme.primary,
       unselectedLabelColor: theme.colorScheme.onSurfaceVariant,

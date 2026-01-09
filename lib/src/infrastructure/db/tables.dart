@@ -633,3 +633,29 @@ class DmOutbox extends Table {
   @override
   Set<Column> get primaryKey => {outboxId};
 }
+
+/// Stores developer settings/flags (e.g., debug mode enabled).
+class DevSettings extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get key => text().unique()();
+  TextColumn get value => text()();
+
+  /// Type of value: 'boolean', 'string', 'int'
+  TextColumn get type => text()();
+}
+
+/// Stores network logs for the debug inspector.
+class DevNetworkLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get uuid => text().unique()();
+  TextColumn get method => text()();
+  TextColumn get url => text()();
+  IntColumn get statusCode => integer()();
+  TextColumn get requestHeaders => text()(); // JSON
+  TextColumn get responseHeaders => text()(); // JSON
+  TextColumn get requestBody => text().nullable()();
+  TextColumn get responseBody => text().nullable()();
+  DateTimeColumn get timestamp => dateTime()();
+  IntColumn get durationMs => integer()();
+  TextColumn get error => text().nullable()();
+}

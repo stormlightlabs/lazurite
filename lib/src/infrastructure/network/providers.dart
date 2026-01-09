@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
@@ -6,6 +7,7 @@ import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../features/debug/infrastructure/debug_network_interceptor.dart';
 import 'dio_clients.dart';
 import 'xrpc_client.dart';
 
@@ -16,7 +18,8 @@ part 'providers.g.dart';
 /// This client is configured for the public AppView at public.api.bsky.app.
 @Riverpod(keepAlive: true)
 Dio dioPublic(Ref ref) {
-  return createPublicDio();
+  final db = ref.watch(appDatabaseProvider);
+  return createPublicDio(interceptors: [if (kDebugMode) DebugNetworkInterceptor(db.devToolsDao)]);
 }
 
 /// Provides the PDS Dio client for authenticated API access.
@@ -31,6 +34,8 @@ Dio? dioPds(Ref ref) {
     return null;
   }
 
+  final db = ref.watch(appDatabaseProvider);
+
   return createPdsDio(
     pdsUrl: session.pdsUrl,
     getSession: () => _readCurrentSession(ref),
@@ -38,7 +43,6 @@ Dio? dioPds(Ref ref) {
     nonceStore: ref.read(dpopNonceStoreProvider),
     onSessionInvalidated: () {
       try {
-        final db = ref.read(appDatabaseProvider);
         db.feedContentDao.clearFeedContent('home', session.did);
       } catch (e) {
         /* Ignore if database not available */
@@ -46,6 +50,7 @@ Dio? dioPds(Ref ref) {
 
       ref.read(authProvider.notifier).logout();
     },
+    interceptors: [if (kDebugMode) DebugNetworkInterceptor(db.devToolsDao)],
   );
 }
 

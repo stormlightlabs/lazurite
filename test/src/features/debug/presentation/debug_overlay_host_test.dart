@@ -129,7 +129,6 @@ void main() {
 
         expect(find.text('Debug Overlay'), findsNothing);
 
-        // Simulate 2-finger press
         final gesture1 = await tester.createGesture(kind: PointerDeviceKind.touch, pointer: 1);
         final gesture2 = await tester.createGesture(kind: PointerDeviceKind.touch, pointer: 2);
 
@@ -137,7 +136,6 @@ void main() {
         await gesture2.down(const Offset(200, 200));
         await tester.pump();
 
-        // Hold for required duration (2 seconds)
         await tester.pump(const Duration(seconds: 2));
 
         expect(find.text('Debug Overlay'), findsOneWidget);

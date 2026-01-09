@@ -4,6 +4,7 @@ import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/infrastructure/db/daos/dev_tools_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:lazurite/src/infrastructure/network/interceptors/auth_interceptor.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
@@ -12,6 +13,8 @@ import 'package:mocktail/mocktail.dart';
 import '../../../helpers/mocks.dart';
 
 class MockFeedContentDao extends Mock implements FeedContentDao {}
+
+class MockDevToolsDao extends Mock implements DevToolsDao {}
 
 class TestAuthNotifier extends AuthNotifier {
   TestAuthNotifier(this._initialState, {this.refreshedSession});
@@ -53,7 +56,13 @@ Session buildSession() {
 void main() {
   group('dioPublicProvider', () {
     test('creates Dio configured for public API', () {
-      final container = ProviderContainer();
+      final database = MockAppDatabase();
+      final devToolsDao = MockDevToolsDao();
+      when(() => database.devToolsDao).thenReturn(devToolsDao);
+
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
+      );
       addTearDown(container.dispose);
 
       final dio = container.read(dioPublicProvider);
@@ -65,15 +74,18 @@ void main() {
     late MockSessionStorage mockSessionStorage;
     late MockAppDatabase mockDatabase;
     late MockFeedContentDao mockFeedContentDao;
+    late MockDevToolsDao mockDevToolsDao;
 
     setUp(() {
       mockSessionStorage = MockSessionStorage();
       mockDatabase = MockAppDatabase();
       mockFeedContentDao = MockFeedContentDao();
+      mockDevToolsDao = MockDevToolsDao();
 
       when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
       when(() => mockSessionStorage.clearSession()).thenAnswer((_) async {});
       when(() => mockDatabase.feedContentDao).thenReturn(mockFeedContentDao);
+      when(() => mockDatabase.devToolsDao).thenReturn(mockDevToolsDao);
       when(() => mockFeedContentDao.clearFeedContent(any(), any())).thenAnswer((_) async {});
     });
 
@@ -96,6 +108,7 @@ void main() {
         overrides: [
           sessionStorageProvider.overrideWithValue(mockSessionStorage),
           authProvider.overrideWith(() => notifier),
+          appDatabaseProvider.overrideWithValue(mockDatabase),
         ],
       );
       addTearDown(container.dispose);

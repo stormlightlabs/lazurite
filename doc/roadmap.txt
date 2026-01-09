@@ -22,20 +22,20 @@ Phase 0: Internal Debug Mode Foundation (kDebugMode only)
 - [x] Build DebugDrawer with tabs: System Info, ATProto Session
 - [x] System Info Tab: Flutter version, platform, screen size, memory, FPS
 - [x] ATProto Session Tab: DID, handle, PDS host, session status (no tokens)
-- [ ] Create DebugNetworkInterceptor for Dio to log XRPC calls
-- [ ] Network Inspector Tab: display last 20 XRPC calls, expandable bodies to
+- [x] Create DebugNetworkInterceptor for Dio to log XRPC calls
+- [x] Network Inspector Tab: display last 20 XRPC calls, expandable bodies to
       view request/response details
-- [ ] Add dev_settings table (debugModeEnabled, allowOtherRepos, etc.)
-- [ ] Add dev_network_logs table with LRU eviction (1000 in-memory, 24h in DB)
+- [x] Add dev_settings table (debugModeEnabled, allowOtherRepos, etc.)
+- [x] Add dev_network_logs table with LRU eviction (1000 in-memory, 24h in DB)
 
-Phase 1: User-Facing DevTools Entry Points (Production builds)
-- [ ] Add Settings → "Developer Tools" toggle (works in release builds)
+Phase 1: User-Facing "DevTools"
+- [ ] Add dev_pins table for pinned collections/records
+- [ ] Add dev_recent_records table for LRU cache
 - [ ] Create /devtools route group (always available, not kDebugMode gated)
 - [ ] DevToolsHomePage: show DID, PDS host, quick actions
 - [ ] "Copy my DID" action
+- [ ] Add Settings → "Developer Tools" toggle (works in release builds)
 - [ ] Link debug overlay to full DevTools (/devtools routes)
-- [ ] Add dev_pins table for pinned collections/records
-- [ ] Add dev_recent_records table for LRU cache
 
 Phase 2: Repository Browser (Read-Only)
 - [ ] Implement DevtoolsRepository wrapping XrpcClient
@@ -317,6 +317,7 @@ Tasks:
       - [ ] Post published
       - [ ] Media attached
       - [ ] Publish failed
+
 - [x] DM Accessibility
       - [x] screen reader support (semantic labels)
       - [ ] keyboard navigation (Cmd/Ctrl+Enter to send)

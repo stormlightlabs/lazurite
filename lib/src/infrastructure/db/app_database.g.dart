@@ -11651,6 +11651,925 @@ class DmOutboxCompanion extends UpdateCompanion<DmOutboxData> {
   }
 }
 
+class $DevSettingsTable extends DevSettings with TableInfo<$DevSettingsTable, DevSetting> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DevSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+  );
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, key, value, type];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'dev_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DevSetting> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('key')) {
+      context.handle(_keyMeta, key.isAcceptableOrUnknown(data['key']!, _keyMeta));
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(_valueMeta, value.isAcceptableOrUnknown(data['value']!, _valueMeta));
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(_typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DevSetting map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DevSetting(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      key: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}key'])!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+    );
+  }
+
+  @override
+  $DevSettingsTable createAlias(String alias) {
+    return $DevSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class DevSetting extends DataClass implements Insertable<DevSetting> {
+  final int id;
+  final String key;
+  final String value;
+
+  /// Type of value: 'boolean', 'string', 'int'
+  final String type;
+  const DevSetting({required this.id, required this.key, required this.value, required this.type});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<String>(value);
+    map['type'] = Variable<String>(type);
+    return map;
+  }
+
+  DevSettingsCompanion toCompanion(bool nullToAbsent) {
+    return DevSettingsCompanion(
+      id: Value(id),
+      key: Value(key),
+      value: Value(value),
+      type: Value(type),
+    );
+  }
+
+  factory DevSetting.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DevSetting(
+      id: serializer.fromJson<int>(json['id']),
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String>(json['value']),
+      type: serializer.fromJson<String>(json['type']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String>(value),
+      'type': serializer.toJson<String>(type),
+    };
+  }
+
+  DevSetting copyWith({int? id, String? key, String? value, String? type}) => DevSetting(
+    id: id ?? this.id,
+    key: key ?? this.key,
+    value: value ?? this.value,
+    type: type ?? this.type,
+  );
+  DevSetting copyWithCompanion(DevSettingsCompanion data) {
+    return DevSetting(
+      id: data.id.present ? data.id.value : this.id,
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+      type: data.type.present ? data.type.value : this.type,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DevSetting(')
+          ..write('id: $id, ')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('type: $type')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, key, value, type);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DevSetting &&
+          other.id == this.id &&
+          other.key == this.key &&
+          other.value == this.value &&
+          other.type == this.type);
+}
+
+class DevSettingsCompanion extends UpdateCompanion<DevSetting> {
+  final Value<int> id;
+  final Value<String> key;
+  final Value<String> value;
+  final Value<String> type;
+  const DevSettingsCompanion({
+    this.id = const Value.absent(),
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.type = const Value.absent(),
+  });
+  DevSettingsCompanion.insert({
+    this.id = const Value.absent(),
+    required String key,
+    required String value,
+    required String type,
+  }) : key = Value(key),
+       value = Value(value),
+       type = Value(type);
+  static Insertable<DevSetting> custom({
+    Expression<int>? id,
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<String>? type,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (type != null) 'type': type,
+    });
+  }
+
+  DevSettingsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? key,
+    Value<String>? value,
+    Value<String>? type,
+  }) {
+    return DevSettingsCompanion(
+      id: id ?? this.id,
+      key: key ?? this.key,
+      value: value ?? this.value,
+      type: type ?? this.type,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DevSettingsCompanion(')
+          ..write('id: $id, ')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('type: $type')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DevNetworkLogsTable extends DevNetworkLogs
+    with TableInfo<$DevNetworkLogsTable, DevNetworkLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DevNetworkLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+  );
+  static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
+  @override
+  late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
+    'uuid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _methodMeta = const VerificationMeta('method');
+  @override
+  late final GeneratedColumn<String> method = GeneratedColumn<String>(
+    'method',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _urlMeta = const VerificationMeta('url');
+  @override
+  late final GeneratedColumn<String> url = GeneratedColumn<String>(
+    'url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusCodeMeta = const VerificationMeta('statusCode');
+  @override
+  late final GeneratedColumn<int> statusCode = GeneratedColumn<int>(
+    'status_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requestHeadersMeta = const VerificationMeta('requestHeaders');
+  @override
+  late final GeneratedColumn<String> requestHeaders = GeneratedColumn<String>(
+    'request_headers',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _responseHeadersMeta = const VerificationMeta('responseHeaders');
+  @override
+  late final GeneratedColumn<String> responseHeaders = GeneratedColumn<String>(
+    'response_headers',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requestBodyMeta = const VerificationMeta('requestBody');
+  @override
+  late final GeneratedColumn<String> requestBody = GeneratedColumn<String>(
+    'request_body',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _responseBodyMeta = const VerificationMeta('responseBody');
+  @override
+  late final GeneratedColumn<String> responseBody = GeneratedColumn<String>(
+    'response_body',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _timestampMeta = const VerificationMeta('timestamp');
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+    'timestamp',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _durationMsMeta = const VerificationMeta('durationMs');
+  @override
+  late final GeneratedColumn<int> durationMs = GeneratedColumn<int>(
+    'duration_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _errorMeta = const VerificationMeta('error');
+  @override
+  late final GeneratedColumn<String> error = GeneratedColumn<String>(
+    'error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    uuid,
+    method,
+    url,
+    statusCode,
+    requestHeaders,
+    responseHeaders,
+    requestBody,
+    responseBody,
+    timestamp,
+    durationMs,
+    error,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'dev_network_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DevNetworkLog> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('uuid')) {
+      context.handle(_uuidMeta, uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta));
+    } else if (isInserting) {
+      context.missing(_uuidMeta);
+    }
+    if (data.containsKey('method')) {
+      context.handle(_methodMeta, method.isAcceptableOrUnknown(data['method']!, _methodMeta));
+    } else if (isInserting) {
+      context.missing(_methodMeta);
+    }
+    if (data.containsKey('url')) {
+      context.handle(_urlMeta, url.isAcceptableOrUnknown(data['url']!, _urlMeta));
+    } else if (isInserting) {
+      context.missing(_urlMeta);
+    }
+    if (data.containsKey('status_code')) {
+      context.handle(
+        _statusCodeMeta,
+        statusCode.isAcceptableOrUnknown(data['status_code']!, _statusCodeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusCodeMeta);
+    }
+    if (data.containsKey('request_headers')) {
+      context.handle(
+        _requestHeadersMeta,
+        requestHeaders.isAcceptableOrUnknown(data['request_headers']!, _requestHeadersMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_requestHeadersMeta);
+    }
+    if (data.containsKey('response_headers')) {
+      context.handle(
+        _responseHeadersMeta,
+        responseHeaders.isAcceptableOrUnknown(data['response_headers']!, _responseHeadersMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_responseHeadersMeta);
+    }
+    if (data.containsKey('request_body')) {
+      context.handle(
+        _requestBodyMeta,
+        requestBody.isAcceptableOrUnknown(data['request_body']!, _requestBodyMeta),
+      );
+    }
+    if (data.containsKey('response_body')) {
+      context.handle(
+        _responseBodyMeta,
+        responseBody.isAcceptableOrUnknown(data['response_body']!, _responseBodyMeta),
+      );
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(
+        _timestampMeta,
+        timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timestampMeta);
+    }
+    if (data.containsKey('duration_ms')) {
+      context.handle(
+        _durationMsMeta,
+        durationMs.isAcceptableOrUnknown(data['duration_ms']!, _durationMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_durationMsMeta);
+    }
+    if (data.containsKey('error')) {
+      context.handle(_errorMeta, error.isAcceptableOrUnknown(data['error']!, _errorMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DevNetworkLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DevNetworkLog(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      uuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uuid'],
+      )!,
+      method: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}method'],
+      )!,
+      url: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}url'])!,
+      statusCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}status_code'],
+      )!,
+      requestHeaders: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_headers'],
+      )!,
+      responseHeaders: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}response_headers'],
+      )!,
+      requestBody: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_body'],
+      ),
+      responseBody: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}response_body'],
+      ),
+      timestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}timestamp'],
+      )!,
+      durationMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_ms'],
+      )!,
+      error: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error'],
+      ),
+    );
+  }
+
+  @override
+  $DevNetworkLogsTable createAlias(String alias) {
+    return $DevNetworkLogsTable(attachedDatabase, alias);
+  }
+}
+
+class DevNetworkLog extends DataClass implements Insertable<DevNetworkLog> {
+  final int id;
+  final String uuid;
+  final String method;
+  final String url;
+  final int statusCode;
+  final String requestHeaders;
+  final String responseHeaders;
+  final String? requestBody;
+  final String? responseBody;
+  final DateTime timestamp;
+  final int durationMs;
+  final String? error;
+  const DevNetworkLog({
+    required this.id,
+    required this.uuid,
+    required this.method,
+    required this.url,
+    required this.statusCode,
+    required this.requestHeaders,
+    required this.responseHeaders,
+    this.requestBody,
+    this.responseBody,
+    required this.timestamp,
+    required this.durationMs,
+    this.error,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['uuid'] = Variable<String>(uuid);
+    map['method'] = Variable<String>(method);
+    map['url'] = Variable<String>(url);
+    map['status_code'] = Variable<int>(statusCode);
+    map['request_headers'] = Variable<String>(requestHeaders);
+    map['response_headers'] = Variable<String>(responseHeaders);
+    if (!nullToAbsent || requestBody != null) {
+      map['request_body'] = Variable<String>(requestBody);
+    }
+    if (!nullToAbsent || responseBody != null) {
+      map['response_body'] = Variable<String>(responseBody);
+    }
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    map['duration_ms'] = Variable<int>(durationMs);
+    if (!nullToAbsent || error != null) {
+      map['error'] = Variable<String>(error);
+    }
+    return map;
+  }
+
+  DevNetworkLogsCompanion toCompanion(bool nullToAbsent) {
+    return DevNetworkLogsCompanion(
+      id: Value(id),
+      uuid: Value(uuid),
+      method: Value(method),
+      url: Value(url),
+      statusCode: Value(statusCode),
+      requestHeaders: Value(requestHeaders),
+      responseHeaders: Value(responseHeaders),
+      requestBody: requestBody == null && nullToAbsent ? const Value.absent() : Value(requestBody),
+      responseBody: responseBody == null && nullToAbsent
+          ? const Value.absent()
+          : Value(responseBody),
+      timestamp: Value(timestamp),
+      durationMs: Value(durationMs),
+      error: error == null && nullToAbsent ? const Value.absent() : Value(error),
+    );
+  }
+
+  factory DevNetworkLog.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DevNetworkLog(
+      id: serializer.fromJson<int>(json['id']),
+      uuid: serializer.fromJson<String>(json['uuid']),
+      method: serializer.fromJson<String>(json['method']),
+      url: serializer.fromJson<String>(json['url']),
+      statusCode: serializer.fromJson<int>(json['statusCode']),
+      requestHeaders: serializer.fromJson<String>(json['requestHeaders']),
+      responseHeaders: serializer.fromJson<String>(json['responseHeaders']),
+      requestBody: serializer.fromJson<String?>(json['requestBody']),
+      responseBody: serializer.fromJson<String?>(json['responseBody']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+      durationMs: serializer.fromJson<int>(json['durationMs']),
+      error: serializer.fromJson<String?>(json['error']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'uuid': serializer.toJson<String>(uuid),
+      'method': serializer.toJson<String>(method),
+      'url': serializer.toJson<String>(url),
+      'statusCode': serializer.toJson<int>(statusCode),
+      'requestHeaders': serializer.toJson<String>(requestHeaders),
+      'responseHeaders': serializer.toJson<String>(responseHeaders),
+      'requestBody': serializer.toJson<String?>(requestBody),
+      'responseBody': serializer.toJson<String?>(responseBody),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+      'durationMs': serializer.toJson<int>(durationMs),
+      'error': serializer.toJson<String?>(error),
+    };
+  }
+
+  DevNetworkLog copyWith({
+    int? id,
+    String? uuid,
+    String? method,
+    String? url,
+    int? statusCode,
+    String? requestHeaders,
+    String? responseHeaders,
+    Value<String?> requestBody = const Value.absent(),
+    Value<String?> responseBody = const Value.absent(),
+    DateTime? timestamp,
+    int? durationMs,
+    Value<String?> error = const Value.absent(),
+  }) => DevNetworkLog(
+    id: id ?? this.id,
+    uuid: uuid ?? this.uuid,
+    method: method ?? this.method,
+    url: url ?? this.url,
+    statusCode: statusCode ?? this.statusCode,
+    requestHeaders: requestHeaders ?? this.requestHeaders,
+    responseHeaders: responseHeaders ?? this.responseHeaders,
+    requestBody: requestBody.present ? requestBody.value : this.requestBody,
+    responseBody: responseBody.present ? responseBody.value : this.responseBody,
+    timestamp: timestamp ?? this.timestamp,
+    durationMs: durationMs ?? this.durationMs,
+    error: error.present ? error.value : this.error,
+  );
+  DevNetworkLog copyWithCompanion(DevNetworkLogsCompanion data) {
+    return DevNetworkLog(
+      id: data.id.present ? data.id.value : this.id,
+      uuid: data.uuid.present ? data.uuid.value : this.uuid,
+      method: data.method.present ? data.method.value : this.method,
+      url: data.url.present ? data.url.value : this.url,
+      statusCode: data.statusCode.present ? data.statusCode.value : this.statusCode,
+      requestHeaders: data.requestHeaders.present
+          ? data.requestHeaders.value
+          : this.requestHeaders,
+      responseHeaders: data.responseHeaders.present
+          ? data.responseHeaders.value
+          : this.responseHeaders,
+      requestBody: data.requestBody.present ? data.requestBody.value : this.requestBody,
+      responseBody: data.responseBody.present ? data.responseBody.value : this.responseBody,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+      durationMs: data.durationMs.present ? data.durationMs.value : this.durationMs,
+      error: data.error.present ? data.error.value : this.error,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DevNetworkLog(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('method: $method, ')
+          ..write('url: $url, ')
+          ..write('statusCode: $statusCode, ')
+          ..write('requestHeaders: $requestHeaders, ')
+          ..write('responseHeaders: $responseHeaders, ')
+          ..write('requestBody: $requestBody, ')
+          ..write('responseBody: $responseBody, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('error: $error')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    uuid,
+    method,
+    url,
+    statusCode,
+    requestHeaders,
+    responseHeaders,
+    requestBody,
+    responseBody,
+    timestamp,
+    durationMs,
+    error,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DevNetworkLog &&
+          other.id == this.id &&
+          other.uuid == this.uuid &&
+          other.method == this.method &&
+          other.url == this.url &&
+          other.statusCode == this.statusCode &&
+          other.requestHeaders == this.requestHeaders &&
+          other.responseHeaders == this.responseHeaders &&
+          other.requestBody == this.requestBody &&
+          other.responseBody == this.responseBody &&
+          other.timestamp == this.timestamp &&
+          other.durationMs == this.durationMs &&
+          other.error == this.error);
+}
+
+class DevNetworkLogsCompanion extends UpdateCompanion<DevNetworkLog> {
+  final Value<int> id;
+  final Value<String> uuid;
+  final Value<String> method;
+  final Value<String> url;
+  final Value<int> statusCode;
+  final Value<String> requestHeaders;
+  final Value<String> responseHeaders;
+  final Value<String?> requestBody;
+  final Value<String?> responseBody;
+  final Value<DateTime> timestamp;
+  final Value<int> durationMs;
+  final Value<String?> error;
+  const DevNetworkLogsCompanion({
+    this.id = const Value.absent(),
+    this.uuid = const Value.absent(),
+    this.method = const Value.absent(),
+    this.url = const Value.absent(),
+    this.statusCode = const Value.absent(),
+    this.requestHeaders = const Value.absent(),
+    this.responseHeaders = const Value.absent(),
+    this.requestBody = const Value.absent(),
+    this.responseBody = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.durationMs = const Value.absent(),
+    this.error = const Value.absent(),
+  });
+  DevNetworkLogsCompanion.insert({
+    this.id = const Value.absent(),
+    required String uuid,
+    required String method,
+    required String url,
+    required int statusCode,
+    required String requestHeaders,
+    required String responseHeaders,
+    this.requestBody = const Value.absent(),
+    this.responseBody = const Value.absent(),
+    required DateTime timestamp,
+    required int durationMs,
+    this.error = const Value.absent(),
+  }) : uuid = Value(uuid),
+       method = Value(method),
+       url = Value(url),
+       statusCode = Value(statusCode),
+       requestHeaders = Value(requestHeaders),
+       responseHeaders = Value(responseHeaders),
+       timestamp = Value(timestamp),
+       durationMs = Value(durationMs);
+  static Insertable<DevNetworkLog> custom({
+    Expression<int>? id,
+    Expression<String>? uuid,
+    Expression<String>? method,
+    Expression<String>? url,
+    Expression<int>? statusCode,
+    Expression<String>? requestHeaders,
+    Expression<String>? responseHeaders,
+    Expression<String>? requestBody,
+    Expression<String>? responseBody,
+    Expression<DateTime>? timestamp,
+    Expression<int>? durationMs,
+    Expression<String>? error,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (uuid != null) 'uuid': uuid,
+      if (method != null) 'method': method,
+      if (url != null) 'url': url,
+      if (statusCode != null) 'status_code': statusCode,
+      if (requestHeaders != null) 'request_headers': requestHeaders,
+      if (responseHeaders != null) 'response_headers': responseHeaders,
+      if (requestBody != null) 'request_body': requestBody,
+      if (responseBody != null) 'response_body': responseBody,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (durationMs != null) 'duration_ms': durationMs,
+      if (error != null) 'error': error,
+    });
+  }
+
+  DevNetworkLogsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? uuid,
+    Value<String>? method,
+    Value<String>? url,
+    Value<int>? statusCode,
+    Value<String>? requestHeaders,
+    Value<String>? responseHeaders,
+    Value<String?>? requestBody,
+    Value<String?>? responseBody,
+    Value<DateTime>? timestamp,
+    Value<int>? durationMs,
+    Value<String?>? error,
+  }) {
+    return DevNetworkLogsCompanion(
+      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
+      method: method ?? this.method,
+      url: url ?? this.url,
+      statusCode: statusCode ?? this.statusCode,
+      requestHeaders: requestHeaders ?? this.requestHeaders,
+      responseHeaders: responseHeaders ?? this.responseHeaders,
+      requestBody: requestBody ?? this.requestBody,
+      responseBody: responseBody ?? this.responseBody,
+      timestamp: timestamp ?? this.timestamp,
+      durationMs: durationMs ?? this.durationMs,
+      error: error ?? this.error,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (uuid.present) {
+      map['uuid'] = Variable<String>(uuid.value);
+    }
+    if (method.present) {
+      map['method'] = Variable<String>(method.value);
+    }
+    if (url.present) {
+      map['url'] = Variable<String>(url.value);
+    }
+    if (statusCode.present) {
+      map['status_code'] = Variable<int>(statusCode.value);
+    }
+    if (requestHeaders.present) {
+      map['request_headers'] = Variable<String>(requestHeaders.value);
+    }
+    if (responseHeaders.present) {
+      map['response_headers'] = Variable<String>(responseHeaders.value);
+    }
+    if (requestBody.present) {
+      map['request_body'] = Variable<String>(requestBody.value);
+    }
+    if (responseBody.present) {
+      map['response_body'] = Variable<String>(responseBody.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (durationMs.present) {
+      map['duration_ms'] = Variable<int>(durationMs.value);
+    }
+    if (error.present) {
+      map['error'] = Variable<String>(error.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DevNetworkLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('method: $method, ')
+          ..write('url: $url, ')
+          ..write('statusCode: $statusCode, ')
+          ..write('requestHeaders: $requestHeaders, ')
+          ..write('responseHeaders: $responseHeaders, ')
+          ..write('requestBody: $requestBody, ')
+          ..write('responseBody: $responseBody, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('error: $error')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -11682,6 +12601,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DmConvosTable dmConvos = $DmConvosTable(this);
   late final $DmMessagesTable dmMessages = $DmMessagesTable(this);
   late final $DmOutboxTable dmOutbox = $DmOutboxTable(this);
+  late final $DevSettingsTable devSettings = $DevSettingsTable(this);
+  late final $DevNetworkLogsTable devNetworkLogs = $DevNetworkLogsTable(this);
   late final Index feedContentSortIdx = Index(
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
@@ -11731,6 +12652,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final DmConvosDao dmConvosDao = DmConvosDao(this as AppDatabase);
   late final DmMessagesDao dmMessagesDao = DmMessagesDao(this as AppDatabase);
   late final DmOutboxDao dmOutboxDao = DmOutboxDao(this as AppDatabase);
+  late final DevToolsDao devToolsDao = DevToolsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -11761,6 +12683,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     dmConvos,
     dmMessages,
     dmOutbox,
+    devSettings,
+    devNetworkLogs,
     feedContentSortIdx,
     recentSearchesUniqueIdx,
     searchCacheSortIdx,
@@ -18549,6 +19473,423 @@ typedef $$DmOutboxTableProcessedTableManager =
       DmOutboxData,
       PrefetchHooks Function()
     >;
+typedef $$DevSettingsTableCreateCompanionBuilder =
+    DevSettingsCompanion Function({
+      Value<int> id,
+      required String key,
+      required String value,
+      required String type,
+    });
+typedef $$DevSettingsTableUpdateCompanionBuilder =
+    DevSettingsCompanion Function({
+      Value<int> id,
+      Value<String> key,
+      Value<String> value,
+      Value<String> type,
+    });
+
+class $$DevSettingsTableFilterComposer extends Composer<_$AppDatabase, $DevSettingsTable> {
+  $$DevSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
+}
+
+class $$DevSettingsTableOrderingComposer extends Composer<_$AppDatabase, $DevSettingsTable> {
+  $$DevSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
+}
+
+class $$DevSettingsTableAnnotationComposer extends Composer<_$AppDatabase, $DevSettingsTable> {
+  $$DevSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+}
+
+class $$DevSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DevSettingsTable,
+          DevSetting,
+          $$DevSettingsTableFilterComposer,
+          $$DevSettingsTableOrderingComposer,
+          $$DevSettingsTableAnnotationComposer,
+          $$DevSettingsTableCreateCompanionBuilder,
+          $$DevSettingsTableUpdateCompanionBuilder,
+          (DevSetting, BaseReferences<_$AppDatabase, $DevSettingsTable, DevSetting>),
+          DevSetting,
+          PrefetchHooks Function()
+        > {
+  $$DevSettingsTableTableManager(_$AppDatabase db, $DevSettingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$DevSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$DevSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DevSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> key = const Value.absent(),
+                Value<String> value = const Value.absent(),
+                Value<String> type = const Value.absent(),
+              }) => DevSettingsCompanion(id: id, key: key, value: value, type: type),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String key,
+                required String value,
+                required String type,
+              }) => DevSettingsCompanion.insert(id: id, key: key, value: value, type: type),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DevSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DevSettingsTable,
+      DevSetting,
+      $$DevSettingsTableFilterComposer,
+      $$DevSettingsTableOrderingComposer,
+      $$DevSettingsTableAnnotationComposer,
+      $$DevSettingsTableCreateCompanionBuilder,
+      $$DevSettingsTableUpdateCompanionBuilder,
+      (DevSetting, BaseReferences<_$AppDatabase, $DevSettingsTable, DevSetting>),
+      DevSetting,
+      PrefetchHooks Function()
+    >;
+typedef $$DevNetworkLogsTableCreateCompanionBuilder =
+    DevNetworkLogsCompanion Function({
+      Value<int> id,
+      required String uuid,
+      required String method,
+      required String url,
+      required int statusCode,
+      required String requestHeaders,
+      required String responseHeaders,
+      Value<String?> requestBody,
+      Value<String?> responseBody,
+      required DateTime timestamp,
+      required int durationMs,
+      Value<String?> error,
+    });
+typedef $$DevNetworkLogsTableUpdateCompanionBuilder =
+    DevNetworkLogsCompanion Function({
+      Value<int> id,
+      Value<String> uuid,
+      Value<String> method,
+      Value<String> url,
+      Value<int> statusCode,
+      Value<String> requestHeaders,
+      Value<String> responseHeaders,
+      Value<String?> requestBody,
+      Value<String?> responseBody,
+      Value<DateTime> timestamp,
+      Value<int> durationMs,
+      Value<String?> error,
+    });
+
+class $$DevNetworkLogsTableFilterComposer extends Composer<_$AppDatabase, $DevNetworkLogsTable> {
+  $$DevNetworkLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get method =>
+      $composableBuilder(column: $table.method, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get statusCode =>
+      $composableBuilder(column: $table.statusCode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get requestHeaders => $composableBuilder(
+    column: $table.requestHeaders,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get responseHeaders => $composableBuilder(
+    column: $table.responseHeaders,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requestBody =>
+      $composableBuilder(column: $table.requestBody, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get responseBody =>
+      $composableBuilder(column: $table.responseBody, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get durationMs =>
+      $composableBuilder(column: $table.durationMs, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => ColumnFilters(column));
+}
+
+class $$DevNetworkLogsTableOrderingComposer extends Composer<_$AppDatabase, $DevNetworkLogsTable> {
+  $$DevNetworkLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get method =>
+      $composableBuilder(column: $table.method, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get statusCode =>
+      $composableBuilder(column: $table.statusCode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get requestHeaders => $composableBuilder(
+    column: $table.requestHeaders,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get responseHeaders => $composableBuilder(
+    column: $table.responseHeaders,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requestBody =>
+      $composableBuilder(column: $table.requestBody, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get responseBody => $composableBuilder(
+    column: $table.responseBody,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get durationMs =>
+      $composableBuilder(column: $table.durationMs, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => ColumnOrderings(column));
+}
+
+class $$DevNetworkLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DevNetworkLogsTable> {
+  $$DevNetworkLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => column);
+
+  GeneratedColumn<String> get method =>
+      $composableBuilder(column: $table.method, builder: (column) => column);
+
+  GeneratedColumn<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => column);
+
+  GeneratedColumn<int> get statusCode =>
+      $composableBuilder(column: $table.statusCode, builder: (column) => column);
+
+  GeneratedColumn<String> get requestHeaders =>
+      $composableBuilder(column: $table.requestHeaders, builder: (column) => column);
+
+  GeneratedColumn<String> get responseHeaders =>
+      $composableBuilder(column: $table.responseHeaders, builder: (column) => column);
+
+  GeneratedColumn<String> get requestBody =>
+      $composableBuilder(column: $table.requestBody, builder: (column) => column);
+
+  GeneratedColumn<String> get responseBody =>
+      $composableBuilder(column: $table.responseBody, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+
+  GeneratedColumn<int> get durationMs =>
+      $composableBuilder(column: $table.durationMs, builder: (column) => column);
+
+  GeneratedColumn<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => column);
+}
+
+class $$DevNetworkLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DevNetworkLogsTable,
+          DevNetworkLog,
+          $$DevNetworkLogsTableFilterComposer,
+          $$DevNetworkLogsTableOrderingComposer,
+          $$DevNetworkLogsTableAnnotationComposer,
+          $$DevNetworkLogsTableCreateCompanionBuilder,
+          $$DevNetworkLogsTableUpdateCompanionBuilder,
+          (DevNetworkLog, BaseReferences<_$AppDatabase, $DevNetworkLogsTable, DevNetworkLog>),
+          DevNetworkLog,
+          PrefetchHooks Function()
+        > {
+  $$DevNetworkLogsTableTableManager(_$AppDatabase db, $DevNetworkLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DevNetworkLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DevNetworkLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DevNetworkLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> uuid = const Value.absent(),
+                Value<String> method = const Value.absent(),
+                Value<String> url = const Value.absent(),
+                Value<int> statusCode = const Value.absent(),
+                Value<String> requestHeaders = const Value.absent(),
+                Value<String> responseHeaders = const Value.absent(),
+                Value<String?> requestBody = const Value.absent(),
+                Value<String?> responseBody = const Value.absent(),
+                Value<DateTime> timestamp = const Value.absent(),
+                Value<int> durationMs = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+              }) => DevNetworkLogsCompanion(
+                id: id,
+                uuid: uuid,
+                method: method,
+                url: url,
+                statusCode: statusCode,
+                requestHeaders: requestHeaders,
+                responseHeaders: responseHeaders,
+                requestBody: requestBody,
+                responseBody: responseBody,
+                timestamp: timestamp,
+                durationMs: durationMs,
+                error: error,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String uuid,
+                required String method,
+                required String url,
+                required int statusCode,
+                required String requestHeaders,
+                required String responseHeaders,
+                Value<String?> requestBody = const Value.absent(),
+                Value<String?> responseBody = const Value.absent(),
+                required DateTime timestamp,
+                required int durationMs,
+                Value<String?> error = const Value.absent(),
+              }) => DevNetworkLogsCompanion.insert(
+                id: id,
+                uuid: uuid,
+                method: method,
+                url: url,
+                statusCode: statusCode,
+                requestHeaders: requestHeaders,
+                responseHeaders: responseHeaders,
+                requestBody: requestBody,
+                responseBody: responseBody,
+                timestamp: timestamp,
+                durationMs: durationMs,
+                error: error,
+              ),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DevNetworkLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DevNetworkLogsTable,
+      DevNetworkLog,
+      $$DevNetworkLogsTableFilterComposer,
+      $$DevNetworkLogsTableOrderingComposer,
+      $$DevNetworkLogsTableAnnotationComposer,
+      $$DevNetworkLogsTableCreateCompanionBuilder,
+      $$DevNetworkLogsTableUpdateCompanionBuilder,
+      (DevNetworkLog, BaseReferences<_$AppDatabase, $DevNetworkLogsTable, DevNetworkLog>),
+      DevNetworkLog,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -18596,4 +19937,8 @@ class $AppDatabaseManager {
   $$DmMessagesTableTableManager get dmMessages =>
       $$DmMessagesTableTableManager(_db, _db.dmMessages);
   $$DmOutboxTableTableManager get dmOutbox => $$DmOutboxTableTableManager(_db, _db.dmOutbox);
+  $$DevSettingsTableTableManager get devSettings =>
+      $$DevSettingsTableTableManager(_db, _db.devSettings);
+  $$DevNetworkLogsTableTableManager get devNetworkLogs =>
+      $$DevNetworkLogsTableTableManager(_db, _db.devNetworkLogs);
 }

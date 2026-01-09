@@ -10,7 +10,7 @@ const publicApiBaseUrl = 'https://public.api.bsky.app';
 ///
 /// This client is used for unauthenticated reads like fetching profiles, threads, and
 /// search results.
-Dio createPublicDio({bool enableLogging = true}) {
+Dio createPublicDio({bool enableLogging = true, List<Interceptor> interceptors = const []}) {
   final dio = Dio(
     BaseOptions(
       baseUrl: publicApiBaseUrl,
@@ -21,7 +21,11 @@ Dio createPublicDio({bool enableLogging = true}) {
     ),
   );
 
-  dio.interceptors.addAll([if (enableLogging) LoggingInterceptor(), RetryInterceptor()]);
+  dio.interceptors.addAll([
+    if (enableLogging) LoggingInterceptor(),
+    ...interceptors,
+    RetryInterceptor(),
+  ]);
 
   return dio;
 }
@@ -37,6 +41,7 @@ Dio createPdsDio({
   DPoPNonceStore? nonceStore,
   SessionInvalidatedCallback? onSessionInvalidated,
   bool enableLogging = true,
+  List<Interceptor> interceptors = const [],
 }) {
   final dio = Dio(
     BaseOptions(
@@ -57,6 +62,7 @@ Dio createPdsDio({
       onSessionInvalidated: onSessionInvalidated,
     ),
     ProxyInterceptor(),
+    ...interceptors,
     RetryInterceptor(),
   ]);
 

@@ -104,7 +104,6 @@ class _DebugOverlayHostState extends ConsumerState<DebugOverlayHost> {
         _longPressTimer = Timer(_longPressDuration, () {
           if (mounted && _activePointers.length == 2) {
             ref.read(debugOverlayControllerProvider.notifier).toggle();
-            // Reset to avoid repeated toggles without lifting fingers
             _activePointers.clear();
           }
         });
