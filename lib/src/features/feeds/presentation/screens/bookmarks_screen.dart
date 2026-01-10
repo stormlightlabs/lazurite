@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/core/widgets/pull_to_refresh_wrapper.dart';
@@ -53,7 +54,7 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to refresh bookmarks: ${e.toString()}'),
+            content: Text('Failed to refresh bookmarks: ${errorMessage(e)}'),
             action: SnackBarAction(label: 'Retry', onPressed: _refresh),
           ),
         );
@@ -117,7 +118,7 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen> {
           loading: () => const LoadingView(),
           error: (e, st) => ErrorView(
             title: 'Failed to load bookmarks',
-            message: e.toString(),
+            message: errorMessage(e),
             onRetry: _refresh,
           ),
         ),

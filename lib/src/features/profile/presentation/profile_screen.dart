@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/core/constants/layout_constants.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/feed_post_card.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
@@ -278,7 +279,7 @@ class _ProfilePageContentState extends ConsumerState<ProfilePageContent>
         appBar: AppBar(title: const Text('Profile')),
         body: ErrorView(
           title: 'Failed to load profile',
-          message: error.toString(),
+          message: errorMessage(error),
           onRetry: () => ref.read(profileProvider(widget.did).notifier).refresh(),
         ),
       ),

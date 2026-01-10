@@ -8,6 +8,7 @@ import 'package:lazurite/src/features/search/infrastructure/search_repository.da
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
 import 'package:lazurite/src/features/search/presentation/widgets/search_bar_widget.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart' hide Post;
+import 'package:lazurite/src/infrastructure/network/network_failure.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSearchRepository extends Mock implements SearchRepository {}
@@ -171,7 +172,9 @@ void main() {
 
     testWidgets('retry on error', (tester) async {
       const query = 'error';
-      when(() => mockRepository.searchPosts(query, cursor: null)).thenThrow('Network Error');
+      when(
+        () => mockRepository.searchPosts(query, cursor: null),
+      ).thenThrow(const ConnectionFailure());
       when(
         () => mockRepository.searchActors(query, cursor: null),
       ).thenAnswer((_) async => const PaginatedResult(items: [], cursor: null));
@@ -179,7 +182,7 @@ void main() {
       await tester.pumpWidget(createSubject(initialQuery: query));
       await tester.pumpAndSettle();
 
-      expect(find.text('Error: Network Error'), findsOneWidget);
+      expect(find.text('Network error. Check your connection and try again.'), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
 
       await tester.tap(find.text('Retry'));

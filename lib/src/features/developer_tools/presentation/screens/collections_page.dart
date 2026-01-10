@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/app/routes.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/features/developer_tools/application/devtools_providers.dart';
 import 'package:lazurite/src/features/developer_tools/domain/repo_collection.dart';
 
@@ -119,7 +120,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage> {
                       Text('Failed to load collections', style: theme.textTheme.titleMedium),
                       const SizedBox(height: 8),
                       Text(
-                        error.toString(),
+                        errorMessage(error),
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,

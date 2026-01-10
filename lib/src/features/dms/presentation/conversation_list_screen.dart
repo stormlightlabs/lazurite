@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/features/dms/presentation/widgets/message_request_card.dart';
 
 import '../../../core/animations/animation_utils.dart';
@@ -235,7 +236,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
           loading: () => const LoadingView(),
           error: (error, stack) => ErrorView(
             title: 'Failed to load messages',
-            message: error.toString(),
+            message: errorMessage(error),
             onRetry: () => ref.read(conversationListProvider.notifier).refresh(),
           ),
         ),

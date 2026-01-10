@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/core/utils/image_compressor.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart' as composer;
@@ -288,7 +289,7 @@ class DraftRepository {
         ownerDid,
         DraftsCompanion(
           status: Value(composer.DraftStatus.failed.name),
-          errorMessage: Value(e.toString()),
+          errorMessage: Value(errorMessage(e)),
           updatedAt: Value(DateTime.now()),
         ),
       );

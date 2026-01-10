@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/core/widgets/actor_row.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
@@ -48,6 +49,7 @@ class _FollowingPageState extends ConsumerState<FollowingPage> {
         loading: () => const LoadingView(),
         error: (error, stack) => ErrorView(
           title: 'Failed to load following',
+          message: errorMessage(error),
           onRetry: () => ref.invalidate(followingProvider(widget.did)),
         ),
         data: (following) {

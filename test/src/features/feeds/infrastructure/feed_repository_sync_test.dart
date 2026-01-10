@@ -263,6 +263,7 @@ void main() {
 
       final feed = await db.savedFeedsDao.getFeed(feedUri, ownerDid);
       expect(feed, isNotNull, reason: 'Local feed should be saved');
+      expect(feed!.localUpdatedAt, isNull, reason: 'Local modifications should be cleared');
 
       final queueItems = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queueItems, isEmpty, reason: 'Queue should be empty after successful sync');
@@ -336,6 +337,169 @@ void main() {
 
       final queueItems = await db.preferenceSyncQueueDao.getPendingItems(ownerDid);
       expect(queueItems, isEmpty, reason: 'Queue should be empty after successful sync');
+    });
+
+    test('saveFeed unpins feeds in legacy preferences when pin is false', () async {
+      const feedUri = 'at://did:plc:unpin/app.bsky.feed.generator/test';
+
+      final currentPrefs = {
+        'preferences': [
+          {
+            '\$type': 'app.bsky.actor.defs#savedFeedsPref',
+            'saved': [feedUri],
+            'pinned': [feedUri],
+          },
+        ],
+      };
+
+      final feedMetadata = {
+        'view': {
+          'uri': feedUri,
+          'cid': 'bafytest',
+          'did': 'did:web:feedgen.test',
+          'displayName': 'Test Feed',
+          'description': 'Test feed description',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:unpin', 'handle': 'unpin.user'},
+          'likeCount': 1,
+        },
+      };
+
+      when(
+        () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
+      ).thenAnswer((_) async => feedMetadata);
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => currentPrefs);
+
+      final capturedBodies = <Map<String, dynamic>>[];
+      when(
+        () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
+      ).thenAnswer((invocation) async {
+        capturedBodies.add(invocation.namedArguments[#body] as Map<String, dynamic>);
+        return {};
+      });
+
+      await repository.saveFeed(feedUri, ownerDid, pin: false);
+
+      final prefs = capturedBodies.single['preferences'] as List<dynamic>;
+      final savedPref = prefs.cast<Map<String, dynamic>>().firstWhere(
+        (pref) => pref['\$type'] == 'app.bsky.actor.defs#savedFeedsPref',
+      );
+      final pinned = List<String>.from(savedPref['pinned'] as List);
+
+      expect(pinned.contains(feedUri), false, reason: 'Feed should be unpinned remotely');
+    });
+
+    test('saveFeed updates pinned state in V2 preferences', () async {
+      const feedUri = 'at://did:plc:v2/app.bsky.feed.generator/test';
+
+      final currentPrefs = {
+        'preferences': [
+          {
+            '\$type': 'app.bsky.actor.defs#savedFeedsPrefV2',
+            'items': [
+              {'value': feedUri, 'pinned': true, 'id': 'item-1'},
+            ],
+          },
+          {
+            '\$type': 'app.bsky.actor.defs#savedFeedsPref',
+            'saved': [feedUri],
+            'pinned': [feedUri],
+          },
+        ],
+      };
+
+      final feedMetadata = {
+        'view': {
+          'uri': feedUri,
+          'cid': 'bafytest',
+          'did': 'did:web:feedgen.test',
+          'displayName': 'Test Feed V2',
+          'description': 'Test feed description',
+          'avatar': 'avatar.jpg',
+          'creator': {'did': 'did:plc:v2', 'handle': 'v2.user'},
+          'likeCount': 1,
+        },
+      };
+
+      when(
+        () => mockApi.call('app.bsky.feed.getFeedGenerator', params: {'feed': feedUri}),
+      ).thenAnswer((_) async => feedMetadata);
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => currentPrefs);
+
+      final capturedBodies = <Map<String, dynamic>>[];
+      when(
+        () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
+      ).thenAnswer((invocation) async {
+        capturedBodies.add(invocation.namedArguments[#body] as Map<String, dynamic>);
+        return {};
+      });
+
+      await repository.saveFeed(feedUri, ownerDid, pin: false);
+
+      final prefs = capturedBodies.single['preferences'] as List<dynamic>;
+      final v2Pref = prefs.cast<Map<String, dynamic>>().firstWhere(
+        (pref) => pref['\$type'] == 'app.bsky.actor.defs#savedFeedsPrefV2',
+      );
+      final items = v2Pref['items'] as List<dynamic>;
+      final item = items.cast<Map<String, dynamic>>().first;
+
+      expect(item['id'], 'item-1', reason: 'V2 item id should be preserved');
+      expect(item['pinned'], false, reason: 'Pinned flag should be updated');
+    });
+
+    test('reorderFeeds clears local modifications after successful sync', () async {
+      const feedUriA = 'at://did:plc:reorder/app.bsky.feed.generator/a';
+      const feedUriB = 'at://did:plc:reorder/app.bsky.feed.generator/b';
+
+      final now = DateTime.now();
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: feedUriA,
+          displayName: 'Feed A',
+          creatorDid: 'did:plc:reorder',
+          sortOrder: 0,
+          lastSynced: now,
+          ownerDid: ownerDid,
+        ),
+      );
+      await db.savedFeedsDao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: feedUriB,
+          displayName: 'Feed B',
+          creatorDid: 'did:plc:reorder',
+          sortOrder: 1,
+          lastSynced: now,
+          ownerDid: ownerDid,
+        ),
+      );
+
+      final currentPrefs = {
+        'preferences': [
+          {
+            '\$type': 'app.bsky.actor.defs#savedFeedsPref',
+            'saved': [feedUriA, feedUriB],
+            'pinned': <String>[],
+          },
+        ],
+      };
+
+      when(
+        () => mockApi.call('app.bsky.actor.getPreferences'),
+      ).thenAnswer((_) async => currentPrefs);
+      when(
+        () => mockApi.call('app.bsky.actor.putPreferences', body: any(named: 'body')),
+      ).thenAnswer((_) async => {});
+
+      await repository.reorderFeeds([feedUriB, feedUriA], ownerDid);
+
+      final feedA = await db.savedFeedsDao.getFeed(feedUriA, ownerDid);
+      final feedB = await db.savedFeedsDao.getFeed(feedUriB, ownerDid);
+      expect(feedA!.localUpdatedAt, isNull);
+      expect(feedB!.localUpdatedAt, isNull);
     });
 
     test('rolls back local save when queue enqueue fails', () async {

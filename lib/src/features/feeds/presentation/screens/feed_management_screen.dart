@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
@@ -114,7 +115,7 @@ class FeedManagementScreen extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (err, stack) => ErrorView(
           title: 'Failed to load feeds',
-          message: err.toString(),
+          message: errorMessage(err),
           onRetry: () => ref.invalidate(allFeedsProvider),
         ),
       ),

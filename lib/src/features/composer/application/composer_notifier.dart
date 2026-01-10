@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
@@ -219,7 +220,9 @@ class ComposerNotifier extends _$ComposerNotifier {
     } catch (e) {
       final updatedState = state.asData?.value;
       if (updatedState != null) {
-        state = AsyncValue.data(updatedState.copyWith(isPublishing: false, error: e.toString()));
+        state = AsyncValue.data(
+          updatedState.copyWith(isPublishing: false, error: errorMessage(e)),
+        );
       }
       return null;
     }

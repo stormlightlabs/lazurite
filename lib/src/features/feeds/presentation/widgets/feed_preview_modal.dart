@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_notifier.dart';
@@ -141,7 +142,7 @@ class _FeedPreviewModalState extends ConsumerState<FeedPreviewModal> {
                   loading: () => const LoadingView(),
                   error: (err, stack) => ErrorView(
                     title: 'Failed to load preview',
-                    message: err.toString(),
+                    message: errorMessage(err),
                     onRetry: () {
                       ref.read(feedContentProvider(widget.feedUri).notifier).refresh();
                     },

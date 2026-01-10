@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/animations/animation_utils.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/pull_to_refresh_wrapper.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
@@ -123,7 +124,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           error: (err, stack) => ErrorView(
             key: const ValueKey('error'),
             title: 'Failed to load notifications',
-            message: err.toString(),
+            message: errorMessage(err),
             onRetry: () => ref.read(notificationsProvider.notifier).refresh(),
           ),
         ),

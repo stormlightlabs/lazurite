@@ -8,6 +8,7 @@ import 'package:lazurite/src/infrastructure/db/daos/preference_sync_queue_dao.da
 import 'package:lazurite/src/infrastructure/db/daos/profile_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/saved_feeds_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
+import 'package:uuid/uuid.dart';
 
 /// Duration after which permanently failed sync items are cleaned up.
 const Duration kSyncQueueCleanupAge = Duration(days: 30);
@@ -19,6 +20,8 @@ const Duration kSyncQueueCleanupAge = Duration(days: 30);
 /// from app.bsky.feed.getFeedGenerator.
 class FeedRepository {
   FeedRepository(this._api, this._dao, this._syncQueueDao, this._profileDao, this._logger);
+
+  static const _uuid = Uuid();
 
   final XrpcClient _api;
   final SavedFeedsDao _dao;
@@ -390,6 +393,7 @@ class FeedRepository {
     if (!_api.isAuthenticated) throw Exception('User not authenticated');
     _validateFeedUri(feedUri);
 
+    final existing = await _dao.getFeed(feedUri, ownerDid);
     FeedGenerator? metadata;
     String displayName = 'Saved Feed';
     String? description;
@@ -420,6 +424,8 @@ class FeedRepository {
     }
 
     final allFeeds = await _dao.getAllFeeds(ownerDid);
+    final sortOrder = existing?.sortOrder ?? allFeeds.length;
+    final lastSynced = existing?.lastSynced ?? DateTime.now();
     int? queueId;
 
     try {
@@ -433,9 +439,9 @@ class FeedRepository {
             avatar: Value(avatar),
             creatorDid: creatorDid,
             likeCount: Value(likeCount ?? 0),
-            sortOrder: allFeeds.length,
+            sortOrder: sortOrder,
             isPinned: Value(pin),
-            lastSynced: DateTime.now(),
+            lastSynced: lastSynced,
             localUpdatedAt: Value(DateTime.now()),
           ),
         );
@@ -453,52 +459,47 @@ class FeedRepository {
     try {
       await _executeRemoteSaveFeed(feedUri, pin);
       if (queueId != null) await _syncQueueDao.deleteItem(queueId);
+      await _clearLocalModifications([feedUri], ownerDid);
     } catch (e) {
       _logger.error('Failed to save feed', {'error': e});
     }
   }
 
   Future<void> _executeRemoteSaveFeed(String feedUri, bool pin) async {
-    final currentPrefsResponse = await _api.call('app.bsky.actor.getPreferences');
-    final prefs = List<Map<String, dynamic>>.from(
-      (currentPrefsResponse['preferences'] as List).map(
-        (p) => Map<String, dynamic>.from(p as Map),
-      ),
-    );
+    final snapshot = await _loadSavedFeedsPreferences();
 
-    var savedFeedsPref = prefs.cast<Map<String, dynamic>>().firstWhere(
-      (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref',
-      orElse: () => <String, dynamic>{},
-    );
-
-    if (savedFeedsPref.isEmpty) {
-      savedFeedsPref = {
-        '\$type': 'app.bsky.actor.defs#savedFeedsPref',
-        'saved': <String>[],
-        'pinned': <String>[],
-      };
-      prefs.add(savedFeedsPref);
+    if (snapshot.v2 != null) {
+      final updatedItems = _upsertV2Item(snapshot.v2!.items, feedUri, pin);
+      _updatePreferences(
+        snapshot,
+        v2: SavedFeedsPrefV2(items: updatedItems),
+        v1: snapshot.v1,
+      );
     } else {
-      savedFeedsPref = Map<String, dynamic>.from(savedFeedsPref);
-      final index = prefs.indexWhere((p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref');
-      prefs[index] = savedFeedsPref;
+      final existingSaved = snapshot.v1?.saved ?? [];
+      final existingPinned = snapshot.v1?.pinned ?? [];
+      final saved = List<String>.from(existingSaved);
+      final pinned = List<String>.from(existingPinned);
+
+      if (!saved.contains(feedUri)) {
+        saved.add(feedUri);
+      }
+
+      if (pin) {
+        if (!pinned.contains(feedUri)) {
+          pinned.add(feedUri);
+        }
+      } else {
+        pinned.remove(feedUri);
+      }
+
+      _updatePreferences(
+        snapshot,
+        v1: SavedFeedsPref(saved: saved, pinned: pinned),
+      );
     }
 
-    final saved = List<String>.from(savedFeedsPref['saved'] ?? []);
-    final pinned = List<String>.from(savedFeedsPref['pinned'] ?? []);
-
-    if (!saved.contains(feedUri)) {
-      saved.add(feedUri);
-    }
-
-    if (pin && !pinned.contains(feedUri)) {
-      pinned.add(feedUri);
-    }
-
-    savedFeedsPref['saved'] = saved;
-    savedFeedsPref['pinned'] = pinned;
-
-    await _api.call('app.bsky.actor.putPreferences', body: {'preferences': prefs});
+    await _api.call('app.bsky.actor.putPreferences', body: {'preferences': snapshot.preferences});
   }
 
   /// Removes a feed from user preferences and local cache.
@@ -528,34 +529,27 @@ class FeedRepository {
   }
 
   Future<void> _executeRemoteRemoveFeed(String feedUri) async {
-    final currentPrefsResponse = await _api.call('app.bsky.actor.getPreferences');
-    final prefs = List<Map<String, dynamic>>.from(
-      (currentPrefsResponse['preferences'] as List).map(
-        (p) => Map<String, dynamic>.from(p as Map),
-      ),
-    );
+    final snapshot = await _loadSavedFeedsPreferences();
 
-    var savedFeedsPref = prefs.cast<Map<String, dynamic>>().firstWhere(
-      (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref',
-      orElse: () => <String, dynamic>{},
-    );
-
-    if (savedFeedsPref.isNotEmpty) {
-      savedFeedsPref = Map<String, dynamic>.from(savedFeedsPref);
-      final index = prefs.indexWhere((p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref');
-      prefs[index] = savedFeedsPref;
-
-      final saved = List<String>.from(savedFeedsPref['saved'] ?? []);
-      final pinned = List<String>.from(savedFeedsPref['pinned'] ?? []);
-
-      saved.remove(feedUri);
-      pinned.remove(feedUri);
-
-      savedFeedsPref['saved'] = saved;
-      savedFeedsPref['pinned'] = pinned;
-
-      await _api.call('app.bsky.actor.putPreferences', body: {'preferences': prefs});
+    if (snapshot.v2 != null) {
+      final updatedItems = snapshot.v2!.items.where((item) => item.value != feedUri).toList();
+      _updatePreferences(
+        snapshot,
+        v2: SavedFeedsPrefV2(items: updatedItems),
+        v1: snapshot.v1,
+      );
+    } else if (snapshot.v1 != null) {
+      final saved = List<String>.from(snapshot.v1!.saved)..remove(feedUri);
+      final pinned = List<String>.from(snapshot.v1!.pinned)..remove(feedUri);
+      _updatePreferences(
+        snapshot,
+        v1: SavedFeedsPref(saved: saved, pinned: pinned),
+      );
+    } else {
+      return;
     }
+
+    await _api.call('app.bsky.actor.putPreferences', body: {'preferences': snapshot.preferences});
   }
 
   /// Reorders feeds according to the provided URI list.
@@ -585,57 +579,52 @@ class FeedRepository {
     try {
       await _executeRemoteReorderFeeds(orderedUris);
       if (queueId != null) await _syncQueueDao.deleteItem(queueId);
+      await _clearLocalModifications(orderedUris, ownerDid);
     } catch (e) {
       _logger.error('Failed to reorder feeds', {'error': e});
     }
   }
 
   Future<void> _executeRemoteReorderFeeds(List<String> orderedUris) async {
-    final currentPrefsResponse = await _api.call('app.bsky.actor.getPreferences');
-    final prefs = List<Map<String, dynamic>>.from(
-      (currentPrefsResponse['preferences'] as List).map(
-        (p) => Map<String, dynamic>.from(p as Map),
-      ),
-    );
+    final snapshot = await _loadSavedFeedsPreferences();
 
-    var savedFeedsPref = prefs.cast<Map<String, dynamic>>().firstWhere(
-      (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref',
-      orElse: () => <String, dynamic>{},
-    );
+    if (snapshot.v2 != null) {
+      final updatedItems = _reorderV2Items(snapshot.v2!.items, orderedUris);
+      _updatePreferences(
+        snapshot,
+        v2: SavedFeedsPrefV2(items: updatedItems),
+        v1: snapshot.v1,
+      );
+    } else if (snapshot.v1 != null) {
+      final currentSaved = List<String>.from(snapshot.v1!.saved);
+      final currentPinned = List<String>.from(snapshot.v1!.pinned);
+      final reorderedSaved = <String>[];
+      final reorderedPinned = <String>[];
 
-    if (savedFeedsPref.isEmpty) {
+      for (final uri in orderedUris) {
+        if (currentSaved.contains(uri)) {
+          reorderedSaved.add(uri);
+          if (currentPinned.contains(uri)) {
+            reorderedPinned.add(uri);
+          }
+        }
+      }
+
+      for (final uri in currentSaved) {
+        if (!reorderedSaved.contains(uri)) {
+          reorderedSaved.add(uri);
+        }
+      }
+
+      _updatePreferences(
+        snapshot,
+        v1: SavedFeedsPref(saved: reorderedSaved, pinned: reorderedPinned),
+      );
+    } else {
       return;
     }
 
-    savedFeedsPref = Map<String, dynamic>.from(savedFeedsPref);
-    final index = prefs.indexWhere((p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref');
-    prefs[index] = savedFeedsPref;
-
-    final currentSaved = List<String>.from(savedFeedsPref['saved'] ?? []);
-    final currentPinned = List<String>.from(savedFeedsPref['pinned'] ?? []);
-
-    final reorderedSaved = <String>[];
-    final reorderedPinned = <String>[];
-
-    for (final uri in orderedUris) {
-      if (currentSaved.contains(uri)) {
-        reorderedSaved.add(uri);
-        if (currentPinned.contains(uri)) {
-          reorderedPinned.add(uri);
-        }
-      }
-    }
-
-    for (final uri in currentSaved) {
-      if (!reorderedSaved.contains(uri)) {
-        reorderedSaved.add(uri);
-      }
-    }
-
-    savedFeedsPref['saved'] = reorderedSaved;
-    savedFeedsPref['pinned'] = reorderedPinned;
-
-    await _api.call('app.bsky.actor.putPreferences', body: {'preferences': prefs});
+    await _api.call('app.bsky.actor.putPreferences', body: {'preferences': snapshot.preferences});
   }
 
   /// Discovers trending feed generators or searches for them if a query is provided.
@@ -850,6 +839,11 @@ class FeedRepository {
         }
 
         await _syncQueueDao.deleteItem(item.id);
+        if (item.type == 'save') {
+          await _clearLocalModifications([item.payload], ownerDid);
+        } else if (item.type == 'reorder') {
+          await _clearLocalModifications(item.payload.split(','), ownerDid);
+        }
       } catch (e) {
         _logger.error('Failed to process sync item ${item.id}', {
           'error': e,
@@ -1072,6 +1066,101 @@ class FeedRepository {
     });
     return results;
   }
+
+  Future<_SavedFeedsPreferencesSnapshot> _loadSavedFeedsPreferences() async {
+    final currentPrefsResponse = await _api.call('app.bsky.actor.getPreferences');
+    final prefsRaw = currentPrefsResponse['preferences'];
+    if (prefsRaw is! List) {
+      throw FormatException('preferences must be a List', currentPrefsResponse);
+    }
+
+    final preferences = prefsRaw
+        .map((p) => Map<String, dynamic>.from(p as Map))
+        .toList(growable: true);
+
+    final parsed = SavedFeedsPreferenceParser.parse(preferences);
+    final v2Index = preferences.indexWhere(
+      (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPrefV2',
+    );
+    final v1Index = preferences.indexWhere(
+      (p) => p['\$type'] == 'app.bsky.actor.defs#savedFeedsPref',
+    );
+
+    return _SavedFeedsPreferencesSnapshot(
+      preferences: preferences,
+      v2: parsed.v2,
+      v1: parsed.v1,
+      v2Index: v2Index >= 0 ? v2Index : null,
+      v1Index: v1Index >= 0 ? v1Index : null,
+    );
+  }
+
+  void _updatePreferences(
+    _SavedFeedsPreferencesSnapshot snapshot, {
+    SavedFeedsPrefV2? v2,
+    SavedFeedsPref? v1,
+  }) {
+    if (v2 != null) {
+      final json = v2.toJson();
+      if (snapshot.v2Index != null) {
+        snapshot.preferences[snapshot.v2Index!] = json;
+      } else {
+        snapshot.preferences.add(json);
+      }
+
+      if (snapshot.v1Index != null) {
+        final v1FromV2 = SavedFeedsPref(saved: v2.savedUris, pinned: v2.pinnedUris);
+        snapshot.preferences[snapshot.v1Index!] = v1FromV2.toJson();
+      }
+    } else if (v1 != null) {
+      final json = v1.toJson();
+      if (snapshot.v1Index != null) {
+        snapshot.preferences[snapshot.v1Index!] = json;
+      } else {
+        snapshot.preferences.add(json);
+      }
+    }
+  }
+
+  List<SavedFeedItem> _upsertV2Item(List<SavedFeedItem> items, String feedUri, bool pinned) {
+    final updated = List<SavedFeedItem>.from(items);
+    final index = updated.indexWhere((item) => item.value == feedUri);
+    if (index >= 0) {
+      final existing = updated[index];
+      updated[index] = SavedFeedItem(value: feedUri, pinned: pinned, id: existing.id);
+    } else {
+      updated.add(SavedFeedItem(value: feedUri, pinned: pinned, id: _uuid.v4()));
+    }
+    return updated;
+  }
+
+  List<SavedFeedItem> _reorderV2Items(List<SavedFeedItem> items, List<String> orderedUris) {
+    final itemByUri = {for (final item in items) item.value: item};
+    final reordered = <SavedFeedItem>[];
+
+    for (final uri in orderedUris) {
+      final item = itemByUri[uri];
+      if (item != null) {
+        reordered.add(item);
+      }
+    }
+
+    for (final item in items) {
+      if (!reordered.any((existing) => existing.value == item.value)) {
+        reordered.add(item);
+      }
+    }
+
+    return reordered;
+  }
+
+  Future<void> _clearLocalModifications(List<String> uris, String ownerDid) async {
+    await _dao.db.transaction(() async {
+      for (final uri in uris) {
+        await _dao.clearLocalModification(uri, ownerDid);
+      }
+    });
+  }
 }
 
 /// Helper class for representing a partial feed update during merge.
@@ -1097,4 +1186,20 @@ class _MigrationResult {
 
   final bool isPinned;
   final int sortOrder;
+}
+
+class _SavedFeedsPreferencesSnapshot {
+  const _SavedFeedsPreferencesSnapshot({
+    required this.preferences,
+    required this.v2,
+    required this.v1,
+    required this.v2Index,
+    required this.v1Index,
+  });
+
+  final List<Map<String, dynamic>> preferences;
+  final SavedFeedsPrefV2? v2;
+  final SavedFeedsPref? v1;
+  final int? v2Index;
+  final int? v1Index;
 }

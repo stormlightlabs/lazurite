@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lazurite/src/core/domain/post.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/features/composer/application/composer_notifier.dart';
 import 'package:lazurite/src/features/composer/application/composer_providers.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/alt_text_editor_sheet.dart';
@@ -501,7 +502,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
               Text('Failed to load composer', style: theme.textTheme.bodyLarge),
               const SizedBox(height: 8),
               Text(
-                error.toString(),
+                errorMessage(error),
                 style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/animations/animation_utils.dart';
+import '../../../core/utils/error_message.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/loading_view.dart';
 import '../../../core/widgets/pull_to_refresh_wrapper.dart';
@@ -162,7 +163,7 @@ class _ConversationDetailScreenState extends ConsumerState<ConversationDetailScr
                 loading: () => const LoadingView(),
                 error: (error, stack) => ErrorView(
                   title: 'Failed to load messages',
-                  message: error.toString(),
+                  message: errorMessage(error),
                   onRetry: () =>
                       ref.read(conversationDetailProvider(widget.convoId).notifier).refresh(),
                 ),

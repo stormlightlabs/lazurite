@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart' as composer;
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
@@ -187,7 +188,7 @@ void main() {
 
     final failed = await repository.getDraft(draft.id);
     expect(failed.status, composer.DraftStatus.failed);
-    expect(failed.errorMessage, contains('publish failed'));
+    expect(failed.errorMessage, errorMessage(Exception('publish failed')));
     expect(failed.media.single.uploadCid, 'cid-test');
   });
 

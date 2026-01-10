@@ -16,7 +16,7 @@ Phase 1: Code Quality and Architecture
 - [ ] Type safety improvements:
       - Use freezed for critical models
       - Add typed JSON parsing where appropriate
-- [ ] Error handling standardization:
+- [x] Error handling standardization:
       - Define standard error types for common failures (network, auth,
         validation)
       - Standardize error display messages (no raw .toString() in UI)

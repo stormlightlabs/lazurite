@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
@@ -432,7 +433,7 @@ class FeedSearch extends _$FeedSearch {
       );
       state = state.copyWith(results: results, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: errorMessage(e));
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/core/widgets/error_view.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/widgets/feed_post_card.dart';
@@ -85,7 +86,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
         loading: () => const LoadingView(),
         error: (err, stack) => ErrorView(
           title: 'Could not load thread',
-          message: err.toString(),
+          message: errorMessage(err),
           onRetry: () => ref.refresh(threadProvider(widget.postUri)),
         ),
         data: (thread) {
@@ -352,7 +353,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
       loading: () => const LoadingView(),
       error: (err, stack) => ErrorView(
         title: 'Thread cache unavailable',
-        message: err.toString(),
+        message: errorMessage(err),
         onRetry: () => ref.refresh(threadProvider(widget.postUri)),
       ),
     );
