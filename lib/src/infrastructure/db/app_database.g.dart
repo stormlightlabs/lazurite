@@ -7054,6 +7054,15 @@ class $PostInteractionsTable extends PostInteractions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _bookmarkUriMeta = const VerificationMeta('bookmarkUri');
+  @override
+  late final GeneratedColumn<String> bookmarkUri = GeneratedColumn<String>(
+    'bookmark_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _bookmarkedMeta = const VerificationMeta('bookmarked');
   @override
   late final GeneratedColumn<bool> bookmarked = GeneratedColumn<bool>(
@@ -7091,6 +7100,7 @@ class $PostInteractionsTable extends PostInteractions
     ownerDid,
     likeUri,
     repostUri,
+    bookmarkUri,
     bookmarked,
     threadMuted,
     updatedAt,
@@ -7127,6 +7137,12 @@ class $PostInteractionsTable extends PostInteractions
       context.handle(
         _repostUriMeta,
         repostUri.isAcceptableOrUnknown(data['repost_uri']!, _repostUriMeta),
+      );
+    }
+    if (data.containsKey('bookmark_uri')) {
+      context.handle(
+        _bookmarkUriMeta,
+        bookmarkUri.isAcceptableOrUnknown(data['bookmark_uri']!, _bookmarkUriMeta),
       );
     }
     if (data.containsKey('bookmarked')) {
@@ -7174,6 +7190,10 @@ class $PostInteractionsTable extends PostInteractions
         DriftSqlType.string,
         data['${effectivePrefix}repost_uri'],
       ),
+      bookmarkUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bookmark_uri'],
+      ),
       bookmarked: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}bookmarked'],
@@ -7208,6 +7228,9 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
   /// AT URI of the repost record (if reposted).
   final String? repostUri;
 
+  /// AT URI of the bookmark record (if bookmarked).
+  final String? bookmarkUri;
+
   /// Whether the post is bookmarked.
   final bool bookmarked;
 
@@ -7221,6 +7244,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
     required this.ownerDid,
     this.likeUri,
     this.repostUri,
+    this.bookmarkUri,
     required this.bookmarked,
     required this.threadMuted,
     required this.updatedAt,
@@ -7236,6 +7260,9 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
     if (!nullToAbsent || repostUri != null) {
       map['repost_uri'] = Variable<String>(repostUri);
     }
+    if (!nullToAbsent || bookmarkUri != null) {
+      map['bookmark_uri'] = Variable<String>(bookmarkUri);
+    }
     map['bookmarked'] = Variable<bool>(bookmarked);
     map['thread_muted'] = Variable<bool>(threadMuted);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -7248,6 +7275,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
       ownerDid: Value(ownerDid),
       likeUri: likeUri == null && nullToAbsent ? const Value.absent() : Value(likeUri),
       repostUri: repostUri == null && nullToAbsent ? const Value.absent() : Value(repostUri),
+      bookmarkUri: bookmarkUri == null && nullToAbsent ? const Value.absent() : Value(bookmarkUri),
       bookmarked: Value(bookmarked),
       threadMuted: Value(threadMuted),
       updatedAt: Value(updatedAt),
@@ -7261,6 +7289,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
       ownerDid: serializer.fromJson<String>(json['ownerDid']),
       likeUri: serializer.fromJson<String?>(json['likeUri']),
       repostUri: serializer.fromJson<String?>(json['repostUri']),
+      bookmarkUri: serializer.fromJson<String?>(json['bookmarkUri']),
       bookmarked: serializer.fromJson<bool>(json['bookmarked']),
       threadMuted: serializer.fromJson<bool>(json['threadMuted']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -7274,6 +7303,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
       'ownerDid': serializer.toJson<String>(ownerDid),
       'likeUri': serializer.toJson<String?>(likeUri),
       'repostUri': serializer.toJson<String?>(repostUri),
+      'bookmarkUri': serializer.toJson<String?>(bookmarkUri),
       'bookmarked': serializer.toJson<bool>(bookmarked),
       'threadMuted': serializer.toJson<bool>(threadMuted),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -7285,6 +7315,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
     String? ownerDid,
     Value<String?> likeUri = const Value.absent(),
     Value<String?> repostUri = const Value.absent(),
+    Value<String?> bookmarkUri = const Value.absent(),
     bool? bookmarked,
     bool? threadMuted,
     DateTime? updatedAt,
@@ -7293,6 +7324,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
     ownerDid: ownerDid ?? this.ownerDid,
     likeUri: likeUri.present ? likeUri.value : this.likeUri,
     repostUri: repostUri.present ? repostUri.value : this.repostUri,
+    bookmarkUri: bookmarkUri.present ? bookmarkUri.value : this.bookmarkUri,
     bookmarked: bookmarked ?? this.bookmarked,
     threadMuted: threadMuted ?? this.threadMuted,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -7303,6 +7335,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
       ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
       likeUri: data.likeUri.present ? data.likeUri.value : this.likeUri,
       repostUri: data.repostUri.present ? data.repostUri.value : this.repostUri,
+      bookmarkUri: data.bookmarkUri.present ? data.bookmarkUri.value : this.bookmarkUri,
       bookmarked: data.bookmarked.present ? data.bookmarked.value : this.bookmarked,
       threadMuted: data.threadMuted.present ? data.threadMuted.value : this.threadMuted,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -7316,6 +7349,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
           ..write('ownerDid: $ownerDid, ')
           ..write('likeUri: $likeUri, ')
           ..write('repostUri: $repostUri, ')
+          ..write('bookmarkUri: $bookmarkUri, ')
           ..write('bookmarked: $bookmarked, ')
           ..write('threadMuted: $threadMuted, ')
           ..write('updatedAt: $updatedAt')
@@ -7324,8 +7358,16 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(postUri, ownerDid, likeUri, repostUri, bookmarked, threadMuted, updatedAt);
+  int get hashCode => Object.hash(
+    postUri,
+    ownerDid,
+    likeUri,
+    repostUri,
+    bookmarkUri,
+    bookmarked,
+    threadMuted,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -7334,6 +7376,7 @@ class PostInteraction extends DataClass implements Insertable<PostInteraction> {
           other.ownerDid == this.ownerDid &&
           other.likeUri == this.likeUri &&
           other.repostUri == this.repostUri &&
+          other.bookmarkUri == this.bookmarkUri &&
           other.bookmarked == this.bookmarked &&
           other.threadMuted == this.threadMuted &&
           other.updatedAt == this.updatedAt);
@@ -7344,6 +7387,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
   final Value<String> ownerDid;
   final Value<String?> likeUri;
   final Value<String?> repostUri;
+  final Value<String?> bookmarkUri;
   final Value<bool> bookmarked;
   final Value<bool> threadMuted;
   final Value<DateTime> updatedAt;
@@ -7353,6 +7397,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
     this.ownerDid = const Value.absent(),
     this.likeUri = const Value.absent(),
     this.repostUri = const Value.absent(),
+    this.bookmarkUri = const Value.absent(),
     this.bookmarked = const Value.absent(),
     this.threadMuted = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -7363,6 +7408,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
     required String ownerDid,
     this.likeUri = const Value.absent(),
     this.repostUri = const Value.absent(),
+    this.bookmarkUri = const Value.absent(),
     this.bookmarked = const Value.absent(),
     this.threadMuted = const Value.absent(),
     required DateTime updatedAt,
@@ -7375,6 +7421,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
     Expression<String>? ownerDid,
     Expression<String>? likeUri,
     Expression<String>? repostUri,
+    Expression<String>? bookmarkUri,
     Expression<bool>? bookmarked,
     Expression<bool>? threadMuted,
     Expression<DateTime>? updatedAt,
@@ -7385,6 +7432,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
       if (ownerDid != null) 'owner_did': ownerDid,
       if (likeUri != null) 'like_uri': likeUri,
       if (repostUri != null) 'repost_uri': repostUri,
+      if (bookmarkUri != null) 'bookmark_uri': bookmarkUri,
       if (bookmarked != null) 'bookmarked': bookmarked,
       if (threadMuted != null) 'thread_muted': threadMuted,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -7397,6 +7445,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
     Value<String>? ownerDid,
     Value<String?>? likeUri,
     Value<String?>? repostUri,
+    Value<String?>? bookmarkUri,
     Value<bool>? bookmarked,
     Value<bool>? threadMuted,
     Value<DateTime>? updatedAt,
@@ -7407,6 +7456,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
       ownerDid: ownerDid ?? this.ownerDid,
       likeUri: likeUri ?? this.likeUri,
       repostUri: repostUri ?? this.repostUri,
+      bookmarkUri: bookmarkUri ?? this.bookmarkUri,
       bookmarked: bookmarked ?? this.bookmarked,
       threadMuted: threadMuted ?? this.threadMuted,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -7428,6 +7478,9 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
     }
     if (repostUri.present) {
       map['repost_uri'] = Variable<String>(repostUri.value);
+    }
+    if (bookmarkUri.present) {
+      map['bookmark_uri'] = Variable<String>(bookmarkUri.value);
     }
     if (bookmarked.present) {
       map['bookmarked'] = Variable<bool>(bookmarked.value);
@@ -7451,6 +7504,7 @@ class PostInteractionsCompanion extends UpdateCompanion<PostInteraction> {
           ..write('ownerDid: $ownerDid, ')
           ..write('likeUri: $likeUri, ')
           ..write('repostUri: $repostUri, ')
+          ..write('bookmarkUri: $bookmarkUri, ')
           ..write('bookmarked: $bookmarked, ')
           ..write('threadMuted: $threadMuted, ')
           ..write('updatedAt: $updatedAt, ')
@@ -17580,6 +17634,7 @@ typedef $$PostInteractionsTableCreateCompanionBuilder =
       required String ownerDid,
       Value<String?> likeUri,
       Value<String?> repostUri,
+      Value<String?> bookmarkUri,
       Value<bool> bookmarked,
       Value<bool> threadMuted,
       required DateTime updatedAt,
@@ -17591,6 +17646,7 @@ typedef $$PostInteractionsTableUpdateCompanionBuilder =
       Value<String> ownerDid,
       Value<String?> likeUri,
       Value<String?> repostUri,
+      Value<String?> bookmarkUri,
       Value<bool> bookmarked,
       Value<bool> threadMuted,
       Value<DateTime> updatedAt,
@@ -17634,6 +17690,9 @@ class $$PostInteractionsTableFilterComposer
 
   ColumnFilters<String> get repostUri =>
       $composableBuilder(column: $table.repostUri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get bookmarkUri =>
+      $composableBuilder(column: $table.bookmarkUri, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get bookmarked =>
       $composableBuilder(column: $table.bookmarked, builder: (column) => ColumnFilters(column));
@@ -17682,6 +17741,9 @@ class $$PostInteractionsTableOrderingComposer
   ColumnOrderings<String> get repostUri =>
       $composableBuilder(column: $table.repostUri, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get bookmarkUri =>
+      $composableBuilder(column: $table.bookmarkUri, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get bookmarked =>
       $composableBuilder(column: $table.bookmarked, builder: (column) => ColumnOrderings(column));
 
@@ -17728,6 +17790,9 @@ class $$PostInteractionsTableAnnotationComposer
 
   GeneratedColumn<String> get repostUri =>
       $composableBuilder(column: $table.repostUri, builder: (column) => column);
+
+  GeneratedColumn<String> get bookmarkUri =>
+      $composableBuilder(column: $table.bookmarkUri, builder: (column) => column);
 
   GeneratedColumn<bool> get bookmarked =>
       $composableBuilder(column: $table.bookmarked, builder: (column) => column);
@@ -17790,6 +17855,7 @@ class $$PostInteractionsTableTableManager
                 Value<String> ownerDid = const Value.absent(),
                 Value<String?> likeUri = const Value.absent(),
                 Value<String?> repostUri = const Value.absent(),
+                Value<String?> bookmarkUri = const Value.absent(),
                 Value<bool> bookmarked = const Value.absent(),
                 Value<bool> threadMuted = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -17799,6 +17865,7 @@ class $$PostInteractionsTableTableManager
                 ownerDid: ownerDid,
                 likeUri: likeUri,
                 repostUri: repostUri,
+                bookmarkUri: bookmarkUri,
                 bookmarked: bookmarked,
                 threadMuted: threadMuted,
                 updatedAt: updatedAt,
@@ -17810,6 +17877,7 @@ class $$PostInteractionsTableTableManager
                 required String ownerDid,
                 Value<String?> likeUri = const Value.absent(),
                 Value<String?> repostUri = const Value.absent(),
+                Value<String?> bookmarkUri = const Value.absent(),
                 Value<bool> bookmarked = const Value.absent(),
                 Value<bool> threadMuted = const Value.absent(),
                 required DateTime updatedAt,
@@ -17819,6 +17887,7 @@ class $$PostInteractionsTableTableManager
                 ownerDid: ownerDid,
                 likeUri: likeUri,
                 repostUri: repostUri,
+                bookmarkUri: bookmarkUri,
                 bookmarked: bookmarked,
                 threadMuted: threadMuted,
                 updatedAt: updatedAt,

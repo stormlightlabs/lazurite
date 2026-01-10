@@ -78,7 +78,7 @@ final class AllFeedsNotifierProvider
   AllFeedsNotifier create() => AllFeedsNotifier();
 }
 
-String _$allFeedsNotifierHash() => r'150e08e3ea64c0a368a0d0515eb73edadb1bfe4e';
+String _$allFeedsNotifierHash() => r'9c7c7493ab2f646d37af9b8fedbaba49336be33e';
 
 /// Notifier for watching all saved feeds reactively.
 
@@ -128,7 +128,7 @@ final class PinnedFeedsNotifierProvider
   PinnedFeedsNotifier create() => PinnedFeedsNotifier();
 }
 
-String _$pinnedFeedsNotifierHash() => r'b21dee72c84c29e80e0f073b019e768fd7952a67';
+String _$pinnedFeedsNotifierHash() => r'ee2ab5b56dc7437709f959204e7b2d88a28c2ef6';
 
 /// Notifier for watching pinned feeds reactively.
 
@@ -385,7 +385,7 @@ final class ActiveFeedProvider extends $NotifierProvider<ActiveFeed, String> {
   }
 }
 
-String _$activeFeedHash() => r'37de39d7b43cf52c4aa886da362bf217116c6874';
+String _$activeFeedHash() => r'b68c4cb42ba06f9b57ad01bc4a7f891690948013';
 
 /// Notifier for tracking the currently active feed.
 ///

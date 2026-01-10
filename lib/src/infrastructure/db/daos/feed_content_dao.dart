@@ -10,7 +10,9 @@ part 'feed_content_dao.g.dart';
 /// This replaces TimelineDao with clearer naming that aligns with BlueSky's
 /// feed-based architecture. Uses the same underlying tables (Posts, Profiles,
 /// FeedContentItems, FeedCursors).
-@DriftAccessor(tables: [Posts, Profiles, ProfileRelationships, FeedContentItems, FeedCursors])
+@DriftAccessor(
+  tables: [Posts, Profiles, ProfileRelationships, PostInteractions, FeedContentItems, FeedCursors],
+)
 class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDaoMixin {
   FeedContentDao(super.db);
 
@@ -64,6 +66,11 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
       innerJoin(posts, posts.uri.equalsExp(feedContentItems.postUri)),
       innerJoin(profiles, profiles.did.equalsExp(posts.authorDid)),
       leftOuterJoin(profileRelationships, profileRelationships.profileDid.equalsExp(profiles.did)),
+      leftOuterJoin(
+        postInteractions,
+        postInteractions.postUri.equalsExp(posts.uri) &
+            postInteractions.ownerDid.equalsExp(feedContentItems.ownerDid),
+      ),
     ]);
 
     query.where(
@@ -78,6 +85,7 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
           post: row.readTable(posts),
           author: row.readTable(profiles),
           relationship: row.readTableOrNull(profileRelationships),
+          interaction: row.readTableOrNull(postInteractions),
           reason: feedItem.reason,
         );
       }).toList();
@@ -131,11 +139,18 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
 ///
 /// Combines post content, author profile, and feed-specific data like repost reason.
 class FeedPost {
-  FeedPost({required this.post, required this.author, this.relationship, this.reason});
+  FeedPost({
+    required this.post,
+    required this.author,
+    this.relationship,
+    this.interaction,
+    this.reason,
+  });
 
   final Post post;
   final Profile author;
   final ProfileRelationship? relationship;
+  final PostInteraction? interaction;
 
   /// Feed-specific reason (e.g., repost information as JSON).
   final String? reason;

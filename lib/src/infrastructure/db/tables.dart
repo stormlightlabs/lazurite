@@ -44,6 +44,9 @@ class PostInteractions extends Table {
   /// AT URI of the repost record (if reposted).
   TextColumn get repostUri => text().nullable()();
 
+  /// AT URI of the bookmark record (if bookmarked).
+  TextColumn get bookmarkUri => text().nullable()();
+
   /// Whether the post is bookmarked.
   BoolColumn get bookmarked => boolean().withDefault(const Constant(false))();
 

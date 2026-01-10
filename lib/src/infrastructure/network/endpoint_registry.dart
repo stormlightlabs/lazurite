@@ -167,6 +167,24 @@ class EndpointRegistry {
       hostKind: HostKind.pds,
       requiresAuth: true,
     ),
+    'app.bsky.bookmark.createBookmark': const EndpointMeta(
+      nsid: 'app.bsky.bookmark.createBookmark',
+      method: HttpMethod.post,
+      hostKind: HostKind.pds,
+      requiresAuth: true,
+    ),
+    'app.bsky.bookmark.deleteBookmark': const EndpointMeta(
+      nsid: 'app.bsky.bookmark.deleteBookmark',
+      method: HttpMethod.post,
+      hostKind: HostKind.pds,
+      requiresAuth: true,
+    ),
+    'app.bsky.bookmark.getBookmarks': const EndpointMeta(
+      nsid: 'app.bsky.bookmark.getBookmarks',
+      method: HttpMethod.get,
+      hostKind: HostKind.pds,
+      requiresAuth: true,
+    ),
 
     'com.atproto.server.createSession': const EndpointMeta(
       nsid: 'com.atproto.server.createSession',

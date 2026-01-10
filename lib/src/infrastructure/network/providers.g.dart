@@ -52,7 +52,7 @@ final class DioPublicProvider extends $FunctionalProvider<Dio, Dio, Dio> with $P
   }
 }
 
-String _$dioPublicHash() => r'32be6de7d8ba289bb1cf4af536dbb9263494bbae';
+String _$dioPublicHash() => r'440eb166523bcd20276af10eafbe6735a28a655a';
 
 /// Provides the PDS Dio client for authenticated API access.
 ///

@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/domain/content_label.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/feeds/application/post_interaction_providers.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/content_warning.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_actions_row.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_body.dart';
@@ -84,9 +87,55 @@ class FeedPostCard extends ConsumerWidget {
           replyCount: item.post.replyCount,
           repostCount: item.post.repostCount,
           likeCount: item.post.likeCount,
-          viewerLikeUri: item.post.viewerLikeUri,
-          viewerRepostUri: item.post.viewerRepostUri,
-          viewerBookmarked: item.post.viewerBookmarked,
+          viewerLikeUri: item.interaction?.likeUri ?? item.post.viewerLikeUri,
+          viewerRepostUri: item.interaction?.repostUri ?? item.post.viewerRepostUri,
+          viewerBookmarked: item.interaction?.bookmarked ?? item.post.viewerBookmarked,
+          onReply: () {
+            final encodedUri = Uri.encodeComponent(item.post.uri);
+            GoRouter.of(context).push('/compose?replyTo=$encodedUri');
+          },
+          onRepost: () async {
+            final repo = ref.read(postInteractionRepositoryProvider);
+            final auth = ref.read(authProvider);
+            final ownerDid = (auth is AuthStateAuthenticated) ? auth.session.did : null;
+            if (ownerDid == null) return;
+
+            final repostUri = item.interaction?.repostUri ?? item.post.viewerRepostUri;
+            if (repostUri != null) {
+              await repo.unrepost(item.post.uri, repostUri, ownerDid);
+            } else {
+              await repo.repost(item.post.uri, item.post.cid, ownerDid);
+            }
+          },
+          onLike: () async {
+            final repo = ref.read(postInteractionRepositoryProvider);
+            final auth = ref.read(authProvider);
+            final ownerDid = (auth is AuthStateAuthenticated) ? auth.session.did : null;
+            if (ownerDid == null) return;
+
+            final likeUri = item.interaction?.likeUri ?? item.post.viewerLikeUri;
+            if (likeUri != null) {
+              await repo.unlike(item.post.uri, likeUri, ownerDid);
+            } else {
+              await repo.like(item.post.uri, item.post.cid, ownerDid);
+            }
+          },
+          onBookmark: () async {
+            final repo = ref.read(postInteractionRepositoryProvider);
+            final auth = ref.read(authProvider);
+            final ownerDid = (auth is AuthStateAuthenticated) ? auth.session.did : null;
+            if (ownerDid == null) return;
+
+            final bookmarked = item.interaction?.bookmarked ?? item.post.viewerBookmarked;
+            if (bookmarked) {
+              final bookmarkUri = item.interaction?.bookmarkUri;
+              if (bookmarkUri != null) {
+                await repo.unbookmark(item.post.uri, bookmarkUri, ownerDid);
+              }
+            } else {
+              await repo.bookmark(item.post.uri, item.post.cid, ownerDid);
+            }
+          },
         ),
       ],
     );

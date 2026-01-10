@@ -33,6 +33,75 @@ void main() {
       expect(find.text('0'), findsNothing);
     });
 
+    testWidgets('renders all action counts correctly', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: PostActionsRow(replyCount: 10, repostCount: 20, likeCount: 30)),
+        ),
+      );
+
+      expect(find.text('10'), findsOneWidget);
+      expect(find.text('20'), findsOneWidget);
+      expect(find.text('30'), findsOneWidget);
+    });
+
+    testWidgets('applies active color when interacted', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: PostActionsRow(
+              viewerLikeUri: 'some-uri',
+              viewerRepostUri: 'some-uri',
+              viewerBookmarked: true,
+            ),
+          ),
+        ),
+      );
+
+      final likeIcon = find.byIcon(Icons.favorite);
+      final repostIcon = find.byIcon(Icons.repeat);
+      final bookmarkIcon = find.byIcon(Icons.bookmark);
+
+      expect(likeIcon, findsOneWidget);
+      expect(repostIcon, findsOneWidget);
+      expect(bookmarkIcon, findsOneWidget);
+
+      final likeWidget = tester.widget<Icon>(likeIcon);
+      expect(likeWidget.color, Colors.red);
+    });
+
+    testWidgets('calls callbacks when items are tapped', (tester) async {
+      bool likeCalled = false;
+      bool repostCalled = false;
+      bool bookmarkCalled = false;
+      bool replyCalled = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PostActionsRow(
+              onLike: () => likeCalled = true,
+              onRepost: () => repostCalled = true,
+              onBookmark: () => bookmarkCalled = true,
+              onReply: () => replyCalled = true,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byTooltip('Like'));
+      expect(likeCalled, isTrue);
+
+      await tester.tap(find.byTooltip('Repost'));
+      expect(repostCalled, isTrue);
+
+      await tester.tap(find.byTooltip('Bookmark'));
+      expect(bookmarkCalled, isTrue);
+
+      await tester.tap(find.byTooltip('Reply'));
+      expect(replyCalled, isTrue);
+    });
+
     group('viewer interaction states', () {
       testWidgets('shows filled like icon when viewerLikeUri is present', (tester) async {
         await tester.pumpWidget(
