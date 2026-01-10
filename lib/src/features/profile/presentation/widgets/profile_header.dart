@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
-import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
+import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_labels.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_relationship_indicator.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/verification_badge.dart';

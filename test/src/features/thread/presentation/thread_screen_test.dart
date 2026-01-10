@@ -5,7 +5,7 @@ import 'package:lazurite/src/features/settings/application/label_filter_provider
 import 'package:lazurite/src/features/settings/application/settings_providers.dart';
 import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
 import 'package:lazurite/src/features/thread/application/thread_providers.dart';
-import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 import 'package:lazurite/src/features/thread/presentation/thread_screen.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/blocked_post_card.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/not_found_post_card.dart';

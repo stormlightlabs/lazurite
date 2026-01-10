@@ -8,7 +8,7 @@ import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_embeds.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
-import 'package:lazurite/src/features/search/infrastructure/search_repository.dart';
+import 'package:lazurite/src/features/search/domain/search_actor.dart';
 import 'package:lazurite/src/features/search/presentation/widgets/recent_search_chips.dart';
 import 'package:lazurite/src/features/search/presentation/widgets/search_bar_widget.dart';
 

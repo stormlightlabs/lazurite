@@ -10,10 +10,10 @@ import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/character_count_meter.dart';
-import 'package:lazurite/src/features/composer/presentation/widgets/quote_post_card.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/publish_button.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/quote_post_card.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/reply_context_card.dart';
-import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
+import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/threadgate_indicator.dart';
 
 void main() {

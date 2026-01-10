@@ -6,6 +6,7 @@ import 'package:lazurite/src/features/composer/application/composer_providers.da
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
+import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:mocktail/mocktail.dart';
 

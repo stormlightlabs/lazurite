@@ -7,7 +7,7 @@ import 'package:lazurite/src/features/settings/application/settings_providers.da
 import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
 import 'package:lazurite/src/features/thread/application/thread_notifier.dart';
 import 'package:lazurite/src/features/thread/application/thread_providers.dart';
-import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/blocked_post_card.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/not_found_post_card.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/thread_line_connector.dart';

@@ -13,7 +13,7 @@ import 'package:lazurite/src/features/feeds/application/feed_content_providers.d
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
-import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
+import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
 import 'package:lazurite/src/features/settings/application/preference_sync_controller.dart';
 import 'package:lazurite/src/features/settings/domain/animation_preferences.dart';

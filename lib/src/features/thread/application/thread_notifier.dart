@@ -1,8 +1,8 @@
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../infrastructure/thread_repository.dart';
 import 'thread_providers.dart';
 
 part 'thread_notifier.g.dart';

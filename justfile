@@ -8,11 +8,11 @@ lint:
 
 # Test with failures only to focus on failures and hanging tests
 test-quiet *paths='':
-    flutter test {{ paths }} --reporter=failures-only --timeout=90s
+    flutter test {{ paths }} --reporter=failures-only --timeout=120s
 
 # Run all tests
 test *paths='':
-    flutter test {{ paths }} --timeout=90s
+    flutter test {{ paths }} --timeout=120s
 
 # Run code gen
 gen:

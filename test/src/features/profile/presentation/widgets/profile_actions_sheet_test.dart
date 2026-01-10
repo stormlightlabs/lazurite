@@ -6,7 +6,7 @@ import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
-import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
+import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_actions_sheet.dart';
 import 'package:mocktail/mocktail.dart';
 

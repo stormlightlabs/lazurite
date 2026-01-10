@@ -9,6 +9,121 @@
   (each feature owns its domain/data/presentation)
 - Reactive data flow using Riverpod providers and Drift streams
 
+## Feature Layer Architecture
+
+All features follow a three-layer architecture for clear separation of concerns:
+
+### Domain Layer (`domain/`)
+
+**Purpose:** Business logic and data models independent of framework implementation.
+
+**Contains:**
+
+- Domain models (plain Dart classes, freezed/json_serializable DTOs)
+- Business rules and validation logic
+- Feature-specific exceptions
+
+**Rules:**
+
+- No Flutter imports (package:flutter)
+- No infrastructure dependencies (Drift, Dio, providers)
+- Pure Dart code that could run in any Dart environment
+- Models represent the problem domain, not API schemas or database tables
+
+### Infrastructure Layer (`infrastructure/`)
+
+**Purpose:** External integrations and data persistence.
+
+**Contains:**
+
+- Repository implementations (API clients, database DAOs)
+- Network request/response handling
+- Drift table definitions and database queries
+- Data mapping between domain models and external schemas
+- Cache management and synchronization logic
+
+**Rules:**
+
+- Implements contracts defined by domain (if using abstract repositories)
+- Handles API-specific details (cursors, pagination, error codes)
+- Manages ownerDid scoping for multi-account isolation
+- Returns domain models, not API DTOs or Drift entities directly
+
+### Application Layer (`application/`)
+
+**Purpose:** State management and coordination between UI and infrastructure.
+
+**Contains:**
+
+- Riverpod providers and notifiers
+- UI state classes (loading, error, data states)
+- Orchestration logic combining multiple repositories
+- Application-level business rules (e.g., sync triggers, cache invalidation)
+
+**Rules:**
+
+- Consumes infrastructure repositories via dependency injection
+- Exposes reactive streams or state for UI consumption
+- No direct Drift queries (delegate to repositories)
+- No UI widgets (widgets belong in presentation/)
+
+### Presentation Layer (`presentation/`)
+
+**Purpose:** UI components and user interaction handling.
+
+**Contains:**
+
+- Screens, pages, and widget trees
+- UI-specific state (form controllers, animation controllers)
+- Navigation logic
+- User input handling and validation
+
+**Rules:**
+
+- Consumes application providers, never repositories directly
+- No business logic beyond UI concerns (visibility, formatting, validation feedback)
+- No direct database or network access
+
+### Feature Organization Example
+
+```sh
+features
+  └── feeds
+      ├── domain                 # Domain models
+      │   ├── feed.dart
+      │   └── feed_post.dart
+      ├── infrastructure         # API + caches
+      │   ├── feed_repository.dart
+      │   └── feed_content_repository.dart
+      ├── application            # Riverpod state
+      │   ├── feed_notifier.dart
+      │   └── feed_sync_controller.dart
+      └── presentation           # UI/Widgets
+          ├── feed_screen.dart
+          └── feed_post_card.dart
+
+```
+
+### Migration Strategy
+
+Features missing layers should be refactored incrementally:
+
+1. Extract domain models from presentation or infrastructure
+2. Move API/database logic into repositories
+3. Create application notifiers to coordinate infrastructure
+4. Update presentation to consume application providers only
+
+### Cross-Cutting Infrastructure
+
+Some infrastructure components serve multiple features and live in `lib/src/infrastructure/`:
+
+- **Auth** (`infrastructure/auth/`) - OAuth, session management, token refresh
+- **Network** (`infrastructure/network/`) - Dio clients, XRPC, endpoint routing
+- **Database** (`infrastructure/db/`) - Drift setup, shared DAOs, migrations
+- **Identity** (`infrastructure/identity/`) - DID resolution, handle verification
+
+Features consume these via dependency injection through application providers.
+
 ### ATProto Best Practices
 
 - Cursor-based pagination everywhere (avoid OFFSET paging for feeds)

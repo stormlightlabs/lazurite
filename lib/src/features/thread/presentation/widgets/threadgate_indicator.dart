@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../../infrastructure/thread_repository.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 
 /// Displays reply restriction information when a threadgate is present.
 class ThreadgateIndicator extends StatelessWidget {

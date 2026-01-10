@@ -9,7 +9,7 @@ import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
-import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
+import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/follow_button.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/media_tab.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/pinned_post_card.dart';

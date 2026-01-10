@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/thread/application/thread_notifier.dart';
 import 'package:lazurite/src/features/thread/application/thread_providers.dart';
-import 'package:lazurite/src/features/thread/infrastructure/thread_repository.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../helpers/mocks.dart';

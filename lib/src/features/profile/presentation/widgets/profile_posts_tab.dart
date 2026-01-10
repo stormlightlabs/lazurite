@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/constants/layout_constants.dart';
 import 'package:lazurite/src/core/utils/date_formatter.dart';
-import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
+import 'package:lazurite/src/features/profile/domain/profile.dart';
 
 /// Tab content showing author's posts with infinite scroll.
 class ProfilePostsTab extends StatefulWidget {

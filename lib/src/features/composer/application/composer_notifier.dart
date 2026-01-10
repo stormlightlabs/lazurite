@@ -4,7 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
-import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
+import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'composer_providers.dart';

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/widgets/actor_row.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
-import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
+import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/profile/presentation/followers_page.dart';
 import 'package:mocktail/mocktail.dart';
 

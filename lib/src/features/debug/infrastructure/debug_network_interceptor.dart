@@ -18,8 +18,6 @@ class DebugNetworkInterceptor extends Interceptor {
     final uuid = _uuid.v4();
     options.extra['debug_uuid'] = uuid;
     options.extra['debug_start_time'] = DateTime.now().millisecondsSinceEpoch;
-
-    // TODO: add pending status & log pending requests, updated on completion
     handler.next(options);
   }
 

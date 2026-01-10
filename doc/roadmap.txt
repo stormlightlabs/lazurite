@@ -5,13 +5,13 @@ O. Hardening (mobile)                                                   *bsky-O*
 ================================================================================
 
 Phase 1: Code Quality and Architecture
-- [ ] Feature architecture standardization:
-      - [ ] Audit all features for missing domain/infrastructure/application
+- [x] Feature architecture standardization:
+      - [x] Audit all features for missing domain/infrastructure/application
             layers
-            - [ ] Refactor features missing layers (priority: auth, settings,
+            - [x] Refactor features missing layers (priority: auth, settings,
                   profile, search, thread)
-      - [ ] Document architecture patterns in doc/architecture.md
-            - [ ] Establish clear guidelines for layer responsibilities
+      - [x] Document architecture patterns in doc/architecture.md
+            - [x] Establish clear guidelines for layer responsibilities
       - [x] Document testing patterns in doc/testing.md
 - [ ] Type safety improvements:
       - Use freezed for critical models
