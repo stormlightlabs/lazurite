@@ -8,6 +8,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../infrastructure/thread_repository.dart';
 
+export 'thread_collapse_state.dart';
+
 part 'thread_providers.g.dart';
 
 @riverpod

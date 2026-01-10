@@ -8,9 +8,12 @@ import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
 import 'package:lazurite/src/features/thread/application/thread_notifier.dart';
 import 'package:lazurite/src/features/thread/application/thread_providers.dart';
 import 'package:lazurite/src/features/thread/domain/thread.dart';
+import 'package:lazurite/src/features/thread/domain/thread_layout_calculator.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/blocked_post_card.dart';
+import 'package:lazurite/src/features/thread/presentation/widgets/collapsed_reply_preview.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/not_found_post_card.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/thread_line_connector.dart';
+import 'package:lazurite/src/features/thread/presentation/widgets/thread_reply_item.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/threadgate_indicator.dart';
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 
@@ -41,6 +44,43 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
             tooltip: _flattenedView ? 'Switch to Tree View' : 'Switch to Flattened View',
             onPressed: () => setState(() => _flattenedView = !_flattenedView),
           ),
+          if (!_flattenedView)
+            threadAsync.maybeWhen(
+              data: (thread) => PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                tooltip: 'Thread options',
+                onSelected: (value) {
+                  if (value == 'collapse_all') {
+                    _collapseAllReplies(thread);
+                  } else if (value == 'expand_all') {
+                    ref.read(threadCollapseStateProvider.notifier).expandAll();
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'collapse_all',
+                    child: Row(
+                      children: [
+                        Icon(Icons.unfold_less),
+                        SizedBox(width: 12),
+                        Text('Collapse all replies'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'expand_all',
+                    child: Row(
+                      children: [
+                        Icon(Icons.unfold_more),
+                        SizedBox(width: 12),
+                        Text('Expand all replies'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              orElse: () => const SizedBox.shrink(),
+            ),
         ],
       ),
       body: threadAsync.when(
@@ -90,12 +130,11 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
         SliverList(
           delegate: SliverChildBuilderDelegate((context, index) {
             final reply = sortedReplies[index];
-            final position = _getThreadLinePosition(
-              index: index,
-              total: sortedReplies.length,
-              isParentChain: false,
+            return _buildReplyTree(
+              reply,
+              depth: 1,
+              isLastSibling: index == sortedReplies.length - 1,
             );
-            return _buildThreadPost(reply, position: position, isReply: true);
           }, childCount: sortedReplies.length),
         ),
       ],
@@ -238,6 +277,69 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
       current = current.parent!;
     }
     return list.reversed.toList();
+  }
+
+  /// Collects all reply URIs for collapse/expand all
+  void _collapseAllReplies(ThreadViewPost thread) {
+    final uris = <String>[];
+    void collectUris(ThreadViewPost post) {
+      if (post.replies.isNotEmpty) {
+        uris.add(post.post.uri);
+        for (final reply in post.replies) {
+          collectUris(reply);
+        }
+      }
+    }
+
+    for (final reply in thread.replies) {
+      collectUris(reply);
+    }
+
+    ref.read(threadCollapseStateProvider.notifier).collapseAll(uris);
+  }
+
+  /// Recursively builds reply tree with nesting and collapse support
+  Widget _buildReplyTree(ThreadViewPost post, {required int depth, bool isLastSibling = false}) {
+    final isCollapsed = ref.watch(
+      threadCollapseStateProvider.select((state) => state[post.post.uri] ?? false),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ThreadReplyItem(
+          post: post,
+          depth: depth,
+          isCollapsed: isCollapsed,
+          onToggleCollapse: () {
+            ref.read(threadCollapseStateProvider.notifier).toggle(post.post.uri);
+          },
+          isLastSibling: isLastSibling,
+          hasMoreSiblings: !isLastSibling,
+        ),
+
+        if (!isCollapsed && post.replies.isNotEmpty)
+          ...post.replies.asMap().entries.map((entry) {
+            final index = entry.key;
+            final reply = entry.value;
+            return _buildReplyTree(
+              reply,
+              depth: depth + 1,
+              isLastSibling: index == post.replies.length - 1,
+            );
+          }),
+
+        if (isCollapsed && post.replies.isNotEmpty)
+          CollapsedReplyPreview(
+            firstReply: post.replies.first,
+            totalCount: ThreadLayoutCalculator.countAllReplies(post),
+            onExpand: () {
+              ref.read(threadCollapseStateProvider.notifier).toggle(post.post.uri);
+            },
+            indent: ThreadLayoutCalculator.calculateIndent(depth),
+          ),
+      ],
+    );
   }
 
   /// Helper to flatten replies purely for the list
