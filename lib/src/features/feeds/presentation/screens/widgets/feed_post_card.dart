@@ -20,10 +20,16 @@ import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 /// Adapts [FeedPost] data to display a rich post card with
 /// author info, post text, embeds, and action counts.
 class FeedPostCard extends ConsumerWidget {
-  const FeedPostCard({required this.item, this.onTap, super.key});
+  const FeedPostCard({
+    required this.item,
+    this.onTap,
+    this.margin = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    super.key,
+  });
 
   final FeedPost item;
   final VoidCallback? onTap;
+  final EdgeInsetsGeometry margin;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -159,7 +165,7 @@ class FeedPostCard extends ConsumerWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: margin,
       elevation: 2,
       child: InkWell(
         onTap:

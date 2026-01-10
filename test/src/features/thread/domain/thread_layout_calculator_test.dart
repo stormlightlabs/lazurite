@@ -10,53 +10,22 @@ void main() {
       });
 
       test('calculates indent for various depths', () {
-        expect(ThreadLayoutCalculator.calculateIndent(1), 32.0);
-        expect(ThreadLayoutCalculator.calculateIndent(2), 64.0);
-        expect(ThreadLayoutCalculator.calculateIndent(3), 96.0);
-        expect(ThreadLayoutCalculator.calculateIndent(4), 128.0);
-        expect(ThreadLayoutCalculator.calculateIndent(5), 160.0);
+        expect(ThreadLayoutCalculator.calculateIndent(1), 12.0);
+        expect(ThreadLayoutCalculator.calculateIndent(2), 24.0);
+        expect(ThreadLayoutCalculator.calculateIndent(3), 36.0);
+        expect(ThreadLayoutCalculator.calculateIndent(4), 48.0);
+        expect(ThreadLayoutCalculator.calculateIndent(5), 60.0);
       });
 
       test('clamps indent at maxDepth', () {
-        expect(ThreadLayoutCalculator.calculateIndent(6), 160.0);
-        expect(ThreadLayoutCalculator.calculateIndent(10), 160.0);
-        expect(ThreadLayoutCalculator.calculateIndent(100), 160.0);
+        expect(ThreadLayoutCalculator.calculateIndent(6), 60.0);
+        expect(ThreadLayoutCalculator.calculateIndent(10), 60.0);
+        expect(ThreadLayoutCalculator.calculateIndent(100), 60.0);
       });
 
       test('handles negative depth gracefully', () {
         expect(ThreadLayoutCalculator.calculateIndent(-1), 0.0);
         expect(ThreadLayoutCalculator.calculateIndent(-10), 0.0);
-      });
-    });
-
-    group('calculateConnectorLeft', () {
-      test('positions connector at avatar center for depth 0', () {
-        expect(
-          ThreadLayoutCalculator.calculateConnectorLeft(0),
-          20.0, // 0 + avatarCenterOffset
-        );
-      });
-
-      test('calculates connector position relative to indent', () {
-        expect(
-          ThreadLayoutCalculator.calculateConnectorLeft(1),
-          52.0, // 32 + 20
-        );
-        expect(
-          ThreadLayoutCalculator.calculateConnectorLeft(2),
-          84.0, // 64 + 20
-        );
-        expect(
-          ThreadLayoutCalculator.calculateConnectorLeft(3),
-          116.0, // 96 + 20
-        );
-      });
-
-      test('clamps connector position at maxDepth', () {
-        final maxConnectorLeft = ThreadLayoutCalculator.calculateConnectorLeft(
-          ThreadLayoutCalculator.maxDepth,
-        );
-        expect(ThreadLayoutCalculator.calculateConnectorLeft(10), maxConnectorLeft);
       });
     });
 

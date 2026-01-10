@@ -41,48 +41,63 @@ class PostActionsRow extends StatelessWidget {
     final isLiked = viewerLikeUri != null;
     final isReposted = viewerRepostUri != null;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _ActionItem(
-          icon: Icons.chat_bubble_outline,
-          count: replyCount,
-          onTap: onReply,
-          tooltip: 'Reply',
-        ),
-        _ActionItem(
-          icon: Icons.repeat,
-          count: repostCount,
-          isActive: isReposted,
-          activeColor: Colors.green,
-          onTap: onRepost,
-          tooltip: isReposted ? 'Unrepost' : 'Repost',
-        ),
-        _ActionItem(
-          icon: isLiked ? Icons.favorite : Icons.favorite_border,
-          count: likeCount,
-          isActive: isLiked,
-          activeColor: Colors.red,
-          onTap: onLike,
-          tooltip: isLiked ? 'Unlike' : 'Like',
-        ),
-        _ActionItem(
-          icon: viewerBookmarked ? Icons.bookmark : Icons.bookmark_border,
-          count: 0,
-          isActive: viewerBookmarked,
-          activeColor: Colors.amber,
-          onTap: onBookmark,
-          tooltip: viewerBookmarked ? 'Remove Bookmark' : 'Bookmark',
-        ),
-        IconButton(
-          onPressed: onMore,
-          icon: const Icon(Icons.more_horiz, size: 18),
-          color: AppColors.textSecondary,
-          tooltip: 'More',
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final showCounts = constraints.maxWidth > 240;
+        final itemPadding = constraints.maxWidth > 200
+            ? 8.0
+            : constraints.maxWidth > 160
+            ? 4.0
+            : 2.0;
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _ActionItem(
+              icon: Icons.chat_bubble_outline,
+              count: showCounts ? replyCount : 0,
+              onTap: onReply,
+              tooltip: 'Reply',
+              padding: itemPadding,
+            ),
+            _ActionItem(
+              icon: Icons.repeat,
+              count: showCounts ? repostCount : 0,
+              isActive: isReposted,
+              activeColor: Colors.green,
+              onTap: onRepost,
+              tooltip: isReposted ? 'Unrepost' : 'Repost',
+              padding: itemPadding,
+            ),
+            _ActionItem(
+              icon: isLiked ? Icons.favorite : Icons.favorite_border,
+              count: showCounts ? likeCount : 0,
+              isActive: isLiked,
+              activeColor: Colors.red,
+              onTap: onLike,
+              tooltip: isLiked ? 'Unlike' : 'Like',
+              padding: itemPadding,
+            ),
+            _ActionItem(
+              icon: viewerBookmarked ? Icons.bookmark : Icons.bookmark_border,
+              count: 0,
+              isActive: viewerBookmarked,
+              activeColor: Colors.amber,
+              onTap: onBookmark,
+              tooltip: viewerBookmarked ? 'Remove Bookmark' : 'Bookmark',
+              padding: itemPadding,
+            ),
+            IconButton(
+              onPressed: onMore,
+              icon: const Icon(Icons.more_horiz, size: 18),
+              color: AppColors.textSecondary,
+              tooltip: 'More',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -95,6 +110,7 @@ class _ActionItem extends StatefulWidget {
     this.activeColor,
     this.onTap,
     this.tooltip,
+    this.padding = 8.0,
   });
 
   final IconData icon;
@@ -103,6 +119,7 @@ class _ActionItem extends StatefulWidget {
   final Color? activeColor;
   final VoidCallback? onTap;
   final String? tooltip;
+  final double padding;
 
   @override
   State<_ActionItem> createState() => _ActionItemState();
@@ -147,7 +164,7 @@ class _ActionItemState extends State<_ActionItem> with SingleTickerProviderState
         onTap: _handleTap,
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: widget.padding, vertical: 4),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -157,12 +174,15 @@ class _ActionItemState extends State<_ActionItem> with SingleTickerProviderState
               ),
               if (widget.count > 0) ...[
                 const SizedBox(width: 4),
-                Text(
-                  _formatCount(widget.count),
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 13,
-                    fontWeight: widget.isActive ? FontWeight.bold : FontWeight.normal,
+                ConstraintsTransformBox(
+                  constraintsTransform: ConstraintsTransformBox.unconstrained,
+                  child: Text(
+                    _formatCount(widget.count),
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 13,
+                      fontWeight: widget.isActive ? FontWeight.bold : FontWeight.normal,
+                    ),
                   ),
                 ),
               ],

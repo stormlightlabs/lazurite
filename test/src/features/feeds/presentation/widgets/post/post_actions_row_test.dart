@@ -153,5 +153,25 @@ void main() {
         expect(find.byIcon(Icons.bookmark), findsNothing);
       });
     });
+
+    testWidgets('hides counts in narrow layout', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 150,
+                child: PostActionsRow(replyCount: 5, repostCount: 15, likeCount: 30),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('5'), findsNothing);
+      expect(find.text('15'), findsNothing);
+      expect(find.text('30'), findsNothing);
+      expect(find.byIcon(Icons.chat_bubble_outline), findsOneWidget);
+    });
   });
 }

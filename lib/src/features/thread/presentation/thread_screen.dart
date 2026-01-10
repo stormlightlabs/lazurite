@@ -8,9 +8,7 @@ import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
 import 'package:lazurite/src/features/thread/application/thread_notifier.dart';
 import 'package:lazurite/src/features/thread/application/thread_providers.dart';
 import 'package:lazurite/src/features/thread/domain/thread.dart';
-import 'package:lazurite/src/features/thread/domain/thread_layout_calculator.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/blocked_post_card.dart';
-import 'package:lazurite/src/features/thread/presentation/widgets/collapsed_reply_preview.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/not_found_post_card.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/thread_line_connector.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/thread_reply_item.dart';
@@ -130,11 +128,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
         SliverList(
           delegate: SliverChildBuilderDelegate((context, index) {
             final reply = sortedReplies[index];
-            return _buildReplyTree(
-              reply,
-              depth: 1,
-              isLastSibling: index == sortedReplies.length - 1,
-            );
+            return _buildReplyTree(reply, depth: 1);
           }, childCount: sortedReplies.length),
         ),
       ],
@@ -229,11 +223,9 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.1),
-        border: Border(
-          left: BorderSide(color: colorScheme.primary, width: 3),
-          bottom: BorderSide(color: theme.dividerColor, width: 4),
-        ),
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.45), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,7 +291,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
   }
 
   /// Recursively builds reply tree with nesting and collapse support
-  Widget _buildReplyTree(ThreadViewPost post, {required int depth, bool isLastSibling = false}) {
+  Widget _buildReplyTree(ThreadViewPost post, {required int depth}) {
     final isCollapsed = ref.watch(
       threadCollapseStateProvider.select((state) => state[post.post.uri] ?? false),
     );
@@ -314,30 +306,20 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
           onToggleCollapse: () {
             ref.read(threadCollapseStateProvider.notifier).toggle(post.post.uri);
           },
-          isLastSibling: isLastSibling,
-          hasMoreSiblings: !isLastSibling,
         ),
-
-        if (!isCollapsed && post.replies.isNotEmpty)
-          ...post.replies.asMap().entries.map((entry) {
-            final index = entry.key;
-            final reply = entry.value;
-            return _buildReplyTree(
-              reply,
-              depth: depth + 1,
-              isLastSibling: index == post.replies.length - 1,
-            );
-          }),
-
-        if (isCollapsed && post.replies.isNotEmpty)
-          CollapsedReplyPreview(
-            firstReply: post.replies.first,
-            totalCount: ThreadLayoutCalculator.countAllReplies(post),
-            onExpand: () {
-              ref.read(threadCollapseStateProvider.notifier).toggle(post.post.uri);
-            },
-            indent: ThreadLayoutCalculator.calculateIndent(depth),
-          ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          child: (!isCollapsed && post.replies.isNotEmpty)
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: post.replies
+                      .map((reply) => _buildReplyTree(reply, depth: depth + 1))
+                      .toList(),
+                )
+              : const SizedBox.shrink(),
+        ),
       ],
     );
   }

@@ -1,16 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/core/domain/content_label.dart';
+import 'package:lazurite/src/features/settings/application/label_filter_provider.dart';
+import 'package:lazurite/src/features/settings/domain/label_filter_service.dart';
 import 'package:lazurite/src/features/thread/domain/thread.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/thread_reply_item.dart';
+import 'package:mocktail/mocktail.dart';
+
+import '../../../../../helpers/mocks.dart';
+
+class MockLabelFilterService extends Mock implements LabelFilterService {}
 
 void main() {
+  late MockAppDatabase mockDatabase;
+  late MockLabelFilterService mockLabelFilter;
+
+  setUpAll(() {
+    registerFallbackValue(<ContentLabel>[]);
+  });
+
+  setUp(() {
+    mockDatabase = MockAppDatabase();
+    mockLabelFilter = MockLabelFilterService();
+
+    when(() => mockLabelFilter.anyLabelWarns(any())).thenReturn(false);
+    when(() => mockLabelFilter.anyLabelHides(any())).thenReturn(false);
+  });
+
   group('ThreadReplyItem', () {
     testWidgets('renders post at depth 0', (tester) async {
       final post = _createThreadViewPost(handle: 'user1');
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(mockDatabase),
+            labelFilterServiceProvider.overrideWithValue(mockLabelFilter),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: ThreadReplyItem(
@@ -38,6 +66,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(mockDatabase),
+            labelFilterServiceProvider.overrideWithValue(mockLabelFilter),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: ThreadReplyItem(
@@ -59,6 +91,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(mockDatabase),
+            labelFilterServiceProvider.overrideWithValue(mockLabelFilter),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: ThreadReplyItem(
@@ -81,6 +117,10 @@ void main() {
 
         await tester.pumpWidget(
           ProviderScope(
+            overrides: [
+              appDatabaseProvider.overrideWithValue(mockDatabase),
+              labelFilterServiceProvider.overrideWithValue(mockLabelFilter),
+            ],
             child: MaterialApp(
               home: Scaffold(
                 body: ThreadReplyItem(
@@ -105,6 +145,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(mockDatabase),
+            labelFilterServiceProvider.overrideWithValue(mockLabelFilter),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: ThreadReplyItem(
@@ -126,6 +170,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(mockDatabase),
+            labelFilterServiceProvider.overrideWithValue(mockLabelFilter),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: ThreadReplyItem(
@@ -147,6 +195,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(mockDatabase),
+            labelFilterServiceProvider.overrideWithValue(mockLabelFilter),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: ThreadReplyItem(
@@ -161,6 +213,36 @@ void main() {
       );
 
       expect(find.byType(ThreadReplyItem), findsOneWidget);
+    });
+
+    testWidgets('shows truncated summary and hidden count when collapsed', (tester) async {
+      final post = _createThreadViewPost(
+        handle: 'user1',
+        replies: [_createThreadViewPost(handle: 'child')],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(mockDatabase),
+            labelFilterServiceProvider.overrideWithValue(mockLabelFilter),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: ThreadReplyItem(
+                post: post,
+                depth: 0,
+                isCollapsed: true,
+                onToggleCollapse: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('@user1'), findsOneWidget);
+      expect(find.textContaining('Test post from user1'), findsOneWidget);
+      expect(find.text('1 reply hidden'), findsOneWidget);
     });
   });
 }

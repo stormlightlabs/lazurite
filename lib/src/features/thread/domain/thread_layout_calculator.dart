@@ -11,16 +11,10 @@ class ThreadLayoutCalculator {
   static const double baseIndent = 0.0;
 
   /// Additional indentation per nesting level
-  static const double indentPerLevel = 32.0;
+  static const double indentPerLevel = 12.0;
 
   /// Maximum depth before flattening
   static const int maxDepth = 5;
-
-  /// Avatar radius in pixels
-  static const double avatarRadius = 20.0;
-
-  /// Offset from left edge to avatar center
-  static const double avatarCenterOffset = 20.0;
 
   /// Calculate left padding for a post at given depth.
   ///
@@ -28,13 +22,6 @@ class ThreadLayoutCalculator {
   static double calculateIndent(int depth) {
     final effectiveDepth = depth.clamp(0, maxDepth);
     return baseIndent + (effectiveDepth * indentPerLevel);
-  }
-
-  /// Calculate connector line position for a given depth.
-  ///
-  /// Positions the connector at the avatar center, accounting for indentation.
-  static double calculateConnectorLeft(int depth) {
-    return calculateIndent(depth) + avatarCenterOffset;
   }
 
   /// Determine if depth should be flattened.
