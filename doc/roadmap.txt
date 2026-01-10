@@ -1,78 +1,6 @@
 *roadmap.txt*                         Material You (Flutter/Dart) Bluesky Client
 
 ================================================================================
-N. Developer Tools & Repository Inspector                               *bsky-N*
-================================================================================
-
-Context:
-- Two distinct features:
-      (1) Internal debug mode (kDebugMode only) for dev diagnostics
-      (2) User-facing DevTools (production builds)
-- Internal debug overlay provides system info, network inspector, performance
-  metrics during development.
-- User-facing devtools allow users to explore their ATProto repository, inspect
-  records, and understand underlying data structure.
-
-Phase 0: Internal Debug Mode Foundation (kDebugMode only)
-- [x] Create DebugOverlayHost widget (wraps MaterialApp, kDebugMode gated)
-- [x] Implement gesture detection:
-      - [x] 2-finger long-press
-      - [x] triple-tap on logo
-      - [x] ALT+F12 shortcut
-- [x] Build DebugDrawer with tabs: System Info, ATProto Session
-- [x] System Info Tab: Flutter version, platform, screen size, memory, FPS
-- [x] ATProto Session Tab: DID, handle, PDS host, session status (no tokens)
-- [x] Create DebugNetworkInterceptor for Dio to log XRPC calls
-- [x] Network Inspector Tab: display last 20 XRPC calls, expandable bodies to
-      view request/response details
-- [x] Add dev_settings table (debugModeEnabled, allowOtherRepos, etc.)
-- [x] Add dev_network_logs table with LRU eviction (1000 in-memory, 24h in DB)
-
-Phase 1: User-Facing "DevTools"
-- [x] Add dev_pins table for pinned collections/records
-- [x] Add dev_recent_records table for LRU cache
-- [x] Create /devtools route group (always available, not kDebugMode gated)
-- [x] DevToolsHomePage: show DID, PDS host, quick actions
-      - [x] "Copy my DID" action
-- [x] Add Settings → "Developer Tools" toggle (works in release builds)
-- [x] Link debug overlay to full DevTools (/devtools routes)
-
-Phase 2: Repository Browser (Read-Only)
-- [x] Implement DevtoolsRepository wrapping XrpcClient
-      - [x] com.atproto.repo.describeRepo: list collections for a DID
-      - [x] com.atproto.repo.listRecords: cursor-based pagination
-- [x] CollectionsPage: search, pin/unpin, tap to view records
-- [x] RecordsPage: infinite scroll, filters (rkey prefix, date, blob presence)
-      - [x] Rich preview cards for known record types (post, profile, follow)
-      - [x] Fallback JSON tree for unknown types
-
-Phase 3: Record Inspector
-- [x] com.atproto.repo.getRecord: fetch single record
-- [x] RecordDetailPage: JSON tree viewer with collapsible nodes
-      - [x] Syntax highlighting for JSON
-      - [x] Copy buttons at every level (URI, CID, path values)
-      - [x] Metadata header: AT URI, CID, indexedAt
-      - [x] Inline blob display (images/videos)
-      - [x] Export actions: JSON file, share sheet
-
-Tests:
-- [x] Widget test: debug overlay hidden in release mode
-      (when not manually enabled)
-- [x] Widget test: 2-finger long-press shows overlay in kDebugMode
-- [x] Unit test: describeRepo, listRecords, getRecord parse correctly
-- [x] Provider test: collectionsProvider fetches and caches
-- [x] Provider test: recordsProvider paginates without duplicates
-- [ ] Security test: tokens never logged or displayed
-
-Deliverables:
-- [x] Internal debug overlay (kDebugMode only) with system info, network logs
-- [x] User-facing DevTools (production) for repository inspection
-- [x] Collections browser with search and pinning
-- [x] Records list with rich previews and pagination
-- [x] Record inspector with JSON tree and metadata
-- [x] UI is transparent, "power-user" focused
-
-================================================================================
 O. Hardening (mobile)                                                   *bsky-O*
 ================================================================================
 
@@ -327,10 +255,12 @@ Tasks:
       - [ ] com.atproto.repo.createRecord: create new records
       - [ ] com.atproto.repo.putRecord: update existing records
       - [ ] com.atproto.repo.deleteRecord: delete with typed confirmation
+      - [ ] (Phase 9) Bookmarks Screen (View Saved Posts)
       - [ ] Diff preview for updates
       - [ ] Batch operations UI: com.atproto.repo.applyWrites with review
       - [ ] Security test: record editing disabled when gates are off
       - [ ] Security test: cannot edit other users' repos
+- [ ] (Phase 9) Muted Words/Filters
 Tests:
 - [ ] System theme: follows OS brightness changes
 - [ ] Multi-device: preference changes merge correctly

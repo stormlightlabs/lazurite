@@ -4,6 +4,12 @@
 
 ### Added
 
+#### [2026-01-09]
+
+- User-facing DevTools for ATProto repository browsing, record inspection, and
+  JSON exploration with full security test coverage.
+- Internal debug overlay (kDebugMode) with system info and network inspector.
+
 #### [2026-01-08]
 
 - Direct messaging with conversation list, message detail, outbox-based delivery,
