@@ -188,8 +188,11 @@ void main() {
       await repository.syncPreferences(ownerDid);
 
       final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
-      expect(feeds, hasLength(1));
-      expect(feeds[0].displayName, 'Test Feed 2');
+      expect(feeds, hasLength(2));
+
+      expect(feeds[0].uri, 'at://did:plc:abc/app.bsky.feed.generator/test1');
+      expect(feeds[0].displayName, 'Unknown Feed');
+      expect(feeds[1].displayName, 'Test Feed 2');
     });
   });
 

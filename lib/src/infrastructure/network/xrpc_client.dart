@@ -74,7 +74,13 @@ class XrpcClient {
       return _parseResponse(response);
     } on DioException catch (e) {
       final failure = _convertError(e);
-      _logger.error('XRPC call failed: $nsid', failure, e.stackTrace);
+
+      if (failure is AuthFailure && failure.message?.contains('nonce') == true) {
+        _logger.warning('XRPC auth failure (recoverable): ${failure.message}');
+      } else {
+        _logger.error('XRPC call failed: $nsid', failure, e.stackTrace);
+      }
+
       throw failure;
     }
   }

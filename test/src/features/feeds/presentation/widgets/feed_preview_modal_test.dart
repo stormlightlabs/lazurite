@@ -106,6 +106,9 @@ void main() {
     expect(find.text('@creator'), findsOneWidget);
     expect(find.text('Author 2'), findsOneWidget);
     expect(find.text('Save'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Save button in FeedPreviewModal calls repository', (tester) async {

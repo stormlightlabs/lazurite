@@ -211,8 +211,7 @@ class AuthInterceptor extends Interceptor {
   Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
     final requiresAuth = err.requestOptions.extra[requiresAuthKey] == true;
 
-    final session = await getSession();
-    if (session != null && err.response != null) {
+    if (err.response != null) {
       final nonce = DPoPNonceStore.extractFromHeaders(err.response!.headers.map);
       if (nonce != null) {
         final origin = _getOrigin(err.requestOptions.uri);
@@ -220,6 +219,8 @@ class AuthInterceptor extends Interceptor {
         _logger.debug('Stored DPoP nonce for $origin from error response');
       }
     }
+
+    final session = await getSession();
 
     if (requiresAuth) {
       if (await _tryRefreshAfterInvalidToken(err, handler)) {
@@ -230,6 +231,25 @@ class AuthInterceptor extends Interceptor {
     if (err.response?.statusCode != 401) {
       return handler.next(err);
     }
+
+    final errorCode = _extractErrorCode(err.response);
+    if (errorCode == 'use_dpop_nonce') {
+      final hasRetried = err.requestOptions.extra['_authRetried'] == true;
+      if (!hasRetried) {
+        if (session != null) {
+          final origin = _getOrigin(err.requestOptions.uri);
+          final nonce = _nonceStore.get(origin);
+
+          if (nonce != null) {
+            _logger.debug('Retrying request with new DPoP nonce');
+            return _retryRequestWithSession(err, session, handler);
+          } else {
+            _logger.warning('Received use_dpop_nonce but no nonce found in store');
+          }
+        }
+      }
+    }
+
     if (!requiresAuth) {
       return handler.next(err);
     }

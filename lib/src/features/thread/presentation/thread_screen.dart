@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/utils/error_message.dart';
-import 'package:lazurite/src/core/widgets/error_view.dart';
-import 'package:lazurite/src/core/widgets/loading_view.dart';
+import 'package:lazurite/src/core/widgets/widgets.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/widgets/feed_post_card.dart';
 import 'package:lazurite/src/features/settings/application/settings_providers.dart';
 import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
@@ -108,31 +107,36 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
   Widget _buildTreeView(ThreadViewPost thread, ThreadViewPref pref) {
     final parents = thread.parent != null ? _getParents(thread.parent!) : <ThreadViewPost>[];
     final sortedReplies = _sortReplies(thread.replies, pref);
+    return PullToRefreshWrapper(
+      key: ValueKey(thread.post.uri),
+      onRefresh: () async {
+        await ref.read(threadProvider(widget.postUri).notifier).refresh();
+      },
+      child: CustomScrollView(
+        slivers: [
+          if (parents.isNotEmpty)
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final parent = parents[index];
+                final position = _getThreadLinePosition(
+                  index: index,
+                  total: parents.length,
+                  isParentChain: true,
+                );
+                return _buildThreadPost(parent, position: position);
+              }, childCount: parents.length),
+            ),
 
-    return CustomScrollView(
-      slivers: [
-        if (parents.isNotEmpty)
+          SliverToBoxAdapter(child: _buildFocalPost(thread)),
+
           SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
-              final parent = parents[index];
-              final position = _getThreadLinePosition(
-                index: index,
-                total: parents.length,
-                isParentChain: true,
-              );
-              return _buildThreadPost(parent, position: position);
-            }, childCount: parents.length),
+              final reply = sortedReplies[index];
+              return _buildReplyTree(reply, depth: 1);
+            }, childCount: sortedReplies.length),
           ),
-
-        SliverToBoxAdapter(child: _buildFocalPost(thread)),
-
-        SliverList(
-          delegate: SliverChildBuilderDelegate((context, index) {
-            final reply = sortedReplies[index];
-            return _buildReplyTree(reply, depth: 1);
-          }, childCount: sortedReplies.length),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
+import 'package:lazurite/src/infrastructure/network/network_failure.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 
 import '../domain/thread.dart';
@@ -25,7 +26,11 @@ class ThreadRepository {
 
       return thread;
     } catch (e, stack) {
-      _logger.error('Failed to fetch thread', e, stack);
+      if (e is AuthFailure && e.message?.contains('nonce') == true) {
+        _logger.warning('Failed to fetch thread (recoverable auth error): ${e.message}');
+      } else {
+        _logger.error('Failed to fetch thread', e, stack);
+      }
       rethrow;
     }
   }

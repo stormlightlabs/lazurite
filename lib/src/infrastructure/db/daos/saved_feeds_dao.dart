@@ -137,6 +137,12 @@ class SavedFeedsDao extends DatabaseAccessor<AppDatabase> with _$SavedFeedsDaoMi
   /// Used during sync merge operations to update sort order, pin status, and
   /// sync timestamps without requiring all fields. This only affects existing
   /// records - it will not insert a new record if the feed doesn't exist.
+  ///
+  /// We only apply sync updates if the user hasn't modified it locally since
+  /// the sync started (implied by localUpdatedAt being null).
+  ///
+  /// If clearLocalModification is true, we clear the localUpdatedAt timestamp
+  /// after successful remote sync.
   Future<int> updateSyncState({
     required String uri,
     required int sortOrder,
@@ -147,7 +153,8 @@ class SavedFeedsDao extends DatabaseAccessor<AppDatabase> with _$SavedFeedsDaoMi
   }) {
     return (update(savedFeeds)
           ..where((t) => t.uri.equals(uri))
-          ..where((t) => t.ownerDid.equals(ownerDid)))
+          ..where((t) => t.ownerDid.equals(ownerDid))
+          ..where((t) => t.localUpdatedAt.isNull()))
         .write(
           SavedFeedsCompanion(
             sortOrder: Value(sortOrder),

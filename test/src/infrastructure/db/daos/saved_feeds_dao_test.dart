@@ -528,4 +528,104 @@ void main() {
       expect(updated, 0);
     });
   });
+
+  group('updateSyncState', () {
+    test('updates sync state when localUpdatedAt is null', () async {
+      await dao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: 'at://did:plc:abc/app.bsky.feed.generator/test',
+          displayName: 'Test Feed',
+          creatorDid: 'did:plc:abc',
+          ownerDid: ownerDid,
+          sortOrder: 0,
+          isPinned: const Value(false),
+          lastSynced: DateTime(2025, 1, 1),
+        ),
+      );
+
+      final updated = await dao.updateSyncState(
+        uri: 'at://did:plc:abc/app.bsky.feed.generator/test',
+        sortOrder: 5,
+        isPinned: true,
+        lastSynced: DateTime(2025, 1, 2),
+        ownerDid: ownerDid,
+      );
+
+      expect(updated, 1);
+
+      final result = await dao.getFeed('at://did:plc:abc/app.bsky.feed.generator/test', ownerDid);
+      expect(result!.sortOrder, 5);
+      expect(result.isPinned, true);
+    });
+
+    test('ignores update when localUpdatedAt is set (race condition prevention)', () async {
+      await dao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: 'at://did:plc:abc/app.bsky.feed.generator/conflicted',
+          displayName: 'Conflicted Feed',
+          creatorDid: 'did:plc:abc',
+          ownerDid: ownerDid,
+          sortOrder: 0,
+          isPinned: const Value(false),
+          lastSynced: DateTime(2025, 1, 1),
+          localUpdatedAt: Value(DateTime.now()), // SIMULATE LOCAL MODIFICATION
+        ),
+      );
+
+      final updated = await dao.updateSyncState(
+        uri: 'at://did:plc:abc/app.bsky.feed.generator/conflicted',
+        sortOrder: 5,
+        isPinned: true,
+        lastSynced: DateTime(2025, 1, 2),
+        ownerDid: ownerDid,
+        clearLocalModification: true,
+      );
+
+      expect(updated, 0, reason: 'Should not update rows where localUpdatedAt is not null');
+
+      final result = await dao.getFeed(
+        'at://did:plc:abc/app.bsky.feed.generator/conflicted',
+        ownerDid,
+      );
+
+      expect(result!.sortOrder, 0);
+      expect(result.isPinned, false);
+      expect(result.localUpdatedAt, isNotNull);
+    });
+
+    test('clears localUpdatedAt when flag is set and update succeeds', () async {
+      await dao.upsertFeed(
+        SavedFeedsCompanion.insert(
+          uri: 'at://did:plc:abc/app.bsky.feed.generator/sync_success',
+          displayName: 'Synced Feed',
+          creatorDid: 'did:plc:abc',
+          ownerDid: ownerDid,
+          sortOrder: 0,
+          lastSynced: DateTime(2025, 1, 1),
+        ),
+      );
+
+      final initial = await dao.getFeed(
+        'at://did:plc:abc/app.bsky.feed.generator/sync_success',
+        ownerDid,
+      );
+      expect(initial!.localUpdatedAt, isNull);
+
+      final updated = await dao.updateSyncState(
+        uri: 'at://did:plc:abc/app.bsky.feed.generator/sync_success',
+        sortOrder: 1,
+        isPinned: true,
+        lastSynced: DateTime(2025, 1, 2),
+        ownerDid: ownerDid,
+        clearLocalModification: true,
+      );
+
+      expect(updated, 1);
+      final result = await dao.getFeed(
+        'at://did:plc:abc/app.bsky.feed.generator/sync_success',
+        ownerDid,
+      );
+      expect(result!.localUpdatedAt, isNull);
+    });
+  });
 }

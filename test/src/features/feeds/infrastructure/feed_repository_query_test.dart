@@ -254,7 +254,7 @@ void main() {
   });
 
   group('seedDefaultFeeds', () {
-    test('removes all seeded feeds for authenticated users', () async {
+    test('removes only legacy home alias for authenticated users', () async {
       when(() => mockApi.isAuthenticated).thenReturn(true);
 
       await db.savedFeedsDao.upsertFeeds([
@@ -290,7 +290,10 @@ void main() {
       await repository.seedDefaultFeeds(ownerDid);
 
       final feeds = await db.savedFeedsDao.getAllFeeds(ownerDid);
-      expect(feeds, isEmpty);
+      expect(feeds, hasLength(2));
+      expect(feeds.any((f) => f.uri == FeedRepository.kForYouFeedUri), isTrue);
+      expect(feeds.any((f) => f.uri == FeedRepository.kDiscoverFeedUri), isTrue);
+      expect(feeds.any((f) => f.uri == FeedRepository.kHomeFeedUri), isFalse);
     });
 
     test('seeds Discover feed for unauthenticated users', () async {

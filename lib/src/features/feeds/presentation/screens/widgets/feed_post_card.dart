@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/domain/content_label.dart';
+import 'package:lazurite/src/core/utils/logger_provider.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/post_interaction_providers.dart';
@@ -34,6 +35,9 @@ class FeedPostCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filterService = ref.watch(labelFilterServiceProvider);
+    final interactionAsync = ref.watch(postInteractionStateProvider(item.post.uri));
+    final interaction = interactionAsync.value;
+    final logger = ref.read(loggerProvider('[FeedPostCard|${item.post.uri}]'));
 
     Map<String, dynamic>? record;
     try {
@@ -41,9 +45,10 @@ class FeedPostCard extends ConsumerWidget {
       if (decoded is Map<String, dynamic>) {
         record = decoded;
       }
-    } catch (_) {
-      /* Invalid JSON, use empty record */
+    } catch (e) {
+      logger.warning('Failed to parse record ${item.post.record}: ${e.toString()}');
     }
+
     final text = record?['text'] as String? ?? '';
     final createdAt = DateTime.tryParse(item.post.indexedAt?.toIso8601String() ?? '');
 
@@ -60,8 +65,8 @@ class FeedPostCard extends ConsumerWidget {
         if (decoded is Map<String, dynamic>) {
           reasonJson = decoded;
         }
-      } catch (_) {
-        /* Invalid JSON, skip reason */
+      } catch (e) {
+        logger.warning('Failed to parse reason ${item.reason}: ${e.toString()}');
       }
     }
 
@@ -93,9 +98,14 @@ class FeedPostCard extends ConsumerWidget {
           replyCount: item.post.replyCount,
           repostCount: item.post.repostCount,
           likeCount: item.post.likeCount,
-          viewerLikeUri: item.interaction?.likeUri ?? item.post.viewerLikeUri,
-          viewerRepostUri: item.interaction?.repostUri ?? item.post.viewerRepostUri,
-          viewerBookmarked: item.interaction?.bookmarked ?? item.post.viewerBookmarked,
+          viewerLikeUri:
+              interaction?.likeUri ?? item.interaction?.likeUri ?? item.post.viewerLikeUri,
+          viewerRepostUri:
+              interaction?.repostUri ?? item.interaction?.repostUri ?? item.post.viewerRepostUri,
+          viewerBookmarked:
+              interaction?.bookmarked ??
+              item.interaction?.bookmarked ??
+              item.post.viewerBookmarked,
           onReply: () {
             final encodedUri = Uri.encodeComponent(item.post.uri);
             GoRouter.of(context).push('/compose?replyTo=$encodedUri');

@@ -1,3 +1,5 @@
+import 'package:lazurite/src/core/utils/logger.dart';
+
 /// Domain model for profile data.
 class ProfileData {
   factory ProfileData.fromJson(Map<String, dynamic> json) {
@@ -157,6 +159,10 @@ class ActorBasic {
 /// Represents a single feed item from author feed.
 class FeedItem {
   factory FeedItem.fromPostView(Map<String, dynamic> json) {
+    const logger = Logger('[FeedItem]');
+
+    logger.info('json: $json');
+
     final author = json['author'] as Map<String, dynamic>;
     final record = json['record'] as Map<String, dynamic>;
     final embed = json['embed'] as Map<String, dynamic>?;

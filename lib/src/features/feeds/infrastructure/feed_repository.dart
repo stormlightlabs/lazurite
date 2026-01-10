@@ -143,7 +143,6 @@ class FeedRepository {
       'Pinned URIs: ${pinnedStr.length > 500 ? pinnedStr.substring(0, 500) : pinnedStr}',
     );
 
-    final localFeeds = await _dao.getAllFeeds(ownerDid);
     final now = DateTime.now();
     final remoteSavedSet = remoteSavedUris.toSet();
     final feedsToInsert = <SavedFeedsCompanion>[];
@@ -152,10 +151,9 @@ class FeedRepository {
     final feedsToSyncToRemote = <String>[];
 
     final newRemoteFeeds = <String>[];
+
     for (final uri in remoteSavedUris) {
-      if (uri.startsWith('at://') &&
-          !uri.contains('/app.bsky.graph.list/') &&
-          !localFeeds.any((f) => f.uri == uri)) {
+      if (uri.startsWith('at://') && !uri.contains('/app.bsky.graph.list/')) {
         newRemoteFeeds.add(uri);
       }
     }
@@ -183,6 +181,8 @@ class FeedRepository {
     } else {
       _logger.debug('No new feeds need metadata fetching');
     }
+
+    final localFeeds = await _dao.getAllFeeds(ownerDid);
 
     for (var i = 0; i < remoteSavedUris.length; i++) {
       final remoteUri = remoteSavedUris[i];
@@ -277,7 +277,21 @@ class FeedRepository {
               'isPinned': remoteIsPinned,
             });
           } else {
-            _logger.warning('Missing metadata for $remoteUri');
+            _logger.warning('Missing metadata for $remoteUri, inserting placeholder');
+            feedsToInsert.add(
+              SavedFeedsCompanion.insert(
+                uri: remoteUri,
+                ownerDid: ownerDid,
+                displayName: 'Unknown Feed',
+                description: const Value('Metadata unavailable'),
+                creatorDid: '',
+                likeCount: const Value(0),
+                sortOrder: i,
+                isPinned: Value(remoteIsPinned),
+                lastSynced: now,
+                localUpdatedAt: const Value(null),
+              ),
+            );
           }
         }
       } else if (local.localUpdatedAt == null ||
@@ -941,16 +955,18 @@ class FeedRepository {
   ///
   /// For unauthenticated users (ownerDid="unauthenticated"), ensures Discover feed.
   /// For authenticated users, cleans up legacy/seed feeds that shouldn't be there.
+  ///
+  /// We only delete 'home' as it is an internal alias and never a valid remote URI.
+  /// We leave 'For You' and 'Discover' alone - syncPreferences will remove them
+  /// if they are not in the user's remote preferences.
   Future<void> seedDefaultFeeds(String ownerDid) async {
     _logger.debug('Seeding default feeds');
 
-    final migration = await _migrateDeprecatedFeed(ownerDid); // Pass ownerDid if needed
+    final migration = await _migrateDeprecatedFeed(ownerDid);
 
     if (_api.isAuthenticated) {
       await _dao.deleteFeed(kHomeFeedUri, ownerDid);
-      await _dao.deleteFeed(kForYouFeedUri, ownerDid);
-      await _dao.deleteFeed(kDiscoverFeedUri, ownerDid);
-      _logger.debug('Removed seeded feeds for authenticated user');
+      _logger.debug('Cleaned up legacy home feed alias for authenticated user');
       return;
     }
 

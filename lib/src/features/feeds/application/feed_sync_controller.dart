@@ -81,7 +81,6 @@ void feedSyncController(Ref ref) {
     } else {
       logger.debug('Not initialized yet, skipping auth change handling');
     }
-    unawaited(seedDefaults());
   });
 
   Future.microtask(() async {

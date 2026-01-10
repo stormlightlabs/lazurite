@@ -134,6 +134,51 @@ void main() {
     });
 
     group('401 retry behavior', () {
+      test('retries request immediately on use_dpop_nonce without refresh', () async {
+        final dio = Dio(BaseOptions(baseUrl: 'https://test.api'));
+        final adapter = DioAdapter(dio: dio);
+
+        var refreshCalled = false;
+
+        dio.interceptors.add(
+          AuthInterceptor(
+            getSession: () async => _createTestSession(),
+            refreshSession: () async {
+              refreshCalled = true;
+              return _createTestSession(accessJwt: 'new-token');
+            },
+          ),
+        );
+
+        adapter.onGet(
+          '/test',
+          (server) => server.reply(
+            401,
+            {'error': 'use_dpop_nonce'},
+            headers: {
+              'DPoP-Nonce': ['new-nonce-value'],
+            },
+          ),
+          headers: {
+            'Authorization': ['DPoP test-token'],
+          },
+        );
+
+        adapter.onGet(
+          '/test',
+          (server) => server.reply(200, {'success': true}),
+          headers: {'Authorization': 'DPoP test-token'},
+        );
+
+        final response = await dio.get(
+          '/test',
+          options: Options(extra: {AuthInterceptor.requiresAuthKey: true}),
+        );
+
+        expect(response.statusCode, equals(200));
+        expect(refreshCalled, isFalse);
+      });
+
       test('retries request with new token on 401', () async {
         final dio = Dio(BaseOptions(baseUrl: 'https://test.api'));
         final adapter = DioAdapter(dio: dio);
@@ -426,7 +471,7 @@ void main() {
         adapter.onGet('/public', (server) => server.reply(400, {'error': 'InvalidToken'}));
 
         try {
-          await dio.get('/public'); // No requiresAuth flag
+          await dio.get('/public');
           fail('Should throw exception');
         } catch (e) {
           expect(e, isA<DioException>());
