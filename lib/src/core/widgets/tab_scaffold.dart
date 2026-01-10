@@ -58,7 +58,7 @@ class _TabScaffoldState extends ConsumerState<TabScaffold> {
           }
         },
         destinations: isAuthenticated
-            ? _buildAuthenticatedDestinations(unreadCount)
+            ? _buildAuthenticatedDestinations(context, unreadCount)
             : _unauthenticatedDestinations,
       ),
       floatingActionButton: _shouldShowFab(context, isAuthenticated)
@@ -106,7 +106,10 @@ class _TabScaffoldState extends ConsumerState<TabScaffold> {
 }
 
 /// Builds authenticated navigation destinations with unread count badge.
-List<NavigationDestination> _buildAuthenticatedDestinations(int unreadCount) {
+List<NavigationDestination> _buildAuthenticatedDestinations(
+  BuildContext context,
+  int unreadCount,
+) {
   return [
     const NavigationDestination(
       icon: Icon(Icons.home_outlined),
@@ -128,12 +131,48 @@ List<NavigationDestination> _buildAuthenticatedDestinations(int unreadCount) {
       selectedIcon: Icon(Icons.mail),
       label: 'Messages',
     ),
-    const NavigationDestination(
-      icon: Icon(Icons.person_outlined),
-      selectedIcon: Icon(Icons.person),
+    NavigationDestination(
+      icon: GestureDetector(
+        onLongPress: () => _showProfileMenu(context),
+        child: const Icon(Icons.person_outlined),
+      ),
+      selectedIcon: GestureDetector(
+        onLongPress: () => _showProfileMenu(context),
+        child: const Icon(Icons.person),
+      ),
       label: 'Profile',
     ),
   ];
+}
+
+void _showProfileMenu(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.drafts_outlined),
+            title: const Text('Drafts'),
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/drafts');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.bookmark_border),
+            title: const Text('Bookmarks'),
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/bookmarks');
+            },
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 const _unauthenticatedDestinations = [

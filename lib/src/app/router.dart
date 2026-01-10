@@ -16,6 +16,7 @@ import 'package:lazurite/src/features/developer_tools/presentation/screens/recor
 import 'package:lazurite/src/features/developer_tools/presentation/screens/records_page.dart';
 import 'package:lazurite/src/features/dms/presentation/conversation_detail_screen.dart';
 import 'package:lazurite/src/features/dms/presentation/conversation_list_screen.dart';
+import 'package:lazurite/src/features/feeds/presentation/screens/bookmarks_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_discovery_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_management_screen.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/feed_screen.dart';
@@ -391,6 +392,11 @@ GoRouter createRouter(Ref ref) {
             },
           ),
         ],
+      ),
+      GoRoute(
+        path: '/bookmarks',
+        name: 'bookmarks',
+        builder: (context, state) => const BookmarksScreen(),
       ),
       GoRoute(
         path: AppRoutes.settings,

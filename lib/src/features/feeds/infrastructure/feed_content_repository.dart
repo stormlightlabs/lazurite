@@ -139,6 +139,112 @@ class FeedContentRepository {
     return feedUri;
   }
 
+  /// Fetches and caches bookmarked posts.
+  ///
+  /// Uses a special internal feed key [kInternalBookmarksFeedKey].
+  Future<void> fetchBookmarks({String? cursor, required String ownerDid}) async {
+    const feedKey = '__internal:bookmarks';
+    _logger.info('Fetching bookmarks', {'cursor': cursor, 'ownerDid': ownerDid});
+
+    try {
+      final response = await _api.call(
+        'app.bsky.bookmark.getBookmarks',
+        params: {'limit': 50, if (cursor != null) 'cursor': cursor},
+      );
+
+      final bookmarks = response['bookmarks'] as List;
+      final nextCursor = response['cursor'] as String?;
+
+      final posts = <PostsCompanion>[];
+      final profiles = <ProfilesCompanion>[];
+      final relationships = <ProfileRelationshipsCompanion>[];
+      final items = <FeedContentItemsCompanion>[];
+
+      final baseTime = DateTime.now().microsecondsSinceEpoch;
+
+      for (var i = 0; i < bookmarks.length; i++) {
+        final bookmark = bookmarks[i];
+
+        Map<String, dynamic> postJson;
+        if (bookmark.containsKey('post')) {
+          postJson = bookmark['post'];
+        } else {
+          postJson = bookmark;
+        }
+
+        final postUri = postJson['uri'];
+        if (postUri is! String || postUri.isEmpty) continue;
+
+        try {
+          posts.add(_mapPost(postJson));
+
+          if (postJson['author'] != null) {
+            profiles.add(_mapProfile(postJson['author']));
+
+            final authorRel = _mapRelationship(postJson['author'], ownerDid);
+            if (authorRel != null) {
+              relationships.add(authorRel);
+            }
+          }
+
+          final embedJson = postJson['embed'];
+          if (embedJson is Map<String, dynamic>) {
+            final embedType = embedJson['\$type'] as String?;
+
+            if (embedType == 'app.bsky.embed.record' ||
+                embedType == 'app.bsky.embed.recordWithMedia') {
+              final recordJson = embedJson['record'];
+              if (recordJson is Map<String, dynamic>) {
+                final embeddedAuthor = recordJson['author'];
+                if (embeddedAuthor is Map<String, dynamic>) {
+                  try {
+                    profiles.add(_mapProfile(embeddedAuthor));
+                    final embeddedRel = _mapRelationship(embeddedAuthor, ownerDid);
+                    if (embeddedRel != null) {
+                      relationships.add(embeddedRel);
+                    }
+                  } catch (e) {
+                    _logger.warning('Failed to map embedded author', {
+                      'error': e,
+                      'author': embeddedAuthor,
+                    });
+                  }
+                }
+              }
+            }
+          }
+
+          final sortKey = '${baseTime - i}-$i-${postUri.hashCode.abs()}';
+
+          items.add(
+            FeedContentItemsCompanion.insert(
+              feedKey: feedKey,
+              postUri: postUri,
+              ownerDid: ownerDid,
+              sortKey: sortKey,
+            ),
+          );
+        } catch (e) {
+          _logger.warning('Skipping invalid bookmark item', {'error': e, 'item': bookmark});
+        }
+      }
+
+      await _dao.insertFeedContentBatch(
+        feedKey: feedKey,
+        ownerDid: ownerDid,
+        newPosts: posts,
+        newProfiles: profiles,
+        newRelationships: relationships,
+        newItems: items,
+        newCursor: nextCursor,
+      );
+      _logger.info('Cached ${bookmarks.length} bookmarks');
+    } catch (e, stack) {
+      _logger.error('Failed to fetch/cache bookmarks', e, stack);
+      rethrow;
+    }
+  }
+
   /// Fetch remote feed content and cache it.
   Future<void> fetchAndCacheFeed({
     required String ownerDid,

@@ -160,6 +160,29 @@ void main() {
       expect(find.byIcon(Icons.mail_outlined), findsOneWidget);
       expect(find.byIcon(Icons.person_outlined), findsOneWidget);
     });
+
+    testWidgets('long press on profile destination shows menu with Drafts and Bookmarks', (
+      tester,
+    ) async {
+      final router = _createTestRouter();
+      await tester.pumpRouterApp(
+        router: router,
+        overrides: [
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthState.authenticated(_testSession())),
+          ),
+          unreadCountProvider.overrideWith(() => _TestUnreadCountNotifier(Stream.value(0))),
+        ],
+      );
+
+      await tester.longPress(find.byIcon(Icons.person_outlined));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Drafts'), findsOneWidget);
+      expect(find.text('Bookmarks'), findsOneWidget);
+      expect(find.byIcon(Icons.drafts_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
+    });
   });
 
   group('TabScaffold - Auth State Transitions', () {
