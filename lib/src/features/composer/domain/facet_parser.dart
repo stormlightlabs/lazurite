@@ -28,6 +28,15 @@ class FacetIndex {
   Map<String, dynamic> toJson() {
     return {'byteStart': byteStart, 'byteEnd': byteEnd};
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is FacetIndex && other.byteStart == byteStart && other.byteEnd == byteEnd;
+  }
+
+  @override
+  int get hashCode => byteStart.hashCode ^ byteEnd.hashCode;
 }
 
 /// A feature within a facet (mention, link, hashtag, etc.).
@@ -93,19 +102,28 @@ class FacetParser {
   /// Regular expression for detecting URLs.
   ///
   /// Matches http://, https://, and common TLDs without protocol.
+  /// This pattern validates against common TLDs and handles trailing punctuation.
   static final _urlRegex = RegExp(
-    r'(?:https?://)?(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&/=]*)',
+    r'(?:https?://[^\s]+|(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,}){1,2}(?::\d+)?(?:/[^\s]*)?)[^\s.<>()\[\]{}"'
+    '.,;:!?]*',
   );
+
+  /// Characters that should be trimmed from the end of detected URLs.
+  /// Allows word chars, path chars, and port numbers (with colon).
+  static final _trailingUrlPunctuation = RegExp(r'[^\w/~\-:?]+$');
 
   /// Regular expression for detecting #hashtags.
   ///
-  /// Matches #tag format (letters, numbers, underscore).
-  static final _hashtagRegex = RegExp(r'(?:^|[^\w])(#[a-zA-Z0-9_]+)');
+  /// Matches #tag format where tag starts with letter, number, or underscore, followed by letters,
+  /// numbers, or underscores.
+  ///
+  /// The full match must not contain hyphens.
+  static final _hashtagRegex = RegExp(r'(?:^|[^\w/])(#[a-zA-Z0-9_]+)');
 
   /// Parses text and returns a list of facets.
   ///
-  /// Detects mentions, links, and hashtags, resolves handles to DIDs,
-  /// and calculates byte offsets for each facet.
+  /// Detects mentions, links, and hashtags, resolves handles to DIDs, and calculates byte offsets
+  /// for each facet.
   ///
   /// Returns the facets as a JSON-encoded string suitable for storage.
   Future<String?> parse(String text) async {
@@ -114,12 +132,13 @@ class FacetParser {
     }
 
     final facets = <Facet>[];
+    final mentionMatches = _mentionRegex.allMatches(text);
+    final mentionRanges = <FacetIndex>{};
+    final mentions = await _detectMentions(text, mentionMatches, mentionRanges);
+    final links = _detectLinks(text, excludeRanges: mentionRanges);
 
-    final mentions = await _detectMentions(text);
-    facets.addAll(mentions);
-
-    final links = _detectLinks(text);
     facets.addAll(links);
+    facets.addAll(mentions);
 
     final hashtags = _detectHashtags(text);
     facets.addAll(hashtags);
@@ -137,9 +156,13 @@ class FacetParser {
   /// Detects @mentions in text and resolves them to DIDs.
   ///
   /// Returns a list of mention facets with byte offsets and resolved DIDs.
-  Future<List<Facet>> _detectMentions(String text) async {
+  /// Populates [mentionRanges] with all mention match ranges (for excluding from URL detection).
+  Future<List<Facet>> _detectMentions(
+    String text,
+    Iterable<RegExpMatch> matches,
+    Set<FacetIndex> mentionRanges,
+  ) async {
     final facets = <Facet>[];
-    final matches = _mentionRegex.allMatches(text);
 
     for (final match in matches) {
       final fullMatch = match.group(1);
@@ -147,19 +170,20 @@ class FacetParser {
 
       final handle = fullMatch.substring(1);
 
+      final mentionStart = match.start + text.substring(match.start, match.end).indexOf('@');
+      final mentionEnd = mentionStart + fullMatch.length;
+      final byteStart = _calculateByteOffset(text, mentionStart);
+      final byteEnd = _calculateByteOffset(text, mentionEnd);
+      final range = FacetIndex(byteStart: byteStart, byteEnd: byteEnd);
+      mentionRanges.add(range);
+
       try {
         final did = await _resolveHandle(handle);
 
         if (did != null) {
-          final mentionStart = match.start + text.substring(match.start, match.end).indexOf('@');
-          final mentionEnd = mentionStart + fullMatch.length;
-
-          final byteStart = _calculateByteOffset(text, mentionStart);
-          final byteEnd = _calculateByteOffset(text, mentionEnd);
-
           facets.add(
             Facet(
-              index: FacetIndex(byteStart: byteStart, byteEnd: byteEnd),
+              index: range,
               features: [MentionFeature(did: did)],
             ),
           );
@@ -175,7 +199,8 @@ class FacetParser {
   /// Detects URLs in text.
   ///
   /// Returns a list of link facets with byte offsets.
-  List<Facet> _detectLinks(String text) {
+  /// [excludeRanges] is a set of byte ranges to exclude from URL detection (e.g., mentions).
+  List<Facet> _detectLinks(String text, {Set<FacetIndex> excludeRanges = const {}}) {
     final facets = <Facet>[];
     final matches = _urlRegex.allMatches(text);
 
@@ -183,21 +208,30 @@ class FacetParser {
       final url = match.group(0);
       if (url == null) continue;
 
-      if (url.startsWith('@') || (match.start > 0 && text[match.start - 1] == '@')) {
-        continue;
-      }
+      final trimmedUrl = url.replaceAll(_trailingUrlPunctuation, '');
 
-      var normalizedUrl = url;
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        normalizedUrl = 'https://$url';
+      if (trimmedUrl.isEmpty) continue;
+
+      final byteStart = _calculateByteOffset(text, match.start);
+      final byteEnd = _calculateByteOffset(text, match.start + trimmedUrl.length);
+
+      bool overlaps = false;
+      for (final range in excludeRanges) {
+        if (byteStart < range.byteEnd && byteEnd > range.byteStart) {
+          overlaps = true;
+          break;
+        }
+      }
+      if (overlaps) continue;
+
+      var normalizedUrl = trimmedUrl;
+      if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+        normalizedUrl = 'https://$trimmedUrl';
       }
 
       if (!_isValidUrl(normalizedUrl)) {
         continue;
       }
-
-      final byteStart = _calculateByteOffset(text, match.start);
-      final byteEnd = _calculateByteOffset(text, match.end);
 
       facets.add(
         Facet(
@@ -222,6 +256,16 @@ class FacetParser {
       if (fullMatch == null) continue;
 
       final tag = fullMatch.substring(1);
+
+      if (tag.isEmpty) continue;
+
+      if (RegExp(r'^_+$').hasMatch(tag)) continue;
+
+      if (RegExp(r'^\d+$').hasMatch(tag)) continue;
+
+      if (match.end < text.length && text[match.end] == '-') {
+        continue;
+      }
 
       final hashtagStart = match.start + text.substring(match.start, match.end).indexOf('#');
       final hashtagEnd = hashtagStart + fullMatch.length;
@@ -276,7 +320,7 @@ class FacetParser {
   bool _isValidUrl(String url) {
     try {
       final uri = Uri.parse(url);
-      return uri.hasScheme && uri.hasAuthority;
+      return uri.hasScheme && uri.hasAuthority && uri.host.contains('.');
     } catch (e) {
       return false;
     }

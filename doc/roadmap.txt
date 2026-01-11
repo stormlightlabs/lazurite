@@ -23,19 +23,7 @@ Phase 1: Code Quality and Architecture
       - Document error handling patterns in doc/errors.md
       - Add error handling tests
 
-Phase 2: Database and Persistence
-- [ ] Database migration strategy:
-      - Design migration system for schema version changes
-      - Document migration approach in doc/database-migrations.md
-      - Test migration scenarios (upgrade, rollback, data preservation)
-      - Add migration integration tests before v1.0
-- [ ] Database performance:
-      - DB query profiling with realistic data volumes
-      - Add indexes as needed based on profiling
-      - Optimize hot paths (feed queries, notification queries)
-      - Test with N=10k cached posts, N=1k notifications
-
-Phase 3: Performance Optimization
+Phase 2: Performance Optimization
 - [ ] Performance:
       - Decide on image caching strategy
       - List virtualization sanity checks (ListView.builder usage)
@@ -47,7 +35,7 @@ Phase 3: Performance Optimization
       - Review cache invalidation strategies
       - Optimize background sync frequencies
 
-Phase 4: Quality Assurance
+Phase 3: Quality Assurance
 - [ ] Test coverage:
       - Achieve >95% coverage target across all features
       - Add missing integration tests (notifications grouping, DMs outbox)
@@ -69,7 +57,7 @@ Phase 4: Quality Assurance
       - [ ] Performance monitoring hooks
       - [ ] Analytics event tracking foundation
 
-Phase 5: Security and Moderation
+Phase 4: Security and Moderation
 - [ ] Security audit:
       - Review secure storage usage (credentials, tokens)
       - Validate input sanitization (XSS prevention)
@@ -80,19 +68,6 @@ Phase 5: Security and Moderation
       - Hide/blur content based on moderation labels
       - User-configurable content filters
       - Block/mute functionality
-
-Phase 6: Documentation and Polish
-- [ ] Documentation completion:
-      - Architecture documentation (doc/architecture.md)
-      - Error handling patterns (doc/error-handling.md)
-      - Database migration guide (doc/database-migrations.md)
-      - Testing guide updates (doc/testing.md)
-      - API response schema documentation
-- [ ] Code cleanup:
-      - Remove any remaining dead code
-      - Ensure all files are tracked and used
-      - Verify clean file system (no orphaned files)
-      - Final linting pass with strict analysis options
 
 Tests:
 - [ ] Scroll perf sanity test on mid-range Android emulator profile
@@ -113,7 +88,7 @@ Deliverables:
 - [ ] Security best practices validated
 - [ ] Accessibility requirements met (WCAG AA)
 - [ ] Performance benchmarks passing
-- [ ] Documentation complete and current
+- [ ] Feature parity with official BlueSky app
 
 ================================================================================
 Initial Release (Lazurite-0.1.0-alpha)

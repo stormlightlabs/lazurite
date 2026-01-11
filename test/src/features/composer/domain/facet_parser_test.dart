@@ -114,6 +114,45 @@ void main() {
       final facet = facets.first as Map<String, dynamic>;
       expect((facet['features'] as List).first['did'], aliceDid);
     });
+
+    test('handles mention at start of text', () async {
+      const text = '@alice.bsky.social hello';
+      const did = 'did:plc:alice123';
+
+      when(
+        () => mockApi.call(
+          'com.atproto.identity.resolveHandle',
+          params: {'handle': 'alice.bsky.social'},
+        ),
+      ).thenAnswer((_) async => {'did': did});
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final facet = facets.first as Map<String, dynamic>;
+      expect(facet['index']['byteStart'], 0);
+    });
+
+    test('handles mention with subdomain', () async {
+      const text = 'Hey @user.subdomain.example.com';
+      const did = 'did:plc:user123';
+
+      when(
+        () => mockApi.call(
+          'com.atproto.identity.resolveHandle',
+          params: {'handle': 'user.subdomain.example.com'},
+        ),
+      ).thenAnswer((_) async => {'did': did});
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+    });
   });
 
   group('FacetParser - Links', () {
@@ -202,6 +241,207 @@ void main() {
       expect(firstUri, 'https://example.com');
       expect(secondUri, 'https://another.org');
     });
+
+    test('trims trailing period from URL', () async {
+      const text = 'Check example.com.';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final features = (facets.first as Map<String, dynamic>)['features'] as List<dynamic>;
+      expect(features.first['uri'], 'https://example.com');
+    });
+
+    test('trims trailing comma from URL', () async {
+      const text = 'Visit example.com, for more';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final features = (facets.first as Map<String, dynamic>)['features'] as List<dynamic>;
+      expect(features.first['uri'], 'https://example.com');
+    });
+
+    test('trims trailing exclamation mark from URL', () async {
+      const text = 'Check example.com!';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final features = (facets.first as Map<String, dynamic>)['features'] as List<dynamic>;
+      expect(features.first['uri'], 'https://example.com');
+    });
+
+    test('trims trailing question mark from URL', () async {
+      const text = 'Did you see example.com?';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final features = (facets.first as Map<String, dynamic>)['features'] as List<dynamic>;
+      expect(features.first['uri'], 'https://example.com');
+    });
+
+    test('trims trailing semicolon from URL', () async {
+      const text = 'Visit example.com; then leave';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final features = (facets.first as Map<String, dynamic>)['features'] as List<dynamic>;
+      expect(features.first['uri'], 'https://example.com');
+    });
+
+    test('trims trailing colon from URL', () async {
+      const text = 'See example.com: cool site';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final features = (facets.first as Map<String, dynamic>)['features'] as List<dynamic>;
+      expect(features.first['uri'], 'https://example.com');
+    });
+
+    test('trims trailing closing parenthesis from URL', () async {
+      const text = '(Check example.com) for details';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final features = (facets.first as Map<String, dynamic>)['features'] as List<dynamic>;
+      expect(features.first['uri'], 'https://example.com');
+    });
+
+    test('trims trailing closing bracket from URL', () async {
+      const text = '[See example.com] now';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final features = (facets.first as Map<String, dynamic>)['features'] as List<dynamic>;
+      expect(features.first['uri'], 'https://example.com');
+    });
+
+    test('trims trailing closing brace from URL', () async {
+      const text = '{example.com} is the site';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final features = (facets.first as Map<String, dynamic>)['features'] as List<dynamic>;
+      expect(features.first['uri'], 'https://example.com');
+    });
+
+    test('trims trailing closing angle bracket from URL', () async {
+      const text = '<example.com> link';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final features = (facets.first as Map<String, dynamic>)['features'] as List<dynamic>;
+      expect(features.first['uri'], 'https://example.com');
+    });
+
+    test('handles URL with port', () async {
+      const text = 'Connect to example.com:8080';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final uri = ((facets.first as Map<String, dynamic>)['features'] as List).first['uri'];
+      expect(uri, contains(':8080'));
+    });
+
+    test('handles URL with fragment', () async {
+      const text = 'See https://example.com/page#section';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final uri = ((facets.first as Map<String, dynamic>)['features'] as List).first['uri'];
+      expect(uri, 'https://example.com/page#section');
+    });
+
+    test('handles URL with fragment and trailing punctuation', () async {
+      const text = 'See https://example.com/page#section.';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final uri = ((facets.first as Map<String, dynamic>)['features'] as List).first['uri'];
+      expect(uri, 'https://example.com/page#section');
+    });
+
+    test('detects URL with subdomain', () async {
+      const text = 'Visit api.example.com for API docs';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final uri = ((facets.first as Map<String, dynamic>)['features'] as List).first['uri'];
+      expect(uri, 'https://api.example.com');
+    });
+
+    test('does not detect patterns without valid TLDs', () async {
+      const text = 'Not a URL: abc.123 or xyz';
+      final result = await parser.parse(text);
+      expect(result, isNull);
+    });
+
+    test('handles multiple punctuation marks at end', () async {
+      const text = 'Check example.com!!';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final features = (facets.first as Map<String, dynamic>)['features'] as List<dynamic>;
+      expect(features.first['uri'], 'https://example.com');
+    });
   });
 
   group('FacetParser - Hashtags', () {
@@ -263,6 +503,76 @@ void main() {
 
       final tag = ((facets.first as Map<String, dynamic>)['features'] as List).first['tag'];
       expect(tag, 'event2024');
+    });
+
+    test('detects hashtag starting with underscore', () async {
+      const text = 'This is #_private tag';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final tag = ((facets.first as Map<String, dynamic>)['features'] as List).first['tag'];
+      expect(tag, '_private');
+    });
+
+    test('detects hashtag at start of text', () async {
+      const text = '#start here';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final tag = ((facets.first as Map<String, dynamic>)['features'] as List).first['tag'];
+      expect(tag, 'start');
+    });
+
+    test('skips hashtag starting with number', () async {
+      const text = 'This is #123 invalid';
+      final result = await parser.parse(text);
+      expect(result, isNull);
+    });
+
+    test('allows number after first character', () async {
+      const text = 'Valid #2nd tag';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final tag = ((facets.first as Map<String, dynamic>)['features'] as List).first['tag'];
+      expect(tag, '2nd');
+    });
+
+    test('skips hashtags with hyphens', () async {
+      const text = 'This is #not-valid tag';
+      final result = await parser.parse(text);
+      expect(result, isNull);
+    });
+
+    test('handles hashtag followed by URL path separator', () async {
+      const text = 'Tag #test/Path';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final tag = ((facets.first as Map<String, dynamic>)['features'] as List).first['tag'];
+      expect(tag, 'test');
+    });
+
+    test('skips hashtag that is only underscores', () async {
+      const text = 'Invalid #___ tag';
+      final result = await parser.parse(text);
+      expect(result, isNull);
     });
   });
 
@@ -415,27 +725,6 @@ void main() {
       expect(result, isNull);
     });
 
-    test('handles mention at start of text', () async {
-      const text = '@alice.bsky.social hello';
-      const did = 'did:plc:alice123';
-
-      when(
-        () => mockApi.call(
-          'com.atproto.identity.resolveHandle',
-          params: {'handle': 'alice.bsky.social'},
-        ),
-      ).thenAnswer((_) async => {'did': did});
-
-      final result = await parser.parse(text);
-
-      expect(result, isNotNull);
-      final facets = jsonDecode(result!) as List<dynamic>;
-      expect(facets, hasLength(1));
-
-      final facet = facets.first as Map<String, dynamic>;
-      expect(facet['index']['byteStart'], 0);
-    });
-
     test('handles hashtag at end of text', () async {
       const text = 'This is the end #final';
 
@@ -491,25 +780,9 @@ void main() {
       final facets = jsonDecode(result!) as List<dynamic>;
       expect(facets, hasLength(3));
     });
-  });
 
-  group('FacetParser - URL Validation', () {
-    test('detects domain-like patterns even if not real TLDs', () async {
-      const text = 'Not a URL: abc.123 or xyz';
-
-      final result = await parser.parse(text);
-
-      expect(result, isNotNull);
-      final facets = jsonDecode(result!) as List<dynamic>;
-      expect(facets, hasLength(1));
-      expect(
-        ((facets.first as Map<String, dynamic>)['features'] as List).first['uri'],
-        'https://abc.123',
-      );
-    });
-
-    test('detects URL with subdomain', () async {
-      const text = 'Visit api.example.com for API docs';
+    test('handles URL in parentheses', () async {
+      const text = 'Check (https://example.com) out';
 
       final result = await parser.parse(text);
 
@@ -518,11 +791,11 @@ void main() {
       expect(facets, hasLength(1));
 
       final uri = ((facets.first as Map<String, dynamic>)['features'] as List).first['uri'];
-      expect(uri, 'https://api.example.com');
+      expect(uri, 'https://example.com');
     });
 
-    test('handles URL with port', () async {
-      const text = 'Connect to example.com:8080';
+    test('handles URL in brackets', () async {
+      const text = 'See [https://example.com] for info';
 
       final result = await parser.parse(text);
 
@@ -531,11 +804,11 @@ void main() {
       expect(facets, hasLength(1));
 
       final uri = ((facets.first as Map<String, dynamic>)['features'] as List).first['uri'];
-      expect(uri, contains(':8080'));
+      expect(uri, 'https://example.com');
     });
 
-    test('handles URL with fragment', () async {
-      const text = 'See https://example.com/page#section';
+    test('handles URL at end of sentence', () async {
+      const text = 'Visit https://example.com.';
 
       final result = await parser.parse(text);
 
@@ -544,7 +817,20 @@ void main() {
       expect(facets, hasLength(1));
 
       final uri = ((facets.first as Map<String, dynamic>)['features'] as List).first['uri'];
-      expect(uri, 'https://example.com/page#section');
+      expect(uri, 'https://example.com');
+    });
+
+    test('handles hashtag in parentheses', () async {
+      const text = 'This is (#test) hashtag';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final tag = ((facets.first as Map<String, dynamic>)['features'] as List).first['tag'];
+      expect(tag, 'test');
     });
   });
 
@@ -558,14 +844,23 @@ void main() {
       verifyNever(() => mockApi.call(any(), params: any(named: 'params')));
     });
 
-    test('handles mention with subdomain', () async {
-      const text = 'Hey @user.subdomain.example.com';
-      const did = 'did:plc:user123';
+    test('requires mention to have at least one dot', () async {
+      const text = 'Invalid @nodomain';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNull);
+      verifyNever(() => mockApi.call(any(), params: any(named: 'params')));
+    });
+
+    test('handles mention with multiple subdomains', () async {
+      const text = 'Hey @a.b.c.d.example.com';
+      const did = 'did:plc:abc123';
 
       when(
         () => mockApi.call(
           'com.atproto.identity.resolveHandle',
-          params: {'handle': 'user.subdomain.example.com'},
+          params: {'handle': 'a.b.c.d.example.com'},
         ),
       ).thenAnswer((_) async => {'did': did});
 
@@ -615,6 +910,37 @@ void main() {
 
       expect(json['\$type'], 'app.bsky.richtext.facet#tag');
       expect(json['tag'], 'flutter');
+    });
+  });
+
+  group('FacetParser - URL Validation', () {
+    test('validates URL has proper scheme and authority', () async {
+      const text = 'Visit https://example.com';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+    });
+
+    test('requires URL host to contain dot', () async {
+      const text = 'Visit localhost';
+      final result = await parser.parse(text);
+      expect(result, isNull);
+    });
+
+    test('handles complex URL with all components', () async {
+      const text = 'See https://user:pass@sub.example.com:8080/path?query=value#fragment';
+
+      final result = await parser.parse(text);
+
+      expect(result, isNotNull);
+      final facets = jsonDecode(result!) as List<dynamic>;
+      expect(facets, hasLength(1));
+
+      final uri = ((facets.first as Map<String, dynamic>)['features'] as List).first['uri'];
+      expect(uri, 'https://user:pass@sub.example.com:8080/path?query=value#fragment');
     });
   });
 }
