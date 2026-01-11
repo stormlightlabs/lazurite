@@ -23,6 +23,7 @@ import 'package:lazurite/src/infrastructure/auth/server_metadata.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/notifications_dao.dart';
+import 'package:lazurite/src/infrastructure/db/daos/dev_tools_dao.dart';
 import 'package:lazurite/src/infrastructure/identity/identity_repository.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 import 'package:lazurite/src/infrastructure/preferences/bluesky_preferences_repository.dart';
@@ -77,6 +78,8 @@ class MockNotificationsDao extends Mock implements NotificationsDao {}
 class MockDmsRepository extends Mock implements DmsRepository {}
 
 class MockOutboxRepository extends Mock implements OutboxRepository {}
+
+class MockDevToolsDao extends Mock implements DevToolsDao {}
 
 class MockPinnedFeedsNotifier extends Mock implements PinnedFeedsNotifier {
   @override

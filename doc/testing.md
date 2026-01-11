@@ -3,7 +3,7 @@
 ## Running Tests
 
 - `just check` - Run format, lint, and test
-    - `just test` - Run tests with 60s timeout and verbose output
+  - `just test` - Run tests with 60s timeout and verbose output
 - `just test-quiet` - Run tests with 30s timeout and quiet output to view errors &
   identify hanging tests
 
@@ -56,7 +56,7 @@ Providers that use `Future.microtask` in their `build()` method to trigger side 
 
 #### Widget Tests with Database Streams
 
-**Reference:** `features/search/search_screen_test.dart`
+**Reference:** `features/search/search_screen_test.dart`, `features/developer_tools/presentation/screens/records_page_test.dart`
 
 Pattern:
 
@@ -64,6 +64,25 @@ Pattern:
 - Mock repository to return `Stream.value([])` for immediate completion
 - Use `pumpWidget()` then `pump()` to process async operations
 - Don't use `pumpApp()` helper without proper overrides
+- **CRITICAL**: Use `MockAppDatabase` instead of real database instances to prevent timer conflicts
+  - Mock DAO methods that widgets access (e.g., `devToolsDao.savePin()`, `devToolsDao.deletePin()`)
+
+Example Setup:
+
+```dart
+late AppDatabase testDb;
+late MockDevToolsDao mockDevToolsDao;
+
+setUp(() {
+  mockDevToolsDao = MockDevToolsDao();
+  testDb = MockAppDatabase();
+
+  when(() => testDb.devToolsDao).thenReturn(mockDevToolsDao);
+  when(() => mockDevToolsDao.savePin(uri: any(named: 'uri'), type: any(named: 'type'), label: any(named: 'label')))
+      .thenAnswer((_) async {});
+  when(() => mockDevToolsDao.deletePin(any())).thenAnswer((_) async {});
+});
+```
 
 #### App/Router Tests
 
