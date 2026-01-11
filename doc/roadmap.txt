@@ -94,7 +94,109 @@ Deliverables:
 Initial Release (Lazurite-0.1.0-alpha)
 ================================================================================
 
-*todo*
+Core Composer Enhancement
+- [ ] Rich text composer with link unfurling
+- [ ] Video upload and playback support
+- [ ] GIF support integration
+- [ ] Thread composition (1/x posting)
+- [ ] Post scheduling functionality
+- [ ] Language tagging for posts
+- [ ] Enhanced mention resolution and link previews
+
+Complete Notifications System
+- [ ] Full notification list UI implementation
+- [ ] Notification grouping and batch operations
+- [ ] Unread count management and badges
+- [ ] Mark as seen service integration
+- [ ] Notification filtering by type
+- [ ] Pull-to-refresh for notifications
+- [ ] Notification settings screen
+
+Direct Messages Implementation
+- [ ] Conversation list UI
+- [ ] Message thread view with pagination
+- [ ] Send/receive text messages
+- [ ] Message requests and accept flow
+- [ ] Read receipts and message states
+- [ ] Offline message queue (outbox worker)
+- [ ] DM accessibility and screen reader support
+- [ ] Message history sync
+
+Settings & Preferences Completion
+- [ ] Complete settings screen implementation
+- [ ] Theme settings (light/dark/system) with Material You
+- [ ] Content moderation settings and label filters
+- [ ] Adult content toggle and custom labelers
+- [ ] Muted words configuration
+- [ ] Feed and thread preferences
+- [ ] About screen and app information
+- [ ] Data usage settings for media
+
+Profile & Social Features
+- [ ] Complete profileViewDetailed implementation
+- [ ] Pinned posts display and management
+- [ ] Pronouns, website, and account creation date
+- [ ] Mutual followers (known followers) display
+- [ ] Bookmark posts UI implementation
+- [ ] Share to external apps functionality
+- [ ] Enhanced user reporting flow
+
+Content Moderation Integration
+- [ ] Content label filtering integration with feeds
+- [ ] Mute/Block lists (moderation lists) support
+- [ ] Thread muting UI and management
+- [ ] Enhanced content warnings display
+- [ ] Custom labeler subscription
+- [ ] Advanced moderation tools
+
+Lists & Starter Packs
+- [ ] User-curated lists creation and management
+- [ ] List feeds and browsing
+- [ ] Starter pack discovery and sharing
+- [ ] Join via starter pack functionality
+- [ ] List privacy settings and permissions
+- [ ] List-based feed filtering
+
+Media & Accessibility Enhancement
+- [ ] Fullscreen image viewer implementation
+- [ ] Image quality and compression settings
+- [ ] Dynamic type support and testing
+- [ ] High contrast mode implementation
+- [ ] Reduced motion preferences
+- [ ] Complete screen reader support
+- [ ] WCAG AA compliance validation
+
+Search & Discovery
+- [ ] Hashtag search verification and enhancement
+- [ ] Trending topics implementation
+- [ ] Search suggestions and autocomplete
+- [ ] Advanced search filters
+- [ ] Search history management
+
+Platform Integration & Polish
+- [ ] Home screen widgets (iOS/Android)
+- [ ] Share sheet extension implementation
+- [ ] Deep link handling improvements
+- [ ] App performance optimization
+- [ ] Crash reporting integration
+- [ ] Analytics event tracking foundation
+
+**Release Criteria**:
+- [ ] All critical parity features implemented
+- [ ] >95% test coverage across new features
+- [ ] Accessibility audit passed (WCAG AA)
+- [ ] Performance benchmarks met
+- [ ] Security audit completed
+- [ ] Beta testing feedback incorporated
+- [ ] Documentation updated for all new features
+
+**Quality Gates**:
+- [ ] Feature completeness review
+- [ ] User acceptance testing
+- [ ] Performance regression testing
+- [ ] Security vulnerability scan
+- [ ] Accessibility compliance check
+- [ ] Cross-platform compatibility validation
 
 ================================================================================
 P. Smart folders (local-only saved views)                               *bsky-P*

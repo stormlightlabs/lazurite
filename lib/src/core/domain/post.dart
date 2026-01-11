@@ -72,6 +72,7 @@ class Post {
     this.likeCount = 0,
     this.embed,
     this.record,
+    this.facets,
   });
 
   /// Creates a Post from API JSON response (e.g., searchPosts, getAuthorFeed).
@@ -90,6 +91,7 @@ class Post {
       likeCount: json['likeCount'] as int? ?? 0,
       embed: json['embed'] as Map<String, dynamic>?,
       record: recordJson,
+      facets: recordJson?['facets'] as List<dynamic>?,
     );
   }
 
@@ -157,6 +159,12 @@ class Post {
 
   /// The raw record data from the post.
   final Map<String, dynamic>? record;
+
+  /// Rich text facets (mentions, links, hashtags).
+  ///
+  /// This is the raw JSON from the AT Protocol. Use [FacetHelper.parseFacets]
+  /// to convert this to a list of [Facet] objects.
+  final List<dynamic>? facets;
 
   @override
   bool operator ==(Object other) =>
