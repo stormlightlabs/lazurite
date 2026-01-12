@@ -5806,6 +5806,24 @@ class $DraftMediaTable extends DraftMedia with TableInfo<$DraftMediaTable, Draft
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _durationSecondsMeta = const VerificationMeta('durationSeconds');
+  @override
+  late final GeneratedColumn<int> durationSeconds = GeneratedColumn<int>(
+    'duration_seconds',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _aspectRatioMeta = const VerificationMeta('aspectRatio');
+  @override
+  late final GeneratedColumn<String> aspectRatio = GeneratedColumn<String>(
+    'aspect_ratio',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
@@ -5827,6 +5845,8 @@ class $DraftMediaTable extends DraftMedia with TableInfo<$DraftMediaTable, Draft
     blobRefJson,
     status,
     sortOrder,
+    durationSeconds,
+    aspectRatio,
     createdAt,
   ];
   @override
@@ -5901,6 +5921,18 @@ class $DraftMediaTable extends DraftMedia with TableInfo<$DraftMediaTable, Draft
     } else if (isInserting) {
       context.missing(_sortOrderMeta);
     }
+    if (data.containsKey('duration_seconds')) {
+      context.handle(
+        _durationSecondsMeta,
+        durationSeconds.isAcceptableOrUnknown(data['duration_seconds']!, _durationSecondsMeta),
+      );
+    }
+    if (data.containsKey('aspect_ratio')) {
+      context.handle(
+        _aspectRatioMeta,
+        aspectRatio.isAcceptableOrUnknown(data['aspect_ratio']!, _aspectRatioMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -5955,6 +5987,14 @@ class $DraftMediaTable extends DraftMedia with TableInfo<$DraftMediaTable, Draft
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
       )!,
+      durationSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_seconds'],
+      ),
+      aspectRatio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aspect_ratio'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -5979,6 +6019,8 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
   final String? blobRefJson;
   final String status;
   final int sortOrder;
+  final int? durationSeconds;
+  final String? aspectRatio;
   final DateTime createdAt;
   const DraftMediaData({
     required this.id,
@@ -5991,6 +6033,8 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
     this.blobRefJson,
     required this.status,
     required this.sortOrder,
+    this.durationSeconds,
+    this.aspectRatio,
     required this.createdAt,
   });
   @override
@@ -6012,6 +6056,12 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
     }
     map['status'] = Variable<String>(status);
     map['sort_order'] = Variable<int>(sortOrder);
+    if (!nullToAbsent || durationSeconds != null) {
+      map['duration_seconds'] = Variable<int>(durationSeconds);
+    }
+    if (!nullToAbsent || aspectRatio != null) {
+      map['aspect_ratio'] = Variable<String>(aspectRatio);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -6028,6 +6078,10 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
       blobRefJson: blobRefJson == null && nullToAbsent ? const Value.absent() : Value(blobRefJson),
       status: Value(status),
       sortOrder: Value(sortOrder),
+      durationSeconds: durationSeconds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationSeconds),
+      aspectRatio: aspectRatio == null && nullToAbsent ? const Value.absent() : Value(aspectRatio),
       createdAt: Value(createdAt),
     );
   }
@@ -6045,6 +6099,8 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
       blobRefJson: serializer.fromJson<String?>(json['blobRefJson']),
       status: serializer.fromJson<String>(json['status']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      durationSeconds: serializer.fromJson<int?>(json['durationSeconds']),
+      aspectRatio: serializer.fromJson<String?>(json['aspectRatio']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -6062,6 +6118,8 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
       'blobRefJson': serializer.toJson<String?>(blobRefJson),
       'status': serializer.toJson<String>(status),
       'sortOrder': serializer.toJson<int>(sortOrder),
+      'durationSeconds': serializer.toJson<int?>(durationSeconds),
+      'aspectRatio': serializer.toJson<String?>(aspectRatio),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -6077,6 +6135,8 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
     Value<String?> blobRefJson = const Value.absent(),
     String? status,
     int? sortOrder,
+    Value<int?> durationSeconds = const Value.absent(),
+    Value<String?> aspectRatio = const Value.absent(),
     DateTime? createdAt,
   }) => DraftMediaData(
     id: id ?? this.id,
@@ -6089,6 +6149,8 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
     blobRefJson: blobRefJson.present ? blobRefJson.value : this.blobRefJson,
     status: status ?? this.status,
     sortOrder: sortOrder ?? this.sortOrder,
+    durationSeconds: durationSeconds.present ? durationSeconds.value : this.durationSeconds,
+    aspectRatio: aspectRatio.present ? aspectRatio.value : this.aspectRatio,
     createdAt: createdAt ?? this.createdAt,
   );
   DraftMediaData copyWithCompanion(DraftMediaCompanion data) {
@@ -6103,6 +6165,10 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
       blobRefJson: data.blobRefJson.present ? data.blobRefJson.value : this.blobRefJson,
       status: data.status.present ? data.status.value : this.status,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      durationSeconds: data.durationSeconds.present
+          ? data.durationSeconds.value
+          : this.durationSeconds,
+      aspectRatio: data.aspectRatio.present ? data.aspectRatio.value : this.aspectRatio,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -6120,6 +6186,8 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
           ..write('blobRefJson: $blobRefJson, ')
           ..write('status: $status, ')
           ..write('sortOrder: $sortOrder, ')
+          ..write('durationSeconds: $durationSeconds, ')
+          ..write('aspectRatio: $aspectRatio, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -6137,6 +6205,8 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
     blobRefJson,
     status,
     sortOrder,
+    durationSeconds,
+    aspectRatio,
     createdAt,
   );
   @override
@@ -6153,6 +6223,8 @@ class DraftMediaData extends DataClass implements Insertable<DraftMediaData> {
           other.blobRefJson == this.blobRefJson &&
           other.status == this.status &&
           other.sortOrder == this.sortOrder &&
+          other.durationSeconds == this.durationSeconds &&
+          other.aspectRatio == this.aspectRatio &&
           other.createdAt == this.createdAt);
 }
 
@@ -6167,6 +6239,8 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
   final Value<String?> blobRefJson;
   final Value<String> status;
   final Value<int> sortOrder;
+  final Value<int?> durationSeconds;
+  final Value<String?> aspectRatio;
   final Value<DateTime> createdAt;
   const DraftMediaCompanion({
     this.id = const Value.absent(),
@@ -6179,6 +6253,8 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
     this.blobRefJson = const Value.absent(),
     this.status = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.durationSeconds = const Value.absent(),
+    this.aspectRatio = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   DraftMediaCompanion.insert({
@@ -6192,6 +6268,8 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
     this.blobRefJson = const Value.absent(),
     required String status,
     required int sortOrder,
+    this.durationSeconds = const Value.absent(),
+    this.aspectRatio = const Value.absent(),
     required DateTime createdAt,
   }) : draftId = Value(draftId),
        ownerDid = Value(ownerDid),
@@ -6211,6 +6289,8 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
     Expression<String>? blobRefJson,
     Expression<String>? status,
     Expression<int>? sortOrder,
+    Expression<int>? durationSeconds,
+    Expression<String>? aspectRatio,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -6224,6 +6304,8 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
       if (blobRefJson != null) 'blob_ref_json': blobRefJson,
       if (status != null) 'status': status,
       if (sortOrder != null) 'sort_order': sortOrder,
+      if (durationSeconds != null) 'duration_seconds': durationSeconds,
+      if (aspectRatio != null) 'aspect_ratio': aspectRatio,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -6239,6 +6321,8 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
     Value<String?>? blobRefJson,
     Value<String>? status,
     Value<int>? sortOrder,
+    Value<int?>? durationSeconds,
+    Value<String?>? aspectRatio,
     Value<DateTime>? createdAt,
   }) {
     return DraftMediaCompanion(
@@ -6252,6 +6336,8 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
       blobRefJson: blobRefJson ?? this.blobRefJson,
       status: status ?? this.status,
       sortOrder: sortOrder ?? this.sortOrder,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      aspectRatio: aspectRatio ?? this.aspectRatio,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -6289,6 +6375,12 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
+    if (durationSeconds.present) {
+      map['duration_seconds'] = Variable<int>(durationSeconds.value);
+    }
+    if (aspectRatio.present) {
+      map['aspect_ratio'] = Variable<String>(aspectRatio.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -6308,6 +6400,8 @@ class DraftMediaCompanion extends UpdateCompanion<DraftMediaData> {
           ..write('blobRefJson: $blobRefJson, ')
           ..write('status: $status, ')
           ..write('sortOrder: $sortOrder, ')
+          ..write('durationSeconds: $durationSeconds, ')
+          ..write('aspectRatio: $aspectRatio, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -16992,6 +17086,8 @@ typedef $$DraftMediaTableCreateCompanionBuilder =
       Value<String?> blobRefJson,
       required String status,
       required int sortOrder,
+      Value<int?> durationSeconds,
+      Value<String?> aspectRatio,
       required DateTime createdAt,
     });
 typedef $$DraftMediaTableUpdateCompanionBuilder =
@@ -17006,6 +17102,8 @@ typedef $$DraftMediaTableUpdateCompanionBuilder =
       Value<String?> blobRefJson,
       Value<String> status,
       Value<int> sortOrder,
+      Value<int?> durationSeconds,
+      Value<String?> aspectRatio,
       Value<DateTime> createdAt,
     });
 
@@ -17046,6 +17144,14 @@ class $$DraftMediaTableFilterComposer extends Composer<_$AppDatabase, $DraftMedi
 
   ColumnFilters<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get durationSeconds => $composableBuilder(
+    column: $table.durationSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aspectRatio =>
+      $composableBuilder(column: $table.aspectRatio, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -17089,6 +17195,14 @@ class $$DraftMediaTableOrderingComposer extends Composer<_$AppDatabase, $DraftMe
   ColumnOrderings<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get durationSeconds => $composableBuilder(
+    column: $table.durationSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aspectRatio =>
+      $composableBuilder(column: $table.aspectRatio, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 }
@@ -17131,6 +17245,12 @@ class $$DraftMediaTableAnnotationComposer extends Composer<_$AppDatabase, $Draft
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
 
+  GeneratedColumn<int> get durationSeconds =>
+      $composableBuilder(column: $table.durationSeconds, builder: (column) => column);
+
+  GeneratedColumn<String> get aspectRatio =>
+      $composableBuilder(column: $table.aspectRatio, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
@@ -17171,6 +17291,8 @@ class $$DraftMediaTableTableManager
                 Value<String?> blobRefJson = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<int?> durationSeconds = const Value.absent(),
+                Value<String?> aspectRatio = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => DraftMediaCompanion(
                 id: id,
@@ -17183,6 +17305,8 @@ class $$DraftMediaTableTableManager
                 blobRefJson: blobRefJson,
                 status: status,
                 sortOrder: sortOrder,
+                durationSeconds: durationSeconds,
+                aspectRatio: aspectRatio,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -17197,6 +17321,8 @@ class $$DraftMediaTableTableManager
                 Value<String?> blobRefJson = const Value.absent(),
                 required String status,
                 required int sortOrder,
+                Value<int?> durationSeconds = const Value.absent(),
+                Value<String?> aspectRatio = const Value.absent(),
                 required DateTime createdAt,
               }) => DraftMediaCompanion.insert(
                 id: id,
@@ -17209,6 +17335,8 @@ class $$DraftMediaTableTableManager
                 blobRefJson: blobRefJson,
                 status: status,
                 sortOrder: sortOrder,
+                durationSeconds: durationSeconds,
+                aspectRatio: aspectRatio,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) =>

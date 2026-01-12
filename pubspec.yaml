@@ -71,6 +71,8 @@ dependencies:
   dynamic_color: ^1.8.1
   package_info_plus: ^9.0.0
   flutter_json: ^0.0.6
+  video_player: ^2.9.2
+  chewie: ^1.8.5
 
 dev_dependencies:
   flutter_test:

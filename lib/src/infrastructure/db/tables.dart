@@ -355,6 +355,8 @@ class DraftMedia extends Table {
   TextColumn get blobRefJson => text().nullable()();
   TextColumn get status => text()();
   IntColumn get sortOrder => integer()();
+  IntColumn get durationSeconds => integer().nullable()();
+  TextColumn get aspectRatio => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
 
   @override

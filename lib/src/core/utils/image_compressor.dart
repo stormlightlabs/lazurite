@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 /// Uses flutter_image_compress which runs natively on iOS/Android for
 /// performant compression with automatic EXIF rotation handling.
 class ImageCompressor {
-  const ImageCompressor();
+  ImageCompressor();
 
   /// Maximum dimension (width or height) for compressed images.
   static const int maxDimension = 2000;

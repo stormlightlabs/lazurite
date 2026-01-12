@@ -33,7 +33,7 @@ final class AutocompleteNotifierProvider
   AutocompleteNotifier create() => AutocompleteNotifier();
 }
 
-String _$autocompleteNotifierHash() => r'3becb0707d41d2346819baf57d0dde8e16b8a637';
+String _$autocompleteNotifierHash() => r'c46d302ab0bc29719eae06564f3b979734c7c2d2';
 
 abstract class _$AutocompleteNotifier extends $AsyncNotifier<List<AutocompleteSuggestion>> {
   FutureOr<List<AutocompleteSuggestion>> build();

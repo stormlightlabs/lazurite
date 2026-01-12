@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 class MediaPickerRow extends StatelessWidget {
   const MediaPickerRow({
     required this.mediaPaths,
+    this.mediaTypes,
     this.onAddMedia,
     this.onRemoveMedia,
     this.onTapMedia,
@@ -16,6 +17,9 @@ class MediaPickerRow extends StatelessWidget {
 
   /// List of local file paths for attached media.
   final List<String> mediaPaths;
+
+  /// List of MIME types for attached media (optional).
+  final List<String>? mediaTypes;
 
   /// Callback when user requests to add media.
   final VoidCallback? onAddMedia;
@@ -50,8 +54,10 @@ class MediaPickerRow extends StatelessWidget {
             return _AddMediaButton(onTap: onAddMedia, colorScheme: colorScheme);
           }
           final hasAltText = index < altTextIndicators.length && altTextIndicators[index];
+          final mimeType = index < (mediaTypes?.length ?? 0) ? mediaTypes![index] : '';
           return _MediaThumbnail(
             path: mediaPaths[index],
+            mimeType: mimeType,
             onRemove: onRemoveMedia != null ? () => onRemoveMedia!(index) : null,
             onTap: onTapMedia != null ? () => onTapMedia!(index) : null,
             hasAltText: hasAltText,
@@ -93,6 +99,7 @@ class _AddMediaButton extends StatelessWidget {
 class _MediaThumbnail extends StatelessWidget {
   const _MediaThumbnail({
     required this.path,
+    this.mimeType,
     required this.colorScheme,
     this.onRemove,
     this.onTap,
@@ -100,6 +107,7 @@ class _MediaThumbnail extends StatelessWidget {
   });
 
   final String path;
+  final String? mimeType;
   final VoidCallback? onRemove;
   final VoidCallback? onTap;
   final bool hasAltText;
@@ -109,6 +117,7 @@ class _MediaThumbnail extends StatelessWidget {
   Widget build(BuildContext context) {
     final file = File(path);
     final hasFile = file.existsSync();
+    final isVideo = mimeType != null && mimeType!.startsWith('video/');
 
     return GestureDetector(
       onTap: onTap,
@@ -119,7 +128,9 @@ class _MediaThumbnail extends StatelessWidget {
             child: SizedBox(
               width: 80,
               height: 80,
-              child: hasFile
+              child: isVideo
+                  ? _VideoPlaceholder(colorScheme: colorScheme)
+                  : hasFile
                   ? Image.file(
                       file,
                       fit: BoxFit.cover,
@@ -130,6 +141,18 @@ class _MediaThumbnail extends StatelessWidget {
                   : _BrokenImagePlaceholder(colorScheme: colorScheme),
             ),
           ),
+          if (isVideo)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: Icon(Icons.play_circle_outline, color: Colors.white, size: 32),
+                ),
+              ),
+            ),
           if (onRemove != null)
             Positioned(
               top: 4,
@@ -183,6 +206,24 @@ class _BrokenImagePlaceholder extends StatelessWidget {
     return Container(
       color: colorScheme.surfaceContainerHighest,
       child: Icon(Icons.broken_image, color: colorScheme.error),
+    );
+  }
+}
+
+class _VideoPlaceholder extends StatelessWidget {
+  const _VideoPlaceholder({required this.colorScheme});
+
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: colorScheme.surfaceContainerHighest,
+      child: Icon(
+        Icons.video_library,
+        color: colorScheme.onSurface.withValues(alpha: 0.5),
+        size: 32,
+      ),
     );
   }
 }

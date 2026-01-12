@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/core/utils/image_compressor.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
+import 'package:lazurite/src/core/utils/video_processor.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart' as composer;
 import 'package:lazurite/src/features/composer/domain/facet_parser.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
@@ -22,12 +23,14 @@ class DraftRepository {
     required Logger logger,
     required FacetParser facetParser,
     ImageCompressor? compressor,
+    VideoProcessor? videoProcessor,
   }) : _dao = dao,
        _api = api,
        _sessionStorage = sessionStorage,
        _logger = logger,
        _facetParser = facetParser,
-       _compressor = compressor ?? const ImageCompressor(),
+       _compressor = compressor ?? ImageCompressor(),
+       _videoProcessor = videoProcessor ?? VideoProcessor(),
        _uuid = const Uuid();
 
   final DraftsDao _dao;
@@ -36,6 +39,7 @@ class DraftRepository {
   final Logger _logger;
   final FacetParser _facetParser;
   final ImageCompressor _compressor;
+  final VideoProcessor _videoProcessor;
   final Uuid _uuid;
   final Map<int, CancelToken> _uploadCancelTokens = {};
 
@@ -150,6 +154,18 @@ class DraftRepository {
       }
     }
 
+    int? durationSeconds;
+    String? aspectRatio;
+    if (_videoProcessor.isVideoMimeType(media.mimeType)) {
+      try {
+        final metadata = await _videoProcessor.extractMetadata(localPath);
+        durationSeconds = metadata.durationSeconds;
+        aspectRatio = jsonEncode(metadata.toJson());
+      } catch (e) {
+        _logger.warning('Failed to extract video metadata: $e');
+      }
+    }
+
     final nextOrder = draft.media.length;
     await _dao.insertMedia([
       DraftMediaCompanion.insert(
@@ -162,6 +178,8 @@ class DraftRepository {
         blobRefJson: const Value(null),
         status: composer.DraftMediaStatus.pending.name,
         sortOrder: nextOrder,
+        durationSeconds: Value(durationSeconds),
+        aspectRatio: Value(aspectRatio),
         createdAt: DateTime.now(),
       ),
     ]);
@@ -432,6 +450,8 @@ class DraftRepository {
               blobRefJson: media.blobRefJson,
               status: _mediaStatusFromDb(media.status),
               sortOrder: media.sortOrder,
+              durationSeconds: media.durationSeconds,
+              aspectRatio: media.aspectRatio,
             ),
           )
           .toList(),
@@ -513,21 +533,24 @@ class DraftRepository {
     }
 
     final imagesEmbed = _buildImagesEmbed(draft.media);
+    final videoEmbed = _buildVideoEmbed(draft.media);
     final quoteEmbed = _buildQuoteEmbed(draft);
     final externalEmbed = _buildExternalEmbed(draft);
 
     Map<String, dynamic>? embed;
-    if (imagesEmbed != null && quoteEmbed != null) {
+    final mediaEmbed = videoEmbed ?? imagesEmbed;
+
+    if (mediaEmbed != null && quoteEmbed != null) {
       embed = {
         '\$type': 'app.bsky.embed.recordWithMedia',
         'record': quoteEmbed,
-        'media': imagesEmbed,
+        'media': mediaEmbed,
       };
-    } else if (imagesEmbed != null && externalEmbed != null) {
-      _logger.warning('Cannot combine images and external link embed, using images only');
-      embed = imagesEmbed;
-    } else if (imagesEmbed != null) {
-      embed = imagesEmbed;
+    } else if (mediaEmbed != null && externalEmbed != null) {
+      _logger.warning('Cannot combine media and external link embed, using media only');
+      embed = mediaEmbed;
+    } else if (mediaEmbed != null) {
+      embed = mediaEmbed;
     } else if (quoteEmbed != null) {
       embed = quoteEmbed;
     } else if (externalEmbed != null) {
@@ -559,8 +582,9 @@ class DraftRepository {
   }
 
   Map<String, dynamic>? _buildImagesEmbed(List<composer.DraftMediaAttachment> media) {
-    final uploaded = media.where((item) => item.uploadCid != null).toList()
-      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    final uploaded =
+        media.where((item) => item.uploadCid != null && item.isVideo == false).toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
     if (uploaded.isEmpty) {
       return null;
@@ -582,6 +606,43 @@ class DraftRepository {
 
         return {'alt': item.altText ?? '', 'image': blob};
       }).toList(),
+    };
+  }
+
+  Map<String, dynamic>? _buildVideoEmbed(List<composer.DraftMediaAttachment> media) {
+    final uploaded = media.where((item) => item.uploadCid != null && item.isVideo).toList()
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+    if (uploaded.isEmpty) {
+      return null;
+    }
+
+    final video = uploaded.first;
+    Map<String, dynamic> blob;
+    if (video.blobRefJson != null) {
+      blob = Map<String, dynamic>.from(jsonDecode(video.blobRefJson!));
+    } else {
+      blob = {
+        '\$type': 'blob',
+        'ref': {'\$link': video.uploadCid},
+        'mimeType': video.mimeType,
+      };
+    }
+
+    Map<String, dynamic>? aspectRatio;
+    if (video.aspectRatio != null) {
+      try {
+        aspectRatio = jsonDecode(video.aspectRatio!);
+      } catch (e) {
+        _logger.warning('Failed to decode video aspect ratio: $e');
+      }
+    }
+
+    return {
+      '\$type': 'app.bsky.embed.video',
+      'video': blob,
+      'alt': video.altText ?? '',
+      if (aspectRatio != null) 'aspectRatio': aspectRatio,
     };
   }
 

@@ -88,7 +88,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -96,12 +96,10 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
     },
     onUpgrade: (Migrator m, int from, int to) async {
-      /*
-        While the application is unreleased, migrations are removed for simplicity.
-        When released, the schema version will be incremented and migrations will be added here.
-        In development, database changes require a full app reset, i.e. deleting the app from the
-        device or simulator.
-      */
+      if (from < 2) {
+        await m.addColumn(draftMedia, draftMedia.durationSeconds);
+        await m.addColumn(draftMedia, draftMedia.aspectRatio);
+      }
     },
   );
 }

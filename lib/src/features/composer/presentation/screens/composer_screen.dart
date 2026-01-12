@@ -23,6 +23,8 @@ const int kWarningThreshold = 20;
 /// Duration for quick UI polish animations.
 const Duration _kComposerAnimationDuration = Duration(milliseconds: 250);
 
+enum MediaPickerOption { camera, gallery, video, videoGallery }
+
 /// Full-screen composer for creating or editing posts.
 class ComposerScreen extends ConsumerStatefulWidget {
   const ComposerScreen({this.draftId, this.replyTo, this.quoteTo, super.key});
@@ -219,7 +221,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
 
     if (currentCount >= 4) return;
 
-    final source = await showModalBottomSheet<ImageSource>(
+    final result = await showModalBottomSheet<MediaPickerOption>(
       context: context,
       showDragHandle: true,
       builder: (context) => SafeArea(
@@ -229,39 +231,64 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
               title: const Text('Take photo'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
+              onTap: () => Navigator.pop(context, MediaPickerOption.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
               title: const Text('Choose from gallery'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
+              onTap: () => Navigator.pop(context, MediaPickerOption.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam_outlined),
+              title: const Text('Record video'),
+              onTap: () => Navigator.pop(context, MediaPickerOption.video),
+            ),
+            ListTile(
+              leading: const Icon(Icons.video_library_outlined),
+              title: const Text('Choose video from gallery'),
+              onTap: () => Navigator.pop(context, MediaPickerOption.videoGallery),
             ),
           ],
         ),
       ),
     );
 
-    if (source == null) return;
+    if (result == null) return;
 
     if (!mounted) return;
 
     final picker = ImagePicker();
     final notifier = ref.read(composerProvider(_args).notifier);
 
-    if (source == ImageSource.camera) {
-      final image = await picker.pickImage(source: ImageSource.camera);
-      if (image != null) {
-        final mimeType = _getMimeType(image.path);
-        await notifier.addMedia(image.path, mimeType);
-      }
-    } else {
-      final images = await picker.pickMultiImage(limit: 4 - currentCount);
-      if (images.isNotEmpty) {
-        for (final image in images) {
+    switch (result) {
+      case MediaPickerOption.camera:
+        final image = await picker.pickImage(source: ImageSource.camera);
+        if (image != null) {
           final mimeType = _getMimeType(image.path);
           await notifier.addMedia(image.path, mimeType);
         }
-      }
+        break;
+      case MediaPickerOption.gallery:
+        final images = await picker.pickMultiImage(limit: 4 - currentCount);
+        if (images.isNotEmpty) {
+          for (final image in images) {
+            final mimeType = _getMimeType(image.path);
+            await notifier.addMedia(image.path, mimeType);
+          }
+        }
+        break;
+      case MediaPickerOption.video:
+        final video = await picker.pickVideo(source: ImageSource.camera);
+        if (video != null) {
+          await notifier.addMedia(video.path, 'video/mp4');
+        }
+        break;
+      case MediaPickerOption.videoGallery:
+        final video = await picker.pickVideo(source: ImageSource.gallery);
+        if (video != null) {
+          await notifier.addMedia(video.path, 'video/mp4');
+        }
+        break;
     }
   }
 
@@ -354,6 +381,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
           }
 
           final mediaPaths = state.draft?.media.map((m) => m.localPath).toList() ?? [];
+          final mediaTypes = state.draft?.media.map((m) => m.mimeType).toList() ?? [];
 
           return SafeArea(
             child: AnimatedPadding(
@@ -427,6 +455,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             child: MediaPickerRow(
                               mediaPaths: mediaPaths,
+                              mediaTypes: mediaTypes,
                               onAddMedia: _pickMedia,
                               onRemoveMedia: _removeMedia,
                               onTapMedia: _openAltTextEditor,

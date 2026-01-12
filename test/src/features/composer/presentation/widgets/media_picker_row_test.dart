@@ -91,5 +91,41 @@ void main() {
 
       expect(find.text('ALT'), findsNothing);
     });
+
+    testWidgets('shows video icon for video files', (tester) async {
+      await tester.pumpApp(
+        const MediaPickerRow(mediaPaths: ['/fake/video.mp4'], mediaTypes: ['video/mp4']),
+      );
+      await tester.pump();
+
+      expect(find.byIcon(Icons.play_circle_outline), findsOneWidget);
+    });
+
+    testWidgets('shows video library icon for video files when file does not exist', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        const MediaPickerRow(mediaPaths: ['/fake/video.mp4'], mediaTypes: ['video/mp4']),
+      );
+      await tester.pump();
+
+      expect(find.byIcon(Icons.video_library), findsOneWidget);
+    });
+
+    testWidgets('shows image thumbnail for image files', (tester) async {
+      await tester.pumpApp(
+        const MediaPickerRow(mediaPaths: ['/fake/image.jpg'], mediaTypes: ['image/jpeg']),
+      );
+      await tester.pump();
+
+      expect(find.byIcon(Icons.play_circle_outline), findsNothing);
+    });
+
+    testWidgets('handles empty mimeType list gracefully', (tester) async {
+      await tester.pumpApp(const MediaPickerRow(mediaPaths: ['/fake/file.jpg']));
+      await tester.pump();
+
+      expect(find.byIcon(Icons.play_circle_outline), findsNothing);
+    });
   });
 }

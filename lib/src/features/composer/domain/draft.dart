@@ -55,6 +55,8 @@ class DraftMediaAttachment {
     this.altText,
     this.uploadCid,
     this.blobRefJson,
+    this.durationSeconds,
+    this.aspectRatio,
   });
 
   final int id;
@@ -66,8 +68,12 @@ class DraftMediaAttachment {
   final DraftMediaStatus status;
   final int sortOrder;
   final String? blobRefJson;
+  final int? durationSeconds;
+  final String? aspectRatio;
 
   bool get requiresUpload => uploadCid == null;
+
+  bool get isVideo => mimeType.startsWith('video/');
 }
 
 class DraftMediaInput {
