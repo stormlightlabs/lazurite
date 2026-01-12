@@ -440,7 +440,7 @@ final class FeedSearchProvider extends $NotifierProvider<FeedSearch, FeedSearchS
   }
 }
 
-String _$feedSearchHash() => r'0210fcdcb3337bc2d33ba918e280acdea5caf5d2';
+String _$feedSearchHash() => r'428d127dd5c0d4308ddbd54241223dc1fcce7c3d';
 
 abstract class _$FeedSearch extends $Notifier<FeedSearchState> {
   FeedSearchState build();

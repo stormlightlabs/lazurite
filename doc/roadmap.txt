@@ -1,109 +1,323 @@
 *roadmap.txt*                         Material You (Flutter/Dart) Bluesky Client
 
 ================================================================================
+ACTIVE WORK
+================================================================================
 O. Hardening (mobile)                                                   *bsky-O*
 ================================================================================
 
-Phase 1: Code Quality and Architecture
-- [x] Feature architecture standardization:
-      - [x] Audit all features for missing domain/infrastructure/application
-            layers
-            - [x] Refactor features missing layers (priority: auth, settings,
-                  profile, search, thread)
-      - [x] Document architecture patterns in doc/architecture.md
-            - [x] Establish clear guidelines for layer responsibilities
-      - [x] Document testing patterns in doc/testing.md
-- [ ] Type safety improvements:
-      - Use freezed for critical models
-      - Add typed JSON parsing where appropriate
-- [x] Error handling standardization:
-      - Define standard error types for common failures (network, auth,
-        validation)
-      - Standardize error display messages (no raw .toString() in UI)
-      - Document error handling patterns in doc/errors.md
-      - Add error handling tests
+Goal: Production-ready mobile app with consistent architecture, performance,
+accessibility, and security standards.
 
-Phase 2: Performance Optimization
-- [ ] Performance:
-      - Decide on image caching strategy
-      - List virtualization sanity checks (ListView.builder usage)
-      - Profile critical paths with Flutter DevTools
-      - Optimize animation controller usage in lists (skeleton widgets)
-      - Memory leak detection (especially in stateful widgets)
-- [ ] Network efficiency:
-      - Audit pagination cursor handling
-      - Review cache invalidation strategies
-      - Optimize background sync frequencies
-
-Phase 3: Quality Assurance
-- [ ] Test coverage:
-      - Achieve >95% coverage target across all features
-      - Add missing integration tests (notifications grouping, DMs outbox)
-      - Add E2E tests for critical flows
-      - Widget test coverage for all custom widgets
-- [ ] Accessibility:
-      - Semantic labels for all interactive elements
-      - Dynamic type support and testing
-      - Contrast ratio checks (WCAG AA compliance)
-      - Screen reader testing on iOS and Android
-      - Keyboard navigation testing (tab focus order)
-- [ ] Scroll performance tests:
-      - Sanity test on mid-range Android emulator profile
-      - iOS scroll performance validation
-      - Measure frame render times under load
-- [ ] Observability:
-      - [x] Structured logging framework
-      - [ ] Crash reporting integration (Sentry/Firebase Crashlytics)
-      - [ ] Performance monitoring hooks
-      - [ ] Analytics event tracking foundation
-
-Phase 4: Security and Moderation
-- [ ] Security audit:
-      - Review secure storage usage (credentials, tokens)
-      - Validate input sanitization (XSS prevention)
-      - Audit network request security (HTTPS enforcement)
-      - Review dependency vulnerabilities
-- [ ] Moderation basics:
-      - Respect labels/filters returned by AppView/PDS
-      - Hide/blur content based on moderation labels
-      - User-configurable content filters
-      - Block/mute functionality
+Milestone 1: Code Quality & Architecture (COMPLETE)                   *bsky-O-1*
+--------------------------------------------------------------------------------
+- [x] Feature architecture audit and refactoring (auth, settings, profile, etc.)
+- [x] Architecture patterns documented in doc/architecture.md
+- [x] Testing patterns documented in doc/testing.md
+- [x] Error handling standardization and documentation in doc/errors.md
+- [ ] Type safety improvements: freezed for critical models, typed JSON parsing
 
 Tests:
-- [ ] Scroll perf sanity test on mid-range Android emulator profile
+- [x] Error handling tests for standard error types
+- [ ] Type safety validation across domain models
+
+Definition of Done:
+- All features follow domain/application/infrastructure layers
+- Error types defined for network, auth, validation failures
+- No raw .toString() in UI error messages
+
+Milestone 2: Performance Optimization                                 *bsky-O-2*
+--------------------------------------------------------------------------------
+Tasks:
+- [ ] Image caching strategy decision and implementation
+- [ ] List virtualization audit (ListView.builder usage)
+- [ ] Flutter DevTools profiling of critical paths
+- [ ] Animation controller optimization in lists
+- [ ] Memory leak detection in stateful widgets
+- [ ] Pagination cursor handling audit
+- [ ] Cache invalidation strategy review
+- [ ] Background sync frequency optimization
+
+Tests:
+- [ ] Scroll performance on mid-range Android emulator
 - [ ] iOS scroll performance validation
-- [ ] A11y audit checklist pass
-- [ ] Security audit checklist pass
-- [ ] Database migration tests (upgrade, rollback, data preservation)
-- [ ] Error handling integration tests
+- [ ] Frame render time measurements under load
 - [ ] Memory leak detection tests
+
+Definition of Done:
+- Smooth 60fps scrolling on mid-range devices
+- Image caching reduces network calls
+- No memory leaks in long-running sessions
+- Background sync respects battery constraints
+
+Milestone 3: Quality Assurance                                        *bsky-O-3*
+--------------------------------------------------------------------------------
+Tasks:
+- [ ] Achieve >95% test coverage across all features
+- [ ] Integration tests: notifications grouping, DMs outbox
+- [ ] E2E tests for critical flows
+- [ ] Widget tests for all custom widgets
+- [ ] Semantic labels for interactive elements
+- [ ] Dynamic type support
+- [ ] Contrast ratio checks (WCAG AA)
+- [ ] Screen reader testing (iOS/Android)
+- [ ] Keyboard navigation testing
+- [x] Structured logging framework
+- [ ] Crash reporting integration (Sentry/Firebase Crashlytics)
+- [ ] Performance monitoring hooks
+- [ ] Analytics event tracking foundation
+
+Tests:
+- [ ] A11y audit checklist compliance
+- [ ] Database migration tests (upgrade, rollback, preservation)
+- [ ] Error handling integration tests
 - [ ] Network failure resilience tests
 
-Deliverables:
-- [ ] Mobile app feels stable and responsive for daily use
-- [ ] All features follow consistent architecture patterns
-- [ ] Database migration strategy ready for production
-- [ ] Type-safe codebase with minimal unsafe casts
-- [ ] Comprehensive error handling with user-friendly messages
-- [ ] Security best practices validated
-- [ ] Accessibility requirements met (WCAG AA)
-- [ ] Performance benchmarks passing
-- [ ] Feature parity with official BlueSky app
+Definition of Done:
+- >95% code coverage achieved
+- WCAG AA compliance validated
+- Screen readers work correctly
+- All critical flows have E2E tests
+- Crash reporting captures production errors
+
+Milestone 4: Security & Moderation                                    *bsky-O-4*
+--------------------------------------------------------------------------------
+Tasks:
+- [ ] Secure storage audit (credentials, tokens)
+- [ ] Input sanitization validation (XSS prevention)
+- [ ] Network request security audit (HTTPS enforcement)
+- [ ] Dependency vulnerability review
+- [ ] Content label filtering from AppView/PDS
+- [ ] Hide/blur content based on moderation labels
+- [ ] User-configurable content filters
+- [ ] Block/mute functionality
+
+Tests:
+- [ ] Security audit checklist pass
+- [ ] Moderation label filtering tests
+- [ ] Block/mute functionality tests
+
+Definition of Done:
+- Security audit completed with no critical findings
+- Moderation labels respected across all feeds
+- User content preferences enforced
+- Dependency vulnerabilities addressed
 
 ================================================================================
-Initial Release (Lazurite-0.1.0-alpha)
+A. Composer Parity (Feature Completeness)                               *bsky-A*
 ================================================================================
 
-Core Composer Enhancement
-- [ ] Rich text composer with link unfurling
-- [ ] Video upload and playback support
-- [ ] GIF support integration
-- [ ] Thread composition (1/x posting)
-- [ ] Post scheduling functionality
+Status: In Progress (~70% complete)
+Reference: .sandbox/plan_composer_parity_2026_01_11.md
+Parity Analysis: .sandbox/spec_parity_2026_01_11.md
+
+Goal: Achieve feature parity for the Composer and Post Rendering subsystems,
+enabling users to create rich, expressive content equal to the official Bluesky
+client.
+
+Phase 1: Rich Text Rendering & Interaction                           *bsky-A-p1*
+--------------------------------------------------------------------------------
+- [x] FacetText widget for rendering parsed facets
+- [x] UTF-8 byte offset to UTF-16 character offset conversion
+- [x] TextSpan tree construction with overlapping facet support
+- [x] Facet navigation (mentions -> profile, hashtags -> search, links -> browser)
+- [x] Feed integration (PostBody uses FacetText)
+- [x] Post domain model facets field deserialization
+
+Phase 2: Composer Rich Text & Link Unfurling                         *bsky-A-p2*
+--------------------------------------------------------------------------------
+- [x] Live composer highlighting with ComposerTextSpanBuilder
+- [x] Link unfurling preview with LinkMetadataService
+- [x] LinkCardPreview below text area
+- [x] Remove card option (post link as text only)
+- [x] Mention & hashtag autocomplete UI
+      - Overlay suggestion list when typing @ or #
+      - Parser complete, UI implementation remaining
+
+Phase 3: Advanced Media Support                                      *bsky-A-p3*
+--------------------------------------------------------------------------------
+- [ ] Video upload and playback
+      - [ ] Video picker implementation
+      - [ ] app.bsky.video.uploadCreator integration
+      - [x] Video playback (video_player/chewie integration complete)
+      - [ ] VideoPlayerWidget with mute/unmute and tap-to-expand
+- [ ] GIF support
+      - [ ] Tenor/Giphy API integration
+      - [ ] GIF picker and playback
+- [ ] Fullscreen media viewer
+      - [ ] Zoom/pan support for images
+      - [ ] Better media consumption experience
+
+Phase 4: Threading & Metadata                                        *bsky-A-p4*
+--------------------------------------------------------------------------------
+- [x] Thread composition (1/x posting)
+      - [x] "Add another post" UI in composer
+      - [x] Chain reply references (root=first, parent=previous)
 - [ ] Language tagging for posts
-- [ ] Enhanced mention resolution and link previews
+      - [ ] Language detection (local library or manual selector)
+      - [ ] Send langs field in createRecord
+- [ ] Post scheduling (see *bsky-sched* below - now active)
 
-Complete Notifications System
+Deliverables:
+- [x] Rich text display matches official app (mentions, links, hashtags)
+- [x] Interactive facets with proper navigation
+- [x] Link preview cards in composer
+- [ ] Video upload and playback parity
+- [ ] GIF support parity
+- [x] Thread composition functionality
+- [ ] Language tagging support
+- [ ] Post scheduling functionality
+
+================================================================================
+Post Scheduling (Drafts -> Scheduled -> Posted)                     *bsky-sched*
+================================================================================
+
+Note: Part of Composer Parity Phase 4 (*bsky-A-p4*)
+Status: Active - Ready for implementation
+
+Design Principles:
+- Ship quickly with testable architecture
+- Swap schedulers later without refactoring
+- Share posting logic across all modes
+- Mobile OSes don't guarantee exact timing
+
+User Stories:
+- Schedule draft for future time
+- View/cancel/reschedule upcoming posts
+- See failures with clear reasons and retry
+- Choose between notification-based or background auto-post
+
+Non-Goals: Server-side scheduling (see *bsky-sched-backend*), enterprise job
+orchestration, exact-time guarantees
+
+Infrastructure                                                    *bsky-sched-1*
+--------------------------------------------------------------------------------
+Foundation: Database schema, domain models, repositories, posting worker
+
+Tasks:
+- [ ] Database migration: schedules table (draft_id, scheduled_at_utc, status,
+      attempts, last_error, posted_uri/cid) with indexes
+- [ ] Domain models: Schedule (draftId, scheduledAtUtc, status enum, attempts)
+- [ ] ScheduleRepo: upsert, get, list, cancel operations
+- [ ] PostPublisher service: publishDraft(draftId) with validation, session
+      refresh, createRecord, status persistence
+- [ ] Scheduler interface: schedule(), cancel(), resyncAll() for platform
+      adapters
+- [ ] Idempotency: prevent duplicate posts via posted_uri/cid checks
+
+Tests:
+- [ ] publishDraft builds correct ATProto record shapes
+- [ ] Session refresh flow with token storage and retry
+- [ ] State transitions: scheduled -> posting -> posted/failed
+- [ ] Cancel prevents future publish
+- [ ] Idempotency prevents duplicate posts
+
+Definition of Done:
+- All repository operations tested with Drift fakes
+- PostPublisher unit tested with mock HTTP client
+- State machine transitions validated
+- Domain models use freezed for type safety
+
+Notification Scheduling                                           *bsky-sched-2*
+--------------------------------------------------------------------------------
+User taps notification to post in foreground (reliable, simple)
+
+Tasks:
+- [ ] Add flutter_local_notifications dependency
+- [ ] Local notification scheduling with timezone awareness
+- [ ] Notification payload with draftId and deep link
+- [ ] Route handler: /scheduled/{draftId} with "Post now/Edit/Cancel" actions
+- [ ] Notification tap triggers PostPublisher in foreground
+- [ ] Draft editor: "Schedule" button with date/time picker (default: next hour)
+- [ ] Schedule badge in editor: "Scheduled for Jan 11, 2026 09:00"
+
+Tests:
+- [ ] Notification scheduling with correct timezone handling
+- [ ] Deep link routing to draft detail
+- [ ] Post action triggers publishDraft successfully
+- [ ] DST transitions handled correctly
+
+Definition of Done:
+- Notifications display reliably on iOS and Android
+- Tapping notification posts successfully
+- Clear failure messages displayed to user
+- Timezone edge cases tested
+
+Background Scheduling                                             *bsky-sched-3*
+--------------------------------------------------------------------------------
+Best-effort background auto-post (no user interaction required)
+
+Tasks:
+- [ ] Add workmanager dependency
+- [ ] Define callbackDispatcher top-level function
+- [ ] Platform initialization (Android/iOS background task config)
+- [ ] OneOffTask registration with initialDelay = scheduled_at_utc - now
+- [ ] Worker calls PostPublisher in background isolate
+- [ ] Retry logic with exponential backoff
+- [ ] resyncAll() on app boot to restore pending jobs after reboot
+- [ ] Settings toggle: "Auto-post scheduled drafts (may be delayed)"
+
+Tests:
+- [ ] WorkManager task registration and cancellation
+- [ ] Background worker executes publishDraft
+- [ ] Retry logic with network failures
+- [ ] Device reboot: resyncAll restores jobs (manual test)
+
+Definition of Done:
+- Background posting works on both platforms
+- Retries configured with network constraints
+- Clear UI disclaimer about OS scheduling limitations
+- Toggle defaults to off (notification mode is default)
+
+Scheduled Posts UI                                                *bsky-sched-4*
+--------------------------------------------------------------------------------
+Management screen for viewing/managing scheduled posts
+
+Tasks:
+- [ ] ScheduledPostsPage with tabs: Upcoming | Failed | Posted
+- [ ] List items show: draft snippet, scheduled time, status, last_error
+- [ ] Actions: reschedule, cancel, retry (for failed)
+- [ ] Reschedule opens date/time picker
+- [ ] Bulk action: cancel all upcoming (optional)
+- [ ] Error states: auth_expired, network_unavailable, rate_limited,
+      validation_error, server_error
+
+Tests:
+- [ ] Widget tests for each tab filter
+- [ ] Reschedule updates database and re-registers job
+- [ ] Cancel removes from list and cancels platform job
+- [ ] Error messages display correctly
+- [ ] Pull-to-refresh updates list state
+
+Definition of Done:
+- All tabs functional with correct filtering
+- Actions update both UI and platform schedulers
+- Error messages are user-friendly and actionable
+- Widget test coverage >95%
+
+References:
+- iOS BGTaskScheduler
+  https://developer.apple.com/documentation/backgroundtasks
+- Android WorkManager
+  https://developer.android.com/develop/background-work
+- flutter_local_notifications
+  https://pub.dev/packages/flutter_local_notifications
+- workmanager
+  https://pub.dev/packages/workmanager
+- AT Protocol createRecord
+  https://docs.bsky.app/docs/api/com-atproto-repo-create-record
+
+================================================================================
+INITIAL RELEASE (Lazurite-0.1.0-alpha)                               *bsky-init*
+================================================================================
+
+This section defines features required for the initial alpha release. Active
+work sections (O: Hardening, A: Composer Parity) contribute to these goals.
+
+Status: In Progress (estimated ~65% complete per parity analysis)
+
+Complete Notifications System                                      *bsky-notifs*
+--------------------------------------------------------------------------------
 - [ ] Full notification list UI implementation
 - [ ] Notification grouping and batch operations
 - [ ] Unread count management and badges
@@ -112,7 +326,8 @@ Complete Notifications System
 - [ ] Pull-to-refresh for notifications
 - [ ] Notification settings screen
 
-Direct Messages Implementation
+Direct Messages Implementation                                        *bsky-dms*
+--------------------------------------------------------------------------------
 - [ ] Conversation list UI
 - [ ] Message thread view with pagination
 - [ ] Send/receive text messages
@@ -122,7 +337,8 @@ Direct Messages Implementation
 - [ ] DM accessibility and screen reader support
 - [ ] Message history sync
 
-Settings & Preferences Completion
+Settings & Preferences Completion                              *bsky-settings*
+--------------------------------------------------------------------------------
 - [ ] Complete settings screen implementation
 - [ ] Theme settings (light/dark/system) with Material You
 - [ ] Content moderation settings and label filters
@@ -132,7 +348,8 @@ Settings & Preferences Completion
 - [ ] About screen and app information
 - [ ] Data usage settings for media
 
-Profile & Social Features
+Profile & Social Features                                        *bsky-profile*
+--------------------------------------------------------------------------------
 - [ ] Complete profileViewDetailed implementation
 - [ ] Pinned posts display and management
 - [ ] Pronouns, website, and account creation date
@@ -141,7 +358,8 @@ Profile & Social Features
 - [ ] Share to external apps functionality
 - [ ] Enhanced user reporting flow
 
-Content Moderation Integration
+Content Moderation Integration                                *bsky-moderation*
+--------------------------------------------------------------------------------
 - [ ] Content label filtering integration with feeds
 - [ ] Mute/Block lists (moderation lists) support
 - [ ] Thread muting UI and management
@@ -149,7 +367,8 @@ Content Moderation Integration
 - [ ] Custom labeler subscription
 - [ ] Advanced moderation tools
 
-Lists & Starter Packs
+Lists & Starter Packs                                              *bsky-lists*
+--------------------------------------------------------------------------------
 - [ ] User-curated lists creation and management
 - [ ] List feeds and browsing
 - [ ] Starter pack discovery and sharing
@@ -157,7 +376,9 @@ Lists & Starter Packs
 - [ ] List privacy settings and permissions
 - [ ] List-based feed filtering
 
-Media & Accessibility Enhancement
+Media & Accessibility Enhancement                                  *bsky-media*
+--------------------------------------------------------------------------------
+Note: Video/GIF support tracked in *bsky-A-p3* (Composer Parity Phase 3)
 - [ ] Fullscreen image viewer implementation
 - [ ] Image quality and compression settings
 - [ ] Dynamic type support and testing
@@ -166,14 +387,16 @@ Media & Accessibility Enhancement
 - [ ] Complete screen reader support
 - [ ] WCAG AA compliance validation
 
-Search & Discovery
+Search & Discovery                                                *bsky-search*
+--------------------------------------------------------------------------------
 - [ ] Hashtag search verification and enhancement
 - [ ] Trending topics implementation
 - [ ] Search suggestions and autocomplete
 - [ ] Advanced search filters
 - [ ] Search history management
 
-Platform Integration & Polish
+Platform Integration & Polish                                   *bsky-platform*
+--------------------------------------------------------------------------------
 - [ ] Home screen widgets (iOS/Android)
 - [ ] Share sheet extension implementation
 - [ ] Deep link handling improvements
@@ -181,7 +404,8 @@ Platform Integration & Polish
 - [ ] Crash reporting integration
 - [ ] Analytics event tracking foundation
 
-**Release Criteria**:
+Release Criteria                                              *bsky-init-gates*
+--------------------------------------------------------------------------------
 - [ ] All critical parity features implemented
 - [ ] >95% test coverage across new features
 - [ ] Accessibility audit passed (WCAG AA)
@@ -190,7 +414,7 @@ Platform Integration & Polish
 - [ ] Beta testing feedback incorporated
 - [ ] Documentation updated for all new features
 
-**Quality Gates**:
+Quality Gates:
 - [ ] Feature completeness review
 - [ ] User acceptance testing
 - [ ] Performance regression testing
@@ -199,146 +423,165 @@ Platform Integration & Polish
 - [ ] Cross-platform compatibility validation
 
 ================================================================================
-P. Smart folders (local-only saved views)                               *bsky-P*
+FUTURE (post initial release) PHASES
+================================================================================
+P. Smart Folders (local-only saved views)                               *bsky-P*
 ================================================================================
 
-Definition:
-- A smart folder is a saved query over cached posts + local metadata.
-- It never fetches from network by itself; it organizes what’s already cached.
+Goal: Local-only query engine over cached posts for custom feed organization
+without network fetches.
 
 Tasks:
-- [ ] Drift tables:
-      - smart_folders (name, sortMode)
-      - smart_folder_rules (type, payloadJson)
-      - smart_folder_items materialization
-- [ ] Rule engine (MVP rule types):
-      - author allow/deny (DIDs)
-      - keyword include/exclude (text)
-      - has media / has link
-      - bookmarked only
-      - exclude replies / replies only
-- [ ] UI:
-      - create/edit folder
-      - folder list and folder detail view
+- [ ] Database schema: smart_folders, smart_folder_rules, smart_folder_items
+- [ ] Domain models: SmartFolder, FolderRule, RuleType enum
+- [ ] Rule engine with MVP types: author allow/deny, keyword filter, media/link
+      filter, bookmarks, reply filtering
+- [ ] Query optimizer for rule evaluation
+- [ ] UI: create/edit folder form
+- [ ] UI: folder list and detail views
 
 Tests:
-- [ ] Rule evaluation tests against fixture posts.
-- [ ] Query performance test with N=10k cached posts.
+- [ ] Rule evaluation against fixture posts
+- [ ] Query performance with 10k+ cached posts
+- [ ] Compound rule combinations
+- [ ] Folder CRUD operations
 
-Deliverables:
-- "Saved views" that feel like feeds, entirely local and fast.
+Definition of Done:
+- Rules evaluate in <100ms for 10k posts
+- All rule types functional and tested
+- UI feels like native feeds
+- No network calls during folder browsing
 
 ================================================================================
-Q. Desktop pass                                                         *bsky-Q*
+Q. Desktop Pass                                                         *bsky-Q*
 ================================================================================
+
+Goal: Genuinely usable desktop experience with multi-column layout and keyboard
+shortcuts.
 
 Tasks:
-- [ ] Responsive layout:
-      - multi-column (timeline + thread) for wide screens
-- [ ] Keyboard shortcuts:
-      - navigate, like, repost, reply, new draft
-- [ ] Storage:
-      - confirm Drift backend performance on desktop targets
-- [ ] Window behaviors:
-      - restore last route, remember split pane sizes
-- [ ] ThemeInspectorPane with role inspector in Settings
-      - Split pane theme inspector showing multiple components
-      - Computed role display (surfaceContainerLow, outlineVariant values)
-- [ ] Composer Keyboard shortcuts:
-      - [ ] Ctrl/Cmd+N to open composer
-      - [ ] Esc to cancel composer
-      - [ ] Ctrl/Cmd+Enter to publish
-Tests:
-- [ ] Desktop smoke tests: app boots, auth works, DB works.
+- [ ] Responsive layout: multi-column (timeline + thread) for wide screens
+- [ ] Navigation shortcuts: j/k, l (like), r (reply), n (new draft)
+- [ ] Composer shortcuts: Ctrl/Cmd+N (new), Esc (cancel), Ctrl/Cmd+Enter (publish)
+- [ ] Window state: restore last route, remember split pane sizes
+- [ ] Drift backend performance validation on desktop
+- [ ] ThemeInspectorPane: split view with computed role values
 
-Deliverables:
-- Desktop build that is genuinely usable (not just "it runs").
+Tests:
+- [ ] Desktop smoke tests: boot, auth, database operations
+- [ ] Keyboard shortcut integration tests
+- [ ] Window state persistence tests
+- [ ] Multi-column layout responsive breakpoints
+
+Definition of Done:
+- All keyboard shortcuts functional
+- Window state persists across sessions
+- Multi-column layout adapts to window size
+- Desktop build performs as well as mobile
 
 ================================================================================
 R. Push Notification Backend                                            *bsky-R*
 ================================================================================
 
-Context:
-- Bluesky does NOT send push notifications directly to third-party clients
-- app.bsky.notification.registerPush forwards signed requests to your backend
-- Backend must validate signatures and relay to FCM/APNs
+Goal: End-to-end push notifications via backend relay service.
 
+Context: Bluesky sends signed notification requests to your backend, which
+validates signatures and relays to FCM/APNs.
+
+Milestone 1: Local Notifications (Client)                             *bsky-R-1*
+--------------------------------------------------------------------------------
 Tasks:
-- [ ] Local Notifications
-      - [ ] flutter_local_notifications integration
-      - [ ] Foreground notification banner
-      - [ ] Background notification display
-      - [ ] Deep link handling from notification tap
-      - [ ] Platform-specific configuration (Android channels, iOS presentation)
-- [ ] Backend service:
-      - POST /register-device (store device token with user DID)
-      - POST /push-notification (receive signed notifications from Bluesky)
-      - POST /unregister-device (remove token on logout)
-      - Validate Bluesky signatures using public key
-      - Queue and batch push sends
-      - Rate limiting and error handling
-- [ ] FCM/APNs integration:
-      - FCM configuration for Android
-      - APNs configuration for iOS
-      - Handle token refresh and invalidation
-- [ ] Client integration:
-      - Generate FCM/APNs tokens on app start
-      - Register tokens via app.bsky.notification.registerPush
-      - Include platform identifier (fcm/apns) and service endpoint
-      - Re-register on token refresh
-      - Unregister on logout
-- [ ] Infrastructure:
-      - Deploy backend (AWS Lambda, Cloud Functions, etc.)
-      - Database for device token storage
-      - Monitoring and alerting
-      - Delivery metrics tracking
+- [ ] flutter_local_notifications integration
+- [ ] Foreground/background notification display
+- [ ] Deep link handling from notification tap
+- [ ] Platform-specific config (Android channels, iOS presentation)
 
 Tests:
-- [ ] Backend: signature validation, token storage, FCM/APNs send
-- [ ] Client: token generation, registration, unregistration
-- [ ] Integration: end-to-end push delivery from Bluesky → backend → device
+- [ ] Notification display in foreground/background
+- [ ] Deep link routing from notification
+- [ ] Platform-specific behaviors
 
-Deliverables:
-- Push notifications working end-to-end
-- Backend service deployed and monitored
-- Token management robust across app lifecycle
+Definition of Done:
+- Notifications display on both platforms
+- Tapping opens correct screen
+- Notification permissions handled gracefully
 
-================================================================================
-Parking Lot                                                          *bsky-plot*
-================================================================================
-
+Milestone 2: Backend Service                                          *bsky-R-2*
+--------------------------------------------------------------------------------
 Tasks:
-- [ ] Composer Analytics events:
-      - [ ] Composer opened
-      - [ ] Draft saved
-      - [ ] Post published
-      - [ ] Media attached
-      - [ ] Publish failed
-- [x] DM Accessibility
-      - [x] screen reader support (semantic labels)
-      - [ ] keyboard navigation (Cmd/Ctrl+Enter to send)
-- [ ] DM Integration tests:
-      - [ ] fetch convos → display → tap → open detail
-      - [ ] compose → send → outbox → server → display
-      - [ ] send offline → queue → network restore → deliver
-      - [ ] receive message → display → mark read → sync
-      - [ ] message request → accept → move to main list
-- [ ] DM Offline scenarios:
-      - [ ] compose offline, send when online, display cached
-- [ ] DevTools Write Mode (Triple-Gated):
-      - [ ] Settings toggle: "Enable record editing (dangerous)"
-      - [ ] Biometric/device auth required before enabling
-      - [ ] RecordEditorPage: JSON text editor with validation
-      - [ ] com.atproto.repo.createRecord: create new records
-      - [ ] com.atproto.repo.putRecord: update existing records
-      - [ ] com.atproto.repo.deleteRecord: delete with typed confirmation
-      - [ ] (Phase 9) Bookmarks Screen (View Saved Posts)
-      - [ ] Diff preview for updates
-      - [ ] Batch operations UI: com.atproto.repo.applyWrites with review
-      - [ ] Security test: record editing disabled when gates are off
-      - [ ] Security test: cannot edit other users' repos
-- [ ] (Phase 9) Muted Words/Filters
+- [ ] POST /register-device endpoint (store token + DID)
+- [ ] POST /push-notification endpoint (receive from Bluesky)
+- [ ] POST /unregister-device endpoint
+- [ ] Bluesky signature validation with public key
+- [ ] Queue and batch FCM/APNs sends
+- [ ] Rate limiting and error handling
+- [ ] Deploy backend (Lambda/Cloud Functions)
+- [ ] Database for token storage
+- [ ] Monitoring and alerting
+
 Tests:
+- [ ] Signature validation tests
+- [ ] Token storage CRUD operations
+- [ ] FCM/APNs send integration tests
+- [ ] Rate limiting tests
+- [ ] End-to-end: Bluesky → backend → device
+
+Definition of Done:
+- Backend deployed and monitored
+- Signature validation prevents spoofing
+- Token management handles refresh/invalidation
+- Delivery metrics tracked
+
+Milestone 3: Client Integration                                       *bsky-R-3*
+--------------------------------------------------------------------------------
+Tasks:
+- [ ] Generate FCM/APNs tokens on app start
+- [ ] Register via app.bsky.notification.registerPush
+- [ ] Include platform identifier and service endpoint
+- [ ] Re-register on token refresh
+- [ ] Unregister on logout
+
+Tests:
+- [ ] Token generation on app start
+- [ ] Registration success/failure handling
+- [ ] Token refresh flow
+- [ ] Unregister on logout
+
+Definition of Done:
+- Tokens registered with Bluesky on app start
+- Token refresh handled automatically
+- Logout cleans up registration
+- Push notifications delivered end-to-end
+
+================================================================================
+PARKING LOT                                                          *bsky-plot*
+================================================================================
+
+Items deferred, experimental, or under consideration. Not scheduled for initial
+release.
+
+Composer Analytics
+- [ ] Track: composer opened, draft saved, post published, media attached,
+      publish failed
+
+DM Enhancements
+- [x] Screen reader support (semantic labels)
+- [ ] Keyboard navigation (Cmd/Ctrl+Enter to send)
+- [ ] Integration tests: full conversation flows
+- [ ] Offline scenarios: compose offline, queue, send when online
+
+DevTools Write Mode (Experimental - Triple-Gated)
+- [ ] Settings toggle + biometric auth
+- [ ] RecordEditorPage: JSON editor with validation
+- [ ] ATProto write operations: createRecord, putRecord, deleteRecord
+- [ ] Diff preview for updates
+- [ ] Batch operations UI with review step
+- [ ] Security tests: gating + permission enforcement
+
+Muted Words/Filters
+- [ ] User-configured keyword filtering
+
+Advanced Settings
 - [ ] System theme: follows OS brightness changes
-- [ ] Multi-device: preference changes merge correctly
-- [ ] Offline queue: preference updates retry on network restoration
+- [ ] Multi-device preference sync
+- [ ] Offline queue retry logic

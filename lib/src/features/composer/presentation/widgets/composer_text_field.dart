@@ -1,11 +1,10 @@
 import 'package:extended_text_field/extended_text_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lazurite/src/features/composer/application/autocomplete_provider.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/autocomplete_overlay.dart';
 
-/// Multi-line text field for composing posts with character count and rich text styling.
-///
-/// Automatically styles mentions (@handle), links (URLs), and hashtags (#tag) with
-/// distinct colors as the user types.
-class ComposerTextField extends StatelessWidget {
+class ComposerTextField extends ConsumerStatefulWidget {
   const ComposerTextField({
     required this.controller,
     this.maxLength = 300,
@@ -15,20 +14,120 @@ class ComposerTextField extends StatelessWidget {
     super.key,
   });
 
-  /// Text editing controller for the field.
   final TextEditingController controller;
-
-  /// Maximum character limit (default 300).
   final int maxLength;
-
-  /// Hint text displayed when empty.
   final String hintText;
-
-  /// Callback fired when text changes.
   final ValueChanged<String>? onChanged;
-
-  /// Whether to render the inline remaining-character counter.
   final bool showRemainingCounter;
+
+  @override
+  ConsumerState<ComposerTextField> createState() => _ComposerTextFieldState();
+}
+
+class _ComposerTextFieldState extends ConsumerState<ComposerTextField> {
+  OverlayEntry? _overlayEntry;
+  bool _showAutocomplete = false;
+  String _lastQueriedText = '';
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    _removeOverlay();
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    final text = widget.controller.text;
+
+    if (text == _lastQueriedText) {
+      return;
+    }
+
+    _lastQueriedText = text;
+    ref.read(autocompleteProvider.notifier).search(text);
+
+    final shouldShow = _shouldShowAutocomplete(text);
+    if (shouldShow != _showAutocomplete) {
+      setState(() {
+        _showAutocomplete = shouldShow;
+      });
+
+      if (shouldShow) {
+        _showOverlay();
+      } else {
+        _removeOverlay();
+      }
+    }
+  }
+
+  bool _shouldShowAutocomplete(String text) {
+    if (text.isEmpty) return false;
+
+    final lastSpaceIndex = text.lastIndexOf(' ');
+    final lastNewlineIndex = text.lastIndexOf('\n');
+    final lastSeparatorIndex = [lastSpaceIndex, lastNewlineIndex].reduce((a, b) => a > b ? a : b);
+
+    final segment = lastSeparatorIndex >= 0 ? text.substring(lastSeparatorIndex + 1) : text;
+
+    return segment.startsWith('@') || segment.startsWith('#');
+  }
+
+  void _showOverlay() {
+    _removeOverlay();
+
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => AutocompleteOverlay(
+        text: widget.controller.text,
+        visible: _showAutocomplete,
+        offset: Offset(offset.dx, offset.dy + size.height + 8),
+        onSuggestionSelected: _onSuggestionSelected,
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _onSuggestionSelected(AutocompleteSuggestion suggestion) {
+    final text = widget.controller.text;
+    final lastSpaceIndex = text.lastIndexOf(' ');
+    final lastNewlineIndex = text.lastIndexOf('\n');
+    final lastSeparatorIndex = [lastSpaceIndex, lastNewlineIndex].reduce((a, b) => a > b ? a : b);
+
+    final prefix = lastSeparatorIndex >= 0 ? text.substring(0, lastSeparatorIndex + 1) : '';
+    final suffix = lastSeparatorIndex >= 0 ? '' : '';
+
+    final newText =
+        '$prefix${suggestion.type == AutocompleteType.mention ? '@${suggestion.handle}' : '#${suggestion.label}'} $suffix';
+
+    widget.controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
+    );
+
+    _lastQueriedText = newText;
+    ref.read(autocompleteProvider.notifier).clear();
+    setState(() {
+      _showAutocomplete = false;
+    });
+    _removeOverlay();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,30 +141,30 @@ class ComposerTextField extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ExtendedTextField(
-            controller: controller,
+            controller: widget.controller,
             maxLines: null,
             minLines: 4,
             decoration: InputDecoration(
-              hintText: hintText,
+              hintText: widget.hintText,
               hintStyle: TextStyle(color: colorScheme.onSurface.withAlpha(128)),
               border: InputBorder.none,
               counterText: '',
             ),
             style: theme.textTheme.bodyLarge,
-            onChanged: onChanged,
+            onChanged: widget.onChanged,
             specialTextSpanBuilder: ComposerTextSpanBuilder(
               mentionColor: colorScheme.primary,
               linkColor: colorScheme.tertiary,
               hashtagColor: colorScheme.secondary,
             ),
           ),
-          if (showRemainingCounter)
+          if (widget.showRemainingCounter)
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: ValueListenableBuilder<TextEditingValue>(
-                valueListenable: controller,
+                valueListenable: widget.controller,
                 builder: (context, value, _) {
-                  final remaining = maxLength - value.text.length;
+                  final remaining = widget.maxLength - value.text.length;
                   final isOverLimit = remaining < 0;
                   final isNearLimit = remaining <= 20 && remaining >= 0;
 
