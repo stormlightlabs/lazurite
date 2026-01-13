@@ -13,14 +13,15 @@ import 'xrpc_client.dart';
 
 part 'providers.g.dart';
 
-/// Provides the public Dio client for unauthenticated API access.
+/// Provides public Dio client for unauthenticated API access.
 ///
-/// This client is configured for the public AppView at public.api.bsky.app.
+/// This client is configured for public AppView at public.api.bsky.app.
 @Riverpod(keepAlive: true)
 Dio dioPublic(Ref ref) {
   final authState = ref.watch(authProvider);
   final session = authState is AuthStateAuthenticated ? authState.session : null;
   final db = ref.watch(appDatabaseProvider);
+  final logger = ref.watch(loggerProvider('[Public-http]'));
 
   return createPublicDio(
     getSession: () => _readCurrentSession(ref),
@@ -31,7 +32,7 @@ Dio dioPublic(Ref ref) {
         try {
           db.feedContentDao.clearFeedContent('home', session.did);
         } catch (e) {
-          /* Ignore if database not available */
+          logger.error('Failed to clear feed content for session ${session.did}', e);
         }
       }
 
@@ -41,7 +42,7 @@ Dio dioPublic(Ref ref) {
   );
 }
 
-/// Provides the PDS Dio client for authenticated API access.
+/// Provides PDS Dio client for authenticated API access.
 ///
 /// This requires a logged-in user with a resolved PDS URL.
 /// Returns null if no user is logged in.
@@ -54,6 +55,7 @@ Dio? dioPds(Ref ref) {
   }
 
   final db = ref.watch(appDatabaseProvider);
+  final logger = ref.watch(loggerProvider('[PDS-http]'));
 
   return createPdsDio(
     pdsUrl: session.pdsUrl,
@@ -64,7 +66,7 @@ Dio? dioPds(Ref ref) {
       try {
         db.feedContentDao.clearFeedContent('home', session.did);
       } catch (e) {
-        /* Ignore if database not available */
+        logger.error('Failed to clear feed content for session ${session.did}', e);
       }
 
       ref.read(authProvider.notifier).logout();
@@ -73,15 +75,28 @@ Dio? dioPds(Ref ref) {
   );
 }
 
-/// Provides the XRPC client for making API requests.
+/// Provides video service Dio client for uploads.
 ///
-/// This client automatically routes requests to the correct host
+/// This client uses service auth tokens instead of session tokens.
+@Riverpod(keepAlive: true)
+Dio dioVideoService(Ref ref) {
+  return createVideoServiceDio(
+    interceptors: [
+      if (kDebugMode) DebugNetworkInterceptor(ref.watch(appDatabaseProvider).devToolsDao),
+    ],
+  );
+}
+
+/// Provides XRPC client for making API requests.
+///
+/// This client automatically routes requests to correct host
 /// based on endpoint metadata in the registry.
 @Riverpod(keepAlive: true)
 XrpcClient xrpcClient(Ref ref) {
   return XrpcClient(
     publicDio: ref.watch(dioPublicProvider),
     pdsDio: ref.watch(dioPdsProvider),
+    videoServiceDio: ref.watch(dioVideoServiceProvider),
     logger: ref.watch(loggerProvider('XrpcClient')),
   );
 }

@@ -90,6 +90,47 @@ final class LinkMetadataServiceProvider
 
 String _$linkMetadataServiceHash() => r'f6d106408351a8efbea835eb1b18b52d0b5ef8e2';
 
+@ProviderFor(videoUploadService)
+final videoUploadServiceProvider = VideoUploadServiceProvider._();
+
+final class VideoUploadServiceProvider
+    extends $FunctionalProvider<VideoUploadService, VideoUploadService, VideoUploadService>
+    with $Provider<VideoUploadService> {
+  VideoUploadServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'videoUploadServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$videoUploadServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<VideoUploadService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  VideoUploadService create(Ref ref) {
+    return videoUploadService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(VideoUploadService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<VideoUploadService>(value),
+    );
+  }
+}
+
+String _$videoUploadServiceHash() => r'f4739f93c433b95adbe78575e69f14ff4381d5e6';
+
 @ProviderFor(draftRepository)
 final draftRepositoryProvider = DraftRepositoryProvider._();
 
@@ -129,7 +170,7 @@ final class DraftRepositoryProvider
   }
 }
 
-String _$draftRepositoryHash() => r'69131f522db3287a9da5df8a3cfc99ef66993e54';
+String _$draftRepositoryHash() => r'3c2ea07655cc70badea069ca6cd086ac98058596';
 
 @ProviderFor(drafts)
 final draftsProvider = DraftsProvider._();

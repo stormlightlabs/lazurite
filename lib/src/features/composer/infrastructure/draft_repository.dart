@@ -9,6 +9,7 @@ import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/core/utils/video_processor.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart' as composer;
 import 'package:lazurite/src/features/composer/domain/facet_parser.dart';
+import 'package:lazurite/src/features/composer/infrastructure/video_upload_service.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/drafts_dao.dart';
@@ -24,6 +25,7 @@ class DraftRepository {
     required FacetParser facetParser,
     ImageCompressor? compressor,
     VideoProcessor? videoProcessor,
+    VideoUploadService? videoUploadService,
   }) : _dao = dao,
        _api = api,
        _sessionStorage = sessionStorage,
@@ -31,6 +33,7 @@ class DraftRepository {
        _facetParser = facetParser,
        _compressor = compressor ?? ImageCompressor(),
        _videoProcessor = videoProcessor ?? VideoProcessor(),
+       _videoUploadService = videoUploadService ?? VideoUploadService(api: api, logger: logger),
        _uuid = const Uuid();
 
   final DraftsDao _dao;
@@ -40,6 +43,7 @@ class DraftRepository {
   final FacetParser _facetParser;
   final ImageCompressor _compressor;
   final VideoProcessor _videoProcessor;
+  final VideoUploadService _videoUploadService;
   final Uuid _uuid;
   final Map<int, CancelToken> _uploadCancelTokens = {};
 
@@ -377,6 +381,7 @@ class DraftRepository {
     if (cancelToken != null && !cancelToken.isCancelled) {
       cancelToken.cancel('User cancelled upload');
       _uploadCancelTokens.remove(mediaId);
+      _videoUploadService.cancelUpload(mediaId.toString());
     }
   }
 
@@ -485,6 +490,23 @@ class DraftRepository {
       media.id,
       DraftMediaCompanion(status: Value(composer.DraftMediaStatus.uploading.name)),
     );
+
+    if (media.isVideo) {
+      try {
+        final blob = await _videoUploadService.uploadVideo(
+          filePath: media.localPath,
+          mimeType: media.mimeType,
+          onProgress: onProgress,
+        );
+        return blob;
+      } catch (e) {
+        await _dao.updateMedia(
+          media.id,
+          DraftMediaCompanion(status: Value(composer.DraftMediaStatus.failed.name)),
+        );
+        rethrow;
+      }
+    }
 
     final cancelToken = CancelToken();
     _uploadCancelTokens[media.id] = cancelToken;

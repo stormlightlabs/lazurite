@@ -6,6 +6,7 @@ import 'package:lazurite/src/features/composer/domain/draft.dart' as composer;
 import 'package:lazurite/src/features/composer/domain/facet_parser.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/composer/infrastructure/link_metadata_service.dart';
+import 'package:lazurite/src/features/composer/infrastructure/video_upload_service.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -25,12 +26,20 @@ LinkMetadataService linkMetadataService(Ref ref) {
 }
 
 @riverpod
+VideoUploadService videoUploadService(Ref ref) {
+  final api = ref.watch(xrpcClientProvider);
+  final logger = ref.watch(loggerProvider('VideoUploadService'));
+  return VideoUploadService(api: api, logger: logger);
+}
+
+@riverpod
 DraftRepository draftRepository(Ref ref) {
   final db = ref.watch(appDatabaseProvider);
   final api = ref.watch(xrpcClientProvider);
   final sessionStorage = ref.watch(sessionStorageProvider);
   final logger = ref.watch(loggerProvider('DraftRepository'));
   final facetParser = ref.watch(facetParserProvider);
+  final videoUploadService = ref.watch(videoUploadServiceProvider);
 
   return DraftRepository(
     dao: db.draftsDao,
@@ -38,6 +47,7 @@ DraftRepository draftRepository(Ref ref) {
     sessionStorage: sessionStorage,
     logger: logger,
     facetParser: facetParser,
+    videoUploadService: videoUploadService,
   );
 }
 

@@ -1,9 +1,10 @@
-/// Defines the type of host to use for XRPC requests.
+/// Defines type of host to use for XRPC requests.
 ///
-/// ATProto/Bluesky uses different hosts depending on the operation:
-/// - Public reads can use the public AppView
-/// - Authenticated operations go through the user's PDS
-/// - Chat operations are proxied through the PDS to the chat service
+/// ATProto/Bluesky uses different hosts depending on operation:
+/// - Public reads can use public AppView
+/// - Authenticated operations go through user's PDS
+/// - Chat operations are proxied through PDS to chat service
+/// - Video uploads go to dedicated video service with service auth
 enum HostKind {
   /// Public API endpoint for unauthenticated reads.
   ///
@@ -14,18 +15,24 @@ enum HostKind {
   ///
   /// Base URL: Resolved from user's DID document.
   pds,
+
+  /// Video service endpoint for video uploads with service auth.
+  ///
+  /// Base URL: `https://video.bsky.app`
+  video,
 }
 
 /// Extension to get host-related properties.
 extension HostKindExtension on HostKind {
-  /// Returns the base URL for this host kind.
+  /// Returns base URL for this host kind.
   ///
-  /// Note: For [HostKind.pds], this returns null since the URL must be resolved from the
+  /// Note: For [HostKind.pds], this returns null since URL must be resolved from
   /// user's DID document.
   String? get baseUrl {
     return switch (this) {
       HostKind.publicApi => 'https://public.api.bsky.app',
       HostKind.pds => null,
+      HostKind.video => 'https://video.bsky.app',
     };
   }
 
@@ -34,6 +41,7 @@ extension HostKindExtension on HostKind {
     return switch (this) {
       HostKind.publicApi => false,
       HostKind.pds => true,
+      HostKind.video => true,
     };
   }
 }

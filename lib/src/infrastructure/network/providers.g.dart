@@ -8,21 +8,21 @@ part of 'providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provides the public Dio client for unauthenticated API access.
+/// Provides public Dio client for unauthenticated API access.
 ///
-/// This client is configured for the public AppView at public.api.bsky.app.
+/// This client is configured for public AppView at public.api.bsky.app.
 
 @ProviderFor(dioPublic)
 final dioPublicProvider = DioPublicProvider._();
 
-/// Provides the public Dio client for unauthenticated API access.
+/// Provides public Dio client for unauthenticated API access.
 ///
-/// This client is configured for the public AppView at public.api.bsky.app.
+/// This client is configured for public AppView at public.api.bsky.app.
 
 final class DioPublicProvider extends $FunctionalProvider<Dio, Dio, Dio> with $Provider<Dio> {
-  /// Provides the public Dio client for unauthenticated API access.
+  /// Provides public Dio client for unauthenticated API access.
   ///
-  /// This client is configured for the public AppView at public.api.bsky.app.
+  /// This client is configured for public AppView at public.api.bsky.app.
   DioPublicProvider._()
     : super(
         from: null,
@@ -52,9 +52,9 @@ final class DioPublicProvider extends $FunctionalProvider<Dio, Dio, Dio> with $P
   }
 }
 
-String _$dioPublicHash() => r'440eb166523bcd20276af10eafbe6735a28a655a';
+String _$dioPublicHash() => r'8cd2cec19a9467acff85cb22fdeacd0901083983';
 
-/// Provides the PDS Dio client for authenticated API access.
+/// Provides PDS Dio client for authenticated API access.
 ///
 /// This requires a logged-in user with a resolved PDS URL.
 /// Returns null if no user is logged in.
@@ -62,13 +62,13 @@ String _$dioPublicHash() => r'440eb166523bcd20276af10eafbe6735a28a655a';
 @ProviderFor(dioPds)
 final dioPdsProvider = DioPdsProvider._();
 
-/// Provides the PDS Dio client for authenticated API access.
+/// Provides PDS Dio client for authenticated API access.
 ///
 /// This requires a logged-in user with a resolved PDS URL.
 /// Returns null if no user is logged in.
 
 final class DioPdsProvider extends $FunctionalProvider<Dio?, Dio?, Dio?> with $Provider<Dio?> {
-  /// Provides the PDS Dio client for authenticated API access.
+  /// Provides PDS Dio client for authenticated API access.
   ///
   /// This requires a logged-in user with a resolved PDS URL.
   /// Returns null if no user is logged in.
@@ -101,26 +101,73 @@ final class DioPdsProvider extends $FunctionalProvider<Dio?, Dio?, Dio?> with $P
   }
 }
 
-String _$dioPdsHash() => r'10c062ffcf5d155b80cf9b090b1d3dc1137ab469';
+String _$dioPdsHash() => r'2b6f8e6923ea0958923eafb15abf32396c36700d';
 
-/// Provides the XRPC client for making API requests.
+/// Provides video service Dio client for uploads.
 ///
-/// This client automatically routes requests to the correct host
+/// This client uses service auth tokens instead of session tokens.
+
+@ProviderFor(dioVideoService)
+final dioVideoServiceProvider = DioVideoServiceProvider._();
+
+/// Provides video service Dio client for uploads.
+///
+/// This client uses service auth tokens instead of session tokens.
+
+final class DioVideoServiceProvider extends $FunctionalProvider<Dio, Dio, Dio>
+    with $Provider<Dio> {
+  /// Provides video service Dio client for uploads.
+  ///
+  /// This client uses service auth tokens instead of session tokens.
+  DioVideoServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'dioVideoServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$dioVideoServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<Dio> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
+
+  @override
+  Dio create(Ref ref) {
+    return dioVideoService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Dio value) {
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<Dio>(value));
+  }
+}
+
+String _$dioVideoServiceHash() => r'35fad9f27769840636716b14bdb28c3b43634b52';
+
+/// Provides XRPC client for making API requests.
+///
+/// This client automatically routes requests to correct host
 /// based on endpoint metadata in the registry.
 
 @ProviderFor(xrpcClient)
 final xrpcClientProvider = XrpcClientProvider._();
 
-/// Provides the XRPC client for making API requests.
+/// Provides XRPC client for making API requests.
 ///
-/// This client automatically routes requests to the correct host
+/// This client automatically routes requests to correct host
 /// based on endpoint metadata in the registry.
 
 final class XrpcClientProvider extends $FunctionalProvider<XrpcClient, XrpcClient, XrpcClient>
     with $Provider<XrpcClient> {
-  /// Provides the XRPC client for making API requests.
+  /// Provides XRPC client for making API requests.
   ///
-  /// This client automatically routes requests to the correct host
+  /// This client automatically routes requests to correct host
   /// based on endpoint metadata in the registry.
   XrpcClientProvider._()
     : super(
@@ -155,4 +202,4 @@ final class XrpcClientProvider extends $FunctionalProvider<XrpcClient, XrpcClien
   }
 }
 
-String _$xrpcClientHash() => r'9e0974926236ae82ae9801af291f99f5dd7f55e7';
+String _$xrpcClientHash() => r'f41b33a8efa7ae6e52ac0f5518c64c9cffc50a71';

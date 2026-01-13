@@ -92,3 +92,31 @@ Dio createPdsDio({
 
   return dio;
 }
+
+/// Creates a Dio client configured for video service uploads.
+///
+/// This client uses service auth tokens instead of session tokens.
+Dio createVideoServiceDio({
+  String baseUrl = 'https://video.bsky.app',
+  bool enableLogging = true,
+  List<Interceptor> interceptors = const [],
+}) {
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(seconds: 30),
+      headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+      listFormat: ListFormat.multi,
+    ),
+  );
+
+  dio.interceptors.addAll([
+    if (enableLogging) LoggingInterceptor(),
+    ...interceptors,
+    RetryInterceptor(),
+  ]);
+
+  return dio;
+}

@@ -13,21 +13,24 @@ import 'network_failure.dart';
 ///
 /// This is the main entry point for making XRPC requests. It:
 /// - Looks up endpoint metadata from the registry
-/// - Routes requests to the correct Dio client (public vs PDS)
+/// - Routes requests to the correct Dio client (public vs PDS vs video)
 /// - Handles response parsing and error conversion
 class XrpcClient {
   XrpcClient({
     required Dio publicDio,
     required Dio? pdsDio,
+    required Dio videoServiceDio,
     required Logger logger,
     EndpointRegistry? registry,
   }) : _publicDio = publicDio,
        _pdsDio = pdsDio,
+       _videoServiceDio = videoServiceDio,
        _logger = logger,
        _registry = registry ?? EndpointRegistry.instance;
 
   final Dio _publicDio;
   final Dio? _pdsDio;
+  final Dio _videoServiceDio;
   final Logger _logger;
   final EndpointRegistry _registry;
 
@@ -91,6 +94,7 @@ class XrpcClient {
   ///
   /// [onSendProgress] is called during upload with (bytes sent, total bytes).
   /// [cancelToken] can be used to cancel the request.
+  /// [headers] can be used to add custom headers to the request.
   Future<Response<T>> callRaw<T>(
     String nsid, {
     Map<String, dynamic>? params,
@@ -98,6 +102,7 @@ class XrpcClient {
     ResponseType? responseType,
     void Function(int, int)? onSendProgress,
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     final meta = _registry.lookup(nsid);
     if (meta == null) {
@@ -108,6 +113,10 @@ class XrpcClient {
     final options = _buildOptions(meta);
     if (responseType != null) {
       options.responseType = responseType;
+    }
+    if (headers != null) {
+      options.headers ??= {};
+      options.headers!.addAll(headers);
     }
 
     try {
@@ -138,7 +147,7 @@ class XrpcClient {
 
   /// Selects the appropriate Dio client based on endpoint metadata.
   Dio _selectDio(EndpointMeta meta) {
-    if (_pdsDio != null) {
+    if (meta.hostKind == HostKind.publicApi && _pdsDio != null) {
       return _pdsDio;
     }
 
@@ -146,10 +155,15 @@ class XrpcClient {
       case HostKind.publicApi:
         return _publicDio;
       case HostKind.pds:
+        if (_pdsDio != null) {
+          return _pdsDio;
+        }
         throw StateError(
           'Cannot make authenticated request: PDS client not configured. '
           'Ensure user is logged in.',
         );
+      case HostKind.video:
+        return _videoServiceDio;
     }
   }
 
@@ -176,7 +190,7 @@ class XrpcClient {
     }
 
     if (data is Map) {
-      return Map<String, dynamic>.from(data);
+      return data.map<String, dynamic>((key, value) => MapEntry(key.toString(), value));
     }
 
     throw DecodeFailure(message: 'Unexpected response type: ${data.runtimeType}');

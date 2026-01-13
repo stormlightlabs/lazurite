@@ -138,7 +138,7 @@ Phase 3: Advanced Media Support                                      *bsky-A-p3*
 --------------------------------------------------------------------------------
 - [ ] Video upload and playback
       - [ ] Video picker implementation
-      - [ ] app.bsky.video.uploadCreator integration
+      - [ ] app.bsky.video.uploadVideo integration
       - [x] Video playback (video_player/chewie integration complete)
       - [ ] VideoPlayerWidget with mute/unmute and tap-to-expand
 - [ ] GIF support

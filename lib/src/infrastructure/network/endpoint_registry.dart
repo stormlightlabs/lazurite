@@ -278,6 +278,31 @@ class EndpointRegistry {
       requiresAuth: true,
       proxyKind: ProxyKind.chat,
     ),
+
+    'com.atproto.server.getServiceAuth': const EndpointMeta(
+      nsid: 'com.atproto.server.getServiceAuth',
+      method: HttpMethod.post,
+      hostKind: HostKind.pds,
+      requiresAuth: true,
+    ),
+
+    'app.bsky.video.getUploadLimits': const EndpointMeta(
+      nsid: 'app.bsky.video.getUploadLimits',
+      method: HttpMethod.get,
+      hostKind: HostKind.video,
+    ),
+
+    'app.bsky.video.uploadVideo': const EndpointMeta(
+      nsid: 'app.bsky.video.uploadVideo',
+      method: HttpMethod.post,
+      hostKind: HostKind.video,
+    ),
+
+    'app.bsky.video.getJobStatus': const EndpointMeta(
+      nsid: 'app.bsky.video.getJobStatus',
+      method: HttpMethod.get,
+      hostKind: HostKind.video,
+    ),
   };
 
   /// Looks up endpoint metadata by NSID.

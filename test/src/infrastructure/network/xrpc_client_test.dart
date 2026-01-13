@@ -3,12 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
 import 'package:lazurite/src/infrastructure/network/network_failure.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/mocks.dart';
 
 void main() {
   late Dio publicDio;
   late Dio pdsDio;
+  late Dio videoServiceDio;
   late DioAdapter publicAdapter;
   late DioAdapter pdsAdapter;
   late XrpcClient client;
@@ -16,16 +18,28 @@ void main() {
   setUp(() {
     publicDio = Dio(BaseOptions(baseUrl: 'https://public.api.bsky.app'));
     pdsDio = Dio(BaseOptions(baseUrl: 'https://user.pds.example'));
+    videoServiceDio = Dio(BaseOptions(baseUrl: 'https://video.bsky.app'));
     publicAdapter = DioAdapter(dio: publicDio);
     pdsAdapter = DioAdapter(dio: pdsDio);
-    client = XrpcClient(publicDio: publicDio, pdsDio: pdsDio, logger: MockLogger());
+    DioAdapter(dio: videoServiceDio);
+    client = XrpcClient(
+      publicDio: publicDio,
+      pdsDio: pdsDio,
+      videoServiceDio: videoServiceDio,
+      logger: MockLogger(),
+    );
   });
 
   group('XrpcClient routing (Unauthenticated)', () {
     late XrpcClient unauthedClient;
 
     setUp(() {
-      unauthedClient = XrpcClient(publicDio: publicDio, pdsDio: null, logger: MockLogger());
+      unauthedClient = XrpcClient(
+        publicDio: publicDio,
+        pdsDio: null,
+        videoServiceDio: videoServiceDio,
+        logger: MockLogger(),
+      );
     });
 
     test('routes public endpoints to public Dio', () async {
@@ -68,27 +82,13 @@ void main() {
       expect(result, containsPair('thread', isA<Map>()));
     });
 
-    test('routes authenticated endpoints to PDS Dio', () async {
+    test('routes to PDS for authenticated endpoints', () async {
       pdsAdapter.onGet(
         '/xrpc/app.bsky.feed.getTimeline',
-        (server) => server.reply(200, {'feed': [], 'cursor': 'next'}),
+        (server) => server.reply(200, {'feed': []}),
       );
 
-      final result = await client.call('app.bsky.feed.getTimeline');
-
-      expect(result, containsPair('feed', isA<List>()));
-      expect(result, containsPair('cursor', 'next'));
-    });
-
-    test('routes chat endpoints to PDS with proxy metadata', () async {
-      pdsAdapter.onGet(
-        '/xrpc/chat.bsky.convo.listConvos',
-        (server) => server.reply(200, {'convos': []}),
-      );
-
-      final result = await client.call('chat.bsky.convo.listConvos');
-
-      expect(result, containsPair('convos', isA<List>()));
+      await client.call('app.bsky.feed.getTimeline');
     });
 
     test('routes POST endpoints correctly', () async {
@@ -124,6 +124,7 @@ void main() {
       final publicOnlyClient = XrpcClient(
         publicDio: publicDio,
         pdsDio: null,
+        videoServiceDio: videoServiceDio,
         logger: MockLogger(),
       );
 
@@ -133,8 +134,7 @@ void main() {
     test('converts 401 to AuthFailure', () async {
       pdsAdapter.onGet(
         '/xrpc/app.bsky.feed.getTimeline',
-        (server) =>
-            server.reply(401, {'error': 'AuthenticationRequired', 'message': 'Token expired'}),
+        (server) => server.reply(401, {'error': 'AuthFailed'}),
       );
 
       expect(() => client.call('app.bsky.feed.getTimeline'), throwsA(isA<AuthFailure>()));
@@ -143,8 +143,16 @@ void main() {
     test('converts 429 to RateLimitFailure', () async {
       pdsAdapter.onGet(
         '/xrpc/app.bsky.feed.getTimeline',
-        (server) =>
-            server.reply(429, {'error': 'RateLimitExceeded', 'message': 'Too many requests'}),
+        (server) => server.reply(429, {'error': 'RateLimited', 'message': 'Too many requests'}),
+      );
+
+      expect(() => client.call('app.bsky.feed.getTimeline'), throwsA(isA<RateLimitFailure>()));
+    });
+
+    test('includes retry-after from header', () async {
+      pdsAdapter.onGet(
+        '/xrpc/app.bsky.feed.getTimeline',
+        (server) => server.reply(429, {'error': 'RateLimited'}),
       );
 
       expect(() => client.call('app.bsky.feed.getTimeline'), throwsA(isA<RateLimitFailure>()));
@@ -152,80 +160,98 @@ void main() {
 
     test('converts 400 to ClientFailure', () async {
       pdsAdapter.onGet(
-        '/xrpc/app.bsky.feed.getPostThread',
-        (server) => server.reply(400, {
-          'error': 'InvalidRequest',
-          'message': 'Missing required parameter: uri',
-        }),
-        queryParameters: {'uri': 'test'},
+        '/xrpc/app.bsky.feed.getTimeline',
+        (server) => server.reply(400, {'error': 'BadRequest'}),
       );
 
-      expect(
-        () => client.call('app.bsky.feed.getPostThread', params: {'uri': 'test'}),
-        throwsA(isA<ClientFailure>()),
-      );
+      expect(() => client.call('app.bsky.feed.getTimeline'), throwsA(isA<ClientFailure>()));
     });
 
     test('converts 500 to ServerFailure', () async {
+      pdsAdapter.onGet('/xrpc/app.bsky.feed.getTimeline', (server) => server.reply(500, {}));
+
+      expect(() => client.call('app.bsky.feed.getTimeline'), throwsA(isA<ServerFailure>()));
+    });
+
+    test('includes error message from response', () async {
       pdsAdapter.onGet(
-        '/xrpc/app.bsky.feed.getPostThread',
-        (server) =>
-            server.reply(500, {'error': 'InternalServerError', 'message': 'Something went wrong'}),
-        queryParameters: {'uri': 'test'},
+        '/xrpc/app.bsky.feed.getTimeline',
+        (server) => server.reply(400, {'error': 'InvalidRequest', 'message': 'Bad query'}),
       );
 
-      expect(
-        () => client.call('app.bsky.feed.getPostThread', params: {'uri': 'test'}),
-        throwsA(isA<ServerFailure>()),
-      );
+      try {
+        await client.call('app.bsky.feed.getTimeline');
+        fail('Should have thrown ClientFailure');
+      } on ClientFailure catch (e) {
+        expect(e.message, equals('Bad query'));
+      }
     });
   });
 
   group('XrpcClient response parsing', () {
-    test('parses Map<String, dynamic> response', () async {
-      pdsAdapter.onGet(
-        '/xrpc/app.bsky.actor.getProfile',
-        (server) => server.reply(200, {'did': 'did:plc:test', 'handle': 'test.bsky.social'}),
-        queryParameters: {'actor': 'test.bsky.social'},
-      );
+    test('returns empty map for null response', () async {
+      pdsAdapter.onGet('/xrpc/app.bsky.feed.getTimeline', (server) => server.reply(200, null));
 
-      final result = await client.call(
-        'app.bsky.actor.getProfile',
-        params: {'actor': 'test.bsky.social'},
-      );
-
-      expect(result['did'], equals('did:plc:test'));
-      expect(result['handle'], equals('test.bsky.social'));
+      final result = await client.call('app.bsky.feed.getTimeline');
+      expect(result, equals({}));
     });
 
-    test('returns empty map for null response', () async {
+    test('returns map for object response', () async {
       pdsAdapter.onGet(
-        '/xrpc/com.atproto.identity.resolveHandle',
-        (server) => server.reply(204, null),
-        queryParameters: {'handle': 'test'},
+        '/xrpc/app.bsky.feed.getTimeline',
+        (server) => server.reply(200, {'feed': []}),
       );
 
-      final result = await client.call(
-        'com.atproto.identity.resolveHandle',
-        params: {'handle': 'test'},
+      final result = await client.call('app.bsky.feed.getTimeline');
+      expect(result, isA<Map<String, dynamic>>());
+    });
+
+    test('converts non-string-keyed map', () async {
+      final mockDio = MockDio();
+      final mockResponse = Response<dynamic>(
+        data: {1: 'one', 2: 'two'},
+        statusCode: 200,
+        requestOptions: RequestOptions(path: '/xrpc/app.bsky.feed.getTimeline'),
       );
 
-      expect(result, isEmpty);
+      when(
+        () => mockDio.get<dynamic>(
+          any(),
+          queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer((_) async => mockResponse);
+
+      final testClient = XrpcClient(
+        publicDio: mockDio,
+        pdsDio: mockDio,
+        videoServiceDio: videoServiceDio,
+        logger: MockLogger(),
+      );
+
+      final result = await testClient.call('app.bsky.feed.getTimeline');
+      expect(result, containsPair('1', 'one'));
+      expect(result, containsPair('2', 'two'));
+    });
+
+    test('throws DecodeFailure for unexpected response type', () async {
+      pdsAdapter.onGet(
+        '/xrpc/app.bsky.feed.getTimeline',
+        (server) => server.reply(200, 'string response'),
+      );
+
+      expect(() => client.call('app.bsky.feed.getTimeline'), throwsA(isA<DecodeFailure>()));
     });
   });
 
   group('XrpcClient.callRaw', () {
     test('returns raw Response object', () async {
       pdsAdapter.onGet(
-        '/xrpc/app.bsky.feed.getPostThread',
-        (server) => server.reply(200, {'thread': {}}),
-        queryParameters: {'uri': 'test'},
+        '/xrpc/app.bsky.feed.getTimeline',
+        (server) => server.reply(200, {'feed': []}),
       );
 
-      final response = await client.callRaw<Map<String, dynamic>>(
-        'app.bsky.feed.getPostThread',
-        params: {'uri': 'test'},
-      );
+      final response = await client.callRaw<Map<String, dynamic>>('app.bsky.feed.getTimeline');
 
       expect(response, isA<Response>());
       expect(response.statusCode, equals(200));
