@@ -9,7 +9,7 @@ O. Hardening (mobile)                                                   *bsky-O*
 Goal: Production-ready mobile app with consistent architecture, performance,
 accessibility, and security standards.
 
-Milestone 1: Code Quality & Architecture (COMPLETE)                   *bsky-O-1*
+Milestone 1: Code Quality & Architecture                              *bsky-O-1*
 --------------------------------------------------------------------------------
 - [x] Feature architecture audit and refactoring (auth, settings, profile, etc.)
 - [x] Architecture patterns documented in doc/architecture.md
@@ -107,10 +107,6 @@ Definition of Done:
 A. Composer Parity (Feature Completeness)                               *bsky-A*
 ================================================================================
 
-Status: In Progress (~70% complete)
-Reference: .sandbox/plan_composer_parity_2026_01_11.md
-Parity Analysis: .sandbox/spec_parity_2026_01_11.md
-
 Goal: Achieve feature parity for the Composer and Post Rendering subsystems,
 enabling users to create rich, expressive content equal to the official Bluesky
 client.
@@ -136,11 +132,11 @@ Phase 2: Composer Rich Text & Link Unfurling                         *bsky-A-p2*
 
 Phase 3: Advanced Media Support                                      *bsky-A-p3*
 --------------------------------------------------------------------------------
-- [ ] Video upload and playback
-      - [ ] Video picker implementation
-      - [ ] app.bsky.video.uploadVideo integration
+- [x] Video upload and playback
+      - [x] Video picker implementation
+      - [x] app.bsky.video.uploadVideo integration
       - [x] Video playback (video_player/chewie integration complete)
-      - [ ] VideoPlayerWidget with mute/unmute and tap-to-expand
+      - [x] VideoPlayerWidget with mute/unmute and tap-to-expand
 - [ ] GIF support
       - [ ] Tenor/Giphy API integration
       - [ ] GIF picker and playback
@@ -162,7 +158,7 @@ Deliverables:
 - [x] Rich text display matches official app (mentions, links, hashtags)
 - [x] Interactive facets with proper navigation
 - [x] Link preview cards in composer
-- [ ] Video upload and playback parity
+- [x] Video upload and playback parity
 - [ ] GIF support parity
 - [x] Thread composition functionality
 - [ ] Language tagging support
@@ -379,6 +375,7 @@ Lists & Starter Packs                                              *bsky-lists*
 Media & Accessibility Enhancement                                  *bsky-media*
 --------------------------------------------------------------------------------
 Note: Video/GIF support tracked in *bsky-A-p3* (Composer Parity Phase 3)
+- [x] Video upload and playback (complete in Phase 3)
 - [ ] Fullscreen image viewer implementation
 - [ ] Image quality and compression settings
 - [ ] Dynamic type support and testing

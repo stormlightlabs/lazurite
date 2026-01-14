@@ -33,14 +33,12 @@ void main() {
   setUp(() async {
     mockApi = MockXrpcClient();
     mockLogger = MockLogger();
-    // Use Duration.zero for fast tests
     videoUploadService = VideoUploadService(
       api: mockApi,
       logger: mockLogger,
       pollingInterval: Duration.zero,
     );
 
-    // Mock getServiceAuth for all tests
     when(
       () => mockApi.call('com.atproto.server.getServiceAuth', body: any(named: 'body')),
     ).thenAnswer((_) async => {'token': 'test-service-auth-token'});
@@ -87,7 +85,6 @@ void main() {
         ),
       );
 
-      // Mock getJobStatus to return completed state on first call
       when(
         () => mockApi.callRaw<Map<String, dynamic>>(
           'app.bsky.video.getJobStatus',
@@ -257,7 +254,6 @@ void main() {
         ),
       );
 
-      // Mock getJobStatus to throw DioException.cancel after first call
       when(
         () => mockApi.callRaw<Map<String, dynamic>>(
           'app.bsky.video.getJobStatus',
@@ -267,35 +263,27 @@ void main() {
       ).thenAnswer((_) async {
         getJobStatusCallCount++;
 
-        // First call returns pending, subsequent calls simulate cancellation
         if (getJobStatusCallCount == 1) {
-          // Wait for the signal to cancel
           await shouldCancel.future;
         }
 
-        // After first call, throw cancellation exception
         throw DioException(
           type: DioExceptionType.cancel,
           requestOptions: RequestOptions(path: 'app.bsky.video.getJobStatus'),
         );
       });
 
-      // Start the upload in a separate future (but don't await yet)
       final uploadFuture = videoUploadService.uploadVideo(
         filePath: tempVideoFile.path,
         mimeType: 'video/mp4',
       );
 
-      // Wait a bit for the first getJobStatus call to happen
       await Future.delayed(const Duration(milliseconds: 10));
 
-      // Signal the mock to start throwing cancellation exceptions
       shouldCancel.complete(true);
 
-      // Cancel the upload
       videoUploadService.cancelUpload('test-job-cancel');
 
-      // The upload should throw a cancellation exception wrapped in upload failed
       await expectLater(
         uploadFuture,
         throwsA(
@@ -303,7 +291,6 @@ void main() {
         ),
       );
 
-      // Verify that getJobStatus was called at least once
       expect(getJobStatusCallCount, greaterThan(0));
     });
 

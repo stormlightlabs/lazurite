@@ -427,6 +427,46 @@ void main() {
       verify(() => mockNotifier.mockAddMediaObj('image2.webp', 'image/webp')).called(1);
     });
 
+    testWidgets('picks video from camera', (tester) async {
+      final video = XFile('camera_video.mp4');
+
+      when(
+        () => mockImagePickerPlatform.getVideo(source: ImageSource.camera),
+      ).thenAnswer((_) async => video);
+
+      final mockNotifier = MockComposerNotifierWrapper(createMockDraft());
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
+
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Record video'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockNotifier.mockAddMediaObj('camera_video.mp4', 'video/mp4')).called(1);
+    });
+
+    testWidgets('picks video from gallery', (tester) async {
+      final video = XFile('gallery_video.mp4');
+
+      when(
+        () => mockImagePickerPlatform.getVideo(source: ImageSource.gallery),
+      ).thenAnswer((_) async => video);
+
+      final mockNotifier = MockComposerNotifierWrapper(createMockDraft());
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
+
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Choose video from gallery'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockNotifier.mockAddMediaObj('gallery_video.mp4', 'video/mp4')).called(1);
+    });
+
     testWidgets('shows cancel dialog when has content', (tester) async {
       await tester.pumpWidget(buildTestWidget());
       await navigateToCompose(tester);
