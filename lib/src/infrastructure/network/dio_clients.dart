@@ -120,3 +120,31 @@ Dio createVideoServiceDio({
 
   return dio;
 }
+
+/// Creates a Dio client configured for Tenor API access.
+///
+/// This client is used for GIF search and selection.
+Dio createTenorDio({
+  String baseUrl = 'https://tenor.googleapis.com/v2',
+  bool enableLogging = true,
+  List<Interceptor> interceptors = const [],
+}) {
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(seconds: 30),
+      headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+      listFormat: ListFormat.multi,
+    ),
+  );
+
+  dio.interceptors.addAll([
+    if (enableLogging) LoggingInterceptor(),
+    ...interceptors,
+    RetryInterceptor(),
+  ]);
+
+  return dio;
+}

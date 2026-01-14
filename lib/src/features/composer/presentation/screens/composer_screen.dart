@@ -13,6 +13,7 @@ import 'package:lazurite/src/features/composer/presentation/widgets/media_picker
 import 'package:lazurite/src/features/composer/presentation/widgets/publish_button.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/quote_post_card.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/reply_context_card.dart';
+import 'package:lazurite/src/features/composer/presentation/screens/gif_picker_screen.dart';
 
 /// Maximum character limit for posts (grapheme clusters).
 const int kMaxPostLength = 300;
@@ -23,7 +24,7 @@ const int kWarningThreshold = 20;
 /// Duration for quick UI polish animations.
 const Duration _kComposerAnimationDuration = Duration(milliseconds: 250);
 
-enum MediaPickerOption { camera, gallery, video, videoGallery }
+enum MediaPickerOption { camera, gallery, video, videoGallery, gif }
 
 /// Full-screen composer for creating or editing posts.
 class ComposerScreen extends ConsumerStatefulWidget {
@@ -248,6 +249,11 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
               title: const Text('Choose video from gallery'),
               onTap: () => Navigator.pop(context, MediaPickerOption.videoGallery),
             ),
+            ListTile(
+              leading: const Icon(Icons.gif_outlined),
+              title: const Text('Search GIFs'),
+              onTap: () => Navigator.pop(context, MediaPickerOption.gif),
+            ),
           ],
         ),
       ),
@@ -287,6 +293,20 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
         final video = await picker.pickVideo(source: ImageSource.gallery);
         if (video != null) {
           await notifier.addMedia(video.path, 'video/mp4');
+        }
+        break;
+      case MediaPickerOption.gif:
+        final result = await Navigator.push<GifSelectionResult>(
+          context,
+          MaterialPageRoute(builder: (context) => const GifPickerScreen()),
+        );
+        if (result != null) {
+          await notifier.setGifEmbed(
+            uri: result.uri,
+            title: result.title,
+            description: result.description,
+            thumbBlobJson: result.thumbBlobJson,
+          );
         }
         break;
     }

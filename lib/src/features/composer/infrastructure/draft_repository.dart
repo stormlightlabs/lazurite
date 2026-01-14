@@ -424,6 +424,52 @@ class DraftRepository {
     return _dao.deleteDraftsByStatus(composer.DraftStatus.posted.name, ownerDid);
   }
 
+  /// Sets GIF as external embed for the draft.
+  ///
+  /// This removes all existing media attachments and replaces them with a GIF external embed.
+  /// The [thumbBlobJson] is an optional JSON-encoded blob reference for the thumbnail.
+  Future<void> setGifEmbed(
+    String draftId, {
+    required String uri,
+    required String title,
+    String? description,
+    String? thumbBlobJson,
+  }) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+
+    await _dao.deleteMediaByDraftId(draftId, ownerDid);
+    await _dao.updateDraftFields(
+      draftId,
+      ownerDid,
+      DraftsCompanion(
+        externalUri: Value(uri),
+        externalTitle: Value(title),
+        externalDescription: Value(description),
+        externalThumbBlobJson: Value(thumbBlobJson),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Clears GIF embed from the draft.
+  Future<void> clearGifEmbed(String draftId) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+
+    await _dao.updateDraftFields(
+      draftId,
+      ownerDid,
+      DraftsCompanion(
+        externalUri: const Value(null),
+        externalTitle: const Value(null),
+        externalDescription: const Value(null),
+        externalThumbBlobJson: const Value(null),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   composer.Draft _toDomain(DraftRecord record) {
     return composer.Draft(
       id: record.draft.id,

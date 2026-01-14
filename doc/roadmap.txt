@@ -137,9 +137,13 @@ Phase 3: Advanced Media Support                                      *bsky-A-p3*
       - [x] app.bsky.video.uploadVideo integration
       - [x] Video playback (video_player/chewie integration complete)
       - [x] VideoPlayerWidget with mute/unmute and tap-to-expand
-- [ ] GIF support
-      - [ ] Tenor/Giphy API integration
-      - [ ] GIF picker and playback
+- [x] GIF support
+      - [x] Tenor API integration
+      - [x] GIF picker and playback
+      - [ ] Reduced motion accessibility (MediaQuery.disableAnimationsOf)
+      - [ ] External embed conflict handling: GIF replaces link card with
+            confirmation dialog
+      - [ ] clearGifEmbed restores previously added images
 - [ ] Fullscreen media viewer
       - [ ] Zoom/pan support for images
       - [ ] Better media consumption experience

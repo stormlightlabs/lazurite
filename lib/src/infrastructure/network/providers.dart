@@ -87,6 +87,18 @@ Dio dioVideoService(Ref ref) {
   );
 }
 
+/// Provides Tenor API Dio client for GIF search.
+///
+/// This client is used for GIF search and selection from Tenor.
+@Riverpod(keepAlive: true)
+Dio dioTenor(Ref ref) {
+  return createTenorDio(
+    interceptors: [
+      if (kDebugMode) DebugNetworkInterceptor(ref.watch(appDatabaseProvider).devToolsDao),
+    ],
+  );
+}
+
 /// Provides XRPC client for making API requests.
 ///
 /// This client automatically routes requests to correct host
@@ -97,6 +109,7 @@ XrpcClient xrpcClient(Ref ref) {
     publicDio: ref.watch(dioPublicProvider),
     pdsDio: ref.watch(dioPdsProvider),
     videoServiceDio: ref.watch(dioVideoServiceProvider),
+    tenorDio: ref.watch(dioTenorProvider),
     logger: ref.watch(loggerProvider('XrpcClient')),
   );
 }

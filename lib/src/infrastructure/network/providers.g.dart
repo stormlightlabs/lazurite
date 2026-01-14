@@ -150,6 +150,52 @@ final class DioVideoServiceProvider extends $FunctionalProvider<Dio, Dio, Dio>
 
 String _$dioVideoServiceHash() => r'35fad9f27769840636716b14bdb28c3b43634b52';
 
+/// Provides Tenor API Dio client for GIF search.
+///
+/// This client is used for GIF search and selection from Tenor.
+
+@ProviderFor(dioTenor)
+final dioTenorProvider = DioTenorProvider._();
+
+/// Provides Tenor API Dio client for GIF search.
+///
+/// This client is used for GIF search and selection from Tenor.
+
+final class DioTenorProvider extends $FunctionalProvider<Dio, Dio, Dio> with $Provider<Dio> {
+  /// Provides Tenor API Dio client for GIF search.
+  ///
+  /// This client is used for GIF search and selection from Tenor.
+  DioTenorProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'dioTenorProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$dioTenorHash();
+
+  @$internal
+  @override
+  $ProviderElement<Dio> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
+
+  @override
+  Dio create(Ref ref) {
+    return dioTenor(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Dio value) {
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<Dio>(value));
+  }
+}
+
+String _$dioTenorHash() => r'a2e99a8a8c47829fb3aefdc8d7cdc098ead2c517';
+
 /// Provides XRPC client for making API requests.
 ///
 /// This client automatically routes requests to correct host
@@ -202,4 +248,4 @@ final class XrpcClientProvider extends $FunctionalProvider<XrpcClient, XrpcClien
   }
 }
 
-String _$xrpcClientHash() => r'f41b33a8efa7ae6e52ac0f5518c64c9cffc50a71';
+String _$xrpcClientHash() => r'79a74523bf3f31a57602964b3989d6690bdd4903';

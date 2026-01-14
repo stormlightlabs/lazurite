@@ -5,6 +5,7 @@
 /// - Authenticated operations go through user's PDS
 /// - Chat operations are proxied through PDS to chat service
 /// - Video uploads go to dedicated video service with service auth
+/// - Tenor API for GIF search and selection
 enum HostKind {
   /// Public API endpoint for unauthenticated reads.
   ///
@@ -20,6 +21,11 @@ enum HostKind {
   ///
   /// Base URL: `https://video.bsky.app`
   video,
+
+  /// Tenor API endpoint for GIF search and selection.
+  ///
+  /// Base URL: `https://tenor.googleapis.com/v2`
+  tenor,
 }
 
 /// Extension to get host-related properties.
@@ -33,6 +39,7 @@ extension HostKindExtension on HostKind {
       HostKind.publicApi => 'https://public.api.bsky.app',
       HostKind.pds => null,
       HostKind.video => 'https://video.bsky.app',
+      HostKind.tenor => 'https://tenor.googleapis.com/v2',
     };
   }
 
@@ -42,6 +49,7 @@ extension HostKindExtension on HostKind {
       HostKind.publicApi => false,
       HostKind.pds => true,
       HostKind.video => true,
+      HostKind.tenor => false,
     };
   }
 }

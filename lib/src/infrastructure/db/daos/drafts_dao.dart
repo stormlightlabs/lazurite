@@ -48,6 +48,12 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
     return (delete(draftMedia)..where((tbl) => tbl.id.equals(mediaId))).go();
   }
 
+  Future<void> deleteMediaByDraftId(String draftId, String ownerDid) {
+    return (delete(
+      draftMedia,
+    )..where((tbl) => tbl.draftId.equals(draftId) & tbl.ownerDid.equals(ownerDid))).go();
+  }
+
   Future<void> updateMedia(int mediaId, DraftMediaCompanion entry) {
     return (update(draftMedia)..where((tbl) => tbl.id.equals(mediaId))).write(entry);
   }

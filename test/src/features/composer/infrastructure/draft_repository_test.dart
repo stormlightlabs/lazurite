@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -434,5 +435,70 @@ void main() {
     final mediaEmbed = embed['media'] as Map<String, dynamic>;
     expect(mediaEmbed['\$type'], 'app.bsky.embed.images');
     expect((mediaEmbed['images'] as List).length, 1);
+  });
+
+  group('setGifEmbed and clearGifEmbed', () {
+    test('setGifEmbed clears existing media and sets external embed', () async {
+      final draft = await repository.createDraft();
+
+      // Add some media
+      await repository.addMedia(
+        draft.id,
+        composer.DraftMediaInput(localPath: '/test/image.jpg', mimeType: 'image/jpeg'),
+      );
+
+      // Verify media exists
+      final updatedDraft = await repository.getDraft(draft.id);
+      expect(updatedDraft.media, hasLength(1));
+
+      // Set GIF embed
+      await repository.setGifEmbed(
+        draft.id,
+        uri: 'https://tenor.com/view/cat',
+        title: 'Funny Cat GIF',
+        description: 'A very funny cat',
+        thumbBlobJson: jsonEncode({
+          '\$type': 'blob',
+          'ref': {'\$link': 'cid-thumb'},
+          'mimeType': 'image/jpeg',
+          'size': 1024,
+        }),
+      );
+
+      // Verify media is cleared
+      final gifDraft = await repository.getDraft(draft.id);
+      expect(gifDraft.media, isEmpty);
+      expect(gifDraft.externalUri, 'https://tenor.com/view/cat');
+      expect(gifDraft.externalTitle, 'Funny Cat GIF');
+      expect(gifDraft.externalDescription, 'A very funny cat');
+      expect(gifDraft.externalThumbBlobJson, isNotNull);
+    });
+
+    test('clearGifEmbed clears external embed fields', () async {
+      final draft = await repository.createDraft();
+
+      // Set GIF embed
+      await repository.setGifEmbed(
+        draft.id,
+        uri: 'https://tenor.com/view/dog',
+        title: 'Cute Dog GIF',
+        description: 'A cute dog',
+      );
+
+      // Verify embed exists
+      final embeddedDraft = await repository.getDraft(draft.id);
+      expect(embeddedDraft.externalUri, 'https://tenor.com/view/dog');
+      expect(embeddedDraft.externalTitle, 'Cute Dog GIF');
+
+      // Clear GIF embed
+      await repository.clearGifEmbed(draft.id);
+
+      // Verify fields are cleared
+      final clearedDraft = await repository.getDraft(draft.id);
+      expect(clearedDraft.externalUri, isNull);
+      expect(clearedDraft.externalTitle, isNull);
+      expect(clearedDraft.externalDescription, isNull);
+      expect(clearedDraft.externalThumbBlobJson, isNull);
+    });
   });
 }

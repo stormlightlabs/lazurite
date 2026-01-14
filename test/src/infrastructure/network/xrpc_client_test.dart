@@ -11,6 +11,7 @@ void main() {
   late Dio publicDio;
   late Dio pdsDio;
   late Dio videoServiceDio;
+  late Dio tenorDio;
   late DioAdapter publicAdapter;
   late DioAdapter pdsAdapter;
   late XrpcClient client;
@@ -19,6 +20,7 @@ void main() {
     publicDio = Dio(BaseOptions(baseUrl: 'https://public.api.bsky.app'));
     pdsDio = Dio(BaseOptions(baseUrl: 'https://user.pds.example'));
     videoServiceDio = Dio(BaseOptions(baseUrl: 'https://video.bsky.app'));
+    tenorDio = Dio(BaseOptions(baseUrl: 'https://tenor.googleapis.com/v2'));
     publicAdapter = DioAdapter(dio: publicDio);
     pdsAdapter = DioAdapter(dio: pdsDio);
     DioAdapter(dio: videoServiceDio);
@@ -26,6 +28,7 @@ void main() {
       publicDio: publicDio,
       pdsDio: pdsDio,
       videoServiceDio: videoServiceDio,
+      tenorDio: tenorDio,
       logger: MockLogger(),
     );
   });
@@ -38,6 +41,7 @@ void main() {
         publicDio: publicDio,
         pdsDio: null,
         videoServiceDio: videoServiceDio,
+        tenorDio: tenorDio,
         logger: MockLogger(),
       );
     });
@@ -125,6 +129,7 @@ void main() {
         publicDio: publicDio,
         pdsDio: null,
         videoServiceDio: videoServiceDio,
+        tenorDio: tenorDio,
         logger: MockLogger(),
       );
 
@@ -226,6 +231,7 @@ void main() {
         publicDio: mockDio,
         pdsDio: mockDio,
         videoServiceDio: videoServiceDio,
+        tenorDio: tenorDio,
         logger: MockLogger(),
       );
 

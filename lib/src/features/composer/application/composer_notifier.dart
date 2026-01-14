@@ -289,4 +289,43 @@ class ComposerNotifier extends _$ComposerNotifier {
       state = AsyncValue.data(currentState.copyWith(draft: updated));
     }
   }
+
+  /// Set GIF as external embed for the draft.
+  ///
+  /// This removes any existing media attachments and replaces them with the GIF embed.
+  Future<void> setGifEmbed({
+    required String uri,
+    required String title,
+    String? description,
+    String? thumbBlobJson,
+  }) async {
+    final currentState = state.asData?.value;
+    final currentDraft = currentState?.draft;
+    if (currentDraft == null) return;
+
+    await _repository.setGifEmbed(
+      currentDraft.id,
+      uri: uri,
+      title: title,
+      description: description,
+      thumbBlobJson: thumbBlobJson,
+    );
+    final updated = await _repository.getDraft(currentDraft.id);
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(draft: updated));
+    }
+  }
+
+  /// Clear the GIF embed from the draft.
+  Future<void> clearGifEmbed() async {
+    final currentState = state.asData?.value;
+    final currentDraft = currentState?.draft;
+    if (currentDraft == null) return;
+
+    await _repository.clearGifEmbed(currentDraft.id);
+    final updated = await _repository.getDraft(currentDraft.id);
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(draft: updated));
+    }
+  }
 }
