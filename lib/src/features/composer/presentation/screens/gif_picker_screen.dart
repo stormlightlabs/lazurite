@@ -346,6 +346,7 @@ class GifGridItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final disableAnimations = MediaQuery.of(context).disableAnimations;
 
     return GestureDetector(
       onTap: onTap,
@@ -354,29 +355,50 @@ class GifGridItem extends StatelessWidget {
         child: Container(
           color: colorScheme.surfaceContainerHighest,
           child: gif.thumbnailUrl != null
-              ? Image.network(
-                  gif.thumbnailUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: colorScheme.surfaceContainerHighest,
-                      child: Icon(Icons.broken_image, color: colorScheme.error),
-                    );
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: colorScheme.surfaceContainerHighest,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                              : null,
+              ? Stack(
+                  children: [
+                    Image.network(
+                      gif.thumbnailUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: colorScheme.surfaceContainerHighest,
+                          child: Icon(Icons.broken_image, color: colorScheme.error),
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: colorScheme.surfaceContainerHighest,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    if (disableAnimations)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Colors.transparent, Colors.black.withValues(alpha: 0.3)],
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.play_circle_filled,
+                            color: Colors.white.withValues(alpha: 0.7),
+                            size: 48,
+                          ),
                         ),
                       ),
-                    );
-                  },
+                  ],
                 )
               : Container(
                   color: colorScheme.surfaceContainerHighest,

@@ -1,3 +1,5 @@
+import 'dart:io' as io;
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,6 +9,7 @@ import 'package:lazurite/src/core/utils/image_compressor.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/composer/domain/facet_parser.dart';
+import 'package:lazurite/src/features/composer/infrastructure/tenor_service.dart';
 import 'package:lazurite/src/features/dms/infrastructure/dms_repository.dart';
 import 'package:lazurite/src/features/dms/infrastructure/outbox_repository.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
@@ -22,9 +25,10 @@ import 'package:lazurite/src/infrastructure/auth/oauth_client.dart';
 import 'package:lazurite/src/infrastructure/auth/server_metadata.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
-import 'package:lazurite/src/infrastructure/db/daos/notifications_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/dev_tools_dao.dart';
+import 'package:lazurite/src/infrastructure/db/daos/notifications_dao.dart';
 import 'package:lazurite/src/infrastructure/identity/identity_repository.dart';
+import 'package:lazurite/src/infrastructure/network/network.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 import 'package:lazurite/src/infrastructure/preferences/bluesky_preferences_repository.dart';
 import 'package:mocktail/mocktail.dart';
@@ -105,3 +109,24 @@ class FakeSession extends Fake implements Session {}
 
 /// Fake ServerMetadata for testing
 class FakeServerMetadata extends Fake implements ServerMetadata {}
+
+class MockTenorService extends Mock implements TenorService {}
+
+class FakeFile extends Fake implements io.File {
+  FakeFile({required this.path});
+
+  @override
+  final String path;
+
+  @override
+  bool existsSync() => true;
+
+  @override
+  Future<io.File> writeAsBytes(
+    List<int> bytes, {
+    bool flush = true,
+    io.FileMode mode = io.FileMode.write,
+  }) async {
+    return this;
+  }
+}

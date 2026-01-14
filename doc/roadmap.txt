@@ -140,10 +140,10 @@ Phase 3: Advanced Media Support                                      *bsky-A-p3*
 - [x] GIF support
       - [x] Tenor API integration
       - [x] GIF picker and playback
-      - [ ] Reduced motion accessibility (MediaQuery.disableAnimationsOf)
-      - [ ] External embed conflict handling: GIF replaces link card with
+      - [x] Reduced motion accessibility (MediaQuery.disableAnimationsOf)
+      - [x] External embed conflict handling: GIF replaces link card with
             confirmation dialog
-      - [ ] clearGifEmbed restores previously added images
+      - [x] clearGifEmbed restores previously added images
 - [ ] Fullscreen media viewer
       - [ ] Zoom/pan support for images
       - [ ] Better media consumption experience

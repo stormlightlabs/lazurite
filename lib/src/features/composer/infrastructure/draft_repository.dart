@@ -428,6 +428,7 @@ class DraftRepository {
   ///
   /// This removes all existing media attachments and replaces them with a GIF external embed.
   /// The [thumbBlobJson] is an optional JSON-encoded blob reference for the thumbnail.
+  /// Media attachments are cached so they can be restored if the GIF embed is cleared.
   Future<void> setGifEmbed(
     String draftId, {
     required String uri,
@@ -437,6 +438,27 @@ class DraftRepository {
   }) async {
     final session = await _sessionStorage.getSession();
     final ownerDid = session!.did;
+
+    final draft = await _dao.getDraft(draftId, ownerDid);
+    if (draft != null && draft.media.isNotEmpty) {
+      final cachedMediaJson = jsonEncode(
+        draft.media.map((media) {
+          return {
+            'localPath': media.localPath,
+            'mimeType': media.mimeType,
+            'altText': media.altText,
+            'durationSeconds': media.durationSeconds,
+            'aspectRatio': media.aspectRatio,
+          };
+        }).toList(),
+      );
+
+      await _dao.updateDraftFields(
+        draftId,
+        ownerDid,
+        DraftsCompanion(cachedMediaJson: Value(cachedMediaJson)),
+      );
+    }
 
     await _dao.deleteMediaByDraftId(draftId, ownerDid);
     await _dao.updateDraftFields(
@@ -452,10 +474,30 @@ class DraftRepository {
     );
   }
 
-  /// Clears GIF embed from the draft.
+  /// Clears GIF embed from the draft and restores previously cached media.
   Future<void> clearGifEmbed(String draftId) async {
     final session = await _sessionStorage.getSession();
     final ownerDid = session!.did;
+
+    final draft = await _dao.getDraft(draftId, ownerDid);
+    if (draft?.draft.cachedMediaJson != null) {
+      try {
+        final cachedMediaList = jsonDecode(draft!.draft.cachedMediaJson!) as List;
+        final mediaInputs = cachedMediaList.map((item) {
+          return composer.DraftMediaInput(
+            localPath: item['localPath'] as String,
+            mimeType: item['mimeType'] as String,
+            altText: item['altText'] as String?,
+          );
+        }).toList();
+
+        for (final mediaInput in mediaInputs) {
+          await addMedia(draftId, mediaInput);
+        }
+      } catch (e) {
+        _logger.warning('Failed to restore cached media for draft $draftId: $e');
+      }
+    }
 
     await _dao.updateDraftFields(
       draftId,
@@ -465,6 +507,7 @@ class DraftRepository {
         externalTitle: const Value(null),
         externalDescription: const Value(null),
         externalThumbBlobJson: const Value(null),
+        cachedMediaJson: const Value(null),
         updatedAt: Value(DateTime.now()),
       ),
     );

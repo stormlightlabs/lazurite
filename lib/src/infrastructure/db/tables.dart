@@ -335,6 +335,7 @@ class Drafts extends Table {
   TextColumn get externalTitle => text().nullable()();
   TextColumn get externalDescription => text().nullable()();
   TextColumn get externalThumbBlobJson => text().nullable()();
+  TextColumn get cachedMediaJson => text().nullable()();
   TextColumn get status => text()();
   TextColumn get errorMessage => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();

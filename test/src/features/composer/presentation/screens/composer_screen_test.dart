@@ -9,6 +9,7 @@ import 'package:lazurite/src/features/composer/application/composer_providers.da
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/composer/presentation/screens/composer_screen.dart';
+import 'package:lazurite/src/features/composer/presentation/screens/gif_picker_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/character_count_meter.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/publish_button.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/quote_post_card.dart';
@@ -16,6 +17,8 @@ import 'package:lazurite/src/features/composer/presentation/widgets/reply_contex
 import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
+class MockNavigatorObserver extends Mock implements NavigatorObserver {}
 
 class MockDraftRepository extends Mock implements DraftRepository {}
 
@@ -38,6 +41,7 @@ void main() {
     String text = '',
     DraftStatus status = DraftStatus.draft,
     List<DraftMediaAttachment> media = const [],
+    String? externalUri,
   }) => Draft(
     id: id,
     text: text,
@@ -45,6 +49,7 @@ void main() {
     createdAt: DateTime.now(),
     updatedAt: DateTime.now(),
     media: media,
+    externalUri: externalUri,
   );
 
   Widget buildTestWidget({
@@ -580,6 +585,180 @@ void main() {
       expect(find.byType(QuotePostCard), findsOneWidget);
       expect(find.text('Quoted post text'), findsOneWidget);
     });
+
+    testWidgets('disables image/video picker when external embed exists', (tester) async {
+      final draftWithEmbed = createMockDraft(externalUri: 'https://example.com/gif');
+      final mockNotifier = MockComposerNotifierWrapper(draftWithEmbed);
+
+      when(() => mockRepository.getDraft(any())).thenAnswer((_) async => draftWithEmbed);
+
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
+
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
+      await tester.pumpAndSettle();
+
+      final cameraOption = find.ancestor(
+        of: find.text('Take photo'),
+        matching: find.byType(ListTile),
+      );
+      final galleryOption = find.ancestor(
+        of: find.text('Choose from gallery'),
+        matching: find.byType(ListTile),
+      );
+      final videoOption = find.ancestor(
+        of: find.text('Record video'),
+        matching: find.byType(ListTile),
+      );
+      final videoGalleryOption = find.ancestor(
+        of: find.text('Choose video from gallery'),
+        matching: find.byType(ListTile),
+      );
+      final gifOption = find.ancestor(
+        of: find.text('Search GIFs'),
+        matching: find.byType(ListTile),
+      );
+
+      final cameraTile = tester.widget<ListTile>(cameraOption);
+      final galleryTile = tester.widget<ListTile>(galleryOption);
+      final videoTile = tester.widget<ListTile>(videoOption);
+      final videoGalleryTile = tester.widget<ListTile>(videoGalleryOption);
+      final gifTile = tester.widget<ListTile>(gifOption);
+
+      expect(cameraTile.onTap, isNull);
+      expect(cameraTile.enabled, isFalse);
+
+      expect(galleryTile.onTap, isNull);
+      expect(galleryTile.enabled, isFalse);
+
+      expect(videoTile.onTap, isNull);
+      expect(videoTile.enabled, isFalse);
+
+      expect(videoGalleryTile.onTap, isNull);
+      expect(videoGalleryTile.enabled, isFalse);
+
+      expect(gifTile.onTap, isNotNull);
+      expect(gifTile.enabled, isTrue);
+    });
+
+    testWidgets('shows confirmation dialog when adding GIF with existing external embed', (
+      tester,
+    ) async {
+      final draftWithEmbed = createMockDraft(externalUri: 'https://example.com/gif');
+      final mockNotifier = MockComposerNotifierWrapper(draftWithEmbed);
+
+      when(() => mockRepository.getDraft(any())).thenAnswer((_) async => draftWithEmbed);
+
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
+
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Search GIFs'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Replace link card with GIF?'), findsOneWidget);
+      expect(
+        find.text('This will replace the link card with a GIF. The link card will be removed.'),
+        findsOneWidget,
+      );
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Replace'), findsOneWidget);
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    testWidgets('navigates to GifPickerScreen when GIF option is selected', (tester) async {
+      final mockNotifier = MockComposerNotifierWrapper(createMockDraft());
+
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
+
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Search GIFs'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(GifPickerScreen), findsOneWidget);
+    });
+
+    testWidgets('calls setGifEmbed when GIF selection result is returned', (tester) async {
+      final mockNotifier = MockComposerNotifierWrapper(createMockDraft());
+
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
+
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Search GIFs'));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(GifPickerScreen));
+      const gifResult = GifSelectionResult(
+        uri: 'https://media.tenor.com/test.gif',
+        title: 'Test GIF',
+        description: 'A test GIF',
+        thumbBlobJson: r'{"ref":{"$link":"test.blob"}}',
+      );
+
+      Navigator.of(context).pop(gifResult);
+      await tester.pumpAndSettle();
+
+      verify(
+        () => mockNotifier.mockSetGifEmbedObj(
+          'https://media.tenor.com/test.gif',
+          'Test GIF',
+          'A test GIF',
+          r'{"ref":{"$link":"test.blob"}}',
+        ),
+      ).called(1);
+    });
+
+    testWidgets('does not call setGifEmbed when GIF selection is cancelled', (tester) async {
+      final mockNotifier = MockComposerNotifierWrapper(createMockDraft());
+
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
+
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Search GIFs'));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(GifPickerScreen));
+      Navigator.of(context).pop<GifSelectionResult>(null);
+      await tester.pumpAndSettle();
+
+      verifyNever(() => mockNotifier.mockSetGifEmbedObj(any(), any(), any(), any()));
+    });
+
+    testWidgets('cancels GIF selection when confirmation dialog is rejected', (tester) async {
+      final draftWithEmbed = createMockDraft(externalUri: 'https://example.com/gif');
+      final mockNotifier = MockComposerNotifierWrapper(draftWithEmbed);
+
+      when(() => mockRepository.getDraft(any())).thenAnswer((_) async => draftWithEmbed);
+
+      await tester.pumpWidget(buildTestWidget(notifier: mockNotifier));
+      await navigateToCompose(tester);
+
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_outlined));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Search GIFs'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Replace link card with GIF?'), findsOneWidget);
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(GifPickerScreen), findsNothing);
+      verifyNever(() => mockNotifier.mockSetGifEmbedObj(any(), any(), any(), any()));
+    });
   });
 }
 
@@ -632,6 +811,18 @@ class _MockComposerNotifier extends ComposerNotifier {
 
   @override
   Future<void> removeMedia(int mediaId) async {}
+
+  @override
+  Future<void> setGifEmbed({
+    required String uri,
+    required String title,
+    String? description,
+    String? thumbBlobJson,
+  }) async {
+    mockSetGifEmbed(uri, title, description, thumbBlobJson);
+  }
+
+  void mockSetGifEmbed(String uri, String title, String? description, String? thumbBlobJson) {}
 }
 
 class MockComposerNotifierWrapper extends _MockComposerNotifier {
@@ -640,6 +831,7 @@ class MockComposerNotifierWrapper extends _MockComposerNotifier {
   final _mockForceSave = MockForceSave();
   final _mockAddMedia = MockAddMedia();
   final _mockDeleteDraft = MockDeleteDraft();
+  final _mockSetGifEmbed = MockSetGifEmbed();
 
   @override
   void mockForceSave(String text) => _mockForceSave(text);
@@ -650,9 +842,14 @@ class MockComposerNotifierWrapper extends _MockComposerNotifier {
   @override
   void mockDeleteDraft() => _mockDeleteDraft();
 
+  @override
+  void mockSetGifEmbed(String uri, String title, String? description, String? thumbBlobJson) =>
+      _mockSetGifEmbed(uri, title, description, thumbBlobJson);
+
   MockForceSave get mockForceSaveObj => _mockForceSave;
   MockAddMedia get mockAddMediaObj => _mockAddMedia;
   MockDeleteDraft get mockDeleteDraftObj => _mockDeleteDraft;
+  MockSetGifEmbed get mockSetGifEmbedObj => _mockSetGifEmbed;
 }
 
 class MockAddMedia extends Mock implements AddMediaHandler {}
@@ -672,6 +869,12 @@ abstract class DeleteDraftHandler {
 }
 
 class MockDeleteDraft extends Mock implements DeleteDraftHandler {}
+
+abstract class SetGifEmbedHandler {
+  void call(String uri, String title, String? description, String? thumbBlobJson);
+}
+
+class MockSetGifEmbed extends Mock implements SetGifEmbedHandler {}
 
 class MockImagePickerPlatform extends Mock
     with MockPlatformInterfaceMixin

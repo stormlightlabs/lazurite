@@ -441,17 +441,14 @@ void main() {
     test('setGifEmbed clears existing media and sets external embed', () async {
       final draft = await repository.createDraft();
 
-      // Add some media
       await repository.addMedia(
         draft.id,
         composer.DraftMediaInput(localPath: '/test/image.jpg', mimeType: 'image/jpeg'),
       );
 
-      // Verify media exists
       final updatedDraft = await repository.getDraft(draft.id);
       expect(updatedDraft.media, hasLength(1));
 
-      // Set GIF embed
       await repository.setGifEmbed(
         draft.id,
         uri: 'https://tenor.com/view/cat',
@@ -465,7 +462,6 @@ void main() {
         }),
       );
 
-      // Verify media is cleared
       final gifDraft = await repository.getDraft(draft.id);
       expect(gifDraft.media, isEmpty);
       expect(gifDraft.externalUri, 'https://tenor.com/view/cat');
@@ -477,7 +473,6 @@ void main() {
     test('clearGifEmbed clears external embed fields', () async {
       final draft = await repository.createDraft();
 
-      // Set GIF embed
       await repository.setGifEmbed(
         draft.id,
         uri: 'https://tenor.com/view/dog',
@@ -485,20 +480,123 @@ void main() {
         description: 'A cute dog',
       );
 
-      // Verify embed exists
       final embeddedDraft = await repository.getDraft(draft.id);
       expect(embeddedDraft.externalUri, 'https://tenor.com/view/dog');
       expect(embeddedDraft.externalTitle, 'Cute Dog GIF');
 
-      // Clear GIF embed
       await repository.clearGifEmbed(draft.id);
 
-      // Verify fields are cleared
       final clearedDraft = await repository.getDraft(draft.id);
       expect(clearedDraft.externalUri, isNull);
       expect(clearedDraft.externalTitle, isNull);
       expect(clearedDraft.externalDescription, isNull);
       expect(clearedDraft.externalThumbBlobJson, isNull);
+    });
+
+    test('setGifEmbed caches media before clearing when existing media present', () async {
+      final draft = await repository.createDraft();
+
+      await repository.addMedia(
+        draft.id,
+        composer.DraftMediaInput(
+          localPath: '/test/image1.jpg',
+          mimeType: 'image/jpeg',
+          altText: 'First image',
+        ),
+      );
+      await repository.addMedia(
+        draft.id,
+        composer.DraftMediaInput(localPath: '/test/image2.png', mimeType: 'image/png'),
+      );
+
+      final updatedDraft = await repository.getDraft(draft.id);
+      expect(updatedDraft.media, hasLength(2));
+
+      await repository.setGifEmbed(
+        draft.id,
+        uri: 'https://tenor.com/view/cat',
+        title: 'Funny Cat GIF',
+        description: 'A very funny cat',
+        thumbBlobJson: jsonEncode({
+          '\$type': 'blob',
+          'ref': {'\$link': 'cid-thumb'},
+          'mimeType': 'image/jpeg',
+          'size': 1024,
+        }),
+      );
+
+      final gifDraft = await repository.getDraft(draft.id);
+
+      expect(gifDraft.media, isEmpty);
+      expect(gifDraft.externalUri, 'https://tenor.com/view/cat');
+      expect(gifDraft.externalTitle, 'Funny Cat GIF');
+
+      final dbRecord = await db.draftsDao.getDraft(draft.id, testOwnerDid);
+      expect(dbRecord, isNotNull);
+      final cachedData = jsonDecode(dbRecord!.draft.cachedMediaJson!) as List;
+
+      expect(cachedData, hasLength(2));
+
+      final firstCached = cachedData[0] as Map<String, dynamic>;
+      expect(firstCached['localPath'], '/test/image1.jpg');
+      expect(firstCached['mimeType'], 'image/jpeg');
+      expect(firstCached['altText'], 'First image');
+
+      final secondCached = cachedData[1] as Map<String, dynamic>;
+      expect(secondCached['localPath'], '/test/image2.png');
+      expect(secondCached['mimeType'], 'image/png');
+    });
+
+    test('clearGifEmbed restores cached media when available', () async {
+      final draft = await repository.createDraft();
+
+      await repository.addMedia(
+        draft.id,
+        composer.DraftMediaInput(
+          localPath: (await createTempFile('restore.jpg')).path,
+          mimeType: 'image/jpeg',
+          altText: 'To be restored',
+        ),
+      );
+
+      await repository.setGifEmbed(
+        draft.id,
+        uri: 'https://tenor.com/view/temp',
+        title: 'Temp GIF',
+      );
+
+      await repository.clearGifEmbed(draft.id);
+
+      final restored = await repository.getDraft(draft.id);
+      expect(restored.media, hasLength(1));
+      expect(restored.media.first.altText, 'To be restored');
+      expect(restored.externalUri, isNull);
+      expect(restored.externalTitle, isNull);
+    });
+
+    test('clearGifEmbed handles missing cached media gracefully', () async {
+      final draft = await repository.createDraft();
+
+      await repository.setGifEmbed(
+        draft.id,
+        uri: 'https://tenor.com/view/temp',
+        title: 'Temp GIF',
+      );
+
+      final dbDraft = await db.draftsDao.getDraft(draft.id, testOwnerDid);
+      expect(dbDraft, isNotNull);
+      await db.draftsDao.updateDraftFields(
+        draft.id,
+        testOwnerDid,
+        const DraftsCompanion(cachedMediaJson: Value(null)),
+      );
+
+      await repository.clearGifEmbed(draft.id);
+
+      final cleared = await repository.getDraft(draft.id);
+      expect(cleared.externalUri, isNull);
+      expect(cleared.externalTitle, isNull);
+      expect(cleared.media, isEmpty);
     });
   });
 }

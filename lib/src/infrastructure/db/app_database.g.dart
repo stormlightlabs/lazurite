@@ -4879,6 +4879,15 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _cachedMediaJsonMeta = const VerificationMeta('cachedMediaJson');
+  @override
+  late final GeneratedColumn<String> cachedMediaJson = GeneratedColumn<String>(
+    'cached_media_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -4931,6 +4940,7 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
     externalTitle,
     externalDescription,
     externalThumbBlobJson,
+    cachedMediaJson,
     status,
     errorMessage,
     createdAt,
@@ -5033,6 +5043,12 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
         ),
       );
     }
+    if (data.containsKey('cached_media_json')) {
+      context.handle(
+        _cachedMediaJsonMeta,
+        cachedMediaJson.isAcceptableOrUnknown(data['cached_media_json']!, _cachedMediaJsonMeta),
+      );
+    }
     if (data.containsKey('status')) {
       context.handle(_statusMeta, status.isAcceptableOrUnknown(data['status']!, _statusMeta));
     } else if (isInserting) {
@@ -5122,6 +5138,10 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
         DriftSqlType.string,
         data['${effectivePrefix}external_thumb_blob_json'],
       ),
+      cachedMediaJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cached_media_json'],
+      ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -5162,6 +5182,7 @@ class Draft extends DataClass implements Insertable<Draft> {
   final String? externalTitle;
   final String? externalDescription;
   final String? externalThumbBlobJson;
+  final String? cachedMediaJson;
   final String status;
   final String? errorMessage;
   final DateTime createdAt;
@@ -5181,6 +5202,7 @@ class Draft extends DataClass implements Insertable<Draft> {
     this.externalTitle,
     this.externalDescription,
     this.externalThumbBlobJson,
+    this.cachedMediaJson,
     required this.status,
     this.errorMessage,
     required this.createdAt,
@@ -5225,6 +5247,9 @@ class Draft extends DataClass implements Insertable<Draft> {
     if (!nullToAbsent || externalThumbBlobJson != null) {
       map['external_thumb_blob_json'] = Variable<String>(externalThumbBlobJson);
     }
+    if (!nullToAbsent || cachedMediaJson != null) {
+      map['cached_media_json'] = Variable<String>(cachedMediaJson);
+    }
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || errorMessage != null) {
       map['error_message'] = Variable<String>(errorMessage);
@@ -5264,6 +5289,9 @@ class Draft extends DataClass implements Insertable<Draft> {
       externalThumbBlobJson: externalThumbBlobJson == null && nullToAbsent
           ? const Value.absent()
           : Value(externalThumbBlobJson),
+      cachedMediaJson: cachedMediaJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cachedMediaJson),
       status: Value(status),
       errorMessage: errorMessage == null && nullToAbsent
           ? const Value.absent()
@@ -5290,6 +5318,7 @@ class Draft extends DataClass implements Insertable<Draft> {
       externalTitle: serializer.fromJson<String?>(json['externalTitle']),
       externalDescription: serializer.fromJson<String?>(json['externalDescription']),
       externalThumbBlobJson: serializer.fromJson<String?>(json['externalThumbBlobJson']),
+      cachedMediaJson: serializer.fromJson<String?>(json['cachedMediaJson']),
       status: serializer.fromJson<String>(json['status']),
       errorMessage: serializer.fromJson<String?>(json['errorMessage']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -5314,6 +5343,7 @@ class Draft extends DataClass implements Insertable<Draft> {
       'externalTitle': serializer.toJson<String?>(externalTitle),
       'externalDescription': serializer.toJson<String?>(externalDescription),
       'externalThumbBlobJson': serializer.toJson<String?>(externalThumbBlobJson),
+      'cachedMediaJson': serializer.toJson<String?>(cachedMediaJson),
       'status': serializer.toJson<String>(status),
       'errorMessage': serializer.toJson<String?>(errorMessage),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -5336,6 +5366,7 @@ class Draft extends DataClass implements Insertable<Draft> {
     Value<String?> externalTitle = const Value.absent(),
     Value<String?> externalDescription = const Value.absent(),
     Value<String?> externalThumbBlobJson = const Value.absent(),
+    Value<String?> cachedMediaJson = const Value.absent(),
     String? status,
     Value<String?> errorMessage = const Value.absent(),
     DateTime? createdAt,
@@ -5359,6 +5390,7 @@ class Draft extends DataClass implements Insertable<Draft> {
     externalThumbBlobJson: externalThumbBlobJson.present
         ? externalThumbBlobJson.value
         : this.externalThumbBlobJson,
+    cachedMediaJson: cachedMediaJson.present ? cachedMediaJson.value : this.cachedMediaJson,
     status: status ?? this.status,
     errorMessage: errorMessage.present ? errorMessage.value : this.errorMessage,
     createdAt: createdAt ?? this.createdAt,
@@ -5388,6 +5420,9 @@ class Draft extends DataClass implements Insertable<Draft> {
       externalThumbBlobJson: data.externalThumbBlobJson.present
           ? data.externalThumbBlobJson.value
           : this.externalThumbBlobJson,
+      cachedMediaJson: data.cachedMediaJson.present
+          ? data.cachedMediaJson.value
+          : this.cachedMediaJson,
       status: data.status.present ? data.status.value : this.status,
       errorMessage: data.errorMessage.present ? data.errorMessage.value : this.errorMessage,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -5412,6 +5447,7 @@ class Draft extends DataClass implements Insertable<Draft> {
           ..write('externalTitle: $externalTitle, ')
           ..write('externalDescription: $externalDescription, ')
           ..write('externalThumbBlobJson: $externalThumbBlobJson, ')
+          ..write('cachedMediaJson: $cachedMediaJson, ')
           ..write('status: $status, ')
           ..write('errorMessage: $errorMessage, ')
           ..write('createdAt: $createdAt, ')
@@ -5436,6 +5472,7 @@ class Draft extends DataClass implements Insertable<Draft> {
     externalTitle,
     externalDescription,
     externalThumbBlobJson,
+    cachedMediaJson,
     status,
     errorMessage,
     createdAt,
@@ -5459,6 +5496,7 @@ class Draft extends DataClass implements Insertable<Draft> {
           other.externalTitle == this.externalTitle &&
           other.externalDescription == this.externalDescription &&
           other.externalThumbBlobJson == this.externalThumbBlobJson &&
+          other.cachedMediaJson == this.cachedMediaJson &&
           other.status == this.status &&
           other.errorMessage == this.errorMessage &&
           other.createdAt == this.createdAt &&
@@ -5480,6 +5518,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
   final Value<String?> externalTitle;
   final Value<String?> externalDescription;
   final Value<String?> externalThumbBlobJson;
+  final Value<String?> cachedMediaJson;
   final Value<String> status;
   final Value<String?> errorMessage;
   final Value<DateTime> createdAt;
@@ -5500,6 +5539,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     this.externalTitle = const Value.absent(),
     this.externalDescription = const Value.absent(),
     this.externalThumbBlobJson = const Value.absent(),
+    this.cachedMediaJson = const Value.absent(),
     this.status = const Value.absent(),
     this.errorMessage = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -5521,6 +5561,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     this.externalTitle = const Value.absent(),
     this.externalDescription = const Value.absent(),
     this.externalThumbBlobJson = const Value.absent(),
+    this.cachedMediaJson = const Value.absent(),
     required String status,
     this.errorMessage = const Value.absent(),
     required DateTime createdAt,
@@ -5546,6 +5587,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     Expression<String>? externalTitle,
     Expression<String>? externalDescription,
     Expression<String>? externalThumbBlobJson,
+    Expression<String>? cachedMediaJson,
     Expression<String>? status,
     Expression<String>? errorMessage,
     Expression<DateTime>? createdAt,
@@ -5567,6 +5609,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
       if (externalTitle != null) 'external_title': externalTitle,
       if (externalDescription != null) 'external_description': externalDescription,
       if (externalThumbBlobJson != null) 'external_thumb_blob_json': externalThumbBlobJson,
+      if (cachedMediaJson != null) 'cached_media_json': cachedMediaJson,
       if (status != null) 'status': status,
       if (errorMessage != null) 'error_message': errorMessage,
       if (createdAt != null) 'created_at': createdAt,
@@ -5590,6 +5633,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     Value<String?>? externalTitle,
     Value<String?>? externalDescription,
     Value<String?>? externalThumbBlobJson,
+    Value<String?>? cachedMediaJson,
     Value<String>? status,
     Value<String?>? errorMessage,
     Value<DateTime>? createdAt,
@@ -5611,6 +5655,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
       externalTitle: externalTitle ?? this.externalTitle,
       externalDescription: externalDescription ?? this.externalDescription,
       externalThumbBlobJson: externalThumbBlobJson ?? this.externalThumbBlobJson,
+      cachedMediaJson: cachedMediaJson ?? this.cachedMediaJson,
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
       createdAt: createdAt ?? this.createdAt,
@@ -5664,6 +5709,9 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     if (externalThumbBlobJson.present) {
       map['external_thumb_blob_json'] = Variable<String>(externalThumbBlobJson.value);
     }
+    if (cachedMediaJson.present) {
+      map['cached_media_json'] = Variable<String>(cachedMediaJson.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -5699,6 +5747,7 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
           ..write('externalTitle: $externalTitle, ')
           ..write('externalDescription: $externalDescription, ')
           ..write('externalThumbBlobJson: $externalThumbBlobJson, ')
+          ..write('cachedMediaJson: $cachedMediaJson, ')
           ..write('status: $status, ')
           ..write('errorMessage: $errorMessage, ')
           ..write('createdAt: $createdAt, ')
@@ -16703,6 +16752,7 @@ typedef $$DraftsTableCreateCompanionBuilder =
       Value<String?> externalTitle,
       Value<String?> externalDescription,
       Value<String?> externalThumbBlobJson,
+      Value<String?> cachedMediaJson,
       required String status,
       Value<String?> errorMessage,
       required DateTime createdAt,
@@ -16725,6 +16775,7 @@ typedef $$DraftsTableUpdateCompanionBuilder =
       Value<String?> externalTitle,
       Value<String?> externalDescription,
       Value<String?> externalThumbBlobJson,
+      Value<String?> cachedMediaJson,
       Value<String> status,
       Value<String?> errorMessage,
       Value<DateTime> createdAt,
@@ -16787,6 +16838,11 @@ class $$DraftsTableFilterComposer extends Composer<_$AppDatabase, $DraftsTable> 
 
   ColumnFilters<String> get externalThumbBlobJson => $composableBuilder(
     column: $table.externalThumbBlobJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cachedMediaJson => $composableBuilder(
+    column: $table.cachedMediaJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16867,6 +16923,11 @@ class $$DraftsTableOrderingComposer extends Composer<_$AppDatabase, $DraftsTable
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get cachedMediaJson => $composableBuilder(
+    column: $table.cachedMediaJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => ColumnOrderings(column));
 
@@ -16932,6 +16993,9 @@ class $$DraftsTableAnnotationComposer extends Composer<_$AppDatabase, $DraftsTab
   GeneratedColumn<String> get externalThumbBlobJson =>
       $composableBuilder(column: $table.externalThumbBlobJson, builder: (column) => column);
 
+  GeneratedColumn<String> get cachedMediaJson =>
+      $composableBuilder(column: $table.cachedMediaJson, builder: (column) => column);
+
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
@@ -16985,6 +17049,7 @@ class $$DraftsTableTableManager
                 Value<String?> externalTitle = const Value.absent(),
                 Value<String?> externalDescription = const Value.absent(),
                 Value<String?> externalThumbBlobJson = const Value.absent(),
+                Value<String?> cachedMediaJson = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> errorMessage = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -17005,6 +17070,7 @@ class $$DraftsTableTableManager
                 externalTitle: externalTitle,
                 externalDescription: externalDescription,
                 externalThumbBlobJson: externalThumbBlobJson,
+                cachedMediaJson: cachedMediaJson,
                 status: status,
                 errorMessage: errorMessage,
                 createdAt: createdAt,
@@ -17027,6 +17093,7 @@ class $$DraftsTableTableManager
                 Value<String?> externalTitle = const Value.absent(),
                 Value<String?> externalDescription = const Value.absent(),
                 Value<String?> externalThumbBlobJson = const Value.absent(),
+                Value<String?> cachedMediaJson = const Value.absent(),
                 required String status,
                 Value<String?> errorMessage = const Value.absent(),
                 required DateTime createdAt,
@@ -17047,6 +17114,7 @@ class $$DraftsTableTableManager
                 externalTitle: externalTitle,
                 externalDescription: externalDescription,
                 externalThumbBlobJson: externalThumbBlobJson,
+                cachedMediaJson: cachedMediaJson,
                 status: status,
                 errorMessage: errorMessage,
                 createdAt: createdAt,

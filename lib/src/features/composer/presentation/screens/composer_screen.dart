@@ -219,6 +219,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
   Future<void> _pickMedia() async {
     final composerState = ref.read(composerProvider(_args)).asData?.value;
     final currentCount = composerState?.draft?.media.length ?? 0;
+    final hasExternalEmbed = composerState?.draft?.externalUri != null;
 
     if (currentCount >= 4) return;
 
@@ -232,22 +233,34 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
               title: const Text('Take photo'),
-              onTap: () => Navigator.pop(context, MediaPickerOption.camera),
+              onTap: hasExternalEmbed
+                  ? null
+                  : () => Navigator.pop(context, MediaPickerOption.camera),
+              enabled: !hasExternalEmbed,
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
               title: const Text('Choose from gallery'),
-              onTap: () => Navigator.pop(context, MediaPickerOption.gallery),
+              onTap: hasExternalEmbed
+                  ? null
+                  : () => Navigator.pop(context, MediaPickerOption.gallery),
+              enabled: !hasExternalEmbed,
             ),
             ListTile(
               leading: const Icon(Icons.videocam_outlined),
               title: const Text('Record video'),
-              onTap: () => Navigator.pop(context, MediaPickerOption.video),
+              onTap: hasExternalEmbed
+                  ? null
+                  : () => Navigator.pop(context, MediaPickerOption.video),
+              enabled: !hasExternalEmbed,
             ),
             ListTile(
               leading: const Icon(Icons.video_library_outlined),
               title: const Text('Choose video from gallery'),
-              onTap: () => Navigator.pop(context, MediaPickerOption.videoGallery),
+              onTap: hasExternalEmbed
+                  ? null
+                  : () => Navigator.pop(context, MediaPickerOption.videoGallery),
+              enabled: !hasExternalEmbed,
             ),
             ListTile(
               leading: const Icon(Icons.gif_outlined),
@@ -296,6 +309,37 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
         }
         break;
       case MediaPickerOption.gif:
+        final composerState = ref.read(composerProvider(_args)).asData?.value;
+        final hasExternalEmbed = composerState?.draft?.externalUri != null;
+
+        if (hasExternalEmbed && mounted) {
+          final shouldReplace = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Replace link card with GIF?'),
+              content: const Text(
+                'This will replace the link card with a GIF. The link card will be removed.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Replace'),
+                ),
+              ],
+            ),
+          );
+          if (shouldReplace != true) break;
+        }
+
+        if (!mounted) break;
+
         final result = await Navigator.push<GifSelectionResult>(
           context,
           MaterialPageRoute(builder: (context) => const GifPickerScreen()),
