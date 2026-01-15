@@ -26,7 +26,10 @@ import 'package:lazurite/src/infrastructure/auth/server_metadata.dart';
 import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/dev_tools_dao.dart';
+import 'package:lazurite/src/infrastructure/db/daos/drafts_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/notifications_dao.dart';
+import 'package:lazurite/src/infrastructure/db/daos/schedules_dao.dart';
+import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/infrastructure/identity/identity_repository.dart';
 import 'package:lazurite/src/infrastructure/network/network.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
@@ -84,6 +87,12 @@ class MockDmsRepository extends Mock implements DmsRepository {}
 class MockOutboxRepository extends Mock implements OutboxRepository {}
 
 class MockDevToolsDao extends Mock implements DevToolsDao {}
+
+class MockDraftsDao extends Mock implements DraftsDao {}
+
+class MockSchedulesDao extends Mock implements SchedulesDao {}
+
+class MockDraftRepository extends Mock implements DraftRepository {}
 
 class MockPinnedFeedsNotifier extends Mock implements PinnedFeedsNotifier {
   @override

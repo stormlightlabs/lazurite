@@ -198,16 +198,16 @@ Tasks:
 - [x] ScheduleRepo: upsert, get, list, cancel operations
 - [x] PostPublisher service: publishDraft(draftId) with validation, session
       refresh, createRecord, status persistence
-- [ ] Scheduler interface: schedule(), cancel(), resyncAll() for platform
+- [x] Scheduler interface: schedule(), cancel(), resyncAll() for platform
       adapters
-- [ ] Idempotency: prevent duplicate posts via posted_uri/cid checks
+- [x] Idempotency: prevent duplicate posts via posted_uri/cid checks
 
 Tests:
-- [ ] publishDraft builds correct ATProto record shapes
-- [ ] Session refresh flow with token storage and retry
-- [ ] State transitions: scheduled -> posting -> posted/failed
-- [ ] Cancel prevents future publish
-- [ ] Idempotency prevents duplicate posts
+- [x] publishDraft builds correct ATProto record shapes
+- [x] Session refresh flow with token storage and retry
+- [x] State transitions: scheduled -> posting -> posted/failed
+- [x] Cancel prevents future publish
+- [x] Idempotency prevents duplicate posts
 
 Definition of Done:
 - All repository operations tested with Drift fakes
