@@ -153,10 +153,10 @@ Phase 4: Threading & Metadata                                        *bsky-A-p4*
 - [x] Thread composition (1/x posting)
       - [x] "Add another post" UI in composer
       - [x] Chain reply references (root=first, parent=previous)
-- [ ] Language tagging for posts
-      - [ ] Language detection (local library or manual selector)
-      - [ ] Send langs field in createRecord
-- [ ] Post scheduling (see *bsky-sched*)
+- [x] Language tagging for posts
+      - [x] Language detection (local library or manual selector)
+      - [x] Send langs field in createRecord
+- Post scheduling (see *bsky-sched*)
 
 Deliverables:
 - [x] Rich text display matches official app (mentions, links, hashtags)
@@ -165,15 +165,12 @@ Deliverables:
 - [x] Video upload and playback parity
 - [x] GIF support parity
 - [x] Thread composition functionality
-- [ ] Language tagging support
+- [x] Language tagging support
 - [ ] Post scheduling functionality
 
-================================================================================
+--------------------------------------------------------------------------------
 Post Scheduling (Drafts -> Scheduled -> Posted)                     *bsky-sched*
-================================================================================
-
-Note: Part of Composer Parity Phase 4 (*bsky-A-p4*)
-Status: Active - Ready for implementation
+--------------------------------------------------------------------------------
 
 Design Principles:
 - Ship quickly with testable architecture
