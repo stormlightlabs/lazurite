@@ -23,6 +23,7 @@ import 'daos/preference_sync_queue_dao.dart';
 import 'daos/profile_dao.dart';
 import 'daos/profile_relationship_dao.dart';
 import 'daos/saved_feeds_dao.dart';
+import 'daos/schedules_dao.dart';
 import 'daos/search_cache_dao.dart';
 import 'daos/search_dao.dart';
 import 'tables.dart';
@@ -60,6 +61,7 @@ part 'app_database.g.dart';
     DevNetworkLogs,
     DevPins,
     DevRecentRecords,
+    Schedules,
   ],
   daos: [
     FeedContentDao,
@@ -82,13 +84,14 @@ part 'app_database.g.dart';
     DmMessagesDao,
     DmOutboxDao,
     DevToolsDao,
+    SchedulesDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -108,6 +111,9 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(drafts, drafts.labelsJson);
         await m.addColumn(drafts, drafts.threadGateType);
         await m.addColumn(drafts, drafts.quoteDisabled);
+      }
+      if (from < 5) {
+        await m.createTable(schedules);
       }
     },
   );

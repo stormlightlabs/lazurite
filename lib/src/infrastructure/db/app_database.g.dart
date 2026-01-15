@@ -13555,6 +13555,605 @@ class DevRecentRecordsCompanion extends UpdateCompanion<DevRecentRecord> {
   }
 }
 
+class $SchedulesTable extends Schedules with TableInfo<$SchedulesTable, Schedule> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SchedulesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _draftIdMeta = const VerificationMeta('draftId');
+  @override
+  late final GeneratedColumn<String> draftId = GeneratedColumn<String>(
+    'draft_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerDidMeta = const VerificationMeta('ownerDid');
+  @override
+  late final GeneratedColumn<String> ownerDid = GeneratedColumn<String>(
+    'owner_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scheduledAtUtcMeta = const VerificationMeta('scheduledAtUtc');
+  @override
+  late final GeneratedColumn<DateTime> scheduledAtUtc = GeneratedColumn<DateTime>(
+    'scheduled_at_utc',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _attemptsMeta = const VerificationMeta('attempts');
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+    'attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta('lastError');
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _postedUriMeta = const VerificationMeta('postedUri');
+  @override
+  late final GeneratedColumn<String> postedUri = GeneratedColumn<String>(
+    'posted_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _postedCidMeta = const VerificationMeta('postedCid');
+  @override
+  late final GeneratedColumn<String> postedCid = GeneratedColumn<String>(
+    'posted_cid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    draftId,
+    ownerDid,
+    scheduledAtUtc,
+    status,
+    attempts,
+    lastError,
+    postedUri,
+    postedCid,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'schedules';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Schedule> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('draft_id')) {
+      context.handle(_draftIdMeta, draftId.isAcceptableOrUnknown(data['draft_id']!, _draftIdMeta));
+    } else if (isInserting) {
+      context.missing(_draftIdMeta);
+    }
+    if (data.containsKey('owner_did')) {
+      context.handle(
+        _ownerDidMeta,
+        ownerDid.isAcceptableOrUnknown(data['owner_did']!, _ownerDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerDidMeta);
+    }
+    if (data.containsKey('scheduled_at_utc')) {
+      context.handle(
+        _scheduledAtUtcMeta,
+        scheduledAtUtc.isAcceptableOrUnknown(data['scheduled_at_utc']!, _scheduledAtUtcMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_scheduledAtUtcMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta, status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(
+        _attemptsMeta,
+        attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta),
+      );
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    if (data.containsKey('posted_uri')) {
+      context.handle(
+        _postedUriMeta,
+        postedUri.isAcceptableOrUnknown(data['posted_uri']!, _postedUriMeta),
+      );
+    }
+    if (data.containsKey('posted_cid')) {
+      context.handle(
+        _postedCidMeta,
+        postedCid.isAcceptableOrUnknown(data['posted_cid']!, _postedCidMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {draftId, ownerDid};
+  @override
+  Schedule map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Schedule(
+      draftId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}draft_id'],
+      )!,
+      ownerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_did'],
+      )!,
+      scheduledAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}scheduled_at_utc'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      attempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempts'],
+      )!,
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+      postedUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}posted_uri'],
+      ),
+      postedCid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}posted_cid'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $SchedulesTable createAlias(String alias) {
+    return $SchedulesTable(attachedDatabase, alias);
+  }
+}
+
+class Schedule extends DataClass implements Insertable<Schedule> {
+  /// Reference to the draft to be published.
+  final String draftId;
+
+  /// The DID of the user who owns this scheduled post.
+  final String ownerDid;
+
+  /// When the post should be published (UTC).
+  final DateTime scheduledAtUtc;
+
+  /// Current state: scheduled, posting, posted, failed.
+  final String status;
+
+  /// Number of publish attempts made.
+  final int attempts;
+
+  /// Error message from the last failed attempt (if any).
+  final String? lastError;
+
+  /// AT URI of the successfully posted post (null until published).
+  final String? postedUri;
+
+  /// CID of the successfully posted post (null until published).
+  final String? postedCid;
+
+  /// When this schedule record was created.
+  final DateTime createdAt;
+
+  /// When this schedule was last modified.
+  final DateTime updatedAt;
+  const Schedule({
+    required this.draftId,
+    required this.ownerDid,
+    required this.scheduledAtUtc,
+    required this.status,
+    required this.attempts,
+    this.lastError,
+    this.postedUri,
+    this.postedCid,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['draft_id'] = Variable<String>(draftId);
+    map['owner_did'] = Variable<String>(ownerDid);
+    map['scheduled_at_utc'] = Variable<DateTime>(scheduledAtUtc);
+    map['status'] = Variable<String>(status);
+    map['attempts'] = Variable<int>(attempts);
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    if (!nullToAbsent || postedUri != null) {
+      map['posted_uri'] = Variable<String>(postedUri);
+    }
+    if (!nullToAbsent || postedCid != null) {
+      map['posted_cid'] = Variable<String>(postedCid);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  SchedulesCompanion toCompanion(bool nullToAbsent) {
+    return SchedulesCompanion(
+      draftId: Value(draftId),
+      ownerDid: Value(ownerDid),
+      scheduledAtUtc: Value(scheduledAtUtc),
+      status: Value(status),
+      attempts: Value(attempts),
+      lastError: lastError == null && nullToAbsent ? const Value.absent() : Value(lastError),
+      postedUri: postedUri == null && nullToAbsent ? const Value.absent() : Value(postedUri),
+      postedCid: postedCid == null && nullToAbsent ? const Value.absent() : Value(postedCid),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Schedule.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Schedule(
+      draftId: serializer.fromJson<String>(json['draftId']),
+      ownerDid: serializer.fromJson<String>(json['ownerDid']),
+      scheduledAtUtc: serializer.fromJson<DateTime>(json['scheduledAtUtc']),
+      status: serializer.fromJson<String>(json['status']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+      postedUri: serializer.fromJson<String?>(json['postedUri']),
+      postedCid: serializer.fromJson<String?>(json['postedCid']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'draftId': serializer.toJson<String>(draftId),
+      'ownerDid': serializer.toJson<String>(ownerDid),
+      'scheduledAtUtc': serializer.toJson<DateTime>(scheduledAtUtc),
+      'status': serializer.toJson<String>(status),
+      'attempts': serializer.toJson<int>(attempts),
+      'lastError': serializer.toJson<String?>(lastError),
+      'postedUri': serializer.toJson<String?>(postedUri),
+      'postedCid': serializer.toJson<String?>(postedCid),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  Schedule copyWith({
+    String? draftId,
+    String? ownerDid,
+    DateTime? scheduledAtUtc,
+    String? status,
+    int? attempts,
+    Value<String?> lastError = const Value.absent(),
+    Value<String?> postedUri = const Value.absent(),
+    Value<String?> postedCid = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => Schedule(
+    draftId: draftId ?? this.draftId,
+    ownerDid: ownerDid ?? this.ownerDid,
+    scheduledAtUtc: scheduledAtUtc ?? this.scheduledAtUtc,
+    status: status ?? this.status,
+    attempts: attempts ?? this.attempts,
+    lastError: lastError.present ? lastError.value : this.lastError,
+    postedUri: postedUri.present ? postedUri.value : this.postedUri,
+    postedCid: postedCid.present ? postedCid.value : this.postedCid,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  Schedule copyWithCompanion(SchedulesCompanion data) {
+    return Schedule(
+      draftId: data.draftId.present ? data.draftId.value : this.draftId,
+      ownerDid: data.ownerDid.present ? data.ownerDid.value : this.ownerDid,
+      scheduledAtUtc: data.scheduledAtUtc.present
+          ? data.scheduledAtUtc.value
+          : this.scheduledAtUtc,
+      status: data.status.present ? data.status.value : this.status,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+      postedUri: data.postedUri.present ? data.postedUri.value : this.postedUri,
+      postedCid: data.postedCid.present ? data.postedCid.value : this.postedCid,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Schedule(')
+          ..write('draftId: $draftId, ')
+          ..write('ownerDid: $ownerDid, ')
+          ..write('scheduledAtUtc: $scheduledAtUtc, ')
+          ..write('status: $status, ')
+          ..write('attempts: $attempts, ')
+          ..write('lastError: $lastError, ')
+          ..write('postedUri: $postedUri, ')
+          ..write('postedCid: $postedCid, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    draftId,
+    ownerDid,
+    scheduledAtUtc,
+    status,
+    attempts,
+    lastError,
+    postedUri,
+    postedCid,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Schedule &&
+          other.draftId == this.draftId &&
+          other.ownerDid == this.ownerDid &&
+          other.scheduledAtUtc == this.scheduledAtUtc &&
+          other.status == this.status &&
+          other.attempts == this.attempts &&
+          other.lastError == this.lastError &&
+          other.postedUri == this.postedUri &&
+          other.postedCid == this.postedCid &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class SchedulesCompanion extends UpdateCompanion<Schedule> {
+  final Value<String> draftId;
+  final Value<String> ownerDid;
+  final Value<DateTime> scheduledAtUtc;
+  final Value<String> status;
+  final Value<int> attempts;
+  final Value<String?> lastError;
+  final Value<String?> postedUri;
+  final Value<String?> postedCid;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const SchedulesCompanion({
+    this.draftId = const Value.absent(),
+    this.ownerDid = const Value.absent(),
+    this.scheduledAtUtc = const Value.absent(),
+    this.status = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.postedUri = const Value.absent(),
+    this.postedCid = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SchedulesCompanion.insert({
+    required String draftId,
+    required String ownerDid,
+    required DateTime scheduledAtUtc,
+    required String status,
+    this.attempts = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.postedUri = const Value.absent(),
+    this.postedCid = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : draftId = Value(draftId),
+       ownerDid = Value(ownerDid),
+       scheduledAtUtc = Value(scheduledAtUtc),
+       status = Value(status),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Schedule> custom({
+    Expression<String>? draftId,
+    Expression<String>? ownerDid,
+    Expression<DateTime>? scheduledAtUtc,
+    Expression<String>? status,
+    Expression<int>? attempts,
+    Expression<String>? lastError,
+    Expression<String>? postedUri,
+    Expression<String>? postedCid,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (draftId != null) 'draft_id': draftId,
+      if (ownerDid != null) 'owner_did': ownerDid,
+      if (scheduledAtUtc != null) 'scheduled_at_utc': scheduledAtUtc,
+      if (status != null) 'status': status,
+      if (attempts != null) 'attempts': attempts,
+      if (lastError != null) 'last_error': lastError,
+      if (postedUri != null) 'posted_uri': postedUri,
+      if (postedCid != null) 'posted_cid': postedCid,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SchedulesCompanion copyWith({
+    Value<String>? draftId,
+    Value<String>? ownerDid,
+    Value<DateTime>? scheduledAtUtc,
+    Value<String>? status,
+    Value<int>? attempts,
+    Value<String?>? lastError,
+    Value<String?>? postedUri,
+    Value<String?>? postedCid,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return SchedulesCompanion(
+      draftId: draftId ?? this.draftId,
+      ownerDid: ownerDid ?? this.ownerDid,
+      scheduledAtUtc: scheduledAtUtc ?? this.scheduledAtUtc,
+      status: status ?? this.status,
+      attempts: attempts ?? this.attempts,
+      lastError: lastError ?? this.lastError,
+      postedUri: postedUri ?? this.postedUri,
+      postedCid: postedCid ?? this.postedCid,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (draftId.present) {
+      map['draft_id'] = Variable<String>(draftId.value);
+    }
+    if (ownerDid.present) {
+      map['owner_did'] = Variable<String>(ownerDid.value);
+    }
+    if (scheduledAtUtc.present) {
+      map['scheduled_at_utc'] = Variable<DateTime>(scheduledAtUtc.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (postedUri.present) {
+      map['posted_uri'] = Variable<String>(postedUri.value);
+    }
+    if (postedCid.present) {
+      map['posted_cid'] = Variable<String>(postedCid.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SchedulesCompanion(')
+          ..write('draftId: $draftId, ')
+          ..write('ownerDid: $ownerDid, ')
+          ..write('scheduledAtUtc: $scheduledAtUtc, ')
+          ..write('status: $status, ')
+          ..write('attempts: $attempts, ')
+          ..write('lastError: $lastError, ')
+          ..write('postedUri: $postedUri, ')
+          ..write('postedCid: $postedCid, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -13590,6 +14189,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DevNetworkLogsTable devNetworkLogs = $DevNetworkLogsTable(this);
   late final $DevPinsTable devPins = $DevPinsTable(this);
   late final $DevRecentRecordsTable devRecentRecords = $DevRecentRecordsTable(this);
+  late final $SchedulesTable schedules = $SchedulesTable(this);
   late final Index feedContentSortIdx = Index(
     'feed_content_sort_idx',
     'CREATE INDEX feed_content_sort_idx ON feed_content_items (feed_key, sort_key)',
@@ -13609,6 +14209,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index dmMessagesConvoIdx = Index(
     'dm_messages_convo_idx',
     'CREATE INDEX dm_messages_convo_idx ON dm_messages (convo_id, sent_at)',
+  );
+  late final Index schedulesScheduledAtIdx = Index(
+    'schedules_scheduled_at_idx',
+    'CREATE INDEX schedules_scheduled_at_idx ON schedules (scheduled_at_utc)',
+  );
+  late final Index schedulesStatusIdx = Index(
+    'schedules_status_idx',
+    'CREATE INDEX schedules_status_idx ON schedules (status)',
   );
   late final FeedContentDao feedContentDao = FeedContentDao(this as AppDatabase);
   late final ProfileDao profileDao = ProfileDao(this as AppDatabase);
@@ -13640,6 +14248,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final DmMessagesDao dmMessagesDao = DmMessagesDao(this as AppDatabase);
   late final DmOutboxDao dmOutboxDao = DmOutboxDao(this as AppDatabase);
   late final DevToolsDao devToolsDao = DevToolsDao(this as AppDatabase);
+  late final SchedulesDao schedulesDao = SchedulesDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -13674,11 +14283,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     devNetworkLogs,
     devPins,
     devRecentRecords,
+    schedules,
     feedContentSortIdx,
     recentSearchesUniqueIdx,
     searchCacheSortIdx,
     notificationsIndexedAtIdx,
     dmMessagesConvoIdx,
+    schedulesScheduledAtIdx,
+    schedulesStatusIdx,
   ];
 }
 
@@ -21321,6 +21933,253 @@ typedef $$DevRecentRecordsTableProcessedTableManager =
       DevRecentRecord,
       PrefetchHooks Function()
     >;
+typedef $$SchedulesTableCreateCompanionBuilder =
+    SchedulesCompanion Function({
+      required String draftId,
+      required String ownerDid,
+      required DateTime scheduledAtUtc,
+      required String status,
+      Value<int> attempts,
+      Value<String?> lastError,
+      Value<String?> postedUri,
+      Value<String?> postedCid,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$SchedulesTableUpdateCompanionBuilder =
+    SchedulesCompanion Function({
+      Value<String> draftId,
+      Value<String> ownerDid,
+      Value<DateTime> scheduledAtUtc,
+      Value<String> status,
+      Value<int> attempts,
+      Value<String?> lastError,
+      Value<String?> postedUri,
+      Value<String?> postedCid,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$SchedulesTableFilterComposer extends Composer<_$AppDatabase, $SchedulesTable> {
+  $$SchedulesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get draftId =>
+      $composableBuilder(column: $table.draftId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get scheduledAtUtc => $composableBuilder(
+    column: $table.scheduledAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get postedUri =>
+      $composableBuilder(column: $table.postedUri, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get postedCid =>
+      $composableBuilder(column: $table.postedCid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$SchedulesTableOrderingComposer extends Composer<_$AppDatabase, $SchedulesTable> {
+  $$SchedulesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get draftId =>
+      $composableBuilder(column: $table.draftId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get scheduledAtUtc => $composableBuilder(
+    column: $table.scheduledAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get postedUri =>
+      $composableBuilder(column: $table.postedUri, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get postedCid =>
+      $composableBuilder(column: $table.postedCid, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SchedulesTableAnnotationComposer extends Composer<_$AppDatabase, $SchedulesTable> {
+  $$SchedulesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get draftId =>
+      $composableBuilder(column: $table.draftId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerDid =>
+      $composableBuilder(column: $table.ownerDid, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get scheduledAtUtc =>
+      $composableBuilder(column: $table.scheduledAtUtc, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+
+  GeneratedColumn<String> get postedUri =>
+      $composableBuilder(column: $table.postedUri, builder: (column) => column);
+
+  GeneratedColumn<String> get postedCid =>
+      $composableBuilder(column: $table.postedCid, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$SchedulesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SchedulesTable,
+          Schedule,
+          $$SchedulesTableFilterComposer,
+          $$SchedulesTableOrderingComposer,
+          $$SchedulesTableAnnotationComposer,
+          $$SchedulesTableCreateCompanionBuilder,
+          $$SchedulesTableUpdateCompanionBuilder,
+          (Schedule, BaseReferences<_$AppDatabase, $SchedulesTable, Schedule>),
+          Schedule,
+          PrefetchHooks Function()
+        > {
+  $$SchedulesTableTableManager(_$AppDatabase db, $SchedulesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$SchedulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$SchedulesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SchedulesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> draftId = const Value.absent(),
+                Value<String> ownerDid = const Value.absent(),
+                Value<DateTime> scheduledAtUtc = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<String?> postedUri = const Value.absent(),
+                Value<String?> postedCid = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SchedulesCompanion(
+                draftId: draftId,
+                ownerDid: ownerDid,
+                scheduledAtUtc: scheduledAtUtc,
+                status: status,
+                attempts: attempts,
+                lastError: lastError,
+                postedUri: postedUri,
+                postedCid: postedCid,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String draftId,
+                required String ownerDid,
+                required DateTime scheduledAtUtc,
+                required String status,
+                Value<int> attempts = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<String?> postedUri = const Value.absent(),
+                Value<String?> postedCid = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => SchedulesCompanion.insert(
+                draftId: draftId,
+                ownerDid: ownerDid,
+                scheduledAtUtc: scheduledAtUtc,
+                status: status,
+                attempts: attempts,
+                lastError: lastError,
+                postedUri: postedUri,
+                postedCid: postedCid,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SchedulesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SchedulesTable,
+      Schedule,
+      $$SchedulesTableFilterComposer,
+      $$SchedulesTableOrderingComposer,
+      $$SchedulesTableAnnotationComposer,
+      $$SchedulesTableCreateCompanionBuilder,
+      $$SchedulesTableUpdateCompanionBuilder,
+      (Schedule, BaseReferences<_$AppDatabase, $SchedulesTable, Schedule>),
+      Schedule,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -21375,4 +22234,5 @@ class $AppDatabaseManager {
   $$DevPinsTableTableManager get devPins => $$DevPinsTableTableManager(_db, _db.devPins);
   $$DevRecentRecordsTableTableManager get devRecentRecords =>
       $$DevRecentRecordsTableTableManager(_db, _db.devRecentRecords);
+  $$SchedulesTableTableManager get schedules => $$SchedulesTableTableManager(_db, _db.schedules);
 }

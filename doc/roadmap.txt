@@ -192,11 +192,11 @@ Infrastructure                                                    *bsky-sched-1*
 Foundation: Database schema, domain models, repositories, posting worker
 
 Tasks:
-- [ ] Database migration: schedules table (draft_id, scheduled_at_utc, status,
+- [x] Database migration: schedules table (draft_id, scheduled_at_utc, status,
       attempts, last_error, posted_uri/cid) with indexes
-- [ ] Domain models: Schedule (draftId, scheduledAtUtc, status enum, attempts)
-- [ ] ScheduleRepo: upsert, get, list, cancel operations
-- [ ] PostPublisher service: publishDraft(draftId) with validation, session
+- [x] Domain models: Schedule (draftId, scheduledAtUtc, status enum, attempts)
+- [x] ScheduleRepo: upsert, get, list, cancel operations
+- [x] PostPublisher service: publishDraft(draftId) with validation, session
       refresh, createRecord, status persistence
 - [ ] Scheduler interface: schedule(), cancel(), resyncAll() for platform
       adapters

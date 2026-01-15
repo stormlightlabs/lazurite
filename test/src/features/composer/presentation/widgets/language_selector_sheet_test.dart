@@ -29,7 +29,7 @@ void main() {
           ),
         ),
       );
-      // Allow ListView to render
+
       await tester.pump();
 
       expect(find.text('English'), findsOneWidget);
@@ -46,7 +46,6 @@ void main() {
         ),
       );
 
-      // Look for chips by finding the EN text inside a Chip widget
       expect(find.byType(Chip), findsWidgets);
       expect(find.text('EN'), findsWidgets);
       expect(find.text('ES'), findsWidgets);
@@ -117,19 +116,16 @@ void main() {
         ),
       );
 
-      // Select English
       await tester.tap(
         find.ancestor(of: find.text('English'), matching: find.byType(CheckboxListTile)),
       );
       await tester.pump();
 
-      // Select Spanish
       await tester.tap(
         find.ancestor(of: find.text('Spanish'), matching: find.byType(CheckboxListTile)),
       );
       await tester.pump();
 
-      // Select French
       await tester.tap(
         find.ancestor(of: find.text('French'), matching: find.byType(CheckboxListTile)),
       );
@@ -137,7 +133,6 @@ void main() {
 
       expect(selectedLanguages.length, 3);
 
-      // Try to select German - should not add since we're at max
       await tester.tap(
         find.ancestor(of: find.text('German'), matching: find.byType(CheckboxListTile)),
       );

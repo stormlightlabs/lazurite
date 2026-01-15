@@ -8,7 +8,9 @@ void main() {
   group('ContentWarningButton', () {
     testWidgets('shows "Add warning" when no labels selected', (tester) async {
       await tester.pumpApp(
-        const Material(child: ContentWarningButton(labels: [], onTap: _dummyCallback)),
+        const Material(
+          child: ContentWarningButton(labels: [], onTap: _dummyCallback),
+        ),
       );
 
       expect(find.text('Add warning'), findsOneWidget);
@@ -18,10 +20,7 @@ void main() {
     testWidgets('shows warning count when labels selected', (tester) async {
       await tester.pumpApp(
         const Material(
-          child: ContentWarningButton(
-            labels: ['sexual', 'graphic-media'],
-            onTap: _dummyCallback,
-          ),
+          child: ContentWarningButton(labels: ['sexual', 'graphic-media'], onTap: _dummyCallback),
         ),
       );
 
@@ -64,7 +63,9 @@ void main() {
       }
 
       await tester.pumpApp(
-        Material(child: ContentWarningButton(labels: [], onTap: onTap)),
+        Material(
+          child: ContentWarningButton(labels: [], onTap: onTap),
+        ),
       );
 
       await tester.tap(find.byType(ContentWarningButton));

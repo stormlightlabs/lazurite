@@ -7,9 +7,7 @@ import '../../../../../helpers/pump_app.dart';
 void main() {
   group('LanguagePill', () {
     testWidgets('renders language code in uppercase', (tester) async {
-      await tester.pumpApp(
-        const Material(child: LanguagePill(code: 'en')),
-      );
+      await tester.pumpApp(const Material(child: LanguagePill(code: 'en')));
       expect(find.text('EN'), findsOneWidget);
     });
 
@@ -23,9 +21,7 @@ void main() {
     });
 
     testWidgets('does not render remove button when showRemove is false', (tester) async {
-      await tester.pumpApp(
-        const Material(child: LanguagePill(code: 'en', showRemove: false)),
-      );
+      await tester.pumpApp(const Material(child: LanguagePill(code: 'en', showRemove: false)));
       expect(find.byIcon(Icons.close), findsNothing);
     });
 
@@ -37,7 +33,9 @@ void main() {
       }
 
       await tester.pumpApp(
-        Material(child: LanguagePill(code: 'en', onRemove: onRemove)),
+        Material(
+          child: LanguagePill(code: 'en', onRemove: onRemove),
+        ),
       );
 
       await tester.tap(find.byType(LanguagePill));
@@ -45,9 +43,7 @@ void main() {
     });
 
     testWidgets('handles multi-character language codes', (tester) async {
-      await tester.pumpApp(
-        const Material(child: LanguagePill(code: 'zh')),
-      );
+      await tester.pumpApp(const Material(child: LanguagePill(code: 'zh')));
       expect(find.text('ZH'), findsOneWidget);
     });
   });

@@ -82,7 +82,6 @@ void main() {
         ),
       );
 
-      // Tap the CheckboxListTile widget to add
       await tester.tap(
         find.ancestor(of: find.text('Sexual Content'), matching: find.byType(CheckboxListTile)),
       );
@@ -90,7 +89,6 @@ void main() {
 
       expect(selectedLabels, contains('sexual'));
 
-      // Tap again to remove
       await tester.tap(
         find.ancestor(of: find.text('Sexual Content'), matching: find.byType(CheckboxListTile)),
       );

@@ -708,3 +708,53 @@ class DevRecentRecords extends Table {
   /// When this record was last viewed.
   DateTimeColumn get viewedAt => dateTime()();
 }
+
+/// Stores scheduled post publication times and metadata.
+///
+/// Links drafts to scheduled publication times, tracking the state of
+/// scheduled posts through the publishing pipeline. Maintains idempotency
+/// by storing the posted URI/CID once successfully published.
+///
+/// Uses a composite foreign key to reference Drafts (id, ownerDid) since
+/// drafts use a composite primary key.
+@TableIndex(name: 'schedules_scheduled_at_idx', columns: {#scheduledAtUtc})
+@TableIndex(name: 'schedules_status_idx', columns: {#status})
+class Schedules extends Table {
+  /// Reference to the draft to be published.
+  TextColumn get draftId => text()();
+
+  /// The DID of the user who owns this scheduled post.
+  TextColumn get ownerDid => text()();
+
+  /// When the post should be published (UTC).
+  DateTimeColumn get scheduledAtUtc => dateTime()();
+
+  /// Current state: scheduled, posting, posted, failed.
+  TextColumn get status => text()();
+
+  /// Number of publish attempts made.
+  IntColumn get attempts => integer().withDefault(const Constant(0))();
+
+  /// Error message from the last failed attempt (if any).
+  TextColumn get lastError => text().nullable()();
+
+  /// AT URI of the successfully posted post (null until published).
+  TextColumn get postedUri => text().nullable()();
+
+  /// CID of the successfully posted post (null until published).
+  TextColumn get postedCid => text().nullable()();
+
+  /// When this schedule record was created.
+  DateTimeColumn get createdAt => dateTime()();
+
+  /// When this schedule was last modified.
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {draftId, ownerDid};
+
+  @override
+  List<String> get customConstraints => [
+    'FOREIGN KEY (draft_id, owner_did) REFERENCES drafts (id, owner_did)',
+  ];
+}
