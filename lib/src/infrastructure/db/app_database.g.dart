@@ -4888,6 +4888,43 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _langsJsonMeta = const VerificationMeta('langsJson');
+  @override
+  late final GeneratedColumn<String> langsJson = GeneratedColumn<String>(
+    'langs_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _labelsJsonMeta = const VerificationMeta('labelsJson');
+  @override
+  late final GeneratedColumn<String> labelsJson = GeneratedColumn<String>(
+    'labels_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _threadGateTypeMeta = const VerificationMeta('threadGateType');
+  @override
+  late final GeneratedColumn<String> threadGateType = GeneratedColumn<String>(
+    'thread_gate_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _quoteDisabledMeta = const VerificationMeta('quoteDisabled');
+  @override
+  late final GeneratedColumn<int> quoteDisabled = GeneratedColumn<int>(
+    'quote_disabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -4941,6 +4978,10 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
     externalDescription,
     externalThumbBlobJson,
     cachedMediaJson,
+    langsJson,
+    labelsJson,
+    threadGateType,
+    quoteDisabled,
     status,
     errorMessage,
     createdAt,
@@ -5049,6 +5090,30 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
         cachedMediaJson.isAcceptableOrUnknown(data['cached_media_json']!, _cachedMediaJsonMeta),
       );
     }
+    if (data.containsKey('langs_json')) {
+      context.handle(
+        _langsJsonMeta,
+        langsJson.isAcceptableOrUnknown(data['langs_json']!, _langsJsonMeta),
+      );
+    }
+    if (data.containsKey('labels_json')) {
+      context.handle(
+        _labelsJsonMeta,
+        labelsJson.isAcceptableOrUnknown(data['labels_json']!, _labelsJsonMeta),
+      );
+    }
+    if (data.containsKey('thread_gate_type')) {
+      context.handle(
+        _threadGateTypeMeta,
+        threadGateType.isAcceptableOrUnknown(data['thread_gate_type']!, _threadGateTypeMeta),
+      );
+    }
+    if (data.containsKey('quote_disabled')) {
+      context.handle(
+        _quoteDisabledMeta,
+        quoteDisabled.isAcceptableOrUnknown(data['quote_disabled']!, _quoteDisabledMeta),
+      );
+    }
     if (data.containsKey('status')) {
       context.handle(_statusMeta, status.isAcceptableOrUnknown(data['status']!, _statusMeta));
     } else if (isInserting) {
@@ -5142,6 +5207,22 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
         DriftSqlType.string,
         data['${effectivePrefix}cached_media_json'],
       ),
+      langsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}langs_json'],
+      ),
+      labelsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}labels_json'],
+      ),
+      threadGateType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}thread_gate_type'],
+      ),
+      quoteDisabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quote_disabled'],
+      )!,
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -5183,6 +5264,18 @@ class Draft extends DataClass implements Insertable<Draft> {
   final String? externalDescription;
   final String? externalThumbBlobJson;
   final String? cachedMediaJson;
+
+  /// JSON array of ISO 639 language codes (e.g., ["en", "es"])
+  final String? langsJson;
+
+  /// JSON array of self-label values (e.g., ["sexual", "graphic-media"])
+  final String? labelsJson;
+
+  /// Thread gate type for reply restrictions: 'mention', 'following', 'mention_following'
+  final String? threadGateType;
+
+  /// Whether quote posts are disabled for this draft (0 = allowed, 1 = disabled)
+  final int quoteDisabled;
   final String status;
   final String? errorMessage;
   final DateTime createdAt;
@@ -5203,6 +5296,10 @@ class Draft extends DataClass implements Insertable<Draft> {
     this.externalDescription,
     this.externalThumbBlobJson,
     this.cachedMediaJson,
+    this.langsJson,
+    this.labelsJson,
+    this.threadGateType,
+    required this.quoteDisabled,
     required this.status,
     this.errorMessage,
     required this.createdAt,
@@ -5250,6 +5347,16 @@ class Draft extends DataClass implements Insertable<Draft> {
     if (!nullToAbsent || cachedMediaJson != null) {
       map['cached_media_json'] = Variable<String>(cachedMediaJson);
     }
+    if (!nullToAbsent || langsJson != null) {
+      map['langs_json'] = Variable<String>(langsJson);
+    }
+    if (!nullToAbsent || labelsJson != null) {
+      map['labels_json'] = Variable<String>(labelsJson);
+    }
+    if (!nullToAbsent || threadGateType != null) {
+      map['thread_gate_type'] = Variable<String>(threadGateType);
+    }
+    map['quote_disabled'] = Variable<int>(quoteDisabled);
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || errorMessage != null) {
       map['error_message'] = Variable<String>(errorMessage);
@@ -5292,6 +5399,12 @@ class Draft extends DataClass implements Insertable<Draft> {
       cachedMediaJson: cachedMediaJson == null && nullToAbsent
           ? const Value.absent()
           : Value(cachedMediaJson),
+      langsJson: langsJson == null && nullToAbsent ? const Value.absent() : Value(langsJson),
+      labelsJson: labelsJson == null && nullToAbsent ? const Value.absent() : Value(labelsJson),
+      threadGateType: threadGateType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(threadGateType),
+      quoteDisabled: Value(quoteDisabled),
       status: Value(status),
       errorMessage: errorMessage == null && nullToAbsent
           ? const Value.absent()
@@ -5319,6 +5432,10 @@ class Draft extends DataClass implements Insertable<Draft> {
       externalDescription: serializer.fromJson<String?>(json['externalDescription']),
       externalThumbBlobJson: serializer.fromJson<String?>(json['externalThumbBlobJson']),
       cachedMediaJson: serializer.fromJson<String?>(json['cachedMediaJson']),
+      langsJson: serializer.fromJson<String?>(json['langsJson']),
+      labelsJson: serializer.fromJson<String?>(json['labelsJson']),
+      threadGateType: serializer.fromJson<String?>(json['threadGateType']),
+      quoteDisabled: serializer.fromJson<int>(json['quoteDisabled']),
       status: serializer.fromJson<String>(json['status']),
       errorMessage: serializer.fromJson<String?>(json['errorMessage']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -5344,6 +5461,10 @@ class Draft extends DataClass implements Insertable<Draft> {
       'externalDescription': serializer.toJson<String?>(externalDescription),
       'externalThumbBlobJson': serializer.toJson<String?>(externalThumbBlobJson),
       'cachedMediaJson': serializer.toJson<String?>(cachedMediaJson),
+      'langsJson': serializer.toJson<String?>(langsJson),
+      'labelsJson': serializer.toJson<String?>(labelsJson),
+      'threadGateType': serializer.toJson<String?>(threadGateType),
+      'quoteDisabled': serializer.toJson<int>(quoteDisabled),
       'status': serializer.toJson<String>(status),
       'errorMessage': serializer.toJson<String?>(errorMessage),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -5367,6 +5488,10 @@ class Draft extends DataClass implements Insertable<Draft> {
     Value<String?> externalDescription = const Value.absent(),
     Value<String?> externalThumbBlobJson = const Value.absent(),
     Value<String?> cachedMediaJson = const Value.absent(),
+    Value<String?> langsJson = const Value.absent(),
+    Value<String?> labelsJson = const Value.absent(),
+    Value<String?> threadGateType = const Value.absent(),
+    int? quoteDisabled,
     String? status,
     Value<String?> errorMessage = const Value.absent(),
     DateTime? createdAt,
@@ -5391,6 +5516,10 @@ class Draft extends DataClass implements Insertable<Draft> {
         ? externalThumbBlobJson.value
         : this.externalThumbBlobJson,
     cachedMediaJson: cachedMediaJson.present ? cachedMediaJson.value : this.cachedMediaJson,
+    langsJson: langsJson.present ? langsJson.value : this.langsJson,
+    labelsJson: labelsJson.present ? labelsJson.value : this.labelsJson,
+    threadGateType: threadGateType.present ? threadGateType.value : this.threadGateType,
+    quoteDisabled: quoteDisabled ?? this.quoteDisabled,
     status: status ?? this.status,
     errorMessage: errorMessage.present ? errorMessage.value : this.errorMessage,
     createdAt: createdAt ?? this.createdAt,
@@ -5423,6 +5552,12 @@ class Draft extends DataClass implements Insertable<Draft> {
       cachedMediaJson: data.cachedMediaJson.present
           ? data.cachedMediaJson.value
           : this.cachedMediaJson,
+      langsJson: data.langsJson.present ? data.langsJson.value : this.langsJson,
+      labelsJson: data.labelsJson.present ? data.labelsJson.value : this.labelsJson,
+      threadGateType: data.threadGateType.present
+          ? data.threadGateType.value
+          : this.threadGateType,
+      quoteDisabled: data.quoteDisabled.present ? data.quoteDisabled.value : this.quoteDisabled,
       status: data.status.present ? data.status.value : this.status,
       errorMessage: data.errorMessage.present ? data.errorMessage.value : this.errorMessage,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -5448,6 +5583,10 @@ class Draft extends DataClass implements Insertable<Draft> {
           ..write('externalDescription: $externalDescription, ')
           ..write('externalThumbBlobJson: $externalThumbBlobJson, ')
           ..write('cachedMediaJson: $cachedMediaJson, ')
+          ..write('langsJson: $langsJson, ')
+          ..write('labelsJson: $labelsJson, ')
+          ..write('threadGateType: $threadGateType, ')
+          ..write('quoteDisabled: $quoteDisabled, ')
           ..write('status: $status, ')
           ..write('errorMessage: $errorMessage, ')
           ..write('createdAt: $createdAt, ')
@@ -5457,7 +5596,7 @@ class Draft extends DataClass implements Insertable<Draft> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     ownerDid,
     content,
@@ -5473,11 +5612,15 @@ class Draft extends DataClass implements Insertable<Draft> {
     externalDescription,
     externalThumbBlobJson,
     cachedMediaJson,
+    langsJson,
+    labelsJson,
+    threadGateType,
+    quoteDisabled,
     status,
     errorMessage,
     createdAt,
     updatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5497,6 +5640,10 @@ class Draft extends DataClass implements Insertable<Draft> {
           other.externalDescription == this.externalDescription &&
           other.externalThumbBlobJson == this.externalThumbBlobJson &&
           other.cachedMediaJson == this.cachedMediaJson &&
+          other.langsJson == this.langsJson &&
+          other.labelsJson == this.labelsJson &&
+          other.threadGateType == this.threadGateType &&
+          other.quoteDisabled == this.quoteDisabled &&
           other.status == this.status &&
           other.errorMessage == this.errorMessage &&
           other.createdAt == this.createdAt &&
@@ -5519,6 +5666,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
   final Value<String?> externalDescription;
   final Value<String?> externalThumbBlobJson;
   final Value<String?> cachedMediaJson;
+  final Value<String?> langsJson;
+  final Value<String?> labelsJson;
+  final Value<String?> threadGateType;
+  final Value<int> quoteDisabled;
   final Value<String> status;
   final Value<String?> errorMessage;
   final Value<DateTime> createdAt;
@@ -5540,6 +5691,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     this.externalDescription = const Value.absent(),
     this.externalThumbBlobJson = const Value.absent(),
     this.cachedMediaJson = const Value.absent(),
+    this.langsJson = const Value.absent(),
+    this.labelsJson = const Value.absent(),
+    this.threadGateType = const Value.absent(),
+    this.quoteDisabled = const Value.absent(),
     this.status = const Value.absent(),
     this.errorMessage = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -5562,6 +5717,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     this.externalDescription = const Value.absent(),
     this.externalThumbBlobJson = const Value.absent(),
     this.cachedMediaJson = const Value.absent(),
+    this.langsJson = const Value.absent(),
+    this.labelsJson = const Value.absent(),
+    this.threadGateType = const Value.absent(),
+    this.quoteDisabled = const Value.absent(),
     required String status,
     this.errorMessage = const Value.absent(),
     required DateTime createdAt,
@@ -5588,6 +5747,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     Expression<String>? externalDescription,
     Expression<String>? externalThumbBlobJson,
     Expression<String>? cachedMediaJson,
+    Expression<String>? langsJson,
+    Expression<String>? labelsJson,
+    Expression<String>? threadGateType,
+    Expression<int>? quoteDisabled,
     Expression<String>? status,
     Expression<String>? errorMessage,
     Expression<DateTime>? createdAt,
@@ -5610,6 +5773,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
       if (externalDescription != null) 'external_description': externalDescription,
       if (externalThumbBlobJson != null) 'external_thumb_blob_json': externalThumbBlobJson,
       if (cachedMediaJson != null) 'cached_media_json': cachedMediaJson,
+      if (langsJson != null) 'langs_json': langsJson,
+      if (labelsJson != null) 'labels_json': labelsJson,
+      if (threadGateType != null) 'thread_gate_type': threadGateType,
+      if (quoteDisabled != null) 'quote_disabled': quoteDisabled,
       if (status != null) 'status': status,
       if (errorMessage != null) 'error_message': errorMessage,
       if (createdAt != null) 'created_at': createdAt,
@@ -5634,6 +5801,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     Value<String?>? externalDescription,
     Value<String?>? externalThumbBlobJson,
     Value<String?>? cachedMediaJson,
+    Value<String?>? langsJson,
+    Value<String?>? labelsJson,
+    Value<String?>? threadGateType,
+    Value<int>? quoteDisabled,
     Value<String>? status,
     Value<String?>? errorMessage,
     Value<DateTime>? createdAt,
@@ -5656,6 +5827,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
       externalDescription: externalDescription ?? this.externalDescription,
       externalThumbBlobJson: externalThumbBlobJson ?? this.externalThumbBlobJson,
       cachedMediaJson: cachedMediaJson ?? this.cachedMediaJson,
+      langsJson: langsJson ?? this.langsJson,
+      labelsJson: labelsJson ?? this.labelsJson,
+      threadGateType: threadGateType ?? this.threadGateType,
+      quoteDisabled: quoteDisabled ?? this.quoteDisabled,
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
       createdAt: createdAt ?? this.createdAt,
@@ -5712,6 +5887,18 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
     if (cachedMediaJson.present) {
       map['cached_media_json'] = Variable<String>(cachedMediaJson.value);
     }
+    if (langsJson.present) {
+      map['langs_json'] = Variable<String>(langsJson.value);
+    }
+    if (labelsJson.present) {
+      map['labels_json'] = Variable<String>(labelsJson.value);
+    }
+    if (threadGateType.present) {
+      map['thread_gate_type'] = Variable<String>(threadGateType.value);
+    }
+    if (quoteDisabled.present) {
+      map['quote_disabled'] = Variable<int>(quoteDisabled.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -5748,6 +5935,10 @@ class DraftsCompanion extends UpdateCompanion<Draft> {
           ..write('externalDescription: $externalDescription, ')
           ..write('externalThumbBlobJson: $externalThumbBlobJson, ')
           ..write('cachedMediaJson: $cachedMediaJson, ')
+          ..write('langsJson: $langsJson, ')
+          ..write('labelsJson: $labelsJson, ')
+          ..write('threadGateType: $threadGateType, ')
+          ..write('quoteDisabled: $quoteDisabled, ')
           ..write('status: $status, ')
           ..write('errorMessage: $errorMessage, ')
           ..write('createdAt: $createdAt, ')
@@ -16753,6 +16944,10 @@ typedef $$DraftsTableCreateCompanionBuilder =
       Value<String?> externalDescription,
       Value<String?> externalThumbBlobJson,
       Value<String?> cachedMediaJson,
+      Value<String?> langsJson,
+      Value<String?> labelsJson,
+      Value<String?> threadGateType,
+      Value<int> quoteDisabled,
       required String status,
       Value<String?> errorMessage,
       required DateTime createdAt,
@@ -16776,6 +16971,10 @@ typedef $$DraftsTableUpdateCompanionBuilder =
       Value<String?> externalDescription,
       Value<String?> externalThumbBlobJson,
       Value<String?> cachedMediaJson,
+      Value<String?> langsJson,
+      Value<String?> labelsJson,
+      Value<String?> threadGateType,
+      Value<int> quoteDisabled,
       Value<String> status,
       Value<String?> errorMessage,
       Value<DateTime> createdAt,
@@ -16845,6 +17044,20 @@ class $$DraftsTableFilterComposer extends Composer<_$AppDatabase, $DraftsTable> 
     column: $table.cachedMediaJson,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get langsJson =>
+      $composableBuilder(column: $table.langsJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get labelsJson =>
+      $composableBuilder(column: $table.labelsJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get threadGateType => $composableBuilder(
+    column: $table.threadGateType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quoteDisabled =>
+      $composableBuilder(column: $table.quoteDisabled, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => ColumnFilters(column));
@@ -16928,6 +17141,22 @@ class $$DraftsTableOrderingComposer extends Composer<_$AppDatabase, $DraftsTable
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get langsJson =>
+      $composableBuilder(column: $table.langsJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get labelsJson =>
+      $composableBuilder(column: $table.labelsJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get threadGateType => $composableBuilder(
+    column: $table.threadGateType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quoteDisabled => $composableBuilder(
+    column: $table.quoteDisabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => ColumnOrderings(column));
 
@@ -16996,6 +17225,18 @@ class $$DraftsTableAnnotationComposer extends Composer<_$AppDatabase, $DraftsTab
   GeneratedColumn<String> get cachedMediaJson =>
       $composableBuilder(column: $table.cachedMediaJson, builder: (column) => column);
 
+  GeneratedColumn<String> get langsJson =>
+      $composableBuilder(column: $table.langsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get labelsJson =>
+      $composableBuilder(column: $table.labelsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get threadGateType =>
+      $composableBuilder(column: $table.threadGateType, builder: (column) => column);
+
+  GeneratedColumn<int> get quoteDisabled =>
+      $composableBuilder(column: $table.quoteDisabled, builder: (column) => column);
+
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
@@ -17050,6 +17291,10 @@ class $$DraftsTableTableManager
                 Value<String?> externalDescription = const Value.absent(),
                 Value<String?> externalThumbBlobJson = const Value.absent(),
                 Value<String?> cachedMediaJson = const Value.absent(),
+                Value<String?> langsJson = const Value.absent(),
+                Value<String?> labelsJson = const Value.absent(),
+                Value<String?> threadGateType = const Value.absent(),
+                Value<int> quoteDisabled = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> errorMessage = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -17071,6 +17316,10 @@ class $$DraftsTableTableManager
                 externalDescription: externalDescription,
                 externalThumbBlobJson: externalThumbBlobJson,
                 cachedMediaJson: cachedMediaJson,
+                langsJson: langsJson,
+                labelsJson: labelsJson,
+                threadGateType: threadGateType,
+                quoteDisabled: quoteDisabled,
                 status: status,
                 errorMessage: errorMessage,
                 createdAt: createdAt,
@@ -17094,6 +17343,10 @@ class $$DraftsTableTableManager
                 Value<String?> externalDescription = const Value.absent(),
                 Value<String?> externalThumbBlobJson = const Value.absent(),
                 Value<String?> cachedMediaJson = const Value.absent(),
+                Value<String?> langsJson = const Value.absent(),
+                Value<String?> labelsJson = const Value.absent(),
+                Value<String?> threadGateType = const Value.absent(),
+                Value<int> quoteDisabled = const Value.absent(),
                 required String status,
                 Value<String?> errorMessage = const Value.absent(),
                 required DateTime createdAt,
@@ -17115,6 +17368,10 @@ class $$DraftsTableTableManager
                 externalDescription: externalDescription,
                 externalThumbBlobJson: externalThumbBlobJson,
                 cachedMediaJson: cachedMediaJson,
+                langsJson: langsJson,
+                labelsJson: labelsJson,
+                threadGateType: threadGateType,
+                quoteDisabled: quoteDisabled,
                 status: status,
                 errorMessage: errorMessage,
                 createdAt: createdAt,

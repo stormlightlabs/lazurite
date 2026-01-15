@@ -328,4 +328,56 @@ class ComposerNotifier extends _$ComposerNotifier {
       state = AsyncValue.data(currentState.copyWith(draft: updated));
     }
   }
+
+  /// Update language tags for the draft.
+  Future<void> setLanguages(List<String> langs) async {
+    final currentState = state.asData?.value;
+    final currentDraft = currentState?.draft;
+    if (currentDraft == null) return;
+
+    await _repository.updateLanguages(currentDraft.id, langs);
+    final updated = await _repository.getDraft(currentDraft.id);
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(draft: updated));
+    }
+  }
+
+  /// Update content warning labels for the draft.
+  Future<void> setLabels(List<String> labels) async {
+    final currentState = state.asData?.value;
+    final currentDraft = currentState?.draft;
+    if (currentDraft == null) return;
+
+    await _repository.updateLabels(currentDraft.id, labels);
+    final updated = await _repository.getDraft(currentDraft.id);
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(draft: updated));
+    }
+  }
+
+  /// Update thread gate type for the draft.
+  Future<void> setThreadGate(ThreadGateType? type) async {
+    final currentState = state.asData?.value;
+    final currentDraft = currentState?.draft;
+    if (currentDraft == null) return;
+
+    await _repository.updateThreadGate(currentDraft.id, type);
+    final updated = await _repository.getDraft(currentDraft.id);
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(draft: updated));
+    }
+  }
+
+  /// Update quote disabled setting for the draft.
+  Future<void> setQuoteDisabled(bool disabled) async {
+    final currentState = state.asData?.value;
+    final currentDraft = currentState?.draft;
+    if (currentDraft == null) return;
+
+    await _repository.updateQuoteDisabled(currentDraft.id, disabled);
+    final updated = await _repository.getDraft(currentDraft.id);
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(draft: updated));
+    }
+  }
 }

@@ -75,6 +75,7 @@ dependencies:
   video_player: ^2.9.2
   chewie: ^1.8.5
   vector_math: ^2.1.4
+  language_detector: ^1.0.1
 
 dev_dependencies:
   flutter_test:

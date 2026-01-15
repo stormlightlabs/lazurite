@@ -6,4 +6,14 @@ part of 'dm_convos_dao.dart';
 mixin _$DmConvosDaoMixin on DatabaseAccessor<AppDatabase> {
   $DmConvosTable get dmConvos => attachedDatabase.dmConvos;
   $ProfilesTable get profiles => attachedDatabase.profiles;
+  DmConvosDaoManager get managers => DmConvosDaoManager(this);
+}
+
+class DmConvosDaoManager {
+  final _$DmConvosDaoMixin _db;
+  DmConvosDaoManager(this._db);
+  $$DmConvosTableTableManager get dmConvos =>
+      $$DmConvosTableTableManager(_db.attachedDatabase, _db.dmConvos);
+  $$ProfilesTableTableManager get profiles =>
+      $$ProfilesTableTableManager(_db.attachedDatabase, _db.profiles);
 }

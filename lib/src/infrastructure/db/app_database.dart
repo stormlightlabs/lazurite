@@ -88,7 +88,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -102,6 +102,12 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 3) {
         await m.addColumn(drafts, drafts.cachedMediaJson);
+      }
+      if (from < 4) {
+        await m.addColumn(drafts, drafts.langsJson);
+        await m.addColumn(drafts, drafts.labelsJson);
+        await m.addColumn(drafts, drafts.threadGateType);
+        await m.addColumn(drafts, drafts.quoteDisabled);
       }
     },
   );

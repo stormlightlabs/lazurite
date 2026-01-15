@@ -7,7 +7,7 @@ import '../domain/tenor_gif.dart';
 
 part 'tenor_service.g.dart';
 
-// FIXME: Replace with an actual API key
+// FIXME: Replace with Klipy (Tenor is deprecated)
 const String _defaultApiKey = 'AIzaSyD4HJZw9KqfVqXbQeJZxk7w7xX0Xy0X0';
 
 /// Service for interacting with Tenor API.

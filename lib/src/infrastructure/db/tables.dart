@@ -336,6 +336,18 @@ class Drafts extends Table {
   TextColumn get externalDescription => text().nullable()();
   TextColumn get externalThumbBlobJson => text().nullable()();
   TextColumn get cachedMediaJson => text().nullable()();
+
+  /// JSON array of ISO 639 language codes (e.g., ["en", "es"])
+  TextColumn get langsJson => text().nullable()();
+
+  /// JSON array of self-label values (e.g., ["sexual", "graphic-media"])
+  TextColumn get labelsJson => text().nullable()();
+
+  /// Thread gate type for reply restrictions: 'mention', 'following', 'mention_following'
+  TextColumn get threadGateType => text().nullable()();
+
+  /// Whether quote posts are disabled for this draft (0 = allowed, 1 = disabled)
+  IntColumn get quoteDisabled => integer().withDefault(const Constant(0))();
   TextColumn get status => text()();
   TextColumn get errorMessage => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();

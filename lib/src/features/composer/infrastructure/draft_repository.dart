@@ -288,6 +288,22 @@ class DraftRepository {
       final uri = data['uri'] as String;
       final cid = data['cid'] as String;
 
+      if (draftToPublish.threadGateType != null && draftToPublish.isRootPost) {
+        try {
+          await _createThreadGate(uri, draftToPublish.threadGateType!);
+        } catch (e, stack) {
+          _logger.warning('Failed to create thread gate for $uri (post succeeded)', e, stack);
+        }
+      }
+
+      if (draftToPublish.quoteDisabled) {
+        try {
+          await _createPostGate(uri);
+        } catch (e, stack) {
+          _logger.warning('Failed to create post gate for $uri (post succeeded)', e, stack);
+        }
+      }
+
       await _dao.updateDraftFields(
         draftId,
         ownerDid,
@@ -513,7 +529,63 @@ class DraftRepository {
     );
   }
 
+  /// Updates language tags for a draft.
+  Future<void> updateLanguages(String draftId, List<String> langs) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    final langsJson = langs.isEmpty ? null : jsonEncode(langs);
+    await _dao.updateDraftFields(
+      draftId,
+      ownerDid,
+      DraftsCompanion(langsJson: Value(langsJson), updatedAt: Value(DateTime.now())),
+    );
+  }
+
+  /// Updates content warning labels for a draft.
+  Future<void> updateLabels(String draftId, List<String> labels) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    final labelsJson = labels.isEmpty ? null : jsonEncode(labels);
+    await _dao.updateDraftFields(
+      draftId,
+      ownerDid,
+      DraftsCompanion(labelsJson: Value(labelsJson), updatedAt: Value(DateTime.now())),
+    );
+  }
+
+  /// Updates thread gate type for a draft.
+  Future<void> updateThreadGate(String draftId, composer.ThreadGateType? type) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    await _dao.updateDraftFields(
+      draftId,
+      ownerDid,
+      DraftsCompanion(
+        threadGateType: Value(composer.threadGateTypeToString(type)),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Updates quote disabled setting for a draft.
+  Future<void> updateQuoteDisabled(String draftId, bool disabled) async {
+    final session = await _sessionStorage.getSession();
+    final ownerDid = session!.did;
+    await _dao.updateDraftFields(
+      draftId,
+      ownerDid,
+      DraftsCompanion(quoteDisabled: Value(disabled ? 1 : 0), updatedAt: Value(DateTime.now())),
+    );
+  }
+
   composer.Draft _toDomain(DraftRecord record) {
+    final langs = record.draft.langsJson != null
+        ? (jsonDecode(record.draft.langsJson!) as List).cast<String>()
+        : <String>[];
+    final labels = record.draft.labelsJson != null
+        ? (jsonDecode(record.draft.labelsJson!) as List).cast<String>()
+        : <String>[];
+
     return composer.Draft(
       id: record.draft.id,
       text: record.draft.content,
@@ -532,6 +604,10 @@ class DraftRepository {
       errorMessage: record.draft.errorMessage,
       createdAt: record.draft.createdAt,
       updatedAt: record.draft.updatedAt,
+      langs: langs,
+      labels: labels,
+      threadGateType: composer.threadGateTypeFromString(record.draft.threadGateType),
+      quoteDisabled: record.draft.quoteDisabled == 1,
       media: record.media
           .map(
             (media) => composer.DraftMediaAttachment(
@@ -636,6 +712,17 @@ class DraftRepository {
       } catch (_) {
         _logger.warning('Failed to decode draft facets for ${draft.id}');
       }
+    }
+
+    if (draft.langs.isNotEmpty) {
+      record['langs'] = draft.langs;
+    }
+
+    if (draft.labels.isNotEmpty) {
+      record['labels'] = {
+        '\$type': 'com.atproto.label.defs#selfLabels',
+        'values': draft.labels.map((label) => {'val': label}).toList(),
+      };
     }
 
     final reply = _buildReplyReference(draft);
@@ -789,5 +876,73 @@ class DraftRepository {
     }
 
     return {'\$type': 'app.bsky.embed.external', 'external': external};
+  }
+
+  /// Creates a thread gate record for the given post URI.
+  Future<void> _createThreadGate(String postUri, composer.ThreadGateType type) async {
+    final rules = <Map<String, String>>[];
+
+    if (type == composer.ThreadGateType.mention ||
+        type == composer.ThreadGateType.mentionAndFollowing) {
+      rules.add({'\$type': 'app.bsky.feed.threadgate#mentionRule'});
+    }
+
+    if (type == composer.ThreadGateType.following ||
+        type == composer.ThreadGateType.mentionAndFollowing) {
+      rules.add({'\$type': 'app.bsky.feed.threadgate#followingRule'});
+    }
+
+    final rkey = _extractRkey(postUri);
+    final session = await _sessionStorage.getSession();
+
+    await _api.call(
+      'com.atproto.repo.createRecord',
+      body: {
+        'repo': session!.did,
+        'collection': 'app.bsky.feed.threadgate',
+        'rkey': rkey,
+        'record': {
+          '\$type': 'app.bsky.feed.threadgate',
+          'post': postUri,
+          'allow': rules,
+          'createdAt': DateTime.now().toUtc().toIso8601String(),
+        },
+      },
+    );
+  }
+
+  /// Creates a post gate record to disable quote posts for the given post URI.
+  Future<void> _createPostGate(String postUri) async {
+    final rkey = _extractRkey(postUri);
+    final session = await _sessionStorage.getSession();
+
+    await _api.call(
+      'com.atproto.repo.createRecord',
+      body: {
+        'repo': session!.did,
+        'collection': 'app.bsky.feed.postgate',
+        'rkey': rkey,
+        'record': {
+          '\$type': 'app.bsky.feed.postgate',
+          'post': postUri,
+          'embeddingRules': [
+            {'\$type': 'app.bsky.feed.postgate#disableRule'},
+          ],
+          'createdAt': DateTime.now().toUtc().toIso8601String(),
+        },
+      },
+    );
+  }
+
+  /// Extracts the rkey from an AT URI.
+  ///
+  /// AT URIs have the format: at://did:plc:xxx/collection/rkey
+  /// This extracts the rkey so threadgate/postgate records can use the same key.
+  String _extractRkey(String uri) {
+    final parts = uri.split('/');
+    if (parts.length < 4) {
+      throw StateError('Invalid AT URI: $uri');
+    }
+    return parts.last;
   }
 }
