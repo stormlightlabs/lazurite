@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/app/routes.dart';
+import 'package:lazurite/src/core/widgets/fullscreen_image_viewer.dart';
 import 'package:path_provider/path_provider.dart';
 
 class EmbedImages extends StatelessWidget {
@@ -12,16 +15,34 @@ class EmbedImages extends StatelessWidget {
   Widget build(BuildContext context) {
     if (images.isEmpty) return const SizedBox.shrink();
 
+    final imageList = List<Map<String, dynamic>>.from(images);
+
     if (images.length == 1) {
-      return _SingleImage(image: images.first as Map<String, dynamic>);
+      return _SingleImage(
+        image: images.first as Map<String, dynamic>,
+        index: 0,
+        allImages: imageList,
+      );
     }
 
     if (images.length == 2) {
       return Row(
         children: [
-          Expanded(child: _SingleImage(image: images[0] as Map<String, dynamic>)),
+          Expanded(
+            child: _SingleImage(
+              image: images[0] as Map<String, dynamic>,
+              index: 0,
+              allImages: imageList,
+            ),
+          ),
           const SizedBox(width: 4),
-          Expanded(child: _SingleImage(image: images[1] as Map<String, dynamic>)),
+          Expanded(
+            child: _SingleImage(
+              image: images[1] as Map<String, dynamic>,
+              index: 1,
+              allImages: imageList,
+            ),
+          ),
         ],
       );
     }
@@ -29,13 +50,25 @@ class EmbedImages extends StatelessWidget {
     if (images.length == 3) {
       return Column(
         children: [
-          _SingleImage(image: images[0] as Map<String, dynamic>),
+          _SingleImage(image: images[0] as Map<String, dynamic>, index: 0, allImages: imageList),
           const SizedBox(height: 4),
           Row(
             children: [
-              Expanded(child: _SingleImage(image: images[1] as Map<String, dynamic>)),
+              Expanded(
+                child: _SingleImage(
+                  image: images[1] as Map<String, dynamic>,
+                  index: 1,
+                  allImages: imageList,
+                ),
+              ),
               const SizedBox(width: 4),
-              Expanded(child: _SingleImage(image: images[2] as Map<String, dynamic>)),
+              Expanded(
+                child: _SingleImage(
+                  image: images[2] as Map<String, dynamic>,
+                  index: 2,
+                  allImages: imageList,
+                ),
+              ),
             ],
           ),
         ],
@@ -46,17 +79,41 @@ class EmbedImages extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: _SingleImage(image: images[0] as Map<String, dynamic>)),
+            Expanded(
+              child: _SingleImage(
+                image: images[0] as Map<String, dynamic>,
+                index: 0,
+                allImages: imageList,
+              ),
+            ),
             const SizedBox(width: 4),
-            Expanded(child: _SingleImage(image: images[1] as Map<String, dynamic>)),
+            Expanded(
+              child: _SingleImage(
+                image: images[1] as Map<String, dynamic>,
+                index: 1,
+                allImages: imageList,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 4),
         Row(
           children: [
-            Expanded(child: _SingleImage(image: images[2] as Map<String, dynamic>)),
+            Expanded(
+              child: _SingleImage(
+                image: images[2] as Map<String, dynamic>,
+                index: 2,
+                allImages: imageList,
+              ),
+            ),
             const SizedBox(width: 4),
-            Expanded(child: _SingleImage(image: images[3] as Map<String, dynamic>)),
+            Expanded(
+              child: _SingleImage(
+                image: images[3] as Map<String, dynamic>,
+                index: 3,
+                allImages: imageList,
+              ),
+            ),
           ],
         ),
       ],
@@ -65,9 +122,11 @@ class EmbedImages extends StatelessWidget {
 }
 
 class _SingleImage extends StatelessWidget {
-  const _SingleImage({required this.image});
+  const _SingleImage({required this.image, required this.index, required this.allImages});
 
   final Map<String, dynamic> image;
+  final int index;
+  final List<Map<String, dynamic>> allImages;
 
   Future<void> _downloadImage(BuildContext context, String url) async {
     try {
@@ -106,6 +165,19 @@ class _SingleImage extends StatelessWidget {
     );
   }
 
+  void _openFullscreen(BuildContext context) {
+    final fullsize = image['fullsize'] as String? ?? '';
+    final heroTag = FullscreenImageViewer.heroTag(fullsize, index);
+
+    context.push(
+      Uri(
+        path: AppRoutes.fullscreenImage,
+        queryParameters: {'index': index.toString()},
+      ).toString(),
+      extra: {'images': allImages, 'heroTag': heroTag},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final thumb = image['thumb'] as String? ?? '';
@@ -117,17 +189,27 @@ class _SingleImage extends StatelessWidget {
     final height = (aspectRatioData?['height'] as num?)?.toDouble();
     final aspectRatio = (width != null && height != null && height > 0) ? width / height : 16 / 9;
 
+    final heroTag = FullscreenImageViewer.heroTag(fullsize, index);
+
     return Semantics(
       label: alt.isNotEmpty ? alt : 'Image',
       image: true,
+      button: true,
+      onTap: () => _openFullscreen(context),
       child: Stack(
         children: [
-          AspectRatio(
-            aspectRatio: aspectRatio,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                image: DecorationImage(image: NetworkImage(thumb), fit: BoxFit.cover),
+          GestureDetector(
+            onTap: () => _openFullscreen(context),
+            child: Hero(
+              tag: heroTag,
+              child: AspectRatio(
+                aspectRatio: aspectRatio,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    image: DecorationImage(image: NetworkImage(thumb), fit: BoxFit.cover),
+                  ),
+                ),
               ),
             ),
           ),

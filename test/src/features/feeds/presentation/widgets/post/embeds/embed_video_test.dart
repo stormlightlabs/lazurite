@@ -17,7 +17,7 @@ void main() {
         );
       });
 
-      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+      expect(find.byIcon(Icons.fullscreen), findsOneWidget);
       expect(find.byIcon(Icons.download), findsOneWidget);
     });
 

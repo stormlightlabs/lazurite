@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/animation_controller.dart' as lazurite_anim;
 import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/core/animations/page_transitions.dart';
+import 'package:lazurite/src/core/widgets/fullscreen_image_viewer.dart';
+import 'package:lazurite/src/core/widgets/fullscreen_video_viewer.dart';
 import 'package:lazurite/src/core/widgets/tab_scaffold.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
@@ -545,6 +547,63 @@ GoRouter createRouter(Ref ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.fullscreenImage,
+        name: AppRouteNames.fullscreenImage,
+        pageBuilder: (context, state) {
+          final initialIndex = int.tryParse(state.uri.queryParameters['index'] ?? '0') ?? 0;
+          final extra = state.extra as Map<String, dynamic>?;
+
+          if (extra == null || extra['images'] == null) {
+            return LazuritePageTransitions.build(
+              child: const Scaffold(
+                body: Center(child: Text('Invalid request: missing images data')),
+              ),
+              type: LazuriteTransitionType.fadeScale,
+              state: state,
+              controller: animationController,
+            );
+          }
+
+          final images = extra['images'] as List<Map<String, dynamic>>;
+
+          return LazuritePageTransitions.build(
+            child: FullscreenImageViewer(
+              images: images,
+              initialIndex: initialIndex.clamp(0, images.length - 1),
+            ),
+            type: LazuriteTransitionType.fadeScale,
+            state: state,
+            controller: animationController,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.fullscreenVideo,
+        name: AppRouteNames.fullscreenVideo,
+        pageBuilder: (context, state) {
+          final playlist = state.uri.queryParameters['playlist'] ?? '';
+          final thumbnail = state.uri.queryParameters['thumbnail'];
+          final alt = state.uri.queryParameters['alt'];
+          final cid = state.uri.queryParameters['cid'];
+          final authorDid = state.uri.queryParameters['authorDid'];
+          final durationSeconds = int.tryParse(state.uri.queryParameters['durationSeconds'] ?? '');
+
+          return LazuritePageTransitions.build(
+            child: FullscreenVideoViewer(
+              playlist: playlist,
+              thumbnail: thumbnail,
+              alt: alt,
+              cid: cid,
+              authorDid: authorDid,
+              durationSeconds: durationSeconds,
+            ),
+            type: LazuriteTransitionType.fadeScale,
+            state: state,
+            controller: animationController,
+          );
+        },
       ),
     ],
   );

@@ -36,6 +36,8 @@ abstract final class AppRoutes {
   static const String devtoolsCollections = 'collections';
   static const String devtoolsRecords = ':collection';
   static const String devtoolsRecord = ':rkey';
+  static const String fullscreenImage = '/fullscreen/image';
+  static const String fullscreenVideo = '/fullscreen/video';
 }
 
 /// Route names for named navigation.
@@ -71,4 +73,6 @@ abstract final class AppRouteNames {
   static const String devToolsCollections = 'devToolsCollections';
   static const String devToolsRecords = 'devToolsRecords';
   static const String devToolsRecord = 'devToolsRecord';
+  static const String fullscreenImage = 'fullscreenImage';
+  static const String fullscreenVideo = 'fullscreenVideo';
 }

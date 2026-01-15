@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gal/gal.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/core/widgets/video_player_widget.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
@@ -86,6 +88,22 @@ class _EmbedVideoState extends ConsumerState<EmbedVideo> {
     }
   }
 
+  void _openFullscreen(BuildContext context) {
+    context.push(
+      Uri(
+        path: AppRoutes.fullscreenVideo,
+        queryParameters: {
+          'playlist': widget.playlist,
+          if (widget.thumbnail != null) 'thumbnail': widget.thumbnail!,
+          if (widget.alt != null) 'alt': widget.alt!,
+          if (widget.cid != null) 'cid': widget.cid!,
+          if (widget.authorDid != null) 'authorDid': widget.authorDid!,
+          if (widget.durationSeconds != null) 'durationSeconds': widget.durationSeconds.toString(),
+        },
+      ).toString(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = (widget.aspectRatio?['width'] as num?)?.toDouble();
@@ -94,6 +112,8 @@ class _EmbedVideoState extends ConsumerState<EmbedVideo> {
 
     return Semantics(
       label: widget.alt ?? 'Video',
+      button: true,
+      onTap: () => _openFullscreen(context),
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -129,11 +149,7 @@ class _EmbedVideoState extends ConsumerState<EmbedVideo> {
               ),
             ),
           GestureDetector(
-            onTap: () {
-              setState(() {
-                _isExpanded = !_isExpanded;
-              });
-            },
+            onTap: () => _openFullscreen(context),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -141,7 +157,7 @@ class _EmbedVideoState extends ConsumerState<EmbedVideo> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                _isExpanded ? Icons.close : Icons.play_arrow,
+                _isExpanded ? Icons.close : Icons.fullscreen,
                 color: Colors.white,
                 size: 32,
               ),
