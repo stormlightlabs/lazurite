@@ -144,9 +144,9 @@ Phase 3: Advanced Media Support                                      *bsky-A-p3*
       - [x] External embed conflict handling: GIF replaces link card with
             confirmation dialog
       - [x] clearGifEmbed restores previously added images
-- [ ] Fullscreen media viewer
-      - [ ] Zoom/pan support for images
-      - [ ] Better media consumption experience
+- [x] Fullscreen media viewer
+      - [x] Zoom/pan support for images
+      - [x] Better media consumption experience
 
 Phase 4: Threading & Metadata                                        *bsky-A-p4*
 --------------------------------------------------------------------------------
@@ -156,14 +156,14 @@ Phase 4: Threading & Metadata                                        *bsky-A-p4*
 - [ ] Language tagging for posts
       - [ ] Language detection (local library or manual selector)
       - [ ] Send langs field in createRecord
-- [ ] Post scheduling (see *bsky-sched* below - now active)
+- [ ] Post scheduling (see *bsky-sched*)
 
 Deliverables:
 - [x] Rich text display matches official app (mentions, links, hashtags)
 - [x] Interactive facets with proper navigation
 - [x] Link preview cards in composer
 - [x] Video upload and playback parity
-- [ ] GIF support parity
+- [x] GIF support parity
 - [x] Thread composition functionality
 - [ ] Language tagging support
 - [ ] Post scheduling functionality
@@ -313,8 +313,6 @@ INITIAL RELEASE (Lazurite-0.1.0-alpha)                               *bsky-init*
 
 This section defines features required for the initial alpha release. Active
 work sections (O: Hardening, A: Composer Parity) contribute to these goals.
-
-Status: In Progress (estimated ~65% complete per parity analysis)
 
 Complete Notifications System                                      *bsky-notifs*
 --------------------------------------------------------------------------------

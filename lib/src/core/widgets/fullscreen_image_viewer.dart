@@ -40,6 +40,9 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
     super.initState();
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _preloadAdjacentImages(widget.initialIndex);
+    });
   }
 
   @override
@@ -106,6 +109,25 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
     setState(() {
       _currentIndex = index;
     });
+    _preloadAdjacentImages(index);
+  }
+
+  /// Preloads adjacent images for smoother navigation.
+  void _preloadAdjacentImages(int index) {
+    if (index > 0) {
+      final prevImage = widget.images[index - 1];
+      final prevUrl = prevImage['fullsize'] as String?;
+      if (prevUrl != null && prevUrl.isNotEmpty) {
+        precacheImage(NetworkImage(prevUrl), context);
+      }
+    }
+    if (index < widget.images.length - 1) {
+      final nextImage = widget.images[index + 1];
+      final nextUrl = nextImage['fullsize'] as String?;
+      if (nextUrl != null && nextUrl.isNotEmpty) {
+        precacheImage(NetworkImage(nextUrl), context);
+      }
+    }
   }
 
   @override
