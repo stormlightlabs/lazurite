@@ -6,14 +6,20 @@ import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/features/composer/application/composer_notifier.dart';
 import 'package:lazurite/src/features/composer/application/composer_providers.dart';
+import 'package:lazurite/src/features/composer/domain/draft.dart';
+import 'package:lazurite/src/features/composer/presentation/screens/gif_picker_screen.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/alt_text_editor_sheet.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/character_count_meter.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/composer_text_field.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/content_warning_button.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/content_warning_sheet.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/language_pill.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/language_selector_sheet.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/media_picker_row.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/publish_button.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/quote_post_card.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/reply_context_card.dart';
-import 'package:lazurite/src/features/composer/presentation/screens/gif_picker_screen.dart';
+import 'package:lazurite/src/features/composer/presentation/widgets/threading_settings_sheet.dart';
 
 /// Maximum character limit for posts (grapheme clusters).
 const int kMaxPostLength = 300;
@@ -395,6 +401,102 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
     }
   }
 
+  Future<void> _openLanguageSelector() async {
+    final composerState = ref.read(composerProvider(_args)).asData?.value;
+    final currentLangs = composerState?.draft?.langs ?? [];
+
+    final result = await showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => LanguageSelectorSheet(
+        selectedLanguages: currentLangs,
+        onSelectionChanged: (langs) {
+          ref.read(composerProvider(_args).notifier).setLanguages(langs);
+        },
+      ),
+    );
+
+    if (result != null && mounted) {
+      await ref.read(composerProvider(_args).notifier).setLanguages(result);
+    }
+  }
+
+  Future<void> _openContentWarningSelector() async {
+    final composerState = ref.read(composerProvider(_args)).asData?.value;
+    final currentLabels = composerState?.draft?.labels ?? [];
+
+    final result = await showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => ContentWarningSheet(
+        selectedLabels: currentLabels,
+        onSelectionChanged: (labels) {
+          ref.read(composerProvider(_args).notifier).setLabels(labels);
+        },
+      ),
+    );
+
+    if (result != null && mounted) {
+      await ref.read(composerProvider(_args).notifier).setLabels(result);
+    }
+  }
+
+  Future<void> _openThreadingSettings() async {
+    final composerState = ref.read(composerProvider(_args)).asData?.value;
+    final currentThreadGate = composerState?.draft?.threadGateType;
+    final currentQuoteDisabled = composerState?.draft?.quoteDisabled ?? false;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => ThreadingSettingsSheet(
+        threadGateType: currentThreadGate,
+        quoteDisabled: currentQuoteDisabled,
+        onThreadGateChanged: (type) {
+          ref.read(composerProvider(_args).notifier).setThreadGate(type);
+        },
+        onQuoteDisabledChanged: (disabled) {
+          ref.read(composerProvider(_args).notifier).setQuoteDisabled(disabled);
+        },
+      ),
+    );
+  }
+
+  IconData _getThreadingIcon(Draft? draft) {
+    if (draft?.quoteDisabled == true) {
+      return Icons.format_quote_rounded;
+    }
+    switch (draft?.threadGateType) {
+      case ThreadGateType.mention:
+        return Icons.alternate_email;
+      case ThreadGateType.following:
+        return Icons.people_alt;
+      case ThreadGateType.mentionAndFollowing:
+        return Icons.group_work;
+      case null:
+        return Icons.lock_open;
+    }
+  }
+
+  String _getThreadingLabel(Draft? draft) {
+    if (draft?.quoteDisabled == true) {
+      return 'No quotes';
+    }
+    switch (draft?.threadGateType) {
+      case ThreadGateType.mention:
+        return 'Mentions only';
+      case ThreadGateType.following:
+        return 'Following only';
+      case ThreadGateType.mentionAndFollowing:
+        return 'Limited replies';
+      case null:
+        return 'Post settings';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final composerAsync = ref.watch(composerProvider(_args));
@@ -506,6 +608,104 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                                         ),
                                       )
                                     : const SizedBox.shrink(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              if (state.draft?.langs.isNotEmpty ?? false)
+                                ...state.draft!.langs.map(
+                                  (lang) => LanguagePill(
+                                    code: lang,
+                                    onRemove: () => ref
+                                        .read(composerProvider(_args).notifier)
+                                        .setLanguages(
+                                          state.draft!.langs.where((l) => l != lang).toList(),
+                                        ),
+                                  ),
+                                ),
+                              InkWell(
+                                onTap: _openLanguageSelector,
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  height: 32,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: colorScheme.outlineVariant),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.language,
+                                        size: 16,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        state.draft?.langs.isEmpty ?? true
+                                            ? 'Add language'
+                                            : 'Add',
+                                        style: theme.textTheme.labelSmall?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              ContentWarningButton(
+                                labels: state.draft?.labels ?? [],
+                                onTap: _openContentWarningSelector,
+                              ),
+                              InkWell(
+                                onTap: _openThreadingSettings,
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  height: 32,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        state.draft?.threadGateType != null ||
+                                            state.draft?.quoteDisabled == true
+                                        ? colorScheme.secondaryContainer
+                                        : colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _getThreadingIcon(state.draft),
+                                        size: 16,
+                                        color:
+                                            state.draft?.threadGateType != null ||
+                                                state.draft?.quoteDisabled == true
+                                            ? colorScheme.onSecondaryContainer
+                                            : colorScheme.onSurfaceVariant,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _getThreadingLabel(state.draft),
+                                        style: theme.textTheme.labelSmall?.copyWith(
+                                          color:
+                                              state.draft?.threadGateType != null ||
+                                                  state.draft?.quoteDisabled == true
+                                              ? colorScheme.onSecondaryContainer
+                                              : colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ],
                           ),
