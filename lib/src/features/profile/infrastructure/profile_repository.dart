@@ -1,8 +1,11 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:lazurite/src/core/domain/author.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
+import 'package:lazurite/src/infrastructure/db/app_database.dart' as db;
+import 'package:lazurite/src/infrastructure/db/app_database.dart' hide Post, Profile;
 import 'package:lazurite/src/infrastructure/db/daos/follows_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/profile_dao.dart';
 import 'package:lazurite/src/infrastructure/db/daos/profile_relationship_dao.dart';
@@ -97,12 +100,12 @@ class ProfileRepository {
   }
 
   /// Gets a cached profile by DID.
-  Future<Profile?> getCachedProfile(String did) {
+  Future<db.Profile?> getCachedProfile(String did) {
     return _dao.getProfile(did);
   }
 
   /// Watches a cached profile by DID.
-  Stream<Profile?> watchProfile(String did) {
+  Stream<db.Profile?> watchProfile(String did) {
     return _dao.watchProfile(did);
   }
 
@@ -117,7 +120,7 @@ class ProfileRepository {
 
       final feed =
           (response['feed'] as List?)
-              ?.map((e) => FeedItem.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => Post.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [];
       final nextCursor = response['cursor'] as String?;
@@ -141,7 +144,7 @@ class ProfileRepository {
 
       final followers =
           (response['followers'] as List?)
-              ?.map((e) => ActorBasic.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => Author.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [];
       final nextCursor = response['cursor'] as String?;
@@ -165,7 +168,7 @@ class ProfileRepository {
 
       final follows =
           (response['follows'] as List?)
-              ?.map((e) => ActorBasic.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => Author.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [];
       final nextCursor = response['cursor'] as String?;
@@ -239,12 +242,12 @@ class ProfileRepository {
   }
 
   /// Gets cached follow state for a user.
-  Future<Follow?> getCachedFollow(String actorDid, String subjectDid) {
+  Future<db.Follow?> getCachedFollow(String actorDid, String subjectDid) {
     return _followsDao.getFollow(actorDid, subjectDid);
   }
 
   /// Watches cached follow state for a user.
-  Stream<Follow?> watchFollow(String actorDid, String subjectDid) {
+  Stream<db.Follow?> watchFollow(String actorDid, String subjectDid) {
     return _followsDao.watchFollow(actorDid, subjectDid);
   }
 
@@ -365,7 +368,7 @@ class ProfileRepository {
   }
 
   /// Fetches a single post by URI.
-  Future<FeedItem?> getPost(String uri) async {
+  Future<Post?> getPost(String uri) async {
     _logger.info('Fetching post', {'uri': uri});
     try {
       final response = await _api.call(
@@ -378,7 +381,7 @@ class ProfileRepository {
       final posts = response['posts'] as List?;
       if (posts == null || posts.isEmpty) return null;
 
-      return FeedItem.fromPostView(posts.first as Map<String, dynamic>);
+      return Post.fromJson(posts.first as Map<String, dynamic>);
     } catch (e, stack) {
       _logger.error('Failed to fetch post', e, stack);
       rethrow;

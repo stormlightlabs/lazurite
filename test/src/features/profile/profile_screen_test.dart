@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/author.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/domain/profile.dart';
@@ -61,28 +63,26 @@ void main() {
     });
 
     testWidgets('displays pinned post when present', (tester) async {
-      final profile = ProfileData(
+      const profile = ProfileData(
         did: 'did:plc:test',
         handle: 'test.bsky.social',
         displayName: 'Test User',
         pinnedPostUri: 'at://did:plc:test/app.bsky.feed.post/pinned',
       );
 
-      final pinnedPost = FeedItem(
+      final pinnedPost = Post(
         uri: 'at://did:plc:test/app.bsky.feed.post/pinned',
         cid: 'cid1',
-        authorDid: 'did:plc:test',
-        authorHandle: 'test.bsky.social',
+        author: const Author(did: 'did:plc:test', handle: 'test.bsky.social'),
         text: 'This is a pinned post',
         indexedAt: DateTime.now(),
       );
 
       final feedItems = [
-        FeedItem(
+        Post(
           uri: 'at://did:plc:test/app.bsky.feed.post/1',
           cid: 'cid2',
-          authorDid: 'did:plc:test',
-          authorHandle: 'test.bsky.social',
+          author: const Author(did: 'did:plc:test', handle: 'test.bsky.social'),
           text: 'Regular post',
           indexedAt: DateTime.now(),
         ),
@@ -115,29 +115,27 @@ void main() {
     });
 
     testWidgets('does not duplicate pinned post in feed', (tester) async {
-      final profile = ProfileData(
+      const profile = ProfileData(
         did: 'did:plc:test',
         handle: 'test.bsky.social',
         displayName: 'Test User',
         pinnedPostUri: 'at://did:plc:test/app.bsky.feed.post/pinned',
       );
 
-      final pinnedPost = FeedItem(
+      final pinnedPost = Post(
         uri: 'at://did:plc:test/app.bsky.feed.post/pinned',
         cid: 'cid1',
-        authorDid: 'did:plc:test',
-        authorHandle: 'test.bsky.social',
+        author: const Author(did: 'did:plc:test', handle: 'test.bsky.social'),
         text: 'This is a pinned post',
         indexedAt: DateTime.now(),
       );
 
       final feedItems = [
         pinnedPost,
-        FeedItem(
+        Post(
           uri: 'at://did:plc:test/app.bsky.feed.post/1',
           cid: 'cid2',
-          authorDid: 'did:plc:test',
-          authorHandle: 'test.bsky.social',
+          author: const Author(did: 'did:plc:test', handle: 'test.bsky.social'),
           text: 'Regular post',
           indexedAt: DateTime.now(),
         ),
@@ -183,10 +181,10 @@ class MockProfileNotifier extends ProfileNotifier {
 
 class MockAuthorFeedNotifier extends AuthorFeedNotifier {
   MockAuthorFeedNotifier(this._items);
-  final List<FeedItem> _items;
+  final List<Post> _items;
 
   @override
-  Future<List<FeedItem>> build(String actor) async => _items;
+  Future<List<Post>> build(String actor) async => _items;
 
   @override
   Future<void> loadMore() async {}

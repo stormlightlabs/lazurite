@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/constants/layout_constants.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/date_formatter.dart';
-import 'package:lazurite/src/features/profile/domain/profile.dart';
 
 /// Tab content showing author's posts with infinite scroll.
 class ProfilePostsTab extends StatefulWidget {
@@ -15,7 +15,7 @@ class ProfilePostsTab extends StatefulWidget {
     super.key,
   });
 
-  final List<FeedItem> items;
+  final List<Post> items;
   final bool hasMore;
   final bool isLoading;
   final VoidCallback onLoadMore;
@@ -80,7 +80,7 @@ class _ProfilePostsTabState extends State<ProfilePostsTab> {
 class _ProfilePostCard extends StatelessWidget {
   const _ProfilePostCard({required this.item});
 
-  final FeedItem item;
+  final Post item;
 
   @override
   Widget build(BuildContext context) {

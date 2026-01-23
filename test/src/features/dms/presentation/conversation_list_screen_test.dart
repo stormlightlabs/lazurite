@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/dms/domain/dm_conversation.dart';
@@ -11,7 +12,6 @@ import 'package:lazurite/src/features/dms/presentation/conversation_list_screen.
 import 'package:lazurite/src/features/dms/presentation/widgets/conversation_list_item.dart';
 import 'package:lazurite/src/features/dms/presentation/widgets/message_request_card.dart';
 import 'package:lazurite/src/features/dms/providers.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -66,14 +66,10 @@ void main() {
       ];
     });
 
-    const profile = Profile(
-      did: 'did:web:alice',
-      handle: 'alice.bsky.social',
-      displayName: 'Alice',
-    );
+    const author = Author(did: 'did:web:alice', handle: 'alice.bsky.social', displayName: 'Alice');
     final conversation = DmConversation(
       convoId: '123',
-      members: [profile],
+      members: [author],
       lastMessageText: 'Hello',
       lastMessageAt: DateTime.now(),
       unreadCount: 0,
@@ -169,7 +165,7 @@ void main() {
       final message = dmm.AppDmMessage(
         messageId: 'msg1',
         convoId: '123',
-        sender: profile,
+        sender: author,
         content: 'Hi',
         sentAt: DateTime.now(),
         status: dmm.MessageStatus.sent,

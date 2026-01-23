@@ -1,3 +1,7 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'outbox_item.freezed.dart';
+
 /// Outbox item status enum.
 enum OutboxStatus {
   /// Message is ready to send.
@@ -21,41 +25,35 @@ enum OutboxStatus {
 /// Represents a pending message in the outbox queue.
 ///
 /// Domain model for DmOutbox table with retry logic methods.
-class OutboxItem {
-  OutboxItem({
-    required this.outboxId,
-    required this.convoId,
-    required this.messageText,
-    required this.status,
-    required this.retryCount,
-    required this.createdAt,
-    this.lastAttemptAt,
-    this.errorMessage,
-  });
+@freezed
+abstract class OutboxItem with _$OutboxItem {
+  const factory OutboxItem({
+    /// Local UUID for this outbox item.
+    required String outboxId,
 
-  /// Local UUID for this outbox item.
-  final String outboxId;
+    /// Conversation to send the message to.
+    required String convoId,
 
-  /// Conversation to send the message to.
-  final String convoId;
+    /// Message text content.
+    required String messageText,
 
-  /// Message text content.
-  final String messageText;
+    /// Current status.
+    required OutboxStatus status,
 
-  /// Current status.
-  final OutboxStatus status;
+    /// Number of send attempts.
+    required int retryCount,
 
-  /// Number of send attempts.
-  final int retryCount;
+    /// When the message was queued.
+    required DateTime createdAt,
 
-  /// When the message was queued.
-  final DateTime createdAt;
+    /// When the last send attempt was made.
+    DateTime? lastAttemptAt,
 
-  /// When the last send attempt was made.
-  final DateTime? lastAttemptAt;
+    /// Error message from the last failed attempt.
+    String? errorMessage,
+  }) = _OutboxItem;
 
-  /// Error message from the last failed attempt.
-  final String? errorMessage;
+  const OutboxItem._();
 
   /// Maximum number of retry attempts before permanent failure.
   static const int maxRetries = 5;
@@ -79,27 +77,4 @@ class OutboxItem {
   ///
   /// Delay = 2^retryCount seconds (2s, 4s, 8s, 16s, 32s).
   Duration get nextRetryDelay => Duration(seconds: 1 << (retryCount + 1));
-
-  /// Returns a copy with updated fields.
-  OutboxItem copyWith({
-    String? outboxId,
-    String? convoId,
-    String? messageText,
-    OutboxStatus? status,
-    int? retryCount,
-    DateTime? createdAt,
-    DateTime? lastAttemptAt,
-    String? errorMessage,
-  }) {
-    return OutboxItem(
-      outboxId: outboxId ?? this.outboxId,
-      convoId: convoId ?? this.convoId,
-      messageText: messageText ?? this.messageText,
-      status: status ?? this.status,
-      retryCount: retryCount ?? this.retryCount,
-      createdAt: createdAt ?? this.createdAt,
-      lastAttemptAt: lastAttemptAt ?? this.lastAttemptAt,
-      errorMessage: errorMessage ?? this.errorMessage,
-    );
-  }
 }

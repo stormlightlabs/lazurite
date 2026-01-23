@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/core/domain/content_label.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
@@ -211,7 +212,7 @@ class FeedPostCard extends ConsumerWidget {
                   ),
                 ),
               PostHeader(
-                author: item.author,
+                author: Author.fromProfile(item.author),
                 indexedAt: createdAt,
                 onAvatarTap: () {
                   final encodedDid = Uri.encodeComponent(item.author.did);

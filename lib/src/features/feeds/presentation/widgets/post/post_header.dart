@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/core/utils/date_formatter.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/verification_badge.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 
 class PostHeader extends StatelessWidget {
   const PostHeader({
@@ -13,7 +13,7 @@ class PostHeader extends StatelessWidget {
     super.key,
   });
 
-  final Profile author;
+  final Author author;
   final DateTime? indexedAt;
   final VoidCallback? onAvatarTap;
 

@@ -1,32 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/features/notifications/domain/notification.dart';
 import 'package:lazurite/src/features/notifications/domain/notification_type.dart';
 import 'package:lazurite/src/features/notifications/presentation/widgets/notification_list_item.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 
 import '../../../../../helpers/pump_app.dart';
 
 void main() {
   group('NotificationListItem', () {
     late AppNotification notification;
-    late Profile actor;
+    late Author actor;
 
     setUp(() {
-      actor = const Profile(
+      actor = const Author(
         did: 'did:plc:actor1',
         handle: 'alice.bsky.social',
         displayName: 'Alice',
-        description: null,
         avatar: 'https://example.com/avatar.jpg',
-        banner: null,
-        indexedAt: null,
-        pronouns: null,
-        website: null,
-        createdAt: null,
-        verificationStatus: null,
-        labels: null,
-        pinnedPostUri: null,
       );
 
       notification = AppNotification(
@@ -95,20 +86,11 @@ void main() {
     });
 
     testWidgets('displays handle when displayName is null', (tester) async {
-      const noDisplayNameActor = Profile(
+      const noDisplayNameActor = Author(
         did: 'did:plc:actor2',
         handle: 'bob.bsky.social',
         displayName: null,
-        description: null,
         avatar: null,
-        banner: null,
-        indexedAt: null,
-        pronouns: null,
-        website: null,
-        createdAt: null,
-        verificationStatus: null,
-        labels: null,
-        pinnedPostUri: null,
       );
       final noDisplayNameNotification = notification.copyWith(actor: noDisplayNameActor);
       await tester.pumpApp(NotificationListItem(notification: noDisplayNameNotification));

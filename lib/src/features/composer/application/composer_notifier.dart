@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
-import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'composer_providers.dart';
@@ -39,17 +39,17 @@ class ComposerState {
   final String? error;
 
   /// The parent post being replied to (for displaying ReplyContextCard).
-  final FeedItem? replyPost;
+  final Post? replyPost;
 
   /// The quoted post (for displaying QuotePostCard).
-  final FeedItem? quotePost;
+  final Post? quotePost;
 
   ComposerState copyWith({
     Draft? draft,
     bool? isPublishing,
     String? error,
-    FeedItem? replyPost,
-    FeedItem? quotePost,
+    Post? replyPost,
+    Post? quotePost,
   }) {
     return ComposerState(
       draft: draft ?? this.draft,
@@ -78,8 +78,8 @@ class ComposerNotifier extends _$ComposerNotifier {
 
     if (args?.draftId case final id?) {
       final existing = await _repository.getDraft(id);
-      FeedItem? replyPost;
-      FeedItem? quotePost;
+      Post? replyPost;
+      Post? quotePost;
       if (existing.replyParentUri != null) {
         replyPost = await _fetchPost(existing.replyParentUri!);
       }
@@ -89,7 +89,7 @@ class ComposerNotifier extends _$ComposerNotifier {
       return ComposerState(draft: existing, replyPost: replyPost, quotePost: quotePost);
     }
 
-    FeedItem? replyPost;
+    Post? replyPost;
     String? replyParentUri;
     String? replyParentCid;
     String? replyRootUri;
@@ -113,7 +113,7 @@ class ComposerNotifier extends _$ComposerNotifier {
       }
     }
 
-    FeedItem? quotePost;
+    Post? quotePost;
     String? quoteUri;
     String? quoteCid;
 
@@ -137,7 +137,7 @@ class ComposerNotifier extends _$ComposerNotifier {
   }
 
   /// Fetches a post by URI for reply/quote context.
-  Future<FeedItem?> _fetchPost(String uri) async {
+  Future<Post?> _fetchPost(String uri) async {
     try {
       final repository = ref.read(profileRepositoryProvider);
       return await repository.getPost(uri);

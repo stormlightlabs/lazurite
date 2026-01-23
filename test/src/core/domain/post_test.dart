@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/core/domain/post.dart';
 
 void main() {
@@ -115,7 +116,7 @@ void main() {
       expect(post.text, '');
     });
 
-    test('equality compares by uri and cid', () {
+    test('equality compares all fields', () {
       const post1 = Post(
         uri: 'at://did:plc:user1/app.bsky.feed.post/1',
         cid: 'cid123',
@@ -125,14 +126,13 @@ void main() {
       const post2 = Post(
         uri: 'at://did:plc:user1/app.bsky.feed.post/1',
         cid: 'cid123',
-        author: Author(did: 'did1', handle: 'different'),
-        text: 'Different text',
-        likeCount: 100,
+        author: Author(did: 'did1', handle: 'handle1'),
+        text: 'Hello',
       );
       const post3 = Post(
-        uri: 'at://did:plc:user1/app.bsky.feed.post/2',
-        cid: 'cid456',
-        author: Author(did: 'did1', handle: 'handle1'),
+        uri: 'at://did:plc:user1/app.bsky.feed.post/1',
+        cid: 'cid123',
+        author: Author(did: 'did1', handle: 'different'),
         text: 'Hello',
       );
 
@@ -150,8 +150,8 @@ void main() {
       const post2 = Post(
         uri: 'at://did:plc:user1/app.bsky.feed.post/1',
         cid: 'cid123',
-        author: Author(did: 'did1', handle: 'different'),
-        text: 'Different text',
+        author: Author(did: 'did1', handle: 'handle1'),
+        text: 'Hello',
       );
 
       expect(post1.hashCode, equals(post2.hashCode));

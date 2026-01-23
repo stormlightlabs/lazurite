@@ -10,7 +10,6 @@ import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_body.
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_embeds.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_header.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 
 class PinnedPostCard extends ConsumerWidget {
   const PinnedPostCard(this.postUri, {super.key});
@@ -29,13 +28,6 @@ class PinnedPostCard extends ConsumerWidget {
       data: (item) {
         logger.info('item: $item');
         if (item == null) return const SizedBox.shrink();
-
-        final author = Profile(
-          did: item.authorDid,
-          handle: item.authorHandle,
-          displayName: item.authorDisplayName,
-          avatar: item.authorAvatar,
-        );
 
         return Card(
           clipBehavior: Clip.antiAlias,
@@ -60,12 +52,12 @@ class PinnedPostCard extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                PostHeader(author: author, indexedAt: item.indexedAt, onAvatarTap: () => ()),
+                PostHeader(author: item.author, indexedAt: item.indexedAt, onAvatarTap: () => ()),
                 const SizedBox(height: 8),
                 PostBody(text: item.text),
                 if (item.embed != null && item.record != null) ...[
                   const SizedBox(height: 8),
-                  PostEmbeds(embed: item.embed!, authorDid: item.authorDid, record: item.record!),
+                  PostEmbeds(embed: item.embed!, authorDid: item.author.did, record: item.record!),
                 ],
                 const SizedBox(height: 8),
                 PostActionsRow(

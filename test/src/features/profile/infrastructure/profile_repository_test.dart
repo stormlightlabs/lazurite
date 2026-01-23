@@ -421,7 +421,7 @@ void main() {
         expect(post, isNotNull);
         expect(post!.uri, 'at://did:plc:test123/app.bsky.feed.post/1');
         expect(post.text, 'Hello world');
-        expect(post.authorDid, 'did:plc:test123');
+        expect(post.author.did, 'did:plc:test123');
         expect(post.replyCount, 5);
       });
 

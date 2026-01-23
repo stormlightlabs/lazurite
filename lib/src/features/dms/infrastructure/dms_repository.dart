@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 
 import '../../../core/utils/logger.dart';
-import '../../../infrastructure/db/app_database.dart';
+import '../../../infrastructure/db/app_database.dart' as db;
+import '../../../infrastructure/db/app_database.dart' hide Post, Profile;
 import '../../../infrastructure/db/daos/dm_convos_dao.dart';
 import '../../../infrastructure/db/daos/dm_messages_dao.dart';
 import '../../../infrastructure/network/xrpc_client.dart';
@@ -126,7 +128,7 @@ class DmsRepository {
       return items.map((item) {
         return DmConversation(
           convoId: item.convo.convoId,
-          members: item.members,
+          members: item.members.map(Author.fromProfile).toList(),
           lastMessageText: item.convo.lastMessageText,
           lastMessageAt: item.convo.lastMessageAt,
           lastReadMessageId: item.convo.lastReadMessageId,
@@ -145,7 +147,7 @@ class DmsRepository {
 
     return DmConversation(
       convoId: item.convo.convoId,
-      members: item.members,
+      members: item.members.map(Author.fromProfile).toList(),
       lastMessageText: item.convo.lastMessageText,
       lastMessageAt: item.convo.lastMessageAt,
       lastReadMessageId: item.convo.lastReadMessageId,
@@ -182,7 +184,7 @@ class DmsRepository {
 
       _logger.debug('Received messages', {'count': messagesList.length, 'newCursor': newCursor});
 
-      final messages = <DmMessagesCompanion>[];
+      final messages = <db.DmMessagesCompanion>[];
       final profiles = <ProfilesCompanion>[];
       final now = DateTime.now();
 
@@ -209,7 +211,7 @@ class DmsRepository {
         final sentAt = sentAtStr != null ? DateTime.tryParse(sentAtStr) ?? now : now;
 
         messages.add(
-          DmMessagesCompanion.insert(
+          db.DmMessagesCompanion.insert(
             messageId: messageMap['id'] as String,
             convoId: convoId,
             ownerDid: ownerDid,
@@ -243,7 +245,7 @@ class DmsRepository {
         return domain.AppDmMessage(
           messageId: item.message.messageId,
           convoId: item.message.convoId,
-          sender: item.sender,
+          sender: Author.fromProfile(item.sender),
           content: item.message.content,
           sentAt: item.message.sentAt,
           status: domain.MessageStatus.fromString(item.message.status),

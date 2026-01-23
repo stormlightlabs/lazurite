@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/date_formatter.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
 
@@ -7,32 +8,9 @@ import 'package:lazurite/src/core/widgets/avatar.dart';
 /// This widget displays a feed item with author info, post text, and action counts.
 /// It can be used in profile tabs (Posts/Replies/Media) and search results.
 class FeedPostCard extends StatelessWidget {
-  const FeedPostCard({
-    required this.uri,
-    required this.authorDid,
-    required this.authorHandle,
-    required this.text,
-    this.authorDisplayName,
-    this.authorAvatar,
-    this.indexedAt,
-    this.replyCount = 0,
-    this.repostCount = 0,
-    this.likeCount = 0,
-    this.onTap,
-    this.onAvatarTap,
-    super.key,
-  });
+  const FeedPostCard({required this.post, this.onTap, this.onAvatarTap, super.key});
 
-  final String uri;
-  final String authorDid;
-  final String authorHandle;
-  final String? authorDisplayName;
-  final String? authorAvatar;
-  final String text;
-  final DateTime? indexedAt;
-  final int replyCount;
-  final int repostCount;
-  final int likeCount;
+  final Post post;
   final VoidCallback? onTap;
   final VoidCallback? onAvatarTap;
 
@@ -68,7 +46,7 @@ class FeedPostCard extends StatelessWidget {
       children: [
         InkWell(
           onTap: onAvatarTap,
-          child: Avatar(imageUrl: authorAvatar, radius: 20),
+          child: Avatar(imageUrl: post.author.avatar, radius: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -79,16 +57,16 @@ class FeedPostCard extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      authorDisplayName ?? authorHandle,
+                      post.author.displayName ?? post.author.handle,
                       style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 4),
-                  if (indexedAt != null)
+                  if (post.indexedAt != null)
                     Text(
-                      '• ${DateFormatter.formatRelative(indexedAt!)}',
+                      '• ${DateFormatter.formatRelative(post.indexedAt!)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -96,7 +74,7 @@ class FeedPostCard extends StatelessWidget {
                 ],
               ),
               Text(
-                '@$authorHandle',
+                '@${post.author.handle}',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -112,7 +90,7 @@ class FeedPostCard extends StatelessWidget {
 
   Widget _buildBody(ThemeData theme) {
     return Text(
-      text,
+      post.text,
       style: theme.textTheme.bodyMedium,
       maxLines: 6,
       overflow: TextOverflow.ellipsis,
@@ -122,11 +100,11 @@ class FeedPostCard extends StatelessWidget {
   Widget _buildActions(ThemeData theme) {
     return Row(
       children: [
-        _ActionItem(icon: Icons.chat_bubble_outline, count: replyCount),
+        _ActionItem(icon: Icons.chat_bubble_outline, count: post.replyCount),
         const SizedBox(width: 24),
-        _ActionItem(icon: Icons.repeat, count: repostCount),
+        _ActionItem(icon: Icons.repeat, count: post.repostCount),
         const SizedBox(width: 24),
-        _ActionItem(icon: Icons.favorite_outline, count: likeCount),
+        _ActionItem(icon: Icons.favorite_outline, count: post.likeCount),
       ],
     );
   }

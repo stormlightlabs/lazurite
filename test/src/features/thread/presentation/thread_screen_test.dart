@@ -42,7 +42,7 @@ void main() {
           post: ThreadPost(
             uri: testUri,
             cid: 'cid1',
-            author: ThreadAuthor(did: 'did:1', handle: 'alice', displayName: 'Alice'),
+            author: const ThreadAuthor(did: 'did:1', handle: 'alice', displayName: 'Alice'),
             record: {'text': 'Focal post', 'createdAt': '2024-01-01T00:00:00Z'},
             indexedAt: DateTime.parse('2024-01-01T00:00:00Z'),
           ),
@@ -67,7 +67,7 @@ void main() {
         post: ThreadPost(
           uri: 'at://did:1/app.bsky.feed.post/parent',
           cid: 'parentcid',
-          author: ThreadAuthor(did: 'did:1', handle: 'parent_user', displayName: 'Parent'),
+          author: const ThreadAuthor(did: 'did:1', handle: 'parent_user', displayName: 'Parent'),
           record: {'text': 'Parent post', 'createdAt': '2024-01-01T00:00:00Z'},
           indexedAt: DateTime.parse('2024-01-01T00:00:00Z'),
         ),
@@ -78,7 +78,7 @@ void main() {
           post: ThreadPost(
             uri: testUri,
             cid: 'cid1',
-            author: ThreadAuthor(did: 'did:2', handle: 'child_user', displayName: 'Child'),
+            author: const ThreadAuthor(did: 'did:2', handle: 'child_user', displayName: 'Child'),
             record: {'text': 'Child post', 'createdAt': '2024-01-01T00:01:00Z'},
             indexedAt: DateTime.parse('2024-01-01T00:01:00Z'),
           ),
@@ -103,7 +103,7 @@ void main() {
           post: ThreadPost(
             uri: testUri,
             cid: 'cid1',
-            author: ThreadAuthor(did: 'did:1', handle: 'alice', displayName: 'Alice'),
+            author: const ThreadAuthor(did: 'did:1', handle: 'alice', displayName: 'Alice'),
             record: {'text': 'Root post', 'createdAt': '2024-01-01T00:00:00Z'},
             indexedAt: DateTime.parse('2024-01-01T00:00:00Z'),
           ),
@@ -112,7 +112,7 @@ void main() {
               post: ThreadPost(
                 uri: 'at://did:2/app.bsky.feed.post/reply1',
                 cid: 'replycid',
-                author: ThreadAuthor(did: 'did:2', handle: 'bob', displayName: 'Bob'),
+                author: const ThreadAuthor(did: 'did:2', handle: 'bob', displayName: 'Bob'),
                 record: {'text': 'Reply to root', 'createdAt': '2024-01-01T00:01:00Z'},
                 indexedAt: DateTime.parse('2024-01-01T00:01:00Z'),
               ),
@@ -134,7 +134,7 @@ void main() {
           post: ThreadPost(
             uri: testUri,
             cid: 'cid1',
-            author: ThreadAuthor(did: 'did:1', handle: 'alice'),
+            author: const ThreadAuthor(did: 'did:1', handle: 'alice'),
             record: {'text': 'Root'},
             indexedAt: DateTime.now(),
           ),
@@ -164,7 +164,7 @@ void main() {
           post: ThreadPost(
             uri: testUri,
             cid: 'cid1',
-            author: ThreadAuthor(did: 'did:1', handle: 'alice'),
+            author: const ThreadAuthor(did: 'did:1', handle: 'alice'),
             record: {'text': 'Root'},
             indexedAt: DateTime.now(),
           ),
@@ -194,11 +194,11 @@ void main() {
           post: ThreadPost(
             uri: testUri,
             cid: 'cid1',
-            author: ThreadAuthor(did: 'did:1', handle: 'alice'),
+            author: const ThreadAuthor(did: 'did:1', handle: 'alice'),
             record: {'text': 'Restricted replies post'},
             indexedAt: DateTime.now(),
           ),
-          threadgate: Threadgate(
+          threadgate: const Threadgate(
             uri: 'at://did:1/app.bsky.feed.threadgate/1',
             record: ThreadgateRecord(
               post: testUri,
@@ -223,7 +223,7 @@ void main() {
           post: ThreadPost(
             uri: testUri,
             cid: 'cid1',
-            author: ThreadAuthor(did: 'did:1', handle: 'alice'),
+            author: const ThreadAuthor(did: 'did:1', handle: 'alice'),
             record: {'text': 'Root post'},
             indexedAt: DateTime.now(),
           ),

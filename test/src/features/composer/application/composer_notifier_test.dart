@@ -1,12 +1,12 @@
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/features/composer/application/composer_notifier.dart';
 import 'package:lazurite/src/features/composer/application/composer_providers.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart';
 import 'package:lazurite/src/features/composer/infrastructure/draft_repository.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
-import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -14,18 +14,18 @@ class MockDraftRepository extends Mock implements DraftRepository {}
 
 class MockProfileRepository extends Mock implements ProfileRepository {}
 
-class MockFeedItem extends Mock implements FeedItem {}
+class MockPost extends Mock implements Post {}
 
 void main() {
   late MockDraftRepository mockRepository;
   late MockProfileRepository mockProfileRepository;
   late Draft mockDraft;
-  late MockFeedItem mockPost;
+  late MockPost mockPost;
 
   setUp(() {
     mockRepository = MockDraftRepository();
     mockProfileRepository = MockProfileRepository();
-    mockPost = MockFeedItem();
+    mockPost = MockPost();
 
     mockDraft = Draft(
       id: 'test-draft-id',
@@ -196,7 +196,7 @@ void main() {
         final container = createContainer();
         const args = ComposerArgs(replyTo: 'at://parent');
 
-        final parentPost = MockFeedItem();
+        final parentPost = MockPost();
         when(() => parentPost.uri).thenReturn('at://parent');
         when(() => parentPost.cid).thenReturn('parent-cid');
         when(() => parentPost.record).thenReturn({

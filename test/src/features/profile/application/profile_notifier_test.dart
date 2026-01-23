@@ -14,7 +14,7 @@ void main() {
   const testDid = 'did:plc:test';
   const myDid = 'did:plc:me';
 
-  final testProfile = ProfileData(
+  const testProfile = ProfileData(
     did: testDid,
     handle: 'test.bsky.social',
     displayName: 'Test User',

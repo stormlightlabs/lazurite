@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/domain/profile.dart';
@@ -33,7 +34,7 @@ void main() {
 
   group('Profile Screen Regression Tests', () {
     testWidgets('shows "Follows you" indicator when profile follows viewer', (tester) async {
-      final profile = ProfileData(
+      const profile = ProfileData(
         did: 'did:plc:other',
         handle: 'other.bsky.social',
         displayName: 'Other User',
@@ -61,7 +62,7 @@ void main() {
     testWidgets('hides Pinned Post header and card when pinned post fails to load', (
       tester,
     ) async {
-      final profile = ProfileData(
+      const profile = ProfileData(
         did: 'did:plc:test',
         handle: 'test.bsky.social',
         pinnedPostUri: 'at://did:plc:test/app.bsky.feed.post/deleted',
@@ -91,7 +92,7 @@ void main() {
     testWidgets('shows "No posts yet" when author has no posts but has a deleted pinned post', (
       tester,
     ) async {
-      final profile = ProfileData(
+      const profile = ProfileData(
         did: 'did:plc:test',
         handle: 'test.bsky.social',
         pinnedPostUri: 'at://did:plc:test/app.bsky.feed.post/deleted',
@@ -119,7 +120,7 @@ void main() {
     });
 
     testWidgets('shows "Unfollow" text when following a profile', (tester) async {
-      final profile = ProfileData(
+      const profile = ProfileData(
         did: 'did:plc:other',
         handle: 'other.bsky.social',
         displayName: 'Other User',
@@ -146,7 +147,7 @@ void main() {
     });
 
     testWidgets('shows both "Unfollow" and "Follows you" for mutual follow', (tester) async {
-      final profile = ProfileData(
+      const profile = ProfileData(
         did: 'did:plc:other',
         handle: 'other.bsky.social',
         displayName: 'Other User',
@@ -188,10 +189,10 @@ class MockProfileNotifier extends ProfileNotifier {
 
 class MockAuthorFeedNotifier extends AuthorFeedNotifier {
   MockAuthorFeedNotifier(this._items);
-  final List<FeedItem> _items;
+  final List<Post> _items;
 
   @override
-  Future<List<FeedItem>> build(String actor) async => _items;
+  Future<List<Post>> build(String actor) async => _items;
 
   @override
   bool get hasMore => false;

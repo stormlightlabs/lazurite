@@ -1,37 +1,41 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'search_actor.freezed.dart';
+
 /// An actor (user) from search results.
-class SearchActorItem {
-  SearchActorItem({
-    required this.did,
-    required this.handle,
-    this.displayName,
-    this.description,
-    this.avatar,
-    this.followersCount = 0,
-    this.followsCount = 0,
-    this.indexedAt,
-    this.allowIncoming,
-  });
+@freezed
+abstract class SearchActorItem with _$SearchActorItem {
+  const factory SearchActorItem({
+    required String did,
+    required String handle,
+    String? displayName,
+    String? description,
+    String? avatar,
+    @Default(0) int followersCount,
+    @Default(0) int followsCount,
+    DateTime? indexedAt,
+    String? allowIncoming,
+  }) = _SearchActorItem;
+
+  const SearchActorItem._();
 
   factory SearchActorItem.fromJson(Map<String, dynamic> json) {
-    final did = json['did'];
-    final handle = json['handle'];
-
-    if (did is! String || did.isEmpty) {
+    if (json['did'] is! String || (json['did'] as String).isEmpty) {
       throw FormatException('SearchActorItem.did must be a non-empty string', json);
     }
-    if (handle is! String || handle.isEmpty) {
+    if (json['handle'] is! String || (json['handle'] as String).isEmpty) {
       throw FormatException('SearchActorItem.handle must be a non-empty string', json);
     }
 
     return SearchActorItem(
-      did: did,
-      handle: handle,
+      did: json['did'] as String,
+      handle: json['handle'] as String,
       displayName: json['displayName'] as String?,
       description: json['description'] as String?,
       avatar: json['avatar'] as String?,
       followersCount: json['followersCount'] as int? ?? 0,
       followsCount: json['followsCount'] as int? ?? 0,
-      indexedAt: DateTime.tryParse(json['indexedAt'] as String? ?? ''),
+      indexedAt: json['indexedAt'] != null ? DateTime.tryParse(json['indexedAt'] as String) : null,
       allowIncoming: _parseAllowIncoming(json),
     );
   }
@@ -46,14 +50,4 @@ class SearchActorItem {
     }
     return null;
   }
-
-  final String did;
-  final String handle;
-  final String? displayName;
-  final String? description;
-  final String? avatar;
-  final int followersCount;
-  final int followsCount;
-  final DateTime? indexedAt;
-  final String? allowIncoming;
 }

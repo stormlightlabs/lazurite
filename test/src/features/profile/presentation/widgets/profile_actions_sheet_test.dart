@@ -61,7 +61,7 @@ void main() {
     mockProfileRepository = MockProfileRepository();
     when(
       () => mockProfileRepository.getProfile(any(), any()),
-    ).thenAnswer((_) async => ProfileData(did: 'did:plc:test', handle: 'test.bsky.social'));
+    ).thenAnswer((_) async => const ProfileData(did: 'did:plc:test', handle: 'test.bsky.social'));
     when(() => mockProfileRepository.watchProfile(any())).thenAnswer((_) => Stream.value(null));
     when(
       () => mockProfileRepository.createReport(

@@ -6,7 +6,7 @@ import 'package:lazurite/src/features/thread/presentation/widgets/threadgate_ind
 void main() {
   group('ThreadgateIndicator', () {
     testWidgets('renders restriction description', (tester) async {
-      final threadgate = Threadgate(
+      const threadgate = Threadgate(
         uri: 'at://did:example/app.bsky.feed.threadgate/abc',
         record: ThreadgateRecord(
           post: 'at://did:example/app.bsky.feed.post/123',
@@ -17,7 +17,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(body: ThreadgateIndicator(threadgate: threadgate)),
         ),
       );
@@ -26,10 +26,10 @@ void main() {
     });
 
     testWidgets('displays lock icon', (tester) async {
-      final threadgate = Threadgate(uri: 'at://test/gate/1');
+      const threadgate = Threadgate(uri: 'at://test/gate/1');
 
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(body: ThreadgateIndicator(threadgate: threadgate)),
         ),
       );
@@ -38,13 +38,13 @@ void main() {
     });
 
     testWidgets('has semantic label for accessibility', (tester) async {
-      final threadgate = Threadgate(
+      const threadgate = Threadgate(
         uri: 'at://test/gate/1',
         record: ThreadgateRecord(post: 'at://test/post/1', allow: []),
       );
 
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(body: ThreadgateIndicator(threadgate: threadgate)),
         ),
       );
@@ -54,7 +54,7 @@ void main() {
     });
 
     testWidgets('shows tooltip on hover/long press', (tester) async {
-      final threadgate = Threadgate(
+      const threadgate = Threadgate(
         uri: 'at://test/gate/1',
         record: ThreadgateRecord(
           post: 'at://test/post/1',
@@ -65,7 +65,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(body: ThreadgateIndicator(threadgate: threadgate)),
         ),
       );
@@ -76,7 +76,7 @@ void main() {
 
   group('Threadgate', () {
     test('restrictionDescription returns correct text for mentionRule', () {
-      final threadgate = Threadgate(
+      const threadgate = Threadgate(
         uri: 'at://test/gate/1',
         record: ThreadgateRecord(
           post: 'at://test/post/1',
@@ -90,7 +90,7 @@ void main() {
     });
 
     test('restrictionDescription returns correct text for followingRule', () {
-      final threadgate = Threadgate(
+      const threadgate = Threadgate(
         uri: 'at://test/gate/1',
         record: ThreadgateRecord(
           post: 'at://test/post/1',
@@ -104,7 +104,7 @@ void main() {
     });
 
     test('restrictionDescription returns correct text for listRule', () {
-      final threadgate = Threadgate(
+      const threadgate = Threadgate(
         uri: 'at://test/gate/1',
         record: ThreadgateRecord(
           post: 'at://test/post/1',
@@ -118,7 +118,7 @@ void main() {
     });
 
     test('restrictionDescription handles multiple rules', () {
-      final threadgate = Threadgate(
+      const threadgate = Threadgate(
         uri: 'at://test/gate/1',
         record: ThreadgateRecord(
           post: 'at://test/post/1',
@@ -136,7 +136,7 @@ void main() {
     });
 
     test('restrictionDescription returns disabled for empty allow', () {
-      final threadgate = Threadgate(
+      const threadgate = Threadgate(
         uri: 'at://test/gate/1',
         record: ThreadgateRecord(post: 'at://test/post/1', allow: []),
       );
@@ -145,7 +145,7 @@ void main() {
     });
 
     test('restrictionDescription returns restricted for null record', () {
-      final threadgate = Threadgate(uri: 'at://test/gate/1');
+      const threadgate = Threadgate(uri: 'at://test/gate/1');
 
       expect(threadgate.restrictionDescription, 'Replies restricted');
     });

@@ -55,7 +55,7 @@ void main() {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         media: [
-          DraftMediaAttachment(
+          const DraftMediaAttachment(
             id: 1,
             draftId: '1',
             localPath: '/tmp/img1.jpg',
@@ -63,7 +63,7 @@ void main() {
             status: DraftMediaStatus.pending,
             sortOrder: 0,
           ),
-          DraftMediaAttachment(
+          const DraftMediaAttachment(
             id: 2,
             draftId: '1',
             localPath: '/tmp/img2.jpg',

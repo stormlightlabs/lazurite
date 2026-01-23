@@ -54,8 +54,8 @@ String _$profileRepositoryHash() => r'ec881f45142b9ecac2a527877fc40c33cf59193d';
 final pinnedPostProvider = PinnedPostFamily._();
 
 final class PinnedPostProvider
-    extends $FunctionalProvider<AsyncValue<FeedItem?>, FeedItem?, FutureOr<FeedItem?>>
-    with $FutureModifier<FeedItem?>, $FutureProvider<FeedItem?> {
+    extends $FunctionalProvider<AsyncValue<Post?>, Post?, FutureOr<Post?>>
+    with $FutureModifier<Post?>, $FutureProvider<Post?> {
   PinnedPostProvider._({required PinnedPostFamily super.from, required String super.argument})
     : super(
         retry: null,
@@ -77,11 +77,11 @@ final class PinnedPostProvider
 
   @$internal
   @override
-  $FutureProviderElement<FeedItem?> $createElement($ProviderPointer pointer) =>
+  $FutureProviderElement<Post?> $createElement($ProviderPointer pointer) =>
       $FutureProviderElement(pointer);
 
   @override
-  FutureOr<FeedItem?> create(Ref ref) {
+  FutureOr<Post?> create(Ref ref) {
     final argument = this.argument as String;
     return pinnedPost(ref, argument);
   }
@@ -97,10 +97,10 @@ final class PinnedPostProvider
   }
 }
 
-String _$pinnedPostHash() => r'65082b94fb3fdbd13cfd9b0cf97f5f1c714831ec';
+String _$pinnedPostHash() => r'8069586abf38747f1f86bbb0ce2754b91ac2a784';
 
 final class PinnedPostFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<FeedItem?>, String> {
+    with $FunctionalFamilyOverride<FutureOr<Post?>, String> {
   PinnedPostFamily._()
     : super(
         retry: null,
@@ -208,7 +208,7 @@ abstract class _$ProfileNotifier extends $AsyncNotifier<ProfileData> {
 final authorFeedProvider = AuthorFeedNotifierFamily._();
 
 final class AuthorFeedNotifierProvider
-    extends $AsyncNotifierProvider<AuthorFeedNotifier, List<FeedItem>> {
+    extends $AsyncNotifierProvider<AuthorFeedNotifier, List<Post>> {
   AuthorFeedNotifierProvider._({
     required AuthorFeedNotifierFamily super.from,
     required String super.argument,
@@ -245,15 +245,15 @@ final class AuthorFeedNotifierProvider
   }
 }
 
-String _$authorFeedNotifierHash() => r'b241402d3ec7ba5ca64908fd166bbfa3d3b126c7';
+String _$authorFeedNotifierHash() => r'3311af5767650ab3f1859fcfe7a6eab3d9f6bac7';
 
 final class AuthorFeedNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
           AuthorFeedNotifier,
-          AsyncValue<List<FeedItem>>,
-          List<FeedItem>,
-          FutureOr<List<FeedItem>>,
+          AsyncValue<List<Post>>,
+          List<Post>,
+          FutureOr<List<Post>>,
           String
         > {
   AuthorFeedNotifierFamily._()
@@ -272,20 +272,20 @@ final class AuthorFeedNotifierFamily extends $Family
   String toString() => r'authorFeedProvider';
 }
 
-abstract class _$AuthorFeedNotifier extends $AsyncNotifier<List<FeedItem>> {
+abstract class _$AuthorFeedNotifier extends $AsyncNotifier<List<Post>> {
   late final _$args = ref.$arg as String;
   String get actor => _$args;
 
-  FutureOr<List<FeedItem>> build(String actor);
+  FutureOr<List<Post>> build(String actor);
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<List<FeedItem>>, List<FeedItem>>;
+    final ref = this.ref as $Ref<AsyncValue<List<Post>>, List<Post>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<List<FeedItem>>, List<FeedItem>>,
-              AsyncValue<List<FeedItem>>,
+              AnyNotifier<AsyncValue<List<Post>>, List<Post>>,
+              AsyncValue<List<Post>>,
               Object?,
               Object?
             >;
@@ -357,7 +357,7 @@ final followersProvider = FollowersNotifierFamily._();
 
 /// Notifier for managing followers list with cursor pagination.
 final class FollowersNotifierProvider
-    extends $AsyncNotifierProvider<FollowersNotifier, List<ActorBasic>> {
+    extends $AsyncNotifierProvider<FollowersNotifier, List<Author>> {
   /// Notifier for managing followers list with cursor pagination.
   FollowersNotifierProvider._({
     required FollowersNotifierFamily super.from,
@@ -395,7 +395,7 @@ final class FollowersNotifierProvider
   }
 }
 
-String _$followersNotifierHash() => r'780708982a3a4207b47f22e314705befeeb13ab0';
+String _$followersNotifierHash() => r'e14b085cc71a7aafe6552fbfb2f78bfc40988519';
 
 /// Notifier for managing followers list with cursor pagination.
 
@@ -403,9 +403,9 @@ final class FollowersNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
           FollowersNotifier,
-          AsyncValue<List<ActorBasic>>,
-          List<ActorBasic>,
-          FutureOr<List<ActorBasic>>,
+          AsyncValue<List<Author>>,
+          List<Author>,
+          FutureOr<List<Author>>,
           String
         > {
   FollowersNotifierFamily._()
@@ -428,20 +428,20 @@ final class FollowersNotifierFamily extends $Family
 
 /// Notifier for managing followers list with cursor pagination.
 
-abstract class _$FollowersNotifier extends $AsyncNotifier<List<ActorBasic>> {
+abstract class _$FollowersNotifier extends $AsyncNotifier<List<Author>> {
   late final _$args = ref.$arg as String;
   String get actor => _$args;
 
-  FutureOr<List<ActorBasic>> build(String actor);
+  FutureOr<List<Author>> build(String actor);
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<List<ActorBasic>>, List<ActorBasic>>;
+    final ref = this.ref as $Ref<AsyncValue<List<Author>>, List<Author>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<List<ActorBasic>>, List<ActorBasic>>,
-              AsyncValue<List<ActorBasic>>,
+              AnyNotifier<AsyncValue<List<Author>>, List<Author>>,
+              AsyncValue<List<Author>>,
               Object?,
               Object?
             >;
@@ -456,7 +456,7 @@ final followingProvider = FollowingNotifierFamily._();
 
 /// Notifier for managing following list with cursor pagination.
 final class FollowingNotifierProvider
-    extends $AsyncNotifierProvider<FollowingNotifier, List<ActorBasic>> {
+    extends $AsyncNotifierProvider<FollowingNotifier, List<Author>> {
   /// Notifier for managing following list with cursor pagination.
   FollowingNotifierProvider._({
     required FollowingNotifierFamily super.from,
@@ -494,7 +494,7 @@ final class FollowingNotifierProvider
   }
 }
 
-String _$followingNotifierHash() => r'bd2e177823a3055aa5653f03fd3e593198651111';
+String _$followingNotifierHash() => r'b9c1015fcf7d145b3de8b4f1edcbd4b622c27642';
 
 /// Notifier for managing following list with cursor pagination.
 
@@ -502,9 +502,9 @@ final class FollowingNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
           FollowingNotifier,
-          AsyncValue<List<ActorBasic>>,
-          List<ActorBasic>,
-          FutureOr<List<ActorBasic>>,
+          AsyncValue<List<Author>>,
+          List<Author>,
+          FutureOr<List<Author>>,
           String
         > {
   FollowingNotifierFamily._()
@@ -527,20 +527,20 @@ final class FollowingNotifierFamily extends $Family
 
 /// Notifier for managing following list with cursor pagination.
 
-abstract class _$FollowingNotifier extends $AsyncNotifier<List<ActorBasic>> {
+abstract class _$FollowingNotifier extends $AsyncNotifier<List<Author>> {
   late final _$args = ref.$arg as String;
   String get actor => _$args;
 
-  FutureOr<List<ActorBasic>> build(String actor);
+  FutureOr<List<Author>> build(String actor);
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<List<ActorBasic>>, List<ActorBasic>>;
+    final ref = this.ref as $Ref<AsyncValue<List<Author>>, List<Author>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<List<ActorBasic>>, List<ActorBasic>>,
-              AsyncValue<List<ActorBasic>>,
+              AnyNotifier<AsyncValue<List<Author>>, List<Author>>,
+              AsyncValue<List<Author>>,
               Object?,
               Object?
             >;

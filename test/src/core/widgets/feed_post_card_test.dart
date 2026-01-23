@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/author.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/widgets/feed_post_card.dart';
 
 void main() {
@@ -20,16 +22,21 @@ void main() {
     return MaterialApp(
       home: Scaffold(
         body: FeedPostCard(
-          uri: uri,
-          authorDid: authorDid,
-          authorHandle: authorHandle,
-          authorDisplayName: authorDisplayName,
-          authorAvatar: authorAvatar,
-          text: text,
-          indexedAt: indexedAt,
-          replyCount: replyCount,
-          repostCount: repostCount,
-          likeCount: likeCount,
+          post: Post(
+            uri: uri,
+            cid: 'cid',
+            author: Author(
+              did: authorDid,
+              handle: authorHandle,
+              displayName: authorDisplayName,
+              avatar: authorAvatar,
+            ),
+            text: text,
+            indexedAt: indexedAt,
+            replyCount: replyCount,
+            repostCount: repostCount,
+            likeCount: likeCount,
+          ),
           onTap: onTap,
           onAvatarTap: onAvatarTap,
         ),

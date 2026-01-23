@@ -1,25 +1,46 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide JsonKey;
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:lazurite/src/core/domain/author.dart' as core;
+import 'package:lazurite/src/core/domain/post.dart' as domain;
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 
+part 'thread.freezed.dart';
+part 'thread.g.dart';
+
 /// Domain model for a thread view post.
-class ThreadViewPost {
+@freezed
+abstract class ThreadViewPost with _$ThreadViewPost {
+  const factory ThreadViewPost({
+    required ThreadPost post,
+    ThreadViewPost? parent,
+    @Default([]) List<ThreadViewPost> replies,
+    Threadgate? threadgate,
+    @Default(false) bool isBlocked,
+    @Default(false) bool isNotFound,
+  }) = _ThreadViewPost;
+
+  const ThreadViewPost._();
+
   factory ThreadViewPost.fromJson(Map<String, dynamic> json) {
-    final type = json[r'$type'];
+    final type = json[r'$type'] as String?;
     switch (type) {
       case 'app.bsky.feed.defs#threadViewPost':
-        final threadgateJson = json['threadgate'] as Map<String, dynamic>?;
         return ThreadViewPost(
           post: ThreadPost.fromJson(json['post'] as Map<String, dynamic>),
-          parent: json['parent'] != null ? ThreadViewPost.fromJson(json['parent']) : null,
+          parent: json['parent'] != null
+              ? ThreadViewPost.fromJson(json['parent'] as Map<String, dynamic>)
+              : null,
           replies:
               (json['replies'] as List?)
                   ?.map((e) => ThreadViewPost.fromJson(e as Map<String, dynamic>))
                   .toList() ??
-              [],
-          threadgate: threadgateJson != null ? Threadgate.fromJson(threadgateJson) : null,
+              const [],
+          threadgate: json['threadgate'] != null
+              ? Threadgate.fromJson(json['threadgate'] as Map<String, dynamic>)
+              : null,
         );
       case 'app.bsky.feed.defs#blockedPost':
         return ThreadViewPost(
@@ -49,22 +70,6 @@ class ThreadViewPost {
     }
   }
 
-  ThreadViewPost({
-    required this.post,
-    this.parent,
-    this.replies = const [],
-    this.threadgate,
-    this.isBlocked = false,
-    this.isNotFound = false,
-  });
-
-  final ThreadPost post;
-  final ThreadViewPost? parent;
-  final List<ThreadViewPost> replies;
-  final Threadgate? threadgate;
-  final bool isBlocked;
-  final bool isNotFound;
-
   List<ThreadViewPost> get ancestorChain {
     final chain = <ThreadViewPost>[];
     var current = parent;
@@ -77,42 +82,44 @@ class ThreadViewPost {
 }
 
 /// Domain model for a thread post.
-class ThreadPost {
-  ThreadPost({
-    required this.uri,
-    required this.cid,
-    required this.author,
-    required this.record,
-    this.embed,
-    this.indexedAt,
-    this.replyCount = 0,
-    this.repostCount = 0,
-    this.likeCount = 0,
-    this.quoteCount = 0,
-    this.bookmarkCount = 0,
-    this.labels,
-    this.viewerLikeUri,
-    this.viewerRepostUri,
-    this.viewerBookmarked = false,
-    this.viewerThreadMuted = false,
-    this.viewerReplyDisabled = false,
-    this.placeholderReason,
-    this.isBlocked = false,
-    this.isNotFound = false,
-  });
+@freezed
+abstract class ThreadPost with _$ThreadPost {
+  const factory ThreadPost({
+    required String uri,
+    required String cid,
+    required ThreadAuthor author,
+    required Map<String, dynamic> record,
+    String? embed,
+    DateTime? indexedAt,
+    @Default(0) int replyCount,
+    @Default(0) int repostCount,
+    @Default(0) int likeCount,
+    @Default(0) int quoteCount,
+    @Default(0) int bookmarkCount,
+    String? labels,
+    String? viewerLikeUri,
+    String? viewerRepostUri,
+    @Default(false) bool viewerBookmarked,
+    @Default(false) bool viewerThreadMuted,
+    @Default(false) bool viewerReplyDisabled,
+    String? placeholderReason,
+    @Default(false) bool isBlocked,
+    @Default(false) bool isNotFound,
+  }) = _ThreadPost;
+
+  const ThreadPost._();
 
   factory ThreadPost.fromJson(Map<String, dynamic> json) {
-    final author = ThreadAuthor.fromJson(json['author'] as Map<String, dynamic>);
     final viewer = json['viewer'] as Map<String, dynamic>?;
     final labelsJson = json['labels'] as List?;
 
     return ThreadPost(
       uri: json['uri'] as String,
       cid: json['cid'] as String? ?? json['uri'] as String,
-      author: author,
+      author: ThreadAuthor.fromJson(json['author'] as Map<String, dynamic>),
       record: (json['record'] as Map<String, dynamic>?) ?? const {},
       embed: json['embed'] != null ? jsonEncode(json['embed']) : null,
-      indexedAt: DateTime.tryParse(json['indexedAt'] ?? ''),
+      indexedAt: DateTime.tryParse(json['indexedAt'] as String? ?? ''),
       replyCount: json['replyCount'] as int? ?? 0,
       repostCount: json['repostCount'] as int? ?? 0,
       likeCount: json['likeCount'] as int? ?? 0,
@@ -144,27 +151,6 @@ class ThreadPost {
       isNotFound: isNotFound,
     );
   }
-
-  final String uri;
-  final String cid;
-  final ThreadAuthor author;
-  final Map<String, dynamic> record;
-  final String? embed;
-  final DateTime? indexedAt;
-  final int replyCount;
-  final int repostCount;
-  final int likeCount;
-  final int quoteCount;
-  final int bookmarkCount;
-  final String? labels;
-  final String? viewerLikeUri;
-  final String? viewerRepostUri;
-  final bool viewerBookmarked;
-  final bool viewerThreadMuted;
-  final bool viewerReplyDisabled;
-  final String? placeholderReason;
-  final bool isBlocked;
-  final bool isNotFound;
 
   PostsCompanion toPostsCompanion() {
     return PostsCompanion.insert(
@@ -219,8 +205,37 @@ class ThreadPost {
     );
   }
 
-  Post toPostModel() {
-    return Post(
+  domain.Post toPostModel() {
+    return domain.Post(
+      uri: uri,
+      cid: cid,
+      author: author.toAuthorModel(),
+      text: record['text'] as String? ?? '',
+      embed: embed != null ? jsonDecode(embed!) as Map<String, dynamic> : null,
+      record: record,
+      indexedAt: indexedAt,
+      replyCount: replyCount,
+      repostCount: repostCount,
+      likeCount: likeCount,
+      viewerLikeUri: viewerLikeUri,
+      viewerRepostUri: viewerRepostUri,
+      viewerBookmarked: viewerBookmarked,
+    );
+  }
+
+  Profile toProfileModel() {
+    return Profile(
+      did: author.did,
+      handle: author.handle,
+      displayName: author.displayName ?? placeholderReason,
+      description: author.description,
+      avatar: author.avatar,
+      indexedAt: indexedAt,
+    );
+  }
+
+  FeedPost toFeedPost({String? reason}) {
+    final driftPost = Post(
       uri: uri,
       cid: cid,
       authorDid: author.did,
@@ -239,57 +254,42 @@ class ThreadPost {
       viewerThreadMuted: viewerThreadMuted,
       viewerReplyDisabled: viewerReplyDisabled,
     );
-  }
-
-  Profile toProfileModel() {
-    return Profile(
-      did: author.did,
-      handle: author.handle,
-      displayName: author.displayName ?? placeholderReason,
-      description: author.description,
-      avatar: author.avatar,
-      indexedAt: indexedAt,
-    );
-  }
-
-  FeedPost toFeedPost({String? reason}) {
-    return FeedPost(post: toPostModel(), author: toProfileModel(), reason: reason);
+    return FeedPost(post: driftPost, author: toProfileModel(), reason: reason);
   }
 }
 
 /// Domain model for a thread author.
-class ThreadAuthor {
-  ThreadAuthor({
-    required this.did,
-    required this.handle,
-    this.displayName,
-    this.description,
-    this.avatar,
-    this.viewer,
-  });
+@freezed
+abstract class ThreadAuthor with _$ThreadAuthor {
+  const factory ThreadAuthor({
+    required String did,
+    required String handle,
+    String? displayName,
+    String? description,
+    String? avatar,
+    Map<String, dynamic>? viewer,
+  }) = _ThreadAuthor;
 
-  factory ThreadAuthor.fromJson(Map<String, dynamic> json) {
-    return ThreadAuthor(
-      did: json['did'] as String,
-      handle: json['handle'] as String,
-      displayName: json['displayName'] as String?,
-      description: json['description'] as String?,
-      avatar: json['avatar'] as String?,
-      viewer: json['viewer'] as Map<String, dynamic>?,
-    );
+  const ThreadAuthor._();
+
+  factory ThreadAuthor.fromJson(Map<String, dynamic> json) => _$ThreadAuthorFromJson(json);
+
+  core.Author toAuthorModel() {
+    return core.Author(did: did, handle: handle, displayName: displayName, avatar: avatar);
   }
-
-  final String did;
-  final String handle;
-  final String? displayName;
-  final String? description;
-  final String? avatar;
-  final Map<String, dynamic>? viewer;
 }
 
 /// Threadgate represents reply restrictions on a post.
-class Threadgate {
-  Threadgate({required this.uri, this.cid, this.record, this.lists = const []});
+@freezed
+abstract class Threadgate with _$Threadgate {
+  const factory Threadgate({
+    required String uri,
+    String? cid,
+    ThreadgateRecord? record,
+    @Default([]) List<Map<String, dynamic>> lists,
+  }) = _Threadgate;
+
+  const Threadgate._();
 
   factory Threadgate.fromJson(Map<String, dynamic> json) {
     final recordJson = json['record'] as Map<String, dynamic>?;
@@ -299,14 +299,9 @@ class Threadgate {
       uri: json['uri'] as String? ?? '',
       cid: json['cid'] as String?,
       record: recordJson != null ? ThreadgateRecord.fromJson(recordJson) : null,
-      lists: listsJson?.map((e) => e as Map<String, dynamic>).toList() ?? [],
+      lists: listsJson?.map((e) => e as Map<String, dynamic>).toList() ?? const [],
     );
   }
-
-  final String uri;
-  final String? cid;
-  final ThreadgateRecord? record;
-  final List<Map<String, dynamic>> lists;
 
   /// Returns readable description of reply restriction.
   String get restrictionDescription {
@@ -333,19 +328,22 @@ class Threadgate {
 }
 
 /// Threadgate record with allow rules.
-class ThreadgateRecord {
-  ThreadgateRecord({required this.post, this.allow = const [], this.createdAt});
+@freezed
+abstract class ThreadgateRecord with _$ThreadgateRecord {
+  const factory ThreadgateRecord({
+    required String post,
+    @Default([]) List<Map<String, dynamic>> allow,
+    DateTime? createdAt,
+  }) = _ThreadgateRecord;
+
+  const ThreadgateRecord._();
 
   factory ThreadgateRecord.fromJson(Map<String, dynamic> json) {
     final allowJson = json['allow'] as List?;
     return ThreadgateRecord(
       post: json['post'] as String? ?? '',
-      allow: allowJson?.map((e) => e as Map<String, dynamic>).toList() ?? [],
+      allow: allowJson?.map((e) => e as Map<String, dynamic>).toList() ?? const [],
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
     );
   }
-
-  final String post;
-  final List<Map<String, dynamic>> allow;
-  final DateTime? createdAt;
 }

@@ -7,7 +7,7 @@ import '../../../../../helpers/pump_app.dart';
 
 void main() {
   group('ProfileHeader', () {
-    final testProfile = ProfileData(
+    const testProfile = ProfileData(
       did: 'did:plc:test123',
       handle: 'testuser.bsky.social',
       displayName: 'Test User',
@@ -20,68 +20,68 @@ void main() {
     );
 
     testWidgets('renders display name and handle', (tester) async {
-      await tester.pumpApp(Material(child: ProfileHeader(profile: testProfile)));
+      await tester.pumpApp(const Material(child: ProfileHeader(profile: testProfile)));
 
       expect(find.text('Test User'), findsOneWidget);
       expect(find.text('@testuser.bsky.social'), findsOneWidget);
     });
 
     testWidgets('renders bio/description', (tester) async {
-      await tester.pumpApp(Material(child: ProfileHeader(profile: testProfile)));
+      await tester.pumpApp(const Material(child: ProfileHeader(profile: testProfile)));
 
       expect(find.text('This is a test bio for the profile header.'), findsOneWidget);
     });
 
     testWidgets('renders follower count', (tester) async {
-      await tester.pumpApp(Material(child: ProfileHeader(profile: testProfile)));
+      await tester.pumpApp(const Material(child: ProfileHeader(profile: testProfile)));
 
       expect(find.text('1.5K'), findsOneWidget);
       expect(find.text('Followers'), findsOneWidget);
     });
 
     testWidgets('renders following count', (tester) async {
-      await tester.pumpApp(Material(child: ProfileHeader(profile: testProfile)));
+      await tester.pumpApp(const Material(child: ProfileHeader(profile: testProfile)));
 
       expect(find.text('250'), findsOneWidget);
       expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('renders posts count', (tester) async {
-      await tester.pumpApp(Material(child: ProfileHeader(profile: testProfile)));
+      await tester.pumpApp(const Material(child: ProfileHeader(profile: testProfile)));
 
       expect(find.text('100'), findsOneWidget);
       expect(find.text('Posts'), findsOneWidget);
     });
 
     testWidgets('hides bio when null', (tester) async {
-      final noBioProfile = ProfileData(
+      const noBioProfile = ProfileData(
         did: 'did:plc:nobio',
         handle: 'nobio.bsky.social',
         description: null,
       );
 
-      await tester.pumpApp(Material(child: ProfileHeader(profile: noBioProfile)));
+      await tester.pumpApp(const Material(child: ProfileHeader(profile: noBioProfile)));
 
       expect(find.text('nobio.bsky.social'), findsWidgets);
     });
 
     testWidgets('uses handle when display name is null', (tester) async {
-      final noDisplayNameProfile = ProfileData(
+      const noDisplayNameProfile = ProfileData(
         did: 'did:plc:noname',
         handle: 'noname.bsky.social',
       );
 
-      await tester.pumpApp(Material(child: ProfileHeader(profile: noDisplayNameProfile)));
+      await tester.pumpApp(const Material(child: ProfileHeader(profile: noDisplayNameProfile)));
 
       expect(find.text('noname.bsky.social'), findsWidgets);
     });
 
     testWidgets('follow button is rendered when provided', (tester) async {
       await tester.pumpApp(
-        Material(
+        const Material(
           child: ProfileHeader(
             profile: testProfile,
-            followButton: const ElevatedButton(onPressed: null, child: Text('Follow')),
+            followButton: ElevatedButton(onPressed: null, child: Text('Follow')),
           ),
         ),
       );
@@ -120,20 +120,20 @@ void main() {
     });
 
     testWidgets('formats follower counts correctly', (tester) async {
-      final millionFollowers = ProfileData(
+      const millionFollowers = ProfileData(
         did: 'did:plc:popular',
         handle: 'popular.bsky.social',
         followersCount: 2500000,
         followsCount: 100,
       );
 
-      await tester.pumpApp(Material(child: ProfileHeader(profile: millionFollowers)));
+      await tester.pumpApp(const Material(child: ProfileHeader(profile: millionFollowers)));
 
       expect(find.text('2.5M'), findsOneWidget);
     });
 
     testWidgets('renders avatar placeholder when no image', (tester) async {
-      await tester.pumpApp(Material(child: ProfileHeader(profile: testProfile)));
+      await tester.pumpApp(const Material(child: ProfileHeader(profile: testProfile)));
 
       expect(find.byIcon(Icons.person), findsOneWidget);
     });

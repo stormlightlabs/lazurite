@@ -1,4 +1,5 @@
-import '../../../infrastructure/db/app_database.dart';
+import 'package:lazurite/src/core/domain/author.dart';
+
 import 'notification.dart';
 import 'notification_type.dart';
 
@@ -21,7 +22,7 @@ class GroupedNotification {
   final NotificationType type;
 
   /// Actors who triggered notifications in this group.
-  final List<Profile> actors;
+  final List<Author> actors;
 
   /// URI of the subject (post/profile) this group is about.
   final String? subjectUri;
@@ -106,7 +107,7 @@ class GroupedNotification {
 
   static GroupedNotification _createGroup(List<AppNotification> notifications) {
     final seenDids = <String>{};
-    final uniqueActors = <Profile>[];
+    final uniqueActors = <Author>[];
     for (final n in notifications) {
       if (!seenDids.contains(n.actor.did)) {
         seenDids.add(n.actor.did);

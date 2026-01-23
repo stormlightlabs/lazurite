@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
@@ -9,7 +10,6 @@ import 'package:lazurite/src/features/notifications/application/notifications_no
 import 'package:lazurite/src/features/notifications/application/notifications_providers.dart';
 import 'package:lazurite/src/features/notifications/domain/notification.dart';
 import 'package:lazurite/src/features/notifications/domain/notification_type.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../helpers/mocks.dart';
@@ -262,20 +262,6 @@ class _FakeAuthNotifier extends AuthNotifier {
   }
 }
 
-Profile _createProfile(String did, String handle) {
-  return Profile(
-    did: did,
-    handle: handle,
-    displayName: null,
-    description: null,
-    avatar: null,
-    banner: null,
-    indexedAt: null,
-    pronouns: null,
-    website: null,
-    createdAt: null,
-    verificationStatus: null,
-    labels: null,
-    pinnedPostUri: null,
-  );
+Author _createProfile(String did, String handle) {
+  return Author(did: did, handle: handle, displayName: null, avatar: null);
 }

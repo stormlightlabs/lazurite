@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/widgets/feed_post_card.dart';
+import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_header.dart';
 import 'package:lazurite/src/features/thread/domain/thread.dart';
 import 'package:lazurite/src/features/thread/domain/thread_layout_calculator.dart';
-import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_header.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/blocked_post_card.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/collapse_toggle.dart';
 import 'package:lazurite/src/features/thread/presentation/widgets/deep_thread_indicator.dart';
@@ -139,7 +139,7 @@ class _CollapsedPostSummary extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          PostHeader(author: post.post.toProfileModel(), indexedAt: post.post.indexedAt),
+          PostHeader(author: post.post.author.toAuthorModel(), indexedAt: post.post.indexedAt),
           const SizedBox(height: 8),
           Text(
             previewText,

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/features/dms/domain/dm_conversation.dart';
 import 'package:lazurite/src/features/dms/presentation/widgets/message_request_card.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 
 import '../../../../../helpers/pump_app.dart';
 
 void main() {
   group('MessageRequestCard', () {
     final now = DateTime.now();
-    const profile = Profile(
+    const profile = Author(
       did: 'did:web:alice',
       handle: 'alice.bsky.social',
       displayName: 'Alice',
@@ -115,7 +115,7 @@ void main() {
     });
 
     testWidgets('uses handle when display name is null', (tester) async {
-      const profileNoName = Profile(did: 'did:web:bob', handle: 'bob.bsky.social');
+      const profileNoName = Author(did: 'did:web:bob', handle: 'bob.bsky.social');
       final convoNoName = conversation.copyWith(members: [profileNoName]);
 
       await tester.pumpApp(

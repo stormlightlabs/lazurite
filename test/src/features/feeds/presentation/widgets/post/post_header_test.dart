@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_header.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/verification_badge.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 
 void main() {
   group('PostHeader', () {
     testWidgets('renders author info correctly', (tester) async {
-      final author = Profile(
+      const author = Author(
         did: 'did:1',
         handle: 'alice.bsky.social',
         displayName: 'Alice',
-        description: 'Bio',
         avatar: 'avatar.jpg',
-        indexedAt: DateTime.now(),
       );
 
       await tester.pumpWidget(
@@ -33,7 +31,7 @@ void main() {
     });
 
     testWidgets('handles missing display name', (tester) async {
-      final author = Profile(did: 'did:1', handle: 'bob.bsky.social', indexedAt: DateTime.now());
+      const author = Author(did: 'did:1', handle: 'bob.bsky.social');
 
       await tester.pumpWidget(
         MaterialApp(
@@ -48,11 +46,10 @@ void main() {
 
     group('verification badge', () {
       testWidgets('renders verification badge when verificationStatus provided', (tester) async {
-        final author = Profile(
+        const author = Author(
           did: 'did:1',
           handle: 'verified.bsky.social',
           displayName: 'Verified User',
-          indexedAt: DateTime.now(),
         );
 
         await tester.pumpWidget(
@@ -74,11 +71,10 @@ void main() {
       testWidgets('does not render verification badge when verificationStatus is null', (
         tester,
       ) async {
-        final author = Profile(
+        const author = Author(
           did: 'did:1',
           handle: 'regular.bsky.social',
           displayName: 'Regular User',
-          indexedAt: DateTime.now(),
         );
 
         await tester.pumpWidget(
@@ -96,12 +92,7 @@ void main() {
     group('theming', () {
       testWidgets('uses onSurfaceVariant for handle text', (tester) async {
         const testColor = Color(0xFF123456);
-        final author = Profile(
-          did: 'did:1',
-          handle: 'test.bsky.social',
-          displayName: 'Test User',
-          indexedAt: DateTime.now(),
-        );
+        const author = Author(did: 'did:1', handle: 'test.bsky.social', displayName: 'Test User');
 
         await tester.pumpWidget(
           MaterialApp(
@@ -121,12 +112,7 @@ void main() {
 
       testWidgets('uses onSurfaceVariant for timestamp text', (tester) async {
         const testColor = Color(0xFF654321);
-        final author = Profile(
-          did: 'did:1',
-          handle: 'test.bsky.social',
-          displayName: 'Test User',
-          indexedAt: DateTime.now(),
-        );
+        const author = Author(did: 'did:1', handle: 'test.bsky.social', displayName: 'Test User');
 
         await tester.pumpWidget(
           MaterialApp(
@@ -149,12 +135,7 @@ void main() {
 
       testWidgets('uses onSurface for display name text', (tester) async {
         const testColor = Color(0xFFABCDEF);
-        final author = Profile(
-          did: 'did:1',
-          handle: 'test.bsky.social',
-          displayName: 'Test User',
-          indexedAt: DateTime.now(),
-        );
+        const author = Author(did: 'did:1', handle: 'test.bsky.social', displayName: 'Test User');
 
         await tester.pumpWidget(
           MaterialApp(

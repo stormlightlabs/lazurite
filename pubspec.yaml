@@ -34,6 +34,8 @@ dependencies:
   # State Management
   flutter_riverpod: ^3.1.0
   riverpod_annotation: ^4.0.0
+  freezed_annotation: ^3.0.0
+  json_annotation: ^4.9.0
 
   # Typography
   google_fonts: ^6.2.1
@@ -89,6 +91,8 @@ dev_dependencies:
   # Code Generation
   build_runner: ^2.10.5
   riverpod_generator: ^4.0.0
+  freezed: ^3.0.0
+  json_serializable: ^6.9.0
   drift_dev: ^2.30.1
 
   # Mocking

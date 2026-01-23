@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
+import 'package:lazurite/src/core/domain/author.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/features/composer/application/composer_notifier.dart';
 import 'package:lazurite/src/features/composer/application/composer_providers.dart';
 import 'package:lazurite/src/features/composer/domain/draft.dart';
@@ -14,7 +16,6 @@ import 'package:lazurite/src/features/composer/presentation/widgets/character_co
 import 'package:lazurite/src/features/composer/presentation/widgets/publish_button.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/quote_post_card.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/reply_context_card.dart';
-import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -22,7 +23,9 @@ class MockNavigatorObserver extends Mock implements NavigatorObserver {}
 
 class MockDraftRepository extends Mock implements DraftRepository {}
 
-class MockFeedItem extends Mock implements FeedItem {}
+class MockPost extends Mock implements Post {}
+
+class MockAuthor extends Mock implements Author {}
 
 void main() {
   late MockDraftRepository mockRepository;
@@ -552,11 +555,14 @@ void main() {
     });
 
     testWidgets('shows ReplyContextCard when replyPost is present', (tester) async {
-      final mockPost = MockFeedItem();
-      when(() => mockPost.authorDid).thenReturn('did:test');
-      when(() => mockPost.authorHandle).thenReturn('handle.test');
-      when(() => mockPost.authorDisplayName).thenReturn('Display Name');
-      when(() => mockPost.authorAvatar).thenReturn(null);
+      final mockPost = MockPost();
+      final mockAuthor = MockAuthor();
+      when(() => mockAuthor.did).thenReturn('did:test');
+      when(() => mockAuthor.handle).thenReturn('handle.test');
+      when(() => mockAuthor.displayName).thenReturn('Display Name');
+      when(() => mockAuthor.avatar).thenReturn(null);
+
+      when(() => mockPost.author).thenReturn(mockAuthor);
       when(() => mockPost.text).thenReturn('Parent post text');
 
       final mockNotifier = MockComposerNotifierWrapper(createMockDraft(), replyPost: mockPost);
@@ -569,13 +575,18 @@ void main() {
     });
 
     testWidgets('shows QuotePostCard when quotePost is present', (tester) async {
-      final mockPost = MockFeedItem();
-      when(() => mockPost.authorDid).thenReturn('did:test');
-      when(() => mockPost.authorHandle).thenReturn('handle.test');
-      when(() => mockPost.authorDisplayName).thenReturn('Display Name');
-      when(() => mockPost.authorAvatar).thenReturn(null);
+      final mockPost = MockPost();
+      final mockAuthor = MockAuthor();
+      when(() => mockAuthor.did).thenReturn('did:test');
+      when(() => mockAuthor.handle).thenReturn('handle.test');
+      when(() => mockAuthor.displayName).thenReturn('Display Name');
+      when(() => mockAuthor.avatar).thenReturn(null);
+
+      when(() => mockPost.author).thenReturn(mockAuthor);
       when(() => mockPost.text).thenReturn('Quoted post text');
+      when(() => mockPost.hasMedia).thenReturn(true);
       when(() => mockPost.hasImages).thenReturn(true);
+      when(() => mockPost.hasVideo).thenReturn(false);
 
       final mockNotifier = MockComposerNotifierWrapper(createMockDraft(), quotePost: mockPost);
 
@@ -767,8 +778,8 @@ class _MockComposerNotifier extends ComposerNotifier {
   _MockComposerNotifier(this._draft, {this.replyPost, this.quotePost});
 
   final Draft _draft;
-  final FeedItem? replyPost;
-  final FeedItem? quotePost;
+  final Post? replyPost;
+  final Post? quotePost;
 
   @override
   Future<ComposerState> build(ComposerArgs? args) async {

@@ -59,7 +59,7 @@ void main() {
     group('AutocompleteSuggestion', () {
       test('creates mention suggestion from actor', () {
         final suggestion = AutocompleteSuggestion.mention(
-          SearchActorItem(
+          const SearchActorItem(
             did: 'did:plc:test',
             handle: 'test.bsky.social',
             displayName: 'Test User',
@@ -76,7 +76,7 @@ void main() {
 
       test('uses handle as label when display name is null', () {
         final suggestion = AutocompleteSuggestion.mention(
-          SearchActorItem(did: 'did:plc:test', handle: 'test.bsky.social'),
+          const SearchActorItem(did: 'did:plc:test', handle: 'test.bsky.social'),
         );
 
         expect(suggestion.label, 'test.bsky.social');

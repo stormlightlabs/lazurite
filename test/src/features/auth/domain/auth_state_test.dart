@@ -48,21 +48,26 @@ void main() {
       );
     });
 
-    test('hashCode matches session hashCode', () {
+    test('hashCode is consistent for equal states', () {
       final session = buildSession();
-      final authState = AuthState.authenticated(session) as AuthStateAuthenticated;
+      final authState1 = AuthState.authenticated(session);
+      final authState2 = AuthState.authenticated(session.copyWith());
 
-      expect(authState.hashCode, session.hashCode);
+      expect(authState1.hashCode, equals(authState2.hashCode));
     });
   });
 
   group('AuthStateError equality', () {
-    test('compares by error text regardless of stack trace', () {
-      final first = AuthState.error(Exception('boom'), StackTrace.fromString('one'));
-      final second = AuthState.error(Exception('boom'), StackTrace.fromString('two'));
+    test('compares all fields including stack trace', () {
+      final st1 = StackTrace.fromString('one');
+      final st2 = StackTrace.fromString('two');
+      final error = Exception('boom');
+      final first = AuthState.error(error, st1);
+      final second = AuthState.error(error, st2);
+      final third = AuthState.error(error, st1);
 
-      expect(first, equals(second));
-      expect(first.hashCode, equals(second.hashCode));
+      expect(first, isNot(equals(second)));
+      expect(first, equals(third));
     });
   });
 }

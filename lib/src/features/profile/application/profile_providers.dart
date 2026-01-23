@@ -1,4 +1,6 @@
 import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/core/domain/author.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
@@ -18,7 +20,7 @@ ProfileRepository profileRepository(Ref ref) {
 }
 
 @riverpod
-Future<FeedItem?> pinnedPost(Ref ref, String uri) async {
+Future<Post?> pinnedPost(Ref ref, String uri) async {
   final repository = ref.watch(profileRepositoryProvider);
   return repository.getPost(uri);
 }
@@ -119,11 +121,11 @@ class AuthorFeedNotifier extends _$AuthorFeedNotifier {
   bool _hasMore = true;
 
   @override
-  Future<List<FeedItem>> build(String actor) async {
+  Future<List<Post>> build(String actor) async {
     return _fetchFeed(actor);
   }
 
-  Future<List<FeedItem>> _fetchFeed(String actor, {bool loadMore = false}) async {
+  Future<List<Post>> _fetchFeed(String actor, {bool loadMore = false}) async {
     final repository = ref.read(profileRepositoryProvider);
     final result = await repository.getAuthorFeed(actor, cursor: loadMore ? _cursor : null);
 
@@ -207,11 +209,11 @@ class FollowersNotifier extends _$FollowersNotifier {
   bool _hasMore = true;
 
   @override
-  Future<List<ActorBasic>> build(String actor) async {
+  Future<List<Author>> build(String actor) async {
     return _fetchFollowers(actor);
   }
 
-  Future<List<ActorBasic>> _fetchFollowers(String actor, {bool loadMore = false}) async {
+  Future<List<Author>> _fetchFollowers(String actor, {bool loadMore = false}) async {
     final repository = ref.read(profileRepositoryProvider);
     final result = await repository.getFollowers(actor, cursor: loadMore ? _cursor : null);
 
@@ -248,11 +250,11 @@ class FollowingNotifier extends _$FollowingNotifier {
   bool _hasMore = true;
 
   @override
-  Future<List<ActorBasic>> build(String actor) async {
+  Future<List<Author>> build(String actor) async {
     return _fetchFollowing(actor);
   }
 
-  Future<List<ActorBasic>> _fetchFollowing(String actor, {bool loadMore = false}) async {
+  Future<List<Author>> _fetchFollowing(String actor, {bool loadMore = false}) async {
     final repository = ref.read(profileRepositoryProvider);
     final result = await repository.getFollows(actor, cursor: loadMore ? _cursor : null);
 

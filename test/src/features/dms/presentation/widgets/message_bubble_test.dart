@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/features/dms/domain/dm_message.dart';
 import 'package:lazurite/src/features/dms/presentation/widgets/message_bubble.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 
 void main() {
   group('MessageBubble', () {
-    late Profile testProfile;
+    late Author testProfile;
 
     setUp(() {
-      testProfile = const Profile(
+      testProfile = const Author(
         did: 'did:plc:test',
         handle: 'test.bsky.social',
         displayName: 'Test User',

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/features/profile/domain/profile.dart';
+import 'package:lazurite/src/core/domain/author.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/replies_tab.dart';
 
 void main() {
-  FeedItem createFeedItem({
+  Post createPost({
     String uri = 'at://did:plc:test/app.bsky.feed.post/123',
     String cid = 'bafytest123',
     String authorDid = 'did:plc:test',
@@ -22,13 +23,15 @@ void main() {
     bool isRepost = false,
     bool isQuote = false,
   }) {
-    return FeedItem(
+    return Post(
       uri: uri,
       cid: cid,
-      authorDid: authorDid,
-      authorHandle: authorHandle,
-      authorDisplayName: authorDisplayName,
-      authorAvatar: authorAvatar,
+      author: Author(
+        did: authorDid,
+        handle: authorHandle,
+        displayName: authorDisplayName,
+        avatar: authorAvatar,
+      ),
       text: text,
       indexedAt: indexedAt,
       replyCount: replyCount,
@@ -42,7 +45,7 @@ void main() {
     );
   }
 
-  Widget createSubject({List<FeedItem>? items, bool hasMore = false, bool isLoading = false}) {
+  Widget createSubject({List<Post>? items, bool hasMore = false, bool isLoading = false}) {
     return MaterialApp(
       home: Scaffold(
         body: RepliesTab(
@@ -66,8 +69,8 @@ void main() {
       await tester.pumpWidget(
         createSubject(
           items: [
-            createFeedItem(text: 'This is a reply', isReply: true),
-            createFeedItem(text: 'Regular post not a reply', isReply: false),
+            createPost(text: 'This is a reply', isReply: true),
+            createPost(text: 'Regular post not a reply', isReply: false),
           ],
         ),
       );
@@ -80,9 +83,9 @@ void main() {
       await tester.pumpWidget(
         createSubject(
           items: [
-            createFeedItem(text: 'My reply', isReply: true),
-            createFeedItem(text: 'Boosted reply', isReply: true, isRepost: true),
-            createFeedItem(text: 'Quoted reply', isReply: true, isQuote: true),
+            createPost(text: 'My reply', isReply: true),
+            createPost(text: 'Boosted reply', isReply: true, isRepost: true),
+            createPost(text: 'Quoted reply', isReply: true, isQuote: true),
           ],
         ),
       );
@@ -94,7 +97,7 @@ void main() {
 
     testWidgets('shows loading indicator when hasMore is true', (tester) async {
       await tester.pumpWidget(
-        createSubject(items: [createFeedItem(text: 'Reply Post', isReply: true)], hasMore: true),
+        createSubject(items: [createPost(text: 'Reply Post', isReply: true)], hasMore: true),
       );
 
       await tester.drag(find.byType(ListView), const Offset(0, -500));
@@ -107,7 +110,7 @@ void main() {
       await tester.pumpWidget(
         createSubject(
           items: [
-            createFeedItem(
+            createPost(
               text: 'Reply text',
               authorDisplayName: 'Author Name',
               authorHandle: 'authorhandle',

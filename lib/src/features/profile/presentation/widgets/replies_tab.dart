@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/widgets/feed_post_card.dart';
-import 'package:lazurite/src/features/profile/domain/profile.dart';
 
 /// Tab content showing author's replies (posts that are replies to others).
 class RepliesTab extends StatefulWidget {
@@ -13,7 +13,7 @@ class RepliesTab extends StatefulWidget {
     super.key,
   });
 
-  final List<FeedItem> items;
+  final List<Post> items;
   final bool hasMore;
   final bool isLoading;
   final VoidCallback onLoadMore;
@@ -47,7 +47,7 @@ class _RepliesTabState extends State<RepliesTab> with AutomaticKeepAliveClientMi
   }
 
   /// Filter items to only show replies authored by the profile.
-  List<FeedItem> get _replies {
+  List<Post> get _replies {
     return widget.items.where((item) => item.isReply && !item.isRepost && !item.isQuote).toList();
   }
 
@@ -75,22 +75,13 @@ class _RepliesTabState extends State<RepliesTab> with AutomaticKeepAliveClientMi
 
         final item = replies[index];
         return FeedPostCard(
-          uri: item.uri,
-          authorDid: item.authorDid,
-          authorHandle: item.authorHandle,
-          authorDisplayName: item.authorDisplayName,
-          authorAvatar: item.authorAvatar,
-          text: item.text,
-          indexedAt: item.indexedAt,
-          replyCount: item.replyCount,
-          repostCount: item.repostCount,
-          likeCount: item.likeCount,
+          post: item,
           onTap: () {
             final encodedUri = Uri.encodeComponent(item.uri);
             GoRouter.of(context).push('/home/t/$encodedUri');
           },
           onAvatarTap: () {
-            final encodedDid = Uri.encodeComponent(item.authorDid);
+            final encodedDid = Uri.encodeComponent(item.author.did);
             GoRouter.of(context).push('/home/u/$encodedDid');
           },
         );

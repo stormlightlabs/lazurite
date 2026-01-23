@@ -1,9 +1,10 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 
 import '../../../core/utils/logger.dart';
-import '../../../infrastructure/db/app_database.dart';
+import '../../../infrastructure/db/app_database.dart' hide Post, Profile;
 import '../../../infrastructure/db/daos/notifications_dao.dart';
 import '../../../infrastructure/db/daos/notifications_sync_queue_dao.dart';
 import '../../../infrastructure/network/xrpc_client.dart';
@@ -137,7 +138,7 @@ class NotificationsRepository {
 
             return AppNotification(
               uri: item.notification.uri,
-              actor: item.actor,
+              actor: Author.fromProfile(item.actor),
               type: type,
               reasonSubjectUri: item.notification.reasonSubjectUri,
               recordJson: item.notification.recordJson,

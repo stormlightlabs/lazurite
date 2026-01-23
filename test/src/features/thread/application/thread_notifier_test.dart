@@ -28,7 +28,7 @@ void main() {
     post: ThreadPost(
       uri: postUri,
       cid: 'cid',
-      author: ThreadAuthor(did: 'did:123', handle: 'handle'),
+      author: const ThreadAuthor(did: 'did:123', handle: 'handle'),
       record: {},
       indexedAt: DateTime.now(),
     ),

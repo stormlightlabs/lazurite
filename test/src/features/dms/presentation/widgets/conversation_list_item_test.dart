@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/features/dms/domain/dm_conversation.dart';
 import 'package:lazurite/src/features/dms/presentation/widgets/conversation_list_item.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 
 import '../../../../../helpers/pump_app.dart';
 
@@ -12,8 +12,8 @@ void main() {
     final conversation = DmConversation(
       convoId: '123',
       members: [
-        const Profile(did: 'did:web:alice', handle: 'alice.bsky.social', displayName: 'Alice'),
-        const Profile(did: 'did:web:bob', handle: 'bob.bsky.social', displayName: 'Bob'),
+        const Author(did: 'did:web:alice', handle: 'alice.bsky.social', displayName: 'Alice'),
+        const Author(did: 'did:web:bob', handle: 'bob.bsky.social', displayName: 'Bob'),
       ],
       lastMessageText: 'Hello',
       lastMessageAt: now,

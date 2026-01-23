@@ -1,25 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/features/notifications/domain/grouped_notification.dart';
 import 'package:lazurite/src/features/notifications/domain/notification.dart';
 import 'package:lazurite/src/features/notifications/domain/notification_type.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 
-Profile _createProfile(String did, String handle, {String? displayName}) {
-  return Profile(
-    did: did,
-    handle: handle,
-    displayName: displayName,
-    description: null,
-    avatar: null,
-    banner: null,
-    indexedAt: null,
-    pronouns: null,
-    website: null,
-    createdAt: null,
-    verificationStatus: null,
-    labels: null,
-    pinnedPostUri: null,
-  );
+Author _createProfile(String did, String handle, {String? displayName}) {
+  return Author(did: did, handle: handle, displayName: displayName, avatar: null);
 }
 
 AppNotification _createNotification({

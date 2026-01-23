@@ -443,7 +443,7 @@ void main() {
 
       await repository.addMedia(
         draft.id,
-        composer.DraftMediaInput(localPath: '/test/image.jpg', mimeType: 'image/jpeg'),
+        const composer.DraftMediaInput(localPath: '/test/image.jpg', mimeType: 'image/jpeg'),
       );
 
       final updatedDraft = await repository.getDraft(draft.id);
@@ -498,7 +498,7 @@ void main() {
 
       await repository.addMedia(
         draft.id,
-        composer.DraftMediaInput(
+        const composer.DraftMediaInput(
           localPath: '/test/image1.jpg',
           mimeType: 'image/jpeg',
           altText: 'First image',
@@ -506,7 +506,7 @@ void main() {
       );
       await repository.addMedia(
         draft.id,
-        composer.DraftMediaInput(localPath: '/test/image2.png', mimeType: 'image/png'),
+        const composer.DraftMediaInput(localPath: '/test/image2.png', mimeType: 'image/png'),
       );
 
       final updatedDraft = await repository.getDraft(draft.id);

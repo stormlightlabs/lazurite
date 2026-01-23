@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/domain/author.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/avatar.dart';
-import '../../../../infrastructure/db/app_database.dart';
 import '../../domain/dm_message.dart';
 import 'delivery_status_indicator.dart';
 
@@ -30,7 +30,7 @@ class MessageBubble extends StatelessWidget {
   final bool isFromMe;
 
   /// Profile of the sender (for received messages).
-  final Profile? senderProfile;
+  final Author? senderProfile;
 
   /// Whether to show the sender's avatar.
   /// Set to false for consecutive messages from the same sender.

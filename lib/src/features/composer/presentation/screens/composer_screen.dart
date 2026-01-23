@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/features/composer/application/composer_notifier.dart';
 import 'package:lazurite/src/features/composer/application/composer_providers.dart';
@@ -564,12 +563,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                             child: ReplyContextCard(
-                              author: Author(
-                                did: state.replyPost!.authorDid,
-                                handle: state.replyPost!.authorHandle,
-                                displayName: state.replyPost!.authorDisplayName,
-                                avatar: state.replyPost!.authorAvatar,
-                              ),
+                              author: state.replyPost!.author,
                               text: state.replyPost!.text,
                             ),
                           ),
@@ -735,12 +729,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: QuotePostCard(
-                              author: Author(
-                                did: state.quotePost!.authorDid,
-                                handle: state.quotePost!.authorHandle,
-                                displayName: state.quotePost!.authorDisplayName,
-                                avatar: state.quotePost!.authorAvatar,
-                              ),
+                              author: state.quotePost!.author,
                               text: state.quotePost!.text,
                               imageCount: state.quotePost!.hasImages ? 1 : 0,
                             ),

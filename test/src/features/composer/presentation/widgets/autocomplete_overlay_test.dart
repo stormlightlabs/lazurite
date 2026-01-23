@@ -21,7 +21,7 @@ void main() {
   group('AutocompleteSuggestionTile', () {
     testWidgets('displays mention with avatar and details', (tester) async {
       final suggestion = AutocompleteSuggestion.mention(
-        SearchActorItem(
+        const SearchActorItem(
           did: 'did:plc:test',
           handle: 'test.bsky.social',
           displayName: 'Test User',

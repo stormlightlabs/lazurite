@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/features/profile/domain/profile.dart';
+import 'package:lazurite/src/core/domain/author.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/media_tab.dart';
 
 void main() {
-  FeedItem createFeedItem({
+  Post createPost({
     String uri = 'at://did:plc:test/app.bsky.feed.post/123',
     String cid = 'bafytest123',
     String authorDid = 'did:plc:test',
@@ -22,13 +23,15 @@ void main() {
     bool isRepost = false,
     bool isQuote = false,
   }) {
-    return FeedItem(
+    return Post(
       uri: uri,
       cid: cid,
-      authorDid: authorDid,
-      authorHandle: authorHandle,
-      authorDisplayName: authorDisplayName,
-      authorAvatar: authorAvatar,
+      author: Author(
+        did: authorDid,
+        handle: authorHandle,
+        displayName: authorDisplayName,
+        avatar: authorAvatar,
+      ),
       text: text,
       indexedAt: indexedAt,
       replyCount: replyCount,
@@ -42,7 +45,7 @@ void main() {
     );
   }
 
-  Widget createSubject({List<FeedItem>? items, bool hasMore = false, bool isLoading = false}) {
+  Widget createSubject({List<Post>? items, bool hasMore = false, bool isLoading = false}) {
     return MaterialApp(
       home: Scaffold(
         body: MediaTab(
@@ -66,9 +69,9 @@ void main() {
       await tester.pumpWidget(
         createSubject(
           items: [
-            createFeedItem(text: 'Post with image', hasImages: true),
-            createFeedItem(text: 'Post with video', hasVideo: true),
-            createFeedItem(text: 'Text only post'),
+            createPost(text: 'Post with image', hasImages: true),
+            createPost(text: 'Post with video', hasVideo: true),
+            createPost(text: 'Text only post'),
           ],
         ),
       );
@@ -80,7 +83,7 @@ void main() {
 
     testWidgets('shows loading indicator when hasMore is true', (tester) async {
       await tester.pumpWidget(
-        createSubject(items: [createFeedItem(text: 'Media post', hasImages: true)], hasMore: true),
+        createSubject(items: [createPost(text: 'Media post', hasImages: true)], hasMore: true),
       );
 
       await tester.drag(find.byType(ListView), const Offset(0, -500));
@@ -92,7 +95,7 @@ void main() {
     testWidgets('preserves scroll position with AutomaticKeepAlive', (tester) async {
       final items = List.generate(
         20,
-        (i) => createFeedItem(uri: 'at://did:plc:test/post/$i', text: 'Post $i', hasImages: true),
+        (i) => createPost(uri: 'at://did:plc:test/post/$i', text: 'Post $i', hasImages: true),
       );
 
       await tester.pumpWidget(createSubject(items: items));
@@ -106,8 +109,8 @@ void main() {
       await tester.pumpWidget(
         createSubject(
           items: [
-            createFeedItem(text: 'Original media', hasImages: true),
-            createFeedItem(text: 'Boosted media', hasImages: true, isRepost: true),
+            createPost(text: 'Original media', hasImages: true),
+            createPost(text: 'Boosted media', hasImages: true, isRepost: true),
           ],
         ),
       );

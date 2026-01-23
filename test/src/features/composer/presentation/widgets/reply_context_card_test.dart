@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/src/core/domain/post.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/reply_context_card.dart';
 
 import '../../../../../helpers/pump_app.dart';

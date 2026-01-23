@@ -1,3 +1,8 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'schedule.freezed.dart';
+part 'schedule.g.dart';
+
 /// Status of a scheduled post through the publishing pipeline.
 enum ScheduleStatus {
   /// Post is scheduled and waiting for the scheduled time.
@@ -31,49 +36,43 @@ String scheduleStatusToString(ScheduleStatus value) {
 /// Links a draft to a scheduled publication time, tracking the state
 /// of the post through the publishing pipeline. Maintains idempotency
 /// by storing the posted URI/CID once successfully published.
-class Schedule {
-  const Schedule({
-    required this.draftId,
-    required this.ownerDid,
-    required this.scheduledAtUtc,
-    required this.status,
-    required this.createdAt,
-    required this.updatedAt,
-    this.attempts = 0,
-    this.lastError,
-    this.postedUri,
-    this.postedCid,
-  });
+@freezed
+abstract class Schedule with _$Schedule {
+  const factory Schedule({
+    /// ID of the draft to be published.
+    required String draftId,
 
-  /// ID of the draft to be published.
-  final String draftId;
+    /// The DID of the user who owns this scheduled post.
+    required String ownerDid,
 
-  /// The DID of the user who owns this scheduled post.
-  final String ownerDid;
+    /// When the post should be published (UTC).
+    required DateTime scheduledAtUtc,
 
-  /// When the post should be published (UTC).
-  final DateTime scheduledAtUtc;
+    /// Current state of the scheduled post.
+    required ScheduleStatus status,
 
-  /// Current state of the scheduled post.
-  final ScheduleStatus status;
+    /// When this schedule record was created.
+    required DateTime createdAt,
 
-  /// Number of publish attempts made.
-  final int attempts;
+    /// When this schedule was last modified.
+    required DateTime updatedAt,
 
-  /// Error message from the last failed attempt (if any).
-  final String? lastError;
+    /// Number of publish attempts made.
+    @Default(0) int attempts,
 
-  /// AT URI of the successfully posted post (null until published).
-  final String? postedUri;
+    /// Error message from the last failed attempt (if any).
+    String? lastError,
 
-  /// CID of the successfully posted post (null until published).
-  final String? postedCid;
+    /// AT URI of the successfully posted post (null until published).
+    String? postedUri,
 
-  /// When this schedule record was created.
-  final DateTime createdAt;
+    /// CID of the successfully posted post (null until published).
+    String? postedCid,
+  }) = _Schedule;
 
-  /// When this schedule was last modified.
-  final DateTime updatedAt;
+  const Schedule._();
+
+  factory Schedule.fromJson(Map<String, dynamic> json) => _$ScheduleFromJson(json);
 
   /// Returns true if the post has been successfully published.
   bool get isPosted => status == ScheduleStatus.posted;
@@ -89,15 +88,4 @@ class Schedule {
 
   /// Returns true if this schedule can be retried (failed with attempts remaining).
   bool get canRetry => status == ScheduleStatus.failed && attempts < 3;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Schedule &&
-          runtimeType == other.runtimeType &&
-          draftId == other.draftId &&
-          ownerDid == other.ownerDid;
-
-  @override
-  int get hashCode => Object.hash(draftId, ownerDid);
 }

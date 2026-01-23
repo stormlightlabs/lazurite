@@ -1,34 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/features/notifications/application/mark_as_seen_service.dart';
 import 'package:lazurite/src/features/notifications/application/notifications_providers.dart';
 import 'package:lazurite/src/features/notifications/domain/grouped_notification.dart';
 import 'package:lazurite/src/features/notifications/domain/notification_type.dart';
 import 'package:lazurite/src/features/notifications/presentation/widgets/grouped_notification_item.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../../helpers/mocks.dart';
 
 class MockMarkAsSeenService extends Mock implements MarkAsSeenService {}
 
-Profile _createProfile(String did, String handle, {String? displayName}) {
-  return Profile(
-    did: did,
-    handle: handle,
-    displayName: displayName,
-    description: null,
-    avatar: null,
-    banner: null,
-    indexedAt: null,
-    pronouns: null,
-    website: null,
-    createdAt: null,
-    verificationStatus: null,
-    labels: null,
-    pinnedPostUri: null,
-  );
+Author _createProfile(String did, String handle, {String? displayName}) {
+  return Author(did: did, handle: handle, displayName: displayName, avatar: null);
 }
 
 void main() {

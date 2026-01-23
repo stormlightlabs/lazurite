@@ -1,3 +1,8 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'draft.freezed.dart';
+part 'draft.g.dart';
+
 enum DraftStatus { draft, publishing, failed, posted }
 
 enum DraftMediaStatus { pending, uploading, uploaded, failed }
@@ -28,103 +33,74 @@ String? threadGateTypeToString(ThreadGateType? value) {
   return value?.name;
 }
 
-class Draft {
-  Draft({
-    required this.id,
-    required this.text,
-    required this.status,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.media,
-    this.replyParentUri,
-    this.replyParentCid,
-    this.replyRootUri,
-    this.replyRootCid,
-    this.quoteUri,
-    this.quoteCid,
-    this.facetsJson,
-    this.externalUri,
-    this.externalTitle,
-    this.externalDescription,
-    this.externalThumbBlobJson,
-    this.errorMessage,
-    this.langs = const [],
-    this.labels = const [],
-    this.threadGateType,
-    this.quoteDisabled = false,
-  });
+@freezed
+abstract class Draft with _$Draft {
+  const factory Draft({
+    required String id,
+    required String text,
+    required DraftStatus status,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required List<DraftMediaAttachment> media,
+    String? replyParentUri,
+    String? replyParentCid,
+    String? replyRootUri,
+    String? replyRootCid,
+    String? quoteUri,
+    String? quoteCid,
+    String? facetsJson,
+    String? externalUri,
+    String? externalTitle,
+    String? externalDescription,
+    String? externalThumbBlobJson,
+    String? errorMessage,
+    @Default([]) List<String> langs,
+    @Default([]) List<String> labels,
+    ThreadGateType? threadGateType,
+    @Default(false) bool quoteDisabled,
+  }) = _Draft;
 
-  final String id;
-  final String text;
-  final String? replyParentUri;
-  final String? replyParentCid;
-  final String? replyRootUri;
-  final String? replyRootCid;
-  final String? quoteUri;
-  final String? quoteCid;
-  final String? facetsJson;
-  final String? externalUri;
-  final String? externalTitle;
-  final String? externalDescription;
-  final String? externalThumbBlobJson;
-  final DraftStatus status;
-  final String? errorMessage;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final List<DraftMediaAttachment> media;
+  const Draft._();
 
-  /// ISO 639 language codes for this post (e.g., ["en", "es"]).
-  final List<String> langs;
-
-  /// Self-applied content labels (e.g., ["sexual", "graphic-media"]).
-  final List<String> labels;
-
-  /// Thread gate type for reply restrictions (null = no restriction).
-  final ThreadGateType? threadGateType;
-
-  /// Whether quote posts are disabled for this draft.
-  final bool quoteDisabled;
+  factory Draft.fromJson(Map<String, dynamic> json) => _$DraftFromJson(json);
 
   /// Returns true if this is a root post (not a reply or quote).
   bool get isRootPost => replyParentUri == null && quoteUri == null;
 }
 
-class DraftMediaAttachment {
-  DraftMediaAttachment({
-    required this.id,
-    required this.draftId,
-    required this.localPath,
-    required this.mimeType,
-    required this.status,
-    required this.sortOrder,
-    this.altText,
-    this.uploadCid,
-    this.blobRefJson,
-    this.durationSeconds,
-    this.aspectRatio,
-  });
+@freezed
+abstract class DraftMediaAttachment with _$DraftMediaAttachment {
+  const factory DraftMediaAttachment({
+    required int id,
+    required String draftId,
+    required String localPath,
+    required String mimeType,
+    required DraftMediaStatus status,
+    required int sortOrder,
+    String? altText,
+    String? uploadCid,
+    String? blobRefJson,
+    int? durationSeconds,
+    String? aspectRatio,
+  }) = _DraftMediaAttachment;
 
-  final int id;
-  final String draftId;
-  final String localPath;
-  final String mimeType;
-  final String? altText;
-  final String? uploadCid;
-  final DraftMediaStatus status;
-  final int sortOrder;
-  final String? blobRefJson;
-  final int? durationSeconds;
-  final String? aspectRatio;
+  const DraftMediaAttachment._();
+
+  factory DraftMediaAttachment.fromJson(Map<String, dynamic> json) =>
+      _$DraftMediaAttachmentFromJson(json);
 
   bool get requiresUpload => uploadCid == null;
 
   bool get isVideo => mimeType.startsWith('video/');
 }
 
-class DraftMediaInput {
-  DraftMediaInput({required this.localPath, required this.mimeType, this.altText});
+@freezed
+abstract class DraftMediaInput with _$DraftMediaInput {
+  const factory DraftMediaInput({
+    required String localPath,
+    required String mimeType,
+    String? altText,
+  }) = _DraftMediaInput;
 
-  final String localPath;
-  final String mimeType;
-  final String? altText;
+  factory DraftMediaInput.fromJson(Map<String, dynamic> json) => _$DraftMediaInputFromJson(json);
 }

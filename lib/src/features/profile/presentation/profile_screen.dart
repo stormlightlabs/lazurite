@@ -9,6 +9,7 @@ import 'package:lazurite/src/core/widgets/feed_post_card.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/follow_button.dart';
@@ -297,7 +298,7 @@ class _PostsTab extends StatefulWidget {
     required this.onLoadMore,
   });
 
-  final List<FeedItem> items;
+  final List<Post> items;
   final String? pinnedPostUri;
   final bool hasMore;
   final bool isLoading;
@@ -356,22 +357,13 @@ class _PostsTabState extends State<_PostsTab> with AutomaticKeepAliveClientMixin
 
         final item = widget.items[itemIndex];
         return FeedPostCard(
-          uri: item.uri,
-          authorDid: item.authorDid,
-          authorHandle: item.authorHandle,
-          authorDisplayName: item.authorDisplayName,
-          authorAvatar: item.authorAvatar,
-          text: item.text,
-          indexedAt: item.indexedAt,
-          replyCount: item.replyCount,
-          repostCount: item.repostCount,
-          likeCount: item.likeCount,
+          post: item,
           onTap: () {
             final encodedUri = Uri.encodeComponent(item.uri);
             GoRouter.of(context).push('/home/t/$encodedUri');
           },
           onAvatarTap: () {
-            final encodedDid = Uri.encodeComponent(item.authorDid);
+            final encodedDid = Uri.encodeComponent(item.author.did);
             GoRouter.of(context).push('/home/u/$encodedDid');
           },
         );

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lazurite/src/core/domain/post.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
 
 /// Displays the parent post context when replying to a post.

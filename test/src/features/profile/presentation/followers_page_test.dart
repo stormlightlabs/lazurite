@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/core/widgets/actor_row.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/domain/profile.dart';
@@ -26,14 +27,14 @@ void main() {
   group('FollowersPage', () {
     testWidgets('renders list of ActorRow widgets', (tester) async {
       when(() => mockRepository.getFollowers(any(), cursor: any(named: 'cursor'))).thenAnswer(
-        (_) async => FollowersResult(
+        (_) async => const FollowersResult(
           followers: [
-            ActorBasic(
+            Author(
               did: 'did:plc:follower1',
               handle: 'follower1.bsky.social',
               displayName: 'Follower One',
             ),
-            ActorBasic(did: 'did:plc:follower2', handle: 'follower2.bsky.social'),
+            Author(did: 'did:plc:follower2', handle: 'follower2.bsky.social'),
           ],
         ),
       );
@@ -49,7 +50,7 @@ void main() {
     testWidgets('shows empty state when no followers', (tester) async {
       when(
         () => mockRepository.getFollowers(any(), cursor: any(named: 'cursor')),
-      ).thenAnswer((_) async => FollowersResult(followers: []));
+      ).thenAnswer((_) async => const FollowersResult(followers: []));
 
       await tester.pumpWidget(createSubject());
       await tester.pumpAndSettle();
@@ -60,7 +61,7 @@ void main() {
     testWidgets('displays correct app bar title', (tester) async {
       when(
         () => mockRepository.getFollowers(any(), cursor: any(named: 'cursor')),
-      ).thenAnswer((_) async => FollowersResult(followers: []));
+      ).thenAnswer((_) async => const FollowersResult(followers: []));
 
       await tester.pumpWidget(createSubject());
       await tester.pumpAndSettle();

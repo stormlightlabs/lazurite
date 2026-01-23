@@ -1,4 +1,8 @@
-import '../../../infrastructure/db/app_database.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:lazurite/src/core/domain/author.dart';
+
+part 'dm_message.freezed.dart';
+part 'dm_message.g.dart';
 
 /// Message delivery status enum.
 enum MessageStatus {
@@ -33,33 +37,31 @@ enum MessageStatus {
 ///
 /// Domain model combining data from the DmMessages table
 /// with the sender profile for UI display.
-class AppDmMessage {
-  AppDmMessage({
-    required this.messageId,
-    required this.convoId,
-    required this.sender,
-    required this.content,
-    required this.sentAt,
-    required this.status,
-  });
+@freezed
+abstract class AppDmMessage with _$AppDmMessage {
+  const factory AppDmMessage({
+    /// Message ID (unique identifier from API or local UUID for pending).
+    required String messageId,
 
-  /// Message ID (unique identifier from API or local UUID for pending).
-  final String messageId;
+    /// Conversation this message belongs to.
+    required String convoId,
 
-  /// Conversation this message belongs to.
-  final String convoId;
+    /// The message sender's profile.
+    required Author sender,
 
-  /// The message sender's profile.
-  final Profile sender;
+    /// Message text content.
+    required String content,
 
-  /// Message text content.
-  final String content;
+    /// When the message was sent.
+    required DateTime sentAt,
 
-  /// When the message was sent.
-  final DateTime sentAt;
+    /// Current delivery status.
+    required MessageStatus status,
+  }) = _AppDmMessage;
 
-  /// Current delivery status.
-  final MessageStatus status;
+  const AppDmMessage._();
+
+  factory AppDmMessage.fromJson(Map<String, dynamic> json) => _$AppDmMessageFromJson(json);
 
   /// Whether this message is still pending send.
   bool get isPending => status == MessageStatus.pending;
@@ -78,23 +80,4 @@ class AppDmMessage {
 
   /// Whether this message was deleted.
   bool get isDeleted => status == MessageStatus.deleted;
-
-  /// Returns a copy with updated fields.
-  AppDmMessage copyWith({
-    String? messageId,
-    String? convoId,
-    Profile? sender,
-    String? content,
-    DateTime? sentAt,
-    MessageStatus? status,
-  }) {
-    return AppDmMessage(
-      messageId: messageId ?? this.messageId,
-      convoId: convoId ?? this.convoId,
-      sender: sender ?? this.sender,
-      content: content ?? this.content,
-      sentAt: sentAt ?? this.sentAt,
-      status: status ?? this.status,
-    );
-  }
 }
