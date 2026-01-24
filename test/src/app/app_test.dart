@@ -53,7 +53,6 @@ void main() {
         did: 'did:web:test',
         handle: 'handle',
         displayName: 'Test User',
-        viewerFollowing: false,
         followsCount: 0,
         followersCount: 0,
         postsCount: 0,

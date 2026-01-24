@@ -1,8 +1,11 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:lazurite/src/core/domain/author.dart';
+import 'package:lazurite/src/core/domain/content_label.dart';
 import 'package:lazurite/src/core/domain/post.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 
 part 'profile.freezed.dart';
+part 'profile.g.dart';
 
 @freezed
 abstract class ProfileData with _$ProfileData {
@@ -17,57 +20,47 @@ abstract class ProfileData with _$ProfileData {
     @Default(0) int followsCount,
     @Default(0) int postsCount,
     DateTime? indexedAt,
+    DateTime? createdAt,
     String? pronouns,
     String? website,
-    DateTime? createdAt,
-    String? verificationStatus,
-    List<Map<String, dynamic>>? labels,
-    String? pinnedPostUri,
-    @Default(false) bool viewerFollowing,
-    String? viewerFollowUri,
-    @Default(false) bool viewerMuted,
-    @Default(false) bool viewerBlockedBy,
-    String? viewerBlockingUri,
-    @Default(false) bool viewerFollowedBy,
-    String? viewerMutedByList,
-    String? viewerBlockingByList,
+    @JsonKey(name: 'verification', fromJson: _parseVerification) String? verificationStatus,
+    @JsonKey(name: 'pinnedPost', fromJson: _parsePinnedPost) String? pinnedPostUri,
+    ActorViewer? viewer,
+    List<ContentLabel>? labels,
   }) = _ProfileData;
 
   const ProfileData._();
 
-  factory ProfileData.fromJson(Map<String, dynamic> json) {
-    final viewer = json['viewer'] as Map<String, dynamic>?;
-    final labels = json['labels'] as List?;
+  factory ProfileData.fromJson(Map<String, dynamic> json) => _$ProfileDataFromJson(json);
 
-    return ProfileData(
-      did: json['did'] as String,
-      handle: json['handle'] as String,
-      displayName: json['displayName'] as String?,
-      description: json['description'] as String?,
-      avatar: json['avatar'] as String?,
-      banner: json['banner'] as String?,
-      followersCount: json['followersCount'] as int? ?? 0,
-      followsCount: json['followsCount'] as int? ?? 0,
-      postsCount: json['postsCount'] as int? ?? 0,
-      indexedAt: json['indexedAt'] != null ? DateTime.tryParse(json['indexedAt'] as String) : null,
-      pronouns: json['pronouns'] as String?,
-      website: json['website'] as String?,
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : null,
-      verificationStatus: json['verification']?['type'] as String?,
-      labels: labels?.cast<Map<String, dynamic>>(),
-      pinnedPostUri: json['pinnedPost']?['uri'] as String?,
-      viewerFollowing: viewer?['following'] != null,
-      viewerFollowUri: viewer?['following'] as String?,
-      viewerMuted: viewer?['muted'] as bool? ?? false,
-      viewerBlockedBy: viewer?['blockedBy'] as bool? ?? false,
-      viewerBlockingUri: viewer?['blocking'] as String?,
-      viewerFollowedBy: viewer?['followedBy'] != null,
-      viewerMutedByList: viewer?['mutedByList']?['uri'] as String?,
-      viewerBlockingByList: viewer?['blockingByList']?['uri'] as String?,
-    );
-  }
+  @override
+  Map<String, dynamic> toJson() => _$ProfileDataToJson(this as _ProfileData);
 
   String get displayNameOrHandle => displayName ?? handle;
+
+  // Proxy getters for UI compatibility
+  bool get viewerFollowing => viewer?.following != null;
+  String? get viewerFollowUri => viewer?.following;
+  bool get viewerMuted => viewer?.muted ?? false;
+  bool get viewerBlockedBy => viewer?.blockedBy ?? false;
+  String? get viewerBlockingUri => viewer?.blocking;
+  bool get viewerFollowedBy => viewer?.followedBy != null;
+  String? get viewerMutedByList => viewer?.mutedByList;
+  String? get viewerBlockingByList => viewer?.blockingByList;
+}
+
+String? _parseVerification(Object? json) {
+  if (json is Map<String, dynamic>) {
+    return json['type'] as String?;
+  }
+  return null;
+}
+
+String? _parsePinnedPost(Object? json) {
+  if (json is Map<String, dynamic>) {
+    return json['uri'] as String?;
+  }
+  return null;
 }
 
 /// Result of fetching author feed.
@@ -76,6 +69,11 @@ abstract class AuthorFeedResult with _$AuthorFeedResult {
   const factory AuthorFeedResult({required List<Post> items, String? cursor}) = _AuthorFeedResult;
 
   const AuthorFeedResult._();
+
+  factory AuthorFeedResult.fromJson(Map<String, dynamic> json) => _$AuthorFeedResultFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$AuthorFeedResultToJson(this as _AuthorFeedResult);
 
   bool get hasMore => cursor != null;
 }
@@ -88,6 +86,11 @@ abstract class FollowersResult with _$FollowersResult {
 
   const FollowersResult._();
 
+  factory FollowersResult.fromJson(Map<String, dynamic> json) => _$FollowersResultFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$FollowersResultToJson(this as _FollowersResult);
+
   bool get hasMore => cursor != null;
 }
 
@@ -97,6 +100,11 @@ abstract class FollowsResult with _$FollowsResult {
   const factory FollowsResult({required List<Author> follows, String? cursor}) = _FollowsResult;
 
   const FollowsResult._();
+
+  factory FollowsResult.fromJson(Map<String, dynamic> json) => _$FollowsResultFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$FollowsResultToJson(this as _FollowsResult);
 
   bool get hasMore => cursor != null;
 }

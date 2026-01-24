@@ -11,4 +11,6 @@ sealed class AuthState with _$AuthState {
   const factory AuthState.authenticated(Session session) = AuthStateAuthenticated;
   const factory AuthState.loading() = AuthStateLoading;
   const factory AuthState.error(Object error, StackTrace? stackTrace) = AuthStateError;
+
+  const AuthState._();
 }

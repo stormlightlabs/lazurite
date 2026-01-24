@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/feeds/infrastructure/feed_repository.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
@@ -26,95 +27,39 @@ class FeedContentRepository {
   ///
   /// Throws [FormatException] if required fields are missing or invalid.
   PostsCompanion _mapPost(Map<String, dynamic> json) {
-    final authorJson = json['author'];
-    if (authorJson is! Map<String, dynamic>) {
-      throw FormatException('Post author must be a Map', json);
+    try {
+      final post = ThreadPost.fromJson(json);
+      return post.toPostsCompanion();
+    } catch (e) {
+      _logger.error('Failed to map post', {'error': e, 'json': json});
+      rethrow;
     }
-
-    final authorDid = authorJson['did'];
-    if (authorDid is! String || authorDid.isEmpty) {
-      throw FormatException('Post author.did must be a non-empty string', json);
-    }
-
-    final uri = json['uri'];
-    final cid = json['cid'];
-    if (uri is! String || uri.isEmpty) {
-      throw FormatException('Post uri must be a non-empty string', json);
-    }
-    if (cid is! String || cid.isEmpty) {
-      throw FormatException('Post cid must be a non-empty string', json);
-    }
-
-    final viewer = json['viewer'] as Map<String, dynamic>?;
-
-    return PostsCompanion.insert(
-      uri: uri,
-      cid: cid,
-      authorDid: authorDid,
-      record: jsonEncode(json['record']),
-      embed: Value(json['embed'] != null ? jsonEncode(json['embed']) : null),
-      indexedAt: Value(DateTime.tryParse(json['indexedAt'] as String? ?? '')),
-      replyCount: Value(json['replyCount'] as int? ?? 0),
-      repostCount: Value(json['repostCount'] as int? ?? 0),
-      likeCount: Value(json['likeCount'] as int? ?? 0),
-      quoteCount: Value(json['quoteCount'] as int? ?? 0),
-      bookmarkCount: Value(json['bookmarkCount'] as int? ?? 0),
-      labels: Value(json['labels'] != null ? jsonEncode(json['labels']) : null),
-      viewerLikeUri: Value(viewer?['like'] as String?),
-      viewerRepostUri: Value(viewer?['repost'] as String?),
-      viewerBookmarked: Value(viewer?['bookmarked'] as bool? ?? false),
-      viewerThreadMuted: Value(viewer?['threadMuted'] as bool? ?? false),
-      viewerReplyDisabled: Value(viewer?['replyDisabled'] as bool? ?? false),
-    );
   }
 
   /// Helper to map API Author to DB Companion with validation.
   ///
   /// Throws [FormatException] if required fields are missing or invalid.
   ProfilesCompanion _mapProfile(Map<String, dynamic> json) {
-    final did = json['did'];
-    final handle = json['handle'];
-
-    if (did is! String || did.isEmpty) {
-      throw FormatException('Profile did must be a non-empty string', json);
+    try {
+      final author = ThreadAuthor.fromJson(json);
+      return author.toProfilesCompanion();
+    } catch (e) {
+      _logger.error('Failed to map profile', {'error': e, 'json': json});
+      rethrow;
     }
-    if (handle is! String || handle.isEmpty) {
-      throw FormatException('Profile handle must be a non-empty string', json);
-    }
-
-    return ProfilesCompanion.insert(
-      did: did,
-      handle: handle,
-      displayName: Value(json['displayName'] as String?),
-      description: Value(json['description'] as String?),
-      avatar: Value(json['avatar'] as String?),
-    );
   }
 
   /// Helper to map API Author to DB Companion with validation.
   ///
   /// Extracts viewer relationship data if present.
   ProfileRelationshipsCompanion? _mapRelationship(Map<String, dynamic> json, String ownerDid) {
-    final did = json['did'];
-    if (did is! String || did.isEmpty) return null;
-
-    final viewer = json['viewer'] as Map<String, dynamic>?;
-    if (viewer == null) return null;
-
-    return ProfileRelationshipsCompanion.insert(
-      profileDid: did,
-      ownerDid: ownerDid,
-      following: Value(viewer['following'] != null),
-      followingUri: Value(viewer['following'] as String?),
-      followedBy: Value(viewer['followedBy'] != null),
-      muted: Value(viewer['muted'] as bool? ?? false),
-      blocked: Value(viewer['blocking'] != null),
-      blockingUri: Value(viewer['blocking'] as String?),
-      blockedBy: Value(viewer['blockedBy'] as bool? ?? false),
-      mutedByList: Value(viewer['mutedByList']?['uri'] as String?),
-      blockingByList: Value(viewer['blockingByList']?['uri'] as String?),
-      updatedAt: DateTime.now(),
-    );
+    try {
+      final author = ThreadAuthor.fromJson(json);
+      return author.toRelationshipCompanion(ownerDid);
+    } catch (e) {
+      _logger.warning('Failed to map relationship', {'error': e, 'json': json});
+      return null;
+    }
   }
 
   /// Derives a feedKey from a feed URI.

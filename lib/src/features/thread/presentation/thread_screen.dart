@@ -172,7 +172,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
       final notFollowed = <ThreadViewPost>[];
 
       for (final reply in sortedReplies) {
-        final isFollowing = reply.post.author.viewer?['following'] != null;
+        final isFollowing = reply.post.author.viewer?.following != null;
         if (isFollowing) {
           followed.add(reply);
         } else {

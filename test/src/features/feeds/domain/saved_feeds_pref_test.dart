@@ -26,15 +26,13 @@ void main() {
     });
 
     test('fromJson throws on missing value', () {
-      final json = {'pinned': true, 'id': 'feed-123'};
-
-      expect(() => SavedFeedItem.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => SavedFeedItem.fromJson({'id': '123'}), throwsA(isA<Error>()));
     });
 
     test('fromJson throws on missing id', () {
       final json = {'value': 'at://did:plc:test/app.bsky.feed.generator/feed1', 'pinned': true};
 
-      expect(() => SavedFeedItem.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => SavedFeedItem.fromJson(json), throwsA(isA<Error>()));
     });
 
     test('toJson converts back to JSON correctly', () {
@@ -87,15 +85,13 @@ void main() {
     });
 
     test('fromJson throws on missing items', () {
-      final json = <String, dynamic>{};
-
-      expect(() => SavedFeedsPrefV2.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => SavedFeedsPrefV2.fromJson({}), throwsA(isA<Error>()));
     });
 
     test('fromJson throws on invalid items type', () {
       final json = {'items': 'not-a-list'};
 
-      expect(() => SavedFeedsPrefV2.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => SavedFeedsPrefV2.fromJson(json), throwsA(isA<Error>()));
     });
 
     test('savedUris returns all feed URIs', () {
@@ -218,7 +214,7 @@ void main() {
     test('fromJson throws on invalid saved type', () {
       final json = {'saved': 'not-a-list'};
 
-      expect(() => SavedFeedsPref.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => SavedFeedsPref.fromJson(json), throwsA(isA<Error>()));
     });
 
     test('toJson converts back to JSON correctly', () {

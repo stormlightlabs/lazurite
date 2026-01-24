@@ -120,7 +120,7 @@ class ProfileRepository {
 
       final feed =
           (response['feed'] as List?)
-              ?.map((e) => Post.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => Post.fromLexicon(e as Map<String, dynamic>))
               .toList() ??
           [];
       final nextCursor = response['cursor'] as String?;
@@ -381,7 +381,7 @@ class ProfileRepository {
       final posts = response['posts'] as List?;
       if (posts == null || posts.isEmpty) return null;
 
-      return Post.fromJson(posts.first as Map<String, dynamic>);
+      return Post.fromLexicon(posts.first as Map<String, dynamic>);
     } catch (e, stack) {
       _logger.error('Failed to fetch post', e, stack);
       rethrow;

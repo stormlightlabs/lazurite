@@ -6,6 +6,7 @@ import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -49,7 +50,11 @@ class ProfileNotifier extends _$ProfileNotifier {
     final current = state.value;
     if (current == null) return;
 
-    state = AsyncData(current.copyWith(viewerFollowing: isFollowing, viewerFollowUri: followUri));
+    state = AsyncData(
+      current.copyWith(
+        viewer: (current.viewer ?? const ActorViewer()).copyWith(following: followUri),
+      ),
+    );
   }
 
   /// Toggles the mute status of the profile.
@@ -58,7 +63,9 @@ class ProfileNotifier extends _$ProfileNotifier {
     if (current == null) return;
 
     final wasMuted = current.viewerMuted;
-    state = AsyncData(current.copyWith(viewerMuted: !wasMuted));
+    state = AsyncData(
+      current.copyWith(viewer: (current.viewer ?? const ActorViewer()).copyWith(muted: !wasMuted)),
+    );
 
     try {
       final repo = ref.read(profileRepositoryProvider);
@@ -88,10 +95,14 @@ class ProfileNotifier extends _$ProfileNotifier {
       final repo = ref.read(profileRepositoryProvider);
       if (wasBlocked) {
         await repo.unblockActor(authState.session.did, originalUri!, subjectDid: current.did);
-        return current.copyWith(viewerBlockingUri: null);
+        return current.copyWith(
+          viewer: (current.viewer ?? const ActorViewer()).copyWith(blocking: null),
+        );
       } else {
         final uri = await repo.blockActor(authState.session.did, current.did);
-        return current.copyWith(viewerBlockingUri: uri);
+        return current.copyWith(
+          viewer: (current.viewer ?? const ActorViewer()).copyWith(blocking: uri),
+        );
       }
     });
   }

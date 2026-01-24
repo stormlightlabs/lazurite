@@ -1,8 +1,10 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'outbox_item.freezed.dart';
+part 'outbox_item.g.dart';
 
 /// Outbox item status enum.
+@JsonEnum()
 enum OutboxStatus {
   /// Message is ready to send.
   pending,
@@ -13,7 +15,7 @@ enum OutboxStatus {
   /// Message send failed (will retry or user can retry).
   failed;
 
-  /// Parses a status string from the database.
+  /// Parses a status string from the database (for backwards compatibility).
   static OutboxStatus fromString(String value) {
     return OutboxStatus.values.firstWhere(
       (s) => s.name == value,
@@ -23,10 +25,9 @@ enum OutboxStatus {
 }
 
 /// Represents a pending message in the outbox queue.
-///
-/// Domain model for DmOutbox table with retry logic methods.
 @freezed
 abstract class OutboxItem with _$OutboxItem {
+  factory OutboxItem.fromJson(Map<String, dynamic> json) => _$OutboxItemFromJson(json);
   const factory OutboxItem({
     /// Local UUID for this outbox item.
     required String outboxId,
@@ -58,6 +59,9 @@ abstract class OutboxItem with _$OutboxItem {
   /// Maximum number of retry attempts before permanent failure.
   static const int maxRetries = 5;
 
+  @override
+  Map<String, dynamic> toJson() => _$OutboxItemToJson(this as _OutboxItem);
+
   /// Whether this item can be retried.
   bool get canRetry => retryCount < maxRetries;
 
@@ -74,7 +78,5 @@ abstract class OutboxItem with _$OutboxItem {
   bool get isFailed => status == OutboxStatus.failed;
 
   /// Calculates the delay before next retry using exponential backoff.
-  ///
-  /// Delay = 2^retryCount seconds (2s, 4s, 8s, 16s, 32s).
   Duration get nextRetryDelay => Duration(seconds: 1 << (retryCount + 1));
 }

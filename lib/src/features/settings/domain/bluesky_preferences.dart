@@ -1,10 +1,9 @@
-/// Domain models for AT Protocol Bluesky account preferences.
-///
-/// These models provide type-safe parsing of preferences from
-/// app.bsky.actor.getPreferences and putPreferences endpoints.
-library;
-
 import 'dart:convert';
+
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'bluesky_preferences.freezed.dart';
+part 'bluesky_preferences.g.dart';
 
 /// Constants for preference type identifiers used in the $type field.
 abstract final class BlueskyPreferenceTypes {
@@ -14,66 +13,57 @@ abstract final class BlueskyPreferenceTypes {
   static const String feedView = 'app.bsky.actor.defs#feedViewPref';
   static const String threadView = 'app.bsky.actor.defs#threadViewPref';
   static const String mutedWords = 'app.bsky.actor.defs#mutedWordsPref';
+  static const String contentLabels = 'app.bsky.actor.defs#contentLabelPrefs'; // Custom if needed
 }
 
 /// Adult content preference controlling visibility of adult content.
-///
-/// AT Protocol type: app.bsky.actor.defs#adultContentPref
-class AdultContentPref {
-  const AdultContentPref({required this.enabled});
+@freezed
+abstract class AdultContentPref with _$AdultContentPref {
+  const factory AdultContentPref({@Default(false) bool enabled}) = _AdultContentPref;
 
-  /// Creates an AdultContentPref from API JSON response.
-  factory AdultContentPref.fromJson(Map<String, dynamic> json) {
-    return AdultContentPref(enabled: json['enabled'] as bool? ?? false);
-  }
+  const AdultContentPref._();
 
-  /// Deserializes from stored JSON string.
-  factory AdultContentPref.fromStoredJson(String jsonString) {
-    return AdultContentPref.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
+  factory AdultContentPref.fromJson(Map<String, dynamic> json) => _$AdultContentPrefFromJson(json);
 
-  /// Whether adult content is enabled.
-  final bool enabled;
+  factory AdultContentPref.fromStoredJson(String jsonString) =>
+      AdultContentPref.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
 
-  /// Converts to JSON map for storage.
-  Map<String, dynamic> toJson() => {'enabled': enabled};
+  @override
+  Map<String, dynamic> toJson() => {
+    r'$type': BlueskyPreferenceTypes.adultContent,
+    ..._$AdultContentPrefToJson(this as _AdultContentPref),
+  };
 
-  /// Serializes to JSON string for storage.
   String toStoredJson() => jsonEncode(toJson());
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is AdultContentPref && enabled == other.enabled;
-
-  @override
-  int get hashCode => enabled.hashCode;
-
-  @override
-  String toString() => 'AdultContentPref(enabled: $enabled)';
 }
 
 /// Visibility options for content labels.
+@JsonEnum()
 enum LabelVisibility {
   /// No action taken, content appears normally.
+  @JsonValue('ignore')
   ignore,
 
   /// Content shown with label badge.
+  @JsonValue('show')
   show,
 
   /// Content hidden behind warning screen.
+  @JsonValue('warn')
   warn,
 
   /// Content completely filtered from feeds.
+  @JsonValue('hide')
   hide;
 
-  /// Parses a visibility string from the API.
+  /// Parses a visibility string from the API (for backwards compatibility).
   static LabelVisibility fromString(String? value) {
     return switch (value) {
       'ignore' => LabelVisibility.ignore,
       'show' => LabelVisibility.show,
       'warn' => LabelVisibility.warn,
       'hide' => LabelVisibility.hide,
-      _ => LabelVisibility.warn, // Default to warn for unknown values
+      _ => LabelVisibility.warn,
     };
   }
 
@@ -82,85 +72,51 @@ enum LabelVisibility {
 }
 
 /// Content label preference controlling visibility of labeled content.
-///
-/// AT Protocol type: app.bsky.actor.defs#contentLabelPref
-class ContentLabelPref {
-  const ContentLabelPref({required this.label, required this.visibility, this.labelerDid});
+@freezed
+abstract class ContentLabelPref with _$ContentLabelPref {
+  const factory ContentLabelPref({
+    required String label,
+    @Default(LabelVisibility.warn) LabelVisibility visibility,
+    @JsonKey(includeIfNull: false) String? labelerDid,
+  }) = _ContentLabelPref;
 
-  /// Creates a ContentLabelPref from API JSON response.
-  factory ContentLabelPref.fromJson(Map<String, dynamic> json) {
-    return ContentLabelPref(
-      label: json['label'] as String? ?? '',
-      labelerDid: json['labelerDid'] as String?,
-      visibility: LabelVisibility.fromString(json['visibility'] as String?),
-    );
-  }
+  const ContentLabelPref._();
 
-  /// The label identifier (e.g., "sexual", "graphic-media", "nudity").
-  final String label;
+  factory ContentLabelPref.fromJson(Map<String, dynamic> json) => _$ContentLabelPrefFromJson(json);
 
-  /// Optional DID of the labeler that defines this label.
-  final String? labelerDid;
-
-  /// The visibility setting for this label.
-  final LabelVisibility visibility;
-
-  /// Converts to JSON map.
+  @override
   Map<String, dynamic> toJson() => {
-    'label': label,
-    if (labelerDid != null) 'labelerDid': labelerDid,
-    'visibility': visibility.toApiString(),
+    r'$type': BlueskyPreferenceTypes.contentLabel,
+    ..._$ContentLabelPrefToJson(this as _ContentLabelPref),
   };
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ContentLabelPref &&
-          label == other.label &&
-          labelerDid == other.labelerDid &&
-          visibility == other.visibility;
-
-  @override
-  int get hashCode => Object.hash(label, labelerDid, visibility);
-
-  @override
-  String toString() =>
-      'ContentLabelPref(label: $label, labelerDid: $labelerDid, visibility: $visibility)';
 }
 
 /// Collection of content label preferences.
-///
-/// Stored as a single JSON array in the database for efficiency.
-class ContentLabelPrefs {
-  const ContentLabelPrefs({required this.items});
+@freezed
+abstract class ContentLabelPrefs with _$ContentLabelPrefs {
+  factory ContentLabelPrefs.fromJson(Map<String, dynamic> json) =>
+      _$ContentLabelPrefsFromJson(json);
 
-  /// Creates from a list of preference JSON objects.
   factory ContentLabelPrefs.fromJsonList(List<dynamic> jsonList) {
-    final items = <ContentLabelPref>[];
-    for (final item in jsonList) {
-      if (item is Map<String, dynamic>) {
-        items.add(ContentLabelPref.fromJson(item));
-      }
-    }
-    return ContentLabelPrefs(items: items);
+    return ContentLabelPrefs(
+      items: jsonList.whereType<Map<String, dynamic>>().map(ContentLabelPref.fromJson).toList(),
+    );
   }
 
-  /// Deserializes from stored JSON string.
-  factory ContentLabelPrefs.fromStoredJson(String jsonString) {
-    final list = jsonDecode(jsonString) as List<dynamic>;
-    return ContentLabelPrefs.fromJsonList(list);
-  }
+  factory ContentLabelPrefs.fromStoredJson(String jsonString) =>
+      ContentLabelPrefs.fromJsonList(jsonDecode(jsonString) as List<dynamic>);
+  const factory ContentLabelPrefs({@Default([]) List<ContentLabelPref> items}) =
+      _ContentLabelPrefs;
+
+  const ContentLabelPrefs._();
 
   /// Empty collection.
   static const empty = ContentLabelPrefs(items: []);
 
-  final List<ContentLabelPref> items;
+  @override
+  Map<String, dynamic> toJson() => _$ContentLabelPrefsToJson(this as _ContentLabelPrefs);
 
-  /// Converts to JSON list.
-  List<Map<String, dynamic>> toJson() => items.map((item) => item.toJson()).toList();
-
-  /// Serializes to JSON string for storage.
-  String toStoredJson() => jsonEncode(toJson());
+  String toStoredJson() => jsonEncode(items.map((i) => i.toJson()).toList());
 
   /// Gets the visibility for a specific label.
   LabelVisibility? getVisibility(String label, {String? labelerDid}) {
@@ -171,188 +127,92 @@ class ContentLabelPrefs {
     }
     return null;
   }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is ContentLabelPrefs && _listEquals(items, other.items);
-
-  @override
-  int get hashCode => Object.hashAll(items);
-
-  static bool _listEquals<T>(List<T> a, List<T> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
 }
 
 /// Reference to a labeler service.
-class LabelerRef {
-  const LabelerRef({required this.did});
+@freezed
+abstract class LabelerRef with _$LabelerRef {
+  const factory LabelerRef({required String did}) = _LabelerRef;
 
-  factory LabelerRef.fromJson(Map<String, dynamic> json) {
-    return LabelerRef(did: json['did'] as String? ?? '');
-  }
+  const LabelerRef._();
 
-  final String did;
-
-  Map<String, dynamic> toJson() => {'did': did};
+  factory LabelerRef.fromJson(Map<String, dynamic> json) => _$LabelerRefFromJson(json);
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is LabelerRef && did == other.did;
-
-  @override
-  int get hashCode => did.hashCode;
+  Map<String, dynamic> toJson() => _$LabelerRefToJson(this as _LabelerRef);
 }
 
 /// Labelers preference for custom moderation services.
-///
-/// AT Protocol type: app.bsky.actor.defs#labelersPref
-class LabelersPref {
-  const LabelersPref({required this.labelers});
+@freezed
+abstract class LabelersPref with _$LabelersPref {
+  factory LabelersPref.fromJson(Map<String, dynamic> json) => _$LabelersPrefFromJson(json);
 
-  /// Creates a LabelersPref from API JSON response.
-  factory LabelersPref.fromJson(Map<String, dynamic> json) {
-    final labelersJson = json['labelers'] as List<dynamic>? ?? [];
-    final labelers = labelersJson
-        .whereType<Map<String, dynamic>>()
-        .map(LabelerRef.fromJson)
-        .toList();
-    return LabelersPref(labelers: labelers);
-  }
+  factory LabelersPref.fromStoredJson(String jsonString) =>
+      LabelersPref.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+  const factory LabelersPref({@Default([]) List<LabelerRef> labelers}) = _LabelersPref;
 
-  /// Deserializes from stored JSON string.
-  factory LabelersPref.fromStoredJson(String jsonString) {
-    return LabelersPref.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
+  const LabelersPref._();
 
   /// Empty preference with no labelers.
   static const empty = LabelersPref(labelers: []);
 
-  final List<LabelerRef> labelers;
+  @override
+  Map<String, dynamic> toJson() => {
+    r'$type': BlueskyPreferenceTypes.labelers,
+    ..._$LabelersPrefToJson(this as _LabelersPref),
+  };
+
+  String toStoredJson() => jsonEncode(toJson());
 
   /// Gets the list of labeler DIDs.
   List<String> get labelerDids => labelers.map((l) => l.did).toList();
-
-  /// Converts to JSON map.
-  Map<String, dynamic> toJson() => {'labelers': labelers.map((l) => l.toJson()).toList()};
-
-  /// Serializes to JSON string for storage.
-  String toStoredJson() => jsonEncode(toJson());
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LabelersPref && ContentLabelPrefs._listEquals(labelers, other.labelers);
-
-  @override
-  int get hashCode => Object.hashAll(labelers);
-
-  @override
-  String toString() => 'LabelersPref(labelers: ${labelers.length})';
 }
 
 /// Feed view preference controlling what content appears in feeds.
-///
-/// AT Protocol type: app.bsky.actor.defs#feedViewPref
-class FeedViewPref {
-  const FeedViewPref({
-    this.hideReplies = false,
-    this.hideRepliesByUnfollowed = true,
-    this.hideRepliesByLikeCount,
-    this.hideReposts = false,
-    this.hideQuotePosts = false,
-    this.feed,
-  });
+@freezed
+abstract class FeedViewPref with _$FeedViewPref {
+  factory FeedViewPref.fromJson(Map<String, dynamic> json) => _$FeedViewPrefFromJson(json);
 
-  /// Creates a FeedViewPref from API JSON response.
-  factory FeedViewPref.fromJson(Map<String, dynamic> json) {
-    return FeedViewPref(
-      hideReplies: json['hideReplies'] as bool? ?? false,
-      hideRepliesByUnfollowed: json['hideRepliesByUnfollowed'] as bool? ?? true,
-      hideRepliesByLikeCount: json['hideRepliesByLikeCount'] as int?,
-      hideReposts: json['hideReposts'] as bool? ?? false,
-      hideQuotePosts: json['hideQuotePosts'] as bool? ?? false,
-      feed: json['feed'] as String?,
-    );
-  }
+  factory FeedViewPref.fromStoredJson(String jsonString) =>
+      FeedViewPref.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+  const factory FeedViewPref({
+    @Default(false) bool hideReplies,
+    @Default(true) bool hideRepliesByUnfollowed,
+    @JsonKey(includeIfNull: false) int? hideRepliesByLikeCount,
+    @Default(false) bool hideReposts,
+    @Default(false) bool hideQuotePosts,
+    @JsonKey(includeIfNull: false) String? feed,
+  }) = _FeedViewPref;
 
-  /// Deserializes from stored JSON string.
-  factory FeedViewPref.fromStoredJson(String jsonString) {
-    return FeedViewPref.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
+  const FeedViewPref._();
 
   /// Default preferences.
   static const defaultPref = FeedViewPref();
 
-  /// Whether to hide replies in feeds.
-  final bool hideReplies;
-
-  /// Whether to hide replies from accounts you don't follow.
-  final bool hideRepliesByUnfollowed;
-
-  /// Hide replies with less than this many likes (optional).
-  final int? hideRepliesByLikeCount;
-
-  /// Whether to hide reposts in feeds.
-  final bool hideReposts;
-
-  /// Whether to hide quote posts in feeds.
-  final bool hideQuotePosts;
-
-  /// Optional feed URI this preference applies to.
-  final String? feed;
-
-  /// Converts to JSON map.
+  @override
   Map<String, dynamic> toJson() => {
-    'hideReplies': hideReplies,
-    'hideRepliesByUnfollowed': hideRepliesByUnfollowed,
-    if (hideRepliesByLikeCount != null) 'hideRepliesByLikeCount': hideRepliesByLikeCount,
-    'hideReposts': hideReposts,
-    'hideQuotePosts': hideQuotePosts,
-    if (feed != null) 'feed': feed,
+    r'$type': BlueskyPreferenceTypes.feedView,
+    ..._$FeedViewPrefToJson(this as _FeedViewPref),
   };
 
-  /// Serializes to JSON string for storage.
   String toStoredJson() => jsonEncode(toJson());
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is FeedViewPref &&
-          hideReplies == other.hideReplies &&
-          hideRepliesByUnfollowed == other.hideRepliesByUnfollowed &&
-          hideRepliesByLikeCount == other.hideRepliesByLikeCount &&
-          hideReposts == other.hideReposts &&
-          hideQuotePosts == other.hideQuotePosts &&
-          feed == other.feed;
-
-  @override
-  int get hashCode => Object.hash(
-    hideReplies,
-    hideRepliesByUnfollowed,
-    hideRepliesByLikeCount,
-    hideReposts,
-    hideQuotePosts,
-    feed,
-  );
-
-  @override
-  String toString() => 'FeedViewPref(hideReplies: $hideReplies, hideReposts: $hideReposts)';
 }
 
 /// Sort order options for thread views.
+@JsonEnum()
 enum ThreadSortOrder {
+  @JsonValue('oldest')
   oldest,
+  @JsonValue('newest')
   newest,
+  @JsonValue('most-likes')
   mostLikes,
+  @JsonValue('random')
   random,
+  @JsonValue('hotness')
   hotness;
 
-  /// Parses a sort order string from the API.
+  /// Parses a sort order string from the API (for backwards compatibility).
   static ThreadSortOrder fromString(String? value) {
     return switch (value) {
       'oldest' => ThreadSortOrder.oldest,
@@ -360,7 +220,7 @@ enum ThreadSortOrder {
       'most-likes' => ThreadSortOrder.mostLikes,
       'random' => ThreadSortOrder.random,
       'hotness' => ThreadSortOrder.hotness,
-      _ => ThreadSortOrder.oldest, // Default
+      _ => ThreadSortOrder.oldest,
     };
   }
 
@@ -377,60 +237,37 @@ enum ThreadSortOrder {
 }
 
 /// Thread view preference controlling thread display.
-///
-/// AT Protocol type: app.bsky.actor.defs#threadViewPref
-class ThreadViewPref {
-  const ThreadViewPref({this.sort = ThreadSortOrder.oldest, this.prioritizeFollowedUsers = true});
+@freezed
+abstract class ThreadViewPref with _$ThreadViewPref {
+  factory ThreadViewPref.fromJson(Map<String, dynamic> json) => _$ThreadViewPrefFromJson(json);
 
-  /// Creates a ThreadViewPref from API JSON response.
-  factory ThreadViewPref.fromJson(Map<String, dynamic> json) {
-    return ThreadViewPref(
-      sort: ThreadSortOrder.fromString(json['sort'] as String?),
-      prioritizeFollowedUsers: json['prioritizeFollowedUsers'] as bool? ?? true,
-    );
-  }
+  factory ThreadViewPref.fromStoredJson(String jsonString) =>
+      ThreadViewPref.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+  const factory ThreadViewPref({
+    @Default(ThreadSortOrder.oldest) ThreadSortOrder sort,
+    @Default(true) bool prioritizeFollowedUsers,
+  }) = _ThreadViewPref;
 
-  /// Deserializes from stored JSON string.
-  factory ThreadViewPref.fromStoredJson(String jsonString) {
-    return ThreadViewPref.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
+  const ThreadViewPref._();
 
   /// Default preferences.
   static const defaultPref = ThreadViewPref();
 
-  /// The sort order for thread replies.
-  final ThreadSortOrder sort;
-
-  /// Whether to show replies from followed users first.
-  final bool prioritizeFollowedUsers;
-
-  /// Converts to JSON map.
+  @override
   Map<String, dynamic> toJson() => {
-    'sort': sort.toApiString(),
-    'prioritizeFollowedUsers': prioritizeFollowedUsers,
+    r'$type': BlueskyPreferenceTypes.threadView,
+    ..._$ThreadViewPrefToJson(this as _ThreadViewPref),
   };
 
-  /// Serializes to JSON string for storage.
   String toStoredJson() => jsonEncode(toJson());
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ThreadViewPref &&
-          sort == other.sort &&
-          prioritizeFollowedUsers == other.prioritizeFollowedUsers;
-
-  @override
-  int get hashCode => Object.hash(sort, prioritizeFollowedUsers);
-
-  @override
-  String toString() =>
-      'ThreadViewPref(sort: $sort, prioritizeFollowedUsers: $prioritizeFollowedUsers)';
 }
 
 /// Target options for muted words.
+@JsonEnum()
 enum MutedWordTarget {
+  @JsonValue('content')
   content,
+  @JsonValue('tag')
   tags;
 
   static MutedWordTarget? fromString(String? value) {
@@ -441,17 +278,15 @@ enum MutedWordTarget {
     };
   }
 
-  String toApiString() {
-    return switch (this) {
-      MutedWordTarget.content => 'content',
-      MutedWordTarget.tags => 'tag',
-    };
-  }
+  String toApiString() => name == 'tags' ? 'tag' : name;
 }
 
 /// Actor target options for muted words.
+@JsonEnum()
 enum MutedWordActorTarget {
+  @JsonValue('all')
   all,
+  @JsonValue('exclude-following')
   excludeFollowing;
 
   static MutedWordActorTarget fromString(String? value) {
@@ -471,104 +306,49 @@ enum MutedWordActorTarget {
 }
 
 /// A single muted word entry.
-class MutedWord {
-  const MutedWord({
-    required this.id,
-    required this.value,
-    required this.targets,
-    this.actorTarget = MutedWordActorTarget.all,
-    this.expiresAt,
-  });
+@freezed
+abstract class MutedWord with _$MutedWord {
+  const factory MutedWord({
+    required String id,
+    required String value,
+    required List<MutedWordTarget> targets,
+    @Default(MutedWordActorTarget.all) MutedWordActorTarget actorTarget,
+    @JsonKey(includeIfNull: false) DateTime? expiresAt,
+  }) = _MutedWord;
 
-  factory MutedWord.fromJson(Map<String, dynamic> json) {
-    final targetsJson = json['targets'] as List<dynamic>? ?? [];
-    final targets = targetsJson
-        .map((t) => MutedWordTarget.fromString(t as String?))
-        .whereType<MutedWordTarget>()
-        .toList();
+  const MutedWord._();
 
-    DateTime? expiresAt;
-    final expiresAtStr = json['expiresAt'] as String?;
-    if (expiresAtStr != null) {
-      expiresAt = DateTime.tryParse(expiresAtStr);
-    }
+  factory MutedWord.fromJson(Map<String, dynamic> json) => _$MutedWordFromJson(json);
 
-    return MutedWord(
-      id: json['id'] as String? ?? '',
-      value: json['value'] as String? ?? '',
-      targets: targets,
-      actorTarget: MutedWordActorTarget.fromString(json['actorTarget'] as String?),
-      expiresAt: expiresAt,
-    );
-  }
-
-  final String id;
-  final String value;
-  final List<MutedWordTarget> targets;
-  final MutedWordActorTarget actorTarget;
-  final DateTime? expiresAt;
+  @override
+  Map<String, dynamic> toJson() => _$MutedWordToJson(this as _MutedWord);
 
   /// Whether this muted word has expired.
   bool get isExpired => expiresAt != null && expiresAt!.isBefore(DateTime.now());
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'value': value,
-    'targets': targets.map((t) => t.toApiString()).toList(),
-    'actorTarget': actorTarget.toApiString(),
-    if (expiresAt != null) 'expiresAt': expiresAt!.toIso8601String(),
-  };
-
-  @override
-  bool operator ==(Object other) => identical(this, other) || other is MutedWord && id == other.id;
-
-  @override
-  int get hashCode => id.hashCode;
-
-  @override
-  String toString() => 'MutedWord(id: $id, value: $value)';
 }
 
 /// Muted words preference for keyword filtering.
-///
-/// AT Protocol type: app.bsky.actor.defs#mutedWordsPref
-class MutedWordsPref {
-  const MutedWordsPref({required this.items});
+@freezed
+abstract class MutedWordsPref with _$MutedWordsPref {
+  factory MutedWordsPref.fromJson(Map<String, dynamic> json) => _$MutedWordsPrefFromJson(json);
 
-  /// Creates a MutedWordsPref from API JSON response.
-  factory MutedWordsPref.fromJson(Map<String, dynamic> json) {
-    final itemsJson = json['items'] as List<dynamic>? ?? [];
-    final items = itemsJson.whereType<Map<String, dynamic>>().map(MutedWord.fromJson).toList();
-    return MutedWordsPref(items: items);
-  }
+  factory MutedWordsPref.fromStoredJson(String jsonString) =>
+      MutedWordsPref.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+  const factory MutedWordsPref({@Default([]) List<MutedWord> items}) = _MutedWordsPref;
 
-  /// Deserializes from stored JSON string.
-  factory MutedWordsPref.fromStoredJson(String jsonString) {
-    return MutedWordsPref.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
+  const MutedWordsPref._();
 
   /// Empty preference with no muted words.
   static const empty = MutedWordsPref(items: []);
 
-  final List<MutedWord> items;
+  @override
+  Map<String, dynamic> toJson() => {
+    r'$type': BlueskyPreferenceTypes.mutedWords,
+    ..._$MutedWordsPrefToJson(this as _MutedWordsPref),
+  };
+
+  String toStoredJson() => jsonEncode(toJson());
 
   /// Gets only non-expired muted words.
   List<MutedWord> get activeItems => items.where((i) => !i.isExpired).toList();
-
-  /// Converts to JSON map.
-  Map<String, dynamic> toJson() => {'items': items.map((i) => i.toJson()).toList()};
-
-  /// Serializes to JSON string for storage.
-  String toStoredJson() => jsonEncode(toJson());
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MutedWordsPref && ContentLabelPrefs._listEquals(items, other.items);
-
-  @override
-  int get hashCode => Object.hashAll(items);
-
-  @override
-  String toString() => 'MutedWordsPref(items: ${items.length})';
 }

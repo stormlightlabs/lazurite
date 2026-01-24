@@ -70,7 +70,7 @@ void main() {
         'likeCount': 25,
       };
 
-      final post = Post.fromJson(json);
+      final post = Post.fromLexicon(json);
 
       expect(post.uri, 'at://did:plc:user1/app.bsky.feed.post/1');
       expect(post.cid, 'cid123');
@@ -93,7 +93,7 @@ void main() {
         'record': {'text': 'Hello world!'},
       };
 
-      final post = Post.fromJson(json);
+      final post = Post.fromLexicon(json);
 
       expect(post.uri, 'at://did:plc:user1/app.bsky.feed.post/1');
       expect(post.text, 'Hello world!');
@@ -112,7 +112,7 @@ void main() {
         'record': {'images': []},
       };
 
-      final post = Post.fromJson(json);
+      final post = Post.fromLexicon(json);
       expect(post.text, '');
     });
 

@@ -11,18 +11,19 @@ part of 'post.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
+
 /// @nodoc
 mixin _$Post {
 
- String get uri; String get cid; Author get author; String get text; DateTime? get indexedAt; int get replyCount; int get repostCount; int get likeCount; Map<String, dynamic>? get embed; Map<String, dynamic>? get record; List<dynamic>? get facets;// Viewer states (from FeedItem)
- String? get viewerLikeUri; String? get viewerRepostUri; bool get viewerBookmarked;// Helper flags (from FeedItem)
- bool get isReply; bool get isRepost; bool get isQuote; bool get hasImages; bool get hasVideo; String? get embedType;
+ String get uri; String get cid; Author get author; String get text; DateTime? get indexedAt; int get replyCount; int get repostCount; int get likeCount; Map<String, dynamic>? get embed; Map<String, dynamic>? get record; List<dynamic>? get facets; String? get viewerLikeUri; String? get viewerRepostUri; bool get viewerBookmarked; bool get isReply; bool get isRepost; bool get isQuote; bool get hasImages; bool get hasVideo; String? get embedType;
 /// Create a copy of Post
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $PostCopyWith<Post> get copyWith => _$PostCopyWithImpl<Post>(this as Post, _$identity);
 
+  /// Serializes this Post to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -30,7 +31,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is Post&&(identical(other.uri, uri) || other.uri == uri)&&(identical(other.cid, cid) || other.cid == cid)&&(identical(other.author, author) || other.author == author)&&(identical(other.text, text) || other.text == text)&&(identical(other.indexedAt, indexedAt) || other.indexedAt == indexedAt)&&(identical(other.replyCount, replyCount) || other.replyCount == replyCount)&&(identical(other.repostCount, repostCount) || other.repostCount == repostCount)&&(identical(other.likeCount, likeCount) || other.likeCount == likeCount)&&const DeepCollectionEquality().equals(other.embed, embed)&&const DeepCollectionEquality().equals(other.record, record)&&const DeepCollectionEquality().equals(other.facets, facets)&&(identical(other.viewerLikeUri, viewerLikeUri) || other.viewerLikeUri == viewerLikeUri)&&(identical(other.viewerRepostUri, viewerRepostUri) || other.viewerRepostUri == viewerRepostUri)&&(identical(other.viewerBookmarked, viewerBookmarked) || other.viewerBookmarked == viewerBookmarked)&&(identical(other.isReply, isReply) || other.isReply == isReply)&&(identical(other.isRepost, isRepost) || other.isRepost == isRepost)&&(identical(other.isQuote, isQuote) || other.isQuote == isQuote)&&(identical(other.hasImages, hasImages) || other.hasImages == hasImages)&&(identical(other.hasVideo, hasVideo) || other.hasVideo == hasVideo)&&(identical(other.embedType, embedType) || other.embedType == embedType));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hashAll([runtimeType,uri,cid,author,text,indexedAt,replyCount,repostCount,likeCount,const DeepCollectionEquality().hash(embed),const DeepCollectionEquality().hash(record),const DeepCollectionEquality().hash(facets),viewerLikeUri,viewerRepostUri,viewerBookmarked,isReply,isRepost,isQuote,hasImages,hasVideo,embedType]);
 
@@ -233,11 +234,11 @@ return $default(_that.uri,_that.cid,_that.author,_that.text,_that.indexedAt,_tha
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _Post extends Post {
   const _Post({required this.uri, required this.cid, required this.author, required this.text, this.indexedAt, this.replyCount = 0, this.repostCount = 0, this.likeCount = 0, final  Map<String, dynamic>? embed, final  Map<String, dynamic>? record, final  List<dynamic>? facets, this.viewerLikeUri, this.viewerRepostUri, this.viewerBookmarked = false, this.isReply = false, this.isRepost = false, this.isQuote = false, this.hasImages = false, this.hasVideo = false, this.embedType}): _embed = embed,_record = record,_facets = facets,super._();
-  
+  factory _Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
 
 @override final  String uri;
 @override final  String cid;
@@ -274,11 +275,9 @@ class _Post extends Post {
   return EqualUnmodifiableListView(value);
 }
 
-// Viewer states (from FeedItem)
 @override final  String? viewerLikeUri;
 @override final  String? viewerRepostUri;
 @override@JsonKey() final  bool viewerBookmarked;
-// Helper flags (from FeedItem)
 @override@JsonKey() final  bool isReply;
 @override@JsonKey() final  bool isRepost;
 @override@JsonKey() final  bool isQuote;
@@ -292,14 +291,17 @@ class _Post extends Post {
 @pragma('vm:prefer-inline')
 _$PostCopyWith<_Post> get copyWith => __$PostCopyWithImpl<_Post>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$PostToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _Post&&(identical(other.uri, uri) || other.uri == uri)&&(identical(other.cid, cid) || other.cid == cid)&&(identical(other.author, author) || other.author == author)&&(identical(other.text, text) || other.text == text)&&(identical(other.indexedAt, indexedAt) || other.indexedAt == indexedAt)&&(identical(other.replyCount, replyCount) || other.replyCount == replyCount)&&(identical(other.repostCount, repostCount) || other.repostCount == repostCount)&&(identical(other.likeCount, likeCount) || other.likeCount == likeCount)&&const DeepCollectionEquality().equals(other._embed, _embed)&&const DeepCollectionEquality().equals(other._record, _record)&&const DeepCollectionEquality().equals(other._facets, _facets)&&(identical(other.viewerLikeUri, viewerLikeUri) || other.viewerLikeUri == viewerLikeUri)&&(identical(other.viewerRepostUri, viewerRepostUri) || other.viewerRepostUri == viewerRepostUri)&&(identical(other.viewerBookmarked, viewerBookmarked) || other.viewerBookmarked == viewerBookmarked)&&(identical(other.isReply, isReply) || other.isReply == isReply)&&(identical(other.isRepost, isRepost) || other.isRepost == isRepost)&&(identical(other.isQuote, isQuote) || other.isQuote == isQuote)&&(identical(other.hasImages, hasImages) || other.hasImages == hasImages)&&(identical(other.hasVideo, hasVideo) || other.hasVideo == hasVideo)&&(identical(other.embedType, embedType) || other.embedType == embedType));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hashAll([runtimeType,uri,cid,author,text,indexedAt,replyCount,repostCount,likeCount,const DeepCollectionEquality().hash(_embed),const DeepCollectionEquality().hash(_record),const DeepCollectionEquality().hash(_facets),viewerLikeUri,viewerRepostUri,viewerBookmarked,isReply,isRepost,isQuote,hasImages,hasVideo,embedType]);
 

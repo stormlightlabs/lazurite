@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/domain/profile.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../helpers/mocks.dart';
@@ -59,7 +60,7 @@ void main() {
     });
 
     test('toggleMute un-mutes if already muted', () async {
-      final mutedProfile = testProfile.copyWith(viewerMuted: true);
+      final mutedProfile = testProfile.copyWith(viewer: const ActorViewer(muted: true));
       when(() => mockRepository.getProfile(testDid, any())).thenAnswer((_) async => mutedProfile);
       when(() => mockRepository.unmuteActor(myDid, testDid)).thenAnswer((_) async {});
 
@@ -89,7 +90,7 @@ void main() {
 
     test('toggleBlock un-blocks if already blocked', () async {
       const blockUri = 'at://...';
-      final blockedProfile = testProfile.copyWith(viewerBlockingUri: blockUri);
+      final blockedProfile = testProfile.copyWith(viewer: const ActorViewer(blocking: blockUri));
 
       when(
         () => mockRepository.getProfile(testDid, any()),

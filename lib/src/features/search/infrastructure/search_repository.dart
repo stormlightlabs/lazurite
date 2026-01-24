@@ -56,7 +56,7 @@ class SearchRepository {
         if (postJson is! Map<String, dynamic>) {
           throw FormatException('Each post must be a Map', postJson);
         }
-        posts.add(Post.fromJson(postJson));
+        posts.add(Post.fromLexicon(postJson));
       }
       final nextCursor = response['cursor'] as String?;
 

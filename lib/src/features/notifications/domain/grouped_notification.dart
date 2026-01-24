@@ -1,43 +1,38 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:lazurite/src/core/domain/author.dart';
 
 import 'notification.dart';
 import 'notification_type.dart';
 
+part 'grouped_notification.freezed.dart';
+
 /// Represents a group of similar notifications for compact display.
-///
-/// Groups notifications of the same type, on the same subject,
-/// within a 24-hour window.
-class GroupedNotification {
-  GroupedNotification({
-    required this.type,
-    required this.actors,
-    required this.subjectUri,
-    required this.mostRecentTimestamp,
-    required this.hasUnread,
-    required this.totalCount,
-    required this.notifications,
-  });
+@freezed
+abstract class GroupedNotification with _$GroupedNotification {
+  const factory GroupedNotification({
+    /// The notification type shared by all in this group.
+    required NotificationType type,
 
-  /// The notification type shared by all in this group.
-  final NotificationType type;
+    /// Actors who triggered notifications in this group.
+    required List<Author> actors,
 
-  /// Actors who triggered notifications in this group.
-  final List<Author> actors;
+    /// URI of the subject (post/profile) this group is about.
+    String? subjectUri,
 
-  /// URI of the subject (post/profile) this group is about.
-  final String? subjectUri;
+    /// Timestamp of the most recent notification in the group.
+    required DateTime mostRecentTimestamp,
 
-  /// Timestamp of the most recent notification in the group.
-  final DateTime mostRecentTimestamp;
+    /// Whether any notification in this group is unread.
+    required bool hasUnread,
 
-  /// Whether any notification in this group is unread.
-  final bool hasUnread;
+    /// Total number of notifications in this group.
+    required int totalCount,
 
-  /// Total number of notifications in this group.
-  final int totalCount;
+    /// All underlying notifications in this group.
+    required List<AppNotification> notifications,
+  }) = _GroupedNotification;
 
-  /// All underlying notifications in this group.
-  final List<AppNotification> notifications;
+  const GroupedNotification._();
 
   /// Maximum number of actors to display inline.
   static const int maxDisplayActors = 5;
@@ -46,11 +41,6 @@ class GroupedNotification {
   static const Duration groupingWindow = Duration(hours: 24);
 
   /// Returns a formatted display text for this group.
-  ///
-  /// Examples:
-  /// - Single actor: "Alice liked your post"
-  /// - Two actors: "Alice and Bob liked your post"
-  /// - Many actors: "Alice, Bob and 3 others liked your post"
   String get displayText {
     if (actors.isEmpty) return type.displayText;
 
@@ -67,8 +57,6 @@ class GroupedNotification {
   }
 
   /// Groups a list of notifications by type and subject within 24 hours.
-  ///
-  /// Returns a list of [GroupedNotification] sorted by most recent timestamp.
   static List<GroupedNotification> groupNotifications(List<AppNotification> notifications) {
     if (notifications.isEmpty) return [];
 

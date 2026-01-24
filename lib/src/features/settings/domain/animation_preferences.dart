@@ -1,8 +1,10 @@
-import 'package:flutter/foundation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'animation_preferences.freezed.dart';
+part 'animation_preferences.g.dart';
 
 /// Animation intensity mode for the app.
-///
-/// Controls how animations are displayed, with accessibility considerations.
+@JsonEnum()
 enum AnimationMode {
   /// Full animations with all effects enabled.
   full,
@@ -18,16 +20,16 @@ enum AnimationMode {
 }
 
 /// Animation preferences for the app.
-///
-/// Controls animation intensity and speed across the application,
-/// with support for accessibility settings.
-@immutable
-class AnimationPreferences {
-  const AnimationPreferences({this.mode = AnimationMode.system, this.speedMultiplier = 1.0})
-    : assert(
-        speedMultiplier >= minSpeedMultiplier && speedMultiplier <= maxSpeedMultiplier,
-        'Speed multiplier must be between $minSpeedMultiplier and $maxSpeedMultiplier',
-      );
+@freezed
+abstract class AnimationPreferences with _$AnimationPreferences {
+  factory AnimationPreferences.fromJson(Map<String, dynamic> json) =>
+      _$AnimationPreferencesFromJson(json);
+  const factory AnimationPreferences({
+    @Default(AnimationMode.system) AnimationMode mode,
+    @Default(1.0) double speedMultiplier,
+  }) = _AnimationPreferences;
+
+  const AnimationPreferences._();
 
   /// Default animation preferences.
   static const defaults = AnimationPreferences();
@@ -38,18 +40,10 @@ class AnimationPreferences {
   /// Maximum allowed speed multiplier.
   static const maxSpeedMultiplier = 2.0;
 
-  /// The animation mode setting.
-  final AnimationMode mode;
-
-  /// Speed multiplier for animations (0.5x to 2.0x).
-  ///
-  /// Values < 1.0 slow down animations, values > 1.0 speed them up.
-  final double speedMultiplier;
+  @override
+  Map<String, dynamic> toJson() => _$AnimationPreferencesToJson(this as _AnimationPreferences);
 
   /// Resolves the effective animation mode considering platform settings.
-  ///
-  /// When [mode] is [AnimationMode.system], returns [AnimationMode.reduced]
-  /// if the platform requests reduced motion, otherwise [AnimationMode.full].
   AnimationMode resolveMode({required bool platformReduceMotion}) {
     if (mode == AnimationMode.system) {
       return platformReduceMotion ? AnimationMode.reduced : AnimationMode.full;
@@ -58,11 +52,6 @@ class AnimationPreferences {
   }
 
   /// Calculates the effective duration for an animation.
-  ///
-  /// Takes a base duration and adjusts it based on:
-  /// 1. The animation mode (minimal = instant, reduced = faster)
-  /// 2. The speed multiplier setting
-  /// 3. Platform accessibility settings
   Duration getEffectiveDuration(Duration baseDuration, {required bool platformReduceMotion}) {
     final effectiveMode = resolveMode(platformReduceMotion: platformReduceMotion);
 
@@ -84,26 +73,4 @@ class AnimationPreferences {
     final effectiveMode = resolveMode(platformReduceMotion: platformReduceMotion);
     return effectiveMode == AnimationMode.minimal;
   }
-
-  /// Creates a copy with the given fields replaced.
-  AnimationPreferences copyWith({AnimationMode? mode, double? speedMultiplier}) {
-    return AnimationPreferences(
-      mode: mode ?? this.mode,
-      speedMultiplier: speedMultiplier ?? this.speedMultiplier,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is AnimationPreferences &&
-        other.mode == mode &&
-        other.speedMultiplier == speedMultiplier;
-  }
-
-  @override
-  int get hashCode => Object.hash(mode, speedMultiplier);
-
-  @override
-  String toString() => 'AnimationPreferences(mode: $mode, speedMultiplier: $speedMultiplier)';
 }

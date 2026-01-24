@@ -7,6 +7,7 @@ import 'package:lazurite/src/features/profile/application/profile_providers.dart
 import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/profile/infrastructure/profile_repository.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -38,7 +39,7 @@ void main() {
         did: 'did:plc:other',
         handle: 'other.bsky.social',
         displayName: 'Other User',
-        viewerFollowedBy: true,
+        viewer: ActorViewer(followedBy: 'at://followed'),
       );
 
       when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
@@ -124,8 +125,7 @@ void main() {
         did: 'did:plc:other',
         handle: 'other.bsky.social',
         displayName: 'Other User',
-        viewerFollowing: true,
-        viewerFollowUri: 'at://did:plc:viewer/app.bsky.graph.follow/123',
+        viewer: ActorViewer(following: 'at://did:plc:viewer/app.bsky.graph.follow/123'),
       );
 
       when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);
@@ -151,9 +151,10 @@ void main() {
         did: 'did:plc:other',
         handle: 'other.bsky.social',
         displayName: 'Other User',
-        viewerFollowing: true,
-        viewerFollowUri: 'at://did:plc:viewer/app.bsky.graph.follow/123',
-        viewerFollowedBy: true,
+        viewer: ActorViewer(
+          following: 'at://did:plc:viewer/app.bsky.graph.follow/123',
+          followedBy: 'at://followed',
+        ),
       );
 
       when(() => mockSessionStorage.getSession()).thenAnswer((_) async => null);

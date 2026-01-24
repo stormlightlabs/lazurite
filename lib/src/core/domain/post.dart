@@ -5,6 +5,7 @@ import 'package:lazurite/src/core/domain/author.dart';
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart' as db;
 
 part 'post.freezed.dart';
+part 'post.g.dart';
 
 /// Unified post domain model used across feeds, search, and profiles.
 @freezed
@@ -34,7 +35,10 @@ abstract class Post with _$Post {
 
   const Post._();
 
-  factory Post.fromJson(Map<String, dynamic> json) {
+  factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
+
+  /// Custom factory to handle different Lexicon shapes from API responses.
+  factory Post.fromLexicon(Map<String, dynamic> json) {
     final postJson = json.containsKey('post') ? json['post'] as Map<String, dynamic> : json;
     final authorJson = postJson['author'] as Map<String, dynamic>;
     final recordJson = postJson['record'] as Map<String, dynamic>?;
@@ -100,4 +104,7 @@ abstract class Post with _$Post {
   }
 
   bool get hasMedia => hasImages || hasVideo;
+
+  @override
+  Map<String, dynamic> toJson() => _$PostToJson(this as _Post);
 }

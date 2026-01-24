@@ -11,30 +11,33 @@ part of 'profile.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
+
 /// @nodoc
 mixin _$ProfileData {
 
- String get did; String get handle; String? get displayName; String? get description; String? get avatar; String? get banner; int get followersCount; int get followsCount; int get postsCount; DateTime? get indexedAt; String? get pronouns; String? get website; DateTime? get createdAt; String? get verificationStatus; List<Map<String, dynamic>>? get labels; String? get pinnedPostUri; bool get viewerFollowing; String? get viewerFollowUri; bool get viewerMuted; bool get viewerBlockedBy; String? get viewerBlockingUri; bool get viewerFollowedBy; String? get viewerMutedByList; String? get viewerBlockingByList;
+ String get did; String get handle; String? get displayName; String? get description; String? get avatar; String? get banner; int get followersCount; int get followsCount; int get postsCount; DateTime? get indexedAt; DateTime? get createdAt; String? get pronouns; String? get website;@JsonKey(name: 'verification', fromJson: _parseVerification) String? get verificationStatus;@JsonKey(name: 'pinnedPost', fromJson: _parsePinnedPost) String? get pinnedPostUri; ActorViewer? get viewer; List<ContentLabel>? get labels;
 /// Create a copy of ProfileData
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $ProfileDataCopyWith<ProfileData> get copyWith => _$ProfileDataCopyWithImpl<ProfileData>(this as ProfileData, _$identity);
 
+  /// Serializes this ProfileData to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProfileData&&(identical(other.did, did) || other.did == did)&&(identical(other.handle, handle) || other.handle == handle)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.description, description) || other.description == description)&&(identical(other.avatar, avatar) || other.avatar == avatar)&&(identical(other.banner, banner) || other.banner == banner)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followsCount, followsCount) || other.followsCount == followsCount)&&(identical(other.postsCount, postsCount) || other.postsCount == postsCount)&&(identical(other.indexedAt, indexedAt) || other.indexedAt == indexedAt)&&(identical(other.pronouns, pronouns) || other.pronouns == pronouns)&&(identical(other.website, website) || other.website == website)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.verificationStatus, verificationStatus) || other.verificationStatus == verificationStatus)&&const DeepCollectionEquality().equals(other.labels, labels)&&(identical(other.pinnedPostUri, pinnedPostUri) || other.pinnedPostUri == pinnedPostUri)&&(identical(other.viewerFollowing, viewerFollowing) || other.viewerFollowing == viewerFollowing)&&(identical(other.viewerFollowUri, viewerFollowUri) || other.viewerFollowUri == viewerFollowUri)&&(identical(other.viewerMuted, viewerMuted) || other.viewerMuted == viewerMuted)&&(identical(other.viewerBlockedBy, viewerBlockedBy) || other.viewerBlockedBy == viewerBlockedBy)&&(identical(other.viewerBlockingUri, viewerBlockingUri) || other.viewerBlockingUri == viewerBlockingUri)&&(identical(other.viewerFollowedBy, viewerFollowedBy) || other.viewerFollowedBy == viewerFollowedBy)&&(identical(other.viewerMutedByList, viewerMutedByList) || other.viewerMutedByList == viewerMutedByList)&&(identical(other.viewerBlockingByList, viewerBlockingByList) || other.viewerBlockingByList == viewerBlockingByList));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProfileData&&(identical(other.did, did) || other.did == did)&&(identical(other.handle, handle) || other.handle == handle)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.description, description) || other.description == description)&&(identical(other.avatar, avatar) || other.avatar == avatar)&&(identical(other.banner, banner) || other.banner == banner)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followsCount, followsCount) || other.followsCount == followsCount)&&(identical(other.postsCount, postsCount) || other.postsCount == postsCount)&&(identical(other.indexedAt, indexedAt) || other.indexedAt == indexedAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.pronouns, pronouns) || other.pronouns == pronouns)&&(identical(other.website, website) || other.website == website)&&(identical(other.verificationStatus, verificationStatus) || other.verificationStatus == verificationStatus)&&(identical(other.pinnedPostUri, pinnedPostUri) || other.pinnedPostUri == pinnedPostUri)&&(identical(other.viewer, viewer) || other.viewer == viewer)&&const DeepCollectionEquality().equals(other.labels, labels));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,did,handle,displayName,description,avatar,banner,followersCount,followsCount,postsCount,indexedAt,pronouns,website,createdAt,verificationStatus,const DeepCollectionEquality().hash(labels),pinnedPostUri,viewerFollowing,viewerFollowUri,viewerMuted,viewerBlockedBy,viewerBlockingUri,viewerFollowedBy,viewerMutedByList,viewerBlockingByList]);
+int get hashCode => Object.hash(runtimeType,did,handle,displayName,description,avatar,banner,followersCount,followsCount,postsCount,indexedAt,createdAt,pronouns,website,verificationStatus,pinnedPostUri,viewer,const DeepCollectionEquality().hash(labels));
 
 @override
 String toString() {
-  return 'ProfileData(did: $did, handle: $handle, displayName: $displayName, description: $description, avatar: $avatar, banner: $banner, followersCount: $followersCount, followsCount: $followsCount, postsCount: $postsCount, indexedAt: $indexedAt, pronouns: $pronouns, website: $website, createdAt: $createdAt, verificationStatus: $verificationStatus, labels: $labels, pinnedPostUri: $pinnedPostUri, viewerFollowing: $viewerFollowing, viewerFollowUri: $viewerFollowUri, viewerMuted: $viewerMuted, viewerBlockedBy: $viewerBlockedBy, viewerBlockingUri: $viewerBlockingUri, viewerFollowedBy: $viewerFollowedBy, viewerMutedByList: $viewerMutedByList, viewerBlockingByList: $viewerBlockingByList)';
+  return 'ProfileData(did: $did, handle: $handle, displayName: $displayName, description: $description, avatar: $avatar, banner: $banner, followersCount: $followersCount, followsCount: $followsCount, postsCount: $postsCount, indexedAt: $indexedAt, createdAt: $createdAt, pronouns: $pronouns, website: $website, verificationStatus: $verificationStatus, pinnedPostUri: $pinnedPostUri, viewer: $viewer, labels: $labels)';
 }
 
 
@@ -45,11 +48,11 @@ abstract mixin class $ProfileDataCopyWith<$Res>  {
   factory $ProfileDataCopyWith(ProfileData value, $Res Function(ProfileData) _then) = _$ProfileDataCopyWithImpl;
 @useResult
 $Res call({
- String did, String handle, String? displayName, String? description, String? avatar, String? banner, int followersCount, int followsCount, int postsCount, DateTime? indexedAt, String? pronouns, String? website, DateTime? createdAt, String? verificationStatus, List<Map<String, dynamic>>? labels, String? pinnedPostUri, bool viewerFollowing, String? viewerFollowUri, bool viewerMuted, bool viewerBlockedBy, String? viewerBlockingUri, bool viewerFollowedBy, String? viewerMutedByList, String? viewerBlockingByList
+ String did, String handle, String? displayName, String? description, String? avatar, String? banner, int followersCount, int followsCount, int postsCount, DateTime? indexedAt, DateTime? createdAt, String? pronouns, String? website,@JsonKey(name: 'verification', fromJson: _parseVerification) String? verificationStatus,@JsonKey(name: 'pinnedPost', fromJson: _parsePinnedPost) String? pinnedPostUri, ActorViewer? viewer, List<ContentLabel>? labels
 });
 
 
-
+$ActorViewerCopyWith<$Res>? get viewer;
 
 }
 /// @nodoc
@@ -62,7 +65,7 @@ class _$ProfileDataCopyWithImpl<$Res>
 
 /// Create a copy of ProfileData
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? did = null,Object? handle = null,Object? displayName = freezed,Object? description = freezed,Object? avatar = freezed,Object? banner = freezed,Object? followersCount = null,Object? followsCount = null,Object? postsCount = null,Object? indexedAt = freezed,Object? pronouns = freezed,Object? website = freezed,Object? createdAt = freezed,Object? verificationStatus = freezed,Object? labels = freezed,Object? pinnedPostUri = freezed,Object? viewerFollowing = null,Object? viewerFollowUri = freezed,Object? viewerMuted = null,Object? viewerBlockedBy = null,Object? viewerBlockingUri = freezed,Object? viewerFollowedBy = null,Object? viewerMutedByList = freezed,Object? viewerBlockingByList = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? did = null,Object? handle = null,Object? displayName = freezed,Object? description = freezed,Object? avatar = freezed,Object? banner = freezed,Object? followersCount = null,Object? followsCount = null,Object? postsCount = null,Object? indexedAt = freezed,Object? createdAt = freezed,Object? pronouns = freezed,Object? website = freezed,Object? verificationStatus = freezed,Object? pinnedPostUri = freezed,Object? viewer = freezed,Object? labels = freezed,}) {
   return _then(_self.copyWith(
 did: null == did ? _self.did : did // ignore: cast_nullable_to_non_nullable
 as String,handle: null == handle ? _self.handle : handle // ignore: cast_nullable_to_non_nullable
@@ -74,24 +77,29 @@ as String?,followersCount: null == followersCount ? _self.followersCount : follo
 as int,followsCount: null == followsCount ? _self.followsCount : followsCount // ignore: cast_nullable_to_non_nullable
 as int,postsCount: null == postsCount ? _self.postsCount : postsCount // ignore: cast_nullable_to_non_nullable
 as int,indexedAt: freezed == indexedAt ? _self.indexedAt : indexedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,pronouns: freezed == pronouns ? _self.pronouns : pronouns // ignore: cast_nullable_to_non_nullable
 as String?,website: freezed == website ? _self.website : website // ignore: cast_nullable_to_non_nullable
-as String?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,verificationStatus: freezed == verificationStatus ? _self.verificationStatus : verificationStatus // ignore: cast_nullable_to_non_nullable
-as String?,labels: freezed == labels ? _self.labels : labels // ignore: cast_nullable_to_non_nullable
-as List<Map<String, dynamic>>?,pinnedPostUri: freezed == pinnedPostUri ? _self.pinnedPostUri : pinnedPostUri // ignore: cast_nullable_to_non_nullable
-as String?,viewerFollowing: null == viewerFollowing ? _self.viewerFollowing : viewerFollowing // ignore: cast_nullable_to_non_nullable
-as bool,viewerFollowUri: freezed == viewerFollowUri ? _self.viewerFollowUri : viewerFollowUri // ignore: cast_nullable_to_non_nullable
-as String?,viewerMuted: null == viewerMuted ? _self.viewerMuted : viewerMuted // ignore: cast_nullable_to_non_nullable
-as bool,viewerBlockedBy: null == viewerBlockedBy ? _self.viewerBlockedBy : viewerBlockedBy // ignore: cast_nullable_to_non_nullable
-as bool,viewerBlockingUri: freezed == viewerBlockingUri ? _self.viewerBlockingUri : viewerBlockingUri // ignore: cast_nullable_to_non_nullable
-as String?,viewerFollowedBy: null == viewerFollowedBy ? _self.viewerFollowedBy : viewerFollowedBy // ignore: cast_nullable_to_non_nullable
-as bool,viewerMutedByList: freezed == viewerMutedByList ? _self.viewerMutedByList : viewerMutedByList // ignore: cast_nullable_to_non_nullable
-as String?,viewerBlockingByList: freezed == viewerBlockingByList ? _self.viewerBlockingByList : viewerBlockingByList // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,verificationStatus: freezed == verificationStatus ? _self.verificationStatus : verificationStatus // ignore: cast_nullable_to_non_nullable
+as String?,pinnedPostUri: freezed == pinnedPostUri ? _self.pinnedPostUri : pinnedPostUri // ignore: cast_nullable_to_non_nullable
+as String?,viewer: freezed == viewer ? _self.viewer : viewer // ignore: cast_nullable_to_non_nullable
+as ActorViewer?,labels: freezed == labels ? _self.labels : labels // ignore: cast_nullable_to_non_nullable
+as List<ContentLabel>?,
   ));
 }
+/// Create a copy of ProfileData
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ActorViewerCopyWith<$Res>? get viewer {
+    if (_self.viewer == null) {
+    return null;
+  }
 
+  return $ActorViewerCopyWith<$Res>(_self.viewer!, (value) {
+    return _then(_self.copyWith(viewer: value));
+  });
+}
 }
 
 
@@ -173,10 +181,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String did,  String handle,  String? displayName,  String? description,  String? avatar,  String? banner,  int followersCount,  int followsCount,  int postsCount,  DateTime? indexedAt,  String? pronouns,  String? website,  DateTime? createdAt,  String? verificationStatus,  List<Map<String, dynamic>>? labels,  String? pinnedPostUri,  bool viewerFollowing,  String? viewerFollowUri,  bool viewerMuted,  bool viewerBlockedBy,  String? viewerBlockingUri,  bool viewerFollowedBy,  String? viewerMutedByList,  String? viewerBlockingByList)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String did,  String handle,  String? displayName,  String? description,  String? avatar,  String? banner,  int followersCount,  int followsCount,  int postsCount,  DateTime? indexedAt,  DateTime? createdAt,  String? pronouns,  String? website, @JsonKey(name: 'verification', fromJson: _parseVerification)  String? verificationStatus, @JsonKey(name: 'pinnedPost', fromJson: _parsePinnedPost)  String? pinnedPostUri,  ActorViewer? viewer,  List<ContentLabel>? labels)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProfileData() when $default != null:
-return $default(_that.did,_that.handle,_that.displayName,_that.description,_that.avatar,_that.banner,_that.followersCount,_that.followsCount,_that.postsCount,_that.indexedAt,_that.pronouns,_that.website,_that.createdAt,_that.verificationStatus,_that.labels,_that.pinnedPostUri,_that.viewerFollowing,_that.viewerFollowUri,_that.viewerMuted,_that.viewerBlockedBy,_that.viewerBlockingUri,_that.viewerFollowedBy,_that.viewerMutedByList,_that.viewerBlockingByList);case _:
+return $default(_that.did,_that.handle,_that.displayName,_that.description,_that.avatar,_that.banner,_that.followersCount,_that.followsCount,_that.postsCount,_that.indexedAt,_that.createdAt,_that.pronouns,_that.website,_that.verificationStatus,_that.pinnedPostUri,_that.viewer,_that.labels);case _:
   return orElse();
 
 }
@@ -194,10 +202,10 @@ return $default(_that.did,_that.handle,_that.displayName,_that.description,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String did,  String handle,  String? displayName,  String? description,  String? avatar,  String? banner,  int followersCount,  int followsCount,  int postsCount,  DateTime? indexedAt,  String? pronouns,  String? website,  DateTime? createdAt,  String? verificationStatus,  List<Map<String, dynamic>>? labels,  String? pinnedPostUri,  bool viewerFollowing,  String? viewerFollowUri,  bool viewerMuted,  bool viewerBlockedBy,  String? viewerBlockingUri,  bool viewerFollowedBy,  String? viewerMutedByList,  String? viewerBlockingByList)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String did,  String handle,  String? displayName,  String? description,  String? avatar,  String? banner,  int followersCount,  int followsCount,  int postsCount,  DateTime? indexedAt,  DateTime? createdAt,  String? pronouns,  String? website, @JsonKey(name: 'verification', fromJson: _parseVerification)  String? verificationStatus, @JsonKey(name: 'pinnedPost', fromJson: _parsePinnedPost)  String? pinnedPostUri,  ActorViewer? viewer,  List<ContentLabel>? labels)  $default,) {final _that = this;
 switch (_that) {
 case _ProfileData():
-return $default(_that.did,_that.handle,_that.displayName,_that.description,_that.avatar,_that.banner,_that.followersCount,_that.followsCount,_that.postsCount,_that.indexedAt,_that.pronouns,_that.website,_that.createdAt,_that.verificationStatus,_that.labels,_that.pinnedPostUri,_that.viewerFollowing,_that.viewerFollowUri,_that.viewerMuted,_that.viewerBlockedBy,_that.viewerBlockingUri,_that.viewerFollowedBy,_that.viewerMutedByList,_that.viewerBlockingByList);case _:
+return $default(_that.did,_that.handle,_that.displayName,_that.description,_that.avatar,_that.banner,_that.followersCount,_that.followsCount,_that.postsCount,_that.indexedAt,_that.createdAt,_that.pronouns,_that.website,_that.verificationStatus,_that.pinnedPostUri,_that.viewer,_that.labels);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -214,10 +222,10 @@ return $default(_that.did,_that.handle,_that.displayName,_that.description,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String did,  String handle,  String? displayName,  String? description,  String? avatar,  String? banner,  int followersCount,  int followsCount,  int postsCount,  DateTime? indexedAt,  String? pronouns,  String? website,  DateTime? createdAt,  String? verificationStatus,  List<Map<String, dynamic>>? labels,  String? pinnedPostUri,  bool viewerFollowing,  String? viewerFollowUri,  bool viewerMuted,  bool viewerBlockedBy,  String? viewerBlockingUri,  bool viewerFollowedBy,  String? viewerMutedByList,  String? viewerBlockingByList)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String did,  String handle,  String? displayName,  String? description,  String? avatar,  String? banner,  int followersCount,  int followsCount,  int postsCount,  DateTime? indexedAt,  DateTime? createdAt,  String? pronouns,  String? website, @JsonKey(name: 'verification', fromJson: _parseVerification)  String? verificationStatus, @JsonKey(name: 'pinnedPost', fromJson: _parsePinnedPost)  String? pinnedPostUri,  ActorViewer? viewer,  List<ContentLabel>? labels)?  $default,) {final _that = this;
 switch (_that) {
 case _ProfileData() when $default != null:
-return $default(_that.did,_that.handle,_that.displayName,_that.description,_that.avatar,_that.banner,_that.followersCount,_that.followsCount,_that.postsCount,_that.indexedAt,_that.pronouns,_that.website,_that.createdAt,_that.verificationStatus,_that.labels,_that.pinnedPostUri,_that.viewerFollowing,_that.viewerFollowUri,_that.viewerMuted,_that.viewerBlockedBy,_that.viewerBlockingUri,_that.viewerFollowedBy,_that.viewerMutedByList,_that.viewerBlockingByList);case _:
+return $default(_that.did,_that.handle,_that.displayName,_that.description,_that.avatar,_that.banner,_that.followersCount,_that.followsCount,_that.postsCount,_that.indexedAt,_that.createdAt,_that.pronouns,_that.website,_that.verificationStatus,_that.pinnedPostUri,_that.viewer,_that.labels);case _:
   return null;
 
 }
@@ -226,11 +234,11 @@ return $default(_that.did,_that.handle,_that.displayName,_that.description,_that
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _ProfileData extends ProfileData {
-  const _ProfileData({required this.did, required this.handle, this.displayName, this.description, this.avatar, this.banner, this.followersCount = 0, this.followsCount = 0, this.postsCount = 0, this.indexedAt, this.pronouns, this.website, this.createdAt, this.verificationStatus, final  List<Map<String, dynamic>>? labels, this.pinnedPostUri, this.viewerFollowing = false, this.viewerFollowUri, this.viewerMuted = false, this.viewerBlockedBy = false, this.viewerBlockingUri, this.viewerFollowedBy = false, this.viewerMutedByList, this.viewerBlockingByList}): _labels = labels,super._();
-  
+  const _ProfileData({required this.did, required this.handle, this.displayName, this.description, this.avatar, this.banner, this.followersCount = 0, this.followsCount = 0, this.postsCount = 0, this.indexedAt, this.createdAt, this.pronouns, this.website, @JsonKey(name: 'verification', fromJson: _parseVerification) this.verificationStatus, @JsonKey(name: 'pinnedPost', fromJson: _parsePinnedPost) this.pinnedPostUri, this.viewer, final  List<ContentLabel>? labels}): _labels = labels,super._();
+  factory _ProfileData.fromJson(Map<String, dynamic> json) => _$ProfileDataFromJson(json);
 
 @override final  String did;
 @override final  String handle;
@@ -242,12 +250,14 @@ class _ProfileData extends ProfileData {
 @override@JsonKey() final  int followsCount;
 @override@JsonKey() final  int postsCount;
 @override final  DateTime? indexedAt;
+@override final  DateTime? createdAt;
 @override final  String? pronouns;
 @override final  String? website;
-@override final  DateTime? createdAt;
-@override final  String? verificationStatus;
- final  List<Map<String, dynamic>>? _labels;
-@override List<Map<String, dynamic>>? get labels {
+@override@JsonKey(name: 'verification', fromJson: _parseVerification) final  String? verificationStatus;
+@override@JsonKey(name: 'pinnedPost', fromJson: _parsePinnedPost) final  String? pinnedPostUri;
+@override final  ActorViewer? viewer;
+ final  List<ContentLabel>? _labels;
+@override List<ContentLabel>? get labels {
   final value = _labels;
   if (value == null) return null;
   if (_labels is EqualUnmodifiableListView) return _labels;
@@ -255,15 +265,6 @@ class _ProfileData extends ProfileData {
   return EqualUnmodifiableListView(value);
 }
 
-@override final  String? pinnedPostUri;
-@override@JsonKey() final  bool viewerFollowing;
-@override final  String? viewerFollowUri;
-@override@JsonKey() final  bool viewerMuted;
-@override@JsonKey() final  bool viewerBlockedBy;
-@override final  String? viewerBlockingUri;
-@override@JsonKey() final  bool viewerFollowedBy;
-@override final  String? viewerMutedByList;
-@override final  String? viewerBlockingByList;
 
 /// Create a copy of ProfileData
 /// with the given fields replaced by the non-null parameter values.
@@ -271,20 +272,23 @@ class _ProfileData extends ProfileData {
 @pragma('vm:prefer-inline')
 _$ProfileDataCopyWith<_ProfileData> get copyWith => __$ProfileDataCopyWithImpl<_ProfileData>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$ProfileDataToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProfileData&&(identical(other.did, did) || other.did == did)&&(identical(other.handle, handle) || other.handle == handle)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.description, description) || other.description == description)&&(identical(other.avatar, avatar) || other.avatar == avatar)&&(identical(other.banner, banner) || other.banner == banner)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followsCount, followsCount) || other.followsCount == followsCount)&&(identical(other.postsCount, postsCount) || other.postsCount == postsCount)&&(identical(other.indexedAt, indexedAt) || other.indexedAt == indexedAt)&&(identical(other.pronouns, pronouns) || other.pronouns == pronouns)&&(identical(other.website, website) || other.website == website)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.verificationStatus, verificationStatus) || other.verificationStatus == verificationStatus)&&const DeepCollectionEquality().equals(other._labels, _labels)&&(identical(other.pinnedPostUri, pinnedPostUri) || other.pinnedPostUri == pinnedPostUri)&&(identical(other.viewerFollowing, viewerFollowing) || other.viewerFollowing == viewerFollowing)&&(identical(other.viewerFollowUri, viewerFollowUri) || other.viewerFollowUri == viewerFollowUri)&&(identical(other.viewerMuted, viewerMuted) || other.viewerMuted == viewerMuted)&&(identical(other.viewerBlockedBy, viewerBlockedBy) || other.viewerBlockedBy == viewerBlockedBy)&&(identical(other.viewerBlockingUri, viewerBlockingUri) || other.viewerBlockingUri == viewerBlockingUri)&&(identical(other.viewerFollowedBy, viewerFollowedBy) || other.viewerFollowedBy == viewerFollowedBy)&&(identical(other.viewerMutedByList, viewerMutedByList) || other.viewerMutedByList == viewerMutedByList)&&(identical(other.viewerBlockingByList, viewerBlockingByList) || other.viewerBlockingByList == viewerBlockingByList));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProfileData&&(identical(other.did, did) || other.did == did)&&(identical(other.handle, handle) || other.handle == handle)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.description, description) || other.description == description)&&(identical(other.avatar, avatar) || other.avatar == avatar)&&(identical(other.banner, banner) || other.banner == banner)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followsCount, followsCount) || other.followsCount == followsCount)&&(identical(other.postsCount, postsCount) || other.postsCount == postsCount)&&(identical(other.indexedAt, indexedAt) || other.indexedAt == indexedAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.pronouns, pronouns) || other.pronouns == pronouns)&&(identical(other.website, website) || other.website == website)&&(identical(other.verificationStatus, verificationStatus) || other.verificationStatus == verificationStatus)&&(identical(other.pinnedPostUri, pinnedPostUri) || other.pinnedPostUri == pinnedPostUri)&&(identical(other.viewer, viewer) || other.viewer == viewer)&&const DeepCollectionEquality().equals(other._labels, _labels));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,did,handle,displayName,description,avatar,banner,followersCount,followsCount,postsCount,indexedAt,pronouns,website,createdAt,verificationStatus,const DeepCollectionEquality().hash(_labels),pinnedPostUri,viewerFollowing,viewerFollowUri,viewerMuted,viewerBlockedBy,viewerBlockingUri,viewerFollowedBy,viewerMutedByList,viewerBlockingByList]);
+int get hashCode => Object.hash(runtimeType,did,handle,displayName,description,avatar,banner,followersCount,followsCount,postsCount,indexedAt,createdAt,pronouns,website,verificationStatus,pinnedPostUri,viewer,const DeepCollectionEquality().hash(_labels));
 
 @override
 String toString() {
-  return 'ProfileData(did: $did, handle: $handle, displayName: $displayName, description: $description, avatar: $avatar, banner: $banner, followersCount: $followersCount, followsCount: $followsCount, postsCount: $postsCount, indexedAt: $indexedAt, pronouns: $pronouns, website: $website, createdAt: $createdAt, verificationStatus: $verificationStatus, labels: $labels, pinnedPostUri: $pinnedPostUri, viewerFollowing: $viewerFollowing, viewerFollowUri: $viewerFollowUri, viewerMuted: $viewerMuted, viewerBlockedBy: $viewerBlockedBy, viewerBlockingUri: $viewerBlockingUri, viewerFollowedBy: $viewerFollowedBy, viewerMutedByList: $viewerMutedByList, viewerBlockingByList: $viewerBlockingByList)';
+  return 'ProfileData(did: $did, handle: $handle, displayName: $displayName, description: $description, avatar: $avatar, banner: $banner, followersCount: $followersCount, followsCount: $followsCount, postsCount: $postsCount, indexedAt: $indexedAt, createdAt: $createdAt, pronouns: $pronouns, website: $website, verificationStatus: $verificationStatus, pinnedPostUri: $pinnedPostUri, viewer: $viewer, labels: $labels)';
 }
 
 
@@ -295,11 +299,11 @@ abstract mixin class _$ProfileDataCopyWith<$Res> implements $ProfileDataCopyWith
   factory _$ProfileDataCopyWith(_ProfileData value, $Res Function(_ProfileData) _then) = __$ProfileDataCopyWithImpl;
 @override @useResult
 $Res call({
- String did, String handle, String? displayName, String? description, String? avatar, String? banner, int followersCount, int followsCount, int postsCount, DateTime? indexedAt, String? pronouns, String? website, DateTime? createdAt, String? verificationStatus, List<Map<String, dynamic>>? labels, String? pinnedPostUri, bool viewerFollowing, String? viewerFollowUri, bool viewerMuted, bool viewerBlockedBy, String? viewerBlockingUri, bool viewerFollowedBy, String? viewerMutedByList, String? viewerBlockingByList
+ String did, String handle, String? displayName, String? description, String? avatar, String? banner, int followersCount, int followsCount, int postsCount, DateTime? indexedAt, DateTime? createdAt, String? pronouns, String? website,@JsonKey(name: 'verification', fromJson: _parseVerification) String? verificationStatus,@JsonKey(name: 'pinnedPost', fromJson: _parsePinnedPost) String? pinnedPostUri, ActorViewer? viewer, List<ContentLabel>? labels
 });
 
 
-
+@override $ActorViewerCopyWith<$Res>? get viewer;
 
 }
 /// @nodoc
@@ -312,7 +316,7 @@ class __$ProfileDataCopyWithImpl<$Res>
 
 /// Create a copy of ProfileData
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? did = null,Object? handle = null,Object? displayName = freezed,Object? description = freezed,Object? avatar = freezed,Object? banner = freezed,Object? followersCount = null,Object? followsCount = null,Object? postsCount = null,Object? indexedAt = freezed,Object? pronouns = freezed,Object? website = freezed,Object? createdAt = freezed,Object? verificationStatus = freezed,Object? labels = freezed,Object? pinnedPostUri = freezed,Object? viewerFollowing = null,Object? viewerFollowUri = freezed,Object? viewerMuted = null,Object? viewerBlockedBy = null,Object? viewerBlockingUri = freezed,Object? viewerFollowedBy = null,Object? viewerMutedByList = freezed,Object? viewerBlockingByList = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? did = null,Object? handle = null,Object? displayName = freezed,Object? description = freezed,Object? avatar = freezed,Object? banner = freezed,Object? followersCount = null,Object? followsCount = null,Object? postsCount = null,Object? indexedAt = freezed,Object? createdAt = freezed,Object? pronouns = freezed,Object? website = freezed,Object? verificationStatus = freezed,Object? pinnedPostUri = freezed,Object? viewer = freezed,Object? labels = freezed,}) {
   return _then(_ProfileData(
 did: null == did ? _self.did : did // ignore: cast_nullable_to_non_nullable
 as String,handle: null == handle ? _self.handle : handle // ignore: cast_nullable_to_non_nullable
@@ -324,26 +328,32 @@ as String?,followersCount: null == followersCount ? _self.followersCount : follo
 as int,followsCount: null == followsCount ? _self.followsCount : followsCount // ignore: cast_nullable_to_non_nullable
 as int,postsCount: null == postsCount ? _self.postsCount : postsCount // ignore: cast_nullable_to_non_nullable
 as int,indexedAt: freezed == indexedAt ? _self.indexedAt : indexedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,pronouns: freezed == pronouns ? _self.pronouns : pronouns // ignore: cast_nullable_to_non_nullable
 as String?,website: freezed == website ? _self.website : website // ignore: cast_nullable_to_non_nullable
-as String?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,verificationStatus: freezed == verificationStatus ? _self.verificationStatus : verificationStatus // ignore: cast_nullable_to_non_nullable
-as String?,labels: freezed == labels ? _self._labels : labels // ignore: cast_nullable_to_non_nullable
-as List<Map<String, dynamic>>?,pinnedPostUri: freezed == pinnedPostUri ? _self.pinnedPostUri : pinnedPostUri // ignore: cast_nullable_to_non_nullable
-as String?,viewerFollowing: null == viewerFollowing ? _self.viewerFollowing : viewerFollowing // ignore: cast_nullable_to_non_nullable
-as bool,viewerFollowUri: freezed == viewerFollowUri ? _self.viewerFollowUri : viewerFollowUri // ignore: cast_nullable_to_non_nullable
-as String?,viewerMuted: null == viewerMuted ? _self.viewerMuted : viewerMuted // ignore: cast_nullable_to_non_nullable
-as bool,viewerBlockedBy: null == viewerBlockedBy ? _self.viewerBlockedBy : viewerBlockedBy // ignore: cast_nullable_to_non_nullable
-as bool,viewerBlockingUri: freezed == viewerBlockingUri ? _self.viewerBlockingUri : viewerBlockingUri // ignore: cast_nullable_to_non_nullable
-as String?,viewerFollowedBy: null == viewerFollowedBy ? _self.viewerFollowedBy : viewerFollowedBy // ignore: cast_nullable_to_non_nullable
-as bool,viewerMutedByList: freezed == viewerMutedByList ? _self.viewerMutedByList : viewerMutedByList // ignore: cast_nullable_to_non_nullable
-as String?,viewerBlockingByList: freezed == viewerBlockingByList ? _self.viewerBlockingByList : viewerBlockingByList // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,verificationStatus: freezed == verificationStatus ? _self.verificationStatus : verificationStatus // ignore: cast_nullable_to_non_nullable
+as String?,pinnedPostUri: freezed == pinnedPostUri ? _self.pinnedPostUri : pinnedPostUri // ignore: cast_nullable_to_non_nullable
+as String?,viewer: freezed == viewer ? _self.viewer : viewer // ignore: cast_nullable_to_non_nullable
+as ActorViewer?,labels: freezed == labels ? _self._labels : labels // ignore: cast_nullable_to_non_nullable
+as List<ContentLabel>?,
   ));
 }
 
+/// Create a copy of ProfileData
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ActorViewerCopyWith<$Res>? get viewer {
+    if (_self.viewer == null) {
+    return null;
+  }
 
+  return $ActorViewerCopyWith<$Res>(_self.viewer!, (value) {
+    return _then(_self.copyWith(viewer: value));
+  });
 }
+}
+
 
 /// @nodoc
 mixin _$AuthorFeedResult {
@@ -355,6 +365,8 @@ mixin _$AuthorFeedResult {
 @pragma('vm:prefer-inline')
 $AuthorFeedResultCopyWith<AuthorFeedResult> get copyWith => _$AuthorFeedResultCopyWithImpl<AuthorFeedResult>(this as AuthorFeedResult, _$identity);
 
+  /// Serializes this AuthorFeedResult to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -362,7 +374,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthorFeedResult&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.cursor, cursor) || other.cursor == cursor));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(items),cursor);
 
@@ -538,11 +550,11 @@ return $default(_that.items,_that.cursor);case _:
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _AuthorFeedResult extends AuthorFeedResult {
   const _AuthorFeedResult({required final  List<Post> items, this.cursor}): _items = items,super._();
-  
+  factory _AuthorFeedResult.fromJson(Map<String, dynamic> json) => _$AuthorFeedResultFromJson(json);
 
  final  List<Post> _items;
 @override List<Post> get items {
@@ -559,14 +571,17 @@ class _AuthorFeedResult extends AuthorFeedResult {
 @pragma('vm:prefer-inline')
 _$AuthorFeedResultCopyWith<_AuthorFeedResult> get copyWith => __$AuthorFeedResultCopyWithImpl<_AuthorFeedResult>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$AuthorFeedResultToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _AuthorFeedResult&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.cursor, cursor) || other.cursor == cursor));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_items),cursor);
 
@@ -611,6 +626,7 @@ as String?,
 
 }
 
+
 /// @nodoc
 mixin _$FollowersResult {
 
@@ -621,6 +637,8 @@ mixin _$FollowersResult {
 @pragma('vm:prefer-inline')
 $FollowersResultCopyWith<FollowersResult> get copyWith => _$FollowersResultCopyWithImpl<FollowersResult>(this as FollowersResult, _$identity);
 
+  /// Serializes this FollowersResult to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -628,7 +646,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is FollowersResult&&const DeepCollectionEquality().equals(other.followers, followers)&&(identical(other.cursor, cursor) || other.cursor == cursor));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(followers),cursor);
 
@@ -804,11 +822,11 @@ return $default(_that.followers,_that.cursor);case _:
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _FollowersResult extends FollowersResult {
   const _FollowersResult({required final  List<Author> followers, this.cursor}): _followers = followers,super._();
-  
+  factory _FollowersResult.fromJson(Map<String, dynamic> json) => _$FollowersResultFromJson(json);
 
  final  List<Author> _followers;
 @override List<Author> get followers {
@@ -825,14 +843,17 @@ class _FollowersResult extends FollowersResult {
 @pragma('vm:prefer-inline')
 _$FollowersResultCopyWith<_FollowersResult> get copyWith => __$FollowersResultCopyWithImpl<_FollowersResult>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$FollowersResultToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _FollowersResult&&const DeepCollectionEquality().equals(other._followers, _followers)&&(identical(other.cursor, cursor) || other.cursor == cursor));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_followers),cursor);
 
@@ -877,6 +898,7 @@ as String?,
 
 }
 
+
 /// @nodoc
 mixin _$FollowsResult {
 
@@ -887,6 +909,8 @@ mixin _$FollowsResult {
 @pragma('vm:prefer-inline')
 $FollowsResultCopyWith<FollowsResult> get copyWith => _$FollowsResultCopyWithImpl<FollowsResult>(this as FollowsResult, _$identity);
 
+  /// Serializes this FollowsResult to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -894,7 +918,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is FollowsResult&&const DeepCollectionEquality().equals(other.follows, follows)&&(identical(other.cursor, cursor) || other.cursor == cursor));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(follows),cursor);
 
@@ -1070,11 +1094,11 @@ return $default(_that.follows,_that.cursor);case _:
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _FollowsResult extends FollowsResult {
   const _FollowsResult({required final  List<Author> follows, this.cursor}): _follows = follows,super._();
-  
+  factory _FollowsResult.fromJson(Map<String, dynamic> json) => _$FollowsResultFromJson(json);
 
  final  List<Author> _follows;
 @override List<Author> get follows {
@@ -1091,14 +1115,17 @@ class _FollowsResult extends FollowsResult {
 @pragma('vm:prefer-inline')
 _$FollowsResultCopyWith<_FollowsResult> get copyWith => __$FollowsResultCopyWithImpl<_FollowsResult>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$FollowsResultToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _FollowsResult&&const DeepCollectionEquality().equals(other._follows, _follows)&&(identical(other.cursor, cursor) || other.cursor == cursor));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_follows),cursor);
 

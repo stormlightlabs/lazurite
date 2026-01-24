@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart' hide JsonKey;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:lazurite/src/core/domain/author.dart' as core;
+import 'package:lazurite/src/core/domain/content_label.dart';
 import 'package:lazurite/src/core/domain/post.dart' as domain;
 import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
@@ -10,65 +11,75 @@ import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 part 'thread.freezed.dart';
 part 'thread.g.dart';
 
-/// Domain model for a thread view post.
-@freezed
-abstract class ThreadViewPost with _$ThreadViewPost {
-  const factory ThreadViewPost({
+@Freezed(unionKey: r'$type', unionValueCase: FreezedUnionCase.pascal)
+sealed class ThreadViewPost with _$ThreadViewPost {
+  const ThreadViewPost._();
+
+  @FreezedUnionValue('app.bsky.feed.defs#threadViewPost')
+  const factory ThreadViewPost.item({
     required ThreadPost post,
     ThreadViewPost? parent,
     @Default([]) List<ThreadViewPost> replies,
     Threadgate? threadgate,
-    @Default(false) bool isBlocked,
-    @Default(false) bool isNotFound,
-  }) = _ThreadViewPost;
+  }) = _ThreadViewPostView;
 
-  const ThreadViewPost._();
+  @FreezedUnionValue('app.bsky.feed.defs#blockedPost')
+  const factory ThreadViewPost.blocked({
+    required String uri,
+    @Default(true) bool blocked,
+    ThreadAuthor? author,
+  }) = _ThreadViewPostBlocked;
 
-  factory ThreadViewPost.fromJson(Map<String, dynamic> json) {
-    final type = json[r'$type'] as String?;
-    switch (type) {
-      case 'app.bsky.feed.defs#threadViewPost':
-        return ThreadViewPost(
-          post: ThreadPost.fromJson(json['post'] as Map<String, dynamic>),
-          parent: json['parent'] != null
-              ? ThreadViewPost.fromJson(json['parent'] as Map<String, dynamic>)
-              : null,
-          replies:
-              (json['replies'] as List?)
-                  ?.map((e) => ThreadViewPost.fromJson(e as Map<String, dynamic>))
-                  .toList() ??
-              const [],
-          threadgate: json['threadgate'] != null
-              ? Threadgate.fromJson(json['threadgate'] as Map<String, dynamic>)
-              : null,
-        );
-      case 'app.bsky.feed.defs#blockedPost':
-        return ThreadViewPost(
-          post: ThreadPost.placeholder(
-            uri: json['uri'] as String? ?? 'unknown',
-            reason: 'Post blocked',
-            isBlocked: true,
-          ),
-          isBlocked: true,
-        );
-      case 'app.bsky.feed.defs#notFoundPost':
-        return ThreadViewPost(
-          post: ThreadPost.placeholder(
-            uri: json['uri'] as String? ?? 'unknown',
-            reason: 'Post not found',
-            isNotFound: true,
-          ),
-          isNotFound: true,
-        );
-      default:
-        return ThreadViewPost(
-          post: ThreadPost.placeholder(
-            uri: json['uri'] as String? ?? 'unknown',
-            reason: 'Unsupported thread item',
-          ),
-        );
+  @FreezedUnionValue('app.bsky.feed.defs#notFoundPost')
+  const factory ThreadViewPost.notFound({required String uri, @Default(true) bool notFound}) =
+      _ThreadViewPostNotFound;
+
+  factory ThreadViewPost({
+    required ThreadPost post,
+    ThreadViewPost? parent,
+    List<ThreadViewPost> replies = const [],
+    Threadgate? threadgate,
+    bool isBlocked = false,
+    bool isNotFound = false,
+  }) {
+    if (isBlocked) {
+      return ThreadViewPost.blocked(uri: post.uri, blocked: true, author: post.author);
     }
+    if (isNotFound) {
+      return ThreadViewPost.notFound(uri: post.uri, notFound: true);
+    }
+    return ThreadViewPost.item(
+      post: post,
+      parent: parent,
+      replies: replies,
+      threadgate: threadgate,
+    );
   }
+
+  factory ThreadViewPost.fromJson(Map<String, dynamic> json) => _$ThreadViewPostFromJson(json);
+
+  ThreadPost get post {
+    return maybeWhen(
+      item: (post, _, _, _) => post,
+      blocked: (uri, _, _) =>
+          ThreadPost.placeholder(uri: uri, reason: 'Post blocked', isBlocked: true),
+      notFound: (uri, _) =>
+          ThreadPost.placeholder(uri: uri, reason: 'Post not found', isNotFound: true),
+      orElse: () => ThreadPost.placeholder(uri: 'unknown', reason: 'Unsupported thread item'),
+    );
+  }
+
+  ThreadViewPost? get parent => maybeWhen(item: (_, parent, _, _) => parent, orElse: () => null);
+
+  List<ThreadViewPost> get replies =>
+      maybeWhen(item: (_, _, replies, _) => replies, orElse: () => const []);
+
+  Threadgate? get threadgate =>
+      maybeWhen(item: (_, _, _, threadgate) => threadgate, orElse: () => null);
+
+  bool get isBlocked => maybeWhen(blocked: (_, _, _) => true, orElse: () => false);
+
+  bool get isNotFound => maybeWhen(notFound: (_, _) => true, orElse: () => false);
 
   List<ThreadViewPost> get ancestorChain {
     final chain = <ThreadViewPost>[];
@@ -84,24 +95,38 @@ abstract class ThreadViewPost with _$ThreadViewPost {
 /// Domain model for a thread post.
 @freezed
 abstract class ThreadPost with _$ThreadPost {
+  factory ThreadPost.fromJson(Map<String, dynamic> json) => _$ThreadPostFromJson(json);
+
+  factory ThreadPost.placeholder({
+    required String uri,
+    required String reason,
+    bool isBlocked = false,
+    bool isNotFound = false,
+  }) => ThreadPost(
+    uri: uri,
+    cid: uri,
+    author: ThreadAuthor(did: 'placeholder:$uri', handle: 'unknown', displayName: reason),
+    record: {'text': reason},
+    placeholderReason: reason,
+    indexedAt: DateTime.now(),
+    isBlocked: isBlocked,
+    isNotFound: isNotFound,
+  );
+
   const factory ThreadPost({
     required String uri,
-    required String cid,
+    String? cid,
     required ThreadAuthor author,
     required Map<String, dynamic> record,
-    String? embed,
+    @JsonKey(fromJson: _transformEmbed) String? embed,
     DateTime? indexedAt,
     @Default(0) int replyCount,
     @Default(0) int repostCount,
     @Default(0) int likeCount,
     @Default(0) int quoteCount,
     @Default(0) int bookmarkCount,
-    String? labels,
-    String? viewerLikeUri,
-    String? viewerRepostUri,
-    @Default(false) bool viewerBookmarked,
-    @Default(false) bool viewerThreadMuted,
-    @Default(false) bool viewerReplyDisabled,
+    List<ContentLabel>? labels,
+    PostViewer? viewer,
     String? placeholderReason,
     @Default(false) bool isBlocked,
     @Default(false) bool isNotFound,
@@ -109,119 +134,81 @@ abstract class ThreadPost with _$ThreadPost {
 
   const ThreadPost._();
 
-  factory ThreadPost.fromJson(Map<String, dynamic> json) {
-    final viewer = json['viewer'] as Map<String, dynamic>?;
-    final labelsJson = json['labels'] as List?;
+  String get effectiveCid => cid ?? uri;
 
-    return ThreadPost(
-      uri: json['uri'] as String,
-      cid: json['cid'] as String? ?? json['uri'] as String,
-      author: ThreadAuthor.fromJson(json['author'] as Map<String, dynamic>),
-      record: (json['record'] as Map<String, dynamic>?) ?? const {},
-      embed: json['embed'] != null ? jsonEncode(json['embed']) : null,
-      indexedAt: DateTime.tryParse(json['indexedAt'] as String? ?? ''),
-      replyCount: json['replyCount'] as int? ?? 0,
-      repostCount: json['repostCount'] as int? ?? 0,
-      likeCount: json['likeCount'] as int? ?? 0,
-      quoteCount: json['quoteCount'] as int? ?? 0,
-      bookmarkCount: json['bookmarkCount'] as int? ?? 0,
-      labels: labelsJson != null ? jsonEncode(labelsJson) : null,
-      viewerLikeUri: viewer?['like'] as String?,
-      viewerRepostUri: viewer?['repost'] as String?,
-      viewerBookmarked: viewer?['bookmarked'] as bool? ?? false,
-      viewerThreadMuted: viewer?['threadMuted'] as bool? ?? false,
-      viewerReplyDisabled: viewer?['replyDisabled'] as bool? ?? false,
-    );
-  }
+  String? get viewerLikeUri => viewer?.like;
+  String? get viewerRepostUri => viewer?.repost;
+  bool get viewerBookmarked => viewer?.bookmarked ?? false;
+  bool get viewerThreadMuted => viewer?.threadMuted ?? false;
+  bool get viewerReplyDisabled => viewer?.replyDisabled ?? false;
 
-  factory ThreadPost.placeholder({
-    required String uri,
-    required String reason,
-    bool isBlocked = false,
-    bool isNotFound = false,
-  }) {
-    return ThreadPost(
-      uri: uri,
-      cid: uri,
-      author: ThreadAuthor(did: 'placeholder:$uri', handle: 'unknown', displayName: reason),
-      record: {'text': reason},
-      placeholderReason: reason,
-      indexedAt: DateTime.now(),
-      isBlocked: isBlocked,
-      isNotFound: isNotFound,
-    );
-  }
+  @override
+  Map<String, dynamic> toJson() => _$ThreadPostToJson(this as _ThreadPost);
 
-  PostsCompanion toPostsCompanion() {
-    return PostsCompanion.insert(
-      uri: uri,
-      cid: cid,
-      authorDid: author.did,
-      record: jsonEncode(record),
-      embed: Value(embed),
-      indexedAt: Value(indexedAt),
-      replyCount: Value(replyCount),
-      repostCount: Value(repostCount),
-      likeCount: Value(likeCount),
-      quoteCount: Value(quoteCount),
-      bookmarkCount: Value(bookmarkCount),
-      labels: Value(labels),
-      viewerLikeUri: Value(viewerLikeUri),
-      viewerRepostUri: Value(viewerRepostUri),
-      viewerBookmarked: Value(viewerBookmarked),
-      viewerThreadMuted: Value(viewerThreadMuted),
-      viewerReplyDisabled: Value(viewerReplyDisabled),
-    );
-  }
+  PostsCompanion toPostsCompanion() => PostsCompanion.insert(
+    uri: uri,
+    cid: effectiveCid,
+    authorDid: author.did,
+    record: jsonEncode(record),
+    embed: Value(embed),
+    indexedAt: Value(indexedAt),
+    replyCount: Value(replyCount),
+    repostCount: Value(repostCount),
+    likeCount: Value(likeCount),
+    quoteCount: Value(quoteCount),
+    bookmarkCount: Value(bookmarkCount),
+    labels: Value(labels != null ? jsonEncode(labels) : null),
+    viewerLikeUri: Value(viewer?.like),
+    viewerRepostUri: Value(viewer?.repost),
+    viewerBookmarked: Value(viewer?.bookmarked ?? false),
+    viewerThreadMuted: Value(viewer?.threadMuted ?? false),
+    viewerReplyDisabled: Value(viewer?.replyDisabled ?? false),
+  );
 
-  ProfilesCompanion toProfilesCompanion() {
-    return ProfilesCompanion.insert(
-      did: author.did,
-      handle: author.handle,
-      displayName: Value(author.displayName ?? placeholderReason),
-      description: Value(author.description),
-      avatar: Value(author.avatar),
-      indexedAt: Value(indexedAt),
-    );
-  }
+  ProfilesCompanion toProfilesCompanion() => ProfilesCompanion.insert(
+    did: author.did,
+    handle: author.handle,
+    displayName: Value(author.displayName ?? placeholderReason),
+    description: Value(author.description),
+    avatar: Value(author.avatar),
+    indexedAt: Value(indexedAt),
+  );
 
   ProfileRelationshipsCompanion? toRelationshipCompanion(String ownerDid) {
-    final viewer = author.viewer;
-    if (viewer == null) return null;
+    final v = author.viewer;
+    if (v == null) return null;
 
     return ProfileRelationshipsCompanion.insert(
       ownerDid: ownerDid,
       profileDid: author.did,
-      following: Value(viewer['following'] != null),
-      followingUri: Value(viewer['following'] as String?),
-      followedBy: Value(viewer['followedBy'] != null),
-      muted: Value(viewer['muted'] as bool? ?? false),
-      blocked: Value(viewer['blocking'] != null),
-      blockingUri: Value(viewer['blocking'] as String?),
-      blockedBy: Value(viewer['blockedBy'] as bool? ?? false),
-      mutedByList: Value(viewer['mutedByList']?['uri'] as String?),
-      blockingByList: Value(viewer['blockingByList']?['uri'] as String?),
+      following: Value(v.following != null),
+      followingUri: Value(v.following),
+      followedBy: Value(v.followedBy != null),
+      muted: Value(v.muted),
+      blocked: Value(v.blocking != null),
+      blockingUri: Value(v.blocking),
+      blockedBy: Value(v.blockedBy),
+      mutedByList: Value(v.mutedByList),
+      blockingByList: Value(v.blockingByList),
       updatedAt: DateTime.now(),
     );
   }
 
-  domain.Post toPostModel() {
-    return domain.Post(
-      uri: uri,
-      cid: cid,
-      author: author.toAuthorModel(),
-      text: record['text'] as String? ?? '',
-      embed: embed != null ? jsonDecode(embed!) as Map<String, dynamic> : null,
-      record: record,
-      indexedAt: indexedAt,
-      replyCount: replyCount,
-      repostCount: repostCount,
-      likeCount: likeCount,
-      viewerLikeUri: viewerLikeUri,
-      viewerRepostUri: viewerRepostUri,
-      viewerBookmarked: viewerBookmarked,
-    );
-  }
+  domain.Post toPostModel() => domain.Post(
+    uri: uri,
+    cid: effectiveCid,
+    author: author.toAuthorModel(),
+    text: record['text'] as String? ?? '',
+    embed: embed != null ? jsonDecode(embed!) as Map<String, dynamic> : null,
+    record: record,
+    indexedAt: indexedAt,
+    replyCount: replyCount,
+    repostCount: repostCount,
+    likeCount: likeCount,
+    viewerLikeUri: viewer?.like,
+    viewerRepostUri: viewer?.repost,
+    viewerBookmarked: viewer?.bookmarked ?? false,
+  );
 
   Profile toProfileModel() {
     return Profile(
@@ -234,10 +221,10 @@ abstract class ThreadPost with _$ThreadPost {
     );
   }
 
-  FeedPost toFeedPost({String? reason}) {
-    final driftPost = Post(
+  FeedPost toFeedPost({String? reason}) => FeedPost(
+    post: Post(
       uri: uri,
-      cid: cid,
+      cid: effectiveCid,
       authorDid: author.did,
       record: jsonEncode(record),
       embed: embed,
@@ -247,18 +234,41 @@ abstract class ThreadPost with _$ThreadPost {
       likeCount: likeCount,
       quoteCount: quoteCount,
       bookmarkCount: bookmarkCount,
-      labels: labels,
-      viewerLikeUri: viewerLikeUri,
-      viewerRepostUri: viewerRepostUri,
-      viewerBookmarked: viewerBookmarked,
-      viewerThreadMuted: viewerThreadMuted,
-      viewerReplyDisabled: viewerReplyDisabled,
-    );
-    return FeedPost(post: driftPost, author: toProfileModel(), reason: reason);
-  }
+      labels: labels != null ? jsonEncode(labels) : null,
+      viewerLikeUri: viewer?.like,
+      viewerRepostUri: viewer?.repost,
+      viewerBookmarked: viewer?.bookmarked ?? false,
+      viewerThreadMuted: viewer?.threadMuted ?? false,
+      viewerReplyDisabled: viewer?.replyDisabled ?? false,
+    ),
+    author: toProfileModel(),
+    reason: reason,
+  );
 }
 
-/// Domain model for a thread author.
+String? _transformEmbed(Object? embed) {
+  if (embed == null) return null;
+  if (embed is String) return embed;
+  return jsonEncode(embed);
+}
+
+@freezed
+abstract class PostViewer with _$PostViewer {
+  const factory PostViewer({
+    String? like,
+    String? repost,
+    @Default(false) bool bookmarked,
+    @Default(false) bool threadMuted,
+    @Default(false) bool replyDisabled,
+    String? embedding,
+  }) = _PostViewer;
+
+  factory PostViewer.fromJson(Map<String, dynamic> json) => _$PostViewerFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$PostViewerToJson(this as _PostViewer);
+}
+
 @freezed
 abstract class ThreadAuthor with _$ThreadAuthor {
   const factory ThreadAuthor({
@@ -267,19 +277,71 @@ abstract class ThreadAuthor with _$ThreadAuthor {
     String? displayName,
     String? description,
     String? avatar,
-    Map<String, dynamic>? viewer,
+    ActorViewer? viewer,
+    List<ContentLabel>? labels,
   }) = _ThreadAuthor;
 
   const ThreadAuthor._();
 
   factory ThreadAuthor.fromJson(Map<String, dynamic> json) => _$ThreadAuthorFromJson(json);
 
+  @override
+  Map<String, dynamic> toJson() => _$ThreadAuthorToJson(this as _ThreadAuthor);
+
   core.Author toAuthorModel() {
     return core.Author(did: did, handle: handle, displayName: displayName, avatar: avatar);
   }
+
+  ProfilesCompanion toProfilesCompanion() {
+    return ProfilesCompanion.insert(
+      did: did,
+      handle: handle,
+      displayName: Value(displayName),
+      description: Value(description),
+      avatar: Value(avatar),
+    );
+  }
+
+  ProfileRelationshipsCompanion? toRelationshipCompanion(String ownerDid) {
+    final v = viewer;
+    if (v == null) return null;
+
+    return ProfileRelationshipsCompanion.insert(
+      ownerDid: ownerDid,
+      profileDid: did,
+      following: Value(v.following != null),
+      followingUri: Value(v.following),
+      followedBy: Value(v.followedBy != null),
+      muted: Value(v.muted),
+      blocked: Value(v.blocking != null),
+      blockingUri: Value(v.blocking),
+      blockedBy: Value(v.blockedBy),
+      mutedByList: Value(v.mutedByList),
+      blockingByList: Value(v.blockingByList),
+      updatedAt: DateTime.now(),
+    );
+  }
 }
 
-/// Threadgate represents reply restrictions on a post.
+@freezed
+abstract class ActorViewer with _$ActorViewer {
+  const factory ActorViewer({
+    String? following,
+    String? followedBy,
+    @Default(false) bool muted,
+    String? blocking,
+    @Default(false) bool blockedBy,
+    String? mutedByList,
+    String? blockingByList,
+    @Default(false) bool knownFollowers,
+  }) = _ActorViewer;
+
+  factory ActorViewer.fromJson(Map<String, dynamic> json) => _$ActorViewerFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$ActorViewerToJson(this as _ActorViewer);
+}
+
 @freezed
 abstract class Threadgate with _$Threadgate {
   const factory Threadgate({
@@ -291,17 +353,10 @@ abstract class Threadgate with _$Threadgate {
 
   const Threadgate._();
 
-  factory Threadgate.fromJson(Map<String, dynamic> json) {
-    final recordJson = json['record'] as Map<String, dynamic>?;
-    final listsJson = json['lists'] as List?;
+  factory Threadgate.fromJson(Map<String, dynamic> json) => _$ThreadgateFromJson(json);
 
-    return Threadgate(
-      uri: json['uri'] as String? ?? '',
-      cid: json['cid'] as String?,
-      record: recordJson != null ? ThreadgateRecord.fromJson(recordJson) : null,
-      lists: listsJson?.map((e) => e as Map<String, dynamic>).toList() ?? const [],
-    );
-  }
+  @override
+  Map<String, dynamic> toJson() => _$ThreadgateToJson(this as _Threadgate);
 
   /// Returns readable description of reply restriction.
   String get restrictionDescription {
@@ -327,7 +382,6 @@ abstract class Threadgate with _$Threadgate {
   }
 }
 
-/// Threadgate record with allow rules.
 @freezed
 abstract class ThreadgateRecord with _$ThreadgateRecord {
   const factory ThreadgateRecord({
@@ -338,12 +392,8 @@ abstract class ThreadgateRecord with _$ThreadgateRecord {
 
   const ThreadgateRecord._();
 
-  factory ThreadgateRecord.fromJson(Map<String, dynamic> json) {
-    final allowJson = json['allow'] as List?;
-    return ThreadgateRecord(
-      post: json['post'] as String? ?? '',
-      allow: allowJson?.map((e) => e as Map<String, dynamic>).toList() ?? const [],
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
-    );
-  }
+  factory ThreadgateRecord.fromJson(Map<String, dynamic> json) => _$ThreadgateRecordFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$ThreadgateRecordToJson(this as _ThreadgateRecord);
 }

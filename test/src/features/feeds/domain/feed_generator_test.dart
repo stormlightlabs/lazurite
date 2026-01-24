@@ -48,31 +48,19 @@ void main() {
     test('fromJson throws on missing did', () {
       final json = {'handle': 'user.test'};
 
-      expect(() => ActorBasic.fromJson(json), throwsA(isA<FormatException>()));
-    });
-
-    test('fromJson throws on empty did', () {
-      final json = {'did': '', 'handle': 'user.test'};
-
-      expect(() => ActorBasic.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => ActorBasic.fromJson(json), throwsA(isA<Error>()));
     });
 
     test('fromJson throws on missing handle', () {
       final json = {'did': 'did:plc:test123'};
 
-      expect(() => ActorBasic.fromJson(json), throwsA(isA<FormatException>()));
-    });
-
-    test('fromJson throws on empty handle', () {
-      final json = {'did': 'did:plc:test123', 'handle': ''};
-
-      expect(() => ActorBasic.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => ActorBasic.fromJson(json), throwsA(isA<Error>()));
     });
 
     test('fromJson throws on invalid did type', () {
       final json = {'did': 123, 'handle': 'user.test'};
 
-      expect(() => ActorBasic.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => ActorBasic.fromJson(json), throwsA(isA<Error>()));
     });
   });
 
@@ -135,7 +123,7 @@ void main() {
         'creator': {'did': 'did:plc:creator123', 'handle': 'creator.test'},
       };
 
-      expect(() => FeedGenerator.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => FeedGenerator.fromJson(json), throwsA(isA<Error>()));
     });
 
     test('fromJson throws on missing displayName', () {
@@ -146,7 +134,7 @@ void main() {
         'creator': {'did': 'did:plc:creator123', 'handle': 'creator.test'},
       };
 
-      expect(() => FeedGenerator.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => FeedGenerator.fromJson(json), throwsA(isA<Error>()));
     });
 
     test('fromJson throws on invalid creator type', () {
@@ -158,7 +146,7 @@ void main() {
         'creator': 'not-a-map',
       };
 
-      expect(() => FeedGenerator.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => FeedGenerator.fromJson(json), throwsA(isA<Error>()));
     });
 
     test('fromJson throws on missing creator', () {
@@ -169,7 +157,7 @@ void main() {
         'displayName': 'Test Feed',
       };
 
-      expect(() => FeedGenerator.fromJson(json), throwsA(isA<FormatException>()));
+      expect(() => FeedGenerator.fromJson(json), throwsA(isA<Error>()));
     });
   });
 }

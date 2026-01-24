@@ -133,7 +133,12 @@ void main() {
             'quoteCount': 3,
             'bookmarkCount': 1,
             'labels': [
-              {'val': 'sensitive', 'src': 'did:labeler'},
+              {
+                'val': 'sensitive',
+                'src': 'did:labeler',
+                'uri': 'at://did:1/app.bsky.feed.post/1',
+                'cts': '2024-01-01T00:00:00Z',
+              },
             ],
             'viewer': {
               'like': 'at://did:viewer/app.bsky.feed.like/abc',
@@ -159,7 +164,7 @@ void main() {
       expect(thread.post.viewerReplyDisabled, false);
       expect(thread.post.quoteCount, 3);
       expect(thread.post.bookmarkCount, 1);
-      expect(thread.post.labels, contains('"val":"sensitive"'));
+      expect(thread.post.labels?.any((l) => l.val == 'sensitive'), true);
     });
 
     test('parses threadgate from thread response', () async {

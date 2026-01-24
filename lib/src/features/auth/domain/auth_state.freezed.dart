@@ -192,8 +192,8 @@ return error(_that.error,_that.stackTrace);case _:
 /// @nodoc
 
 
-class AuthStateUnknown implements AuthState {
-  const AuthStateUnknown();
+class AuthStateUnknown extends AuthState {
+  const AuthStateUnknown(): super._();
   
 
 
@@ -224,8 +224,8 @@ String toString() {
 /// @nodoc
 
 
-class AuthStateUnauthenticated implements AuthState {
-  const AuthStateUnauthenticated();
+class AuthStateUnauthenticated extends AuthState {
+  const AuthStateUnauthenticated(): super._();
   
 
 
@@ -256,8 +256,8 @@ String toString() {
 /// @nodoc
 
 
-class AuthStateAuthenticated implements AuthState {
-  const AuthStateAuthenticated(this.session);
+class AuthStateAuthenticated extends AuthState {
+  const AuthStateAuthenticated(this.session): super._();
   
 
  final  Session session;
@@ -331,8 +331,8 @@ $SessionCopyWith<$Res> get session {
 /// @nodoc
 
 
-class AuthStateLoading implements AuthState {
-  const AuthStateLoading();
+class AuthStateLoading extends AuthState {
+  const AuthStateLoading(): super._();
   
 
 
@@ -363,8 +363,8 @@ String toString() {
 /// @nodoc
 
 
-class AuthStateError implements AuthState {
-  const AuthStateError(this.error, this.stackTrace);
+class AuthStateError extends AuthState {
+  const AuthStateError(this.error, this.stackTrace): super._();
   
 
  final  Object error;

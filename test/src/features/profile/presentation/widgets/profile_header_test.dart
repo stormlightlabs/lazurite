@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_header.dart';
+import 'package:lazurite/src/features/thread/domain/thread.dart';
 
 import '../../../../../helpers/pump_app.dart';
 
@@ -159,13 +160,13 @@ void main() {
     });
 
     testWidgets('renders muted indicator', (tester) async {
-      final mutedProfile = testProfile.copyWith(viewerMuted: true);
+      final mutedProfile = testProfile.copyWith(viewer: const ActorViewer(muted: true));
       await tester.pumpApp(Material(child: ProfileHeader(profile: mutedProfile)));
       expect(find.text('Muted'), findsOneWidget);
     });
 
     testWidgets('renders blocked indicator', (tester) async {
-      final blockedProfile = testProfile.copyWith(viewerBlockingUri: 'at://...');
+      final blockedProfile = testProfile.copyWith(viewer: const ActorViewer(blocking: 'at://...'));
       await tester.pumpApp(Material(child: ProfileHeader(profile: blockedProfile)));
       expect(find.text('Blocked'), findsOneWidget);
     });

@@ -59,7 +59,7 @@ void main() {
       expect(listView.indexedAt, isNull);
     });
 
-    test('fromJson throws FormatException when uri is missing', () {
+    test('fromJson throws when uri is missing', () {
       final json = {
         'cid': 'bafyreiabc123',
         'creator': {'did': 'did:plc:abc123', 'handle': 'creator.bsky.social'},
@@ -67,40 +67,10 @@ void main() {
         'purpose': 'app.bsky.graph.defs#curatelist',
       };
 
-      expect(
-        () => ListView.fromJson(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('ListView.uri must be a non-empty string'),
-          ),
-        ),
-      );
+      expect(() => ListView.fromJson(json), throwsA(isA<Error>()));
     });
 
-    test('fromJson throws FormatException when uri is empty', () {
-      final json = {
-        'uri': '',
-        'cid': 'bafyreiabc123',
-        'creator': {'did': 'did:plc:abc123', 'handle': 'creator.bsky.social'},
-        'name': 'Test List',
-        'purpose': 'app.bsky.graph.defs#curatelist',
-      };
-
-      expect(
-        () => ListView.fromJson(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('ListView.uri must be a non-empty string'),
-          ),
-        ),
-      );
-    });
-
-    test('fromJson throws FormatException when cid is missing', () {
+    test('fromJson throws when cid is missing', () {
       final json = {
         'uri': 'at://did:plc:abc123/app.bsky.graph.list/testlist',
         'creator': {'did': 'did:plc:abc123', 'handle': 'creator.bsky.social'},
@@ -108,19 +78,10 @@ void main() {
         'purpose': 'app.bsky.graph.defs#curatelist',
       };
 
-      expect(
-        () => ListView.fromJson(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('ListView.cid must be a non-empty string'),
-          ),
-        ),
-      );
+      expect(() => ListView.fromJson(json), throwsA(isA<Error>()));
     });
 
-    test('fromJson throws FormatException when name is missing', () {
+    test('fromJson throws when name is missing', () {
       final json = {
         'uri': 'at://did:plc:abc123/app.bsky.graph.list/testlist',
         'cid': 'bafyreiabc123',
@@ -128,19 +89,10 @@ void main() {
         'purpose': 'app.bsky.graph.defs#curatelist',
       };
 
-      expect(
-        () => ListView.fromJson(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('ListView.name must be a non-empty string'),
-          ),
-        ),
-      );
+      expect(() => ListView.fromJson(json), throwsA(isA<Error>()));
     });
 
-    test('fromJson throws FormatException when purpose is missing', () {
+    test('fromJson throws when purpose is missing', () {
       final json = {
         'uri': 'at://did:plc:abc123/app.bsky.graph.list/testlist',
         'cid': 'bafyreiabc123',
@@ -148,19 +100,10 @@ void main() {
         'name': 'Test List',
       };
 
-      expect(
-        () => ListView.fromJson(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('ListView.purpose must be a non-empty string'),
-          ),
-        ),
-      );
+      expect(() => ListView.fromJson(json), throwsA(isA<Error>()));
     });
 
-    test('fromJson throws FormatException when creator is not a Map', () {
+    test('fromJson throws when creator is not a Map', () {
       final json = {
         'uri': 'at://did:plc:abc123/app.bsky.graph.list/testlist',
         'cid': 'bafyreiabc123',
@@ -169,19 +112,10 @@ void main() {
         'purpose': 'app.bsky.graph.defs#curatelist',
       };
 
-      expect(
-        () => ListView.fromJson(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('ListView.creator must be a Map'),
-          ),
-        ),
-      );
+      expect(() => ListView.fromJson(json), throwsA(isA<Error>()));
     });
 
-    test('equality is based on uri', () {
+    test('equality is value-based', () {
       const list1 = ListView(
         uri: 'at://did:plc:abc123/app.bsky.graph.list/testlist',
         cid: 'bafyreiabc123',
@@ -192,10 +126,10 @@ void main() {
 
       const list2 = ListView(
         uri: 'at://did:plc:abc123/app.bsky.graph.list/testlist',
-        cid: 'different_cid',
-        creator: ActorBasic(did: 'did:plc:xyz789', handle: 'other.bsky.social'),
-        name: 'Different Name',
-        purpose: 'app.bsky.graph.defs#modlist',
+        cid: 'bafyreiabc123',
+        creator: ActorBasic(did: 'did:plc:abc123', handle: 'creator.bsky.social'),
+        name: 'Test List',
+        purpose: 'app.bsky.graph.defs#curatelist',
       );
 
       expect(list1, equals(list2));

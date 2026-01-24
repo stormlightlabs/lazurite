@@ -11,6 +11,7 @@ part of 'outbox_item.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
+
 /// @nodoc
 mixin _$OutboxItem {
 
@@ -29,6 +30,8 @@ mixin _$OutboxItem {
 @pragma('vm:prefer-inline')
 $OutboxItemCopyWith<OutboxItem> get copyWith => _$OutboxItemCopyWithImpl<OutboxItem>(this as OutboxItem, _$identity);
 
+  /// Serializes this OutboxItem to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -36,7 +39,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is OutboxItem&&(identical(other.outboxId, outboxId) || other.outboxId == outboxId)&&(identical(other.convoId, convoId) || other.convoId == convoId)&&(identical(other.messageText, messageText) || other.messageText == messageText)&&(identical(other.status, status) || other.status == status)&&(identical(other.retryCount, retryCount) || other.retryCount == retryCount)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastAttemptAt, lastAttemptAt) || other.lastAttemptAt == lastAttemptAt)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,outboxId,convoId,messageText,status,retryCount,createdAt,lastAttemptAt,errorMessage);
 
@@ -218,11 +221,11 @@ return $default(_that.outboxId,_that.convoId,_that.messageText,_that.status,_tha
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _OutboxItem extends OutboxItem {
   const _OutboxItem({required this.outboxId, required this.convoId, required this.messageText, required this.status, required this.retryCount, required this.createdAt, this.lastAttemptAt, this.errorMessage}): super._();
-  
+  factory _OutboxItem.fromJson(Map<String, dynamic> json) => _$OutboxItemFromJson(json);
 
 /// Local UUID for this outbox item.
 @override final  String outboxId;
@@ -247,14 +250,17 @@ class _OutboxItem extends OutboxItem {
 @pragma('vm:prefer-inline')
 _$OutboxItemCopyWith<_OutboxItem> get copyWith => __$OutboxItemCopyWithImpl<_OutboxItem>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$OutboxItemToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _OutboxItem&&(identical(other.outboxId, outboxId) || other.outboxId == outboxId)&&(identical(other.convoId, convoId) || other.convoId == convoId)&&(identical(other.messageText, messageText) || other.messageText == messageText)&&(identical(other.status, status) || other.status == status)&&(identical(other.retryCount, retryCount) || other.retryCount == retryCount)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastAttemptAt, lastAttemptAt) || other.lastAttemptAt == lastAttemptAt)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,outboxId,convoId,messageText,status,retryCount,createdAt,lastAttemptAt,errorMessage);
 

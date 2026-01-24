@@ -156,7 +156,7 @@ final class ProfileNotifierProvider extends $AsyncNotifierProvider<ProfileNotifi
   }
 }
 
-String _$profileNotifierHash() => r'7ccce6122fcf09098774583f7a1568dc94d50343';
+String _$profileNotifierHash() => r'0a80dfc2085d0862d6efa77e18f459a419d5c151';
 
 final class ProfileNotifierFamily extends $Family
     with
