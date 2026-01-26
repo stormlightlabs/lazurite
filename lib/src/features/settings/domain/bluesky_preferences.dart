@@ -13,7 +13,7 @@ abstract final class BlueskyPreferenceTypes {
   static const String feedView = 'app.bsky.actor.defs#feedViewPref';
   static const String threadView = 'app.bsky.actor.defs#threadViewPref';
   static const String mutedWords = 'app.bsky.actor.defs#mutedWordsPref';
-  static const String contentLabels = 'app.bsky.actor.defs#contentLabelPrefs'; // Custom if needed
+  static const String contentLabels = 'app.bsky.actor.defs#contentLabelPrefs';
 }
 
 /// Adult content preference controlling visibility of adult content.

@@ -53,7 +53,7 @@ class EmbedExternal extends StatelessWidget {
           children: [
             if (thumb != null && thumb.isNotEmpty)
               AspectRatio(
-                aspectRatio: 1.91 / 1, // Standard OG image ratio
+                aspectRatio: 1.91 / 1,
                 child: Image.network(
                   thumb,
                   fit: BoxFit.cover,

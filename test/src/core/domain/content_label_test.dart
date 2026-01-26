@@ -188,10 +188,7 @@ void main() {
         expect(_createLabel('!takedown').behavior, LabelBehavior.hide);
         expect(_createLabel('!suspend').behavior, LabelBehavior.hide);
         expect(_createLabel('!no-promote').behavior, LabelBehavior.inform);
-        expect(
-          _createLabel('!unknown').behavior,
-          LabelBehavior.warn,
-        ); // default for unknown system
+        expect(_createLabel('!unknown').behavior, LabelBehavior.warn);
       });
 
       test('behavior returns correct value for descriptive labels', () {
@@ -199,7 +196,7 @@ void main() {
         expect(_createLabel('nudity').behavior, LabelBehavior.blur);
         expect(_createLabel('spam').behavior, LabelBehavior.inform);
         expect(_createLabel('scam').behavior, LabelBehavior.alert);
-        expect(_createLabel('unknown').behavior, LabelBehavior.inform); // default
+        expect(_createLabel('unknown').behavior, LabelBehavior.inform);
       });
 
       test('behavior is case insensitive for descriptive labels', () {

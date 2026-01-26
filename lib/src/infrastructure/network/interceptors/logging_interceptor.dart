@@ -56,11 +56,7 @@ class LoggingInterceptor extends Interceptor {
       final statusCode = err.response?.statusCode ?? 'N/A';
       final type = err.type.name;
 
-      developer.log(
-        '✕ $statusCode $method $uri ($type)',
-        name: 'HTTP',
-        level: 900, // Warning level
-      );
+      developer.log('✕ $statusCode $method $uri ($type)', name: 'HTTP', level: 900);
       if (err.message != null) {
         developer.log('  Error: ${err.message}', name: 'HTTP', level: 900);
       }

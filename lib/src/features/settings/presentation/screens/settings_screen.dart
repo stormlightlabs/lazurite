@@ -122,7 +122,7 @@ class SettingsScreen extends ConsumerWidget {
         leading: const Icon(Icons.logout),
         title: 'Sign Out',
         subtitle: 'Log out of your account',
-        trailing: null, // No chevron for action items
+        trailing: null,
         onTap: () async {
           final confirmed = await _showSignOutDialog(context);
           if (confirmed == true) {

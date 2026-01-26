@@ -11,7 +11,7 @@ import 'package:lazurite/src/features/settings/application/label_filter_provider
 import 'package:lazurite/src/features/settings/application/muted_word_filter_provider.dart';
 import 'package:lazurite/src/features/settings/application/settings_providers.dart';
 import 'package:lazurite/src/features/settings/domain/bluesky_preferences.dart';
-import 'package:lazurite/src/infrastructure/db/app_database.dart'; // For Post, Profile classes
+import 'package:lazurite/src/infrastructure/db/app_database.dart';
 import 'package:lazurite/src/infrastructure/db/daos/feed_content_dao.dart';
 import 'package:mocktail/mocktail.dart';
 

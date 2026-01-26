@@ -94,23 +94,26 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
   late Color _selectedColor;
   final _hexController = TextEditingController();
 
+  /// In order: Blue, Light Blue, Cyan, Pink, Light Pink,
+  ///           Green, Orange, Yellow, Purple, Dark,
+  ///           Dark Gray, Gray, Medium Gray, Light Gray, Light, White
   static const _presetColors = [
-    Color(0xFF0085FF), // Blue
-    Color(0xFF78A9FF), // Light Blue
-    Color(0xFF33B1FF), // Cyan
-    Color(0xFFEE5396), // Pink
-    Color(0xFFFF7EB6), // Light Pink
-    Color(0xFF42BE65), // Green
-    Color(0xFFFF832B), // Orange
-    Color(0xFFF1C21B), // Yellow
-    Color(0xFFBE95FF), // Purple
-    Color(0xFF161616), // Dark
-    Color(0xFF262626), // Dark Gray
-    Color(0xFF393939), // Gray
-    Color(0xFF525252), // Medium Gray
-    Color(0xFF8D8D8D), // Light Gray
-    Color(0xFFF2F4F8), // Light
-    Color(0xFFFFFFFF), // White
+    Color(0xFF0085FF),
+    Color(0xFF78A9FF),
+    Color(0xFF33B1FF),
+    Color(0xFFEE5396),
+    Color(0xFFFF7EB6),
+    Color(0xFF42BE65),
+    Color(0xFFFF832B),
+    Color(0xFFF1C21B),
+    Color(0xFFBE95FF),
+    Color(0xFF161616),
+    Color(0xFF262626),
+    Color(0xFF393939),
+    Color(0xFF525252),
+    Color(0xFF8D8D8D),
+    Color(0xFFF2F4F8),
+    Color(0xFFFFFFFF),
   ];
 
   @override
@@ -130,9 +133,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
     if (hex.length == 6) {
       final intValue = int.tryParse(hex, radix: 16);
       if (intValue != null) {
-        setState(() {
-          _selectedColor = Color(0xFF000000 | intValue);
-        });
+        setState(() => _selectedColor = Color(0xFF000000 | intValue));
       }
     }
   }

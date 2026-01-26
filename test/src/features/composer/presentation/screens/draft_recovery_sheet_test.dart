@@ -58,7 +58,7 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(() => mockRepository.publishDraft('123')).called(1);
-    expect(find.byType(DraftRecoverySheet), findsNothing); // Popped
+    expect(find.byType(DraftRecoverySheet), findsNothing);
   });
 
   testWidgets('Delete button triggers controller delete', (tester) async {
@@ -74,6 +74,6 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(() => mockRepository.deleteDraft('123')).called(1);
-    expect(find.byType(DraftRecoverySheet), findsNothing); // Popped
+    expect(find.byType(DraftRecoverySheet), findsNothing);
   });
 }

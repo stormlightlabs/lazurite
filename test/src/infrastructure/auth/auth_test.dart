@@ -190,10 +190,7 @@ void main() {
         (_) async => Response(
           requestOptions: RequestOptions(path: ''),
           statusCode: 201,
-          data: {
-            'request_uri': 'urn:ietf:params:oauth:request_uri:test',
-            'expires_in': 15, // Less than 30 seconds
-          },
+          data: {'request_uri': 'urn:ietf:params:oauth:request_uri:test', 'expires_in': 15},
         ),
       );
       when(() => logger.warning(any())).thenReturn(null);
@@ -465,7 +462,7 @@ void main() {
           accessToken: 'access',
           tokenType: 'Bearer',
           refreshToken: 'refresh',
-          scope: 'atproto', // Missing 'transition:generic'
+          scope: 'atproto',
           expiresIn: 3600,
         ),
       );

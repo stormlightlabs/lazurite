@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-
-import '../../../../core/utils/date_formatter.dart';
-import '../../../../core/widgets/avatar.dart';
-import '../../domain/dm_conversation.dart';
+import 'package:lazurite/src/core/domain/author.dart';
+import 'package:lazurite/src/core/utils/date_formatter.dart';
+import 'package:lazurite/src/core/widgets/avatar.dart';
+import 'package:lazurite/src/features/dms/domain/dm_conversation.dart';
 
 /// A card widget for displaying a message request.
 ///
-/// Shows the sender's profile, message preview, and accept/decline buttons
-/// for unaccepted conversation requests.
+/// Shows the sender's profile, message preview, and accept/decline
+/// buttons for unaccepted conversation requests.
 class MessageRequestCard extends StatelessWidget {
   const MessageRequestCard({
     super.key,
@@ -36,12 +36,84 @@ class MessageRequestCard extends StatelessWidget {
     return 'Message request from $name. $message. Double tap to view, or use buttons to accept or decline.';
   }
 
+  Widget _otherPartyInfo(Author other, TextTheme textTheme, ColorScheme colorScheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          other.displayName ?? other.handle,
+          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '@${other.handle}',
+          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLastMessageText(String? text, TextTheme textTheme, ColorScheme colorScheme) {
+    return Row(
+      children: [
+        Icon(Icons.chat_bubble_outline, size: 16, color: colorScheme.onSurfaceVariant),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text!,
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildLastMessageTime(
+    DateTime? time,
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+  ) => time == null
+      ? []
+      : [
+          const SizedBox(width: 8),
+          Text(
+            DateFormatter.formatRelative(time),
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+        ];
+
+  Widget _buildButtons(TextTheme textTheme, ColorScheme colorScheme) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: onDecline,
+            style: OutlinedButton.styleFrom(foregroundColor: colorScheme.onSurfaceVariant),
+            child: const Text('Decline'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FilledButton(onPressed: onAccept, child: const Text('Accept')),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
     final otherParty = conversation.otherParty;
     final lastMessageAt = conversation.lastMessageAt;
+    final lastMessageText = conversation.lastMessageText;
 
     return Semantics(
       label: _buildSemanticLabel(),
@@ -59,39 +131,8 @@ class MessageRequestCard extends StatelessWidget {
                   children: [
                     Avatar(imageUrl: otherParty.avatar, radius: 24),
                     const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            otherParty.displayName ?? otherParty.handle,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '@${otherParty.handle}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (lastMessageAt != null) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        DateFormatter.formatRelative(lastMessageAt),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                    Expanded(child: _otherPartyInfo(otherParty, textTheme, colorScheme)),
+                    ..._buildLastMessageTime(lastMessageAt, textTheme, colorScheme),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -102,46 +143,11 @@ class MessageRequestCard extends StatelessWidget {
                       color: colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 16,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            conversation.lastMessageText!,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurface,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: _buildLastMessageText(lastMessageText, textTheme, colorScheme),
                   ),
                   const SizedBox(height: 16),
                 ],
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: onDecline,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: colorScheme.onSurfaceVariant,
-                        ),
-                        child: const Text('Decline'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton(onPressed: onAccept, child: const Text('Accept')),
-                    ),
-                  ],
-                ),
+                _buildButtons(textTheme, colorScheme),
               ],
             ),
           ),

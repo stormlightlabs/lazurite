@@ -24,11 +24,35 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage> {
     super.dispose();
   }
 
+  Widget? _buildSuffixIcon(bool notEmpty) {
+    if (notEmpty) {
+      return IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          _searchController.clear();
+          setState(() => _searchQuery = '');
+        },
+      );
+    }
+    return null;
+  }
+
+  Widget _buildEmptyView(bool isEmpty, TextTheme textTheme, ColorScheme colorScheme) {
+    return Center(
+      child: Text(
+        isEmpty ? 'No collections found' : 'No collections matching "$_searchQuery"',
+        style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final collectionsAsync = ref.watch(filteredCollectionsProvider(_searchQuery));
     final pinnedUrisAsync = ref.watch(pinnedUrisProvider);
+    final textTheme = theme.textTheme;
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -47,40 +71,17 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage> {
               decoration: InputDecoration(
                 hintText: 'Search collections...',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
+                suffixIcon: _buildSuffixIcon(_searchQuery.isNotEmpty),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
+              onChanged: (value) => setState(() => _searchQuery = value),
             ),
           ),
           Expanded(
             child: collectionsAsync.when(
               data: (collections) {
                 if (collections.isEmpty) {
-                  return Center(
-                    child: Text(
-                      _searchQuery.isEmpty
-                          ? 'No collections found'
-                          : 'No collections matching "$_searchQuery"',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  );
+                  return _buildEmptyView(_searchQuery.isEmpty, textTheme, colorScheme);
                 }
 
                 return pinnedUrisAsync.when(
@@ -109,30 +110,37 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
-                      const SizedBox(height: 16),
-                      Text('Failed to load collections', style: theme.textTheme.titleMedium),
-                      const SizedBox(height: 8),
-                      Text(
-                        errorMessage(error),
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              error: (error, stack) => _buildAsyncErrorView(error, stack, textTheme, colorScheme),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAsyncErrorView(
+    Object error,
+    StackTrace stack,
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+  ) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+            const SizedBox(height: 16),
+            Text('Failed to load collections', style: textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              errorMessage(error),
+              textAlign: TextAlign.center,
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ),
       ),
     );
   }

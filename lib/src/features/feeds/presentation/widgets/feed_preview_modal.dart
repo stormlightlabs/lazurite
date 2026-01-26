@@ -36,11 +36,93 @@ class _FeedPreviewModalState extends ConsumerState<FeedPreviewModal> {
     });
   }
 
+  Widget _buildUserInfoRow(
+    String? avatar,
+    String? creatorHandle,
+    String displayName,
+    String feedUri,
+    bool isSaved,
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+  ) {
+    return Row(
+      children: [
+        CircleAvatar(
+          backgroundImage: avatar != null ? NetworkImage(avatar) : null,
+          child: avatar == null ? const Icon(Icons.rss_feed) : null,
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(displayName, style: textTheme.titleLarge),
+              if (creatorHandle != null)
+                Text(
+                  '@$creatorHandle',
+                  style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+            ],
+          ),
+        ),
+        if (isSaved)
+          FilledButton.icon(
+            onPressed: () {
+              ref.read(feedMutationProvider.notifier).removeFeed(feedUri);
+            },
+            icon: const Icon(Icons.check),
+            label: const Text('Saved'),
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.surfaceContainerHighest,
+              foregroundColor: colorScheme.onSurfaceVariant,
+            ),
+          )
+        else
+          FilledButton.icon(
+            onPressed: () {
+              ref.read(feedMutationProvider.notifier).saveFeed(widget.feedUri);
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Save'),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFeedContent(String feedUri, ScrollController scrollController) {
+    final feedContentState = ref.watch(feedContentProvider(feedUri));
+    return Expanded(
+      child: feedContentState.when(
+        data: (items) {
+          if (items.isEmpty) {
+            return const Center(child: Text('No posts found'));
+          }
+          return ListView.separated(
+            controller: scrollController,
+            itemCount: items.length,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: (context, index) => FeedPostCard(item: items[index]),
+          );
+        },
+        loading: () => const LoadingView(),
+        error: (err, stack) => ErrorView(
+          title: 'Failed to load preview',
+          message: errorMessage(err),
+          onRetry: () {
+            ref.read(feedContentProvider(widget.feedUri).notifier).refresh();
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final feedContentState = ref.watch(feedContentProvider(widget.feedUri));
     final savedFeeds = ref.watch(allFeedsProvider).asData?.value ?? [];
     final isSaved = savedFeeds.any((f) => f.uri == widget.feedUri);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
@@ -49,7 +131,7 @@ class _FeedPreviewModalState extends ConsumerState<FeedPreviewModal> {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
+            color: theme.scaffoldBackgroundColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           ),
           child: Column(
@@ -67,56 +149,14 @@ class _FeedPreviewModalState extends ConsumerState<FeedPreviewModal> {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundImage: widget.avatar != null
-                              ? NetworkImage(widget.avatar!)
-                              : null,
-                          child: widget.avatar == null ? const Icon(Icons.rss_feed) : null,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.displayName,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              if (widget.creatorHandle != null)
-                                Text(
-                                  '@${widget.creatorHandle}',
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        if (isSaved)
-                          FilledButton.icon(
-                            onPressed: () {
-                              ref.read(feedMutationProvider.notifier).removeFeed(widget.feedUri);
-                            },
-                            icon: const Icon(Icons.check),
-                            label: const Text('Saved'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          )
-                        else
-                          FilledButton.icon(
-                            onPressed: () {
-                              ref.read(feedMutationProvider.notifier).saveFeed(widget.feedUri);
-                            },
-                            icon: const Icon(Icons.add),
-                            label: const Text('Save'),
-                          ),
-                      ],
+                    _buildUserInfoRow(
+                      widget.avatar,
+                      widget.creatorHandle,
+                      widget.displayName,
+                      widget.feedUri,
+                      isSaved,
+                      textTheme,
+                      colorScheme,
                     ),
                     if (widget.description != null) ...[
                       const SizedBox(height: 12),
@@ -126,29 +166,7 @@ class _FeedPreviewModalState extends ConsumerState<FeedPreviewModal> {
                 ),
               ),
               const Divider(height: 1),
-              Expanded(
-                child: feedContentState.when(
-                  data: (items) {
-                    if (items.isEmpty) {
-                      return const Center(child: Text('No posts found'));
-                    }
-                    return ListView.separated(
-                      controller: scrollController,
-                      itemCount: items.length,
-                      separatorBuilder: (context, index) => const Divider(height: 1),
-                      itemBuilder: (context, index) => FeedPostCard(item: items[index]),
-                    );
-                  },
-                  loading: () => const LoadingView(),
-                  error: (err, stack) => ErrorView(
-                    title: 'Failed to load preview',
-                    message: errorMessage(err),
-                    onRetry: () {
-                      ref.read(feedContentProvider(widget.feedUri).notifier).refresh();
-                    },
-                  ),
-                ),
-              ),
+              _buildFeedContent(widget.feedUri, scrollController),
             ],
           ),
         );

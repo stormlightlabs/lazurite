@@ -92,7 +92,7 @@ void main() {
 
       expect(insertedFeeds.length, 1);
       expect(insertedFeeds.first.uri.value, feedUri);
-      expect(insertedFeeds.first.displayName.value, 'Unknown Feed'); // This is the placeholder!
+      expect(insertedFeeds.first.displayName.value, 'Unknown Feed');
       expect(insertedFeeds.first.description.value, 'Metadata unavailable');
     });
     test('seedDefaultFeeds only cleans up legacy home alias for authenticated users', () async {

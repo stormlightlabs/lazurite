@@ -202,7 +202,7 @@ class ProfileRepository {
 
       await _followsDao.upsertFollow(
         FollowsCompanion.insert(
-          actorDid: actorDid, // actorDid is the owner
+          actorDid: actorDid,
           subjectDid: subjectDid,
           uri: uri,
           createdAt: Value(DateTime.now()),

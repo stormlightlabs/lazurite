@@ -20,15 +20,22 @@ class LanguageDetectionService {
       return null;
     }
 
+    /// In order:
+    /// 1. Emoticons
+    /// 2. Misc Symbols and Pictographs
+    /// 3. Transport and Map
+    /// 4. Flags (iOS)
+    /// 5. Misc symbols
+    /// 6. Dingbats
     final hasNonEmoji = text
         .replaceAll(
           RegExp(
-            '[\u{1F600}-\u{1F64F}]' // Emoticons
-            '|[\u{1F300}-\u{1F5FF}]' // Misc Symbols and Pictographs
-            '|[\u{1F680}-\u{1F6FF}]' // Transport and Map
-            '|[\u{1F1E0}-\u{1F1FF}]' // Flags (iOS)
-            '|[\u{2600}-\u{26FF}]' // Misc symbols
-            '|[\u{2700}-\u{27BF}]', // Dingbats
+            '[\u{1F600}-\u{1F64F}]'
+            '|[\u{1F300}-\u{1F5FF}]'
+            '|[\u{1F680}-\u{1F6FF}]'
+            '|[\u{1F1E0}-\u{1F1FF}]'
+            '|[\u{2600}-\u{26FF}]'
+            '|[\u{2700}-\u{27BF}]',
             unicode: true,
           ),
           '',
@@ -54,8 +61,6 @@ class LanguageDetectionService {
   }
 
   /// Validate a language code against ISO 639-1/639-2 standards.
-  ///
-  /// Returns true if the code is valid, false otherwise.
   static bool isValidLanguageCode(String code) {
     if (code.length != 2 && code.length != 3) {
       return false;

@@ -6,7 +6,6 @@ import 'package:lazurite/src/app/routes.dart';
 ///
 /// Provides options to browse public content or sign in to access full features.
 class LandingScreen extends StatelessWidget {
-  /// Creates a landing screen.
   const LandingScreen({super.key});
 
   @override

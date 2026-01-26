@@ -58,7 +58,7 @@ void main() {
         method: 'GET',
         url: 'https://example.com/api',
         statusCode: 200,
-        durationMs: any(named: 'durationMs'), // > 0
+        durationMs: any(named: 'durationMs'),
         requestHeaders: any(named: 'requestHeaders'),
         responseHeaders: any(named: 'responseHeaders'),
         requestBody: any(named: 'requestBody'),

@@ -153,9 +153,9 @@ void main() {
 
         final results = await dao.watchNotifications(ownerDid).first;
         expect(results, hasLength(3));
-        expect(results[0].notification.type, 'repost'); // Most recent
+        expect(results[0].notification.type, 'repost');
         expect(results[1].notification.type, 'follow');
-        expect(results[2].notification.type, 'like'); // Oldest
+        expect(results[2].notification.type, 'like');
       });
 
       test('emits updates when notifications change', () async {

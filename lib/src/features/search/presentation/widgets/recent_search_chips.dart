@@ -29,10 +29,11 @@ class RecentSearchChips extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final search = searches[index];
+          final q = search.query;
           return InputChip(
-            label: Text(search.query),
-            onPressed: () => onTap?.call(search.query),
-            onDeleted: onDelete != null ? () => onDelete!(search.query) : null,
+            label: Text(q),
+            onPressed: () => onTap?.call(q),
+            onDeleted: onDelete != null ? () => onDelete!(q) : null,
             deleteIcon: const Icon(Icons.close, size: 18),
           );
         },

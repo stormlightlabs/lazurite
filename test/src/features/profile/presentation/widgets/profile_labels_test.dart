@@ -20,7 +20,7 @@ void main() {
 
       await tester.pumpApp(Material(child: ProfileLabels(rawLabels: labels)));
 
-      expect(find.text('warn'), findsOneWidget); // displayValue strips !
+      expect(find.text('warn'), findsOneWidget);
       expect(find.text('spam'), findsOneWidget);
     });
 

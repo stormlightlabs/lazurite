@@ -505,7 +505,7 @@ void main() {
       testWidgets('renders efficiently for text with multiple facets', (tester) async {
         final facets = <Map<String, dynamic>>[];
         var text = 'Post with ';
-        var byteCount = 11; // 'Post with '.length
+        var byteCount = 11;
 
         for (var i = 0; i < 5; i++) {
           final mention = '@user$i ';

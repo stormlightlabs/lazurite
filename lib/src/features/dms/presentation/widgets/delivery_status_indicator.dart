@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../../domain/dm_message.dart';
+import 'package:lazurite/src/features/dms/domain/dm_message.dart';
 
 /// Displays the delivery status of a message.
 ///

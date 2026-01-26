@@ -153,7 +153,7 @@ void main() {
             home: Scaffold(
               body: ThreadReplyItem(
                 post: post,
-                depth: 6, // Exceeds MAX_DEPTH of 5
+                depth: 6,
                 isCollapsed: false,
                 onToggleCollapse: () {},
               ),

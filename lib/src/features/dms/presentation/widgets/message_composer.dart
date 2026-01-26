@@ -61,12 +61,23 @@ class _MessageComposerState extends State<MessageComposer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final colorScheme = theme.colorScheme;
+    final overLimitTextColor = _isOverLimit ? colorScheme.error : colorScheme.onSurfaceVariant;
+    final sendButtonStyle = IconButton.styleFrom(
+      backgroundColor: _canSend && !_isOverLimit
+          ? colorScheme.primary
+          : colorScheme.surfaceContainerHighest,
+      foregroundColor: _canSend && !_isOverLimit
+          ? colorScheme.onPrimary
+          : colorScheme.onSurfaceVariant,
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
+        color: colorScheme.surface,
+        border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
       ),
       child: SafeArea(
         child: Column(
@@ -78,11 +89,7 @@ class _MessageComposerState extends State<MessageComposer> {
                 padding: const EdgeInsets.only(bottom: 4, right: 8),
                 child: Text(
                   '${_controller.text.length} / ${widget.maxCharacters}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: _isOverLimit
-                        ? theme.colorScheme.error
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
+                  style: textTheme.labelSmall?.copyWith(color: overLimitTextColor),
                 ),
               ),
             Row(
@@ -92,7 +99,7 @@ class _MessageComposerState extends State<MessageComposer> {
                   child: Container(
                     constraints: const BoxConstraints(maxHeight: 150),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
+                      color: colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: TextField(
@@ -107,7 +114,7 @@ class _MessageComposerState extends State<MessageComposer> {
                         hintText: 'Message...',
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                       ),
                     ),
                   ),
@@ -117,14 +124,7 @@ class _MessageComposerState extends State<MessageComposer> {
                   onPressed: _canSend && !_isOverLimit ? _handleSend : null,
                   icon: const Icon(Icons.send),
                   tooltip: 'Send message',
-                  style: IconButton.styleFrom(
-                    backgroundColor: _canSend && !_isOverLimit
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.surfaceContainerHighest,
-                    foregroundColor: _canSend && !_isOverLimit
-                        ? theme.colorScheme.onPrimary
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
+                  style: sendButtonStyle,
                 ),
               ],
             ),

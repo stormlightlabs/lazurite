@@ -229,7 +229,7 @@ void main() {
 
         expect(find.text('Cool People'), findsOneWidget);
         expect(find.textContaining('Curated List'), findsOneWidget);
-        expect(find.byIcon(Icons.star), findsNWidgets(2)); // Icon in title and placeholder
+        expect(find.byIcon(Icons.star), findsNWidgets(2));
       });
 
       testWidgets('renders moderation list', (tester) async {

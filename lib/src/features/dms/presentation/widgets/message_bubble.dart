@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/src/core/domain/author.dart';
+import 'package:lazurite/src/core/utils/date_formatter.dart';
+import 'package:lazurite/src/core/widgets/avatar.dart';
+import 'package:lazurite/src/features/dms/domain/dm_message.dart';
 
-import '../../../../core/domain/author.dart';
-import '../../../../core/utils/date_formatter.dart';
-import '../../../../core/widgets/avatar.dart';
-import '../../domain/dm_message.dart';
 import 'delivery_status_indicator.dart';
 
 /// Displays a single message in a conversation.
@@ -53,9 +53,37 @@ class MessageBubble extends StatelessWidget {
     return '$sender said: ${message.content}. $time. Status: $statusLabel';
   }
 
+  Widget _buildDeliveryStatusLabel(TextTheme textTheme, Color textColor) {
+    return Column(
+      crossAxisAlignment: isFromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(message.content, style: textTheme.bodyMedium?.copyWith(color: textColor)),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              DateFormatter.formatRelative(message.sentAt),
+              style: textTheme.labelSmall?.copyWith(color: textColor.withAlpha(153)),
+            ),
+            if (isFromMe) ...[
+              const SizedBox(width: 4),
+              DeliveryStatusIndicator(
+                status: message.status,
+                onRetry: message.isFailed ? onRetry : null,
+                size: 14,
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
     final bubbleColor = isFromMe
         ? theme.colorScheme.primaryContainer
         : theme.colorScheme.surfaceContainerHighest;
@@ -80,7 +108,7 @@ class MessageBubble extends StatelessWidget {
               Avatar(imageUrl: senderProfile?.avatar, radius: 16),
               const SizedBox(width: 8),
             ] else if (!isFromMe) ...[
-              const SizedBox(width: 40), // Space for hidden avatar
+              const SizedBox(width: 40),
             ],
             Flexible(
               child: Container(
@@ -94,35 +122,7 @@ class MessageBubble extends StatelessWidget {
                     bottomRight: Radius.circular(isFromMe ? 4 : 16),
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: isFromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      message.content,
-                      style: theme.textTheme.bodyMedium?.copyWith(color: textColor),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          DateFormatter.formatRelative(message.sentAt),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: textColor.withAlpha(153),
-                          ),
-                        ),
-                        if (isFromMe) ...[
-                          const SizedBox(width: 4),
-                          DeliveryStatusIndicator(
-                            status: message.status,
-                            onRetry: message.isFailed ? onRetry : null,
-                            size: 14,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
+                child: _buildDeliveryStatusLabel(textTheme, textColor),
               ),
             ),
           ],

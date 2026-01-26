@@ -68,7 +68,7 @@ void main() {
       });
 
       test('clearing non-existent server URL does nothing', () {
-        store.clear('https://example.com'); // Should not throw
+        store.clear('https://example.com');
       });
 
       test('clearAll removes all stored nonces', () {

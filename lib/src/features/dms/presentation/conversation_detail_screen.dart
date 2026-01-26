@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lazurite/src/core/animations/animation_utils.dart';
+import 'package:lazurite/src/core/utils/error_message.dart';
+import 'package:lazurite/src/core/widgets/error_view.dart';
+import 'package:lazurite/src/core/widgets/loading_view.dart';
+import 'package:lazurite/src/core/widgets/pull_to_refresh_wrapper.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/dms/domain/dm_conversation.dart';
+import 'package:lazurite/src/features/dms/providers.dart';
 
-import '../../../core/animations/animation_utils.dart';
-import '../../../core/utils/error_message.dart';
-import '../../../core/widgets/error_view.dart';
-import '../../../core/widgets/loading_view.dart';
-import '../../../core/widgets/pull_to_refresh_wrapper.dart';
-import '../../../features/auth/application/auth_providers.dart';
-import '../../../features/auth/domain/auth_state.dart';
-import '../domain/dm_conversation.dart';
-import '../providers.dart';
 import 'conversation_detail_notifier.dart';
 import 'widgets/message_bubble.dart';
 import 'widgets/message_composer.dart';
@@ -84,6 +84,10 @@ class _ConversationDetailScreenState extends ConsumerState<ConversationDetailScr
     final otherParty = _conversation?.otherParty;
     final title = otherParty?.displayName ?? otherParty?.handle ?? 'Conversation';
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: Column(
@@ -93,40 +97,18 @@ class _ConversationDetailScreenState extends ConsumerState<ConversationDetailScr
               child: messagesAsync.when(
                 data: (messages) {
                   if (messages.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.chat_bubble_outline,
-                            size: 64,
-                            color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No messages yet',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withAlpha(153),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Start the conversation!',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
+                    return _buildEmptyView(colorScheme, textTheme);
                   }
 
                   final sortedMessages = List.of(messages)
                     ..sort((a, b) => b.sentAt.compareTo(a.sentAt));
 
                   return PullToRefreshWrapper(
-                    onRefresh: () =>
-                        ref.read(conversationDetailProvider(widget.convoId).notifier).loadMore(),
+                    onRefresh: () {
+                      return ref
+                          .read(conversationDetailProvider(widget.convoId).notifier)
+                          .loadMore();
+                    },
                     child: ListView.builder(
                       controller: _scrollController,
                       reverse: true,
@@ -135,7 +117,6 @@ class _ConversationDetailScreenState extends ConsumerState<ConversationDetailScr
                       itemBuilder: (context, index) {
                         final message = sortedMessages[index];
                         final isFromMe = message.sender.did == currentUserDid;
-
                         final showAvatar =
                             index == sortedMessages.length - 1 ||
                             sortedMessages[index + 1].sender.did != message.sender.did;
@@ -164,8 +145,9 @@ class _ConversationDetailScreenState extends ConsumerState<ConversationDetailScr
                 error: (error, stack) => ErrorView(
                   title: 'Failed to load messages',
                   message: errorMessage(error),
-                  onRetry: () =>
-                      ref.read(conversationDetailProvider(widget.convoId).notifier).refresh(),
+                  onRetry: () async {
+                    await ref.read(conversationDetailProvider(widget.convoId).notifier).refresh();
+                  },
                 ),
               ),
             ),
@@ -178,6 +160,24 @@ class _ConversationDetailScreenState extends ConsumerState<ConversationDetailScr
               _scrollToBottom();
             },
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyView(ColorScheme colorScheme, TextTheme textTheme) {
+    final baseColor = colorScheme.onSurface.withAlpha(100);
+    final secondaryColor = colorScheme.onSurface.withAlpha(153);
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.chat_bubble_outline, size: 64, color: baseColor),
+          const SizedBox(height: 16),
+          Text('No messages yet', style: textTheme.bodyLarge?.copyWith(color: secondaryColor)),
+          const SizedBox(height: 8),
+          Text('Start the conversation!', style: textTheme.bodyMedium?.copyWith(color: baseColor)),
         ],
       ),
     );

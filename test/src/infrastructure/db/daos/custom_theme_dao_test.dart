@@ -73,7 +73,7 @@ void main() {
       final result = await dao.getAll();
 
       expect(result, hasLength(2));
-      expect(result[0].name, 'Second'); // Newer first
+      expect(result[0].name, 'Second');
       expect(result[1].name, 'First');
     });
   });

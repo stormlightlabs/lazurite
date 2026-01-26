@@ -12,7 +12,9 @@ class Posts extends Table {
   IntColumn get likeCount => integer().withDefault(const Constant(0))();
   IntColumn get quoteCount => integer().withDefault(const Constant(0))();
   IntColumn get bookmarkCount => integer().withDefault(const Constant(0))();
-  TextColumn get labels => text().nullable()(); // JSON array
+
+  /// JSON array
+  TextColumn get labels => text().nullable()();
   TextColumn get viewerLikeUri => text().nullable()();
   TextColumn get viewerRepostUri => text().nullable()();
   BoolColumn get viewerBookmarked => boolean().withDefault(const Constant(false))();
@@ -72,7 +74,9 @@ class Profiles extends Table {
   TextColumn get website => text().nullable()();
   DateTimeColumn get createdAt => dateTime().nullable()();
   TextColumn get verificationStatus => text().nullable()();
-  TextColumn get labels => text().nullable()(); // JSON array
+
+  /// JSON array
+  TextColumn get labels => text().nullable()();
   TextColumn get pinnedPostUri => text().nullable()();
 
   @override
@@ -669,8 +673,12 @@ class DevNetworkLogs extends Table {
   TextColumn get method => text()();
   TextColumn get url => text()();
   IntColumn get statusCode => integer()();
-  TextColumn get requestHeaders => text()(); // JSON
-  TextColumn get responseHeaders => text()(); // JSON
+
+  /// JSON
+  TextColumn get requestHeaders => text()();
+
+  /// JSON
+  TextColumn get responseHeaders => text()();
   TextColumn get requestBody => text().nullable()();
   TextColumn get responseBody => text().nullable()();
   DateTimeColumn get timestamp => dateTime()();

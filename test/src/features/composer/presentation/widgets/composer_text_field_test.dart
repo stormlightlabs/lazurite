@@ -67,7 +67,7 @@ void main() {
     });
 
     testWidgets('shows correct count when near limit', (tester) async {
-      controller.text = 'abcde'; // With maxLength: 10, this is 5 remaining
+      controller.text = 'abcde';
       await tester.pumpApp(
         SingleChildScrollView(child: ComposerTextField(controller: controller, maxLength: 10)),
       );

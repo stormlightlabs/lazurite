@@ -136,7 +136,7 @@ void main() {
 
         final pins = await dao.getAllPins();
         expect(pins.length, 2);
-        expect(pins[0].uri, '2'); // Most recent first
+        expect(pins[0].uri, '2');
         expect(pins[1].uri, '1');
 
         expect(

@@ -197,16 +197,13 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false), // Discard
+            onPressed: () => Navigator.pop(context, false),
             style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Discard'),
           ),
+          TextButton(onPressed: () => Navigator.pop(context, null), child: const Text('Cancel')),
           TextButton(
-            onPressed: () => Navigator.pop(context, null), // Cancel
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true), // Save
+            onPressed: () => Navigator.pop(context, true),
             child: const Text('Save Draft'),
           ),
         ],

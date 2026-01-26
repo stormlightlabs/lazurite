@@ -29,8 +29,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Apps Version'), findsOneWidget);
-    expect(find.text('9.9.9+888'), findsOneWidget); // Value
+    expect(find.text('9.9.9+888'), findsOneWidget);
     expect(find.text('Git Version'), findsOneWidget);
-    expect(find.text('v1.2.3-git'), findsOneWidget); // Value
+    expect(find.text('v1.2.3-git'), findsOneWidget);
   });
 }

@@ -216,20 +216,20 @@ class _EmptySearchState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_outlined, size: 64, color: theme.colorScheme.primary.withAlpha(127)),
+          Icon(Icons.search_outlined, size: 64, color: colorScheme.primary.withAlpha(127)),
           const SizedBox(height: 16),
-          Text('Search for posts and people', style: theme.textTheme.headlineSmall),
+          Text('Search for posts and people', style: textTheme.headlineSmall),
           const SizedBox(height: 8),
           Text(
             'Type a query to find posts or people',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withAlpha(153),
-            ),
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withAlpha(153)),
           ),
         ],
       ),
@@ -346,23 +346,20 @@ class _NoResultsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.search_off_outlined,
-            size: 64,
-            color: Theme.of(context).colorScheme.onSurface.withAlpha(127),
-          ),
+          Icon(Icons.search_off_outlined, size: 64, color: colorScheme.onSurface.withAlpha(127)),
           const SizedBox(height: 16),
-          Text(message, style: Theme.of(context).textTheme.headlineSmall),
+          Text(message, style: textTheme.headlineSmall),
           const SizedBox(height: 8),
           Text(
             'Try a different search term',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withAlpha(153),
-            ),
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withAlpha(153)),
           ),
         ],
       ),

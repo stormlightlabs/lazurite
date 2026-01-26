@@ -63,6 +63,9 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(conversationListProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Messages'), actions: null),
@@ -100,8 +103,8 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                         child: Text(
                           'Message Requests',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
+                          style: textTheme.titleSmall?.copyWith(
+                            color: colorScheme.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -131,8 +134,8 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                           child: Text(
                             'All Messages',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            style: textTheme.titleSmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -144,13 +147,13 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                         return Dismissible(
                           key: ValueKey(convo.convoId),
                           background: Container(
-                            color: Colors.blue,
+                            color: colorScheme.primary,
                             alignment: Alignment.centerLeft,
                             padding: const EdgeInsets.only(left: 20),
                             child: const Icon(Icons.mark_chat_read, color: Colors.white),
                           ),
                           secondaryBackground: Container(
-                            color: Colors.red,
+                            color: colorScheme.error,
                             alignment: Alignment.centerRight,
                             padding: const EdgeInsets.only(right: 20),
                             child: const Icon(Icons.delete, color: Colors.white),

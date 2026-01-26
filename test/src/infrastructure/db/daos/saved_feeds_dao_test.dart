@@ -568,7 +568,7 @@ void main() {
           sortOrder: 0,
           isPinned: const Value(false),
           lastSynced: DateTime(2025, 1, 1),
-          localUpdatedAt: Value(DateTime.now()), // SIMULATE LOCAL MODIFICATION
+          localUpdatedAt: Value(DateTime.now()),
         ),
       );
 
