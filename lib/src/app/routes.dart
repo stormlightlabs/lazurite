@@ -15,6 +15,7 @@ abstract final class AppRoutes {
   static const String callback = '/callback';
   static const String compose = '/compose';
   static const String drafts = '/drafts';
+  static const String scheduled = '/scheduled/:draftId';
 
   static const String settings = '/settings';
   static const String appearance = '/settings/appearance';
@@ -53,6 +54,7 @@ abstract final class AppRouteNames {
   static const String login = 'login';
   static const String callback = 'callback';
   static const String compose = 'compose';
+  static const String scheduled = 'scheduled';
   static const String settings = 'settings';
   static const String appearance = 'appearance';
   static const String about = 'about';

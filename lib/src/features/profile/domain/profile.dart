@@ -38,7 +38,6 @@ abstract class ProfileData with _$ProfileData {
 
   String get displayNameOrHandle => displayName ?? handle;
 
-  // Proxy getters for UI compatibility
   bool get viewerFollowing => viewer?.following != null;
   String? get viewerFollowUri => viewer?.following;
   bool get viewerMuted => viewer?.muted ?? false;

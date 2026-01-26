@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/features/composer/application/composer_notifier.dart';
 import 'package:lazurite/src/features/composer/application/composer_providers.dart';
@@ -19,6 +20,8 @@ import 'package:lazurite/src/features/composer/presentation/widgets/publish_butt
 import 'package:lazurite/src/features/composer/presentation/widgets/quote_post_card.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/reply_context_card.dart';
 import 'package:lazurite/src/features/composer/presentation/widgets/threading_settings_sheet.dart';
+import 'package:lazurite/src/features/scheduling/application/scheduling_providers.dart';
+import 'package:lazurite/src/features/scheduling/presentation/widgets/schedule_picker_sheet.dart';
 
 /// Maximum character limit for posts (grapheme clusters).
 const int kMaxPostLength = 300;
@@ -52,6 +55,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
   late TextEditingController _textController;
   int _characterCount = 0;
   String? _pendingThreadText;
+  DateTime? _scheduledForUtc;
 
   ComposerArgs get _args =>
       ComposerArgs(draftId: widget.draftId, replyTo: widget.replyTo, quoteTo: widget.quoteTo);
@@ -97,6 +101,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
   }
 
   bool get _isOverLimit => _characterCount > kMaxPostLength;
+
   void _splitText() {
     final text = _textController.text;
     final characters = text.characters;
@@ -219,6 +224,85 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
       await notifier.deleteDraft();
       if (mounted) context.pop();
     }
+  }
+
+  Future<void> _scheduleForLater() async {
+    if (!_canPublish) return;
+
+    final result = await showModalBottomSheet<DateTime>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: SchedulePickerSheet(initialScheduledAt: _scheduledForUtc),
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() => _scheduledForUtc = result);
+      await _saveSchedule();
+    }
+  }
+
+  Future<void> _saveSchedule() async {
+    if (_scheduledForUtc == null) return;
+
+    final notifier = ref.read(composerProvider(_args).notifier);
+    final state = ref.read(composerProvider(_args)).asData?.value;
+    final draft = state?.draft;
+
+    if (draft == null) {
+      await notifier.forceSave(_textController.text);
+    }
+
+    final currentDraft = ref.read(composerProvider(_args)).asData?.value.draft;
+    if (currentDraft == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to save draft')));
+      }
+      return;
+    }
+
+    try {
+      final scheduleRepo = ref.read(scheduleRepositoryProvider);
+      final scheduler = ref.read(schedulerProvider);
+
+      await scheduleRepo.upsertSchedule(
+        draftId: currentDraft.id,
+        scheduledAtUtc: _scheduledForUtc!,
+      );
+
+      await scheduler.schedule(currentDraft.id, _scheduledForUtc!);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Scheduled for ${DateFormat('MMM d, y • h:mm a').format(_scheduledForUtc!.toLocal())}',
+            ),
+          ),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to schedule: ${errorMessage(e)}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _clearSchedule() {
+    setState(() => _scheduledForUtc = null);
   }
 
   Future<void> _pickMedia() async {
@@ -421,7 +505,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
     }
   }
 
-  Future<void> _openContentWarningSelector() async {
+  Future<void> _openCWSelector() async {
     final composerState = ref.read(composerProvider(_args)).asData?.value;
     final currentLabels = composerState?.draft?.labels ?? [];
 
@@ -502,6 +586,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final insets = MediaQuery.of(context).viewInsets.bottom;
+    final textTheme = theme.textTheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -513,6 +598,16 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (_isOverLimit) TextButton(onPressed: _splitText, child: const Text('Split')),
+                TextButton.icon(
+                  onPressed: _canPublish ? _scheduleForLater : null,
+                  icon: const Icon(Icons.schedule),
+                  label: const Text('Schedule'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: _scheduledForUtc != null
+                        ? colorScheme.primary
+                        : colorScheme.onSurface,
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: PublishButton(
@@ -590,19 +685,28 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              AnimatedSwitcher(
-                                duration: _kComposerAnimationDuration,
-                                child: _pendingThreadText != null
-                                    ? const Tooltip(
-                                        message: 'Continue this thread after posting',
-                                        child: Chip(
-                                          key: ValueKey('thread-indicator'),
-                                          avatar: Icon(Icons.forum_outlined, size: 16),
-                                          label: Text('Next post ready'),
-                                        ),
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
+                              ...[
+                                if (_pendingThreadText != null)
+                                  const Tooltip(
+                                    message: 'Continue this thread after posting',
+                                    child: Chip(
+                                      avatar: Icon(Icons.forum_outlined, size: 16),
+                                      label: Text('Next post ready'),
+                                    ),
+                                  ),
+                                if (_scheduledForUtc != null)
+                                  Tooltip(
+                                    message:
+                                        'Scheduled for ${DateFormat('MMM d, y • h:mm a').format(_scheduledForUtc!.toLocal())}',
+                                    child: Chip(
+                                      avatar: const Icon(Icons.schedule, size: 16),
+                                      label: Text(
+                                        'Scheduled for ${DateFormat('MMM d, h:mm a').format(_scheduledForUtc!.toLocal())}',
+                                      ),
+                                      onDeleted: _clearSchedule,
+                                    ),
+                                  ),
+                              ],
                             ],
                           ),
                         ),
@@ -615,116 +719,18 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               if (state.draft?.langs.isNotEmpty ?? false)
-                                ...state.draft!.langs.map(
-                                  (lang) => LanguagePill(
-                                    code: lang,
-                                    onRemove: () => ref
-                                        .read(composerProvider(_args).notifier)
-                                        .setLanguages(
-                                          state.draft!.langs.where((l) => l != lang).toList(),
-                                        ),
-                                  ),
-                                ),
-                              InkWell(
-                                onTap: _openLanguageSelector,
-                                borderRadius: BorderRadius.circular(20),
-                                child: Container(
-                                  height: 32,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: colorScheme.outlineVariant),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.language,
-                                        size: 16,
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        state.draft?.langs.isEmpty ?? true
-                                            ? 'Add language'
-                                            : 'Add',
-                                        style: theme.textTheme.labelSmall?.copyWith(
-                                          color: colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                                ..._langPills(state.draft, state.draft!.langs),
+                              _buildLanguageSelector(state.draft, colorScheme, theme.textTheme),
                               ContentWarningButton(
                                 labels: state.draft?.labels ?? [],
-                                onTap: _openContentWarningSelector,
+                                onTap: _openCWSelector,
                               ),
-                              InkWell(
-                                onTap: _openThreadingSettings,
-                                borderRadius: BorderRadius.circular(20),
-                                child: Container(
-                                  height: 32,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        state.draft?.threadGateType != null ||
-                                            state.draft?.quoteDisabled == true
-                                        ? colorScheme.secondaryContainer
-                                        : colorScheme.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        _getThreadingIcon(state.draft),
-                                        size: 16,
-                                        color:
-                                            state.draft?.threadGateType != null ||
-                                                state.draft?.quoteDisabled == true
-                                            ? colorScheme.onSecondaryContainer
-                                            : colorScheme.onSurfaceVariant,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        _getThreadingLabel(state.draft),
-                                        style: theme.textTheme.labelSmall?.copyWith(
-                                          color:
-                                              state.draft?.threadGateType != null ||
-                                                  state.draft?.quoteDisabled == true
-                                              ? colorScheme.onSecondaryContainer
-                                              : colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                              _buildThreadingSettings(state.draft, colorScheme, theme.textTheme),
                             ],
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Card(
-                            elevation: 0,
-                            color: colorScheme.surfaceContainerLow,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: MediaPickerRow(
-                              mediaPaths: mediaPaths,
-                              mediaTypes: mediaTypes,
-                              onAddMedia: _pickMedia,
-                              onRemoveMedia: _removeMedia,
-                              onTapMedia: _openAltTextEditor,
-                              altTextIndicators:
-                                  state.draft?.media
-                                      .map((m) => m.altText != null && m.altText!.isNotEmpty)
-                                      .toList() ??
-                                  [],
-                            ),
-                          ),
-                        ),
+                        _buildMediaPicker(state.draft, mediaPaths, mediaTypes, colorScheme),
                         if (state.quotePost != null)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -737,28 +743,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
                         AnimatedSwitcher(
                           duration: _kComposerAnimationDuration,
                           child: state.error != null
-                              ? Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: colorScheme.errorContainer,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.error_outline, color: colorScheme.error),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            state.error!,
-                                            style: TextStyle(color: colorScheme.onErrorContainer),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
+                              ? _buildErrorView(state.error!, colorScheme)
                               : const SizedBox.shrink(),
                         ),
                       ],
@@ -775,22 +760,142 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> with WidgetsBin
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: colorScheme.error),
-              const SizedBox(height: 16),
-              Text('Failed to load composer', style: theme.textTheme.bodyLarge),
-              const SizedBox(height: 8),
-              Text(
-                errorMessage(error),
-                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+        error: (error, _) => _buildAsyncErrorView(error, colorScheme, textTheme),
+      ),
+    );
+  }
+
+  List<Widget> _langPills(Draft? draft, List<String> langs) {
+    return langs.map((lang) {
+      return LanguagePill(
+        code: lang,
+        onRemove: () => ref
+            .read(composerProvider(_args).notifier)
+            .setLanguages(draft!.langs.where((l) => l != lang).toList()),
+      );
+    }).toList();
+  }
+
+  Widget _buildLanguageSelector(Draft? draft, ColorScheme colorScheme, TextTheme textTheme) {
+    return InkWell(
+      onTap: _openLanguageSelector,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(20),
         ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.language, size: 16, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text(
+              draft?.langs.isEmpty ?? true ? 'Add language' : 'Add',
+              style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThreadingSettings(Draft? draft, ColorScheme colorScheme, TextTheme textTheme) {
+    final textColor = draft?.threadGateType != null || draft?.quoteDisabled == true
+        ? colorScheme.onSecondaryContainer
+        : colorScheme.onSurfaceVariant;
+
+    final decorationColor = draft?.threadGateType != null || draft?.quoteDisabled == true
+        ? colorScheme.secondaryContainer
+        : colorScheme.surfaceContainerHighest;
+
+    return InkWell(
+      onTap: _openThreadingSettings,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(color: decorationColor, borderRadius: BorderRadius.circular(20)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(_getThreadingIcon(draft), size: 16, color: textColor),
+            const SizedBox(width: 6),
+            Text(
+              _getThreadingLabel(draft),
+              style: textTheme.labelSmall?.copyWith(color: textColor),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMediaPicker(
+    Draft? draft,
+    List<String> mediaPaths,
+    List<String> mediaTypes,
+    ColorScheme colorScheme,
+  ) {
+    final indicators =
+        draft?.media.map((m) => m.altText != null && m.altText!.isNotEmpty).toList() ?? [];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Card(
+        elevation: 0,
+        color: colorScheme.surfaceContainerLow,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: MediaPickerRow(
+          mediaPaths: mediaPaths,
+          mediaTypes: mediaTypes,
+          onAddMedia: _pickMedia,
+          onRemoveMedia: _removeMedia,
+          onTapMedia: _openAltTextEditor,
+          altTextIndicators: indicators,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorView(String? error, ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: colorScheme.error),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(error!, style: TextStyle(color: colorScheme.onErrorContainer)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAsyncErrorView(Object? error, ColorScheme colorScheme, TextTheme textTheme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+          const SizedBox(height: 16),
+          Text('Failed to load composer', style: textTheme.bodyLarge),
+          const SizedBox(height: 8),
+          Text(
+            errorMessage(error),
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

@@ -15,11 +15,11 @@ Milestone 1: Code Quality & Architecture                              *bsky-O-1*
 - [x] Architecture patterns documented in doc/architecture.md
 - [x] Testing patterns documented in doc/testing.md
 - [x] Error handling standardization and documentation in doc/errors.md
-- [ ] Type safety improvements: freezed for critical models, typed JSON parsing
+- [x] Type safety improvements: freezed for critical models, typed JSON parsing
 
 Tests:
 - [x] Error handling tests for standard error types
-- [ ] Type safety validation across domain models
+- [x] Type safety validation across domain models
 
 Definition of Done:
 - All features follow domain/application/infrastructure layers
@@ -166,7 +166,6 @@ Deliverables:
 - [x] GIF support parity
 - [x] Thread composition functionality
 - [x] Language tagging support
-- [ ] Post scheduling functionality
 
 --------------------------------------------------------------------------------
 Post Scheduling (Drafts -> Scheduled -> Posted)                     *bsky-sched*
@@ -220,13 +219,13 @@ Notification Scheduling                                           *bsky-sched-2*
 User taps notification to post in foreground (reliable, simple)
 
 Tasks:
-- [ ] Add flutter_local_notifications dependency
-- [ ] Local notification scheduling with timezone awareness
-- [ ] Notification payload with draftId and deep link
-- [ ] Route handler: /scheduled/{draftId} with "Post now/Edit/Cancel" actions
-- [ ] Notification tap triggers PostPublisher in foreground
-- [ ] Draft editor: "Schedule" button with date/time picker (default: next hour)
-- [ ] Schedule badge in editor: "Scheduled for Jan 11, 2026 09:00"
+- [x] Add flutter_local_notifications dependency
+- [x] Local notification scheduling with timezone awareness
+- [x] Notification payload with draftId and deep link
+- [x] Route handler: /scheduled/{draftId} with "Post now/Edit/Cancel" actions
+- [x] Notification tap triggers PostPublisher in foreground
+- [x] Draft editor: "Schedule" button with date/time picker (default: next hour)
+- [x] Schedule badge in editor: "Scheduled for Jan 11, 2026 09:00"
 
 Tests:
 - [ ] Notification scheduling with correct timezone handling
@@ -309,7 +308,7 @@ INITIAL RELEASE (Lazurite-0.1.0-alpha)                               *bsky-init*
 ================================================================================
 
 This section defines features required for the initial alpha release. Active
-work sections (O: Hardening, A: Composer Parity) contribute to these goals.
+work sections contribute to these goals.
 
 Complete Notifications System                                      *bsky-notifs*
 --------------------------------------------------------------------------------

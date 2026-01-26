@@ -34,6 +34,7 @@ import 'package:lazurite/src/infrastructure/identity/identity_repository.dart';
 import 'package:lazurite/src/infrastructure/network/network.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
 import 'package:lazurite/src/infrastructure/preferences/bluesky_preferences_repository.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockLogger extends Mock implements Logger {}
@@ -120,6 +121,8 @@ class FakeSession extends Fake implements Session {}
 class FakeServerMetadata extends Fake implements ServerMetadata {}
 
 class MockTenorService extends Mock implements TenorService {}
+
+class MockFlutterLocalNotificationsPlugin extends Mock implements FlutterLocalNotificationsPlugin {}
 
 class FakeFile extends Fake implements io.File {
   FakeFile({required this.path});

@@ -32,6 +32,7 @@ import 'package:lazurite/src/features/profile/presentation/following_page.dart';
 import 'package:lazurite/src/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/src/features/search/presentation/search_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/about_screen.dart';
+import 'package:lazurite/src/features/scheduling/presentation/screens/scheduled_post_detail_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/accessibility_settings_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/content_moderation_screen.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/feed_preferences_screen.dart';
@@ -394,6 +395,17 @@ GoRouter createRouter(Ref ref) {
             },
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.scheduled,
+        name: AppRouteNames.scheduled,
+        builder: (context, state) {
+          final draftId = state.pathParameters['draftId'];
+          if (draftId == null || draftId.isEmpty) {
+            return const Scaffold(body: Center(child: Text('Invalid scheduled post link')));
+          }
+          return ScheduledPostDetailScreen(draftId: draftId);
+        },
       ),
       GoRoute(
         path: '/bookmarks',
