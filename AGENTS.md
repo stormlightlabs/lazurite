@@ -1,64 +1,39 @@
-# Repository Guidelines
+# Agent Guidelines
 
-## Project Structure & Module Organization
+This document provides a high-level overview for contributors (human and AI agents)
+working on Lazurite.
 
-```sh
-.
-├── lib/
-│   └── src/
-│       ├── app/                # Bootstrap widgets
-│       ├── core/               # Shared utilities
-│       ├── features/           # User-facing flows
-│       └── infrastructure/     # Network + persistence
-├── test/
-│   └── src/
-├── android/                    # Android app
-├── ios/                        # iOS app
-├── doc/                        # Documentation
-├── build/                      # Build artifacts
-└── coverage/                   # Test coverage
-```
+## Core Documentation Map
 
-## Development Commands
+- [**Architecture Overview**](./doc/ARCHITECTURE.md):
+  Project structure, layered architecture (Domain, Infrastructure, Application, Presentation),
+  and multi-account isolation.
+- [**Development Workflow**](./doc/DEVELOPMENT_WORKFLOW.md):
+  Build commands, style guide, naming conventions, and commit standards.
+- [**Testing Guide**](./doc/testing/README.md):
+  Test organization, execution via `just`, and troubleshooting.
+- [**Patterns**](./doc/PATTERNS.md):
+  Advanced state management and coding patterns.
 
-Use `just` targets:
+## Development Checklist
 
-- `just format` runs `dart format lib test`.
-- `just lint` proxies `flutter analyze`.
-- `just test` executes the full `flutter test` suite.
-    - To pinpoint errors, use `just test-quiet` for cleaner output.
-- `just gen` invokes `dart run build_runner build --delete-conflicting-outputs`.
-- `just check` performs format + lint + test before commits.
+Before committing and submitting a PR, ensure you have:
 
-For local smoke runs, use `flutter run -d android`, `flutter run -d chrome`, or `flutter run -d ios`
-(once dependencies are fetched with `flutter pub get`).
+1. Ran `just check` to format, lint, and test your changes.
+2. Verified that all generated code is up to date (`just gen`).
+3. Added unit tests for new logic and verified coverage targets (>95%).
+4. Followed [Conventional Commits](https://www.conventionalcommits.org/).
 
-## Style & Naming
+## Coding Standards Summary
 
-Dart files use 2-space indentation and must pass `dart format`.
+| Category             | Standard                              |
+| :------------------- | :------------------------------------ |
+| **Language**         | Dart with 2-space indentation         |
+| **State Management** | Riverpod + Freezed                    |
+| **Logic Layering**   | Strict separation between UI and Data |
+| **Database**         | Drift with reactive streams           |
+| **Naming**           | widgets: `PascalCase`                 |
+|                      | members: `lowerCamelCase`             |
+|                      | files: `snake_case`                   |
 
-Follow Flutter’s preferred naming: PascalCase for widgets/services, lowerCamelCase for
-members, and snake_case for files like `feature_feed_view.dart`.
-
-Linting rules are in `analysis_options.yaml`.  Address `flutter analyze` diagnostics as
-quickly as possible.
-
-DI wiring is centralized in `lib/src/core` to keep `main.dart` lean.
-
-## Testing
-
-Place unit tests beside their feature mirror (e.g., `lib/src/features/feed` → `test/src/features/feed`). Test files end with `_test.dart` and group cases with `group()` labels describing behavior.
-
-Run `just test` before pushing; add `flutter test --coverage` when validating regressions that touch networking or auth. As stated above, use `test-quiet` for quieter output (this is
-equivalent to running `flutter test --reporter=failures-only`)
-
-We prefer fake data builders from `test/helpers` and avoid real network calls.
-The infrastructure layer already exposes abstraction seams for mocking.
-
-We aim for > 95% coverage targets.
-
-Common pitfalls are documented in a dedicated [testing](./doc/testing.md) document.
-
-## Commits
-
-Commit history follows Conventional Commits (`feat:`, `fix:`, `chore:`).
+For deep dives into specific subsystems, refer to the files in the `doc/` directory.

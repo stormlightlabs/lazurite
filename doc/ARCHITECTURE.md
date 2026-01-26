@@ -1,5 +1,24 @@
 # Lazurite Architecture
 
+## Project Structure
+
+```sh
+.
+├── lib/
+│   └── src/
+│       ├── app/                # Bootstrap widgets
+│       ├── core/               # Shared utilities
+│       ├── features/           # User-facing flows
+│       └── infrastructure/     # Network + persistence
+├── test/
+│   └── src/
+├── android/                    # Android app
+├── ios/                        # iOS app
+├── doc/                        # Documentation
+├── build/                      # Build artifacts
+└── coverage/                   # Test coverage
+```
+
 ## Core Principles
 
 ### Separation of Concerns
