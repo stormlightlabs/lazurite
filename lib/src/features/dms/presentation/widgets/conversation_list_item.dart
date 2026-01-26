@@ -51,17 +51,19 @@ class ConversationListItem extends StatelessWidget {
   List<Widget> _buildLastMessageTime(
     TextTheme textTheme,
     ColorScheme colorScheme,
-    DateTime lastMessageAt,
+    DateTime? lastMessageAt,
   ) {
     return [
+      Expanded(child: _buildOtherPartyName(textTheme)),
       const SizedBox(width: 8),
-      Text(
-        DateFormatter.formatRelative(lastMessageAt),
-        style: textTheme.bodySmall?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-          fontWeight: conversation.hasUnread ? FontWeight.bold : FontWeight.normal,
+      if (lastMessageAt != null)
+        Text(
+          DateFormatter.formatRelative(lastMessageAt),
+          style: textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: conversation.hasUnread ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
-      ),
     ];
   }
 
@@ -89,50 +91,15 @@ class ConversationListItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(child: _buildOtherPartyName(textTheme)),
-                        if (lastMessageAt != null)
-                          ..._buildLastMessageTime(textTheme, colorScheme, lastMessageAt),
-                      ],
-                    ),
+                    Row(children: _buildLastMessageTime(textTheme, colorScheme, lastMessageAt)),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         Expanded(child: _buildLastMessage(textTheme, colorScheme)),
-                        if (conversation.unreadCount > 0) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              conversation.unreadCount.toString(),
-                              style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                        if (!conversation.isAccepted) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: colorScheme.tertiaryContainer,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'Request',
-                              style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onTertiaryContainer,
-                              ),
-                            ),
-                          ),
-                        ],
+                        if (conversation.unreadCount > 0)
+                          ..._buildUnreadCount(colorScheme, textTheme),
+                        if (!conversation.isAccepted)
+                          ..._buildRequestLabel(colorScheme, textTheme),
                       ],
                     ),
                   ],
@@ -143,5 +110,42 @@ class ConversationListItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildUnreadCount(ColorScheme colorScheme, TextTheme textTheme) {
+    return [
+      const SizedBox(width: 8),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: colorScheme.primary,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          conversation.unreadCount.toString(),
+          style: textTheme.labelSmall?.copyWith(
+            color: colorScheme.onPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _buildRequestLabel(ColorScheme colorScheme, TextTheme textTheme) {
+    return [
+      const SizedBox(width: 8),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: colorScheme.tertiaryContainer,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          'Request',
+          style: textTheme.labelSmall?.copyWith(color: colorScheme.onTertiaryContainer),
+        ),
+      ),
+    ];
   }
 }

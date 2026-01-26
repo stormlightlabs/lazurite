@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/src/app/providers.dart';
-
-import '../../../infrastructure/db/app_database.dart';
+import 'package:lazurite/src/infrastructure/db/app_database.dart';
 
 /// Tab for inspecting network traffic in the debug drawer.
 class NetworkInspectorTab extends ConsumerWidget {

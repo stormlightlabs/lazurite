@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lazurite/src/features/debug/application/debug_overlay_controller.dart';
 
-import '../application/debug_overlay_controller.dart';
 import 'debug_drawer.dart';
 
 /// Host widget that wraps the app and provides debug overlay functionality.
@@ -33,6 +33,24 @@ class _DebugOverlayHostState extends ConsumerState<DebugOverlayHost> {
   /// Focus node for keyboard shortcuts.
   final _focusNode = FocusNode();
 
+  List<Widget> _buildOverlay() {
+    return [
+      Positioned.fill(
+        child: GestureDetector(
+          onTap: () => ref.read(debugOverlayControllerProvider.notifier).hide(),
+          child: Container(color: Colors.black.withValues(alpha: 0.3)),
+        ),
+      ),
+      Positioned(
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: 320,
+        child: widget.drawerBuilder?.call(context) ?? const DebugDrawer(),
+      ),
+    ];
+  }
+
   @override
   void dispose() {
     _focusNode.dispose();
@@ -42,12 +60,8 @@ class _DebugOverlayHostState extends ConsumerState<DebugOverlayHost> {
 
   @override
   Widget build(BuildContext context) {
-    if (!kDebugMode) {
-      return widget.child;
-    }
-
+    if (!kDebugMode) return widget.child;
     final overlayState = ref.watch(debugOverlayControllerProvider);
-
     return KeyboardListener(
       focusNode: _focusNode,
       autofocus: true,
@@ -56,26 +70,7 @@ class _DebugOverlayHostState extends ConsumerState<DebugOverlayHost> {
         onPointerDown: _handlePointerDown,
         onPointerUp: _handlePointerUp,
         onPointerCancel: _handlePointerUp,
-        child: Stack(
-          children: [
-            widget.child,
-            if (overlayState.isVisible) ...[
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: () => ref.read(debugOverlayControllerProvider.notifier).hide(),
-                  child: Container(color: Colors.black.withValues(alpha: 0.3)),
-                ),
-              ),
-              Positioned(
-                top: 0,
-                right: 0,
-                bottom: 0,
-                width: 320,
-                child: widget.drawerBuilder?.call(context) ?? const DebugDrawer(),
-              ),
-            ],
-          ],
-        ),
+        child: Stack(children: [widget.child, if (overlayState.isVisible) ..._buildOverlay()]),
       ),
     );
   }

@@ -28,6 +28,8 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final colorScheme = theme.colorScheme;
 
     return Center(
       child: Padding(
@@ -36,23 +38,29 @@ class EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: theme.colorScheme.primary.withAlpha(153)),
+            Icon(icon, size: 64, color: colorScheme.primary.withAlpha(153)),
             const SizedBox(height: 16),
-            Text(title, style: theme.textTheme.headlineSmall, textAlign: TextAlign.center),
-            if (subtitle != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                subtitle!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withAlpha(153),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+            Text(title, style: textTheme.headlineSmall, textAlign: TextAlign.center),
+            ..._buildSubtitle(textTheme, colorScheme),
             if (action != null) ...[const SizedBox(height: 24), action!],
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _buildSubtitle(TextTheme textTheme, ColorScheme colorScheme) {
+    if (subtitle != null) {
+      return [
+        const SizedBox(height: 8),
+        Text(
+          subtitle!,
+          style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withAlpha(153)),
+          textAlign: TextAlign.center,
+        ),
+      ];
+    }
+
+    return [];
   }
 }

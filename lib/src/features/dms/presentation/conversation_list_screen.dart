@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/core/animations/animation_utils.dart';
 import 'package:lazurite/src/core/utils/error_message.dart';
+import 'package:lazurite/src/core/widgets/empty_state.dart';
+import 'package:lazurite/src/core/widgets/error_view.dart';
+import 'package:lazurite/src/core/widgets/loading_view.dart';
+import 'package:lazurite/src/core/widgets/pull_to_refresh_wrapper.dart';
+import 'package:lazurite/src/features/dms/domain/dm_conversation.dart';
 import 'package:lazurite/src/features/dms/presentation/widgets/message_request_card.dart';
 
-import '../../../core/animations/animation_utils.dart';
-import '../../../core/widgets/empty_state.dart';
-import '../../../core/widgets/error_view.dart';
-import '../../../core/widgets/loading_view.dart';
-import '../../../core/widgets/pull_to_refresh_wrapper.dart';
 import 'conversation_list_notifier.dart';
 import 'widgets/conversation_list_item.dart';
 
@@ -60,6 +61,128 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
     );
   }
 
+  void _pop(BuildContext context, {bool? result}) => Navigator.pop(context, result);
+
+  void _tapMute(BuildContext context, DmConversation convo) {
+    _pop(context);
+    final notifier = ref.read(conversationListProvider.notifier);
+    if (convo.isMuted) {
+      notifier.unmuteConversation(convo.convoId);
+    } else {
+      notifier.muteConversation(convo.convoId);
+    }
+  }
+
+  Widget _buildEmptyRefresher() {
+    return PullToRefreshWrapper(
+      onRefresh: () => ref.read(conversationListProvider.notifier).refresh(),
+      child: const SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        child: EmptyState(
+          icon: Icons.chat_bubble_outline,
+          title: 'No messages yet',
+          subtitle: 'Start a conversation with someone!',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListTitle(TextTheme textTheme, ColorScheme colorScheme) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Text(
+          'Message Requests',
+          style: textTheme.titleSmall?.copyWith(
+            color: colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _acceptConversation(String convoId) async {
+    await ref.read(conversationListProvider.notifier).acceptConversation(convoId);
+  }
+
+  Widget _muteIcon(bool muted) {
+    return Icon(muted ? Icons.notifications_off_outlined : Icons.notifications_outlined);
+  }
+
+  Widget _alertDialog(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Leave conversation?'),
+      content: const Text(
+        'This will remove the conversation from your inbox. You can rejoin if you receive a new message.',
+      ),
+      actions: [
+        TextButton(onPressed: () => _pop(context, result: false), child: const Text('Cancel')),
+        TextButton(onPressed: () => _pop(context, result: true), child: const Text('Leave')),
+      ],
+    );
+  }
+
+  Future<bool> _onDismiss(
+    BuildContext context,
+    DmConversation convo,
+    DismissDirection direction,
+  ) async {
+    final notifier = ref.read(conversationListProvider.notifier);
+    if (direction == DismissDirection.startToEnd) {
+      await notifier.markAsRead(convo.convoId);
+      return false;
+    } else {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => _alertDialog(context),
+      );
+
+      if (confirm == true) {
+        await notifier.leaveConversation(convo.convoId);
+        return true;
+      }
+      return false;
+    }
+  }
+
+  Widget _conversationListItem(BuildContext context, DmConversation convo) {
+    return ConversationListItem(
+      conversation: convo,
+      onTap: () => context.push('/messages/${convo.convoId}'),
+      onLongPress: () {
+        showModalBottomSheet(
+          context: context,
+          builder: (context) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: _muteIcon(convo.isMuted),
+                title: Text(convo.isMuted ? 'Unmute' : 'Mute'),
+                onTap: () => _tapMute(context, convo),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildShowAll(TextTheme textTheme, ColorScheme colorScheme) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Text(
+          'All Messages',
+          style: textTheme.titleSmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(conversationListProvider);
@@ -72,24 +195,12 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
       body: AnimatedContentSwitcher(
         child: state.when(
           data: (conversations) {
-            if (conversations.isEmpty) {
-              return PullToRefreshWrapper(
-                onRefresh: () => ref.read(conversationListProvider.notifier).refresh(),
-                child: const SingleChildScrollView(
-                  physics: AlwaysScrollableScrollPhysics(),
-                  child: EmptyState(
-                    icon: Icons.chat_bubble_outline,
-                    title: 'No messages yet',
-                    subtitle: 'Start a conversation with someone!',
-                  ),
-                ),
-              );
-            }
+            if (conversations.isEmpty) return _buildEmptyRefresher();
 
+            final active = conversations.where((c) => c.isAccepted).toList();
             final requests = conversations
                 .where((c) => !c.isAccepted && !_declinedConvoIds.contains(c.convoId))
                 .toList();
-            final active = conversations.where((c) => c.isAccepted).toList();
 
             return PullToRefreshWrapper(
               onRefresh: () => ref.read(conversationListProvider.notifier).refresh(),
@@ -98,29 +209,14 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   if (requests.isNotEmpty) ...[
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        child: Text(
-                          'Message Requests',
-                          style: textTheme.titleSmall?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
+                    _buildListTitle(textTheme, colorScheme),
                     SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final convo = requests[index];
                         return MessageRequestCard(
                           conversation: convo,
                           onTap: () => context.push('/messages/${convo.convoId}'),
-                          onAccept: () async {
-                            await ref
-                                .read(conversationListProvider.notifier)
-                                .acceptConversation(convo.convoId);
-                          },
+                          onAccept: () async => await _acceptConversation(convo.convoId),
                           onDecline: () => _declineConversation(convo.convoId),
                         );
                       }, childCount: requests.length),
@@ -128,19 +224,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                     const SliverToBoxAdapter(child: Divider()),
                   ],
                   if (active.isNotEmpty) ...[
-                    if (requests.isNotEmpty)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                          child: Text(
-                            'All Messages',
-                            style: textTheme.titleSmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
+                    if (requests.isNotEmpty) _buildShowAll(textTheme, colorScheme),
                     SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final convo = active[index];
@@ -159,71 +243,9 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                             child: const Icon(Icons.delete, color: Colors.white),
                           ),
                           confirmDismiss: (direction) async {
-                            final notifier = ref.read(conversationListProvider.notifier);
-                            if (direction == DismissDirection.startToEnd) {
-                              await notifier.markAsRead(convo.convoId);
-                              return false;
-                            } else {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Leave conversation?'),
-                                  content: const Text(
-                                    'This will remove the conversation from your inbox. You can rejoin if you receive a new message.',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context, false),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context, true),
-                                      child: const Text('Leave'),
-                                    ),
-                                  ],
-                                ),
-                              );
-
-                              if (confirm == true) {
-                                await notifier.leaveConversation(convo.convoId);
-                                return true;
-                              }
-                              return false;
-                            }
+                            return await _onDismiss(context, convo, direction);
                           },
-                          child: ConversationListItem(
-                            conversation: convo,
-                            onTap: () => context.push('/messages/${convo.convoId}'),
-                            onLongPress: () {
-                              showModalBottomSheet(
-                                context: context,
-                                builder: (context) => Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    ListTile(
-                                      leading: Icon(
-                                        convo.isMuted
-                                            ? Icons.notifications_off_outlined
-                                            : Icons.notifications_outlined,
-                                      ),
-                                      title: Text(convo.isMuted ? 'Unmute' : 'Mute'),
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        final notifier = ref.read(
-                                          conversationListProvider.notifier,
-                                        );
-                                        if (convo.isMuted) {
-                                          notifier.unmuteConversation(convo.convoId);
-                                        } else {
-                                          notifier.muteConversation(convo.convoId);
-                                        }
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
+                          child: _conversationListItem(context, convo),
                         );
                       }, childCount: active.length),
                     ),

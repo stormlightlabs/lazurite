@@ -131,41 +131,39 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.black,
-    extendBodyBehindAppBar: true,
-    body: _DismissDetector(
-      onDismiss: () => Navigator.of(context).pop(),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            onPageChanged: _handlePageChanged,
-            itemCount: widget.images.length,
-            itemBuilder: (context, index) {
-              return _ZoomableImagePage(
-                image: widget.images[index],
-                heroTag: FullscreenImageViewer.heroTag(
-                  widget.images[index]['fullsize'] as String? ?? '',
-                  index,
-                ),
-              );
-            },
-          ),
-          FullscreenViewerOverlay(
-            currentIndex: _currentIndex,
-            totalCount: widget.images.length,
-            onClose: () => Navigator.of(context).pop(),
-            onDownload: () => _downloadImage(context),
-            shareUrl: widget.images[_currentIndex]['fullsize'] as String?,
-            altText: widget.images[_currentIndex]['alt'] as String?,
-            onAltTextTap: () => _showAltTextDialog(context),
-          ),
-        ],
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
+      body: _DismissDetector(
+        onDismiss: () => Navigator.of(context).pop(),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            PageView.builder(
+              controller: _pageController,
+              onPageChanged: _handlePageChanged,
+              itemCount: widget.images.length,
+              itemBuilder: (context, index) {
+                final img = widget.images[index];
+                final tag = FullscreenImageViewer.heroTag(img['fullsize'] as String? ?? '', index);
+                return _ZoomableImagePage(image: img, heroTag: tag);
+              },
+            ),
+            FullscreenViewerOverlay(
+              currentIndex: _currentIndex,
+              totalCount: widget.images.length,
+              onClose: () => Navigator.of(context).pop(),
+              onDownload: () => _downloadImage(context),
+              shareUrl: widget.images[_currentIndex]['fullsize'] as String?,
+              altText: widget.images[_currentIndex]['alt'] as String?,
+              onAltTextTap: () => _showAltTextDialog(context),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Single zoomable image page with double-tap to zoom.
@@ -210,6 +208,35 @@ class _ZoomableImagePageState extends State<_ZoomableImagePage> {
     });
   }
 
+  Widget _buildResponsiveNetworkImage(String fullsize, double aspectRatio) {
+    return AspectRatio(
+      aspectRatio: aspectRatio,
+      child: Image.network(
+        fullsize,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          const icon = Icon(Icons.broken_image, color: Colors.white24, size: 64);
+          return Container(
+            color: Colors.black,
+            child: const Center(child: icon),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          final progress = loadingProgress.expectedTotalBytes != null
+              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+              : null;
+          final indicator = CircularProgressIndicator(value: progress);
+
+          return Container(
+            color: Colors.black,
+            child: Center(child: indicator),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final fullsize = widget.image['fullsize'] as String? ?? '';
@@ -232,36 +259,7 @@ class _ZoomableImagePageState extends State<_ZoomableImagePage> {
               transformationController: _transformationController,
               minScale: 1.0,
               maxScale: 4.0,
-              child: AspectRatio(
-                aspectRatio: aspectRatio,
-                child: Image.network(
-                  fullsize,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.black,
-                      child: const Center(
-                        child: Icon(Icons.broken_image, color: Colors.white24, size: 64),
-                      ),
-                    );
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: Colors.black,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                              : null,
-                          color: Colors.white,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+              child: _buildResponsiveNetworkImage(fullsize, aspectRatio),
             ),
           ),
         ),

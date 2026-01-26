@@ -20,6 +20,8 @@ class ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final colorScheme = theme.colorScheme;
 
     return Center(
       child: Padding(
@@ -28,19 +30,10 @@ class ErrorView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error.withAlpha(153)),
+            Icon(Icons.error_outline, size: 64, color: colorScheme.error.withAlpha(153)),
             const SizedBox(height: 16),
-            Text(title, style: theme.textTheme.headlineSmall, textAlign: TextAlign.center),
-            if (message != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                message!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withAlpha(153),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+            Text(title, style: textTheme.headlineSmall, textAlign: TextAlign.center),
+            ..._buildMessage(textTheme, colorScheme),
             if (onRetry != null) ...[
               const SizedBox(height: 24),
               FilledButton.icon(
@@ -53,5 +46,20 @@ class ErrorView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildMessage(TextTheme textTheme, ColorScheme colorScheme) {
+    if (message != null) {
+      return [
+        const SizedBox(height: 8),
+        Text(
+          message!,
+          style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withAlpha(153)),
+          textAlign: TextAlign.center,
+        ),
+      ];
+    }
+
+    return [];
   }
 }

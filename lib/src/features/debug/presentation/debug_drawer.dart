@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/app/router.dart';
+import 'package:lazurite/src/features/debug/application/debug_overlay_controller.dart';
 
-import '../../../app/router.dart';
-import '../application/debug_overlay_controller.dart';
 import 'atproto_session_tab.dart';
 import 'network_inspector_tab.dart';
 import 'system_info_tab.dart';
