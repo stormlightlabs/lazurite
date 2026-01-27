@@ -122,7 +122,8 @@ class FakeServerMetadata extends Fake implements ServerMetadata {}
 
 class MockTenorService extends Mock implements TenorService {}
 
-class MockFlutterLocalNotificationsPlugin extends Mock implements FlutterLocalNotificationsPlugin {}
+class MockFlutterLocalNotificationsPlugin extends Mock
+    implements FlutterLocalNotificationsPlugin {}
 
 class FakeFile extends Fake implements io.File {
   FakeFile({required this.path});

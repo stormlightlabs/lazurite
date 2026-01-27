@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/core/utils/error_message.dart';
-import 'package:lazurite/src/core/widgets/error_view.dart';
-import 'package:lazurite/src/core/widgets/loading_view.dart';
+import 'package:lazurite/src/core/widgets/widgets.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/sync_status_provider.dart';
 
@@ -82,10 +81,7 @@ class FeedManagementScreen extends ConsumerWidget {
               final feed = feeds[index];
               return ListTile(
                 key: ValueKey(feed.uri),
-                leading: CircleAvatar(
-                  backgroundImage: feed.avatar != null ? NetworkImage(feed.avatar!) : null,
-                  child: feed.avatar == null ? const Icon(Icons.rss_feed) : null,
-                ),
+                leading: Avatar(imageUrl: feed.avatar, fallbackIcon: Icons.rss_feed, radius: 20),
                 title: Text(feed.displayName),
                 subtitle: Text(feed.isPinned ? 'Pinned' : 'Saved'),
                 trailing: Row(

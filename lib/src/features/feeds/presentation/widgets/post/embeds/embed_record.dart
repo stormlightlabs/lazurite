@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/core/widgets/avatar.dart';
+import 'package:lazurite/src/core/widgets/lazurite_image.dart';
 
 import 'embed_images.dart';
 
@@ -89,6 +91,7 @@ class _QuotedPostCard extends StatelessWidget {
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return GestureDetector(
       onTap: uri != null
@@ -110,40 +113,13 @@ class _QuotedPostCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                if (avatar != null && avatar.isNotEmpty)
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundImage: NetworkImage(avatar),
-                    onBackgroundImageError: (e, s) {},
-                  )
-                else
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: colorScheme.surfaceContainerHighest,
-                    child: Icon(Icons.person, size: 14, color: colorScheme.onSurfaceVariant),
-                  ),
+                Avatar(imageUrl: avatar, radius: 12),
                 const SizedBox(width: 8),
                 Expanded(
                   child: RichText(
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    text: TextSpan(
-                      children: [
-                        if (displayName.isNotEmpty)
-                          TextSpan(
-                            text: displayName,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        TextSpan(
-                          text: displayName.isNotEmpty ? ' @$handle' : '@$handle',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
+                    text: _buildAuthorText(textTheme, colorScheme, displayName, handle),
                   ),
                 ),
               ],
@@ -152,7 +128,7 @@ class _QuotedPostCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 text,
-                style: theme.textTheme.bodyMedium,
+                style: textTheme.bodyMedium,
                 maxLines: 6,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -164,6 +140,32 @@ class _QuotedPostCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  TextSpan _buildAuthorText(
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+    String displayName,
+    String handle,
+  ) {
+    return TextSpan(
+      children: [
+        if (displayName.isNotEmpty) ...[
+          TextSpan(
+            text: displayName,
+            style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          TextSpan(
+            text: '@$handle ($displayName)',
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+        ] else
+          TextSpan(
+            text: '@$handle',
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+      ],
     );
   }
 
@@ -253,16 +255,14 @@ class _FeedGeneratorCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-          if (avatar != null && avatar.isNotEmpty)
-            ClipRRect(
+          if (avatar != null)
+            LazuriteImage(
+              imageUrl: avatar,
+              width: 48,
+              height: 48,
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                avatar,
-                width: 48,
-                height: 48,
-                fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => _feedPlaceholder(colorScheme),
-              ),
+              placeholder: _feedPlaceholder(colorScheme),
+              errorWidget: _feedPlaceholder(colorScheme),
             )
           else
             _feedPlaceholder(colorScheme),
@@ -374,16 +374,14 @@ class _ListCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-          if (avatar != null && avatar.isNotEmpty)
-            ClipRRect(
+          if (avatar != null)
+            LazuriteImage(
+              imageUrl: avatar,
+              width: 48,
+              height: 48,
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                avatar,
-                width: 48,
-                height: 48,
-                fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => _listPlaceholder(colorScheme, purposeIcon),
-              ),
+              placeholder: _listPlaceholder(colorScheme, purposeIcon),
+              errorWidget: _listPlaceholder(colorScheme, purposeIcon),
             )
           else
             _listPlaceholder(colorScheme, purposeIcon),

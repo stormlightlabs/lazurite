@@ -7,6 +7,7 @@ import 'package:lazurite/src/core/constants/layout_constants.dart';
 import 'package:lazurite/src/core/domain/post.dart';
 import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/core/widgets/loading_view.dart';
+import 'package:lazurite/src/core/widgets/avatar.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/post/post_embeds.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
 import 'package:lazurite/src/features/search/domain/search_actor.dart';
@@ -411,13 +412,7 @@ class _SearchResultCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: post.author.avatar != null
-                      ? NetworkImage(post.author.avatar!)
-                      : null,
-                  child: post.author.avatar == null ? const Icon(Icons.person, size: 16) : null,
-                ),
+                Avatar(imageUrl: post.author.avatar, radius: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -488,11 +483,7 @@ class _ActorSearchResultCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundImage: actor.avatar != null ? NetworkImage(actor.avatar!) : null,
-              child: actor.avatar == null ? const Icon(Icons.person, size: 24) : null,
-            ),
+            Avatar(imageUrl: actor.avatar, radius: 24),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

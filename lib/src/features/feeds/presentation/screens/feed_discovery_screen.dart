@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lazurite/src/core/widgets/error_view.dart';
-import 'package:lazurite/src/core/widgets/loading_view.dart';
+import 'package:lazurite/src/core/widgets/widgets.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/presentation/widgets/feed_preview_modal.dart';
 
@@ -87,6 +86,7 @@ class FeedDiscoveryScreen extends ConsumerWidget {
                   );
                 }
 
+                // FIXME: These bools don't seem to be right
                 if (searchState.results.isEmpty && searchState.isLoading) {
                   return const LoadingView();
                 }
@@ -104,7 +104,6 @@ class FeedDiscoveryScreen extends ConsumerWidget {
                   separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final feedData = feeds[index];
-                    final creatorData = feedData['creator'] as Map<String, dynamic>?;
 
                     final uri = feedData['uri'];
                     if (uri is! String || uri.isEmpty) {
@@ -114,14 +113,7 @@ class FeedDiscoveryScreen extends ConsumerWidget {
                     return _buildFeedListTile(
                       context,
                       ref,
-                      _FeedListItemData(
-                        displayName: feedData['displayName'] as String? ?? 'Unknown Feed',
-                        description: feedData['description'] as String? ?? '',
-                        avatar: feedData['avatar'] as String?,
-                        creatorHandle: creatorData?['handle'] as String? ?? 'unknown',
-                        likeCount: feedData['likeCount'] as int? ?? 0,
-                        uri: uri,
-                      ),
+                      _FeedListItemData.fromMap(feedData, uri),
                     );
                   },
                 );
@@ -133,48 +125,50 @@ class FeedDiscoveryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFeedListTile(BuildContext context, WidgetRef ref, _FeedListItemData feedData) =>
-      ListTile(
-        leading: CircleAvatar(
-          backgroundImage: feedData.avatar != null ? NetworkImage(feedData.avatar!) : null,
-          child: feedData.avatar == null ? const Icon(Icons.rss_feed) : null,
-        ),
-        title: Text(feedData.displayName),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '@${feedData.creatorHandle} • ${feedData.likeCount} likes',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            if (feedData.description.isNotEmpty)
-              Text(feedData.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.bookmark_add_outlined),
-          onPressed: () {
-            ref.read(feedMutationProvider.notifier).saveFeed(feedData.uri);
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Saved ${feedData.displayName}')));
-          },
-        ),
-        onTap: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => FeedPreviewModal(
-              feedUri: feedData.uri,
-              displayName: feedData.displayName,
-              avatar: feedData.avatar,
-              description: feedData.description,
-              creatorHandle: feedData.creatorHandle,
-            ),
-          );
+  Widget _buildFeedListTile(BuildContext context, WidgetRef ref, _FeedListItemData feedData) {
+    return ListTile(
+      leading: Avatar(imageUrl: feedData.avatar, fallbackIcon: Icons.rss_feed, radius: 20),
+      title: Text(feedData.displayName),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '@${feedData.creatorHandle} • ${feedData.likeCount} likes',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          if (feedData.description.isNotEmpty)
+            Text(feedData.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.bookmark_add_outlined),
+        onPressed: () {
+          ref.read(feedMutationProvider.notifier).saveFeed(feedData.uri);
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Saved ${feedData.displayName}')));
         },
-      );
+      ),
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => _buildFeedPreviewModal(feedData),
+        );
+      },
+    );
+  }
+
+  Widget _buildFeedPreviewModal(_FeedListItemData feedData) {
+    return FeedPreviewModal(
+      feedUri: feedData.uri,
+      displayName: feedData.displayName,
+      avatar: feedData.avatar,
+      description: feedData.description,
+      creatorHandle: feedData.creatorHandle,
+    );
+  }
 }
 
 class _FeedListItemData {
@@ -186,6 +180,18 @@ class _FeedListItemData {
     required this.likeCount,
     required this.uri,
   });
+
+  factory _FeedListItemData.fromMap(Map<String, dynamic> map, String uri) {
+    final creatorData = map['creator'] as Map<String, dynamic>?;
+    return _FeedListItemData(
+      displayName: map['displayName'] as String? ?? 'Unknown Feed',
+      description: map['description'] as String? ?? '',
+      avatar: map['avatar'] as String?,
+      creatorHandle: creatorData?['handle'] as String? ?? 'unknown',
+      likeCount: map['likeCount'] as int? ?? 0,
+      uri: uri,
+    );
+  }
 
   final String displayName;
   final String description;

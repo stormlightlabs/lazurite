@@ -4,6 +4,7 @@ import 'package:gal/gal.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/core/widgets/fullscreen_image_viewer.dart';
+import 'package:lazurite/src/core/widgets/lazurite_image.dart';
 import 'package:path_provider/path_provider.dart';
 
 class EmbedImages extends StatelessWidget {
@@ -183,12 +184,10 @@ class _SingleImage extends StatelessWidget {
     final thumb = image['thumb'] as String? ?? '';
     final fullsize = image['fullsize'] as String? ?? thumb;
     final alt = image['alt'] as String? ?? '';
-
     final aspectRatioData = image['aspectRatio'] as Map<String, dynamic>?;
     final width = (aspectRatioData?['width'] as num?)?.toDouble();
     final height = (aspectRatioData?['height'] as num?)?.toDouble();
     final aspectRatio = (width != null && height != null && height > 0) ? width / height : 16 / 9;
-
     final heroTag = FullscreenImageViewer.heroTag(fullsize, index);
 
     return Semantics(
@@ -200,16 +199,13 @@ class _SingleImage extends StatelessWidget {
         children: [
           GestureDetector(
             onTap: () => _openFullscreen(context),
-            child: Hero(
-              tag: heroTag,
-              child: AspectRatio(
-                aspectRatio: aspectRatio,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    image: DecorationImage(image: NetworkImage(thumb), fit: BoxFit.cover),
-                  ),
-                ),
+            child: AspectRatio(
+              aspectRatio: aspectRatio,
+              child: LazuriteImage(
+                imageUrl: thumb,
+                borderRadius: BorderRadius.circular(8),
+                useHero: true,
+                heroTag: heroTag,
               ),
             ),
           ),

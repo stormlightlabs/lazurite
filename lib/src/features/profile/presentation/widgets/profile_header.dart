@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/src/core/widgets/avatar.dart';
+import 'package:lazurite/src/core/widgets/lazurite_image.dart';
 import 'package:lazurite/src/features/profile/domain/profile.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_labels.dart';
 import 'package:lazurite/src/features/profile/presentation/widgets/profile_relationship_indicator.dart';
@@ -42,19 +43,13 @@ class ProfileHeader extends StatelessWidget {
         Stack(
           clipBehavior: Clip.none,
           children: [
-            Container(
+            LazuriteImage(
+              imageUrl: profile.banner ?? '',
               height: 120,
               width: double.infinity,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                image: profile.banner != null
-                    ? DecorationImage(
-                        image: NetworkImage(profile.banner!),
-                        fit: BoxFit.cover,
-                        onError: (_, _) {},
-                      )
-                    : null,
-              ),
+              fit: BoxFit.cover,
+              placeholder: Container(color: colorScheme.primaryContainer),
+              errorWidget: Container(color: colorScheme.primaryContainer),
             ),
             Positioned(
               left: 16,

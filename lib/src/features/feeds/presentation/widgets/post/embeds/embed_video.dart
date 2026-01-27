@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gal/gal.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/routes.dart';
+import 'package:lazurite/src/core/widgets/lazurite_image.dart';
 import 'package:lazurite/src/core/widgets/video_player_widget.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/infrastructure/network/providers.dart';
@@ -135,17 +136,13 @@ class _EmbedVideoState extends ConsumerState<EmbedVideo> {
           else
             AspectRatio(
               aspectRatio: ratio,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.black,
-                  image: widget.thumbnail != null
-                      ? DecorationImage(image: NetworkImage(widget.thumbnail!), fit: BoxFit.cover)
-                      : null,
+              child: LazuriteImage(
+                imageUrl: widget.thumbnail ?? '',
+                borderRadius: BorderRadius.circular(8),
+                placeholder: Container(color: Colors.black),
+                errorWidget: const Center(
+                  child: Icon(Icons.movie, color: Colors.white54, size: 48),
                 ),
-                child: widget.thumbnail == null
-                    ? const Center(child: Icon(Icons.movie, color: Colors.white54, size: 48))
-                    : null,
               ),
             ),
           GestureDetector(

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/core/utils/error_message.dart';
-import 'package:lazurite/src/core/widgets/error_view.dart';
-import 'package:lazurite/src/core/widgets/loading_view.dart';
+import 'package:lazurite/src/core/widgets/widgets.dart';
 import 'package:lazurite/src/features/feeds/application/feed_content_notifier.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/presentation/screens/widgets/feed_post_card.dart';
@@ -36,6 +35,64 @@ class _FeedPreviewModalState extends ConsumerState<FeedPreviewModal> {
     });
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final savedFeeds = ref.watch(allFeedsProvider).asData?.value ?? [];
+    final isSaved = savedFeeds.any((f) => f.uri == widget.feedUri);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    _buildUserInfoRow(
+                      widget.avatar,
+                      widget.creatorHandle,
+                      widget.displayName,
+                      widget.feedUri,
+                      isSaved,
+                      textTheme,
+                      colorScheme,
+                    ),
+                    if (widget.description != null) ...[
+                      const SizedBox(height: 12),
+                      Text(widget.description!),
+                    ],
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              _buildFeedContent(widget.feedUri, scrollController),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildUserInfoRow(
     String? avatar,
     String? creatorHandle,
@@ -47,10 +104,7 @@ class _FeedPreviewModalState extends ConsumerState<FeedPreviewModal> {
   ) {
     return Row(
       children: [
-        CircleAvatar(
-          backgroundImage: avatar != null ? NetworkImage(avatar) : null,
-          child: avatar == null ? const Icon(Icons.rss_feed) : null,
-        ),
+        Avatar(imageUrl: avatar, fallbackIcon: Icons.rss_feed, radius: 20),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -113,64 +167,6 @@ class _FeedPreviewModalState extends ConsumerState<FeedPreviewModal> {
           },
         ),
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final savedFeeds = ref.watch(allFeedsProvider).asData?.value ?? [];
-    final isSaved = savedFeeds.any((f) => f.uri == widget.feedUri);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.9,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    _buildUserInfoRow(
-                      widget.avatar,
-                      widget.creatorHandle,
-                      widget.displayName,
-                      widget.feedUri,
-                      isSaved,
-                      textTheme,
-                      colorScheme,
-                    ),
-                    if (widget.description != null) ...[
-                      const SizedBox(height: 12),
-                      Text(widget.description!),
-                    ],
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              _buildFeedContent(widget.feedUri, scrollController),
-            ],
-          ),
-        );
-      },
     );
   }
 }

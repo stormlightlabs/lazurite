@@ -140,14 +140,16 @@ void main() {
       });
 
       await tester.tap(find.text('ALT'));
-      await tester.pumpAndSettle();
+      await tester.pump(); // Start the animation
+      await tester.pump(const Duration(milliseconds: 300)); // Finish dialog animation
 
       expect(find.text('Image Description'), findsOneWidget);
       expect(find.text('A beautiful sunset over the ocean'), findsOneWidget);
       expect(find.text('Close'), findsOneWidget);
 
       await tester.tap(find.text('Close'));
-      await tester.pumpAndSettle();
+      await tester.pump(); // Start close animation
+      await tester.pump(const Duration(milliseconds: 300)); // Finish close animation
 
       expect(find.text('Image Description'), findsNothing);
     });

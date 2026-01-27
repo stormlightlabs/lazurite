@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
@@ -26,7 +27,7 @@ class FullscreenImageViewer extends StatefulWidget {
   State<FullscreenImageViewer> createState() => _FullscreenImageViewerState();
 
   /// Generate a unique hero tag for an image at index.
-  static Object heroTag(String fullsizeUrl, int index) {
+  static String heroTag(String fullsizeUrl, int index) {
     return 'image_hero_${fullsizeUrl}_$index';
   }
 }
@@ -208,41 +209,12 @@ class _ZoomableImagePageState extends State<_ZoomableImagePage> {
     });
   }
 
-  Widget _buildResponsiveNetworkImage(String fullsize, double aspectRatio) {
-    return AspectRatio(
-      aspectRatio: aspectRatio,
-      child: Image.network(
-        fullsize,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          const icon = Icon(Icons.broken_image, color: Colors.white24, size: 64);
-          return Container(
-            color: Colors.black,
-            child: const Center(child: icon),
-          );
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          final progress = loadingProgress.expectedTotalBytes != null
-              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-              : null;
-          final indicator = CircularProgressIndicator(value: progress);
-
-          return Container(
-            color: Colors.black,
-            child: Center(child: indicator),
-          );
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final fullsize = widget.image['fullsize'] as String? ?? '';
-    final alt = widget.image['alt'] as String? ?? '';
-
-    final aspectRatioData = widget.image['aspectRatio'] as Map<String, dynamic>?;
+    final img = widget.image;
+    final fullsize = img['fullsize'] as String? ?? '';
+    final alt = img['alt'] as String? ?? '';
+    final aspectRatioData = img['aspectRatio'] as Map<String, dynamic>?;
     final width = (aspectRatioData?['width'] as num?)?.toDouble();
     final height = (aspectRatioData?['height'] as num?)?.toDouble();
     final aspectRatio = (width != null && height != null && height > 0) ? width / height : 16 / 9;
@@ -266,6 +238,24 @@ class _ZoomableImagePageState extends State<_ZoomableImagePage> {
       ),
     );
   }
+
+  Widget _buildResponsiveNetworkImage(String fullsize, double aspectRatio) {
+    return AspectRatio(
+      aspectRatio: aspectRatio,
+      child: CachedNetworkImage(
+        imageUrl: fullsize,
+        fit: BoxFit.contain,
+        placeholder: (context, url) => Container(
+          color: Colors.black,
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+        errorWidget: (context, url, error) => Container(
+          color: Colors.black,
+          child: const Center(child: Icon(Icons.broken_image, color: Colors.white24, size: 64)),
+        ),
+      ),
+    );
+  }
 }
 
 /// Detects vertical swipe-down gesture to dismiss the fullscreen viewer.
@@ -279,9 +269,8 @@ class _DismissDetector extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onVerticalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! > 500) {
-          onDismiss();
-        }
+        final isDismissable = details.primaryVelocity != null && details.primaryVelocity! > 500;
+        if (isDismissable) onDismiss();
       },
       child: child,
     );

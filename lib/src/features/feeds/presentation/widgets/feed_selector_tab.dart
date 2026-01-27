@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/core/animations/animation_utils.dart';
+import 'package:lazurite/src/core/widgets/widgets.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
@@ -78,7 +79,7 @@ class FeedSelectorTab extends ConsumerWidget {
                       showCheckmark: false,
                       label: Text(feed.displayName),
                       avatar: feed.avatar != null
-                          ? CircleAvatar(backgroundImage: NetworkImage(feed.avatar!))
+                          ? Avatar(imageUrl: feed.avatar, radius: 12)
                           : null,
                       selected: isActive,
                       onSelected: (selected) {
@@ -114,9 +115,7 @@ class _ManageFeedsButton extends ConsumerWidget {
           child: ScaleButton(
             child: IconButton(
               icon: const Icon(Icons.tune),
-              onPressed: () {
-                context.push(AppRoutes.feeds);
-              },
+              onPressed: () => context.push(AppRoutes.feeds),
             ),
           ),
         ),
@@ -124,13 +123,11 @@ class _ManageFeedsButton extends ConsumerWidget {
           Positioned(
             right: 8,
             top: 8,
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-            ),
+            child: Container(width: 8, height: 8, decoration: _buildDeco()),
           ),
       ],
     );
   }
+
+  BoxDecoration _buildDeco() => const BoxDecoration(color: Colors.blue, shape: BoxShape.circle);
 }

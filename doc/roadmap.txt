@@ -29,20 +29,20 @@ Definition of Done:
 Milestone 2: Performance Optimization                                 *bsky-O-2*
 --------------------------------------------------------------------------------
 Tasks:
-- [ ] Image caching strategy decision and implementation
-- [ ] List virtualization audit (ListView.builder usage)
-- [ ] Flutter DevTools profiling of critical paths
-- [ ] Animation controller optimization in lists
-- [ ] Memory leak detection in stateful widgets
-- [ ] Pagination cursor handling audit
-- [ ] Cache invalidation strategy review
-- [ ] Background sync frequency optimization
+- [x] Image caching strategy decision and implementation
+- [x] List virtualization audit (ListView.builder usage)
+- [x] Flutter DevTools profiling of critical paths
+- [x] Animation controller optimization in lists
+- [x] Memory leak detection in stateful widgets
+- [x] Pagination cursor handling audit
+- [x] Cache invalidation strategy review
+- [x] Background sync frequency optimization
 
 Tests:
-- [ ] Scroll performance on mid-range Android emulator
-- [ ] iOS scroll performance validation
-- [ ] Frame render time measurements under load
-- [ ] Memory leak detection tests
+- [x] Scroll performance on mid-range Android emulator
+- [x] iOS scroll performance validation
+- [x] Frame render time measurements under load
+- [x] Memory leak detection tests
 
 Definition of Done:
 - Smooth 60fps scrolling on mid-range devices
