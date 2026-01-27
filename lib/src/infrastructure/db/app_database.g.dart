@@ -298,6 +298,8 @@ class Profile extends DataClass implements Insertable<Profile> {
   final String? website;
   final DateTime? createdAt;
   final String? verificationStatus;
+
+  /// JSON array
   final String? labels;
   final String? pinnedPostUri;
   const Profile({
@@ -1110,6 +1112,8 @@ class Post extends DataClass implements Insertable<Post> {
   final int likeCount;
   final int quoteCount;
   final int bookmarkCount;
+
+  /// JSON array
   final String? labels;
   final String? viewerLikeUri;
   final String? viewerRepostUri;
@@ -12588,7 +12592,11 @@ class DevNetworkLog extends DataClass implements Insertable<DevNetworkLog> {
   final String method;
   final String url;
   final int statusCode;
+
+  /// JSON
   final String requestHeaders;
+
+  /// JSON
   final String responseHeaders;
   final String? requestBody;
   final String? responseBody;
@@ -13297,6 +13305,33 @@ class $DevRecentRecordsTable extends DevRecentRecords
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
   );
+  static const VerificationMeta _didMeta = const VerificationMeta('did');
+  @override
+  late final GeneratedColumn<String> did = GeneratedColumn<String>(
+    'did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _collectionMeta = const VerificationMeta('collection');
+  @override
+  late final GeneratedColumn<String> collection = GeneratedColumn<String>(
+    'collection',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rkeyMeta = const VerificationMeta('rkey');
+  @override
+  late final GeneratedColumn<String> rkey = GeneratedColumn<String>(
+    'rkey',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _uriMeta = const VerificationMeta('uri');
   @override
   late final GeneratedColumn<String> uri = GeneratedColumn<String>(
@@ -13316,6 +13351,15 @@ class $DevRecentRecordsTable extends DevRecentRecords
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _indexedAtMeta = const VerificationMeta('indexedAt');
+  @override
+  late final GeneratedColumn<DateTime> indexedAt = GeneratedColumn<DateTime>(
+    'indexed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _viewedAtMeta = const VerificationMeta('viewedAt');
   @override
   late final GeneratedColumn<DateTime> viewedAt = GeneratedColumn<DateTime>(
@@ -13325,8 +13369,37 @@ class $DevRecentRecordsTable extends DevRecentRecords
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _jsonMeta = const VerificationMeta('json');
   @override
-  List<GeneratedColumn> get $columns => [id, uri, cid, viewedAt];
+  late final GeneratedColumn<String> json = GeneratedColumn<String>(
+    'json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _jsonSizeMeta = const VerificationMeta('jsonSize');
+  @override
+  late final GeneratedColumn<int> jsonSize = GeneratedColumn<int>(
+    'json_size',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    did,
+    collection,
+    rkey,
+    uri,
+    cid,
+    indexedAt,
+    viewedAt,
+    json,
+    jsonSize,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -13342,6 +13415,24 @@ class $DevRecentRecordsTable extends DevRecentRecords
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
+    if (data.containsKey('did')) {
+      context.handle(_didMeta, did.isAcceptableOrUnknown(data['did']!, _didMeta));
+    } else if (isInserting) {
+      context.missing(_didMeta);
+    }
+    if (data.containsKey('collection')) {
+      context.handle(
+        _collectionMeta,
+        collection.isAcceptableOrUnknown(data['collection']!, _collectionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_collectionMeta);
+    }
+    if (data.containsKey('rkey')) {
+      context.handle(_rkeyMeta, rkey.isAcceptableOrUnknown(data['rkey']!, _rkeyMeta));
+    } else if (isInserting) {
+      context.missing(_rkeyMeta);
+    }
     if (data.containsKey('uri')) {
       context.handle(_uriMeta, uri.isAcceptableOrUnknown(data['uri']!, _uriMeta));
     } else if (isInserting) {
@@ -13350,6 +13441,12 @@ class $DevRecentRecordsTable extends DevRecentRecords
     if (data.containsKey('cid')) {
       context.handle(_cidMeta, cid.isAcceptableOrUnknown(data['cid']!, _cidMeta));
     }
+    if (data.containsKey('indexed_at')) {
+      context.handle(
+        _indexedAtMeta,
+        indexedAt.isAcceptableOrUnknown(data['indexed_at']!, _indexedAtMeta),
+      );
+    }
     if (data.containsKey('viewed_at')) {
       context.handle(
         _viewedAtMeta,
@@ -13357,6 +13454,15 @@ class $DevRecentRecordsTable extends DevRecentRecords
       );
     } else if (isInserting) {
       context.missing(_viewedAtMeta);
+    }
+    if (data.containsKey('json')) {
+      context.handle(_jsonMeta, json.isAcceptableOrUnknown(data['json']!, _jsonMeta));
+    }
+    if (data.containsKey('json_size')) {
+      context.handle(
+        _jsonSizeMeta,
+        jsonSize.isAcceptableOrUnknown(data['json_size']!, _jsonSizeMeta),
+      );
     }
     return context;
   }
@@ -13368,12 +13474,30 @@ class $DevRecentRecordsTable extends DevRecentRecords
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return DevRecentRecord(
       id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      did: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}did'])!,
+      collection: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}collection'],
+      )!,
+      rkey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rkey'],
+      )!,
       uri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}uri'])!,
       cid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}cid']),
+      indexedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}indexed_at'],
+      ),
       viewedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}viewed_at'],
       )!,
+      json: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}json']),
+      jsonSize: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}json_size'],
+      ),
     );
   }
 
@@ -13386,33 +13510,80 @@ class $DevRecentRecordsTable extends DevRecentRecords
 class DevRecentRecord extends DataClass implements Insertable<DevRecentRecord> {
   final int id;
 
-  /// The AT URI of the record.
+  /// The DID of the repository owner.
+  final String did;
+
+  /// The NSID of the collection.
+  final String collection;
+
+  /// The record key.
+  final String rkey;
+
+  /// The AT URI of the record (unique).
   final String uri;
 
   /// The CID of the record at the time it was viewed.
   final String? cid;
 
+  /// When this record was indexed by the PDS.
+  final DateTime? indexedAt;
+
   /// When this record was last viewed.
   final DateTime viewedAt;
-  const DevRecentRecord({required this.id, required this.uri, this.cid, required this.viewedAt});
+
+  /// Cached JSON content for offline peek (nullable).
+  final String? json;
+
+  /// Size of cached JSON in bytes (for LRU eviction).
+  final int? jsonSize;
+  const DevRecentRecord({
+    required this.id,
+    required this.did,
+    required this.collection,
+    required this.rkey,
+    required this.uri,
+    this.cid,
+    this.indexedAt,
+    required this.viewedAt,
+    this.json,
+    this.jsonSize,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['did'] = Variable<String>(did);
+    map['collection'] = Variable<String>(collection);
+    map['rkey'] = Variable<String>(rkey);
     map['uri'] = Variable<String>(uri);
     if (!nullToAbsent || cid != null) {
       map['cid'] = Variable<String>(cid);
     }
+    if (!nullToAbsent || indexedAt != null) {
+      map['indexed_at'] = Variable<DateTime>(indexedAt);
+    }
     map['viewed_at'] = Variable<DateTime>(viewedAt);
+    if (!nullToAbsent || json != null) {
+      map['json'] = Variable<String>(json);
+    }
+    if (!nullToAbsent || jsonSize != null) {
+      map['json_size'] = Variable<int>(jsonSize);
+    }
     return map;
   }
 
   DevRecentRecordsCompanion toCompanion(bool nullToAbsent) {
     return DevRecentRecordsCompanion(
       id: Value(id),
+      did: Value(did),
+      collection: Value(collection),
+      rkey: Value(rkey),
       uri: Value(uri),
       cid: cid == null && nullToAbsent ? const Value.absent() : Value(cid),
+      indexedAt: indexedAt == null && nullToAbsent ? const Value.absent() : Value(indexedAt),
       viewedAt: Value(viewedAt),
+      json: json == null && nullToAbsent ? const Value.absent() : Value(json),
+      jsonSize: jsonSize == null && nullToAbsent ? const Value.absent() : Value(jsonSize),
     );
   }
 
@@ -13420,9 +13591,15 @@ class DevRecentRecord extends DataClass implements Insertable<DevRecentRecord> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return DevRecentRecord(
       id: serializer.fromJson<int>(json['id']),
+      did: serializer.fromJson<String>(json['did']),
+      collection: serializer.fromJson<String>(json['collection']),
+      rkey: serializer.fromJson<String>(json['rkey']),
       uri: serializer.fromJson<String>(json['uri']),
       cid: serializer.fromJson<String?>(json['cid']),
+      indexedAt: serializer.fromJson<DateTime?>(json['indexedAt']),
       viewedAt: serializer.fromJson<DateTime>(json['viewedAt']),
+      json: serializer.fromJson<String?>(json['json']),
+      jsonSize: serializer.fromJson<int?>(json['jsonSize']),
     );
   }
   @override
@@ -13430,29 +13607,53 @@ class DevRecentRecord extends DataClass implements Insertable<DevRecentRecord> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'did': serializer.toJson<String>(did),
+      'collection': serializer.toJson<String>(collection),
+      'rkey': serializer.toJson<String>(rkey),
       'uri': serializer.toJson<String>(uri),
       'cid': serializer.toJson<String?>(cid),
+      'indexedAt': serializer.toJson<DateTime?>(indexedAt),
       'viewedAt': serializer.toJson<DateTime>(viewedAt),
+      'json': serializer.toJson<String?>(json),
+      'jsonSize': serializer.toJson<int?>(jsonSize),
     };
   }
 
   DevRecentRecord copyWith({
     int? id,
+    String? did,
+    String? collection,
+    String? rkey,
     String? uri,
     Value<String?> cid = const Value.absent(),
+    Value<DateTime?> indexedAt = const Value.absent(),
     DateTime? viewedAt,
+    Value<String?> json = const Value.absent(),
+    Value<int?> jsonSize = const Value.absent(),
   }) => DevRecentRecord(
     id: id ?? this.id,
+    did: did ?? this.did,
+    collection: collection ?? this.collection,
+    rkey: rkey ?? this.rkey,
     uri: uri ?? this.uri,
     cid: cid.present ? cid.value : this.cid,
+    indexedAt: indexedAt.present ? indexedAt.value : this.indexedAt,
     viewedAt: viewedAt ?? this.viewedAt,
+    json: json.present ? json.value : this.json,
+    jsonSize: jsonSize.present ? jsonSize.value : this.jsonSize,
   );
   DevRecentRecord copyWithCompanion(DevRecentRecordsCompanion data) {
     return DevRecentRecord(
       id: data.id.present ? data.id.value : this.id,
+      did: data.did.present ? data.did.value : this.did,
+      collection: data.collection.present ? data.collection.value : this.collection,
+      rkey: data.rkey.present ? data.rkey.value : this.rkey,
       uri: data.uri.present ? data.uri.value : this.uri,
       cid: data.cid.present ? data.cid.value : this.cid,
+      indexedAt: data.indexedAt.present ? data.indexedAt.value : this.indexedAt,
       viewedAt: data.viewedAt.present ? data.viewedAt.value : this.viewedAt,
+      json: data.json.present ? data.json.value : this.json,
+      jsonSize: data.jsonSize.present ? data.jsonSize.value : this.jsonSize,
     );
   }
 
@@ -13460,68 +13661,126 @@ class DevRecentRecord extends DataClass implements Insertable<DevRecentRecord> {
   String toString() {
     return (StringBuffer('DevRecentRecord(')
           ..write('id: $id, ')
+          ..write('did: $did, ')
+          ..write('collection: $collection, ')
+          ..write('rkey: $rkey, ')
           ..write('uri: $uri, ')
           ..write('cid: $cid, ')
-          ..write('viewedAt: $viewedAt')
+          ..write('indexedAt: $indexedAt, ')
+          ..write('viewedAt: $viewedAt, ')
+          ..write('json: $json, ')
+          ..write('jsonSize: $jsonSize')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, uri, cid, viewedAt);
+  int get hashCode =>
+      Object.hash(id, did, collection, rkey, uri, cid, indexedAt, viewedAt, json, jsonSize);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is DevRecentRecord &&
           other.id == this.id &&
+          other.did == this.did &&
+          other.collection == this.collection &&
+          other.rkey == this.rkey &&
           other.uri == this.uri &&
           other.cid == this.cid &&
-          other.viewedAt == this.viewedAt);
+          other.indexedAt == this.indexedAt &&
+          other.viewedAt == this.viewedAt &&
+          other.json == this.json &&
+          other.jsonSize == this.jsonSize);
 }
 
 class DevRecentRecordsCompanion extends UpdateCompanion<DevRecentRecord> {
   final Value<int> id;
+  final Value<String> did;
+  final Value<String> collection;
+  final Value<String> rkey;
   final Value<String> uri;
   final Value<String?> cid;
+  final Value<DateTime?> indexedAt;
   final Value<DateTime> viewedAt;
+  final Value<String?> json;
+  final Value<int?> jsonSize;
   const DevRecentRecordsCompanion({
     this.id = const Value.absent(),
+    this.did = const Value.absent(),
+    this.collection = const Value.absent(),
+    this.rkey = const Value.absent(),
     this.uri = const Value.absent(),
     this.cid = const Value.absent(),
+    this.indexedAt = const Value.absent(),
     this.viewedAt = const Value.absent(),
+    this.json = const Value.absent(),
+    this.jsonSize = const Value.absent(),
   });
   DevRecentRecordsCompanion.insert({
     this.id = const Value.absent(),
+    required String did,
+    required String collection,
+    required String rkey,
     required String uri,
     this.cid = const Value.absent(),
+    this.indexedAt = const Value.absent(),
     required DateTime viewedAt,
-  }) : uri = Value(uri),
+    this.json = const Value.absent(),
+    this.jsonSize = const Value.absent(),
+  }) : did = Value(did),
+       collection = Value(collection),
+       rkey = Value(rkey),
+       uri = Value(uri),
        viewedAt = Value(viewedAt);
   static Insertable<DevRecentRecord> custom({
     Expression<int>? id,
+    Expression<String>? did,
+    Expression<String>? collection,
+    Expression<String>? rkey,
     Expression<String>? uri,
     Expression<String>? cid,
+    Expression<DateTime>? indexedAt,
     Expression<DateTime>? viewedAt,
+    Expression<String>? json,
+    Expression<int>? jsonSize,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (did != null) 'did': did,
+      if (collection != null) 'collection': collection,
+      if (rkey != null) 'rkey': rkey,
       if (uri != null) 'uri': uri,
       if (cid != null) 'cid': cid,
+      if (indexedAt != null) 'indexed_at': indexedAt,
       if (viewedAt != null) 'viewed_at': viewedAt,
+      if (json != null) 'json': json,
+      if (jsonSize != null) 'json_size': jsonSize,
     });
   }
 
   DevRecentRecordsCompanion copyWith({
     Value<int>? id,
+    Value<String>? did,
+    Value<String>? collection,
+    Value<String>? rkey,
     Value<String>? uri,
     Value<String?>? cid,
+    Value<DateTime?>? indexedAt,
     Value<DateTime>? viewedAt,
+    Value<String?>? json,
+    Value<int?>? jsonSize,
   }) {
     return DevRecentRecordsCompanion(
       id: id ?? this.id,
+      did: did ?? this.did,
+      collection: collection ?? this.collection,
+      rkey: rkey ?? this.rkey,
       uri: uri ?? this.uri,
       cid: cid ?? this.cid,
+      indexedAt: indexedAt ?? this.indexedAt,
       viewedAt: viewedAt ?? this.viewedAt,
+      json: json ?? this.json,
+      jsonSize: jsonSize ?? this.jsonSize,
     );
   }
 
@@ -13531,14 +13790,32 @@ class DevRecentRecordsCompanion extends UpdateCompanion<DevRecentRecord> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
+    if (did.present) {
+      map['did'] = Variable<String>(did.value);
+    }
+    if (collection.present) {
+      map['collection'] = Variable<String>(collection.value);
+    }
+    if (rkey.present) {
+      map['rkey'] = Variable<String>(rkey.value);
+    }
     if (uri.present) {
       map['uri'] = Variable<String>(uri.value);
     }
     if (cid.present) {
       map['cid'] = Variable<String>(cid.value);
     }
+    if (indexedAt.present) {
+      map['indexed_at'] = Variable<DateTime>(indexedAt.value);
+    }
     if (viewedAt.present) {
       map['viewed_at'] = Variable<DateTime>(viewedAt.value);
+    }
+    if (json.present) {
+      map['json'] = Variable<String>(json.value);
+    }
+    if (jsonSize.present) {
+      map['json_size'] = Variable<int>(jsonSize.value);
     }
     return map;
   }
@@ -13547,9 +13824,15 @@ class DevRecentRecordsCompanion extends UpdateCompanion<DevRecentRecord> {
   String toString() {
     return (StringBuffer('DevRecentRecordsCompanion(')
           ..write('id: $id, ')
+          ..write('did: $did, ')
+          ..write('collection: $collection, ')
+          ..write('rkey: $rkey, ')
           ..write('uri: $uri, ')
           ..write('cid: $cid, ')
-          ..write('viewedAt: $viewedAt')
+          ..write('indexedAt: $indexedAt, ')
+          ..write('viewedAt: $viewedAt, ')
+          ..write('json: $json, ')
+          ..write('jsonSize: $jsonSize')
           ..write(')'))
         .toString();
   }
@@ -14210,6 +14493,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'dm_messages_convo_idx',
     'CREATE INDEX dm_messages_convo_idx ON dm_messages (convo_id, sent_at)',
   );
+  late final Index idxDevRecentDidViewed = Index(
+    'idx_dev_recent_did_viewed',
+    'CREATE INDEX idx_dev_recent_did_viewed ON dev_recent_records (did, viewed_at)',
+  );
+  late final Index idxDevRecentDidColl = Index(
+    'idx_dev_recent_did_coll',
+    'CREATE INDEX idx_dev_recent_did_coll ON dev_recent_records (did, collection, viewed_at)',
+  );
   late final Index schedulesScheduledAtIdx = Index(
     'schedules_scheduled_at_idx',
     'CREATE INDEX schedules_scheduled_at_idx ON schedules (scheduled_at_utc)',
@@ -14289,6 +14580,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     searchCacheSortIdx,
     notificationsIndexedAtIdx,
     dmMessagesConvoIdx,
+    idxDevRecentDidViewed,
+    idxDevRecentDidColl,
     schedulesScheduledAtIdx,
     schedulesStatusIdx,
   ];
@@ -21790,16 +22083,28 @@ typedef $$DevPinsTableProcessedTableManager =
 typedef $$DevRecentRecordsTableCreateCompanionBuilder =
     DevRecentRecordsCompanion Function({
       Value<int> id,
+      required String did,
+      required String collection,
+      required String rkey,
       required String uri,
       Value<String?> cid,
+      Value<DateTime?> indexedAt,
       required DateTime viewedAt,
+      Value<String?> json,
+      Value<int?> jsonSize,
     });
 typedef $$DevRecentRecordsTableUpdateCompanionBuilder =
     DevRecentRecordsCompanion Function({
       Value<int> id,
+      Value<String> did,
+      Value<String> collection,
+      Value<String> rkey,
       Value<String> uri,
       Value<String?> cid,
+      Value<DateTime?> indexedAt,
       Value<DateTime> viewedAt,
+      Value<String?> json,
+      Value<int?> jsonSize,
     });
 
 class $$DevRecentRecordsTableFilterComposer
@@ -21814,14 +22119,32 @@ class $$DevRecentRecordsTableFilterComposer
   ColumnFilters<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get did =>
+      $composableBuilder(column: $table.did, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get collection =>
+      $composableBuilder(column: $table.collection, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get rkey =>
+      $composableBuilder(column: $table.rkey, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get uri =>
       $composableBuilder(column: $table.uri, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get cid =>
       $composableBuilder(column: $table.cid, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<DateTime> get indexedAt =>
+      $composableBuilder(column: $table.indexedAt, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<DateTime> get viewedAt =>
       $composableBuilder(column: $table.viewedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get json =>
+      $composableBuilder(column: $table.json, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get jsonSize =>
+      $composableBuilder(column: $table.jsonSize, builder: (column) => ColumnFilters(column));
 }
 
 class $$DevRecentRecordsTableOrderingComposer
@@ -21836,14 +22159,32 @@ class $$DevRecentRecordsTableOrderingComposer
   ColumnOrderings<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get did =>
+      $composableBuilder(column: $table.did, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get collection =>
+      $composableBuilder(column: $table.collection, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get rkey =>
+      $composableBuilder(column: $table.rkey, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get uri =>
       $composableBuilder(column: $table.uri, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get cid =>
       $composableBuilder(column: $table.cid, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<DateTime> get indexedAt =>
+      $composableBuilder(column: $table.indexedAt, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get viewedAt =>
       $composableBuilder(column: $table.viewedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get json =>
+      $composableBuilder(column: $table.json, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get jsonSize =>
+      $composableBuilder(column: $table.jsonSize, builder: (column) => ColumnOrderings(column));
 }
 
 class $$DevRecentRecordsTableAnnotationComposer
@@ -21858,14 +22199,32 @@ class $$DevRecentRecordsTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get did =>
+      $composableBuilder(column: $table.did, builder: (column) => column);
+
+  GeneratedColumn<String> get collection =>
+      $composableBuilder(column: $table.collection, builder: (column) => column);
+
+  GeneratedColumn<String> get rkey =>
+      $composableBuilder(column: $table.rkey, builder: (column) => column);
+
   GeneratedColumn<String> get uri =>
       $composableBuilder(column: $table.uri, builder: (column) => column);
 
   GeneratedColumn<String> get cid =>
       $composableBuilder(column: $table.cid, builder: (column) => column);
 
+  GeneratedColumn<DateTime> get indexedAt =>
+      $composableBuilder(column: $table.indexedAt, builder: (column) => column);
+
   GeneratedColumn<DateTime> get viewedAt =>
       $composableBuilder(column: $table.viewedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get json =>
+      $composableBuilder(column: $table.json, builder: (column) => column);
+
+  GeneratedColumn<int> get jsonSize =>
+      $composableBuilder(column: $table.jsonSize, builder: (column) => column);
 }
 
 class $$DevRecentRecordsTableTableManager
@@ -21900,18 +22259,51 @@ class $$DevRecentRecordsTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String> did = const Value.absent(),
+                Value<String> collection = const Value.absent(),
+                Value<String> rkey = const Value.absent(),
                 Value<String> uri = const Value.absent(),
                 Value<String?> cid = const Value.absent(),
+                Value<DateTime?> indexedAt = const Value.absent(),
                 Value<DateTime> viewedAt = const Value.absent(),
-              }) => DevRecentRecordsCompanion(id: id, uri: uri, cid: cid, viewedAt: viewedAt),
+                Value<String?> json = const Value.absent(),
+                Value<int?> jsonSize = const Value.absent(),
+              }) => DevRecentRecordsCompanion(
+                id: id,
+                did: did,
+                collection: collection,
+                rkey: rkey,
+                uri: uri,
+                cid: cid,
+                indexedAt: indexedAt,
+                viewedAt: viewedAt,
+                json: json,
+                jsonSize: jsonSize,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                required String did,
+                required String collection,
+                required String rkey,
                 required String uri,
                 Value<String?> cid = const Value.absent(),
+                Value<DateTime?> indexedAt = const Value.absent(),
                 required DateTime viewedAt,
-              }) =>
-                  DevRecentRecordsCompanion.insert(id: id, uri: uri, cid: cid, viewedAt: viewedAt),
+                Value<String?> json = const Value.absent(),
+                Value<int?> jsonSize = const Value.absent(),
+              }) => DevRecentRecordsCompanion.insert(
+                id: id,
+                did: did,
+                collection: collection,
+                rkey: rkey,
+                uri: uri,
+                cid: cid,
+                indexedAt: indexedAt,
+                viewedAt: viewedAt,
+                json: json,
+                jsonSize: jsonSize,
+              ),
           withReferenceMapper: (p0) =>
               p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
           prefetchHooksCallback: null,

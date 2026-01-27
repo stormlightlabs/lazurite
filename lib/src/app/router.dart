@@ -521,38 +521,48 @@ GoRouter createRouter(Ref ref) {
           GoRoute(
             path: AppRoutes.devtoolsCollections,
             name: AppRouteNames.devToolsCollections,
-            pageBuilder: (context, state) => LazuritePageTransitions.build(
-              child: const CollectionsPage(),
-              type: LazuriteTransitionType.sharedAxisHorizontal,
-              state: state,
-              controller: animationController,
-            ),
+            pageBuilder: (context, state) {
+              final did = state.pathParameters['did'] ?? _getDidFromAuth(ref);
+              return LazuritePageTransitions.build(
+                child: CollectionsPage(did: did),
+                type: LazuriteTransitionType.sharedAxisHorizontal,
+                state: state,
+                controller: animationController,
+              );
+            },
             routes: [
               GoRoute(
                 path: AppRoutes.devtoolsRecords,
                 name: AppRouteNames.devToolsRecords,
-                pageBuilder: (context, state) => LazuritePageTransitions.build(
-                  child: RecordsPage(
-                    did: _getDidFromAuth(ref),
-                    collection: Uri.decodeComponent(state.pathParameters['collection']!),
-                  ),
-                  type: LazuriteTransitionType.sharedAxisHorizontal,
-                  state: state,
-                  controller: animationController,
-                ),
+                pageBuilder: (context, state) {
+                  final did = state.pathParameters['did'] ?? _getDidFromAuth(ref);
+                  return LazuritePageTransitions.build(
+                    child: RecordsPage(
+                      did: did,
+                      collection: Uri.decodeComponent(state.pathParameters['collection']!),
+                    ),
+                    type: LazuriteTransitionType.sharedAxisHorizontal,
+                    state: state,
+                    controller: animationController,
+                  );
+                },
                 routes: [
                   GoRoute(
                     path: AppRoutes.devtoolsRecord,
                     name: AppRouteNames.devToolsRecord,
-                    pageBuilder: (context, state) => LazuritePageTransitions.build(
-                      child: RecordDetailPage(
-                        collection: Uri.decodeComponent(state.pathParameters['collection']!),
-                        rkey: Uri.decodeComponent(state.pathParameters['rkey']!),
-                      ),
-                      type: LazuriteTransitionType.sharedAxisHorizontal,
-                      state: state,
-                      controller: animationController,
-                    ),
+                    pageBuilder: (context, state) {
+                      final did = state.pathParameters['did'] ?? _getDidFromAuth(ref);
+                      return LazuritePageTransitions.build(
+                        child: RecordDetailPage(
+                          did: did,
+                          collection: Uri.decodeComponent(state.pathParameters['collection']!),
+                          rkey: Uri.decodeComponent(state.pathParameters['rkey']!),
+                        ),
+                        type: LazuriteTransitionType.sharedAxisHorizontal,
+                        state: state,
+                        controller: animationController,
+                      );
+                    },
                   ),
                 ],
               ),

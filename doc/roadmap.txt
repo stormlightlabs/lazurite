@@ -55,20 +55,20 @@ Milestone 3: DevTools Completion                                      *bsky-O-3*
 Complete ATProto DevTools feature per doc/DEV_TOOLING.md.
 
 Tasks:
-- [ ] Performance metrics tab in debug overlay (FPS, rebuilds, query times)
-- [ ] Settings toggle UI: enable DevTools, allow other repos, enable editing
-- [ ] Other DID inspection: handle resolution, read-only browsing, banner
-- [ ] DevRecentRecords schema: add did/collection/rkey/json/jsonSize columns
-- [ ] Filter/sort controls in RecordsPage (rkey prefix, has blob, sort order)
-- [ ] File export: share sheet (mobile), file picker (desktop)
-- [ ] Authorization header redaction in network interceptor
+- [x] Performance metrics tab in debug overlay (FPS, rebuilds, query times)
+- [x] Settings toggle UI: enable DevTools, allow other repos, enable editing
+- [x] Other DID inspection: handle resolution, read-only browsing, banner
+- [x] DevRecentRecords schema: add did/collection/rkey/json/jsonSize columns
+- [x] Filter/sort controls in RecordsPage (rkey prefix, has blob, sort order)
+- [x] File export: share sheet (mobile), file picker (desktop)
+- [x] Authorization header redaction in network interceptor
 
 Tests:
-- [ ] Performance tab widget and provider tests
-- [ ] Settings toggle persistence and biometric gate tests
-- [ ] Other DID handle resolution and guard tests
-- [ ] Filter/sort provider parameter tests
-- [ ] Header redaction unit tests
+- [x] Performance tab widget and provider tests
+- [x] Settings toggle persistence and biometric gate tests
+- [x] Other DID handle resolution and guard tests
+- [x] Filter/sort provider parameter tests
+- [x] Header redaction unit tests
 
 Definition of Done:
 - All debug overlay tabs functional (System, Session, Network, Performance)

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/features/developer_tools/application/devtools_providers.dart';
 import 'package:lazurite/src/features/developer_tools/domain/repo_record.dart';
@@ -19,6 +19,10 @@ class RecordsPage extends ConsumerStatefulWidget {
 
 class _RecordsPageState extends ConsumerState<RecordsPage> {
   final _scrollController = ScrollController();
+  final _searchController = TextEditingController();
+  bool _reverse = false;
+  bool _hasBlob = false;
+  String? _rkeyStart;
 
   @override
   void initState() {
@@ -30,62 +34,125 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8) {
-      ref.read(recordsProvider(widget.did, widget.collection).notifier).loadMore();
+      ref
+          .read(
+            recordsProvider(
+              widget.did,
+              widget.collection,
+              _rkeyStart,
+              _reverse,
+              _hasBlob,
+            ).notifier,
+          )
+          .loadMore();
     }
+  }
+
+  void _onSearch() {
+    setState(() {
+      _rkeyStart = _searchController.text.trim();
+      if (_rkeyStart!.isEmpty) _rkeyStart = null;
+    });
+  }
+
+  void _toggleSort() {
+    setState(() {
+      _reverse = !_reverse;
+    });
+  }
+
+  void _toggleBlobFilter() {
+    setState(() {
+      _hasBlob = !_hasBlob;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final recordsAsync = ref.watch(recordsProvider(widget.did, widget.collection));
+    final recordsAsync = ref.watch(
+      recordsProvider(widget.did, widget.collection, _rkeyStart, _reverse, _hasBlob),
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: Text(_formatCollectionName(widget.collection), overflow: TextOverflow.ellipsis),
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.pop()),
-      ),
-      body: recordsAsync.when(
-        data: (state) {
-          if (state.error != null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+        actions: [
+          IconButton(
+            icon: Icon(_reverse ? Icons.sort_by_alpha : Icons.sort_by_alpha_outlined),
+            tooltip: _reverse ? 'Sorted Z-A' : 'Sorted A-Z',
+            onPressed: _toggleSort,
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(120),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Filter by rkey prefix...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearch();
+                            },
+                          )
+                        : null,
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  onChanged: (_) => _onSearch(),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                child: Wrap(
+                  spacing: 8.0,
                   children: [
-                    Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
-                    const SizedBox(height: 16),
-                    Text('Failed to load records', style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Text(
-                      errorMessage(state.error),
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                    FilterChip(
+                      label: const Text('Has blob'),
+                      selected: _hasBlob,
+                      onSelected: (_) => _toggleBlobFilter(),
+                      avatar: _hasBlob ? const Icon(Icons.check_circle, size: 16) : null,
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        ref
-                            .read(recordsProvider(widget.did, widget.collection).notifier)
-                            .refresh();
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
+                    FilterChip(
+                      label: Text(_reverse ? 'Z-A' : 'A-Z'),
+                      selected: _reverse,
+                      onSelected: (_) => _toggleSort(),
                     ),
                   ],
                 ),
               ),
-            );
-          }
+            ],
+          ),
+        ),
+      ),
+      body: recordsAsync.when(
+        data: (records) {
+          final notifier = ref.watch(
+            recordsProvider(
+              widget.did,
+              widget.collection,
+              _rkeyStart,
+              _reverse,
+              _hasBlob,
+            ).notifier,
+          );
 
-          if (state.records.isEmpty && !state.isLoading) {
+          if (records.isEmpty && !recordsAsync.isLoading) {
             return Center(
               child: Text(
                 'No records found',
@@ -97,21 +164,30 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
           }
 
           return RefreshIndicator(
-            onRefresh: () =>
-                ref.read(recordsProvider(widget.did, widget.collection).notifier).refresh(),
+            onRefresh: () => ref
+                .read(
+                  recordsProvider(
+                    widget.did,
+                    widget.collection,
+                    _rkeyStart,
+                    _reverse,
+                    _hasBlob,
+                  ).notifier,
+                )
+                .refresh(),
             child: ListView.builder(
               controller: _scrollController,
-              itemCount: state.records.length + (state.hasMore ? 1 : 0),
+              itemCount: records.length + (notifier.hasMore ? 1 : 0),
               itemBuilder: (context, index) {
-                if (index == state.records.length) {
+                if (index == records.length) {
                   return const Padding(
                     padding: EdgeInsets.all(16.0),
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
 
-                final record = state.records[index];
-                return _RecordTile(record: record);
+                final record = records[index];
+                return _RecordTile(did: widget.did, record: record);
               },
             ),
           );
@@ -137,7 +213,15 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: () {
-                    ref.invalidate(recordsProvider(widget.did, widget.collection));
+                    ref.invalidate(
+                      recordsProvider(
+                        widget.did,
+                        widget.collection,
+                        _rkeyStart,
+                        _reverse,
+                        _hasBlob,
+                      ),
+                    );
                   },
                   icon: const Icon(Icons.refresh),
                   label: const Text('Retry'),
@@ -157,8 +241,9 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
 }
 
 class _RecordTile extends ConsumerWidget {
-  const _RecordTile({required this.record});
+  const _RecordTile({required this.did, required this.record});
 
+  final String did;
   final RepoRecord record;
 
   @override
@@ -232,6 +317,7 @@ class _RecordTile extends ConsumerWidget {
                   context.goNamed(
                     AppRouteNames.devToolsRecord,
                     pathParameters: {
+                      'did': did,
                       'collection': Uri.encodeComponent(record.collection),
                       'rkey': Uri.encodeComponent(record.rkey),
                     },

@@ -8,7 +8,9 @@ import 'package:lazurite/src/features/developer_tools/application/devtools_provi
 import 'package:lazurite/src/features/developer_tools/domain/repo_collection.dart';
 
 class CollectionsPage extends ConsumerStatefulWidget {
-  const CollectionsPage({super.key});
+  const CollectionsPage({required this.did, super.key});
+
+  final String did;
 
   @override
   ConsumerState<CollectionsPage> createState() => _CollectionsPageState();
@@ -49,7 +51,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final collectionsAsync = ref.watch(filteredCollectionsProvider(_searchQuery));
+    final collectionsAsync = ref.watch(filteredCollectionsProvider(widget.did, _searchQuery));
     final pinnedUrisAsync = ref.watch(pinnedUrisProvider);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
@@ -90,6 +92,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage> {
                     itemBuilder: (context, index) {
                       final collection = collections[index];
                       return _CollectionTile(
+                        did: widget.did,
                         collection: collection,
                         isPinned: pinnedUris.contains(collection.nsid),
                       );
@@ -98,13 +101,13 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage> {
                   loading: () => ListView.builder(
                     itemCount: collections.length,
                     itemBuilder: (context, index) {
-                      return _CollectionTile(collection: collections[index]);
+                      return _CollectionTile(did: widget.did, collection: collections[index]);
                     },
                   ),
                   error: (error, stack) => ListView.builder(
                     itemCount: collections.length,
                     itemBuilder: (context, index) {
-                      return _CollectionTile(collection: collections[index]);
+                      return _CollectionTile(did: widget.did, collection: collections[index]);
                     },
                   ),
                 );
@@ -147,8 +150,9 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage> {
 }
 
 class _CollectionTile extends ConsumerWidget {
-  const _CollectionTile({required this.collection, this.isPinned = false});
+  const _CollectionTile({required this.did, required this.collection, this.isPinned = false});
 
+  final String did;
   final RepoCollection collection;
   final bool isPinned;
 
@@ -181,7 +185,7 @@ class _CollectionTile extends ConsumerWidget {
       onTap: () {
         context.goNamed(
           AppRouteNames.devToolsRecords,
-          pathParameters: {'collection': Uri.encodeComponent(collection.nsid)},
+          pathParameters: {'did': did, 'collection': Uri.encodeComponent(collection.nsid)},
         );
       },
     );

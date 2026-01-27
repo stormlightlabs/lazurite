@@ -1,4 +1,5 @@
 import 'package:lazurite/src/core/utils/logger.dart';
+import 'package:lazurite/src/core/utils/pagination.dart';
 import 'package:lazurite/src/features/developer_tools/domain/repo_collection.dart';
 import 'package:lazurite/src/features/developer_tools/domain/repo_record.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
@@ -52,10 +53,8 @@ class DevtoolsRepository {
   /// [rkeyEnd] filters records by rkey end boundary.
   /// [reverse] reverses the sort order if true.
   ///
-  /// Returns a map with:
-  /// - 'records': List of RepoRecord objects
-  /// - 'cursor': String cursor for next page (null if no more)
-  Future<Map<String, dynamic>> listRecords({
+  /// Returns a [PaginatedResult] of [RepoRecord].
+  Future<PaginatedResult<RepoRecord>> listRecords({
     required String repo,
     required String collection,
     int limit = 50,
@@ -90,7 +89,7 @@ class DevtoolsRepository {
 
       final nextCursor = response['cursor'] as String?;
 
-      return {'records': records, 'cursor': nextCursor};
+      return PaginatedResult(items: records, cursor: nextCursor);
     } catch (e, stack) {
       _logger.error('Failed to list records for $repo/$collection', e, stack);
       rethrow;
@@ -144,6 +143,24 @@ class DevtoolsRepository {
       );
     } catch (e, stack) {
       _logger.error('Failed to get record $repo/$collection/$rkey', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Resolves a handle to its DID.
+  ///
+  /// Calls com.atproto.identity.resolveHandle.
+  Future<String?> resolveHandle(String handle) async {
+    _logger.info('Resolving handle: $handle');
+
+    try {
+      final response = await _xrpc.call(
+        'com.atproto.identity.resolveHandle',
+        params: {'handle': handle},
+      );
+      return response['did'] as String?;
+    } catch (e, stack) {
+      _logger.error('Failed to resolve handle: $handle', e, stack);
       rethrow;
     }
   }

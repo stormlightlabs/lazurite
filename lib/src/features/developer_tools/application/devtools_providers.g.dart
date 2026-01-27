@@ -54,18 +54,12 @@ final class DevtoolsRepositoryProvider
 
 String _$devtoolsRepositoryHash() => r'f85a5046ed302093e62d1a41b5493b280787527b';
 
-/// Provides the list of collections for the current user's repository.
-///
-/// Returns null if not authenticated.
-/// Caches the result until invalidated.
+/// Provides the list of collections for a given repository DID.
 
 @ProviderFor(collections)
-final collectionsProvider = CollectionsProvider._();
+final collectionsProvider = CollectionsFamily._();
 
-/// Provides the list of collections for the current user's repository.
-///
-/// Returns null if not authenticated.
-/// Caches the result until invalidated.
+/// Provides the list of collections for a given repository DID.
 
 final class CollectionsProvider
     extends
@@ -75,14 +69,9 @@ final class CollectionsProvider
           FutureOr<List<RepoCollection>?>
         >
     with $FutureModifier<List<RepoCollection>?>, $FutureProvider<List<RepoCollection>?> {
-  /// Provides the list of collections for the current user's repository.
-  ///
-  /// Returns null if not authenticated.
-  /// Caches the result until invalidated.
-  CollectionsProvider._()
+  /// Provides the list of collections for a given repository DID.
+  CollectionsProvider._({required CollectionsFamily super.from, required String super.argument})
     : super(
-        from: null,
-        argument: null,
         retry: null,
         name: r'collectionsProvider',
         isAutoDispose: true,
@@ -93,6 +82,13 @@ final class CollectionsProvider
   @override
   String debugGetCreateSourceHash() => _$collectionsHash();
 
+  @override
+  String toString() {
+    return r'collectionsProvider'
+        ''
+        '($argument)';
+  }
+
   @$internal
   @override
   $FutureProviderElement<List<RepoCollection>?> $createElement($ProviderPointer pointer) =>
@@ -100,24 +96,50 @@ final class CollectionsProvider
 
   @override
   FutureOr<List<RepoCollection>?> create(Ref ref) {
-    return collections(ref);
+    final argument = this.argument as String;
+    return collections(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CollectionsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
   }
 }
 
-String _$collectionsHash() => r'9502cc102bd1e291cf428a95b151f690556668bf';
+String _$collectionsHash() => r'24fbc2fecc101a1c4da3edc9cef65897d1a97740';
+
+/// Provides the list of collections for a given repository DID.
+
+final class CollectionsFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<RepoCollection>?>, String> {
+  CollectionsFamily._()
+    : super(
+        retry: null,
+        name: r'collectionsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provides the list of collections for a given repository DID.
+
+  CollectionsProvider call(String did) => CollectionsProvider._(argument: did, from: this);
+
+  @override
+  String toString() => r'collectionsProvider';
+}
 
 /// Provides a filtered list of collections based on a search query.
-///
-/// [query] is the search string to filter collections by NSID.
-/// Returns collections whose NSID contains the query (case-insensitive).
 
 @ProviderFor(filteredCollections)
 final filteredCollectionsProvider = FilteredCollectionsFamily._();
 
 /// Provides a filtered list of collections based on a search query.
-///
-/// [query] is the search string to filter collections by NSID.
-/// Returns collections whose NSID contains the query (case-insensitive).
 
 final class FilteredCollectionsProvider
     extends
@@ -128,12 +150,9 @@ final class FilteredCollectionsProvider
         >
     with $FutureModifier<List<RepoCollection>>, $FutureProvider<List<RepoCollection>> {
   /// Provides a filtered list of collections based on a search query.
-  ///
-  /// [query] is the search string to filter collections by NSID.
-  /// Returns collections whose NSID contains the query (case-insensitive).
   FilteredCollectionsProvider._({
     required FilteredCollectionsFamily super.from,
-    required String super.argument,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'filteredCollectionsProvider',
@@ -149,7 +168,7 @@ final class FilteredCollectionsProvider
   String toString() {
     return r'filteredCollectionsProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -159,8 +178,8 @@ final class FilteredCollectionsProvider
 
   @override
   FutureOr<List<RepoCollection>> create(Ref ref) {
-    final argument = this.argument as String;
-    return filteredCollections(ref, argument);
+    final argument = this.argument as (String, String);
+    return filteredCollections(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -174,15 +193,12 @@ final class FilteredCollectionsProvider
   }
 }
 
-String _$filteredCollectionsHash() => r'aad6d547902b80209d4cd9190c6aad53d91361b1';
+String _$filteredCollectionsHash() => r'4387c599ffd7c631d32321c74a39b132c718ebde';
 
 /// Provides a filtered list of collections based on a search query.
-///
-/// [query] is the search string to filter collections by NSID.
-/// Returns collections whose NSID contains the query (case-insensitive).
 
 final class FilteredCollectionsFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<List<RepoCollection>>, String> {
+    with $FunctionalFamilyOverride<FutureOr<List<RepoCollection>>, (String, String)> {
   FilteredCollectionsFamily._()
     : super(
         retry: null,
@@ -193,12 +209,9 @@ final class FilteredCollectionsFamily extends $Family
       );
 
   /// Provides a filtered list of collections based on a search query.
-  ///
-  /// [query] is the search string to filter collections by NSID.
-  /// Returns collections whose NSID contains the query (case-insensitive).
 
-  FilteredCollectionsProvider call(String query) =>
-      FilteredCollectionsProvider._(argument: query, from: this);
+  FilteredCollectionsProvider call(String did, String query) =>
+      FilteredCollectionsProvider._(argument: (did, query), from: this);
 
   @override
   String toString() => r'filteredCollectionsProvider';
@@ -242,32 +255,63 @@ final class PinnedUrisProvider
 
 String _$pinnedUrisHash() => r'dbe9bd345d2600ce0cd40c65deceba8141a827c6';
 
-/// Provides a single record by collection and rkey for the current user.
-///
-/// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
-/// [rkey] is the record key.
-/// Returns null if not authenticated or record not found.
+/// Provides a stream of recently viewed records from the database.
+
+@ProviderFor(recentRecords)
+final recentRecordsProvider = RecentRecordsProvider._();
+
+/// Provides a stream of recently viewed records from the database.
+
+final class RecentRecordsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<RecentRecord>>,
+          List<RecentRecord>,
+          Stream<List<RecentRecord>>
+        >
+    with $FutureModifier<List<RecentRecord>>, $StreamProvider<List<RecentRecord>> {
+  /// Provides a stream of recently viewed records from the database.
+  RecentRecordsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'recentRecordsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$recentRecordsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<RecentRecord>> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<RecentRecord>> create(Ref ref) {
+    return recentRecords(ref);
+  }
+}
+
+String _$recentRecordsHash() => r'835b53a09b1358b7ca7466697ab4102f5b1c8026';
+
+/// Provides a single record by collection and rkey for a given repository DID.
 
 @ProviderFor(recordDetail)
 final recordDetailProvider = RecordDetailFamily._();
 
-/// Provides a single record by collection and rkey for the current user.
-///
-/// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
-/// [rkey] is the record key.
-/// Returns null if not authenticated or record not found.
+/// Provides a single record by collection and rkey for a given repository DID.
 
 final class RecordDetailProvider
     extends $FunctionalProvider<AsyncValue<RepoRecord?>, RepoRecord?, FutureOr<RepoRecord?>>
     with $FutureModifier<RepoRecord?>, $FutureProvider<RepoRecord?> {
-  /// Provides a single record by collection and rkey for the current user.
-  ///
-  /// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
-  /// [rkey] is the record key.
-  /// Returns null if not authenticated or record not found.
+  /// Provides a single record by collection and rkey for a given repository DID.
   RecordDetailProvider._({
     required RecordDetailFamily super.from,
-    required (String, String) super.argument,
+    required (String, String, String) super.argument,
   }) : super(
          retry: null,
          name: r'recordDetailProvider',
@@ -293,8 +337,8 @@ final class RecordDetailProvider
 
   @override
   FutureOr<RepoRecord?> create(Ref ref) {
-    final argument = this.argument as (String, String);
-    return recordDetail(ref, argument.$1, argument.$2);
+    final argument = this.argument as (String, String, String);
+    return recordDetail(ref, argument.$1, argument.$2, argument.$3);
   }
 
   @override
@@ -308,16 +352,12 @@ final class RecordDetailProvider
   }
 }
 
-String _$recordDetailHash() => r'34d48a10bfaae231d25dcc6a1d6d175b007cb906';
+String _$recordDetailHash() => r'7bf0f283f9c0260bffcf4e78a06c8859fc3b2ffd';
 
-/// Provides a single record by collection and rkey for the current user.
-///
-/// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
-/// [rkey] is the record key.
-/// Returns null if not authenticated or record not found.
+/// Provides a single record by collection and rkey for a given repository DID.
 
 final class RecordDetailFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<RepoRecord?>, (String, String)> {
+    with $FunctionalFamilyOverride<FutureOr<RepoRecord?>, (String, String, String)> {
   RecordDetailFamily._()
     : super(
         retry: null,
@@ -327,47 +367,39 @@ final class RecordDetailFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Provides a single record by collection and rkey for the current user.
-  ///
-  /// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
-  /// [rkey] is the record key.
-  /// Returns null if not authenticated or record not found.
+  /// Provides a single record by collection and rkey for a given repository DID.
 
-  RecordDetailProvider call(String collection, String rkey) =>
-      RecordDetailProvider._(argument: (collection, rkey), from: this);
+  RecordDetailProvider call(String did, String collection, String rkey) =>
+      RecordDetailProvider._(argument: (did, collection, rkey), from: this);
 
   @override
   String toString() => r'recordDetailProvider';
 }
 
-/// Provides paginated records for a specific collection.
+/// Notifier for managing paginated records in a collection.
 ///
-/// Manages infinite scroll with cursor-based pagination.
-/// [did] is the repository DID to query.
-/// [collection] is the collection NSID.
+/// Follows established patterns from search_providers.dart and profile_providers.dart.
 
 @ProviderFor(Records)
 final recordsProvider = RecordsFamily._();
 
-/// Provides paginated records for a specific collection.
+/// Notifier for managing paginated records in a collection.
 ///
-/// Manages infinite scroll with cursor-based pagination.
-/// [did] is the repository DID to query.
-/// [collection] is the collection NSID.
-final class RecordsProvider extends $AsyncNotifierProvider<Records, RecordsState> {
-  /// Provides paginated records for a specific collection.
+/// Follows established patterns from search_providers.dart and profile_providers.dart.
+final class RecordsProvider extends $AsyncNotifierProvider<Records, List<RepoRecord>> {
+  /// Notifier for managing paginated records in a collection.
   ///
-  /// Manages infinite scroll with cursor-based pagination.
-  /// [did] is the repository DID to query.
-  /// [collection] is the collection NSID.
-  RecordsProvider._({required RecordsFamily super.from, required (String, String) super.argument})
-    : super(
-        retry: null,
-        name: r'recordsProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  /// Follows established patterns from search_providers.dart and profile_providers.dart.
+  RecordsProvider._({
+    required RecordsFamily super.from,
+    required (String, String, String?, bool, bool) super.argument,
+  }) : super(
+         retry: null,
+         name: r'recordsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$recordsHash();
@@ -394,22 +426,20 @@ final class RecordsProvider extends $AsyncNotifierProvider<Records, RecordsState
   }
 }
 
-String _$recordsHash() => r'276711cc187ecfe00faa0c8340ab6394d498beef';
+String _$recordsHash() => r'67986741504dc8bbcc8d359ff2b502259834415c';
 
-/// Provides paginated records for a specific collection.
+/// Notifier for managing paginated records in a collection.
 ///
-/// Manages infinite scroll with cursor-based pagination.
-/// [did] is the repository DID to query.
-/// [collection] is the collection NSID.
+/// Follows established patterns from search_providers.dart and profile_providers.dart.
 
 final class RecordsFamily extends $Family
     with
         $ClassFamilyOverride<
           Records,
-          AsyncValue<RecordsState>,
-          RecordsState,
-          FutureOr<RecordsState>,
-          (String, String)
+          AsyncValue<List<RepoRecord>>,
+          List<RepoRecord>,
+          FutureOr<List<RepoRecord>>,
+          (String, String, String?, bool, bool)
         > {
   RecordsFamily._()
     : super(
@@ -420,43 +450,129 @@ final class RecordsFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Provides paginated records for a specific collection.
+  /// Notifier for managing paginated records in a collection.
   ///
-  /// Manages infinite scroll with cursor-based pagination.
-  /// [did] is the repository DID to query.
-  /// [collection] is the collection NSID.
+  /// Follows established patterns from search_providers.dart and profile_providers.dart.
 
-  RecordsProvider call(String did, String collection) =>
-      RecordsProvider._(argument: (did, collection), from: this);
+  RecordsProvider call(
+    String did,
+    String collection,
+    String? rkeyStart,
+    bool reverse,
+    bool hasBlob,
+  ) => RecordsProvider._(argument: (did, collection, rkeyStart, reverse, hasBlob), from: this);
 
   @override
   String toString() => r'recordsProvider';
 }
 
-/// Provides paginated records for a specific collection.
+/// Notifier for managing paginated records in a collection.
 ///
-/// Manages infinite scroll with cursor-based pagination.
-/// [did] is the repository DID to query.
-/// [collection] is the collection NSID.
+/// Follows established patterns from search_providers.dart and profile_providers.dart.
 
-abstract class _$Records extends $AsyncNotifier<RecordsState> {
-  late final _$args = ref.$arg as (String, String);
+abstract class _$Records extends $AsyncNotifier<List<RepoRecord>> {
+  late final _$args = ref.$arg as (String, String, String?, bool, bool);
   String get did => _$args.$1;
   String get collection => _$args.$2;
+  String? get rkeyStart => _$args.$3;
+  bool get reverse => _$args.$4;
+  bool get hasBlob => _$args.$5;
 
-  FutureOr<RecordsState> build(String did, String collection);
+  FutureOr<List<RepoRecord>> build(
+    String did,
+    String collection,
+    String? rkeyStart,
+    bool reverse,
+    bool hasBlob,
+  );
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<RecordsState>, RecordsState>;
+    final ref = this.ref as $Ref<AsyncValue<List<RepoRecord>>, List<RepoRecord>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<RecordsState>, RecordsState>,
-              AsyncValue<RecordsState>,
+              AnyNotifier<AsyncValue<List<RepoRecord>>, List<RepoRecord>>,
+              AsyncValue<List<RepoRecord>>,
               Object?,
               Object?
             >;
-    element.handleCreate(ref, () => build(_$args.$1, _$args.$2));
+    element.handleCreate(ref, () => build(_$args.$1, _$args.$2, _$args.$3, _$args.$4, _$args.$5));
   }
+}
+
+/// Resolves a handle or DID to a valid DID.
+
+@ProviderFor(resolvedDid)
+final resolvedDidProvider = ResolvedDidFamily._();
+
+/// Resolves a handle or DID to a valid DID.
+
+final class ResolvedDidProvider
+    extends $FunctionalProvider<AsyncValue<String?>, String?, FutureOr<String?>>
+    with $FutureModifier<String?>, $FutureProvider<String?> {
+  /// Resolves a handle or DID to a valid DID.
+  ResolvedDidProvider._({required ResolvedDidFamily super.from, required String super.argument})
+    : super(
+        retry: null,
+        name: r'resolvedDidProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$resolvedDidHash();
+
+  @override
+  String toString() {
+    return r'resolvedDidProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String?> create(Ref ref) {
+    final argument = this.argument as String;
+    return resolvedDid(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ResolvedDidProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$resolvedDidHash() => r'fb544c5d2a18f59a1c360762171c747b54ede923';
+
+/// Resolves a handle or DID to a valid DID.
+
+final class ResolvedDidFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<String?>, String> {
+  ResolvedDidFamily._()
+    : super(
+        retry: null,
+        name: r'resolvedDidProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Resolves a handle or DID to a valid DID.
+
+  ResolvedDidProvider call(String handleOrDid) =>
+      ResolvedDidProvider._(argument: handleOrDid, from: this);
+
+  @override
+  String toString() => r'resolvedDidProvider';
 }

@@ -51,7 +51,6 @@ void main() {
         );
       });
 
-      // Initially it should show placeholder
       expect(find.byKey(placeholderKey), findsOneWidget);
     });
 
@@ -67,7 +66,6 @@ void main() {
         );
       });
 
-      // It should be in placeholder state initially
       final container = tester.widget<Container>(find.byType(Container).first);
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.borderRadius, borderRadius);
@@ -76,8 +74,6 @@ void main() {
     testWidgets('renders fallback icon when error occurs and no errorWidget provided', (
       tester,
     ) async {
-      // We can't easily trigger the error state of CachedNetworkImage in a simple widget test
-      // without more complex mocking of the cache manager, but we can verify the structure.
       await mockNetworkImages(() async {
         await tester.pumpWidget(
           const MaterialApp(

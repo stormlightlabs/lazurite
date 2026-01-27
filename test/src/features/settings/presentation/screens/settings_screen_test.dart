@@ -2,13 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/settings_screen.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../../helpers/mocks.dart';
+
 void main() {
+  late MockAppDatabase mockDb;
+  late MockDevToolsDao mockDao;
+
+  setUp(() {
+    mockDb = MockAppDatabase();
+    mockDao = MockDevToolsDao();
+    when(() => mockDb.devToolsDao).thenReturn(mockDao);
+
+    final keys = [
+      'dev_tools_enabled',
+      'dev_tools_allow_other_repos',
+      'dev_tools_enable_record_editing',
+    ];
+    for (final key in keys) {
+      when(() => mockDao.getSetting(key)).thenAnswer((_) async => 'false');
+    }
+    when(() => mockDao.setSetting(any(), any(), any())).thenAnswer((_) async {});
+  });
   Session createMockSession() {
     return Session(
       did: 'did:plc:test123',
@@ -24,7 +46,7 @@ void main() {
 
   Widget buildTestApp(List<Override> overrides) {
     return ProviderScope(
-      overrides: overrides,
+      overrides: [appDatabaseProvider.overrideWithValue(mockDb), ...overrides],
       child: Builder(
         builder: (context) {
           final router = GoRouter(
@@ -92,13 +114,13 @@ void main() {
       expect(find.text('Saved Feeds'), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
 
-      await tester.drag(find.byType(ListView), const Offset(0, -200));
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
       await tester.pumpAndSettle();
 
       expect(find.text('Accessibility'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
 
-      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.drag(find.byType(ListView), const Offset(0, -400));
       await tester.pumpAndSettle();
 
       expect(find.text('ACCOUNT MANAGEMENT'), findsOneWidget);
@@ -177,10 +199,11 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.drag(find.byType(ListView), const Offset(0, -700));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Sign Out'));
+      final signOutButtons = find.text('Sign Out');
+      await tester.tap(signOutButtons.first);
       await tester.pumpAndSettle();
       expect(find.text('Are you sure you want to sign out?'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
@@ -204,14 +227,13 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-
-      await tester.drag(find.byType(ListView), const Offset(0, -500));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Sign Out'));
+      await tester.drag(find.byType(ListView), const Offset(0, -700));
       await tester.pumpAndSettle();
 
       final signOutButtons = find.text('Sign Out');
+      await tester.tap(signOutButtons.first);
+      await tester.pumpAndSettle();
+
       await tester.tap(signOutButtons.last);
       await tester.pumpAndSettle();
 

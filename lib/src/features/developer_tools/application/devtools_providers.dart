@@ -1,7 +1,7 @@
 import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/utils/logger_provider.dart';
-import 'package:lazurite/src/features/auth/application/auth_providers.dart';
-import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/core/utils/pagination.dart';
+import 'package:lazurite/src/features/developer_tools/domain/recent_record.dart';
 import 'package:lazurite/src/features/developer_tools/domain/repo_collection.dart';
 import 'package:lazurite/src/features/developer_tools/domain/repo_record.dart';
 import 'package:lazurite/src/features/developer_tools/infrastructure/devtools_repository.dart';
@@ -19,36 +19,19 @@ DevtoolsRepository devtoolsRepository(Ref ref) {
   );
 }
 
-/// Provides the list of collections for the current user's repository.
-///
-/// Returns null if not authenticated.
-/// Caches the result until invalidated.
+/// Provides the list of collections for a given repository DID.
 @riverpod
-Future<List<RepoCollection>?> collections(Ref ref) async {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthStateAuthenticated) {
-    return null;
-  }
-
+Future<List<RepoCollection>?> collections(Ref ref, String did) async {
   final repo = ref.watch(devtoolsRepositoryProvider);
-  return repo.describeRepo(authState.session.did);
+  return repo.describeRepo(did);
 }
 
 /// Provides a filtered list of collections based on a search query.
-///
-/// [query] is the search string to filter collections by NSID.
-/// Returns collections whose NSID contains the query (case-insensitive).
 @riverpod
-Future<List<RepoCollection>> filteredCollections(Ref ref, String query) async {
-  final allCollections = await ref.watch(collectionsProvider.future);
-  if (allCollections == null) {
-    return [];
-  }
-
-  if (query.isEmpty) {
-    return allCollections;
-  }
-
+Future<List<RepoCollection>> filteredCollections(Ref ref, String did, String query) async {
+  final allCollections = await ref.watch(collectionsProvider(did).future);
+  if (allCollections == null) return [];
+  if (query.isEmpty) return allCollections;
   final lowerQuery = query.toLowerCase();
   return allCollections.where((c) => c.nsid.toLowerCase().contains(lowerQuery)).toList();
 }
@@ -60,130 +43,98 @@ Stream<List<String>> pinnedUris(Ref ref) {
   return db.devToolsDao.watchPins().map((pins) => pins.map((p) => p.uri).toList());
 }
 
-/// Provides a single record by collection and rkey for the current user.
-///
-/// [collection] is the NSID of the collection (e.g., "app.bsky.feed.post").
-/// [rkey] is the record key.
-/// Returns null if not authenticated or record not found.
+/// Provides a stream of recently viewed records from the database.
 @riverpod
-Future<RepoRecord?> recordDetail(Ref ref, String collection, String rkey) async {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthStateAuthenticated) {
-    return null;
-  }
-
-  final repo = ref.watch(devtoolsRepositoryProvider);
-  return repo.getRecord(repo: authState.session.did, collection: collection, rkey: rkey);
-}
-
-/// State class for managing paginated records.
-class RecordsState {
-  const RecordsState({
-    this.records = const [],
-    this.cursor,
-    this.isLoading = false,
-    this.hasMore = true,
-    this.error,
+Stream<List<RecentRecord>> recentRecords(Ref ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.devToolsDao.watchRecentRecords().map((records) {
+    return records
+        .map(
+          (r) => RecentRecord(
+            uri: r.uri,
+            did: r.did,
+            collection: r.collection,
+            rkey: r.rkey,
+            cid: r.cid,
+            indexedAt: r.indexedAt,
+            viewedAt: r.viewedAt,
+          ),
+        )
+        .toList();
   });
+}
 
-  final List<RepoRecord> records;
-  final String? cursor;
-  final bool isLoading;
-  final bool hasMore;
-  final Object? error;
+/// Provides a single record by collection and rkey for a given repository DID.
+@riverpod
+Future<RepoRecord?> recordDetail(Ref ref, String did, String collection, String rkey) async {
+  final repo = ref.watch(devtoolsRepositoryProvider);
+  return repo.getRecord(repo: did, collection: collection, rkey: rkey);
+}
 
-  RecordsState copyWith({
-    List<RepoRecord>? records,
-    String? cursor,
-    bool? isLoading,
-    bool? hasMore,
-    Object? error,
-  }) {
-    return RecordsState(
-      records: records ?? this.records,
-      cursor: cursor ?? this.cursor,
-      isLoading: isLoading ?? this.isLoading,
-      hasMore: hasMore ?? this.hasMore,
-      error: error ?? this.error,
+/// Notifier for managing paginated records in a collection.
+///
+/// Follows established patterns from search_providers.dart and profile_providers.dart.
+@riverpod
+class Records extends _$Records with CursorPaginationMixin<RepoRecord> {
+  @override
+  Future<List<RepoRecord>> build(
+    String did,
+    String collection,
+    String? rkeyStart,
+    bool reverse,
+    bool hasBlob,
+  ) async {
+    return _fetchRecords();
+  }
+
+  Future<List<RepoRecord>> _fetchRecords({bool loadMore = false}) async {
+    final repo = ref.read(devtoolsRepositoryProvider);
+
+    final result = await repo.listRecords(
+      repo: did,
+      collection: collection,
+      cursor: loadMore ? cursor : null,
+      rkeyStart: rkeyStart,
+      reverse: reverse,
     );
+
+    updatePagination(result);
+
+    var items = result.items;
+
+    if (hasBlob) {
+      items = items.where((r) => r.hasBlob == true).toList();
+    }
+
+    if (loadMore) {
+      final current = state.value ?? [];
+      return [...current, ...items];
+    }
+    return items;
+  }
+
+  /// Loads next page of records.
+  Future<void> loadMore() async {
+    if (!canLoadMore || state.isLoading) return;
+    state = AsyncData(await _fetchRecords(loadMore: true));
+  }
+
+  /// Refreshes records list from beginning.
+  Future<void> refresh() async {
+    resetPagination();
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _fetchRecords());
   }
 }
 
-/// Provides paginated records for a specific collection.
-///
-/// Manages infinite scroll with cursor-based pagination.
-/// [did] is the repository DID to query.
-/// [collection] is the collection NSID.
+/// Resolves a handle or DID to a valid DID.
 @riverpod
-class Records extends _$Records {
-  static const int _pageSize = 50;
-
-  @override
-  Future<RecordsState> build(String did, String collection) async {
-    return _loadInitialRecords();
-  }
-
-  Future<RecordsState> _loadInitialRecords() async {
-    try {
-      final repo = ref.read(devtoolsRepositoryProvider);
-      final result = await repo.listRecords(repo: did, collection: collection, limit: _pageSize);
-
-      final records = result['records'] as List<RepoRecord>;
-      final cursor = result['cursor'] as String?;
-
-      return RecordsState(
-        records: records,
-        cursor: cursor,
-        isLoading: false,
-        hasMore: cursor != null,
-      );
-    } catch (e) {
-      return RecordsState(error: e, isLoading: false, hasMore: false);
-    }
-  }
-
-  /// Loads the next page of records.
-  Future<void> loadMore() async {
-    final currentState = state.value;
-    if (currentState == null ||
-        currentState.isLoading ||
-        !currentState.hasMore ||
-        currentState.cursor == null) {
-      return;
-    }
-
-    state = AsyncValue.data(currentState.copyWith(isLoading: true));
-
-    try {
-      final repo = ref.read(devtoolsRepositoryProvider);
-      final result = await repo.listRecords(
-        repo: did,
-        collection: collection,
-        limit: _pageSize,
-        cursor: currentState.cursor,
-      );
-
-      final newRecords = result['records'] as List<RepoRecord>;
-      final newCursor = result['cursor'] as String?;
-
-      final allRecords = [...currentState.records, ...newRecords];
-
-      state = AsyncValue.data(
-        RecordsState(
-          records: allRecords,
-          cursor: newCursor,
-          isLoading: false,
-          hasMore: newCursor != null,
-        ),
-      );
-    } catch (e) {
-      state = AsyncValue.data(currentState.copyWith(isLoading: false, error: e));
-    }
-  }
-
-  /// Refreshes the records list from the beginning.
-  Future<void> refresh() async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _loadInitialRecords());
+Future<String?> resolvedDid(Ref ref, String handleOrDid) async {
+  if (handleOrDid.startsWith('did:')) return handleOrDid;
+  final repo = ref.watch(devtoolsRepositoryProvider);
+  try {
+    return await repo.resolveHandle(handleOrDid);
+  } catch (e) {
+    return null;
   }
 }

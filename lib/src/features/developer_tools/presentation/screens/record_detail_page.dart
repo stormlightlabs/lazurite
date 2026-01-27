@@ -1,28 +1,38 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_json/flutter_json.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/app/providers.dart';
 import 'package:lazurite/src/core/utils/error_message.dart';
 import 'package:lazurite/src/features/developer_tools/application/devtools_providers.dart';
 import 'package:lazurite/src/features/developer_tools/domain/repo_record.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// A page that displays the full details of a single ATProto record.
 ///
 /// Shows metadata (AT URI, CID, indexedAt), a collapsible JSON tree viewer,
 /// and copy/export actions.
 class RecordDetailPage extends ConsumerWidget {
-  const RecordDetailPage({required this.collection, required this.rkey, super.key});
+  const RecordDetailPage({
+    required this.did,
+    required this.collection,
+    required this.rkey,
+    super.key,
+  });
 
+  final String did;
   final String collection;
   final String rkey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final recordAsync = ref.watch(recordDetailProvider(collection, rkey));
+    final recordAsync = ref.watch(recordDetailProvider(did, collection, rkey));
 
     return Scaffold(
       appBar: AppBar(
@@ -54,6 +64,22 @@ class RecordDetailPage extends ConsumerWidget {
               ),
             );
           }
+          ref.listen(recordDetailProvider(did, collection, rkey), (previous, next) {
+            next.whenData((record) {
+              if (record != null) {
+                final db = ref.read(appDatabaseProvider);
+                db.devToolsDao.addRecentRecord(
+                  did: did,
+                  collection: collection,
+                  rkey: rkey,
+                  uri: record.uri,
+                  cid: record.cid,
+                  indexedAt: record.indexedAt,
+                );
+              }
+            });
+          });
+
           return _RecordDetailContent(record: record);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -76,7 +102,7 @@ class RecordDetailPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: () => ref.invalidate(recordDetailProvider(collection, rkey)),
+                  onPressed: () => ref.invalidate(recordDetailProvider(did, collection, rkey)),
                   icon: const Icon(Icons.refresh),
                   label: const Text('Retry'),
                 ),
@@ -89,11 +115,49 @@ class RecordDetailPage extends ConsumerWidget {
   }
 
   void _shareRecord(BuildContext context, RepoRecord record) {
-    final jsonString = const JsonEncoder.withIndent('  ').convert(record.toJson());
-    Clipboard.setData(ClipboardData(text: jsonString));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Record JSON copied to clipboard')));
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.copy),
+                title: const Text('Copy to Clipboard'),
+                onTap: () {
+                  Navigator.pop(context);
+                  final jsonString = const JsonEncoder.withIndent('  ').convert(record.toJson());
+                  Clipboard.setData(ClipboardData(text: jsonString));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Record JSON copied to clipboard')));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share),
+                title: const Text('Share as File'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final jsonString = const JsonEncoder.withIndent('  ').convert(record.toJson());
+                  final box = context.findRenderObject() as RenderBox?;
+                  final tempDir = await getTemporaryDirectory();
+                  final fileName = '${record.collection.split('.').last}_${record.rkey}.json';
+                  final file = File('${tempDir.path}/$fileName');
+                  await file.writeAsString(jsonString);
+
+                  await Share.shareXFiles(
+                    [XFile(file.path)],
+                    text: 'JSON data for ${record.uri}',
+                    sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

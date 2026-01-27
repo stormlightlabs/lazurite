@@ -1,11 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../auth/application/auth_providers.dart';
-import '../../../auth/domain/auth_state.dart';
-import '../widgets/settings_section.dart';
-import '../widgets/settings_tile.dart';
+import 'package:lazurite/src/features/auth/application/auth_providers.dart';
+import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/developer_tools/application/dev_settings_providers.dart';
+import 'package:lazurite/src/features/settings/presentation/widgets/settings_section.dart';
+import 'package:lazurite/src/features/settings/presentation/widgets/settings_tile.dart';
 
 /// Main settings screen for the app.
 ///
@@ -27,6 +28,7 @@ class SettingsScreen extends ConsumerWidget {
           if (isAuthenticated) ..._buildAccountSection(context, ref),
           ..._buildAppearanceSection(context),
           ..._buildAppSection(context),
+          ..._buildDeveloperSection(context, ref),
           if (isAuthenticated) ..._buildAccountManagementSection(context, ref),
         ],
       ),
@@ -112,6 +114,49 @@ class SettingsScreen extends ConsumerWidget {
           context.push('/settings/about');
         },
       ),
+    ];
+  }
+
+  List<Widget> _buildDeveloperSection(BuildContext context, WidgetRef ref) {
+    final devToolsEnabled = ref.watch(devToolsEnabledProvider).value ?? false;
+    final allowOtherRepos = ref.watch(allowOtherReposProvider).value ?? false;
+    final recordEditing = ref.watch(enableRecordEditingProvider).value ?? false;
+
+    if (!kDebugMode && !devToolsEnabled) return [];
+
+    return [
+      const SettingsSection(title: 'Developer Options'),
+      SettingsTile(
+        leading: const Icon(Icons.settings_applications_outlined),
+        title: 'Enable Developer Tools',
+        subtitle: 'Show dev tools in production (gate with caution)',
+        trailing: Switch(
+          value: devToolsEnabled,
+          onChanged: (_) => ref.read(devToolsEnabledProvider.notifier).toggle(),
+        ),
+      ),
+      if (devToolsEnabled || kDebugMode) ...[
+        SettingsTile(
+          leading: const Icon(Icons.public_outlined),
+          title: 'Browse Other Repositories',
+          subtitle: 'Allow inspecting public DIDs/handles',
+          trailing: Switch(
+            value: allowOtherRepos,
+            onChanged: (_) => ref.read(allowOtherReposProvider.notifier).toggle(),
+          ),
+        ),
+        SettingsTile(
+          leading: const Icon(Icons.edit_note_outlined),
+          title: 'Enable Record Editing',
+          subtitle: 'EXPERIMENTAL: Edit records directly (biometric gate)',
+          trailing: Switch(
+            value: recordEditing,
+            onChanged: (value) async {
+              await ref.read(enableRecordEditingProvider.notifier).toggle();
+            },
+          ),
+        ),
+      ],
     ];
   }
 

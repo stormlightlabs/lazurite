@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
-import 'package:lazurite/src/features/developer_tools/domain/repo_record.dart';
 import 'package:lazurite/src/features/developer_tools/infrastructure/devtools_repository.dart';
 import 'package:lazurite/src/infrastructure/network/network_failure.dart';
 import 'package:lazurite/src/infrastructure/network/xrpc_client.dart';
@@ -114,8 +113,8 @@ void main() {
 
         final result = await repository.listRecords(repo: testDid, collection: testCollection);
 
-        final records = result['records'] as List<RepoRecord>;
-        final cursor = result['cursor'] as String?;
+        final records = result.items;
+        final cursor = result.cursor;
 
         expect(records, hasLength(2));
         expect(records[0].uri, 'at://$testDid/$testCollection/abc123');
@@ -131,8 +130,8 @@ void main() {
 
         final result = await repository.listRecords(repo: testDid, collection: testCollection);
 
-        final records = result['records'] as List<RepoRecord>;
-        final cursor = result['cursor'] as String?;
+        final records = result.items;
+        final cursor = result.cursor;
 
         expect(records, isEmpty);
         expect(cursor, isNull);

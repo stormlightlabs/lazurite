@@ -34,7 +34,7 @@ abstract final class AppRoutes {
   static const String feeds = '/feeds';
   static const String discoverFeeds = 'discover';
   static const String devtools = '/devtools';
-  static const String devtoolsCollections = 'collections';
+  static const String devtoolsCollections = ':did/collections';
   static const String devtoolsRecords = ':collection';
   static const String devtoolsRecord = ':rkey';
   static const String fullscreenImage = '/fullscreen/image';

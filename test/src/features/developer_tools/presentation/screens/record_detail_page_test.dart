@@ -28,13 +28,14 @@ void main() {
       return ProviderScope(
         overrides: [
           recordDetailProvider(
+            testDid,
             testCollection,
             testRkey,
           ).overrideWith((ref) async => returnNull ? null : (record ?? testRecord)),
         ],
         child: MaterialApp(
           theme: AppTheme.dark,
-          home: const RecordDetailPage(collection: testCollection, rkey: testRkey),
+          home: const RecordDetailPage(did: testDid, collection: testCollection, rkey: testRkey),
         ),
       );
     }

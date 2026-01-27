@@ -704,17 +704,37 @@ class DevPins extends Table {
 }
 
 /// LRU cache of recently viewed records in the Repository inspector.
+@TableIndex(name: 'idx_dev_recent_did_viewed', columns: {#did, #viewedAt})
+@TableIndex(name: 'idx_dev_recent_did_coll', columns: {#did, #collection, #viewedAt})
 class DevRecentRecords extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  /// The AT URI of the record.
+  /// The DID of the repository owner.
+  TextColumn get did => text()();
+
+  /// The NSID of the collection.
+  TextColumn get collection => text()();
+
+  /// The record key.
+  TextColumn get rkey => text()();
+
+  /// The AT URI of the record (unique).
   TextColumn get uri => text().unique()();
 
   /// The CID of the record at the time it was viewed.
   TextColumn get cid => text().nullable()();
 
+  /// When this record was indexed by the PDS.
+  DateTimeColumn get indexedAt => dateTime().nullable()();
+
   /// When this record was last viewed.
   DateTimeColumn get viewedAt => dateTime()();
+
+  /// Cached JSON content for offline peek (nullable).
+  TextColumn get json => text().nullable()();
+
+  /// Size of cached JSON in bytes (for LRU eviction).
+  IntColumn get jsonSize => integer().nullable()();
 }
 
 /// Stores scheduled post publication times and metadata.

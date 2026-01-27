@@ -6,17 +6,25 @@ import 'package:lazurite/src/app/theme.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/developer_tools/presentation/screens/dev_tools_home_page.dart';
+import 'package:lazurite/src/app/providers.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../../helpers/mocks.dart';
 
 void main() {
   late MockSession session;
+  late MockDevToolsDao mockDevToolsDao;
+  late MockAppDatabase testDb;
+
   setUp(() {
     session = MockSession();
+    mockDevToolsDao = MockDevToolsDao();
+    testDb = MockAppDatabase();
 
     when(() => session.did).thenReturn('did:web:test');
     when(() => session.pdsUrl).thenReturn('https://pds.example.com');
+    when(() => testDb.devToolsDao).thenReturn(mockDevToolsDao);
+    when(() => mockDevToolsDao.watchRecentRecords()).thenAnswer((_) => Stream.value([]));
   });
 
   group('DevToolsHomePage', () {
@@ -25,7 +33,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [authProvider.overrideWith(() => _TestAuthNotifier(authState))],
+          overrides: [
+            authProvider.overrideWith(() => _TestAuthNotifier(authState)),
+            appDatabaseProvider.overrideWithValue(testDb),
+          ],
           child: MaterialApp(home: const DevToolsHomePage(), theme: AppTheme.dark),
         ),
       );
@@ -58,7 +69,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [authProvider.overrideWith(() => _TestAuthNotifier(authState))],
+          overrides: [
+            authProvider.overrideWith(() => _TestAuthNotifier(authState)),
+            appDatabaseProvider.overrideWithValue(testDb),
+          ],
           child: MaterialApp(home: const DevToolsHomePage(), theme: AppTheme.dark),
         ),
       );
@@ -78,7 +92,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [authProvider.overrideWith(() => _TestAuthNotifier(authState))],
+          overrides: [
+            authProvider.overrideWith(() => _TestAuthNotifier(authState)),
+            appDatabaseProvider.overrideWithValue(testDb),
+          ],
           child: MaterialApp(home: const DevToolsHomePage(), theme: AppTheme.dark),
         ),
       );

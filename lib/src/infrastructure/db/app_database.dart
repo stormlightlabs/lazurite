@@ -91,7 +91,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -114,6 +114,10 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 5) {
         await m.createTable(schedules);
+      }
+      if (from < 6) {
+        await m.addColumn(devRecentRecords, devRecentRecords.json);
+        await m.addColumn(devRecentRecords, devRecentRecords.jsonSize);
       }
     },
   );

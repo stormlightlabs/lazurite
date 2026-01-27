@@ -153,6 +153,9 @@ void main() {
     group('Recent Records', () {
       test('addRecentRecord adds a record', () async {
         await dao.addRecentRecord(
+          did: 'did:plc:123',
+          collection: 'app.bsky.feed.post',
+          rkey: '123',
           uri: 'at://did:plc:123/app.bsky.feed.post/123',
           cid: 'bafyre...',
         );
@@ -165,15 +168,33 @@ void main() {
 
       test('addRecentRecord maintains LRU order', () async {
         final now = DateTime.now();
-        await dao.addRecentRecord(uri: '1', viewedAt: now.subtract(const Duration(seconds: 10)));
-        await dao.addRecentRecord(uri: '2', viewedAt: now);
+        await dao.addRecentRecord(
+          did: 'did:plc:123',
+          collection: 'app.bsky.feed.post',
+          rkey: '1',
+          uri: '1',
+          viewedAt: now.subtract(const Duration(seconds: 10)),
+        );
+        await dao.addRecentRecord(
+          did: 'did:plc:123',
+          collection: 'app.bsky.feed.post',
+          rkey: '2',
+          uri: '2',
+          viewedAt: now,
+        );
 
         final records = await dao.watchRecentRecords().first;
         expect(records.length, 2);
         expect(records[0].uri, '2');
         expect(records[1].uri, '1');
 
-        await dao.addRecentRecord(uri: '1', viewedAt: now.add(const Duration(seconds: 10)));
+        await dao.addRecentRecord(
+          did: 'did:plc:123',
+          collection: 'app.bsky.feed.post',
+          rkey: '1',
+          uri: '1',
+          viewedAt: now.add(const Duration(seconds: 10)),
+        );
         final recordsAfter = await dao.watchRecentRecords().first;
         expect(recordsAfter.length, 2);
         expect(recordsAfter[0].uri, '1');
@@ -181,7 +202,12 @@ void main() {
       });
 
       test('clearRecentRecords removes all', () async {
-        await dao.addRecentRecord(uri: '1');
+        await dao.addRecentRecord(
+          did: 'did:plc:123',
+          collection: 'app.bsky.feed.post',
+          rkey: '1',
+          uri: '1',
+        );
         await dao.clearRecentRecords();
 
         final records = await dao.watchRecentRecords().first;

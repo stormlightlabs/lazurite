@@ -68,3 +68,101 @@ abstract class _$DevToolsEnabled extends $AsyncNotifier<bool> {
     element.handleCreate(ref, build);
   }
 }
+
+/// Provides access to the 'allow other repos' developer setting.
+
+@ProviderFor(AllowOtherRepos)
+final allowOtherReposProvider = AllowOtherReposProvider._();
+
+/// Provides access to the 'allow other repos' developer setting.
+final class AllowOtherReposProvider extends $AsyncNotifierProvider<AllowOtherRepos, bool> {
+  /// Provides access to the 'allow other repos' developer setting.
+  AllowOtherReposProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'allowOtherReposProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$allowOtherReposHash();
+
+  @$internal
+  @override
+  AllowOtherRepos create() => AllowOtherRepos();
+}
+
+String _$allowOtherReposHash() => r'f3aab48e3ec3c2b1e1c83107db2d3fef19d4ff0e';
+
+/// Provides access to the 'allow other repos' developer setting.
+
+abstract class _$AllowOtherRepos extends $AsyncNotifier<bool> {
+  FutureOr<bool> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<bool>, bool>,
+              AsyncValue<bool>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+/// Provides access to the 'enable record editing' developer setting.
+
+@ProviderFor(EnableRecordEditing)
+final enableRecordEditingProvider = EnableRecordEditingProvider._();
+
+/// Provides access to the 'enable record editing' developer setting.
+final class EnableRecordEditingProvider extends $AsyncNotifierProvider<EnableRecordEditing, bool> {
+  /// Provides access to the 'enable record editing' developer setting.
+  EnableRecordEditingProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'enableRecordEditingProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$enableRecordEditingHash();
+
+  @$internal
+  @override
+  EnableRecordEditing create() => EnableRecordEditing();
+}
+
+String _$enableRecordEditingHash() => r'2e0353adeec87202ea73da1aa3fc36a895bb17b7';
+
+/// Provides access to the 'enable record editing' developer setting.
+
+abstract class _$EnableRecordEditing extends $AsyncNotifier<bool> {
+  FutureOr<bool> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<bool>, bool>,
+              AsyncValue<bool>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

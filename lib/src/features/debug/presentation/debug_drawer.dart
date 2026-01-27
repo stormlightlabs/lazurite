@@ -6,6 +6,7 @@ import 'package:lazurite/src/features/debug/application/debug_overlay_controller
 
 import 'atproto_session_tab.dart';
 import 'network_inspector_tab.dart';
+import 'performance_metrics_tab.dart';
 import 'system_info_tab.dart';
 
 /// A drawer displaying debug information in tabs.
@@ -30,7 +31,7 @@ class DebugDrawer extends ConsumerWidget {
             child: SafeArea(
               left: false,
               child: DefaultTabController(
-                length: 3,
+                length: 4,
                 initialIndex: overlayState.activeTabIndex,
                 child: Column(
                   children: [
@@ -38,7 +39,12 @@ class DebugDrawer extends ConsumerWidget {
                     _buildTabBar(theme),
                     const Expanded(
                       child: TabBarView(
-                        children: [SystemInfoTab(), AtprotoSessionTab(), NetworkInspectorTab()],
+                        children: [
+                          SystemInfoTab(),
+                          AtprotoSessionTab(),
+                          NetworkInspectorTab(),
+                          PerformanceMetricsTab(),
+                        ],
                       ),
                     ),
                     _buildFooter(context, ref, theme),
@@ -88,6 +94,7 @@ class DebugDrawer extends ConsumerWidget {
         Tab(icon: Icon(Icons.info_outline), text: 'System'),
         Tab(icon: Icon(Icons.account_circle_outlined), text: 'Session'),
         Tab(icon: Icon(Icons.http), text: 'Network'),
+        Tab(icon: Icon(Icons.speed), text: 'Perf'),
       ],
       labelColor: theme.colorScheme.primary,
       unselectedLabelColor: theme.colorScheme.onSurfaceVariant,

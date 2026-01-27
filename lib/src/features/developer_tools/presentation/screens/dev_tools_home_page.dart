@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/src/app/providers.dart';
+import 'package:lazurite/src/app/routes.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
+import 'package:lazurite/src/features/developer_tools/application/devtools_providers.dart';
 
 class DevToolsHomePage extends ConsumerWidget {
   const DevToolsHomePage({super.key});
@@ -60,11 +63,18 @@ class DevToolsHomePage extends ConsumerWidget {
               subtitle: const Text('Explore collections and records'),
               trailing: const Icon(Icons.chevron_right),
               onTap: authState is AuthStateAuthenticated
-                  ? () => context.push('/devtools/collections')
+                  ? () => context.pushNamed(
+                      AppRouteNames.devToolsCollections,
+                      pathParameters: {'did': authState.session.did},
+                    )
                   : null,
               enabled: authState is AuthStateAuthenticated,
             ),
           ),
+          const SizedBox(height: 24),
+          _OtherRepoInspector(),
+          const SizedBox(height: 24),
+          _RecentRecordsList(),
         ],
       ),
     );
@@ -108,5 +118,182 @@ class DevToolsHomePage extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+class _OtherRepoInspector extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_OtherRepoInspector> createState() => _OtherRepoInspectorState();
+}
+
+class _OtherRepoInspectorState extends ConsumerState<_OtherRepoInspector> {
+  final _controller = TextEditingController();
+  bool _isResolving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleBrowse() async {
+    final input = _controller.text.trim();
+    if (input.isEmpty) return;
+
+    setState(() {
+      _isResolving = true;
+      _error = null;
+    });
+
+    try {
+      final did = await ref.read(resolvedDidProvider(input).future);
+      if (!mounted) return;
+
+      if (did != null) {
+        await context.pushNamed(AppRouteNames.devToolsCollections, pathParameters: {'did': did});
+      } else {
+        setState(() => _error = 'Could not resolve handle or DID');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Error: $e');
+    } finally {
+      if (mounted) setState(() => _isResolving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Browse Other Repository', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    labelText: 'DID or Handle',
+                    hintText: 'e.g. alice.bsky.social or did:plc:...',
+                    suffixIcon: _isResolving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: Padding(
+                              padding: EdgeInsets.all(12.0),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : IconButton(icon: const Icon(Icons.search), onPressed: _handleBrowse),
+                    errorText: _error,
+                    border: const OutlineInputBorder(),
+                  ),
+                  onSubmitted: (_) => _handleBrowse(),
+                  enabled: !_isResolving,
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _isResolving ? null : _handleBrowse,
+                    icon: const Icon(Icons.explore_outlined),
+                    label: const Text('Inspect Repository'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RecentRecordsList extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recentAsync = ref.watch(recentRecordsProvider);
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Recent Records', style: theme.textTheme.titleMedium),
+            if (recentAsync.value?.isNotEmpty ?? false)
+              TextButton(
+                onPressed: () => ref.read(appDatabaseProvider).devToolsDao.clearRecentRecords(),
+                child: const Text('Clear'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        recentAsync.when(
+          data: (records) {
+            if (records.isEmpty) {
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Center(
+                    child: Text(
+                      'No recent records',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            return Card(
+              child: ListView.separated(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: records.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final record = records[index];
+                  return ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.history_outlined),
+                    title: Text(record.rkey, style: const TextStyle(fontFamily: 'monospace')),
+                    subtitle: Text(
+                      '${_formatCollection(record.collection)} • ${record.did.substring(0, 12)}...',
+                    ),
+                    trailing: const Icon(Icons.chevron_right, size: 16),
+                    onTap: () {
+                      context.pushNamed(
+                        AppRouteNames.devToolsRecord,
+                        pathParameters: {
+                          'did': record.did,
+                          'collection': Uri.encodeComponent(record.collection),
+                          'rkey': record.rkey,
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, s) => Text('Error: $e'),
+        ),
+      ],
+    );
+  }
+
+  String _formatCollection(String nsid) {
+    return nsid.split('.').last;
   }
 }

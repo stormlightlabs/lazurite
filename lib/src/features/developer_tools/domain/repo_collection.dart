@@ -1,3 +1,8 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'repo_collection.freezed.dart';
+part 'repo_collection.g.dart';
+
 /// Represents an ATProto repository collection.
 ///
 /// A collection is a type of record in a user's repository (e.g.,
@@ -5,29 +10,11 @@
 ///
 /// Note: The com.atproto.repo.describeRepo API only returns collection NSIDs,
 /// not record counts.
-class RepoCollection {
-  const RepoCollection({required this.nsid});
+@freezed
+abstract class RepoCollection with _$RepoCollection {
+  const factory RepoCollection({required String nsid}) = _RepoCollection;
 
-  /// Creates a collection from an NSID string.
-  factory RepoCollection.fromNsid(String nsid) {
-    return RepoCollection(nsid: nsid);
-  }
+  factory RepoCollection.fromNsid(String nsid) => RepoCollection(nsid: nsid);
 
-  /// Collection NSID (e.g., "app.bsky.feed.post").
-  final String nsid;
-
-  Map<String, dynamic> toJson() {
-    return {'nsid': nsid};
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is RepoCollection && runtimeType == other.runtimeType && nsid == other.nsid;
-
-  @override
-  int get hashCode => nsid.hashCode;
-
-  @override
-  String toString() => 'RepoCollection(nsid: $nsid)';
+  factory RepoCollection.fromJson(Map<String, dynamic> json) => _$RepoCollectionFromJson(json);
 }

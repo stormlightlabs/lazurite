@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/src/core/utils/pagination.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/src/app/theme.dart';
@@ -249,7 +250,7 @@ class _MockDevtoolsRepository extends Mock implements DevtoolsRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> listRecords({
+  Future<PaginatedResult<RepoRecord>> listRecords({
     required String repo,
     required String collection,
     int? limit,
@@ -262,6 +263,6 @@ class _MockDevtoolsRepository extends Mock implements DevtoolsRepository {
       throw _error!;
     }
 
-    return {'records': _records ?? [], 'cursor': _cursor};
+    return PaginatedResult(items: _records ?? [], cursor: _cursor);
   }
 }

@@ -42,3 +42,43 @@ class DevToolsEnabled extends _$DevToolsEnabled {
     }
   }
 }
+
+/// Provides access to the 'allow other repos' developer setting.
+@riverpod
+class AllowOtherRepos extends _$AllowOtherRepos {
+  static const String _key = 'dev_tools_allow_other_repos';
+
+  @override
+  Future<bool> build() async {
+    final db = ref.watch(appDatabaseProvider);
+    final value = await db.devToolsDao.getSetting(_key);
+    return value == 'true';
+  }
+
+  Future<void> toggle() async {
+    final current = await future;
+    final db = ref.read(appDatabaseProvider);
+    await db.devToolsDao.setSetting(_key, (!current).toString(), 'boolean');
+    ref.invalidateSelf();
+  }
+}
+
+/// Provides access to the 'enable record editing' developer setting.
+@riverpod
+class EnableRecordEditing extends _$EnableRecordEditing {
+  static const String _key = 'dev_tools_enable_record_editing';
+
+  @override
+  Future<bool> build() async {
+    final db = ref.watch(appDatabaseProvider);
+    final value = await db.devToolsDao.getSetting(_key);
+    return value == 'true';
+  }
+
+  Future<void> toggle() async {
+    final current = await future;
+    final db = ref.read(appDatabaseProvider);
+    await db.devToolsDao.setSetting(_key, (!current).toString(), 'boolean');
+    ref.invalidateSelf();
+  }
+}

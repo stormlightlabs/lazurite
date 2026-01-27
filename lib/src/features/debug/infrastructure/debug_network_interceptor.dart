@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
+import 'package:lazurite/src/infrastructure/db/daos/dev_tools_dao.dart';
 import 'package:uuid/uuid.dart';
-
-import '../../../infrastructure/db/daos/dev_tools_dao.dart';
 
 /// Interceptor that logs network requests to the [DevToolsDao].
 class DebugNetworkInterceptor extends Interceptor {
@@ -45,8 +44,15 @@ class DebugNetworkInterceptor extends Interceptor {
       final endTime = DateTime.now().millisecondsSinceEpoch;
       final duration = endTime - startTime;
 
-      final requestHeaders = jsonEncode(options.headers);
-      final responseHeaders = response != null ? jsonEncode(response.headers.map) : '{}';
+      final requestHeadersMap = Map<String, dynamic>.from(options.headers);
+      _redactHeaders(requestHeadersMap);
+      final requestHeaders = jsonEncode(requestHeadersMap);
+
+      final responseHeadersMap = response != null
+          ? Map<String, dynamic>.from(response.headers.map)
+          : <String, dynamic>{};
+      _redactHeaders(responseHeadersMap);
+      final responseHeaders = jsonEncode(responseHeadersMap);
 
       String? requestBody;
       try {
@@ -85,6 +91,37 @@ class DebugNetworkInterceptor extends Interceptor {
         error: e,
         stackTrace: stack,
       );
+    }
+  }
+
+  void _redactHeaders(Map<String, dynamic> headers) {
+    const sensitiveHeaders = ['authorization', 'dpop'];
+    final keys = headers.keys.toList();
+    for (final key in keys) {
+      final lowercaseKey = key.toLowerCase();
+      if (sensitiveHeaders.contains(lowercaseKey)) {
+        final value = headers[key];
+        String redactValue(String v) {
+          final parts = v.split(' ');
+          if (parts.length > 1) {
+            return '${parts[0]} ***';
+          }
+          if (lowercaseKey == 'authorization') return 'Bearer ***';
+          if (lowercaseKey == 'dpop') return 'DPoP ***';
+          return '***';
+        }
+
+        if (value is String) {
+          headers[key] = redactValue(value);
+        } else if (value is List) {
+          headers[key] = value.map((v) {
+            if (v is String) return redactValue(v);
+            return '***';
+          }).toList();
+        } else {
+          headers[key] = '***';
+        }
+      }
     }
   }
 }

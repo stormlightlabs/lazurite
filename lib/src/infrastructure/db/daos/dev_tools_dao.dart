@@ -119,16 +119,24 @@ class DevToolsDao extends DatabaseAccessor<AppDatabase> with _$DevToolsDaoMixin 
   }
 
   Future<void> addRecentRecord({
+    required String did,
+    required String collection,
+    required String rkey,
     required String uri,
     String? cid,
+    DateTime? indexedAt,
     DateTime? viewedAt,
-    int limit = 50,
+    int limit = 100,
   }) async {
     await transaction(() async {
       await into(devRecentRecords).insert(
         DevRecentRecordsCompanion(
+          did: Value(did),
+          collection: Value(collection),
+          rkey: Value(rkey),
           uri: Value(uri),
           cid: Value(cid),
+          indexedAt: Value(indexedAt),
           viewedAt: Value(viewedAt ?? DateTime.now()),
         ),
         mode: InsertMode.insertOrReplace,

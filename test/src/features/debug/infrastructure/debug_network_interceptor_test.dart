@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -93,6 +95,51 @@ void main() {
         responseBody: any(named: 'responseBody'),
       ),
     ).called(1);
+  });
+  test('redacts sensitive headers', () async {
+    dio.httpClientAdapter = _MockAdapter(
+      (options) => ResponseBody.fromString(
+        '{}',
+        200,
+        headers: {
+          'Authorization': ['Bearer secret-token'],
+          'DPoP': ['dpop-proof'],
+          'X-Custom': ['public-info'],
+        },
+      ),
+    );
+
+    await dio.get(
+      'https://example.com/redact',
+      options: Options(
+        headers: {'Authorization': 'Bearer my-token', 'DPoP': 'my-proof', 'X-Other': 'safe'},
+      ),
+    );
+
+    final captured = verify(
+      () => mockDao.logRequest(
+        uuid: any(named: 'uuid'),
+        method: 'GET',
+        url: 'https://example.com/redact',
+        statusCode: 200,
+        durationMs: any(named: 'durationMs'),
+        requestHeaders: captureAny(named: 'requestHeaders'),
+        responseHeaders: captureAny(named: 'responseHeaders'),
+        requestBody: any(named: 'requestBody'),
+        responseBody: any(named: 'responseBody'),
+      ),
+    ).captured;
+
+    final requestHeaders = jsonDecode(captured[0] as String) as Map<String, dynamic>;
+    final responseHeaders = jsonDecode(captured[1] as String) as Map<String, dynamic>;
+
+    expect(requestHeaders['Authorization'], 'Bearer ***');
+    expect(requestHeaders['DPoP'], 'DPoP ***');
+    expect(requestHeaders['X-Other'], 'safe');
+
+    expect(responseHeaders['Authorization'], ['Bearer ***']);
+    expect(responseHeaders['DPoP'], ['DPoP ***']);
+    expect(responseHeaders['X-Custom'], ['public-info']);
   });
 }
 
