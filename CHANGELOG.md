@@ -4,10 +4,52 @@
 
 ### Added
 
+#### [2026-01-27]
+
+- DevTools: Performance tab, richer recent-record tracking, safer network logging
+  (auth header redaction), and improved records browsing/export workflows.
+
+#### [2026-01-26]
+
+- Security and moderation hardening with HTTPS validation, and moderation-aware
+  filtering, blurring, and user controls (including block/mute).
+
+- Centralized/cached network image loading.
+
+- Notification-based scheduling with timezone-aware local notifications, deep-link
+  routing to scheduled drafts, and foreground publishing.
+
+#### [2026-01-25]
+
+- Expanded architecture/testing/error docs, with stronger type safety via Freezed and
+  typed parsing.
+
+#### [2026-01-15]
+
+- Scheduling infrastructure: schedules table + indexes, Freezed domain models,
+  ScheduleRepo operations, PostPublisher with validation and state persistence
+
+- Threading and metadata enhancements, including 1/x thread composition, reply-chain,
+  and language detection/tagging wired into record creation
+
+#### [2026-01-14]
+
+- Video upload/playback, Tenor-backed GIF picking with accessibility and conflict
+  handling, and fullscreen viewers with zoom/pan controls.
+
+#### [2026-01-11]
+
+- Composer-side rich text UX with live highlighting, link unfurl previews/cards
+  (including removal), and mention/hashtag autocomplete.
+
+- Rich text facet rendering, including offset conversion, overlapping span
+  construction, and navigation through post models and feed UI.
+
 #### [2026-01-09]
 
 - User-facing DevTools for ATProto repository browsing, record inspection, and
   JSON exploration with full security test coverage.
+
 - Internal debug overlay (kDebugMode) with system info and network inspector.
 
 #### [2026-01-08]
