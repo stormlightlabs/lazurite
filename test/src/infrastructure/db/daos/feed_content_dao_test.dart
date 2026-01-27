@@ -97,4 +97,131 @@ void main() {
       expect(interaction?.bookmarkUri, 'at://did:plc:owner/app.bsky.bookmark/abc');
     });
   });
+
+  group('FeedContentDao Filtering', () {
+    const otherPostUri = 'at://did:plc:other/app.bsky.feed.post/456';
+    const otherDid = 'did:plc:other';
+
+    setUp(() async {
+      await db
+          .into(db.profiles)
+          .insert(
+            ProfilesCompanion.insert(
+              did: otherDid,
+              handle: 'other.bsky.social',
+              indexedAt: Value(DateTime.now()),
+            ),
+          );
+
+      await db
+          .into(db.posts)
+          .insert(
+            PostsCompanion.insert(
+              uri: otherPostUri,
+              cid: 'cid456',
+              authorDid: otherDid,
+              record: jsonEncode({'text': 'Hidden post'}),
+              indexedAt: Value(DateTime.now()),
+            ),
+          );
+
+      await db
+          .into(db.feedContentItems)
+          .insert(
+            FeedContentItemsCompanion.insert(
+              feedKey: feedKey,
+              postUri: otherPostUri,
+              ownerDid: ownerDid,
+              sortKey: '2024-01-01T00:00:00Z',
+            ),
+          );
+
+      await db
+          .into(db.profiles)
+          .insert(
+            ProfilesCompanion.insert(
+              did: 'did:plc:author',
+              handle: 'author.bsky.social',
+              indexedAt: Value(DateTime.now()),
+            ),
+          );
+
+      await db
+          .into(db.posts)
+          .insert(
+            PostsCompanion.insert(
+              uri: postUri,
+              cid: 'cid123',
+              authorDid: 'did:plc:author',
+              record: jsonEncode({'text': 'Visible post'}),
+              indexedAt: Value(DateTime.now()),
+            ),
+          );
+
+      await db
+          .into(db.feedContentItems)
+          .insert(
+            FeedContentItemsCompanion.insert(
+              feedKey: feedKey,
+              postUri: postUri,
+              ownerDid: ownerDid,
+              sortKey: '2024-01-01T00:00:01Z',
+            ),
+          );
+    });
+
+    test('watchFeedContent filters out muted users', () async {
+      final initialResults = await dao.watchFeedContent(feedKey, ownerDid).first;
+      expect(initialResults.length, 2);
+
+      await db
+          .into(db.profileRelationships)
+          .insert(
+            ProfileRelationshipsCompanion.insert(
+              ownerDid: ownerDid,
+              profileDid: otherDid,
+              muted: const Value(true),
+              updatedAt: DateTime.now(),
+            ),
+          );
+
+      final results = await dao.watchFeedContent(feedKey, ownerDid).first;
+      expect(results.length, 1);
+      expect(results.first.post.uri, postUri);
+    });
+
+    test('watchFeedContent filters out blocked users', () async {
+      await db
+          .into(db.profileRelationships)
+          .insert(
+            ProfileRelationshipsCompanion.insert(
+              ownerDid: ownerDid,
+              profileDid: otherDid,
+              blocked: const Value(true),
+              updatedAt: DateTime.now(),
+            ),
+          );
+
+      final results = await dao.watchFeedContent(feedKey, ownerDid).first;
+      expect(results.length, 1);
+      expect(results.first.post.uri, postUri);
+    });
+
+    test('watchFeedContent filters out users who blocked us', () async {
+      await db
+          .into(db.profileRelationships)
+          .insert(
+            ProfileRelationshipsCompanion.insert(
+              ownerDid: ownerDid,
+              profileDid: otherDid,
+              blockedBy: const Value(true),
+              updatedAt: DateTime.now(),
+            ),
+          );
+
+      final results = await dao.watchFeedContent(feedKey, ownerDid).first;
+      expect(results.length, 1);
+      expect(results.first.post.uri, postUri);
+    });
+  });
 }

@@ -50,52 +50,49 @@ Definition of Done:
 - No memory leaks in long-running sessions
 - Background sync respects battery constraints
 
-Milestone 3: Quality Assurance                                        *bsky-O-3*
+Milestone 3: DevTools Completion                                      *bsky-O-3*
 --------------------------------------------------------------------------------
+Complete ATProto DevTools feature per doc/DEV_TOOLING.md.
+
 Tasks:
-- [ ] Achieve >95% test coverage across all features
-- [ ] Integration tests: notifications grouping, DMs outbox
-- [ ] E2E tests for critical flows
-- [ ] Widget tests for all custom widgets
-- [ ] Semantic labels for interactive elements
-- [ ] Dynamic type support
-- [ ] Contrast ratio checks (WCAG AA)
-- [ ] Screen reader testing (iOS/Android)
-- [ ] Keyboard navigation testing
-- [x] Structured logging framework
-- [ ] Crash reporting integration (Sentry/Firebase Crashlytics)
-- [ ] Performance monitoring hooks
-- [ ] Analytics event tracking foundation
+- [ ] Performance metrics tab in debug overlay (FPS, rebuilds, query times)
+- [ ] Settings toggle UI: enable DevTools, allow other repos, enable editing
+- [ ] Other DID inspection: handle resolution, read-only browsing, banner
+- [ ] DevRecentRecords schema: add did/collection/rkey/json/jsonSize columns
+- [ ] Filter/sort controls in RecordsPage (rkey prefix, has blob, sort order)
+- [ ] File export: share sheet (mobile), file picker (desktop)
+- [ ] Authorization header redaction in network interceptor
 
 Tests:
-- [ ] A11y audit checklist compliance
-- [ ] Database migration tests (upgrade, rollback, preservation)
-- [ ] Error handling integration tests
-- [ ] Network failure resilience tests
+- [ ] Performance tab widget and provider tests
+- [ ] Settings toggle persistence and biometric gate tests
+- [ ] Other DID handle resolution and guard tests
+- [ ] Filter/sort provider parameter tests
+- [ ] Header redaction unit tests
 
 Definition of Done:
-- >95% code coverage achieved
-- WCAG AA compliance validated
-- Screen readers work correctly
-- All critical flows have E2E tests
-- Crash reporting captures production errors
+- All debug overlay tabs functional (System, Session, Network, Performance)
+- Settings exposes DevTools toggles with proper gating
+- Can browse any public DID's repo (when enabled)
+- Network logs never contain raw tokens
+- DevTools usable as pdsls.dev alternative
 
 Milestone 4: Security & Moderation                                    *bsky-O-4*
 --------------------------------------------------------------------------------
 Tasks:
-- [ ] Secure storage audit (credentials, tokens)
-- [ ] Input sanitization validation (XSS prevention)
-- [ ] Network request security audit (HTTPS enforcement)
-- [ ] Dependency vulnerability review
-- [ ] Content label filtering from AppView/PDS
-- [ ] Hide/blur content based on moderation labels
-- [ ] User-configurable content filters
-- [ ] Block/mute functionality
+- [x] Secure storage audit (credentials, tokens)
+- [x] Input sanitization validation (XSS prevention)
+- [x] Network request security audit (HTTPS enforcement)
+- [x] Dependency vulnerability review
+- [x] Content label filtering from AppView/PDS
+- [x] Hide/blur content based on moderation labels
+- [x] User-configurable content filters
+- [x] Block/mute functionality
 
 Tests:
-- [ ] Security audit checklist pass
-- [ ] Moderation label filtering tests
-- [ ] Block/mute functionality tests
+- [x] Security audit checklist pass
+- [x] Moderation label filtering tests
+- [x] Block/mute functionality tests
 
 Definition of Done:
 - Security audit completed with no critical findings

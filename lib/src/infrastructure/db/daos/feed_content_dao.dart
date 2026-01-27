@@ -65,7 +65,11 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
     final query = select(feedContentItems).join([
       innerJoin(posts, posts.uri.equalsExp(feedContentItems.postUri)),
       innerJoin(profiles, profiles.did.equalsExp(posts.authorDid)),
-      leftOuterJoin(profileRelationships, profileRelationships.profileDid.equalsExp(profiles.did)),
+      leftOuterJoin(
+        profileRelationships,
+        profileRelationships.profileDid.equalsExp(profiles.did) &
+            profileRelationships.ownerDid.equalsExp(feedContentItems.ownerDid),
+      ),
       leftOuterJoin(
         postInteractions,
         postInteractions.postUri.equalsExp(posts.uri) &
@@ -74,7 +78,11 @@ class FeedContentDao extends DatabaseAccessor<AppDatabase> with _$FeedContentDao
     ]);
 
     query.where(
-      feedContentItems.feedKey.equals(feedKey) & feedContentItems.ownerDid.equals(ownerDid),
+      feedContentItems.feedKey.equals(feedKey) &
+          feedContentItems.ownerDid.equals(ownerDid) &
+          (profileRelationships.muted.isNull() | profileRelationships.muted.equals(false)) &
+          (profileRelationships.blocked.isNull() | profileRelationships.blocked.equals(false)) &
+          (profileRelationships.blockedBy.isNull() | profileRelationships.blockedBy.equals(false)),
     );
     query.orderBy([OrderingTerm.desc(feedContentItems.sortKey)]);
 

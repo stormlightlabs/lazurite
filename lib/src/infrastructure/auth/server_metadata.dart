@@ -87,10 +87,28 @@ class ServerMetadata {
   /// Whether the server requires PAR for all authorization requests.
   final bool requirePushedAuthorizationRequests;
 
-  /// Validates that the server supports required features for ATProto.
+  /// Validates that the server supports required features for ATProto and enforces HTTPS.
   ///
-  /// Throws an exception if required features are missing.
+  /// Throws an exception if required features are missing or if non-secure
+  /// URLs are used for non-local issuers.
   void validateRequirements() {
+    void validateHttps(String url, String name) {
+      final uri = Uri.parse(url);
+      if (uri.scheme != 'https' && uri.host != 'localhost' && uri.host != '127.0.0.1') {
+        throw Exception('$name must use HTTPS: $url');
+      }
+    }
+
+    validateHttps(issuer, 'Issuer');
+    validateHttps(authorizationEndpoint, 'Authorization endpoint');
+    validateHttps(tokenEndpoint, 'Token endpoint');
+    if (pushedAuthorizationRequestEndpoint != null) {
+      validateHttps(pushedAuthorizationRequestEndpoint!, 'PAR endpoint');
+    }
+    if (revocationEndpoint != null) {
+      validateHttps(revocationEndpoint!, 'Revocation endpoint');
+    }
+
     if (requirePushedAuthorizationRequests && pushedAuthorizationRequestEndpoint == null) {
       throw Exception('Server requires PAR but does not advertise PAR endpoint');
     }
