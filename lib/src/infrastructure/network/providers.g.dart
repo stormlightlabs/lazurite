@@ -150,34 +150,34 @@ final class DioVideoServiceProvider extends $FunctionalProvider<Dio, Dio, Dio>
 
 String _$dioVideoServiceHash() => r'35fad9f27769840636716b14bdb28c3b43634b52';
 
-/// Provides Tenor API Dio client for GIF search.
+/// Provides Klipy API Dio client for GIF search.
 ///
-/// This client is used for GIF search and selection from Tenor.
+/// This client is used for GIF search and selection from Klipy.
 
-@ProviderFor(dioTenor)
-final dioTenorProvider = DioTenorProvider._();
+@ProviderFor(dioKlipy)
+final dioKlipyProvider = DioKlipyProvider._();
 
-/// Provides Tenor API Dio client for GIF search.
+/// Provides Klipy API Dio client for GIF search.
 ///
-/// This client is used for GIF search and selection from Tenor.
+/// This client is used for GIF search and selection from Klipy.
 
-final class DioTenorProvider extends $FunctionalProvider<Dio, Dio, Dio> with $Provider<Dio> {
-  /// Provides Tenor API Dio client for GIF search.
+final class DioKlipyProvider extends $FunctionalProvider<Dio, Dio, Dio> with $Provider<Dio> {
+  /// Provides Klipy API Dio client for GIF search.
   ///
-  /// This client is used for GIF search and selection from Tenor.
-  DioTenorProvider._()
+  /// This client is used for GIF search and selection from Klipy.
+  DioKlipyProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'dioTenorProvider',
+        name: r'dioKlipyProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$dioTenorHash();
+  String debugGetCreateSourceHash() => _$dioKlipyHash();
 
   @$internal
   @override
@@ -185,7 +185,7 @@ final class DioTenorProvider extends $FunctionalProvider<Dio, Dio, Dio> with $Pr
 
   @override
   Dio create(Ref ref) {
-    return dioTenor(ref);
+    return dioKlipy(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -194,7 +194,7 @@ final class DioTenorProvider extends $FunctionalProvider<Dio, Dio, Dio> with $Pr
   }
 }
 
-String _$dioTenorHash() => r'a2e99a8a8c47829fb3aefdc8d7cdc098ead2c517';
+String _$dioKlipyHash() => r'86d9a53bc4189f1293878796146efa563dfab8e1';
 
 /// Provides XRPC client for making API requests.
 ///
@@ -248,4 +248,4 @@ final class XrpcClientProvider extends $FunctionalProvider<XrpcClient, XrpcClien
   }
 }
 
-String _$xrpcClientHash() => r'79a74523bf3f31a57602964b3989d6690bdd4903';
+String _$xrpcClientHash() => r'34d0a57c4054cdc40b4671c1036ef2911436dfbf';

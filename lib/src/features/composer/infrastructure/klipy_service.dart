@@ -3,31 +3,32 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../domain/tenor_gif.dart';
+import '../domain/klipy_gif.dart';
 
-part 'tenor_service.g.dart';
+part 'klipy_service.g.dart';
 
-// FIXME: Replace with Klipy (Tenor is deprecated)
-const String _defaultApiKey = 'AIzaSyD4HJZw9KqfVqXbQeJZxk7w7xX0Xy0X0';
+// TODO: Replace with your Klipy API key from https://partner.klipy.com
+const String _defaultApiKey = 'YOUR_KLIPY_API_KEY';
 
-/// Service for interacting with Tenor API.
+/// Service for interacting with Klipy API.
 ///
-/// Provides methods for searching GIFs and getting featured/trending GIFs.
+/// Provides methods for searching GIFs and getting trending GIFs.
 /// The API key should be configured securely via environment variables.
+/// Obtain your API key from https://partner.klipy.com
 @riverpod
-TenorService tenorService(Ref ref) {
-  return TenorService(apiKey: _defaultApiKey, clientKey: 'lazurite_flutter');
+KlipyService klipyService(Ref ref) {
+  return KlipyService(apiKey: _defaultApiKey);
 }
 
-class TenorService {
-  TenorService({required String apiKey, required String clientKey, Dio? dio})
+class KlipyService {
+  KlipyService({required String apiKey, String? customerId, Dio? dio})
     : _apiKey = apiKey,
-      _clientKey = clientKey,
+      _customerId = customerId ?? 'lazurite_user',
       _dio =
           dio ??
           Dio(
             BaseOptions(
-              baseUrl: 'https://tenor.googleapis.com/v2',
+              baseUrl: 'https://api.klipy.com',
               connectTimeout: const Duration(seconds: 30),
               receiveTimeout: const Duration(seconds: 30),
               sendTimeout: const Duration(seconds: 30),
@@ -35,58 +36,56 @@ class TenorService {
           );
 
   final String _apiKey;
-  final String _clientKey;
+  final String _customerId;
   final Dio _dio;
 
   /// Searches for GIFs matching the query string.
   ///
   /// [query] is the search query string.
-  /// [limit] is the number of results to return (max 50, default 20).
-  /// [pos] is the pagination token for fetching next page.
-  Future<TenorSearchResponse> searchGifs({
+  /// [perPage] is the number of results to return (max 50, default 24).
+  /// [page] is the page number for pagination (starts at 1).
+  Future<KlipySearchResponse> searchGifs({
     required String query,
-    int limit = 20,
-    String? pos,
+    int perPage = 24,
+    int page = 1,
   }) async {
     if (query.trim().isEmpty) {
-      return getFeaturedGifs(limit: limit);
+      return getTrendingGifs(perPage: perPage, page: page);
     }
 
     try {
       final response = await _dio.get<Map<String, dynamic>>(
-        '/search',
+        '/api/v1/$_apiKey/gifs/search',
         queryParameters: {
+          'customer_id': _customerId,
           'q': query,
-          'key': _apiKey,
-          'client_key': _clientKey,
-          'limit': limit.clamp(1, 50),
-          if (pos != null) 'pos': pos,
+          'per_page': perPage.clamp(1, 50),
+          'page': page,
         },
       );
 
-      return TenorSearchResponse.fromJson(response.data ?? {});
+      return KlipySearchResponse.fromApiResponse(response.data ?? {});
     } on DioException catch (e) {
       throw _convertDioError(e);
     }
   }
 
-  /// Gets featured/trending GIFs.
+  /// Gets trending GIFs.
   ///
-  /// [limit] is the number of results to return (max 50, default 20).
-  /// [pos] is the pagination token for fetching next page.
-  Future<TenorSearchResponse> getFeaturedGifs({int limit = 20, String? pos}) async {
+  /// [perPage] is the number of results to return (max 50, default 24).
+  /// [page] is the page number for pagination (starts at 1).
+  Future<KlipySearchResponse> getTrendingGifs({int perPage = 24, int page = 1}) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
-        '/featured',
+        '/api/v1/$_apiKey/gifs/trending',
         queryParameters: {
-          'key': _apiKey,
-          'client_key': _clientKey,
-          'limit': limit.clamp(1, 50),
-          if (pos != null) 'pos': pos,
+          'customer_id': _customerId,
+          'per_page': perPage.clamp(1, 50),
+          'page': page,
         },
       );
 
-      return TenorSearchResponse.fromJson(response.data ?? {});
+      return KlipySearchResponse.fromApiResponse(response.data ?? {});
     } on DioException catch (e) {
       throw _convertDioError(e);
     }
@@ -108,9 +107,10 @@ class TenorService {
         throw Exception('Failed to download thumbnail: empty response');
       }
 
+      final extension = url.contains('.webp') ? 'webp' : 'jpg';
       final directory = Directory.systemTemp;
       final file = File(
-        '${directory.path}/tenor_thumb_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        '${directory.path}/klipy_thumb_${DateTime.now().millisecondsSinceEpoch}.$extension',
       );
       await file.writeAsBytes(bytes);
 

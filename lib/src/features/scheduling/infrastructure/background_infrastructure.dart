@@ -68,7 +68,7 @@ class BackgroundInfrastructure {
     );
 
     final videoDio = createVideoServiceDio();
-    final tenorDio = createTenorDio();
+    final klipyDio = createKlipyDio();
 
     Dio? pdsDio;
     final session = await sessionStorage.getSession();
@@ -91,7 +91,7 @@ class BackgroundInfrastructure {
       publicDio: publicDio,
       pdsDio: pdsDio,
       videoServiceDio: videoDio,
-      tenorDio: tenorDio,
+      klipyDio: klipyDio,
       logger: const Logger('XrpcClient'),
     );
 

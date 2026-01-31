@@ -86,17 +86,25 @@ class FeedDiscoveryScreen extends ConsumerWidget {
                   );
                 }
 
-                // FIXME: These bools don't seem to be right
-                if (searchState.results.isEmpty && searchState.isLoading) {
-                  return const LoadingView();
+                if (searchState.isLoading && searchState.results.isEmpty) {
+                  return const LoadingView(message: 'Searching feeds...');
                 }
 
                 final feeds = searchState.filteredResults;
                 if (feeds.isEmpty) {
                   if (searchState.isLoading) {
-                    return const Center(child: Text('No matching feeds found.'));
+                    return const LoadingView(message: 'Searching feeds...');
                   }
-                  return const Center(child: Text('No feeds found.'));
+
+                  return EmptyState(
+                    icon: Icons.search_off,
+                    title: 'No feeds found',
+                    subtitle: searchState.localFilter.isNotEmpty
+                        ? 'No results match your local filter.'
+                        : (searchState.query.isNotEmpty
+                              ? 'No results found for "${searchState.query}".'
+                              : 'No popular feeds found at the moment.'),
+                  );
                 }
 
                 return ListView.separated(

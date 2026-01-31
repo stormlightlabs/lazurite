@@ -9,7 +9,7 @@ import 'package:lazurite/src/core/utils/image_compressor.dart';
 import 'package:lazurite/src/core/utils/logger.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/composer/domain/facet_parser.dart';
-import 'package:lazurite/src/features/composer/infrastructure/tenor_service.dart';
+import 'package:lazurite/src/features/composer/infrastructure/klipy_service.dart';
 import 'package:lazurite/src/features/dms/infrastructure/dms_repository.dart';
 import 'package:lazurite/src/features/dms/infrastructure/outbox_repository.dart';
 import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
@@ -120,7 +120,7 @@ class FakeSession extends Fake implements Session {}
 /// Fake ServerMetadata for testing
 class FakeServerMetadata extends Fake implements ServerMetadata {}
 
-class MockTenorService extends Mock implements TenorService {}
+class MockKlipyService extends Mock implements KlipyService {}
 
 class MockFlutterLocalNotificationsPlugin extends Mock
     implements FlutterLocalNotificationsPlugin {}

@@ -121,11 +121,11 @@ Dio createVideoServiceDio({
   return dio;
 }
 
-/// Creates a Dio client configured for Tenor API access.
+/// Creates a Dio client configured for Klipy API access.
 ///
 /// This client is used for GIF search and selection.
-Dio createTenorDio({
-  String baseUrl = 'https://tenor.googleapis.com/v2',
+Dio createKlipyDio({
+  String baseUrl = 'https://api.klipy.com',
   bool enableLogging = true,
   List<Interceptor> interceptors = const [],
 }) {

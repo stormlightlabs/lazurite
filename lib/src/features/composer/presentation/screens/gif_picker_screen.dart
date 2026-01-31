@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lazurite/src/infrastructure/network/network.dart';
 
-import '../../../composer/domain/tenor_gif.dart';
-import '../../../composer/infrastructure/tenor_service.dart';
+import '../../../composer/domain/klipy_gif.dart';
+import '../../../composer/infrastructure/klipy_service.dart';
 
 /// Result data returned when user selects a GIF.
 class GifSelectionResult {
@@ -23,7 +23,7 @@ class GifSelectionResult {
   final String thumbBlobJson;
 }
 
-/// Screen for searching and selecting GIFs from Tenor.
+/// Screen for searching and selecting GIFs from Klipy.
 class GifPickerScreen extends ConsumerStatefulWidget {
   const GifPickerScreen({super.key});
 
@@ -34,8 +34,8 @@ class GifPickerScreen extends ConsumerStatefulWidget {
 class _GifPickerScreenState extends ConsumerState<GifPickerScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<TenorGif> _gifs = [];
-  String? _nextPos;
+  final List<KlipyGif> _gifs = [];
+  int? _nextPage;
   bool _isLoading = false;
   bool _isSearching = false;
 
@@ -63,14 +63,14 @@ class _GifPickerScreenState extends ConsumerState<GifPickerScreen> {
     });
 
     try {
-      final service = ref.read(tenorServiceProvider);
-      final response = await service.getFeaturedGifs();
+      final service = ref.read(klipyServiceProvider);
+      final response = await service.getTrendingGifs();
 
       if (mounted) {
         setState(() {
           _gifs.clear();
           _gifs.addAll(response.results);
-          _nextPos = response.next;
+          _nextPage = response.nextPage;
           _isLoading = false;
         });
       }
@@ -92,18 +92,18 @@ class _GifPickerScreenState extends ConsumerState<GifPickerScreen> {
     setState(() {
       _isLoading = true;
       _isSearching = true;
-      _nextPos = null;
+      _nextPage = null;
     });
 
     try {
-      final service = ref.read(tenorServiceProvider);
+      final service = ref.read(klipyServiceProvider);
       final response = await service.searchGifs(query: query);
 
       if (mounted) {
         setState(() {
           _gifs.clear();
           _gifs.addAll(response.results);
-          _nextPos = response.next;
+          _nextPage = response.nextPage;
           _isLoading = false;
         });
       }
@@ -120,26 +120,26 @@ class _GifPickerScreenState extends ConsumerState<GifPickerScreen> {
   }
 
   Future<void> _loadMoreGifs() async {
-    if (_isLoading || _nextPos == null) return;
+    if (_isLoading || _nextPage == null) return;
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final service = ref.read(tenorServiceProvider);
+      final service = ref.read(klipyServiceProvider);
 
-      final TenorSearchResponse response;
+      final KlipySearchResponse response;
       if (_isSearching) {
-        response = await service.searchGifs(query: _searchController.text, pos: _nextPos);
+        response = await service.searchGifs(query: _searchController.text, page: _nextPage!);
       } else {
-        response = await service.getFeaturedGifs(pos: _nextPos);
+        response = await service.getTrendingGifs(page: _nextPage!);
       }
 
       if (mounted) {
         setState(() {
           _gifs.addAll(response.results);
-          _nextPos = response.next;
+          _nextPage = response.nextPage;
           _isLoading = false;
         });
       }
@@ -158,9 +158,9 @@ class _GifPickerScreenState extends ConsumerState<GifPickerScreen> {
     }
   }
 
-  Future<void> _selectGif(TenorGif gif) async {
+  Future<void> _selectGif(KlipyGif gif) async {
     try {
-      final service = ref.read(tenorServiceProvider);
+      final service = ref.read(klipyServiceProvider);
 
       final thumbnailUrl = gif.thumbnailUrl;
       if (thumbnailUrl == null) {
@@ -194,9 +194,9 @@ class _GifPickerScreenState extends ConsumerState<GifPickerScreen> {
       if (!mounted) return;
 
       final result = GifSelectionResult(
-        uri: gif.itemurl ?? gif.url ?? '',
+        uri: gif.itemUrl,
         title: gif.title,
-        description: gif.contentDescription,
+        description: gif.tags?.join(', '),
         thumbBlobJson: blobRefJson,
       );
 
@@ -326,7 +326,7 @@ class _GifPickerScreenState extends ConsumerState<GifPickerScreen> {
       bottomSheet: const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Text(
-          'Powered by Tenor',
+          'Powered by Klipy',
           style: TextStyle(fontSize: 12, color: Colors.grey),
           textAlign: TextAlign.center,
         ),
@@ -339,7 +339,7 @@ class _GifPickerScreenState extends ConsumerState<GifPickerScreen> {
 class GifGridItem extends StatelessWidget {
   const GifGridItem({required this.gif, required this.onTap, super.key});
 
-  final TenorGif gif;
+  final KlipyGif gif;
   final VoidCallback onTap;
 
   @override

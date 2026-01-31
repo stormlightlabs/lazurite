@@ -13,27 +13,27 @@ import 'network_failure.dart';
 ///
 /// This is the main entry point for making XRPC requests. It:
 /// - Looks up endpoint metadata from the registry
-/// - Routes requests to the correct Dio client (public vs PDS vs video vs tenor)
+/// - Routes requests to the correct Dio client (public vs PDS vs video vs klipy)
 /// - Handles response parsing and error conversion
 class XrpcClient {
   XrpcClient({
     required Dio publicDio,
     required Dio? pdsDio,
     required Dio videoServiceDio,
-    required Dio tenorDio,
+    required Dio klipyDio,
     required Logger logger,
     EndpointRegistry? registry,
   }) : _publicDio = publicDio,
        _pdsDio = pdsDio,
        _videoServiceDio = videoServiceDio,
-       _tenorDio = tenorDio,
+       _klipyDio = klipyDio,
        _logger = logger,
        _registry = registry ?? EndpointRegistry.instance;
 
   final Dio _publicDio;
   final Dio? _pdsDio;
   final Dio _videoServiceDio;
-  final Dio _tenorDio;
+  final Dio _klipyDio;
   final Logger _logger;
   final EndpointRegistry _registry;
 
@@ -167,8 +167,8 @@ class XrpcClient {
         );
       case HostKind.video:
         return _videoServiceDio;
-      case HostKind.tenor:
-        return _tenorDio;
+      case HostKind.klipy:
+        return _klipyDio;
     }
   }
 

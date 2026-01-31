@@ -238,7 +238,8 @@ void main() {
   group('VideoUploadService - cancelUpload', () {
     test('cancels active upload', () async {
       var getJobStatusCallCount = 0;
-      final shouldCancel = Completer<bool>();
+      final pollingStarted = Completer<void>();
+      final shouldCancel = Completer<void>();
 
       when(
         () => mockApi.callRaw<Map<String, dynamic>>(
@@ -264,6 +265,7 @@ void main() {
         getJobStatusCallCount++;
 
         if (getJobStatusCallCount == 1) {
+          pollingStarted.complete();
           await shouldCancel.future;
         }
 
@@ -278,11 +280,10 @@ void main() {
         mimeType: 'video/mp4',
       );
 
-      await Future.delayed(const Duration(milliseconds: 10));
-
-      shouldCancel.complete(true);
+      await pollingStarted.future;
 
       videoUploadService.cancelUpload('test-job-cancel');
+      shouldCancel.complete();
 
       await expectLater(
         uploadFuture,
