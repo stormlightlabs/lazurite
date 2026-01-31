@@ -8,52 +8,6 @@ part of 'scheduling_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provides the session storage for scheduling operations.
-
-@ProviderFor(sessionStorage)
-final sessionStorageProvider = SessionStorageProvider._();
-
-/// Provides the session storage for scheduling operations.
-
-final class SessionStorageProvider
-    extends $FunctionalProvider<SessionStorage, SessionStorage, SessionStorage>
-    with $Provider<SessionStorage> {
-  /// Provides the session storage for scheduling operations.
-  SessionStorageProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'sessionStorageProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$sessionStorageHash();
-
-  @$internal
-  @override
-  $ProviderElement<SessionStorage> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  SessionStorage create(Ref ref) {
-    return sessionStorage(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(SessionStorage value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<SessionStorage>(value),
-    );
-  }
-}
-
-String _$sessionStorageHash() => r'c054ab7018eab1db05df3ce70acf916f8770e07d';
-
 /// Provides the notification-based scheduler implementation.
 ///
 /// This is the default scheduler for the app, using local notifications
@@ -110,25 +64,132 @@ final class NotificationSchedulerProvider
 
 String _$notificationSchedulerHash() => r'7c8762242a85e0a610845470905b414473cd8d54';
 
+/// Provides the background task-based scheduler implementation.
+
+@ProviderFor(workmanagerScheduler)
+final workmanagerSchedulerProvider = WorkmanagerSchedulerProvider._();
+
+/// Provides the background task-based scheduler implementation.
+
+final class WorkmanagerSchedulerProvider
+    extends $FunctionalProvider<WorkmanagerScheduler, WorkmanagerScheduler, WorkmanagerScheduler>
+    with $Provider<WorkmanagerScheduler> {
+  /// Provides the background task-based scheduler implementation.
+  WorkmanagerSchedulerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'workmanagerSchedulerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$workmanagerSchedulerHash();
+
+  @$internal
+  @override
+  $ProviderElement<WorkmanagerScheduler> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  WorkmanagerScheduler create(Ref ref) {
+    return workmanagerScheduler(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(WorkmanagerScheduler value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<WorkmanagerScheduler>(value),
+    );
+  }
+}
+
+String _$workmanagerSchedulerHash() => r'c9438a3de181e648b4864a7dbd6375868a40c553';
+
+/// Manages the "Auto-post scheduled drafts" setting.
+///
+/// When enabled, scheduled posts are automatically published in the background.
+/// When disabled (default), the app shows a notification when it's time to publish.
+
+@ProviderFor(AutoPostEnabled)
+final autoPostEnabledProvider = AutoPostEnabledProvider._();
+
+/// Manages the "Auto-post scheduled drafts" setting.
+///
+/// When enabled, scheduled posts are automatically published in the background.
+/// When disabled (default), the app shows a notification when it's time to publish.
+final class AutoPostEnabledProvider extends $AsyncNotifierProvider<AutoPostEnabled, bool> {
+  /// Manages the "Auto-post scheduled drafts" setting.
+  ///
+  /// When enabled, scheduled posts are automatically published in the background.
+  /// When disabled (default), the app shows a notification when it's time to publish.
+  AutoPostEnabledProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'autoPostEnabledProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$autoPostEnabledHash();
+
+  @$internal
+  @override
+  AutoPostEnabled create() => AutoPostEnabled();
+}
+
+String _$autoPostEnabledHash() => r'e253916c1b48d121df1c4a5ef10fe80d1ebce695';
+
+/// Manages the "Auto-post scheduled drafts" setting.
+///
+/// When enabled, scheduled posts are automatically published in the background.
+/// When disabled (default), the app shows a notification when it's time to publish.
+
+abstract class _$AutoPostEnabled extends $AsyncNotifier<bool> {
+  FutureOr<bool> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<bool>, bool>,
+              AsyncValue<bool>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 /// Provides the active scheduler instance.
 ///
-/// Currently returns the notification-based scheduler, but can be
-/// swapped to use background task scheduling in the future.
+/// Returns [WorkmanagerScheduler] if auto-post is enabled,
+/// otherwise returns [NotificationScheduler].
 
 @ProviderFor(scheduler)
 final schedulerProvider = SchedulerProvider._();
 
 /// Provides the active scheduler instance.
 ///
-/// Currently returns the notification-based scheduler, but can be
-/// swapped to use background task scheduling in the future.
+/// Returns [WorkmanagerScheduler] if auto-post is enabled,
+/// otherwise returns [NotificationScheduler].
 
 final class SchedulerProvider extends $FunctionalProvider<Scheduler, Scheduler, Scheduler>
     with $Provider<Scheduler> {
   /// Provides the active scheduler instance.
   ///
-  /// Currently returns the notification-based scheduler, but can be
-  /// swapped to use background task scheduling in the future.
+  /// Returns [WorkmanagerScheduler] if auto-post is enabled,
+  /// otherwise returns [NotificationScheduler].
   SchedulerProvider._()
     : super(
         from: null,
@@ -159,7 +220,7 @@ final class SchedulerProvider extends $FunctionalProvider<Scheduler, Scheduler, 
   }
 }
 
-String _$schedulerHash() => r'fd52e1237e7b838371ce497a3da0fb2672410dba';
+String _$schedulerHash() => r'e758cb3452fa5d2fb3f4d4000e78db2f4e8ccc3c';
 
 /// Provides the post publisher service.
 ///

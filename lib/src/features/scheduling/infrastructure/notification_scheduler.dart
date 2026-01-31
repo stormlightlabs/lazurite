@@ -143,6 +143,16 @@ class NotificationScheduler implements Scheduler {
     }
   }
 
+  @override
+  Future<void> cancelAll() async {
+    try {
+      await _notificationsPlugin.cancelAll();
+      _logger.info('Cancelled all scheduled notifications');
+    } catch (e, stack) {
+      _logger.error('Failed to cancel all scheduled notifications', e, stack);
+    }
+  }
+
   /// Generates a consistent notification ID from a draft ID.
   int _generateNotificationId(String draftId) => _notificationIdBase + draftId.hashCode.abs();
 

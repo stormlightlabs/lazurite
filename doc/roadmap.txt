@@ -39,16 +39,16 @@ Tasks:
 - [x] Define callbackDispatcher top-level function
 - [x] Platform initialization (Android/iOS background task config)
 - [x] OneOffTask registration with initialDelay = scheduled_at_utc - now
-- [ ] Worker calls PostPublisher in background isolate
-- [ ] Retry logic with exponential backoff
-- [ ] resyncAll() on app boot to restore pending jobs after reboot
-- [ ] Settings toggle: "Auto-post scheduled drafts (may be delayed)"
+- [x] Worker calls PostPublisher in background isolate
+- [x] Retry logic with exponential backoff
+- [x] resyncAll() on app boot to restore pending jobs after reboot
+- [x] Settings toggle: "Auto-post scheduled drafts (may be delayed)"
 
 Tests:
-- [ ] WorkManager task registration and cancellation
-- [ ] Background worker executes publishDraft
-- [ ] Retry logic with network failures
-- [ ] Device reboot: resyncAll restores jobs (manual test)
+- [x] WorkManager task registration and cancellation
+- [x] Background worker executes publishDraft
+- [x] Retry logic with network failures
+- [x] Device reboot: resyncAll restores jobs (manual test)
 
 Definition of Done:
 - Background posting works on both platforms

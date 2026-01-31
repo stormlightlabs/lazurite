@@ -8,6 +8,7 @@ import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/debug/debug.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
+import 'package:lazurite/src/features/scheduling/application/scheduling_providers.dart';
 import 'package:lazurite/src/features/settings/application/preference_sync_controller.dart';
 
 /// The main application widget.
@@ -25,6 +26,13 @@ class _AppState extends ConsumerState<App> {
   void initState() {
     super.initState();
     _initializeNotifications();
+    _resyncSchedules();
+  }
+
+  Future<void> _resyncSchedules() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(schedulerProvider).resyncAll();
+    });
   }
 
   Future<void> _initializeNotifications() async {

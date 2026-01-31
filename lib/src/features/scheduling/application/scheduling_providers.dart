@@ -6,16 +6,10 @@ import 'package:lazurite/src/features/scheduling/infrastructure/notification_sch
 import 'package:lazurite/src/features/scheduling/infrastructure/post_publisher.dart';
 import 'package:lazurite/src/features/scheduling/infrastructure/schedule_repository.dart';
 import 'package:lazurite/src/features/scheduling/infrastructure/scheduler.dart';
-import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
+import 'package:lazurite/src/features/scheduling/infrastructure/workmanager_scheduler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'scheduling_providers.g.dart';
-
-/// Provides the session storage for scheduling operations.
-@Riverpod(keepAlive: true)
-SessionStorage sessionStorage(Ref ref) {
-  return SessionStorage();
-}
 
 /// Provides the notification-based scheduler implementation.
 ///
@@ -34,13 +28,57 @@ NotificationScheduler notificationScheduler(Ref ref) {
   );
 }
 
+/// Provides the background task-based scheduler implementation.
+@Riverpod(keepAlive: true)
+WorkmanagerScheduler workmanagerScheduler(Ref ref) {
+  final db = ref.watch(appDatabaseProvider);
+  final sessionStorage = ref.watch(sessionStorageProvider);
+  final logger = ref.watch(loggerProvider('WorkmanagerScheduler'));
+
+  return WorkmanagerScheduler(
+    schedulesDao: db.schedulesDao,
+    sessionStorage: sessionStorage,
+    logger: logger,
+  );
+}
+
+/// Manages the "Auto-post scheduled drafts" setting.
+///
+/// When enabled, scheduled posts are automatically published in the background.
+/// When disabled (default), the app shows a notification when it's time to publish.
+@riverpod
+class AutoPostEnabled extends _$AutoPostEnabled {
+  static const _key = 'auto_post_enabled';
+
+  @override
+  Future<bool> build() async {
+    final db = ref.watch(appDatabaseProvider);
+    final value = await db.localSettingsDao.get(_key);
+    return value == 'true';
+  }
+
+  /// Toggles the auto-post setting.
+  Future<void> toggle() async {
+    final current = await future;
+    final db = ref.read(appDatabaseProvider);
+    await db.localSettingsDao.set(_key, (!current).toString());
+    ref.invalidateSelf();
+  }
+}
+
 /// Provides the active scheduler instance.
 ///
-/// Currently returns the notification-based scheduler, but can be
-/// swapped to use background task scheduling in the future.
+/// Returns [WorkmanagerScheduler] if auto-post is enabled,
+/// otherwise returns [NotificationScheduler].
 @Riverpod(keepAlive: true)
 Scheduler scheduler(Ref ref) {
-  return ref.watch(notificationSchedulerProvider);
+  final autoPostEnabled = ref.watch(autoPostEnabledProvider).value ?? false;
+
+  if (autoPostEnabled) {
+    return ref.watch(workmanagerSchedulerProvider);
+  } else {
+    return ref.watch(notificationSchedulerProvider);
+  }
 }
 
 /// Provides the post publisher service.

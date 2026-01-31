@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/developer_tools/application/dev_settings_providers.dart';
+import 'package:lazurite/src/features/scheduling/application/scheduling_providers.dart';
 import 'package:lazurite/src/features/settings/presentation/widgets/settings_section.dart';
 import 'package:lazurite/src/features/settings/presentation/widgets/settings_tile.dart';
 
@@ -26,6 +27,7 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         children: [
           if (isAuthenticated) ..._buildAccountSection(context, ref),
+          if (isAuthenticated) ..._buildSchedulingSection(context, ref),
           ..._buildAppearanceSection(context),
           ..._buildAppSection(context),
           ..._buildDeveloperSection(context, ref),
@@ -69,6 +71,38 @@ class SettingsScreen extends ConsumerWidget {
         onTap: () {
           context.push('/feeds/manage');
         },
+      ),
+    ];
+  }
+
+  List<Widget> _buildSchedulingSection(BuildContext context, WidgetRef ref) {
+    final autoPostEnabled = ref.watch(autoPostEnabledProvider).value ?? false;
+
+    return [
+      const SettingsSection(title: 'Scheduling'),
+      SettingsTile(
+        leading: const Icon(Icons.schedule_send_outlined),
+        title: 'Auto-post scheduled drafts',
+        subtitle: 'Automatically publish posts even when the app is closed',
+        trailing: Switch(
+          value: autoPostEnabled,
+          onChanged: (value) async {
+            final oldScheduler = ref.read(schedulerProvider);
+            await ref.read(autoPostEnabledProvider.notifier).toggle();
+            final newScheduler = ref.read(schedulerProvider);
+
+            await oldScheduler.cancelAll();
+            await newScheduler.resyncAll();
+          },
+        ),
+      ),
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Text(
+          'Note: Background auto-post may be delayed by operating system power management. '
+          'Notification mode (default) is more reliable on some devices.',
+          style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
+        ),
       ),
     ];
   }

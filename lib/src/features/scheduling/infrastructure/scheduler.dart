@@ -46,4 +46,7 @@ abstract class Scheduler {
   /// - Re-register tasks with the platform scheduler
   /// - Handle tasks that may have already executed
   Future<void> resyncAll();
+
+  /// Cancels all previously scheduled tasks managed by this scheduler.
+  Future<void> cancelAll();
 }

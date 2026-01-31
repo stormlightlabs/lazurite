@@ -7,19 +7,25 @@ import 'package:lazurite/src/core/auth/session_model.dart';
 import 'package:lazurite/src/features/auth/application/auth_providers.dart';
 import 'package:lazurite/src/features/auth/domain/auth_state.dart';
 import 'package:lazurite/src/features/settings/presentation/screens/settings_screen.dart';
+import 'package:lazurite/src/infrastructure/db/daos/local_settings_dao.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../../helpers/mocks.dart';
 
+class MockLocalSettingsDao extends Mock implements LocalSettingsDao {}
+
 void main() {
   late MockAppDatabase mockDb;
   late MockDevToolsDao mockDao;
+  late MockLocalSettingsDao mockLocalSettingsDao;
 
   setUp(() {
     mockDb = MockAppDatabase();
     mockDao = MockDevToolsDao();
+    mockLocalSettingsDao = MockLocalSettingsDao();
     when(() => mockDb.devToolsDao).thenReturn(mockDao);
+    when(() => mockDb.localSettingsDao).thenReturn(mockLocalSettingsDao);
 
     final keys = [
       'dev_tools_enabled',
@@ -30,6 +36,8 @@ void main() {
       when(() => mockDao.getSetting(key)).thenAnswer((_) async => 'false');
     }
     when(() => mockDao.setSetting(any(), any(), any())).thenAnswer((_) async {});
+    when(() => mockLocalSettingsDao.get(any())).thenAnswer((_) async => 'false');
+    when(() => mockLocalSettingsDao.set(any(), any())).thenAnswer((_) async {});
   });
   Session createMockSession() {
     return Session(
@@ -106,17 +114,23 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('ACCOUNT'), findsOneWidget);
-      expect(find.text('APPEARANCE'), findsOneWidget);
-      expect(find.text('APP'), findsOneWidget);
       expect(find.text('Content Moderation'), findsOneWidget);
       expect(find.text('Feed Preferences'), findsOneWidget);
       expect(find.text('Muted Words'), findsOneWidget);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.pumpAndSettle();
+
       expect(find.text('Saved Feeds'), findsOneWidget);
+      expect(find.text('SCHEDULING'), findsOneWidget);
+      expect(find.text('Auto-post scheduled drafts'), findsOneWidget);
+      expect(find.text('APPEARANCE'), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
 
       await tester.drag(find.byType(ListView), const Offset(0, -300));
       await tester.pumpAndSettle();
 
+      expect(find.text('APP'), findsOneWidget);
       expect(find.text('Accessibility'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);
 
@@ -199,7 +213,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      await tester.drag(find.byType(ListView), const Offset(0, -700));
+      await tester.drag(find.byType(ListView), const Offset(0, -900));
       await tester.pumpAndSettle();
 
       final signOutButtons = find.text('Sign Out');
@@ -227,7 +241,7 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      await tester.drag(find.byType(ListView), const Offset(0, -700));
+      await tester.drag(find.byType(ListView), const Offset(0, -900));
       await tester.pumpAndSettle();
 
       final signOutButtons = find.text('Sign Out');

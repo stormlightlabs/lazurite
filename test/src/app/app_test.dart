@@ -14,28 +14,44 @@ import 'package:lazurite/src/features/feeds/application/feed_providers.dart';
 import 'package:lazurite/src/features/feeds/application/feed_sync_controller.dart';
 import 'package:lazurite/src/features/profile/application/profile_providers.dart';
 import 'package:lazurite/src/features/profile/domain/profile.dart';
+import 'package:lazurite/src/features/scheduling/application/scheduling_providers.dart';
+import 'package:lazurite/src/features/scheduling/infrastructure/scheduler.dart';
 import 'package:lazurite/src/features/search/application/search_providers.dart';
 import 'package:lazurite/src/features/settings/application/preference_sync_controller.dart';
 import 'package:lazurite/src/features/settings/domain/animation_preferences.dart';
+import 'package:lazurite/src/infrastructure/db/daos/local_settings_dao.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../helpers/mocks.dart';
 
+class MockScheduler extends Mock implements Scheduler {}
+
+class MockLocalSettingsDao extends Mock implements LocalSettingsDao {}
+
 void main() {
   late MockSessionStorage mockSessionStorage;
   late MockSearchRepository mockSearchRepository;
   late MockAppDatabase mockDatabase;
+  late MockLocalSettingsDao mockLocalSettingsDao;
   late MockProfileRepository mockProfileRepository;
   late MockFeedContentRepository mockFeedContentRepository;
+  late MockScheduler mockScheduler;
   late Session testSession;
 
   setUp(() {
     mockSessionStorage = MockSessionStorage();
     mockSearchRepository = MockSearchRepository();
     mockDatabase = MockAppDatabase();
+    mockLocalSettingsDao = MockLocalSettingsDao();
     mockProfileRepository = MockProfileRepository();
     mockFeedContentRepository = MockFeedContentRepository();
+    mockScheduler = MockScheduler();
+
+    when(() => mockDatabase.localSettingsDao).thenReturn(mockLocalSettingsDao);
+    when(() => mockLocalSettingsDao.get(any())).thenAnswer((_) async => null);
+    when(() => mockLocalSettingsDao.watch(any())).thenAnswer((_) => Stream.value(null));
+
     testSession = Session(
       did: 'did:web:test',
       handle: 'handle',
@@ -80,6 +96,7 @@ void main() {
       ),
     ).thenAnswer((_) async {});
     when(() => mockFeedContentRepository.getCursor(any(), any())).thenAnswer((_) async => null);
+    when(() => mockScheduler.resyncAll()).thenAnswer((_) async => {});
   });
 
   List<Override> getTestOverrides() {
@@ -97,6 +114,7 @@ void main() {
       activeFeedProvider.overrideWith(() => MockActiveFeed()),
       themeControllerProvider.overrideWith(MockThemeController.new),
       lazurite_anim.animationControllerProvider.overrideWith(MockAnimationController.new),
+      schedulerProvider.overrideWithValue(mockScheduler),
     ];
   }
 
@@ -174,8 +192,7 @@ class MockPinnedFeedsNotifier extends PinnedFeedsNotifier {
   Stream<List<SavedFeedData>> build() => Stream.value([]);
 }
 
-/// Mock ThemeController that avoids ThemeFactory.buildThemeData()
-/// which triggers Google Fonts loading.
+/// Mock ThemeController that avoids ThemeFactory.buildThemeData() which triggers Google Fonts loading.
 class MockThemeController extends ThemeController {
   @override
   ThemeState build() {

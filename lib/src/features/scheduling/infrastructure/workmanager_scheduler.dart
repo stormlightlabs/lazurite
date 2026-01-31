@@ -1,5 +1,8 @@
 import 'package:lazurite/src/core/utils/logger.dart';
+import 'package:lazurite/src/features/scheduling/domain/schedule.dart';
 import 'package:lazurite/src/features/scheduling/infrastructure/scheduler.dart';
+import 'package:lazurite/src/infrastructure/auth/session_storage.dart';
+import 'package:lazurite/src/infrastructure/db/daos/schedules_dao.dart';
 import 'package:workmanager/workmanager.dart';
 
 /// Background task-based scheduler implementation using Workmanager.
@@ -8,10 +11,18 @@ import 'package:workmanager/workmanager.dart';
 /// BGTaskScheduler on iOS) to trigger post publishing in the background,
 /// even when the app is not running.
 class WorkmanagerScheduler implements Scheduler {
-  WorkmanagerScheduler({required Logger logger, Workmanager? workmanager})
-    : _logger = logger,
-      _workmanager = workmanager ?? Workmanager();
+  WorkmanagerScheduler({
+    required SchedulesDao schedulesDao,
+    required SessionStorage sessionStorage,
+    required Logger logger,
+    Workmanager? workmanager,
+  }) : _schedulesDao = schedulesDao,
+       _sessionStorage = sessionStorage,
+       _logger = logger,
+       _workmanager = workmanager ?? Workmanager();
 
+  final SchedulesDao _schedulesDao;
+  final SessionStorage _sessionStorage;
   final Logger _logger;
   final Workmanager _workmanager;
 
@@ -39,6 +50,8 @@ class WorkmanagerScheduler implements Scheduler {
         initialDelay: initialDelay,
         inputData: {'draftId': draftId},
         constraints: Constraints(networkType: NetworkType.connected),
+        backoffPolicy: BackoffPolicy.exponential,
+        backoffPolicyDelay: const Duration(minutes: 5),
       );
 
       _logger.info(
@@ -67,8 +80,38 @@ class WorkmanagerScheduler implements Scheduler {
 
   @override
   Future<void> resyncAll() async {
-    // TODO: Implement resyncAll for WorkmanagerScheduler
-    _logger.info('resyncAll called for WorkmanagerScheduler');
+    try {
+      final session = await _sessionStorage.getSession();
+      if (session == null) {
+        _logger.warning('Cannot resync background tasks: no active session');
+        return;
+      }
+
+      final schedules = await _schedulesDao.listSchedulesByStatus(
+        ScheduleStatus.scheduled.name,
+        session.did,
+      );
+
+      _logger.info('Resyncing ${schedules.length} background tasks');
+
+      for (final schedule in schedules) {
+        await this.schedule(schedule.draftId, schedule.scheduledAtUtc);
+      }
+
+      _logger.info('Resynced background tasks');
+    } catch (e, stack) {
+      _logger.error('Failed to resync background tasks', e, stack);
+    }
+  }
+
+  @override
+  Future<void> cancelAll() async {
+    try {
+      await _workmanager.cancelAll();
+      _logger.info('Cancelled all background tasks');
+    } catch (e, stack) {
+      _logger.error('Failed to cancel all background tasks', e, stack);
+    }
   }
 
   String _getUniqueName(String draftId) => 'task_$draftId';
