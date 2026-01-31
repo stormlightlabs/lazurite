@@ -35,10 +35,10 @@ Background Scheduling                                             *bsky-sched-3*
 Best-effort background auto-post (no user interaction required)
 
 Tasks:
-- [ ] Add workmanager dependency
-- [ ] Define callbackDispatcher top-level function
-- [ ] Platform initialization (Android/iOS background task config)
-- [ ] OneOffTask registration with initialDelay = scheduled_at_utc - now
+- [x] Add workmanager dependency
+- [x] Define callbackDispatcher top-level function
+- [x] Platform initialization (Android/iOS background task config)
+- [x] OneOffTask registration with initialDelay = scheduled_at_utc - now
 - [ ] Worker calls PostPublisher in background isolate
 - [ ] Retry logic with exponential backoff
 - [ ] resyncAll() on app boot to restore pending jobs after reboot
