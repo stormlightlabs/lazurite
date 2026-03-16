@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Compose - Lazurite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.2.2/dist/fonts/geist-sans/style.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .compose-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background-color: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .compose-header-cancel {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .compose-header-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-family: var(--font-heading);
+    }
+
+    .compose-header-post {
+      padding: 8px 20px;
+      border-radius: 9999px;
+      border: none;
+      background-color: var(--accent-primary);
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .compose-header-post:hover {
+      background-color: var(--accent-primary-hover);
+    }
+
+    .compose-header-post:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .compose-body {
+      padding: 16px;
+      display: flex;
+      gap: 12px;
+      min-height: 200px;
+    }
+
+    .compose-textarea {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 16px;
+      font-family: var(--font-body);
+      resize: none;
+      outline: none;
+      min-height: 160px;
+      line-height: 1.5;
+    }
+
+    .compose-textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Reply Context */
+    .reply-context {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background-color: var(--surface);
+    }
+
+    .reply-context-icon {
+      width: 16px;
+      height: 16px;
+      color: var(--text-muted);
+    }
+
+    .reply-context-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .reply-context-handle {
+      color: var(--accent-primary);
+      font-weight: 500;
+    }
+
+    /* Media Attachments */
+    .compose-media {
+      padding: 0 16px 16px;
+      padding-left: 68px;
+    }
+
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .media-item {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface-variant) 100%);
+      aspect-ratio: 4 / 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .media-item-remove {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: rgba(0, 0, 0, 0.6);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .media-item-remove svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .media-item-alt {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background-color: rgba(0, 0, 0, 0.6);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .media-item-alt.has-alt {
+      background-color: var(--accent-primary);
+    }
+
+    /* Toolbar */
+    .compose-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      position: sticky;
+      bottom: 0;
+      background-color: var(--bg);
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .toolbar-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--accent-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease;
+    }
+
+    .toolbar-btn:hover {
+      background-color: var(--surface);
+    }
+
+    .toolbar-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .toolbar-btn.disabled {
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    /* Character Counter */
+    .char-counter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .char-counter-ring {
+      width: 28px;
+      height: 28px;
+      position: relative;
+    }
+
+    .char-counter-ring svg {
+      width: 28px;
+      height: 28px;
+      transform: rotate(-90deg);
+    }
+
+    .char-counter-ring circle {
+      fill: none;
+      stroke-width: 2.5;
+    }
+
+    .char-counter-bg {
+      stroke: var(--surface-variant);
+    }
+
+    .char-counter-fill {
+      stroke: var(--accent-primary);
+      stroke-dasharray: 75.4;
+      stroke-dashoffset: 30;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.2s ease, stroke 0.2s ease;
+    }
+
+    .char-counter-fill.warning {
+      stroke: var(--accent-warning);
+    }
+
+    .char-counter-fill.danger {
+      stroke: var(--accent-error);
+    }
+
+    .char-counter-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Drafts */
+    .drafts-divider {
+      height: 8px;
+      background-color: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .drafts-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+    }
+
+    .drafts-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .drafts-count {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .draft-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .draft-item:hover {
+      background-color: var(--surface);
+    }
+
+    .draft-item-text {
+      font-size: 15px;
+      color: var(--text-primary);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .draft-item-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .draft-item-badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background-color: var(--surface-variant);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .draft-item-badge.scheduled {
+      background-color: var(--accent-primary);
+      color: white;
+    }
+
+    /* Schedule Pill */
+    .schedule-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-left: 68px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .schedule-pill:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    .schedule-pill svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .schedule-pill.active {
+      background-color: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-container">
+
+    <!-- Compose Header -->
+    <div class="compose-header">
+      <button class="compose-header-cancel">Cancel</button>
+      <span class="compose-header-title">New Post</span>
+      <button class="compose-header-post">Post</button>
+    </div>
+
+    <!-- Reply Context (shown when replying) -->
+    <div class="reply-context">
+      <svg class="reply-context-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 14 4 9 9 4"/>
+        <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+      </svg>
+      <span class="reply-context-text">Replying to <span class="reply-context-handle">@alice.bsky.social</span></span>
+    </div>
+
+    <!-- Compose Body -->
+    <div class="compose-body">
+      <div class="avatar avatar-sm">JD</div>
+      <textarea class="compose-textarea" placeholder="What's on your mind?" rows="6">Excited to share my latest project built with the AT Protocol! Check it out and let me know what you think.</textarea>
+    </div>
+
+    <!-- Schedule Pill -->
+    <div class="schedule-pill">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      Schedule for later
+    </div>
+
+    <!-- Media Attachments -->
+    <div class="compose-media">
+      <div class="media-grid">
+        <div class="media-item">
+          [Photo 1]
+          <button class="media-item-remove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <span class="media-item-alt has-alt">ALT</span>
+        </div>
+        <div class="media-item">
+          [Photo 2]
+          <button class="media-item-remove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <span class="media-item-alt">ALT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="compose-toolbar">
+      <div class="toolbar-actions">
+        <!-- Image -->
+        <button class="toolbar-btn" title="Add image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </button>
+        <!-- Drafts -->
+        <button class="toolbar-btn" title="Drafts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </button>
+        <!-- Schedule -->
+        <button class="toolbar-btn" title="Schedule">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="char-counter">
+        <span class="char-counter-text">192</span>
+        <div class="char-counter-ring">
+          <svg viewBox="0 0 28 28">
+            <circle class="char-counter-bg" cx="14" cy="14" r="12"/>
+            <circle class="char-counter-fill" cx="14" cy="14" r="12"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drafts Section (shown when drafts toolbar button is tapped) -->
+    <div class="drafts-divider"></div>
+
+    <div class="drafts-header">
+      <span class="drafts-title">Drafts</span>
+      <span class="drafts-count">3 drafts</span>
+    </div>
+
+    <div class="draft-item">
+      <div class="draft-item-text">Working on a thread about decentralised identity and why it matters for the open web...</div>
+      <div class="draft-item-meta">
+        <span>2 hours ago</span>
+        <span class="draft-item-badge">Draft</span>
+      </div>
+    </div>
+
+    <div class="draft-item">
+      <div class="draft-item-text">Hot take: the best developer experience is the one you don't notice</div>
+      <div class="draft-item-meta">
+        <span>Yesterday</span>
+        <span class="draft-item-badge scheduled">Mar 18, 9:00 AM</span>
+      </div>
+    </div>
+
+    <div class="draft-item">
+      <div class="draft-item-text">Quick review of the new AT Protocol SDK features that shipped this week</div>
+      <div class="draft-item-meta">
+        <span>3 days ago</span>
+        <span class="draft-item-badge">Draft</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    if (localStorage.getItem('theme')) {
+      const t = localStorage.getItem('theme');
+      if (t !== 'light') document.documentElement.setAttribute('data-theme', t);
+    }
+  </script>
+</body>
+</html>
