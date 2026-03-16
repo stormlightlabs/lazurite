@@ -1,0 +1,74 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+class AppTypography {
+  AppTypography._();
+
+  static TextStyle dmSans({
+    double fontSize = 14,
+    FontWeight fontWeight = FontWeight.normal,
+    Color? color,
+    double? letterSpacing,
+    double? height,
+  }) {
+    return GoogleFonts.dmSans(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+  }
+
+  static TextStyle lora({
+    double fontSize = 14,
+    FontWeight fontWeight = FontWeight.normal,
+    Color? color,
+    double? letterSpacing,
+    double? height,
+  }) {
+    return GoogleFonts.lora(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+  }
+
+  static TextStyle jetBrainsMono({
+    double fontSize = 14,
+    FontWeight fontWeight = FontWeight.normal,
+    Color? color,
+    double? letterSpacing,
+    double? height,
+  }) {
+    return GoogleFonts.jetBrainsMono(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+  }
+
+  static TextTheme textTheme({Color? bodyColor, Color? headlineColor, Color? captionColor}) {
+    return TextTheme(
+      displayLarge: lora(fontSize: 57, fontWeight: FontWeight.w400, color: headlineColor, letterSpacing: -0.25),
+      displayMedium: lora(fontSize: 45, fontWeight: FontWeight.w400, color: headlineColor),
+      displaySmall: lora(fontSize: 36, fontWeight: FontWeight.w400, color: headlineColor),
+      headlineLarge: lora(fontSize: 32, fontWeight: FontWeight.w600, color: headlineColor),
+      headlineMedium: lora(fontSize: 28, fontWeight: FontWeight.w600, color: headlineColor),
+      headlineSmall: lora(fontSize: 24, fontWeight: FontWeight.w600, color: headlineColor),
+      titleLarge: dmSans(fontSize: 22, fontWeight: FontWeight.w600, color: bodyColor),
+      titleMedium: dmSans(fontSize: 16, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.15),
+      titleSmall: jetBrainsMono(fontSize: 14, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.1),
+      bodyLarge: dmSans(fontSize: 16, fontWeight: FontWeight.w400, color: bodyColor, letterSpacing: 0.5),
+      bodyMedium: dmSans(fontSize: 14, fontWeight: FontWeight.w400, color: bodyColor, letterSpacing: 0.25),
+      bodySmall: jetBrainsMono(fontSize: 12, fontWeight: FontWeight.w400, color: captionColor, letterSpacing: 0.4),
+      labelLarge: dmSans(fontSize: 14, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.1),
+      labelMedium: dmSans(fontSize: 12, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.5),
+      labelSmall: jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w500, color: captionColor, letterSpacing: 0.5),
+    );
+  }
+}

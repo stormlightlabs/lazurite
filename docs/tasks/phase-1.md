@@ -27,17 +27,18 @@
 
 ## M3 — Settings & Theming
 
-- [ ] `SettingsCubit` backed by Drift — theme mode preference (system / light / dark)
-- [ ] Oxocarbon Dark `ThemeData` / `ColorScheme`
-- [ ] Oxocarbon Light `ThemeData` / `ColorScheme`
-- [ ] Catppuccin Mocha (Dark) `ThemeData` / `ColorScheme`
-- [ ] Catppuccin Latte (Light) `ThemeData` / `ColorScheme`
-- [ ] Nord Polar Night (Dark) `ThemeData` / `ColorScheme`
-- [ ] Nord Snow Storm (Light) `ThemeData` / `ColorScheme`
-- [ ] Rosé Pine Main (Dark) `ThemeData` / `ColorScheme`
-- [ ] Rosé Pine Dawn (Light) `ThemeData` / `ColorScheme`
-- [ ] Theme picker in settings screen (all 4 palettes × 2 variants + system)
-- [ ] Respect system theme when set to "system"
+- [x] `SettingsCubit` backed by Drift — theme mode preference (system / light / dark)
+- [x] Oxocarbon Dark `ThemeData` / `ColorScheme`
+- [x] Oxocarbon Light `ThemeData` / `ColorScheme`
+- [x] Catppuccin Mocha (Dark) `ThemeData` / `ColorScheme`
+- [x] Catppuccin Latte (Light) `ThemeData` / `ColorScheme`
+- [x] Nord Polar Night (Dark) `ThemeData` / `ColorScheme`
+- [x] Nord Snow Storm (Light) `ThemeData` / `ColorScheme`
+- [x] Rosé Pine Main (Dark) `ThemeData` / `ColorScheme`
+- [x] Rosé Pine Dawn (Light) `ThemeData` / `ColorScheme`
+- [x] Theme picker in settings screen (all 4 palettes × 2 variants + system)
+- [x] Respect system theme when set to "system"
+- NOTE: sans font changed to dmsans from geist
 
 ## M4 — Dev Scripts
 

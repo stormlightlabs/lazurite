@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/router/app_router.dart';
+import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,14 +27,18 @@ Future<void> main() async {
         : const AuthState.unauthenticated(),
   );
 
-  runApp(LazuriteApp(authBloc: authBloc, database: database));
+  final settingsCubit = SettingsCubit(database: database);
+  await settingsCubit.loadSettings();
+
+  runApp(LazuriteApp(authBloc: authBloc, database: database, settingsCubit: settingsCubit));
 }
 
 class LazuriteApp extends StatelessWidget {
-  const LazuriteApp({super.key, required this.authBloc, required this.database});
+  const LazuriteApp({super.key, required this.authBloc, required this.database, required this.settingsCubit});
 
   final AuthBloc authBloc;
   final AppDatabase database;
+  final SettingsCubit settingsCubit;
 
   Bluesky? _createBluesky(AuthState state) {
     if (!state.isAuthenticated || state.tokens == null) {
@@ -73,8 +80,11 @@ class LazuriteApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final router = AppRouter(authBloc: authBloc).router;
 
-    return BlocProvider.value(
-      value: authBloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: authBloc),
+        BlocProvider.value(value: settingsCubit),
+      ],
       child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
           final bluesky = _createBluesky(authState);
@@ -92,11 +102,22 @@ class LazuriteApp extends StatelessWidget {
                 ),
               ],
             ],
-            child: MaterialApp.router(
-              title: 'Lazurite',
-              debugShowCheckedModeBanner: false,
-              theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue), useMaterial3: true),
-              routerConfig: router,
+            child: BlocBuilder<SettingsCubit, SettingsState>(
+              builder: (context, settingsState) {
+                final themeData = settingsState.themeData;
+                final themeMode = settingsState.useSystemTheme
+                    ? ThemeMode.system
+                    : (settingsState.themeVariant == AppThemeVariant.light ? ThemeMode.light : ThemeMode.dark);
+
+                return MaterialApp.router(
+                  title: 'Lazurite',
+                  debugShowCheckedModeBanner: false,
+                  theme: themeData,
+                  darkTheme: themeData,
+                  themeMode: themeMode,
+                  routerConfig: router,
+                );
+              },
             ),
           );
         },
