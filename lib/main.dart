@@ -104,16 +104,18 @@ class LazuriteApp extends StatelessWidget {
             ],
             child: BlocBuilder<SettingsCubit, SettingsState>(
               builder: (context, settingsState) {
-                final themeData = settingsState.themeData;
                 final themeMode = settingsState.useSystemTheme
                     ? ThemeMode.system
                     : (settingsState.themeVariant == AppThemeVariant.light ? ThemeMode.light : ThemeMode.dark);
 
+                final lightTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.light);
+                final darkTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.dark);
+
                 return MaterialApp.router(
                   title: 'Lazurite',
                   debugShowCheckedModeBanner: false,
-                  theme: themeData,
-                  darkTheme: themeData,
+                  theme: lightTheme,
+                  darkTheme: darkTheme,
                   themeMode: themeMode,
                   routerConfig: router,
                 );

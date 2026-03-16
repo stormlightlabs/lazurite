@@ -25,7 +25,7 @@ class NordTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme(
+      colorScheme: const ColorScheme(
         brightness: Brightness.dark,
         primary: nord8,
         onPrimary: nord0,
@@ -81,9 +81,9 @@ class NordTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: nord1,
-        border: OutlineInputBorder(borderSide: const BorderSide(color: nord2)),
-        enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: nord2)),
-        focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: nord8)),
+        border: const OutlineInputBorder(borderSide: BorderSide(color: nord2)),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: nord2)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: nord8)),
         labelStyle: AppTypography.dmSans(color: nord3),
         hintStyle: AppTypography.dmSans(color: nord3),
       ),
@@ -98,7 +98,7 @@ class NordTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme(
+      colorScheme: const ColorScheme(
         brightness: Brightness.light,
         primary: nord8,
         onPrimary: nord0,
@@ -154,9 +154,9 @@ class NordTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: nord5,
-        border: OutlineInputBorder(borderSide: const BorderSide(color: nord2)),
-        enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: nord2)),
-        focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: nord8)),
+        border: const OutlineInputBorder(borderSide: BorderSide(color: nord2)),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: nord2)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: nord8)),
         labelStyle: AppTypography.dmSans(color: nord3),
         hintStyle: AppTypography.dmSans(color: nord3),
       ),

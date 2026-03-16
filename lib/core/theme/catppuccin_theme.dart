@@ -40,7 +40,7 @@ class CatppuccinTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme(
+      colorScheme: const ColorScheme(
         brightness: Brightness.dark,
         primary: mochaLavender,
         onPrimary: mochaBase,
@@ -99,9 +99,9 @@ class CatppuccinTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: mochaMantle,
-        border: OutlineInputBorder(borderSide: const BorderSide(color: mochaSurface0)),
-        enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: mochaSurface0)),
-        focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: mochaLavender)),
+        border: const OutlineInputBorder(borderSide: BorderSide(color: mochaSurface0)),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: mochaSurface0)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: mochaLavender)),
         labelStyle: AppTypography.dmSans(color: mochaSurface1),
         hintStyle: AppTypography.dmSans(color: mochaSurface1),
       ),
@@ -116,7 +116,7 @@ class CatppuccinTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme(
+      colorScheme: const ColorScheme(
         brightness: Brightness.light,
         primary: latteLavender,
         onPrimary: latteBase,
@@ -175,9 +175,9 @@ class CatppuccinTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: latteMantle,
-        border: OutlineInputBorder(borderSide: const BorderSide(color: latteSurface0)),
-        enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: latteSurface0)),
-        focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: latteLavender)),
+        border: const OutlineInputBorder(borderSide: BorderSide(color: latteSurface0)),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: latteSurface0)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: latteLavender)),
         labelStyle: AppTypography.dmSans(color: latteSurface1),
         hintStyle: AppTypography.dmSans(color: latteSurface1),
       ),

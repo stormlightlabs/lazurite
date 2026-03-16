@@ -33,7 +33,7 @@ AppLogger
 ```
 
 **Console output** — enabled only in debug builds via `DevelopmentFilter`.
-Uses `PrettyPrinter` with method counts, colors, and emojis for readability
+Uses `PrettyPrinter` with method counts and colors for readability
 in the terminal.
 
 **File output** — enabled in all builds. Uses `AdvancedFileOutput` which

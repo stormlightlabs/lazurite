@@ -42,7 +42,7 @@ class OxocarbonTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme(
+      colorScheme: const ColorScheme(
         brightness: Brightness.dark,
         primary: darkBase09,
         onPrimary: darkBase00,
@@ -101,9 +101,9 @@ class OxocarbonTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: darkBase01,
-        border: OutlineInputBorder(borderSide: const BorderSide(color: darkBase02)),
-        enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: darkBase02)),
-        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: darkBase09)),
+        border: const OutlineInputBorder(borderSide: BorderSide(color: darkBase02)),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: darkBase02)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: darkBase09)),
         labelStyle: AppTypography.dmSans(color: darkBase03),
         hintStyle: AppTypography.dmSans(color: darkBase03),
       ),
@@ -118,7 +118,7 @@ class OxocarbonTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme(
+      colorScheme: const ColorScheme(
         brightness: Brightness.light,
         primary: lightBase0B,
         onPrimary: lightBase00,
@@ -177,9 +177,9 @@ class OxocarbonTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: lightBase01,
-        border: OutlineInputBorder(borderSide: const BorderSide(color: lightBase02)),
-        enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: lightBase02)),
-        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: lightBase0B)),
+        border: const OutlineInputBorder(borderSide: BorderSide(color: lightBase02)),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: lightBase02)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: lightBase0B)),
         labelStyle: AppTypography.dmSans(color: lightBase05),
         hintStyle: AppTypography.dmSans(color: lightBase05),
       ),

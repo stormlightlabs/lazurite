@@ -34,7 +34,7 @@ class RosePineTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme(
+      colorScheme: const ColorScheme(
         brightness: Brightness.dark,
         primary: mainRose,
         onPrimary: mainBase,
@@ -93,9 +93,9 @@ class RosePineTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: mainSurface,
-        border: OutlineInputBorder(borderSide: const BorderSide(color: mainOverlay)),
-        enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: mainOverlay)),
-        focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: mainRose)),
+        border: const OutlineInputBorder(borderSide: BorderSide(color: mainOverlay)),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: mainOverlay)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: mainRose)),
         labelStyle: AppTypography.dmSans(color: mainMuted),
         hintStyle: AppTypography.dmSans(color: mainMuted),
       ),
@@ -110,7 +110,7 @@ class RosePineTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme(
+      colorScheme: const ColorScheme(
         brightness: Brightness.light,
         primary: dawnRose,
         onPrimary: dawnBase,
@@ -169,9 +169,9 @@ class RosePineTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: dawnSurface,
-        border: OutlineInputBorder(borderSide: const BorderSide(color: dawnOverlay)),
-        enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: dawnOverlay)),
-        focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: dawnRose)),
+        border: const OutlineInputBorder(borderSide: BorderSide(color: dawnOverlay)),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: dawnOverlay)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: dawnRose)),
         labelStyle: AppTypography.dmSans(color: dawnMuted),
         hintStyle: AppTypography.dmSans(color: dawnMuted),
       ),
