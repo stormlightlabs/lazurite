@@ -109,9 +109,9 @@ Build a `SearchBloc` with events: `QuerySubmitted`, `TypeaheadRequested`,
 
 ### PDS Explorer (pdsls.dev replica)
 
-An in-app developer tool (debug builds) that replicates the core functionality
-of [pdsls.dev](https://pdsls.dev) — a client-side AT Protocol repository
-browser.
+An in-app developer tool accessible via Settings that replicates the core
+functionality of [pdsls.dev](https://pdsls.dev) — a client-side AT Protocol
+repository browser.
 
 **Core features:**
 
@@ -132,5 +132,6 @@ browser.
 | `com.atproto.repo.listRecords`       | Collection → paginated record list   |
 | `com.atproto.repo.getRecord`         | Collection + rkey → full record JSON |
 
-Guard behind `kDebugMode`. No separate Bloc needed — use a `DevToolsCubit`
-with simple request/response state, since this is a stateless exploration tool.
+Accessible via Settings → Dev Tools. No separate Bloc needed — use a
+`DevToolsCubit` with simple request/response state, since this is a stateless
+exploration tool.

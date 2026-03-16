@@ -3,19 +3,19 @@
 ## M0 — Project Scaffolding
 
 - [x] Add dependencies (`bluesky`, `atproto_oauth`, `bluesky_text`, `flutter_bloc`, `drift`, `go_router`)
-- [ ] Set up feature-first folder structure (`core/`, `features/auth|profile|settings/`)
-- [ ] Configure Drift database with `accounts`, `cached_profiles`, `cached_posts`, `settings` tables
-- [ ] Configure `go_router` with initial route definitions (login, home, profile, settings)
+- [x] Set up feature-first folder structure (`core/`, `features/auth|profile|settings/`)
+- [x] Configure Drift database with `accounts`, `cached_profiles`, `cached_posts`, `settings` tables
+- [x] Configure `go_router` with initial route definitions (login, home, profile, settings)
 
 ## M1 — Authentication
 
-- [ ] Implement App Password login (`createSession`) behind `kDebugMode` flag
-- [ ] Implement OAuth 2.0 flow (DPoP + PAR + PKCE) via `atproto_oauth`
-- [ ] Set up loopback redirect listener (`http://127.0.0.1/callback`)
-- [ ] Build `AuthBloc` — events: `LoginRequested`, `LogoutRequested`, `SessionRestored`; states: `Unauthenticated`, `Authenticating`, `Authenticated`, `AuthError`
-- [ ] Session persistence: store/restore tokens in Drift, silent refresh on launch
-- [ ] Build login screen (handle input, OAuth button, debug app-password form)
-- [ ] Logout: revoke tokens, clear Drift row, reset Bloc, navigate to login
+- [x] Implement App Password login (`createSession`) behind `kDebugMode` flag
+- [x] Implement OAuth 2.0 flow (DPoP + PAR + PKCE) via `atproto_oauth`
+- [x] Set up loopback redirect listener (`http://127.0.0.1/callback`)
+- [x] Build `AuthBloc` — events: `LoginRequested`, `LogoutRequested`, `SessionRestored`; states: `Unauthenticated`, `Authenticating`, `Authenticated`, `AuthError`
+- [x] Session persistence: store/restore tokens in Drift, silent refresh on launch
+- [x] Build login screen (handle input, OAuth button, debug app-password form)
+- [x] Logout: revoke tokens, clear Drift row, reset Bloc, navigate to login
 
 ## M2 — Profile Rendering
 
@@ -35,6 +35,7 @@
 
 ## M4 — Dev Scripts
 
+- [ ] Create `uv` project in directory `scripts`
 - [ ] `scripts/fetch_profile.py` — pretty-print profile JSON
 - [ ] `scripts/fetch_feed.py` — dump post + facet structures
 - [ ] `scripts/resolve_handle.py` — resolve handle → DID

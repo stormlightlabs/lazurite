@@ -1,516 +1,633 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Dev Tools - Lazurite</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.2.2/dist/fonts/geist-sans/style.css">
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    .devtools-container {
-      padding-bottom: 88px;
-    }
-    
-    .devtools-search {
-      padding: 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    
-    .devtools-search-row {
-      display: flex;
-      gap: 8px;
-    }
-    
-    .devtools-search-row .input {
-      flex: 1;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-    }
-    
-    .devtools-search-btn {
-      padding: 12px 16px;
-      border-radius: 8px;
-      border: none;
-      background-color: var(--accent-primary);
-      color: white;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      white-space: nowrap;
-    }
-    
-    .devtools-search-btn:hover {
-      background-color: var(--accent-primary-hover);
-    }
-    
-    .devtools-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      background-color: var(--bg);
-    }
-    
-    .devtools-tab {
-      flex: 1;
-      padding: 12px;
-      text-align: center;
-      font-weight: 600;
-      font-size: 13px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s ease;
-      background: none;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-    }
-    
-    .devtools-tab:hover {
-      background-color: var(--surface);
-      color: var(--text-primary);
-    }
-    
-    .devtools-tab.active {
-      color: var(--text-primary);
-      border-bottom-color: var(--accent-primary);
-    }
-    
-    /* Repo Overview */
-    .repo-header {
-      padding: 16px;
-      border-bottom: 1px solid var(--border);
-      background-color: var(--surface);
-    }
-    
-    .repo-identity {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    
-    .repo-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: var(--surface-variant);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 14px;
-      color: var(--text-secondary);
-      flex-shrink: 0;
-    }
-    
-    .repo-names {
-      flex: 1;
-      min-width: 0;
-    }
-    
-    .repo-handle {
-      font-weight: 600;
-      font-size: 15px;
-      color: var(--text-primary);
-    }
-    
-    .repo-did {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--text-muted);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    
-    .repo-stats {
-      display: flex;
-      gap: 16px;
-    }
-    
-    .repo-stat {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-    
-    .repo-stat strong {
-      color: var(--text-primary);
-      font-weight: 600;
-    }
-    
-    /* Collection List */
-    .collection-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-    
-    .collection-item:hover {
-      background-color: var(--surface);
-    }
-    
-    .collection-item-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
-      flex: 1;
-    }
-    
-    .collection-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 6px;
-      background-color: var(--surface);
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    
-    .collection-icon svg {
-      width: 16px;
-      height: 16px;
-      color: var(--text-secondary);
-    }
-    
-    .collection-name {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-primary);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    
-    .collection-count {
-      font-size: 12px;
-      color: var(--text-muted);
-      background-color: var(--surface);
-      padding: 2px 8px;
-      border-radius: 9999px;
-      flex-shrink: 0;
-    }
-    
-    .collection-chevron {
-      color: var(--text-muted);
-      flex-shrink: 0;
-      margin-left: 8px;
-    }
-    
-    .collection-chevron svg {
-      width: 16px;
-      height: 16px;
-    }
-    
-    /* Record Inspector */
-    .record-header {
-      padding: 12px 16px;
-      background-color: var(--surface);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    
-    .record-breadcrumb {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      color: var(--text-secondary);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    
-    .record-breadcrumb span {
-      color: var(--accent-primary);
-    }
-    
-    .record-copy-btn {
-      padding: 4px 10px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background-color: var(--bg);
-      color: var(--text-secondary);
-      font-size: 11px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .record-copy-btn:hover {
-      background-color: var(--surface-variant);
-      color: var(--text-primary);
-    }
-    
-    .json-viewer {
-      padding: 16px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      line-height: 1.8;
-      overflow-x: auto;
-    }
-    
-    .json-key { color: var(--accent-primary); }
-    .json-string { color: var(--accent-success); }
-    .json-number { color: var(--accent-secondary); }
-    .json-bool { color: var(--accent-warning); }
-    .json-null { color: var(--text-muted); }
-    .json-brace { color: var(--text-secondary); }
-    
-    /* Section Label */
-    .section-label {
-      padding: 8px 16px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      background-color: var(--surface);
-      border-bottom: 1px solid var(--border);
-    }
-  </style>
-</head>
-<body>
-  <div class="mobile-container">
-    
-    <!-- Header -->
-    <header class="header">
-      <button class="header-action">← Back</button>
-      <h1 class="header-title">PDS Explorer</h1>
-      <span class="debug-badge">Debug</span>
-    </header>
-    
-    <!-- Search / AT-URI Input -->
-    <div class="devtools-search">
-      <div class="devtools-search-row">
-        <input class="input" type="text" placeholder="Handle, DID, or at:// URI" value="alice.bsky.social">
-        <button class="devtools-search-btn">Resolve</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Dev Tools - Lazurite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.2.2/dist/fonts/geist-sans/style.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .devtools-container {
+        padding-bottom: 88px;
+      }
+
+      .devtools-search {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .devtools-search-row {
+        display: flex;
+        gap: 8px;
+      }
+
+      .devtools-search-row .input {
+        flex: 1;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+      }
+
+      .devtools-search-btn {
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: none;
+        background-color: var(--accent-primary);
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        white-space: nowrap;
+      }
+
+      .devtools-search-btn:hover {
+        background-color: var(--accent-primary-hover);
+      }
+
+      .devtools-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        background-color: var(--bg);
+      }
+
+      .devtools-tab {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+      }
+
+      .devtools-tab:hover {
+        background-color: var(--surface);
+        color: var(--text-primary);
+      }
+
+      .devtools-tab.active {
+        color: var(--text-primary);
+        border-bottom-color: var(--accent-primary);
+      }
+
+      /* Repo Overview */
+      .repo-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+        background-color: var(--surface);
+      }
+
+      .repo-identity {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .repo-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--surface-variant);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text-secondary);
+        flex-shrink: 0;
+      }
+
+      .repo-names {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .repo-handle {
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--text-primary);
+      }
+
+      .repo-did {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .repo-stats {
+        display: flex;
+        gap: 16px;
+      }
+
+      .repo-stat {
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+
+      .repo-stat strong {
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+
+      /* Collection List */
+      .collection-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      .collection-item:hover {
+        background-color: var(--surface);
+      }
+
+      .collection-item-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .collection-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .collection-icon svg {
+        width: 16px;
+        height: 16px;
+        color: var(--text-secondary);
+      }
+
+      .collection-name {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .collection-count {
+        font-size: 12px;
+        color: var(--text-muted);
+        background-color: var(--surface);
+        padding: 2px 8px;
+        border-radius: 9999px;
+        flex-shrink: 0;
+      }
+
+      .collection-chevron {
+        color: var(--text-muted);
+        flex-shrink: 0;
+        margin-left: 8px;
+      }
+
+      .collection-chevron svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      /* Record Inspector */
+      .record-header {
+        padding: 12px 16px;
+        background-color: var(--surface);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .record-breadcrumb {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .record-breadcrumb span {
+        color: var(--accent-primary);
+      }
+
+      .record-copy-btn {
+        padding: 4px 10px;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+        background-color: var(--bg);
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .record-copy-btn:hover {
+        background-color: var(--surface-variant);
+        color: var(--text-primary);
+      }
+
+      .json-viewer {
+        padding: 16px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        line-height: 1.8;
+        overflow-x: auto;
+      }
+
+      .json-key {
+        color: var(--accent-primary);
+      }
+      .json-string {
+        color: var(--accent-success);
+      }
+      .json-number {
+        color: var(--accent-secondary);
+      }
+      .json-bool {
+        color: var(--accent-warning);
+      }
+      .json-null {
+        color: var(--text-muted);
+      }
+      .json-brace {
+        color: var(--text-secondary);
+      }
+
+      /* Section Label */
+      .section-label {
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background-color: var(--surface);
+        border-bottom: 1px solid var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mobile-container">
+      <!-- Header -->
+      <header class="header">
+        <button class="header-action">← Back</button>
+        <h1 class="header-title">PDS Explorer</h1>
+        <button class="header-action">⋯</button>
+      </header>
+
+      <!-- Search / AT-URI Input -->
+      <div class="devtools-search">
+        <div class="devtools-search-row">
+          <input class="input" type="text" placeholder="Handle, DID, or at:// URI" value="alice.bsky.social" />
+          <button class="devtools-search-btn">Resolve</button>
+        </div>
       </div>
+
+      <!-- Tabs -->
+      <div class="devtools-tabs">
+        <button class="devtools-tab active">Repo</button>
+        <button class="devtools-tab">Records</button>
+        <button class="devtools-tab">JSON</button>
+      </div>
+
+      <div class="devtools-container">
+        <!-- Repo Overview -->
+        <div class="repo-header">
+          <div class="repo-identity">
+            <div class="repo-avatar">AS</div>
+            <div class="repo-names">
+              <div class="repo-handle">alice.bsky.social</div>
+              <div class="repo-did">did:plc:z72i7hdynmk6r22z27h6tvur</div>
+            </div>
+          </div>
+          <div class="repo-stats">
+            <div class="repo-stat"><strong>12</strong> collections</div>
+            <div class="repo-stat"><strong>1,847</strong> records</div>
+          </div>
+        </div>
+
+        <!-- Collections -->
+        <div class="section-label">Collections</div>
+
+        <div class="collection-item">
+          <div class="collection-item-left">
+            <div class="collection-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                  d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+            </div>
+            <div class="collection-name">app.bsky.feed.post</div>
+          </div>
+          <span class="collection-count">482</span>
+          <div class="collection-chevron">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="collection-item">
+          <div class="collection-item-left">
+            <div class="collection-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </div>
+            <div class="collection-name">app.bsky.feed.like</div>
+          </div>
+          <span class="collection-count">1,203</span>
+          <div class="collection-chevron">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="collection-item">
+          <div class="collection-item-left">
+            <div class="collection-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9" />
+                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                <polyline points="7 23 3 19 7 15" />
+                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+            </div>
+            <div class="collection-name">app.bsky.feed.repost</div>
+          </div>
+          <span class="collection-count">89</span>
+          <div class="collection-chevron">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="collection-item">
+          <div class="collection-item-left">
+            <div class="collection-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="8.5" cy="7" r="4" />
+                <line x1="20" y1="8" x2="20" y2="14" />
+                <line x1="23" y1="11" x2="17" y2="11" />
+              </svg>
+            </div>
+            <div class="collection-name">app.bsky.graph.follow</div>
+          </div>
+          <span class="collection-count">256</span>
+          <div class="collection-chevron">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="collection-item">
+          <div class="collection-item-left">
+            <div class="collection-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+              </svg>
+            </div>
+            <div class="collection-name">app.bsky.feed.generator</div>
+          </div>
+          <span class="collection-count">2</span>
+          <div class="collection-chevron">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="collection-item">
+          <div class="collection-item-left">
+            <div class="collection-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <div class="collection-name">app.bsky.actor.profile</div>
+          </div>
+          <span class="collection-count">1</span>
+          <div class="collection-chevron">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Record Inspector Preview (shown when tapping a record) -->
+        <div class="section-label">Record Preview</div>
+
+        <div class="record-header">
+          <div class="record-breadcrumb"><span>app.bsky.feed.post</span> / 3lbr7yz2gfk2j</div>
+          <button class="record-copy-btn">Copy JSON</button>
+        </div>
+
+        <div class="json-viewer">
+          <span class="json-brace">{</span><br />
+          &nbsp;&nbsp;<span class="json-key">"$type"</span>:
+          <span class="json-string">"app.bsky.feed.post"</span>,<br />
+          &nbsp;&nbsp;<span class="json-key">"text"</span>:
+          <span class="json-string">"Just launched my new project! 🚀"</span>,<br />
+          &nbsp;&nbsp;<span class="json-key">"createdAt"</span>:
+          <span class="json-string">"2024-03-15T14:30:00.000Z"</span>,<br />
+          &nbsp;&nbsp;<span class="json-key">"langs"</span>: <span class="json-brace">[</span
+          ><span class="json-string">"en"</span><span class="json-brace">]</span>,<br />
+          &nbsp;&nbsp;<span class="json-key">"facets"</span>: <span class="json-brace">[</span><br />
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="json-brace">{</span><br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"index"</span>: <span class="json-brace">{</span
+          ><br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"byteStart"</span>:
+          <span class="json-number">0</span>,<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"byteEnd"</span>:
+          <span class="json-number">34</span><br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-brace">}</span>,<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"features"</span>: <span class="json-brace">[</span
+          ><span class="json-brace">{</span><br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"$type"</span>:
+          <span class="json-string">"...facet#tag"</span>,<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"tag"</span>:
+          <span class="json-string">"buildinpublic"</span><br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-brace">}</span><span class="json-brace">]</span><br />
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="json-brace">}</span><br />
+          &nbsp;&nbsp;<span class="json-brace">]</span><br />
+          <span class="json-brace">}</span>
+        </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <nav class="nav-bar">
+        <a href="home.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          <span>Home</span>
+        </a>
+
+        <a href="search.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <span>Search</span>
+        </a>
+
+        <a href="profile.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span>Profile</span>
+        </a>
+
+        <a href="settings.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span>Settings</span>
+        </a>
+      </nav>
     </div>
-    
-    <!-- Tabs -->
-    <div class="devtools-tabs">
-      <button class="devtools-tab active">Repo</button>
-      <button class="devtools-tab">Records</button>
-      <button class="devtools-tab">JSON</button>
-    </div>
-    
-    <div class="devtools-container">
-      
-      <!-- Repo Overview -->
-      <div class="repo-header">
-        <div class="repo-identity">
-          <div class="repo-avatar">AS</div>
-          <div class="repo-names">
-            <div class="repo-handle">alice.bsky.social</div>
-            <div class="repo-did">did:plc:z72i7hdynmk6r22z27h6tvur</div>
-          </div>
-        </div>
-        <div class="repo-stats">
-          <div class="repo-stat"><strong>12</strong> collections</div>
-          <div class="repo-stat"><strong>1,847</strong> records</div>
-        </div>
-      </div>
-      
-      <!-- Collections -->
-      <div class="section-label">Collections</div>
-      
-      <div class="collection-item">
-        <div class="collection-item-left">
-          <div class="collection-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-            </svg>
-          </div>
-          <div class="collection-name">app.bsky.feed.post</div>
-        </div>
-        <span class="collection-count">482</span>
-        <div class="collection-chevron">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </div>
-      </div>
-      
-      <div class="collection-item">
-        <div class="collection-item-left">
-          <div class="collection-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-          </div>
-          <div class="collection-name">app.bsky.feed.like</div>
-        </div>
-        <span class="collection-count">1,203</span>
-        <div class="collection-chevron">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </div>
-      </div>
-      
-      <div class="collection-item">
-        <div class="collection-item-left">
-          <div class="collection-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="17 1 21 5 17 9"/>
-              <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-              <polyline points="7 23 3 19 7 15"/>
-              <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-            </svg>
-          </div>
-          <div class="collection-name">app.bsky.feed.repost</div>
-        </div>
-        <span class="collection-count">89</span>
-        <div class="collection-chevron">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </div>
-      </div>
-      
-      <div class="collection-item">
-        <div class="collection-item-left">
-          <div class="collection-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="8.5" cy="7" r="4"/>
-              <line x1="20" y1="8" x2="20" y2="14"/>
-              <line x1="23" y1="11" x2="17" y2="11"/>
-            </svg>
-          </div>
-          <div class="collection-name">app.bsky.graph.follow</div>
-        </div>
-        <span class="collection-count">256</span>
-        <div class="collection-chevron">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </div>
-      </div>
-      
-      <div class="collection-item">
-        <div class="collection-item-left">
-          <div class="collection-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
-          </div>
-          <div class="collection-name">app.bsky.feed.generator</div>
-        </div>
-        <span class="collection-count">2</span>
-        <div class="collection-chevron">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </div>
-      </div>
-      
-      <div class="collection-item">
-        <div class="collection-item-left">
-          <div class="collection-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </div>
-          <div class="collection-name">app.bsky.actor.profile</div>
-        </div>
-        <span class="collection-count">1</span>
-        <div class="collection-chevron">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </div>
-      </div>
-      
-      <!-- Record Inspector Preview (shown when tapping a record) -->
-      <div class="section-label">Record Preview</div>
-      
-      <div class="record-header">
-        <div class="record-breadcrumb">
-          <span>app.bsky.feed.post</span> / 3lbr7yz2gfk2j
-        </div>
-        <button class="record-copy-btn">Copy JSON</button>
-      </div>
-      
-      <div class="json-viewer">
-        <span class="json-brace">{</span><br>
-        &nbsp;&nbsp;<span class="json-key">"$type"</span>: <span class="json-string">"app.bsky.feed.post"</span>,<br>
-        &nbsp;&nbsp;<span class="json-key">"text"</span>: <span class="json-string">"Just launched my new project! 🚀"</span>,<br>
-        &nbsp;&nbsp;<span class="json-key">"createdAt"</span>: <span class="json-string">"2024-03-15T14:30:00.000Z"</span>,<br>
-        &nbsp;&nbsp;<span class="json-key">"langs"</span>: <span class="json-brace">[</span><span class="json-string">"en"</span><span class="json-brace">]</span>,<br>
-        &nbsp;&nbsp;<span class="json-key">"facets"</span>: <span class="json-brace">[</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;<span class="json-brace">{</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"index"</span>: <span class="json-brace">{</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"byteStart"</span>: <span class="json-number">0</span>,<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"byteEnd"</span>: <span class="json-number">34</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-brace">}</span>,<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"features"</span>: <span class="json-brace">[</span><span class="json-brace">{</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"$type"</span>: <span class="json-string">"...facet#tag"</span>,<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"tag"</span>: <span class="json-string">"buildinpublic"</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-brace">}</span><span class="json-brace">]</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;<span class="json-brace">}</span><br>
-        &nbsp;&nbsp;<span class="json-brace">]</span><br>
-        <span class="json-brace">}</span>
-      </div>
-      
-    </div>
-    
-    <!-- Bottom Navigation -->
-    <nav class="nav-bar">
-      <a href="home.html" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-        <span>Home</span>
-      </a>
-      
-      <a href="search.html" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <span>Search</span>
-      </a>
-      
-      <a href="profile.html" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
-        </svg>
-        <span>Profile</span>
-      </a>
-      
-      <a href="settings.html" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-        <span>Settings</span>
-      </a>
-    </nav>
-    
-  </div>
-  
-  <script>
-    if (localStorage.getItem('theme') === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
-  </script>
-</body>
+
+    <script>
+      if (localStorage.getItem("theme") === "dark") {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    </script>
+  </body>
 </html>

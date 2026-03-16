@@ -28,4 +28,4 @@
 - [ ] Collection browser via `listRecords` — paginated record list per collection
 - [ ] Record inspector via `getRecord` — pretty-printed JSON with syntax highlighting
 - [ ] AT-URI input — paste `at://` URI to jump directly to a record
-- [ ] Guard all dev tools screens behind `kDebugMode`
+- [ ] Add Dev Tools entry in Settings screen, navigable by all users
