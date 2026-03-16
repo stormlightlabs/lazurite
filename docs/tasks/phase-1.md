@@ -30,7 +30,13 @@
 - [ ] `SettingsCubit` backed by Drift — theme mode preference (system / light / dark)
 - [ ] Oxocarbon Dark `ThemeData` / `ColorScheme`
 - [ ] Oxocarbon Light `ThemeData` / `ColorScheme`
-- [ ] Theme picker in settings screen
+- [ ] Catppuccin Mocha (Dark) `ThemeData` / `ColorScheme`
+- [ ] Catppuccin Latte (Light) `ThemeData` / `ColorScheme`
+- [ ] Nord Polar Night (Dark) `ThemeData` / `ColorScheme`
+- [ ] Nord Snow Storm (Light) `ThemeData` / `ColorScheme`
+- [ ] Rosé Pine Main (Dark) `ThemeData` / `ColorScheme`
+- [ ] Rosé Pine Dawn (Light) `ThemeData` / `ColorScheme`
+- [ ] Theme picker in settings screen (all 4 palettes × 2 variants + system)
 - [ ] Respect system theme when set to "system"
 
 ## M4 — Dev Scripts

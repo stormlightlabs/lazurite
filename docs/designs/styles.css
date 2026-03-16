@@ -36,7 +36,7 @@
   --text-muted: var(--oxo-light-text-muted);
 }
 
-/* Dark theme */
+/* Oxocarbon Dark */
 [data-theme="dark"] {
   --bg: var(--oxo-dark-bg);
   --surface: var(--oxo-dark-surface);
@@ -45,6 +45,171 @@
   --text-primary: var(--oxo-dark-text-primary);
   --text-secondary: var(--oxo-dark-text-secondary);
   --text-muted: var(--oxo-dark-text-muted);
+}
+
+/* Catppuccin Theme Variables */
+:root {
+  /* Catppuccin Latte (Light) */
+  --ctp-latte-bg: #eff1f5;
+  --ctp-latte-surface: #e6e9ef;
+  --ctp-latte-surface-variant: #ccd0da;
+  --ctp-latte-border: #bcc0cc;
+  --ctp-latte-text-primary: #4c4f69;
+  --ctp-latte-text-secondary: #6c6f85;
+  --ctp-latte-text-muted: #9ca0b0;
+
+  /* Catppuccin Mocha (Dark) */
+  --ctp-mocha-bg: #1e1e2e;
+  --ctp-mocha-surface: #181825;
+  --ctp-mocha-surface-variant: #313244;
+  --ctp-mocha-border: #45475a;
+  --ctp-mocha-text-primary: #cdd6f4;
+  --ctp-mocha-text-secondary: #a6adc8;
+  --ctp-mocha-text-muted: #7f849c;
+}
+
+/* Catppuccin Latte */
+[data-theme="catppuccin-latte"] {
+  --bg: var(--ctp-latte-bg);
+  --surface: var(--ctp-latte-surface);
+  --surface-variant: var(--ctp-latte-surface-variant);
+  --border: var(--ctp-latte-border);
+  --text-primary: var(--ctp-latte-text-primary);
+  --text-secondary: var(--ctp-latte-text-secondary);
+  --text-muted: var(--ctp-latte-text-muted);
+  --accent-primary: #7287fd;
+  --accent-primary-hover: #5c6ee6;
+  --accent-secondary: #209fb5;
+  --accent-success: #40a02b;
+  --accent-error: #d20f39;
+  --accent-warning: #fe640b;
+}
+
+/* Catppuccin Mocha */
+[data-theme="catppuccin-mocha"] {
+  --bg: var(--ctp-mocha-bg);
+  --surface: var(--ctp-mocha-surface);
+  --surface-variant: var(--ctp-mocha-surface-variant);
+  --border: var(--ctp-mocha-border);
+  --text-primary: var(--ctp-mocha-text-primary);
+  --text-secondary: var(--ctp-mocha-text-secondary);
+  --text-muted: var(--ctp-mocha-text-muted);
+  --accent-primary: #b4befe;
+  --accent-primary-hover: #9aa3e6;
+  --accent-secondary: #74c7ec;
+  --accent-success: #a6e3a1;
+  --accent-error: #f38ba8;
+  --accent-warning: #fab387;
+}
+
+/* Nord Theme Variables */
+:root {
+  /* Nord Snow Storm (Light) */
+  --nord-light-bg: #eceff4;
+  --nord-light-surface: #e5e9f0;
+  --nord-light-surface-variant: #d8dee9;
+  --nord-light-border: #c2c8d4;
+  --nord-light-text-primary: #2e3440;
+  --nord-light-text-secondary: #434c5e;
+  --nord-light-text-muted: #4c566a;
+
+  /* Nord Polar Night (Dark) */
+  --nord-dark-bg: #2e3440;
+  --nord-dark-surface: #3b4252;
+  --nord-dark-surface-variant: #434c5e;
+  --nord-dark-border: #4c566a;
+  --nord-dark-text-primary: #eceff4;
+  --nord-dark-text-secondary: #d8dee9;
+  --nord-dark-text-muted: #a5abb6;
+}
+
+/* Nord Snow Storm */
+[data-theme="nord-light"] {
+  --bg: var(--nord-light-bg);
+  --surface: var(--nord-light-surface);
+  --surface-variant: var(--nord-light-surface-variant);
+  --border: var(--nord-light-border);
+  --text-primary: var(--nord-light-text-primary);
+  --text-secondary: var(--nord-light-text-secondary);
+  --text-muted: var(--nord-light-text-muted);
+  --accent-primary: #5e81ac;
+  --accent-primary-hover: #4c6d96;
+  --accent-secondary: #88c0d0;
+  --accent-success: #a3be8c;
+  --accent-error: #bf616a;
+  --accent-warning: #d08770;
+}
+
+/* Nord Polar Night */
+[data-theme="nord-dark"] {
+  --bg: var(--nord-dark-bg);
+  --surface: var(--nord-dark-surface);
+  --surface-variant: var(--nord-dark-surface-variant);
+  --border: var(--nord-dark-border);
+  --text-primary: var(--nord-dark-text-primary);
+  --text-secondary: var(--nord-dark-text-secondary);
+  --text-muted: var(--nord-dark-text-muted);
+  --accent-primary: #88c0d0;
+  --accent-primary-hover: #6fb0c2;
+  --accent-secondary: #81a1c1;
+  --accent-success: #a3be8c;
+  --accent-error: #bf616a;
+  --accent-warning: #d08770;
+}
+
+/* Rosé Pine Theme Variables */
+:root {
+  /* Rosé Pine Dawn (Light) */
+  --rose-light-bg: #faf4ed;
+  --rose-light-surface: #fffaf3;
+  --rose-light-surface-variant: #f2e9e1;
+  --rose-light-border: #dfdad9;
+  --rose-light-text-primary: #575279;
+  --rose-light-text-secondary: #797593;
+  --rose-light-text-muted: #9893a5;
+
+  /* Rosé Pine Main (Dark) */
+  --rose-dark-bg: #191724;
+  --rose-dark-surface: #1f1d2e;
+  --rose-dark-surface-variant: #26233a;
+  --rose-dark-border: #524f67;
+  --rose-dark-text-primary: #e0def4;
+  --rose-dark-text-secondary: #908caa;
+  --rose-dark-text-muted: #6e6a86;
+}
+
+/* Rosé Pine Dawn */
+[data-theme="rose-pine-dawn"] {
+  --bg: var(--rose-light-bg);
+  --surface: var(--rose-light-surface);
+  --surface-variant: var(--rose-light-surface-variant);
+  --border: var(--rose-light-border);
+  --text-primary: var(--rose-light-text-primary);
+  --text-secondary: var(--rose-light-text-secondary);
+  --text-muted: var(--rose-light-text-muted);
+  --accent-primary: #d7827e;
+  --accent-primary-hover: #c56d69;
+  --accent-secondary: #56949f;
+  --accent-success: #286983;
+  --accent-error: #b4637a;
+  --accent-warning: #ea9d34;
+}
+
+/* Rosé Pine Main */
+[data-theme="rose-pine-moon"] {
+  --bg: var(--rose-dark-bg);
+  --surface: var(--rose-dark-surface);
+  --surface-variant: var(--rose-dark-surface-variant);
+  --border: var(--rose-dark-border);
+  --text-primary: var(--rose-dark-text-primary);
+  --text-secondary: var(--rose-dark-text-secondary);
+  --text-muted: var(--rose-dark-text-muted);
+  --accent-primary: #ebbcba;
+  --accent-primary-hover: #d9a8a6;
+  --accent-secondary: #9ccfd8;
+  --accent-success: #31748f;
+  --accent-error: #eb6f92;
+  --accent-warning: #f6c177;
 }
 
 /* Base Reset */
@@ -457,6 +622,30 @@ p {
 
 .theme-preview-dark {
   background: linear-gradient(135deg, #161616 50%, #262626 50%);
+}
+
+.theme-preview-catppuccin-latte {
+  background: linear-gradient(135deg, #eff1f5 50%, #e6e9ef 50%);
+}
+
+.theme-preview-catppuccin-mocha {
+  background: linear-gradient(135deg, #1e1e2e 50%, #181825 50%);
+}
+
+.theme-preview-nord-light {
+  background: linear-gradient(135deg, #eceff4 50%, #e5e9f0 50%);
+}
+
+.theme-preview-nord-dark {
+  background: linear-gradient(135deg, #2e3440 50%, #3b4252 50%);
+}
+
+.theme-preview-rose-pine-dawn {
+  background: linear-gradient(135deg, #faf4ed 50%, #fffaf3 50%);
+}
+
+.theme-preview-rose-pine-moon {
+  background: linear-gradient(135deg, #191724 50%, #1f1d2e 50%);
 }
 
 /* Scrollbar Styling */

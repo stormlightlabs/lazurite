@@ -141,10 +141,13 @@ System default, Light, and Dark. Persist choice in Drift `settings` table.
 Apply via `ThemeMode` on `MaterialApp`. Use `HydratedBloc` or a `SettingsCubit`
 that reads/writes the preference.
 
-### 2. Custom Themes — Oxocarbon
+### 2. Custom Themes
 
-Ship two built-in themes derived from the Oxocarbon palette (IBM Carbon
-inspired):
+Ship built-in theme palettes. Each theme provides a dark and light variant.
+Persist the user's theme choice in the Drift `settings` table. Expose each
+via factory constructors (e.g. `CatppuccinTheme.dark()`).
+
+#### Oxocarbon (IBM Carbon inspired)
 
 **Dark**:
 
@@ -190,6 +193,141 @@ inspired):
 
 Map these tokens to a `ThemeData` / `ColorScheme` and expose a
 `OxocarbonTheme.dark()` / `OxocarbonTheme.light()` factory.
+
+#### Catppuccin
+
+A community-driven pastel theme. Use **Mocha** (dark) and **Latte** (light).
+
+**Mocha (Dark)**:
+
+| Token     | Hex       | Role                        |
+| --------- | --------- | --------------------------- |
+| base      | `#1e1e2e` | Background                  |
+| mantle    | `#181825` | Surface / card              |
+| surface0  | `#313244` | Selection / divider         |
+| surface1  | `#45475a` | Muted text                  |
+| subtext0  | `#a6adc8` | Secondary text              |
+| text      | `#cdd6f4` | Primary text                |
+| lavender  | `#b4befe` | Primary accent              |
+| blue      | `#89b4fa` | Blue accent                 |
+| sapphire  | `#74c7ec` | Cyan highlight              |
+| green     | `#a6e3a1` | Green / success             |
+| red       | `#f38ba8` | Red / error                 |
+| peach     | `#fab387` | Orange / warning            |
+| mauve     | `#cba6f7` | Purple accent               |
+| pink      | `#f5c2e7` | Pink accent                 |
+| rosewater | `#f5e0dc` | Warm highlight              |
+
+**Latte (Light)**:
+
+| Token     | Hex       | Role                        |
+| --------- | --------- | --------------------------- |
+| base      | `#eff1f5` | Background                  |
+| mantle    | `#e6e9ef` | Surface / card              |
+| surface0  | `#ccd0da` | Selection / divider         |
+| surface1  | `#bcc0cc` | Muted text                  |
+| subtext0  | `#6c6f85` | Secondary text              |
+| text      | `#4c4f69` | Primary text                |
+| lavender  | `#7287fd` | Primary accent              |
+| blue      | `#1e66f5` | Blue accent                 |
+| sapphire  | `#209fb5` | Cyan highlight              |
+| green     | `#40a02b` | Green / success             |
+| red       | `#d20f39` | Red / error                 |
+| peach     | `#fe640b` | Orange / warning            |
+| mauve     | `#8839ef` | Purple accent               |
+| pink      | `#ea76cb` | Pink accent                 |
+| rosewater | `#dc8a78` | Warm highlight              |
+
+Map to `CatppuccinTheme.dark()` / `CatppuccinTheme.light()`.
+
+#### Nord
+
+An arctic, north-bluish palette inspired by the polar night and aurora
+borealis.
+
+**Polar Night (Dark)**:
+
+| Token   | Hex       | Role                        |
+| ------- | --------- | --------------------------- |
+| nord0   | `#2e3440` | Background                  |
+| nord1   | `#3b4252` | Surface / card              |
+| nord2   | `#434c5e` | Selection / divider         |
+| nord3   | `#4c566a` | Muted text                  |
+| nord4   | `#d8dee9` | Secondary text              |
+| nord5   | `#e5e9f0` | Primary text                |
+| nord6   | `#eceff4` | Bright text                 |
+| nord7   | `#8fbcbb` | Teal accent                 |
+| nord8   | `#88c0d0` | Cyan / primary accent       |
+| nord9   | `#81a1c1` | Blue accent                 |
+| nord10  | `#5e81ac` | Deep blue                   |
+| nord11  | `#bf616a` | Red / error                 |
+| nord12  | `#d08770` | Orange / warning            |
+| nord13  | `#ebcb8b` | Yellow                      |
+| nord14  | `#a3be8c` | Green / success             |
+| nord15  | `#b48ead` | Purple accent               |
+
+**Snow Storm (Light)**:
+
+| Token   | Hex       | Role                        |
+| ------- | --------- | --------------------------- |
+| nord0   | `#eceff4` | Background                  |
+| nord1   | `#e5e9f0` | Surface / card              |
+| nord2   | `#d8dee9` | Selection / divider         |
+| nord3   | `#4c566a` | Primary text                |
+| nord4   | `#434c5e` | Secondary text              |
+| nord5   | `#3b4252` | Subheading text             |
+| nord6   | `#2e3440` | Bright / heading text       |
+| nord7   | `#8fbcbb` | Teal accent                 |
+| nord8   | `#88c0d0` | Cyan / primary accent       |
+| nord9   | `#81a1c1` | Blue accent                 |
+| nord10  | `#5e81ac` | Deep blue                   |
+| nord11  | `#bf616a` | Red / error                 |
+| nord12  | `#d08770` | Orange / warning            |
+| nord13  | `#ebcb8b` | Yellow                      |
+| nord14  | `#a3be8c` | Green / success             |
+| nord15  | `#b48ead` | Purple accent               |
+
+Map to `NordTheme.dark()` / `NordTheme.light()`.
+
+#### Rosé Pine
+
+An all-natural pine theme with muted, elegant tones.
+
+**Main (Dark)**:
+
+| Token          | Hex       | Role                        |
+| -------------- | --------- | --------------------------- |
+| base           | `#191724` | Background                  |
+| surface        | `#1f1d2e` | Surface / card              |
+| overlay        | `#26233a` | Selection / divider         |
+| muted          | `#6e6a86` | Muted text                  |
+| subtle         | `#908caa` | Secondary text              |
+| text           | `#e0def4` | Primary text                |
+| love           | `#eb6f92` | Red / error                 |
+| gold           | `#f6c177` | Yellow / warning            |
+| rose           | `#ebbcba` | Rose accent (primary)       |
+| pine           | `#31748f` | Teal / deep accent          |
+| foam           | `#9ccfd8` | Cyan highlight              |
+| iris           | `#c4a7e7` | Purple accent               |
+
+**Dawn (Light)**:
+
+| Token          | Hex       | Role                        |
+| -------------- | --------- | --------------------------- |
+| base           | `#faf4ed` | Background                  |
+| surface        | `#fffaf3` | Surface / card              |
+| overlay        | `#f2e9e1` | Selection / divider         |
+| muted          | `#9893a5` | Muted text                  |
+| subtle         | `#797593` | Secondary text              |
+| text           | `#575279` | Primary text                |
+| love           | `#b4637a` | Red / error                 |
+| gold           | `#ea9d34` | Yellow / warning            |
+| rose           | `#d7827e` | Rose accent (primary)       |
+| pine           | `#286983` | Teal / deep accent          |
+| foam           | `#56949f` | Cyan highlight              |
+| iris           | `#907aa9` | Purple accent               |
+
+Map to `RosePineTheme.dark()` / `RosePineTheme.light()`.
 
 ## Development
 

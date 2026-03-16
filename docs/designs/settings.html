@@ -35,9 +35,10 @@
     
     .theme-selector {
       padding: 16px;
-      display: flex;
-      gap: 16px;
-      justify-content: center;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      justify-items: center;
     }
     
     .theme-option {
@@ -59,9 +60,25 @@
       background-color: var(--surface-variant);
     }
     
+    .theme-section-label {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 0 0;
+      width: 100%;
+      text-align: left;
+    }
+
+    .theme-section-label:first-child {
+      padding-top: 0;
+    }
+
     .theme-option-preview {
-      width: 80px;
-      height: 80px;
+      width: 64px;
+      height: 64px;
       border-radius: 12px;
       border: 2px solid var(--border);
       overflow: hidden;
@@ -234,27 +251,90 @@
         <div class="settings-group">
           <!-- Theme Selector -->
           <div class="theme-selector">
+            <!-- Oxocarbon -->
+            <div class="theme-section-label">Oxocarbon</div>
             <div class="theme-option active" data-theme="light" onclick="setTheme('light')">
               <div class="theme-option-preview theme-preview-light">
                 <div class="theme-option-check">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
               </div>
               <span class="theme-option-label">Light</span>
             </div>
-            
             <div class="theme-option" data-theme="dark" onclick="setTheme('dark')">
               <div class="theme-option-preview theme-preview-dark">
                 <div class="theme-option-check">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
               </div>
               <span class="theme-option-label">Dark</span>
             </div>
+            <!-- spacers for 4-col grid -->
+            <div></div>
+            <div></div>
+
+            <!-- Catppuccin -->
+            <div class="theme-section-label">Catppuccin</div>
+            <div class="theme-option" data-theme="catppuccin-latte" onclick="setTheme('catppuccin-latte')">
+              <div class="theme-option-preview theme-preview-catppuccin-latte">
+                <div class="theme-option-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+              <span class="theme-option-label">Latte</span>
+            </div>
+            <div class="theme-option" data-theme="catppuccin-mocha" onclick="setTheme('catppuccin-mocha')">
+              <div class="theme-option-preview theme-preview-catppuccin-mocha">
+                <div class="theme-option-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+              <span class="theme-option-label">Mocha</span>
+            </div>
+            <div></div>
+            <div></div>
+
+            <!-- Nord -->
+            <div class="theme-section-label">Nord</div>
+            <div class="theme-option" data-theme="nord-light" onclick="setTheme('nord-light')">
+              <div class="theme-option-preview theme-preview-nord-light">
+                <div class="theme-option-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+              <span class="theme-option-label">Snow</span>
+            </div>
+            <div class="theme-option" data-theme="nord-dark" onclick="setTheme('nord-dark')">
+              <div class="theme-option-preview theme-preview-nord-dark">
+                <div class="theme-option-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+              <span class="theme-option-label">Polar</span>
+            </div>
+            <div></div>
+            <div></div>
+
+            <!-- Rosé Pine -->
+            <div class="theme-section-label">Rosé Pine</div>
+            <div class="theme-option" data-theme="rose-pine-dawn" onclick="setTheme('rose-pine-dawn')">
+              <div class="theme-option-preview theme-preview-rose-pine-dawn">
+                <div class="theme-option-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+              <span class="theme-option-label">Dawn</span>
+            </div>
+            <div class="theme-option" data-theme="rose-pine-moon" onclick="setTheme('rose-pine-moon')">
+              <div class="theme-option-preview theme-preview-rose-pine-moon">
+                <div class="theme-option-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+              <span class="theme-option-label">Moon</span>
+            </div>
+            <div></div>
+            <div></div>
           </div>
           
           <!-- Auto Theme Toggle -->
@@ -471,22 +551,24 @@
   
   <script>
     // Theme management
+    const ALL_THEMES = ['light', 'dark', 'catppuccin-latte', 'catppuccin-mocha', 'nord-light', 'nord-dark', 'rose-pine-dawn', 'rose-pine-moon'];
+
     function setTheme(theme) {
       // Update UI
       document.querySelectorAll('.theme-option').forEach(el => {
         el.classList.remove('active');
       });
-      document.querySelector(`[data-theme="${theme}"]`).classList.add('active');
-      
-      // Apply theme
-      if (theme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        localStorage.setItem('theme', 'dark');
-      } else {
+      const target = document.querySelector(`.theme-option[data-theme="${theme}"]`);
+      if (target) target.classList.add('active');
+
+      // Apply theme — 'light' is the default (no data-theme attr), everything else sets the attr
+      if (theme === 'light') {
         document.documentElement.removeAttribute('data-theme');
-        localStorage.setItem('theme', 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', theme);
       }
-      
+      localStorage.setItem('theme', theme);
+
       // Disable auto theme
       document.getElementById('auto-theme-toggle').classList.remove('active');
       localStorage.removeItem('auto-theme');
@@ -521,25 +603,26 @@
     
     // Initialize theme on load
     (function() {
-      const savedTheme = localStorage.getItem('theme');
+      const savedTheme = localStorage.getItem('theme') || 'light';
       const autoTheme = localStorage.getItem('auto-theme');
-      
+
       if (autoTheme === 'true') {
         document.getElementById('auto-theme-toggle').classList.add('active');
       }
-      
-      if (savedTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        document.querySelectorAll('.theme-option').forEach(el => {
-          el.classList.remove('active');
-        });
-        document.querySelector('[data-theme="dark"]').classList.add('active');
+
+      // Apply saved theme
+      document.querySelectorAll('.theme-option').forEach(el => {
+        el.classList.remove('active');
+      });
+
+      if (savedTheme === 'light') {
+        document.documentElement.removeAttribute('data-theme');
       } else {
-        document.querySelectorAll('.theme-option').forEach(el => {
-          el.classList.remove('active');
-        });
-        document.querySelector('[data-theme="light"]').classList.add('active');
+        document.documentElement.setAttribute('data-theme', savedTheme);
       }
+
+      const active = document.querySelector(`.theme-option[data-theme="${savedTheme}"]`);
+      if (active) active.classList.add('active');
     })();
   </script>
 </body>
