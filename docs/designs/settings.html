@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Settings - Lazurite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.2.2/dist/fonts/geist-sans/style.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .settings-container {
+      padding-bottom: 88px;
+    }
+    
+    .settings-section {
+      margin-bottom: 24px;
+    }
+    
+    .settings-section-title {
+      padding: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .settings-group {
+      background-color: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .theme-selector {
+      padding: 16px;
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+    
+    .theme-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 12px;
+      border-radius: 12px;
+      transition: background-color 0.2s ease;
+    }
+    
+    .theme-option:hover {
+      background-color: var(--surface-variant);
+    }
+    
+    .theme-option.active {
+      background-color: var(--surface-variant);
+    }
+    
+    .theme-option-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      overflow: hidden;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    
+    .theme-option:hover .theme-option-preview,
+    .theme-option.active .theme-option-preview {
+      border-color: var(--accent-primary);
+      transform: scale(1.02);
+    }
+    
+    .theme-preview-light {
+      background: linear-gradient(135deg, #ffffff 50%, #f4f4f4 50%);
+    }
+    
+    .theme-preview-dark {
+      background: linear-gradient(135deg, #161616 50%, #262626 50%);
+    }
+    
+    .theme-option-check {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      background-color: var(--accent-primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .theme-option.active .theme-option-check {
+      opacity: 1;
+    }
+    
+    .theme-option-check svg {
+      width: 12px;
+      height: 12px;
+      color: white;
+    }
+    
+    .theme-option-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .auto-theme-toggle {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .auto-theme-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .auto-theme-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .auto-theme-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .settings-item-danger {
+      color: var(--accent-error);
+    }
+    
+    .settings-item-danger .settings-item-title {
+      color: var(--accent-error);
+    }
+    
+    .app-version {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    
+    .user-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background-color: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .user-card-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background-color: var(--surface-variant);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .user-card-info {
+      flex: 1;
+    }
+    
+    .user-card-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 15px;
+    }
+    
+    .user-card-handle {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    
+    .user-card-arrow {
+      color: var(--text-muted);
+    }
+    
+    .user-card-arrow svg {
+      width: 20px;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-container">
+    
+    <!-- Header -->
+    <header class="header">
+      <h1 class="header-title">Settings</h1>
+      <button class="header-action" onclick="logout()">Log Out</button>
+    </header>
+    
+    <div class="settings-container">
+      
+      <!-- User Card -->
+      <a href="profile.html" class="user-card">
+        <div class="user-card-avatar">JD</div>
+        <div class="user-card-info">
+          <div class="user-card-name">John Doe</div>
+          <div class="user-card-handle">@johndoe.bsky.social</div>
+        </div>
+        <div class="user-card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+      </a>
+      
+      <!-- Appearance Section -->
+      <div class="settings-section">
+        <div class="settings-section-title">Appearance</div>
+        
+        <div class="settings-group">
+          <!-- Theme Selector -->
+          <div class="theme-selector">
+            <div class="theme-option active" data-theme="light" onclick="setTheme('light')">
+              <div class="theme-option-preview theme-preview-light">
+                <div class="theme-option-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+              </div>
+              <span class="theme-option-label">Light</span>
+            </div>
+            
+            <div class="theme-option" data-theme="dark" onclick="setTheme('dark')">
+              <div class="theme-option-preview theme-preview-dark">
+                <div class="theme-option-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+              </div>
+              <span class="theme-option-label">Dark</span>
+            </div>
+          </div>
+          
+          <!-- Auto Theme Toggle -->
+          <div class="auto-theme-toggle">
+            <div class="auto-theme-info">
+              <div class="auto-theme-title">Auto</div>
+              <div class="auto-theme-subtitle">Follow system theme</div>
+            </div>
+            <div class="toggle" id="auto-theme-toggle" onclick="toggleAutoTheme()">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Account Section -->
+      <div class="settings-section">
+        <div class="settings-section-title">Account</div>
+        
+        <div class="settings-group">
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              <div class="settings-item-content">
+                <div class="settings-item-title">Edit Profile</div>
+                <div class="settings-item-subtitle">Name, bio, avatar</div>
+              </div>
+            </div>
+            <div class="settings-item-right">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <div class="settings-item-content">
+                <div class="settings-item-title">Privacy</div>
+                <div class="settings-item-subtitle">Visibility settings</div>
+              </div>
+            </div>
+            <div class="settings-item-right">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Notifications Section -->
+      <div class="settings-section">
+        <div class="settings-section-title">Notifications</div>
+        
+        <div class="settings-group">
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              <div class="settings-item-content">
+                <div class="settings-item-title">Push Notifications</div>
+              </div>
+            </div>
+            <div class="settings-item-right">
+              <div class="toggle active">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <div class="settings-item-content">
+                <div class="settings-item-title">Email Notifications</div>
+              </div>
+            </div>
+            <div class="settings-item-right">
+              <div class="toggle">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- About Section -->
+      <div class="settings-section">
+        <div class="settings-section-title">About</div>
+        
+        <div class="settings-group">
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              <div class="settings-item-content">
+                <div class="settings-item-title">Help & Support</div>
+              </div>
+            </div>
+            <div class="settings-item-right">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <div class="settings-item-content">
+                <div class="settings-item-title">Privacy Policy</div>
+              </div>
+            </div>
+            <div class="settings-item-right">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Danger Zone -->
+      <div class="settings-section">
+        <div class="settings-section-title">Danger Zone</div>
+        
+        <div class="settings-group">
+          <div class="settings-item settings-item-danger" onclick="logout()">
+            <div class="settings-item-left">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-error);">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              <div class="settings-item-content">
+                <div class="settings-item-title">Log Out</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- App Version -->
+      <div class="app-version">
+        Lazurite v1.0.0 (Phase 1)
+      </div>
+      
+    </div>
+    
+    <!-- Bottom Navigation -->
+    <nav class="nav-bar">
+      <a href="home.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>Home</span>
+      </a>
+      
+      <a href="profile.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span>Profile</span>
+      </a>
+      
+      <a href="settings.html" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span>Settings</span>
+      </a>
+    </nav>
+    
+  </div>
+  
+  <script>
+    // Theme management
+    function setTheme(theme) {
+      // Update UI
+      document.querySelectorAll('.theme-option').forEach(el => {
+        el.classList.remove('active');
+      });
+      document.querySelector(`[data-theme="${theme}"]`).classList.add('active');
+      
+      // Apply theme
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+      }
+      
+      // Disable auto theme
+      document.getElementById('auto-theme-toggle').classList.remove('active');
+      localStorage.removeItem('auto-theme');
+    }
+    
+    function toggleAutoTheme() {
+      const toggle = document.getElementById('auto-theme-toggle');
+      toggle.classList.toggle('active');
+      
+      if (toggle.classList.contains('active')) {
+        localStorage.setItem('auto-theme', 'true');
+        // Check system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        }
+      } else {
+        localStorage.removeItem('auto-theme');
+      }
+    }
+    
+    function logout() {
+      if (confirm('Are you sure you want to log out?')) {
+        localStorage.removeItem('theme');
+        localStorage.removeItem('auto-theme');
+        window.location.href = 'login.html';
+      }
+    }
+    
+    // Initialize theme on load
+    (function() {
+      const savedTheme = localStorage.getItem('theme');
+      const autoTheme = localStorage.getItem('auto-theme');
+      
+      if (autoTheme === 'true') {
+        document.getElementById('auto-theme-toggle').classList.add('active');
+      }
+      
+      if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.querySelectorAll('.theme-option').forEach(el => {
+          el.classList.remove('active');
+        });
+        document.querySelector('[data-theme="dark"]').classList.add('active');
+      } else {
+        document.querySelectorAll('.theme-option').forEach(el => {
+          el.classList.remove('active');
+        });
+        document.querySelector('[data-theme="light"]').classList.add('active');
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Login - Lazurite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.2.2/dist/fonts/geist-sans/style.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .login-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(180deg, var(--bg) 0%, var(--surface) 100%);
+    }
+    
+    .login-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    
+    .logo {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      border-radius: 20px;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px rgba(0, 102, 255, 0.25);
+    }
+    
+    .logo svg {
+      width: 44px;
+      height: 44px;
+      color: white;
+    }
+    
+    .app-name {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    
+    .app-tagline {
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+    
+    .login-methods {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    
+    .divider-with-text {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 24px 0;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+    
+    .divider-with-text::before,
+    .divider-with-text::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background-color: var(--border);
+    }
+    
+    .debug-section {
+      background-color: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1.5px dashed var(--border);
+    }
+    
+    .debug-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .debug-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 15px;
+    }
+    
+    .debug-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .input-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+    
+    .help-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      text-align: center;
+    }
+    
+    .login-footer {
+      text-align: center;
+      margin-top: auto;
+      padding-top: 32px;
+    }
+    
+    .terms-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-container">
+    <div class="login-screen">
+      <!-- Logo & Header -->
+      <div class="login-header">
+        <div class="logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <h1 class="app-name">Lazurite</h1>
+        <p class="app-tagline">Connect with BlueSky</p>
+      </div>
+      
+      <!-- Login Methods -->
+      <div class="login-methods">
+        <!-- OAuth 2.0 Login -->
+        <button class="oauth-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+          Continue with BlueSky OAuth
+        </button>
+        
+        <div class="divider-with-text">Or</div>
+        
+        <!-- Debug Mode - App Password -->
+        <div class="debug-section">
+          <div class="debug-header">
+            <span class="debug-badge">Debug Mode</span>
+            <span class="debug-title">App Password Login</span>
+          </div>
+          
+          <form class="debug-form">
+            <div class="input-group">
+              <label class="input-label">Handle or DID</label>
+              <input type="text" class="input" placeholder="@username.bsky.social">
+            </div>
+            
+            <div class="input-group">
+              <label class="input-label">App Password</label>
+              <input type="password" class="input" placeholder="xxxx-xxxx-xxxx-xxxx">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+              Sign In
+            </button>
+          </form>
+          
+          <p class="help-text">
+            App passwords can be generated in BlueSky Settings → App Passwords
+          </p>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="login-footer">
+        <p class="terms-text">
+          By continuing, you agree to BlueSky's<br>
+          <a href="#" class="link">Terms of Service</a> and <a href="#" class="link">Privacy Policy</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
