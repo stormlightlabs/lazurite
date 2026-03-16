@@ -29,6 +29,13 @@ void main() {
       expect(state.status, LogViewerStatus.error);
       expect(state.errorMessage, 'Test error');
     });
+
+    test('copyWith clears error message when null is provided', () {
+      final state = LogViewerState.initial().copyWith(status: LogViewerStatus.error, errorMessage: 'Test error');
+      final cleared = state.copyWith(status: LogViewerStatus.loaded, errorMessage: null);
+      expect(cleared.status, LogViewerStatus.loaded);
+      expect(cleared.errorMessage, isNull);
+    });
   });
 
   group('LogViewerCubit', () {

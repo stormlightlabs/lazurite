@@ -14,33 +14,98 @@ class LogsScreen extends StatelessWidget {
   }
 }
 
-class _LogsScreenContent extends StatelessWidget {
+class _LogsScreenContent extends StatefulWidget {
   const _LogsScreenContent();
 
   @override
+  State<_LogsScreenContent> createState() => _LogsScreenContentState();
+}
+
+class _LogsScreenContentState extends State<_LogsScreenContent> {
+  late final ScrollController _scrollController;
+  bool _autoScroll = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController()..addListener(_handleScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_handleScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _handleScroll() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    final maxScrollExtent = _scrollController.position.maxScrollExtent;
+    final isAtBottom = _scrollController.offset >= (maxScrollExtent - 24);
+    if (isAtBottom != _autoScroll) {
+      setState(() => _autoScroll = isAtBottom);
+    }
+  }
+
+  void _scrollToBottom({bool animated = false}) {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    final targetOffset = _scrollController.position.maxScrollExtent;
+    if (animated) {
+      _scrollController.animateTo(targetOffset, duration: const Duration(milliseconds: 180), curve: Curves.easeOut);
+    } else {
+      _scrollController.jumpTo(targetOffset);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Logs'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined),
-            tooltip: 'Share log file',
-            onPressed: () => _shareLogs(context),
-          ),
-          IconButton(
-            icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-            tooltip: 'Clear all logs',
-            onPressed: () => _confirmClearLogs(context),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _SearchBar(),
-          _LevelFilterChips(),
-          Expanded(child: _LogList()),
-        ],
+    return BlocListener<LogViewerCubit, LogViewerState>(
+      listenWhen: (previous, current) =>
+          previous.filteredEntries != current.filteredEntries || previous.status != current.status,
+      listener: (context, state) {
+        if (!_autoScroll || state.status != LogViewerStatus.loaded) {
+          return;
+        }
+
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Logs'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: 'Share log file',
+              onPressed: () => _shareLogs(context),
+            ),
+            IconButton(
+              icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+              tooltip: 'Clear all logs',
+              onPressed: () => _confirmClearLogs(context),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            _SearchBar(),
+            _LevelFilterChips(),
+            Expanded(child: _LogList(controller: _scrollController)),
+            _AutoScrollIndicator(
+              isActive: _autoScroll,
+              onTap: () {
+                setState(() => _autoScroll = true);
+                WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom(animated: true));
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -76,6 +141,47 @@ class _LogsScreenContent extends StatelessWidget {
     if (confirmed == true && context.mounted) {
       await context.read<LogViewerCubit>().clearAllLogs();
     }
+  }
+}
+
+class _AutoScrollIndicator extends StatelessWidget {
+  const _AutoScrollIndicator({required this.isActive, required this.onTap});
+
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colorScheme.surface,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 16,
+                color: isActive ? colorScheme.primary : colorScheme.outline,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Auto-scroll',
+                style: TextStyle(fontSize: 12, color: isActive ? colorScheme.primary : colorScheme.outline),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -152,6 +258,10 @@ class _LevelFilterChips extends StatelessWidget {
 }
 
 class _LogList extends StatelessWidget {
+  const _LogList({required this.controller});
+
+  final ScrollController controller;
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<LogViewerCubit, LogViewerState>(
@@ -180,6 +290,7 @@ class _LogList extends StatelessWidget {
         }
 
         return ListView.separated(
+          controller: controller,
           itemCount: state.filteredEntries.length,
           separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
           itemBuilder: (context, index) {

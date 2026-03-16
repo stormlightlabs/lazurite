@@ -1,7 +1,10 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:lazurite/core/logging/app_file_log_printer.dart';
+import 'package:lazurite/core/logging/daily_log_file_output.dart';
 
 class AppLogger {
   AppLogger._();
@@ -9,42 +12,43 @@ class AppLogger {
   static final AppLogger _instance = AppLogger._();
   static AppLogger get instance => _instance;
 
-  Logger? _logger;
+  Logger? _consoleLogger;
+  Logger? _fileLogger;
+  DailyLogFileOutput? _fileOutput;
   String? _logDirectory;
 
   Future<void> initialize() async {
+    await dispose();
+
     _logDirectory = await _getLogDirectory();
-    final logDir = Directory(_logDirectory!);
-    if (!await logDir.exists()) {
-      await logDir.create(recursive: true);
-    }
-
-    await _cleanupOldLogs();
-
-    _logger = Logger(
-      filter: DevelopmentFilter(),
-      printer: PrettyPrinter(
-        methodCount: 2,
-        errorMethodCount: 8,
-        lineLength: 120,
-        colors: true,
-        printEmojis: true,
-        dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-      ),
-      output: MultiOutput([
-        ConsoleOutput(),
-        AdvancedFileOutput(
-          path: _logDirectory!,
-          maxFileSizeKB: -1,
-          fileNameFormatter: _dailyFileNameFormatter,
-          latestFileName: _todayFileName(),
-          maxRotatedFilesCount: 3,
-          overrideExisting: false,
-        ),
-      ]),
+    _fileOutput = DailyLogFileOutput(directoryPath: _logDirectory!, retentionDays: 3);
+    _fileLogger = Logger(
+      filter: ProductionFilter(),
+      printer: AppFileLogPrinter(),
+      output: _fileOutput!,
+      level: Level.trace,
     );
 
-    await _logger!.init;
+    final initFutures = <Future<void>>[_fileLogger!.init];
+
+    if (kDebugMode) {
+      _consoleLogger = Logger(
+        filter: DevelopmentFilter(),
+        printer: PrettyPrinter(
+          methodCount: 2,
+          errorMethodCount: 8,
+          lineLength: 120,
+          colors: true,
+          printEmojis: true,
+          dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+        ),
+        output: ConsoleOutput(),
+        level: Level.trace,
+      );
+      initFutures.add(_consoleLogger!.init);
+    }
+
+    await Future.wait(initFutures);
   }
 
   Future<String> _getLogDirectory() async {
@@ -52,70 +56,48 @@ class AppLogger {
     return '${docsDir.path}/logs';
   }
 
-  static String _dailyFileNameFormatter(DateTime timestamp) {
-    return 'lazurite_${_formatDate(timestamp)}.log';
-  }
-
-  static String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
-
   static String _todayFileName() {
-    return _dailyFileNameFormatter(DateTime.now());
+    return DailyLogFileOutput.fileNameFor(DateTime.now());
   }
 
-  Future<void> _cleanupOldLogs() async {
-    if (_logDirectory == null) return;
-
-    final logDir = Directory(_logDirectory!);
-    if (!await logDir.exists()) return;
-
-    const retentionDays = 3;
-    final cutoffDate = DateTime.now().subtract(const Duration(days: retentionDays));
-
-    await for (final entity in logDir.list()) {
-      if (entity is File && entity.path.endsWith('.log')) {
-        final fileName = entity.uri.pathSegments.last;
-        final dateMatch = RegExp(r'lazurite_(\d{4}-\d{2}-\d{2})\.log').firstMatch(fileName);
-        if (dateMatch != null) {
-          final fileDate = DateTime.parse(dateMatch.group(1)!);
-          if (fileDate.isBefore(cutoffDate)) {
-            await entity.delete();
-          }
-        }
-      }
-    }
+  void _log(Level level, dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
+    final logTime = time ?? DateTime.now();
+    _fileLogger?.log(level, message, time: logTime, error: error, stackTrace: stackTrace);
+    _consoleLogger?.log(level, message, time: logTime, error: error, stackTrace: stackTrace);
   }
 
   String? get logDirectory => _logDirectory;
 
   void t(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
-    _logger?.t(message, time: time, error: error, stackTrace: stackTrace);
+    _log(Level.trace, message, time: time, error: error, stackTrace: stackTrace);
   }
 
   void d(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
-    _logger?.d(message, time: time, error: error, stackTrace: stackTrace);
+    _log(Level.debug, message, time: time, error: error, stackTrace: stackTrace);
   }
 
   void i(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
-    _logger?.i(message, time: time, error: error, stackTrace: stackTrace);
+    _log(Level.info, message, time: time, error: error, stackTrace: stackTrace);
   }
 
   void w(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
-    _logger?.w(message, time: time, error: error, stackTrace: stackTrace);
+    _log(Level.warning, message, time: time, error: error, stackTrace: stackTrace);
   }
 
   void e(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
-    _logger?.e(message, time: time, error: error, stackTrace: stackTrace);
+    _log(Level.error, message, time: time, error: error, stackTrace: stackTrace);
   }
 
   void f(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
-    _logger?.f(message, time: time, error: error, stackTrace: stackTrace);
+    _log(Level.fatal, message, time: time, error: error, stackTrace: stackTrace);
   }
 
   Future<void> dispose() async {
-    await _logger?.close();
-    _logger = null;
+    await _consoleLogger?.close();
+    await _fileLogger?.close();
+    _consoleLogger = null;
+    _fileLogger = null;
+    _fileOutput = null;
   }
 
   Future<List<File>> getLogFiles() async {
@@ -136,16 +118,7 @@ class AppLogger {
   }
 
   Future<void> clearAllLogs() async {
-    if (_logDirectory == null) return;
-
-    final logDir = Directory(_logDirectory!);
-    if (!await logDir.exists()) return;
-
-    await for (final entity in logDir.list()) {
-      if (entity is File && entity.path.endsWith('.log')) {
-        await entity.delete();
-      }
-    }
+    await _fileOutput?.clearAllLogs();
   }
 
   Future<File?> getTodaysLogFile() async {

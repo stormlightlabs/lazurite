@@ -37,12 +37,21 @@ void main() {
         expect(entry.source, 'AuthBloc');
       });
 
-      test('parses log line with timestamp', () {
-        final entry = LogEntry.tryParse('14:32:01.123 [I] App started');
+      test('parses log line with ISO time tag and source prefix', () {
+        final entry = LogEntry.tryParse('[I] TIME: 2026-03-16T14:32:01.123 AppLogger: App started');
         expect(entry, isNotNull);
         expect(entry!.level, Level.info);
+        expect(entry.source, 'AppLogger');
         expect(entry.message, 'App started');
         expect(entry.formatTimestamp(), '14:32:01.123');
+      });
+
+      test('parses fatal log lines written by the file printer', () {
+        final entry = LogEntry.tryParse('[FATAL] TIME: 2026-03-16T14:32:12.450 AppLogger: Unhandled exception');
+        expect(entry, isNotNull);
+        expect(entry!.level, Level.fatal);
+        expect(entry.source, 'AppLogger');
+        expect(entry.message, 'Unhandled exception');
       });
 
       test('returns null for empty line', () {

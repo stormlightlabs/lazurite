@@ -288,14 +288,18 @@ class AuthRepository {
       final authSession = await atp.ATProto.fromOAuthSession(session, service: service).server.getSession();
       resolvedHandle = authSession.data.handle;
     } catch (e, s) {
-      log.w('Failed to resolve handle from session, falling back to login hint', error: e, stackTrace: s);
+      log.w(
+        'AuthRepository: Failed to resolve handle from session, falling back to login hint',
+        error: e,
+        stackTrace: s,
+      );
     }
 
     try {
       final profile = await Bluesky.fromOAuthSession(session, service: service).actor.getProfile(actor: session.sub);
       displayName = profile.data.displayName;
     } catch (e, s) {
-      log.w('Failed to fetch display name, continuing without it', error: e, stackTrace: s);
+      log.w('AuthRepository: Failed to fetch display name, continuing without it', error: e, stackTrace: s);
     }
 
     return AuthTokens(

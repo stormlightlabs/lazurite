@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:equatable/equatable.dart';
@@ -9,12 +10,23 @@ import 'package:lazurite/features/logs/data/log_entry.dart';
 part 'log_viewer_state.dart';
 
 class LogViewerCubit extends Cubit<LogViewerState> {
-  LogViewerCubit() : super(LogViewerState.initial()) {
-    loadLogs();
+  LogViewerCubit({Duration refreshInterval = const Duration(seconds: 1)}) : super(LogViewerState.initial()) {
+    unawaited(loadLogs());
+    _refreshTimer = Timer.periodic(refreshInterval, (_) => unawaited(loadLogs(showLoading: false)));
   }
 
-  Future<void> loadLogs() async {
-    emit(state.copyWith(status: LogViewerStatus.loading));
+  Timer? _refreshTimer;
+  bool _isLoading = false;
+
+  Future<void> loadLogs({bool showLoading = true}) async {
+    if (_isLoading) {
+      return;
+    }
+
+    _isLoading = true;
+    if (showLoading && state.status == LogViewerStatus.initial) {
+      emit(state.copyWith(status: LogViewerStatus.loading, errorMessage: null));
+    }
 
     try {
       final files = await log.getLogFiles();
@@ -31,18 +43,31 @@ class LogViewerCubit extends Cubit<LogViewerState> {
         }
       }
 
-      entries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      entries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-      emit(
-        state.copyWith(
-          status: LogViewerStatus.loaded,
-          entries: entries,
-          filteredEntries: _applyFilters(entries, state.enabledLevels, state.searchQuery),
-        ),
+      final nextState = state.copyWith(
+        status: LogViewerStatus.loaded,
+        entries: entries,
+        filteredEntries: _applyFilters(entries, state.enabledLevels, state.searchQuery),
+        errorMessage: null,
       );
+      if (nextState != state) {
+        emit(nextState);
+      }
     } catch (e) {
-      emit(state.copyWith(status: LogViewerStatus.error, errorMessage: e.toString()));
+      final nextState = state.copyWith(status: LogViewerStatus.error, errorMessage: e.toString());
+      if (nextState != state) {
+        emit(nextState);
+      }
+    } finally {
+      _isLoading = false;
     }
+  }
+
+  @override
+  Future<void> close() async {
+    _refreshTimer?.cancel();
+    await super.close();
   }
 
   void toggleLevel(Level level) {
@@ -52,25 +77,33 @@ class LogViewerCubit extends Cubit<LogViewerState> {
     } else {
       newLevels.add(level);
     }
-    emit(
-      state.copyWith(
-        enabledLevels: newLevels,
-        filteredEntries: _applyFilters(state.entries, newLevels, state.searchQuery),
-      ),
+
+    final nextState = state.copyWith(
+      enabledLevels: newLevels,
+      filteredEntries: _applyFilters(state.entries, newLevels, state.searchQuery),
     );
+    if (nextState != state) {
+      emit(nextState);
+    }
   }
 
   void setSearchQuery(String query) {
-    emit(state.copyWith(searchQuery: query, filteredEntries: _applyFilters(state.entries, state.enabledLevels, query)));
+    final nextState = state.copyWith(
+      searchQuery: query,
+      filteredEntries: _applyFilters(state.entries, state.enabledLevels, query),
+    );
+    if (nextState != state) {
+      emit(nextState);
+    }
   }
 
   List<LogEntry> _applyFilters(List<LogEntry> entries, Set<Level> enabledLevels, String searchQuery) {
-    var filtered = entries.where((e) => enabledLevels.contains(e.level)).toList();
+    var filtered = entries.where((entry) => enabledLevels.contains(entry.level)).toList();
 
     if (searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
-      filtered = filtered.where((e) {
-        return e.message.toLowerCase().contains(query) || (e.source?.toLowerCase().contains(query) ?? false);
+      filtered = filtered.where((entry) {
+        return entry.message.toLowerCase().contains(query) || (entry.source?.toLowerCase().contains(query) ?? false);
       }).toList();
     }
 
@@ -81,7 +114,6 @@ class LogViewerCubit extends Cubit<LogViewerState> {
 
   Future<void> clearAllLogs() async {
     await log.clearAllLogs();
-    emit(state.copyWith(entries: [], filteredEntries: []));
-    await loadLogs();
+    await loadLogs(showLoading: false);
   }
 }

@@ -2,6 +2,8 @@ part of 'log_viewer_cubit.dart';
 
 enum LogViewerStatus { initial, loading, loaded, error }
 
+const _logViewerStateNoChange = Object();
+
 class LogViewerState extends Equatable {
   const LogViewerState({
     this.status = LogViewerStatus.initial,
@@ -27,7 +29,7 @@ class LogViewerState extends Equatable {
     List<LogEntry>? filteredEntries,
     Set<Level>? enabledLevels,
     String? searchQuery,
-    String? errorMessage,
+    Object? errorMessage = _logViewerStateNoChange,
   }) {
     return LogViewerState(
       status: status ?? this.status,
@@ -35,7 +37,7 @@ class LogViewerState extends Equatable {
       filteredEntries: filteredEntries ?? this.filteredEntries,
       enabledLevels: enabledLevels ?? this.enabledLevels,
       searchQuery: searchQuery ?? this.searchQuery,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: identical(errorMessage, _logViewerStateNoChange) ? this.errorMessage : errorMessage as String?,
     );
   }
 

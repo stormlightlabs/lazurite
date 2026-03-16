@@ -36,7 +36,7 @@ Future<void> main() async {
   final settingsCubit = SettingsCubit(database: database);
   await settingsCubit.loadSettings();
 
-  log.i('App started');
+  log.i('AppLogger: App started');
 
   runApp(LazuriteApp(authBloc: authBloc, database: database, settingsCubit: settingsCubit));
 }

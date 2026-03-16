@@ -16,28 +16,7 @@ class LogEntry extends Equatable {
     DateTime? timestamp;
     var remaining = trimmed;
 
-    final timestampPattern = RegExp(r'^(\d{2}:\d{2}:\d{2}\.\d{3})\s*');
-    final timestampMatch = timestampPattern.firstMatch(remaining);
-    if (timestampMatch != null) {
-      try {
-        final timeStr = timestampMatch.group(1)!;
-        final parts = timeStr.split(':');
-        final secondsParts = parts[2].split('.');
-        final now = DateTime.now();
-        timestamp = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          int.parse(parts[0]),
-          int.parse(parts[1]),
-          int.parse(secondsParts[0]),
-          int.parse(secondsParts[1]),
-        );
-        remaining = remaining.substring(timestampMatch.end);
-      } catch (_) {}
-    }
-
-    final levelPattern = RegExp(r'^\[([A-Z])\]\s*');
+    final levelPattern = RegExp(r'^\[([A-Z]+)\]\s*');
     final levelMatch = levelPattern.firstMatch(remaining);
     Level level = Level.debug;
 
@@ -46,8 +25,12 @@ class LogEntry extends Equatable {
       remaining = remaining.substring(levelMatch.end);
     }
 
-    final timeTagPattern = RegExp(r'^TIME:\s*[\d\-T:.Z]+\s*');
-    remaining = remaining.replaceFirst(timeTagPattern, '');
+    final timeTagPattern = RegExp(r'^TIME:\s*([^\s]+)\s*');
+    final timeTagMatch = timeTagPattern.firstMatch(remaining);
+    if (timeTagMatch != null) {
+      timestamp ??= DateTime.tryParse(timeTagMatch.group(1)!)?.toLocal();
+      remaining = remaining.substring(timeTagMatch.end);
+    }
 
     String message;
     String? source;
@@ -66,17 +49,23 @@ class LogEntry extends Equatable {
   }
 
   static Level _parseLevel(String? levelChar) {
-    switch (levelChar) {
+    switch (levelChar?.toUpperCase()) {
+      case 'TRACE':
       case 'T':
         return Level.trace;
+      case 'DEBUG':
       case 'D':
         return Level.debug;
+      case 'INFO':
       case 'I':
         return Level.info;
+      case 'WARNING':
       case 'W':
         return Level.warning;
+      case 'ERROR':
       case 'E':
         return Level.error;
+      case 'FATAL':
       case 'F':
         return Level.fatal;
       default:
