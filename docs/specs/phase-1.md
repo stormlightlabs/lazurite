@@ -328,19 +328,3 @@ An all-natural pine theme with muted, elegant tones.
 | iris           | `#907aa9` | Purple accent               |
 
 Map to `RosePineTheme.dark()` / `RosePineTheme.light()`.
-
-## Development
-
-`/scripts` directory with Python utilities for inspecting AT Protocol / BlueSky
-API data.
-
-Scripts to include:
-
-| Script              | Purpose                                              |
-| ------------------- | ---------------------------------------------------- |
-| `fetch_profile.py`  | Fetch and pretty-print a profile via `getProfile`    |
-| `fetch_feed.py`     | Fetch author feed and dump post/facet structures     |
-| `resolve_handle.py` | Resolve handle → DID via `com.atproto.identity`      |
-
-Use the `atproto` Python SDK (`atproto` on PyPI). Each script should accept
-CLI args (handle, limit, etc.) and output JSON to stdout.

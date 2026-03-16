@@ -3,6 +3,9 @@ import 'package:bluesky/bluesky.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/logging/logging_bloc_observer.dart';
+import 'package:lazurite/core/logging/logging_navigator_observer.dart';
 import 'package:lazurite/core/router/app_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
@@ -17,6 +20,9 @@ import 'package:lazurite/features/settings/bloc/settings_state.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await log.initialize();
+  Bloc.observer = LoggingBlocObserver();
+
   final database = AppDatabase();
   final authRepository = AuthRepository(database: database);
   final restoredSession = await authRepository.restoreSession();
@@ -30,6 +36,8 @@ Future<void> main() async {
   final settingsCubit = SettingsCubit(database: database);
   await settingsCubit.loadSettings();
 
+  log.i('App started');
+
   runApp(LazuriteApp(authBloc: authBloc, database: database, settingsCubit: settingsCubit));
 }
 
@@ -39,6 +47,8 @@ class LazuriteApp extends StatelessWidget {
   final AuthBloc authBloc;
   final AppDatabase database;
   final SettingsCubit settingsCubit;
+
+  static final _navigatorObserver = LoggingNavigatorObserver();
 
   Bluesky? _createBluesky(AuthState state) {
     if (!state.isAuthenticated || state.tokens == null) {
@@ -78,8 +88,6 @@ class LazuriteApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final router = AppRouter(authBloc: authBloc).router;
-
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: authBloc),
@@ -117,7 +125,7 @@ class LazuriteApp extends StatelessWidget {
                   theme: lightTheme,
                   darkTheme: darkTheme,
                   themeMode: themeMode,
-                  routerConfig: router,
+                  routerConfig: AppRouter(authBloc: authBloc, navigatorObserver: _navigatorObserver).router,
                 );
               },
             ),

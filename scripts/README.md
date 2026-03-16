@@ -1,1 +1,0 @@
-# ATProto/BlueSky API Scripts

@@ -1,0 +1,44 @@
+part of 'log_viewer_cubit.dart';
+
+enum LogViewerStatus { initial, loading, loaded, error }
+
+class LogViewerState extends Equatable {
+  const LogViewerState({
+    this.status = LogViewerStatus.initial,
+    this.entries = const [],
+    this.filteredEntries = const [],
+    this.enabledLevels = const {Level.trace, Level.debug, Level.info, Level.warning, Level.error, Level.fatal},
+    this.searchQuery = '',
+    this.errorMessage,
+  });
+
+  factory LogViewerState.initial() => const LogViewerState();
+
+  final LogViewerStatus status;
+  final List<LogEntry> entries;
+  final List<LogEntry> filteredEntries;
+  final Set<Level> enabledLevels;
+  final String searchQuery;
+  final String? errorMessage;
+
+  LogViewerState copyWith({
+    LogViewerStatus? status,
+    List<LogEntry>? entries,
+    List<LogEntry>? filteredEntries,
+    Set<Level>? enabledLevels,
+    String? searchQuery,
+    String? errorMessage,
+  }) {
+    return LogViewerState(
+      status: status ?? this.status,
+      entries: entries ?? this.entries,
+      filteredEntries: filteredEntries ?? this.filteredEntries,
+      enabledLevels: enabledLevels ?? this.enabledLevels,
+      searchQuery: searchQuery ?? this.searchQuery,
+      errorMessage: errorMessage ?? this.errorMessage,
+    );
+  }
+
+  @override
+  List<Object?> get props => [status, entries, filteredEntries, enabledLevels, searchQuery, errorMessage];
+}

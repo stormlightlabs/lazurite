@@ -7,6 +7,7 @@ import 'package:atproto_oauth/atproto_oauth.dart';
 import 'package:bluesky/bluesky.dart';
 import 'package:drift/drift.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -286,15 +287,15 @@ class AuthRepository {
     try {
       final authSession = await atp.ATProto.fromOAuthSession(session, service: service).server.getSession();
       resolvedHandle = authSession.data.handle;
-    } catch (_) {
-      // TODO: log this -> Fall back to the login hint if the server session lookup fails.
+    } catch (e, s) {
+      log.w('Failed to resolve handle from session, falling back to login hint', error: e, stackTrace: s);
     }
 
     try {
       final profile = await Bluesky.fromOAuthSession(session, service: service).actor.getProfile(actor: session.sub);
       displayName = profile.data.displayName;
-    } catch (_) {
-      // TODO: log this -> Display name is optional and should not block session persistence.
+    } catch (e, s) {
+      log.w('Failed to fetch display name, continuing without it', error: e, stackTrace: s);
     }
 
     return AuthTokens(
