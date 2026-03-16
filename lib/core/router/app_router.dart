@@ -31,7 +31,10 @@ class AppRouter {
     routes: [
       GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => ProfileScreen(actor: state.uri.queryParameters['actor']),
+      ),
       GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
     ],
   );

@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Logs - Lazurite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.2.2/dist/fonts/geist-sans/style.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .logs-container {
+        padding-bottom: 88px;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 56px - 88px);
+      }
+
+      .logs-search {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .logs-search-input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background-color: var(--surface);
+        color: var(--text-primary);
+        font-size: 13px;
+        font-family: var(--font-mono);
+      }
+
+      .logs-search-input:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+      }
+
+      .logs-search-input::placeholder {
+        color: var(--text-muted);
+      }
+
+      .logs-filters {
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .logs-filters::-webkit-scrollbar {
+        display: none;
+      }
+
+      .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        border: 1px solid var(--border);
+        background-color: var(--surface);
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .filter-chip:hover {
+        background-color: var(--surface-variant);
+      }
+
+      .filter-chip.active {
+        border-color: var(--accent-primary);
+        background-color: var(--accent-primary);
+        color: white;
+      }
+
+      .filter-chip-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .filter-chip.active .filter-chip-dot {
+        background-color: rgba(255, 255, 255, 0.6);
+      }
+
+      .dot-fatal {
+        background-color: var(--accent-error);
+      }
+      .dot-error {
+        background-color: var(--accent-error);
+      }
+      .dot-warning {
+        background-color: var(--accent-warning);
+      }
+      .dot-info {
+        background-color: var(--accent-primary);
+      }
+      .dot-debug {
+        background-color: var(--text-muted);
+      }
+      .dot-trace {
+        background-color: var(--text-muted);
+      }
+
+      .logs-list {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .log-entry {
+        display: flex;
+        gap: 8px;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--border);
+        align-items: flex-start;
+        transition: background-color 0.15s ease;
+        cursor: pointer;
+      }
+
+      .log-entry:hover {
+        background-color: var(--surface);
+      }
+
+      .log-entry.expanded {
+        background-color: var(--surface);
+      }
+
+      .log-timestamp {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--text-muted);
+        white-space: nowrap;
+        padding-top: 1px;
+        flex-shrink: 0;
+      }
+
+      .log-badge {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: 3px;
+        flex-shrink: 0;
+        text-align: center;
+        min-width: 18px;
+        margin-top: 1px;
+      }
+
+      .log-badge-fatal {
+        background-color: var(--accent-error);
+        color: white;
+      }
+
+      .log-badge-error {
+        background-color: rgba(239, 68, 68, 0.15);
+        color: var(--accent-error);
+      }
+
+      .log-badge-warning {
+        background-color: rgba(245, 158, 11, 0.15);
+        color: var(--accent-warning);
+      }
+
+      .log-badge-info {
+        background-color: rgba(0, 102, 255, 0.1);
+        color: var(--accent-primary);
+      }
+
+      .log-badge-debug {
+        background-color: var(--surface-variant);
+        color: var(--text-secondary);
+      }
+
+      .log-badge-trace {
+        background-color: var(--surface);
+        color: var(--text-muted);
+      }
+
+      .log-message {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--text-primary);
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+
+      .log-entry.expanded .log-message {
+        line-clamp: unset;
+        -webkit-line-clamp: unset;
+        overflow: visible;
+        word-break: break-all;
+      }
+
+      .log-source {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .autoscroll-indicator {
+        position: sticky;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px;
+        background-color: var(--surface);
+        border-top: 1px solid var(--border);
+        font-size: 12px;
+        color: var(--text-muted);
+        gap: 4px;
+        cursor: pointer;
+      }
+
+      .autoscroll-indicator svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .autoscroll-indicator.active {
+        color: var(--accent-primary);
+      }
+
+      .logs-empty {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 24px;
+        text-align: center;
+      }
+
+      .logs-empty svg {
+        width: 48px;
+        height: 48px;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+      }
+
+      .logs-empty-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      .logs-empty-text {
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mobile-container">
+      <!-- Header -->
+      <header class="header">
+        <button class="header-action">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <h1 class="header-title">Logs</h1>
+        <div style="display: flex; gap: 4px">
+          <button class="header-action" title="Share log file">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+          </button>
+          <button class="header-action" title="Clear all logs" style="color: var(--accent-error)">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="logs-container">
+        <!-- Search -->
+        <div class="logs-search">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--text-muted)"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input class="logs-search-input" type="text" placeholder="Filter logs..." />
+        </div>
+
+        <!-- Level Filter Chips -->
+        <div class="logs-filters">
+          <button class="filter-chip active">
+            <span class="filter-chip-dot dot-fatal"></span>
+            Fatal
+          </button>
+          <button class="filter-chip active">
+            <span class="filter-chip-dot dot-error"></span>
+            Error
+          </button>
+          <button class="filter-chip active">
+            <span class="filter-chip-dot dot-warning"></span>
+            Warning
+          </button>
+          <button class="filter-chip active">
+            <span class="filter-chip-dot dot-info"></span>
+            Info
+          </button>
+          <button class="filter-chip">
+            <span class="filter-chip-dot dot-debug"></span>
+            Debug
+          </button>
+          <button class="filter-chip">
+            <span class="filter-chip-dot dot-trace"></span>
+            Trace
+          </button>
+        </div>
+
+        <!-- Log Entries -->
+        <div class="logs-list">
+          <div class="log-entry">
+            <span class="log-timestamp">14:32:01.123</span>
+            <span class="log-badge log-badge-info">I</span>
+            <div>
+              <div class="log-message">App started — session abc123</div>
+              <div class="log-source">AppLogger</div>
+            </div>
+          </div>
+
+          <div class="log-entry">
+            <span class="log-timestamp">14:32:01.456</span>
+            <span class="log-badge log-badge-info">I</span>
+            <div>
+              <div class="log-message">OAuth session restored for did:plc:z72i7hdy...</div>
+              <div class="log-source">AuthBloc</div>
+            </div>
+          </div>
+
+          <div class="log-entry">
+            <span class="log-timestamp">14:32:02.012</span>
+            <span class="log-badge log-badge-info">I</span>
+            <div>
+              <div class="log-message">Route pushed: /home</div>
+              <div class="log-source">NavObserver</div>
+            </div>
+          </div>
+
+          <div class="log-entry">
+            <span class="log-timestamp">14:32:02.340</span>
+            <span class="log-badge log-badge-warning">W</span>
+            <div>
+              <div class="log-message">Timeline fetch retry (attempt 2/3) — SocketException: Connection reset</div>
+              <div class="log-source">FeedBloc</div>
+            </div>
+          </div>
+
+          <div class="log-entry">
+            <span class="log-timestamp">14:32:03.891</span>
+            <span class="log-badge log-badge-info">I</span>
+            <div>
+              <div class="log-message">GET /xrpc/app.bsky.feed.getTimeline — 200 (342ms)</div>
+              <div class="log-source">HttpLogger</div>
+            </div>
+          </div>
+
+          <div class="log-entry expanded">
+            <span class="log-timestamp">14:32:05.220</span>
+            <span class="log-badge log-badge-error">E</span>
+            <div>
+              <div class="log-message">
+                Failed to decode feed post: type 'Null' is not a subtype of type 'String' in type cast #0
+                FeedRepository.decodeFeedViewPost (feed_repository.dart:142) #1 FeedBloc._onTimelineRequested
+                (feed_bloc.dart:58)
+              </div>
+              <div class="log-source">FeedBloc</div>
+            </div>
+          </div>
+
+          <div class="log-entry">
+            <span class="log-timestamp">14:32:06.100</span>
+            <span class="log-badge log-badge-info">I</span>
+            <div>
+              <div class="log-message">Route pushed: /profile/did:plc:z72i7hdy...</div>
+              <div class="log-source">NavObserver</div>
+            </div>
+          </div>
+
+          <div class="log-entry">
+            <span class="log-timestamp">14:32:06.540</span>
+            <span class="log-badge log-badge-info">I</span>
+            <div>
+              <div class="log-message">GET /xrpc/app.bsky.actor.getProfile — 200 (198ms)</div>
+              <div class="log-source">HttpLogger</div>
+            </div>
+          </div>
+
+          <div class="log-entry">
+            <span class="log-timestamp">14:32:07.010</span>
+            <span class="log-badge log-badge-warning">W</span>
+            <div>
+              <div class="log-message">Image cache miss for avatar CDN — falling back to network fetch</div>
+              <div class="log-source">ImageCache</div>
+            </div>
+          </div>
+
+          <div class="log-entry">
+            <span class="log-timestamp">14:32:08.330</span>
+            <span class="log-badge log-badge-info">I</span>
+            <div>
+              <div class="log-message">ProfileBloc transition: ProfileLoading → ProfileLoaded</div>
+              <div class="log-source">BlocObserver</div>
+            </div>
+          </div>
+
+          <div class="log-entry">
+            <span class="log-timestamp">14:32:12.450</span>
+            <span class="log-badge log-badge-fatal">F</span>
+            <div>
+              <div class="log-message">Unhandled exception in zone — FormatException: Invalid JSON at position 0</div>
+              <div class="log-source">AppLogger</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto-scroll indicator -->
+        <div class="autoscroll-indicator active">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+          Auto-scroll
+        </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <nav class="nav-bar">
+        <a href="home.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          <span>Home</span>
+        </a>
+
+        <a href="search.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <span>Search</span>
+        </a>
+
+        <a href="profile.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span>Profile</span>
+        </a>
+
+        <a href="settings.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <script>
+      // Theme init
+      const saved = localStorage.getItem("theme");
+      if (saved && saved !== "light") {
+        document.documentElement.setAttribute("data-theme", saved);
+      }
+
+      // Toggle filter chips
+      document.querySelectorAll(".filter-chip").forEach((chip) => {
+        chip.addEventListener("click", () => chip.classList.toggle("active"));
+      });
+
+      // Toggle expanded log entries
+      document.querySelectorAll(".log-entry").forEach((entry) => {
+        entry.addEventListener("click", () => entry.classList.toggle("expanded"));
+      });
+
+      // Toggle auto-scroll
+      document.querySelector(".autoscroll-indicator").addEventListener("click", function () {
+        this.classList.toggle("active");
+      });
+    </script>
+  </body>
+</html>

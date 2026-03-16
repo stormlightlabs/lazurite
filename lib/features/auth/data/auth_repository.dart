@@ -287,14 +287,14 @@ class AuthRepository {
       final authSession = await atp.ATProto.fromOAuthSession(session, service: service).server.getSession();
       resolvedHandle = authSession.data.handle;
     } catch (_) {
-      // Fall back to the login hint if the server session lookup fails.
+      // TODO: log this -> Fall back to the login hint if the server session lookup fails.
     }
 
     try {
       final profile = await Bluesky.fromOAuthSession(session, service: service).actor.getProfile(actor: session.sub);
       displayName = profile.data.displayName;
     } catch (_) {
-      // Display name is optional and should not block session persistence.
+      // TODO: log this -> Display name is optional and should not block session persistence.
     }
 
     return AuthTokens(

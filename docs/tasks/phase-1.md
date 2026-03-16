@@ -19,11 +19,11 @@
 
 ## M2 — Profile Rendering
 
-- [ ] Build `ProfileBloc` — fetch via `getProfile` / `getProfiles`
-- [ ] Profile screen: avatar, banner, display name, handle, description, stats (followers/following/posts), pronouns, website
-- [ ] Build `FeedBloc` — paginated fetch via `getAuthorFeed` with cursor + filter support
-- [ ] Post card widget: text, timestamps, embeds (images, quote posts, link cards)
-- [ ] Facet rendering: parse via `bluesky_text`, render mentions / links / hashtags as tappable spans (UTF-8 byte-safe)
+- [x] Build `ProfileBloc` — fetch via `getProfile` / `getProfiles`
+- [x] Profile screen: avatar, banner, display name, handle, description, stats (followers/following/posts), pronouns, website
+- [x] Build `FeedBloc` — paginated fetch via `getAuthorFeed` with cursor + filter support
+- [x] Post card widget: text, timestamps, embeds (images, quote posts, link cards)
+- [x] Facet rendering: parse via `bluesky_text`, render mentions / links / hashtags as tappable spans (UTF-8 byte-safe)
 
 ## M3 — Settings & Theming
 

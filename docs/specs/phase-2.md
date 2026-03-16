@@ -1,5 +1,85 @@
 # Lazurite Phase 2 Spec
 
+## Logging
+
+Structured logging for development debugging and in-app log inspection. Uses
+the [`logger`](https://pub.dev/packages/logger) package (v2.x) — the most
+widely adopted Flutter logging library — with file-based persistence via its
+built-in `AdvancedFileOutput`.
+
+### Log Levels
+
+| Level     | Usage                                       |
+| --------- | ------------------------------------------- |
+| `trace`   | Fine-grained control flow (loop iterations) |
+| `debug`   | Development-only diagnostics                |
+| `info`    | Significant lifecycle events (login, nav)   |
+| `warning` | Recoverable issues (retry, fallback)        |
+| `error`   | Failures with stack traces                  |
+| `fatal`   | Unrecoverable errors (crash-level)          |
+
+### Architecture
+
+A single `AppLogger` wrapper class exposes a top-level `log` instance injected
+via the service locator. All subsystems log through this instance.
+
+```sh
+AppLogger
+├── LogFilter  (DevelopmentFilter / ProductionFilter)
+├── LogPrinter (PrettyPrinter for dev, SimplePrinter for file)
+└── LogOutput
+    ├── ConsoleOutput      (always, dev only)
+    └── AdvancedFileOutput  (always, all builds)
+```
+
+**Console output** — enabled only in debug builds via `DevelopmentFilter`.
+Uses `PrettyPrinter` with method counts, colors, and emojis for readability
+in the terminal.
+
+**File output** — enabled in all builds. Uses `AdvancedFileOutput` which
+writes to the app's documents directory (`getApplicationDocumentsDirectory()`).
+Files are rotated daily with a configurable retention window (default 3 days).
+File format: `lazurite_YYYY-MM-DD.log`, one line per event using
+`SimplePrinter(colors: false)`.
+
+### Integration Points
+
+| Subsystem | What gets logged                                |
+| --------- | ----------------------------------------------- |
+| BLoC      | State transitions via `BlocObserver` override   |
+| HTTP      | Request/response summaries (no auth headers)    |
+| Auth      | OAuth flow steps, token refresh, session events |
+| Nav       | Route changes via `NavigatorObserver`           |
+| DB        | Drift query errors                              |
+
+**Security:** Never log access tokens, refresh tokens, passwords, or full
+request/response bodies. HTTP logging redacts the `Authorization` header and
+truncates bodies to 200 chars.
+
+### In-App Log Viewer
+
+Accessible via Settings → Dev Tools → Logs. Reads log files from disk and
+displays entries in a scrollable, filterable list.
+
+**Features:**
+
+1. **Level filter** — chip bar to toggle visibility per level
+2. **Search** — free-text filter across log messages
+3. **Auto-scroll** — locks to bottom for live tailing; unlocks on manual scroll
+4. **Share** — export current day's log file via the system share sheet
+5. **Clear** — delete all log files with confirmation
+
+Each log entry renders as a single row:
+
+| Element   | Format                              |
+| --------- | ----------------------------------- |
+| Timestamp | `HH:mm:ss.SSS` in monospace         |
+| Level     | Colored badge (E / W / I / D)       |
+| Message   | Truncated to 2 lines, tap to expand |
+
+No Bloc needed — use a `LogViewerCubit` with simple file-read state, since
+this is a stateless inspection tool.
+
 ## Feeds
 
 Phase 1 builds profile author feeds only. Phase 2 adds the full home feed
