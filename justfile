@@ -1,3 +1,6 @@
+export FLUTTER_SUPPRESS_ANALYTICS := "true"
+export DART_SUPPRESS_ANALYTICS := "true"
+
 # Format all Dart files
 format:
     dart format lib test

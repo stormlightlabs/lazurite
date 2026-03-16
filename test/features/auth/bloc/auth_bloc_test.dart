@@ -1,9 +1,9 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:mocktail/mocktail.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -87,20 +87,20 @@ void main() {
       'emits [unauthenticated] when CheckSessionRequested is added and no session exists',
       build: () => AuthBloc(authRepository: mockAuthRepository),
       setUp: () {
-        when(() => mockAuthRepository.getStoredSession()).thenAnswer((_) async => null);
+        when(() => mockAuthRepository.restoreSession()).thenAnswer((_) async => null);
       },
       act: (bloc) => bloc.add(const CheckSessionRequested()),
-      expect: () => [const AuthState.unauthenticated()],
+      expect: () => [const AuthState.authenticating(), const AuthState.unauthenticated()],
     );
 
     blocTest<AuthBloc, AuthState>(
       'emits [authenticated] when CheckSessionRequested is added and valid session exists',
       build: () => AuthBloc(authRepository: mockAuthRepository),
       setUp: () {
-        when(() => mockAuthRepository.getStoredSession()).thenAnswer((_) async => tokens);
+        when(() => mockAuthRepository.restoreSession()).thenAnswer((_) async => tokens);
       },
       act: (bloc) => bloc.add(const CheckSessionRequested()),
-      expect: () => [const AuthState.authenticated(tokens)],
+      expect: () => [const AuthState.authenticating(), const AuthState.authenticated(tokens)],
     );
   });
 }

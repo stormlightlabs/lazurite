@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -13,7 +12,8 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Lazurite'),
         actions: [
-          IconButton(icon: const Icon(Icons.settings), onPressed: () => context.push('/settings')),
+          IconButton(icon: const Icon(Icons.person_outline), onPressed: () => context.push('/profile')),
+          IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => context.push('/settings')),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
@@ -24,19 +24,28 @@ class HomeScreen extends StatelessWidget {
       ),
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
-          if (!state.isAuthenticated || state.tokens == null) {
+          final tokens = state.tokens;
+          if (!state.isAuthenticated || tokens == null) {
             return const Center(child: Text('Not authenticated'));
           }
 
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Welcome!', style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 16),
-                const Text('Handle: @\${state.tokens!.handle}'),
-                const Text('DID: \${state.tokens!.did}'),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    tokens.displayName ?? 'Welcome',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text('@${tokens.handle}'),
+                  const SizedBox(height: 8),
+                  SelectableText(tokens.did, textAlign: TextAlign.center),
+                ],
+              ),
             ),
           );
         },

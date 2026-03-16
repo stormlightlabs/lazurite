@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+enum AuthMethod { appPassword, oauth }
+
 class AuthTokens extends Equatable {
   const AuthTokens({
     required this.accessToken,
@@ -8,6 +10,11 @@ class AuthTokens extends Equatable {
     required this.did,
     required this.handle,
     this.displayName,
+    this.service,
+    this.dpopNonce,
+    this.dpopPublicKey,
+    this.dpopPrivateKey,
+    this.authMethod = AuthMethod.appPassword,
   });
   final String accessToken;
   final String? refreshToken;
@@ -15,6 +22,11 @@ class AuthTokens extends Equatable {
   final String did;
   final String handle;
   final String? displayName;
+  final String? service;
+  final String? dpopNonce;
+  final String? dpopPublicKey;
+  final String? dpopPrivateKey;
+  final AuthMethod authMethod;
 
   AuthTokens copyWith({
     String? accessToken,
@@ -23,6 +35,11 @@ class AuthTokens extends Equatable {
     String? did,
     String? handle,
     String? displayName,
+    String? service,
+    String? dpopNonce,
+    String? dpopPublicKey,
+    String? dpopPrivateKey,
+    AuthMethod? authMethod,
   }) {
     return AuthTokens(
       accessToken: accessToken ?? this.accessToken,
@@ -31,8 +48,15 @@ class AuthTokens extends Equatable {
       did: did ?? this.did,
       handle: handle ?? this.handle,
       displayName: displayName ?? this.displayName,
+      service: service ?? this.service,
+      dpopNonce: dpopNonce ?? this.dpopNonce,
+      dpopPublicKey: dpopPublicKey ?? this.dpopPublicKey,
+      dpopPrivateKey: dpopPrivateKey ?? this.dpopPrivateKey,
+      authMethod: authMethod ?? this.authMethod,
     );
   }
+
+  bool get usesOAuth => authMethod == AuthMethod.oauth;
 
   bool get isExpired {
     if (expiresAt == null) return false;
@@ -40,7 +64,19 @@ class AuthTokens extends Equatable {
   }
 
   @override
-  List<Object?> get props => [accessToken, refreshToken, expiresAt, did, handle, displayName];
+  List<Object?> get props => [
+    accessToken,
+    refreshToken,
+    expiresAt,
+    did,
+    handle,
+    displayName,
+    service,
+    dpopNonce,
+    dpopPublicKey,
+    dpopPrivateKey,
+    authMethod,
+  ];
 }
 
 class User extends Equatable {

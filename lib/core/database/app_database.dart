@@ -2,16 +2,32 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'tables.dart';
+import 'package:lazurite/core/database/tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Accounts, Settings])
+@DriftDatabase(tables: [Accounts, CachedProfiles, CachedPosts, Settings])
 class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (migrator) async {
+      await migrator.createAll();
+    },
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.addColumn(accounts, accounts.service);
+        await migrator.addColumn(accounts, accounts.dpopPublicKey);
+        await migrator.addColumn(accounts, accounts.dpopNonce);
+        await migrator.createTable(cachedProfiles);
+        await migrator.createTable(cachedPosts);
+      }
+    },
+  );
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
@@ -23,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   Future<Account?> getAccount(String did) => (select(accounts)..where((a) => a.did.equals(did))).getSingleOrNull();
 
   Future<Account?> getActiveAccount() async {
-    final all = await select(accounts).get();
+    final all = await (select(accounts)..orderBy([(a) => OrderingTerm.desc(a.updatedAt)])).get();
     return all.isNotEmpty ? all.first : null;
   }
 
@@ -40,6 +56,7 @@ class AppDatabase extends _$AppDatabase {
     required String accessToken,
     String? refreshToken,
     DateTime? expiresAt,
+    String? dpopNonce,
   }) async {
     final query = update(accounts)..where((a) => a.did.equals(did));
     final rowsAffected = await query.write(
@@ -47,11 +64,44 @@ class AppDatabase extends _$AppDatabase {
         accessToken: Value(accessToken),
         refreshToken: refreshToken != null ? Value(refreshToken) : const Value.absent(),
         expiresAt: expiresAt != null ? Value(expiresAt) : const Value.absent(),
+        dpopNonce: dpopNonce != null ? Value(dpopNonce) : const Value.absent(),
         updatedAt: Value(DateTime.now()),
       ),
     );
     return rowsAffected > 0;
   }
+
+  Future<int> cacheProfile({
+    required String did,
+    required String handle,
+    required String payload,
+    DateTime? fetchedAt,
+  }) => into(cachedProfiles).insert(
+    CachedProfilesCompanion(
+      did: Value(did),
+      handle: Value(handle),
+      payload: Value(payload),
+      fetchedAt: Value(fetchedAt ?? DateTime.now()),
+    ),
+    mode: InsertMode.replace,
+  );
+
+  Future<int> cachePost({
+    required String uri,
+    required String authorDid,
+    required String payload,
+    DateTime? createdAt,
+    DateTime? fetchedAt,
+  }) => into(cachedPosts).insert(
+    CachedPostsCompanion(
+      uri: Value(uri),
+      authorDid: Value(authorDid),
+      payload: Value(payload),
+      createdAt: createdAt != null ? Value(createdAt) : const Value.absent(),
+      fetchedAt: Value(fetchedAt ?? DateTime.now()),
+    ),
+    mode: InsertMode.replace,
+  );
 
   Future<String?> getSetting(String key) async {
     final setting = await (select(settings)..where((s) => s.key.equals(key))).getSingleOrNull();

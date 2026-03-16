@@ -7,52 +7,49 @@ part 'auth_event.dart';
 part 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc({required AuthRepository authRepository})
+  AuthBloc({required AuthRepository authRepository, AuthState initialState = const AuthState.unauthenticated()})
     : _authRepository = authRepository,
-      super(const AuthState.unauthenticated()) {
-    on<AuthEvent>(_onEvent);
+      super(initialState) {
+    on<LoginRequested>(_onLoginRequested);
+    on<OAuthLoginRequested>(_onOAuthLoginRequested);
+    on<LogoutRequested>(_onLogoutRequested);
+    on<SessionRestored>(_onSessionRestored);
+    on<CheckSessionRequested>(_onCheckSessionRequested);
   }
-  final AuthRepository _authRepository;
 
-  Future<void> _onEvent(AuthEvent event, Emitter<AuthState> emit) async {
-    if (event is LoginRequested) {
-      await _onLoginRequested(event, emit);
-    } else if (event is OAuthLoginRequested) {
-      await _onOAuthLoginRequested(event, emit);
-    } else if (event is LogoutRequested) {
-      await _onLogoutRequested(event, emit);
-    } else if (event is SessionRestored) {
-      await _onSessionRestored(event, emit);
-    } else if (event is CheckSessionRequested) {
-      await _onCheckSessionRequested(event, emit);
-    }
-  }
+  final AuthRepository _authRepository;
 
   Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
     emit(const AuthState.authenticating());
+
     try {
       final tokens = await _authRepository.loginWithAppPassword(event.handle, event.appPassword);
-      if (tokens != null) {
-        emit(AuthState.authenticated(tokens));
-      } else {
-        emit(const AuthState.authError('Login failed'));
+
+      if (tokens == null) {
+        emit(const AuthState.authError('Login failed.'));
+        return;
       }
-    } catch (e) {
-      emit(const AuthState.authError('Login failed: \$e'));
+
+      emit(AuthState.authenticated(tokens));
+    } catch (error) {
+      emit(AuthState.authError('Login failed: $error'));
     }
   }
 
   Future<void> _onOAuthLoginRequested(OAuthLoginRequested event, Emitter<AuthState> emit) async {
     emit(const AuthState.authenticating());
+
     try {
       final tokens = await _authRepository.loginWithOAuth(event.handle);
-      if (tokens != null) {
-        emit(AuthState.authenticated(tokens));
-      } else {
-        emit(const AuthState.authError('OAuth login failed'));
+
+      if (tokens == null) {
+        emit(const AuthState.authError('OAuth login failed.'));
+        return;
       }
-    } catch (e) {
-      emit(const AuthState.authError('OAuth login failed: \$e'));
+
+      emit(AuthState.authenticated(tokens));
+    } catch (error) {
+      emit(AuthState.authError('OAuth login failed: $error'));
     }
   }
 
@@ -60,8 +57,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       await _authRepository.logout();
       emit(const AuthState.unauthenticated());
-    } catch (e) {
-      emit(const AuthState.authError('Logout failed: \$e'));
+    } catch (error) {
+      emit(AuthState.authError('Logout failed: $error'));
     }
   }
 
@@ -70,23 +67,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onCheckSessionRequested(CheckSessionRequested event, Emitter<AuthState> emit) async {
+    emit(const AuthState.authenticating());
+
     try {
-      final tokens = await _authRepository.getStoredSession();
-      if (tokens != null) {
-        if (tokens.isExpired && tokens.refreshToken != null) {
-          final refreshed = await _authRepository.refreshSession(tokens.refreshToken!);
-          if (refreshed != null) {
-            emit(AuthState.authenticated(refreshed));
-          } else {
-            emit(const AuthState.unauthenticated());
-          }
-        } else {
-          emit(AuthState.authenticated(tokens));
-        }
-      } else {
+      final tokens = await _authRepository.restoreSession();
+      if (tokens == null) {
         emit(const AuthState.unauthenticated());
+        return;
       }
-    } catch (e) {
+
+      emit(AuthState.authenticated(tokens));
+    } catch (_) {
       emit(const AuthState.unauthenticated());
     }
   }

@@ -1,17 +1,12 @@
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
   late AppDatabase database;
 
-  setUpAll(() {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  });
-
   setUp(() async {
-    database = AppDatabase();
+    database = AppDatabase(executor: NativeDatabase.memory());
   });
 
   tearDown(() async {
@@ -125,6 +120,7 @@ void main() {
           'did:plc:abc123',
           accessToken: 'new_token',
           refreshToken: 'new_refresh',
+          dpopNonce: 'nonce-1',
         );
 
         expect(updated, isTrue);
@@ -132,6 +128,32 @@ void main() {
         final retrieved = await database.getAccount('did:plc:abc123');
         expect(retrieved!.accessToken, equals('new_token'));
         expect(retrieved.refreshToken, equals('new_refresh'));
+        expect(retrieved.dpopNonce, equals('nonce-1'));
+      });
+    });
+
+    group('Cache operations', () {
+      test('should cache a profile payload', () async {
+        await database.cacheProfile(
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          payload: '{"did":"did:plc:abc123"}',
+        );
+
+        final cached = await database.select(database.cachedProfiles).getSingle();
+        expect(cached.did, equals('did:plc:abc123'));
+        expect(cached.handle, equals('user.bsky.social'));
+      });
+
+      test('should cache a post payload', () async {
+        await database.cachePost(
+          uri: 'at://did:plc:abc123/app.bsky.feed.post/123',
+          authorDid: 'did:plc:abc123',
+          payload: '{"uri":"at://did:plc:abc123/app.bsky.feed.post/123"}',
+        );
+
+        final cached = await database.select(database.cachedPosts).getSingle();
+        expect(cached.authorDid, equals('did:plc:abc123'));
       });
     });
 

@@ -1,25 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/router/app_router.dart';
+import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/data/auth_repository.dart';
 
-import 'core/database/app_database.dart';
-import 'core/router/app_router.dart';
-import 'features/auth/bloc/auth_bloc.dart';
-import 'features/auth/data/auth_repository.dart';
-
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final database = AppDatabase();
   final authRepository = AuthRepository(database: database);
-  final authBloc = AuthBloc(authRepository: authRepository);
-
-  authBloc.add(const CheckSessionRequested());
+  final restoredSession = await authRepository.restoreSession();
+  final authBloc = AuthBloc(
+    authRepository: authRepository,
+    initialState: restoredSession != null
+        ? AuthState.authenticated(restoredSession)
+        : const AuthState.unauthenticated(),
+  );
 
   runApp(LazuriteApp(authBloc: authBloc));
 }
 
 class LazuriteApp extends StatelessWidget {
   const LazuriteApp({super.key, required this.authBloc});
+
   final AuthBloc authBloc;
 
   @override

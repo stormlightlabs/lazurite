@@ -10,6 +10,7 @@ void main() {
         did: 'did:plc:abc123',
         handle: 'user.bsky.social',
         displayName: 'User Name',
+        service: 'bsky.social',
       );
 
       expect(tokens.accessToken, equals('access_token'));
@@ -17,6 +18,7 @@ void main() {
       expect(tokens.did, equals('did:plc:abc123'));
       expect(tokens.handle, equals('user.bsky.social'));
       expect(tokens.displayName, equals('User Name'));
+      expect(tokens.service, equals('bsky.social'));
     });
 
     test('should create AuthTokens without optional fields', () {
@@ -37,6 +39,20 @@ void main() {
       expect(newTokens.accessToken, equals('new_token'));
       expect(newTokens.did, equals('did:plc:abc123'));
       expect(newTokens.displayName, equals('New Name'));
+    });
+
+    test('should identify oauth-backed sessions', () {
+      const tokens = AuthTokens(
+        accessToken: 'access_token',
+        refreshToken: 'refresh_token',
+        did: 'did:plc:abc123',
+        handle: 'user.bsky.social',
+        dpopPublicKey: 'public',
+        dpopPrivateKey: 'private',
+        authMethod: AuthMethod.oauth,
+      );
+
+      expect(tokens.usesOAuth, isTrue);
     });
 
     test('should check if tokens are expired', () {
