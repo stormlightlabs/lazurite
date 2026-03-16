@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:atproto/atproto.dart' as atp;
@@ -6,6 +7,7 @@ import 'package:atproto_core/atproto_core.dart' as atcore;
 import 'package:atproto_oauth/atproto_oauth.dart';
 import 'package:bluesky/bluesky.dart';
 import 'package:drift/drift.dart';
+import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
@@ -15,6 +17,7 @@ class AuthRepository {
   AuthRepository({required AppDatabase database}) : _database = database;
 
   static const String kClientId = 'https://lazurite.stormlightlabs.org/client-metadata.json';
+  static const String _oauthService = 'bsky.social';
   static const String _fallbackService = 'bsky.social';
 
   final AppDatabase _database;
@@ -23,7 +26,6 @@ class AuthRepository {
   Completer<AuthTokens?>? _oauthCompleter;
   OAuthClient? _pendingOAuthClient;
   OAuthContext? _pendingOAuthContext;
-  Uri? _pendingRedirectUri;
   String? _pendingHandle;
   String? _pendingService;
 
@@ -51,23 +53,29 @@ class AuthRepository {
   }
 
   Future<AuthTokens?> restoreSession() async {
+    log.d('AuthRepository: Restoring stored session');
     final storedSession = await getStoredSession();
     if (storedSession == null) {
+      log.d('AuthRepository: No stored session found');
       return null;
     }
 
     if (!storedSession.isExpired) {
+      log.i('AuthRepository: Restored valid stored session for ${storedSession.handle}');
       return storedSession;
     }
 
     if (storedSession.refreshToken == null) {
+      log.w('AuthRepository: Stored session expired without refresh token, clearing session');
       await clearSession();
       return null;
     }
 
     try {
+      log.i('AuthRepository: Stored session expired, attempting refresh for ${storedSession.handle}');
       return await refreshSession(storedSession);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.e('AuthRepository: Failed to restore expired session', error: error, stackTrace: stackTrace);
       await clearSession();
       return null;
     }
@@ -99,22 +107,27 @@ class AuthRepository {
     try {
       _oauthCompleter = Completer<AuthTokens?>();
       _pendingHandle = handle.trim();
-      _pendingService = await _resolveServiceForIdentifier(_pendingHandle!);
+      _pendingService = _oauthService;
+      log.i('AuthRepository: Starting OAuth login for ${_pendingHandle!}');
 
       final metadata = await getClientMetadata(kClientId);
-      final redirectUri = Uri.parse(metadata.redirectUris.first);
-      final oauthClient = OAuthClient(metadata, service: _pendingService!);
+      log.d('AuthRepository: Loaded client metadata with redirect URIs: ${metadata.redirectUris.join(', ')}');
+      final redirectUriTemplate = Uri.parse(metadata.redirectUris.first);
+      final redirectUri = await _startCallbackServer(redirectUriTemplate);
+      final oauthClient = OAuthClient(
+        metadata.copyWith(redirectUris: [redirectUri.toString()]),
+        service: _pendingService!,
+      );
       final (authorizationUrl, context) = await oauthClient.authorize(_pendingHandle);
 
       _pendingOAuthClient = oauthClient;
       _pendingOAuthContext = context;
-      _pendingRedirectUri = redirectUri;
-
-      await _startCallbackServer(redirectUri);
+      log.i('AuthRepository: OAuth PAR completed, launching browser to ${_sanitizeUriForLog(authorizationUrl)}');
       await _launchUrl(authorizationUrl);
 
       return await _oauthCompleter!.future;
-    } catch (error) {
+    } catch (error, stackTrace) {
+      log.e('AuthRepository: OAuth login failed', error: error, stackTrace: stackTrace);
       await _stopCallbackServer();
       _resetPendingOAuthState();
       throw Exception('Failed to login with OAuth: $error');
@@ -123,7 +136,9 @@ class AuthRepository {
 
   Future<AuthTokens?> loginWithAppPassword(String handle, String appPassword) async {
     try {
+      log.i('AuthRepository: Starting app password login for ${handle.trim()}');
       final service = await _resolveServiceForIdentifier(handle);
+      log.d('AuthRepository: Resolved app password login service to $service');
       final session = await atp.createSession(identifier: handle, password: appPassword, service: service);
 
       final tokens = AuthTokens(
@@ -138,8 +153,10 @@ class AuthRepository {
       );
 
       await saveSession(tokens);
+      log.i('AuthRepository: App password login succeeded for ${tokens.handle}');
       return tokens;
-    } catch (error) {
+    } catch (error, stackTrace) {
+      log.e('AuthRepository: App password login failed', error: error, stackTrace: stackTrace);
       throw Exception('Failed to login with app password: $error');
     }
   }
@@ -150,6 +167,7 @@ class AuthRepository {
     }
 
     if (currentSession.usesOAuth) {
+      log.i('AuthRepository: Refreshing OAuth session for ${currentSession.handle}');
       final publicKey = currentSession.dpopPublicKey;
       final privateKey = currentSession.dpopPrivateKey;
       if (publicKey == null || privateKey == null) {
@@ -175,14 +193,17 @@ class AuthRepository {
         );
 
         await saveSession(refreshedTokens);
+        log.i('AuthRepository: OAuth session refresh succeeded for ${refreshedTokens.handle}');
         return refreshedTokens;
-      } catch (error) {
+      } catch (error, stackTrace) {
+        log.e('AuthRepository: OAuth session refresh failed', error: error, stackTrace: stackTrace);
         await clearSession();
         throw Exception('Failed to refresh OAuth session: $error');
       }
     }
 
     try {
+      log.i('AuthRepository: Refreshing app password session for ${currentSession.handle}');
       final refreshed = await atp.refreshSession(
         refreshJwt: currentSession.refreshToken!,
         service: currentSession.service,
@@ -200,8 +221,10 @@ class AuthRepository {
       );
 
       await saveSession(tokens);
+      log.i('AuthRepository: App password session refresh succeeded for ${tokens.handle}');
       return tokens;
-    } catch (error) {
+    } catch (error, stackTrace) {
+      log.e('AuthRepository: App password session refresh failed', error: error, stackTrace: stackTrace);
       await clearSession();
       throw Exception('Failed to refresh session: $error');
     }
@@ -209,6 +232,7 @@ class AuthRepository {
 
   Future<void> logout() async {
     final storedSession = await getStoredSession();
+    log.i('AuthRepository: Logging out ${storedSession?.handle ?? 'current user'}');
 
     try {
       if (storedSession?.refreshToken != null && storedSession?.usesOAuth == false) {
@@ -216,17 +240,39 @@ class AuthRepository {
       }
     } finally {
       await clearSession();
+      log.i('AuthRepository: Logout complete');
     }
   }
 
-  Future<void> _startCallbackServer(Uri redirectUri) async {
-    final requestedPort = redirectUri.hasPort ? redirectUri.port : 80;
+  Future<Uri> _startCallbackServer(Uri redirectUriTemplate) async {
+    if (!_isSupportedLoopbackRedirect(redirectUriTemplate)) {
+      throw UnsupportedError(
+        'Unsupported OAuth redirect URI: $redirectUriTemplate. '
+        'Lazurite currently supports only loopback HTTP redirects.',
+      );
+    }
+
+    final requestedPort = _requestedCallbackPort(redirectUriTemplate);
+    log.d(
+      'AuthRepository: Binding OAuth callback server to '
+      '${InternetAddress.loopbackIPv4.address}:${requestedPort == 0 ? 'ephemeral' : requestedPort} '
+      'for ${redirectUriTemplate.path}',
+    );
 
     _callbackServer = await HttpServer.bind(InternetAddress.loopbackIPv4, requestedPort);
+    final redirectUri = redirectUriTemplate.replace(
+      host: InternetAddress.loopbackIPv4.address,
+      port: _callbackServer!.port,
+    );
+    log.i('AuthRepository: OAuth callback server listening on ${_sanitizeUriForLog(redirectUri)}');
 
     unawaited(
       _callbackServer!.forEach((request) async {
         final uri = request.requestedUri;
+        log.d(
+          'AuthRepository: OAuth callback request received at '
+          '${uri.path} with query keys: ${uri.queryParameters.keys.join(', ')}',
+        );
 
         if (uri.path != redirectUri.path) {
           request.response.statusCode = HttpStatus.notFound;
@@ -240,24 +286,24 @@ class AuthRepository {
           ..write(_callbackPageHtml);
         await request.response.close();
 
-        final callbackUrl = uri.replace(
-          scheme: redirectUri.scheme,
-          host: redirectUri.host,
-          port: _pendingRedirectUri?.hasPort == true ? _pendingRedirectUri!.port : null,
-        );
+        final callbackUrl = uri.replace(scheme: redirectUri.scheme, host: redirectUri.host, port: redirectUri.port);
 
         await _stopCallbackServer();
 
         try {
+          log.i('AuthRepository: Processing OAuth callback');
           final tokens = await _handleOAuthCallback(callbackUrl.toString());
           _oauthCompleter?.complete(tokens);
-        } catch (error) {
+        } catch (error, stackTrace) {
+          log.e('AuthRepository: OAuth callback handling failed', error: error, stackTrace: stackTrace);
           _oauthCompleter?.completeError(error);
         } finally {
           _resetPendingOAuthState();
         }
       }),
     );
+
+    return redirectUri;
   }
 
   Future<AuthTokens> _handleOAuthCallback(String callbackUrl) async {
@@ -270,9 +316,16 @@ class AuthRepository {
       throw StateError('OAuth callback received without an active auth flow');
     }
 
+    final callbackUri = Uri.parse(callbackUrl);
+    log.d(
+      'AuthRepository: Exchanging OAuth callback for session using '
+      '${callbackUri.path} with query keys: ${callbackUri.queryParameters.keys.join(', ')}',
+    );
     final oauthSession = await oauthClient.callback(callbackUrl, oauthContext);
+    log.i('AuthRepository: OAuth token exchange succeeded for DID ${oauthSession.sub}');
     final tokens = await _buildOAuthTokens(oauthSession, fallbackHandle: fallbackHandle, service: service);
     await saveSession(tokens);
+    log.i('AuthRepository: OAuth login completed for ${tokens.handle}');
     return tokens;
   }
 
@@ -283,6 +336,7 @@ class AuthRepository {
   }) async {
     var resolvedHandle = fallbackHandle;
     String? displayName;
+    log.d('AuthRepository: Building OAuth tokens for DID ${session.sub}');
 
     try {
       final authSession = await atp.ATProto.fromOAuthSession(session, service: service).server.getSession();
@@ -318,19 +372,63 @@ class AuthRepository {
   }
 
   Future<void> _stopCallbackServer() async {
+    if (_callbackServer != null) {
+      log.d('AuthRepository: Stopping OAuth callback server on port ${_callbackServer!.port}');
+    }
     await _callbackServer?.close(force: true);
     _callbackServer = null;
   }
 
   Future<String> _resolveServiceForIdentifier(String identifier) async {
+    log.d('AuthRepository: Resolving AT Protocol service for $identifier');
     final client = atp.ATProto.anonymous(service: _fallbackService);
 
     final did = identifier.startsWith('did:')
         ? identifier
         : (await client.identity.resolveHandle(handle: identifier)).data.did;
+    log.d('AuthRepository: Resolved identifier $identifier to DID $did');
 
-    final didDoc = (await client.identity.resolveDid(did: did)).data.didDoc;
-    return _extractServiceEndpoint(didDoc) ?? _fallbackService;
+    final didDoc = await _resolveDidDocument(did);
+    final serviceEndpoint = _extractServiceEndpoint(didDoc) ?? _fallbackService;
+    log.d('AuthRepository: Resolved DID $did to service endpoint $serviceEndpoint');
+    return serviceEndpoint;
+  }
+
+  Future<Map<String, dynamic>> _resolveDidDocument(String did) async {
+    final uri = _didDocumentUri(did);
+    log.d('AuthRepository: Fetching DID document from ${_sanitizeUriForLog(uri)}');
+    final response = await http.get(uri);
+
+    if (response.statusCode != HttpStatus.ok) {
+      throw Exception('Failed to resolve DID document for $did: ${response.statusCode}');
+    }
+
+    final json = jsonDecode(response.body);
+    if (json is! Map<String, dynamic>) {
+      throw Exception('Invalid DID document for $did');
+    }
+
+    return json;
+  }
+
+  Uri _didDocumentUri(String did) {
+    if (did.startsWith('did:plc:')) {
+      return Uri.https('plc.directory', '/$did');
+    }
+
+    if (did.startsWith('did:web:')) {
+      final encodedSegments = did.substring('did:web:'.length).split(':');
+      if (encodedSegments.isEmpty || encodedSegments.first.isEmpty) {
+        throw Exception('Invalid did:web identifier: $did');
+      }
+
+      final host = Uri.decodeComponent(encodedSegments.first);
+      final pathSegments = encodedSegments.skip(1).map(Uri.decodeComponent).toList();
+      final path = pathSegments.isEmpty ? '/.well-known/did.json' : '/${pathSegments.join('/')}/did.json';
+      return Uri.https(host, path);
+    }
+
+    throw Exception('Unsupported DID method for service resolution: $did');
   }
 
   String? _extractServiceEndpoint(Map<String, dynamic> didDoc) {
@@ -358,15 +456,35 @@ class AuthRepository {
   }
 
   Future<void> _launchUrl(Uri url) async {
+    log.d('AuthRepository: Launching external URL ${_sanitizeUriForLog(url)}');
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');
     }
   }
 
+  bool _isSupportedLoopbackRedirect(Uri redirectUri) {
+    return redirectUri.scheme == 'http' && _isLoopbackHost(redirectUri.host);
+  }
+
+  bool _isLoopbackHost(String host) {
+    return host == '127.0.0.1' || host == 'localhost';
+  }
+
+  int _requestedCallbackPort(Uri redirectUri) {
+    if (!redirectUri.hasPort) {
+      return 0;
+    }
+
+    return redirectUri.port < 1024 ? 0 : redirectUri.port;
+  }
+
+  String _sanitizeUriForLog(Uri uri) {
+    return uri.replace(query: null, fragment: null).toString();
+  }
+
   void _resetPendingOAuthState() {
     _pendingOAuthClient = null;
     _pendingOAuthContext = null;
-    _pendingRedirectUri = null;
     _pendingHandle = null;
     _pendingService = null;
   }

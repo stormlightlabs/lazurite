@@ -96,39 +96,42 @@ class LazuriteApp extends StatelessWidget {
       child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
           final bluesky = _createBluesky(authState);
+          final appShell = BlocBuilder<SettingsCubit, SettingsState>(
+            builder: (context, settingsState) {
+              final themeMode = settingsState.useSystemTheme
+                  ? ThemeMode.system
+                  : (settingsState.themeVariant == AppThemeVariant.light ? ThemeMode.light : ThemeMode.dark);
+
+              final lightTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.light);
+              final darkTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.dark);
+
+              return MaterialApp.router(
+                title: 'Lazurite',
+                debugShowCheckedModeBanner: false,
+                theme: lightTheme,
+                darkTheme: darkTheme,
+                themeMode: themeMode,
+                routerConfig: AppRouter(authBloc: authBloc, navigatorObserver: _navigatorObserver).router,
+              );
+            },
+          );
+
+          if (bluesky == null) {
+            return appShell;
+          }
 
           return MultiBlocProvider(
             providers: [
-              if (bluesky != null) ...[
-                BlocProvider(
-                  create: (_) => ProfileBloc(
-                    profileRepository: ProfileRepository(database: database, bluesky: bluesky),
-                  ),
+              BlocProvider(
+                create: (_) => ProfileBloc(
+                  profileRepository: ProfileRepository(database: database, bluesky: bluesky),
                 ),
-                BlocProvider(
-                  create: (_) => FeedBloc(feedRepository: FeedRepository(bluesky: bluesky)),
-                ),
-              ],
+              ),
+              BlocProvider(
+                create: (_) => FeedBloc(feedRepository: FeedRepository(bluesky: bluesky)),
+              ),
             ],
-            child: BlocBuilder<SettingsCubit, SettingsState>(
-              builder: (context, settingsState) {
-                final themeMode = settingsState.useSystemTheme
-                    ? ThemeMode.system
-                    : (settingsState.themeVariant == AppThemeVariant.light ? ThemeMode.light : ThemeMode.dark);
-
-                final lightTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.light);
-                final darkTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.dark);
-
-                return MaterialApp.router(
-                  title: 'Lazurite',
-                  debugShowCheckedModeBanner: false,
-                  theme: lightTheme,
-                  darkTheme: darkTheme,
-                  themeMode: themeMode,
-                  routerConfig: AppRouter(authBloc: authBloc, navigatorObserver: _navigatorObserver).router,
-                );
-              },
-            ),
+            child: appShell,
           );
         },
       ),
