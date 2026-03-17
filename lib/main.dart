@@ -1,6 +1,7 @@
 import 'package:bluesky/bluesky.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
@@ -43,14 +44,32 @@ Future<void> main() async {
   runApp(LazuriteApp(authBloc: authBloc, database: database, settingsCubit: settingsCubit));
 }
 
-class LazuriteApp extends StatelessWidget {
+class LazuriteApp extends StatefulWidget {
   const LazuriteApp({super.key, required this.authBloc, required this.database, required this.settingsCubit});
 
   final AuthBloc authBloc;
   final AppDatabase database;
   final SettingsCubit settingsCubit;
 
+  @override
+  State<LazuriteApp> createState() => _LazuriteAppState();
+}
+
+class _LazuriteAppState extends State<LazuriteApp> {
   static final _navigatorObserver = LoggingNavigatorObserver();
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = AppRouter(authBloc: widget.authBloc, navigatorObserver: _navigatorObserver).router;
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
 
   Bluesky? _createBluesky(AuthState state) {
     if (!state.isAuthenticated) {
@@ -64,8 +83,8 @@ class LazuriteApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider.value(value: authBloc),
-        BlocProvider.value(value: settingsCubit),
+        BlocProvider.value(value: widget.authBloc),
+        BlocProvider.value(value: widget.settingsCubit),
       ],
       child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
@@ -85,7 +104,7 @@ class LazuriteApp extends StatelessWidget {
                 theme: lightTheme,
                 darkTheme: darkTheme,
                 themeMode: themeMode,
-                routerConfig: AppRouter(authBloc: authBloc, navigatorObserver: _navigatorObserver).router,
+                routerConfig: _router,
               );
             },
           );
@@ -101,14 +120,16 @@ class LazuriteApp extends StatelessWidget {
             providers: [
               BlocProvider(
                 create: (_) => ProfileBloc(
-                  profileRepository: ProfileRepository(database: database, bluesky: bluesky),
+                  profileRepository: ProfileRepository(database: widget.database, bluesky: bluesky),
                 ),
               ),
               BlocProvider(create: (_) => FeedBloc(feedRepository: feedRepository)),
               BlocProvider(
-                create: (_) =>
-                    FeedPreferencesCubit(feedRepository: feedRepository, database: database, accountDid: accountDid)
-                      ..loadPreferences(),
+                create: (_) => FeedPreferencesCubit(
+                  feedRepository: feedRepository,
+                  database: widget.database,
+                  accountDid: accountDid,
+                )..loadPreferences(),
               ),
               BlocProvider(create: (_) => DevToolsCubit(atproto: bluesky.atproto)),
               RepositoryProvider.value(value: feedRepository),

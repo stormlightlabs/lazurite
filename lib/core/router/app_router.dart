@@ -10,6 +10,7 @@ import 'package:lazurite/features/feed/presentation/feed_management_screen.dart'
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/logs/presentation/logs_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
+import 'package:lazurite/features/settings/presentation/about_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 
 class AppRouter {
@@ -77,6 +78,7 @@ class AppRouter {
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
                 routes: [
+                  GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
                   GoRoute(path: 'logs', builder: (context, state) => const LogsScreen()),
                   GoRoute(path: 'devtools', builder: (context, state) => const DevToolsScreen()),
                 ],

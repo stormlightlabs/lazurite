@@ -35,127 +35,98 @@
         border-bottom: 1px solid var(--border);
       }
 
-      .theme-selector {
-        padding: 16px;
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
-        justify-items: center;
-      }
-
-      .theme-option {
+      .segmented-control {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        padding: 12px;
+        padding: 16px;
+      }
+
+      .segmented-control-inner {
+        display: flex;
+        width: 100%;
+        border: 1px solid var(--border);
         border-radius: 12px;
-        transition: background-color 0.2s ease;
+        overflow: hidden;
       }
 
-      .theme-option:hover {
+      .segment-btn {
+        flex: 1;
+        padding: 10px 0;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        background: transparent;
+        font-family: inherit;
+      }
+
+      .segment-btn:not(:last-child) {
+        border-right: 1px solid var(--border);
+      }
+
+      .segment-btn:hover {
         background-color: var(--surface-variant);
       }
 
-      .theme-option.active {
-        background-color: var(--surface-variant);
+      .segment-btn.active {
+        background-color: var(--accent-primary);
+        color: var(--bg-primary);
+        font-weight: 600;
       }
 
-      .theme-section-label {
-        grid-column: 1 / -1;
+      .theme-list-label {
+        padding: 16px 16px 8px;
         font-size: 12px;
         font-weight: 600;
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        padding: 8px 0 0;
-        width: 100%;
-        text-align: left;
       }
 
-      .theme-section-label:first-child {
-        padding-top: 0;
-      }
-
-      .theme-option-preview {
-        width: 64px;
-        height: 64px;
-        border-radius: 12px;
-        border: 2px solid var(--border);
-        overflow: hidden;
-        position: relative;
-        transition: all 0.2s ease;
-      }
-
-      .theme-option:hover .theme-option-preview,
-      .theme-option.active .theme-option-preview {
-        border-color: var(--accent-primary);
-        transform: scale(1.02);
-      }
-
-      .theme-preview-light {
-        background: linear-gradient(135deg, #ffffff 50%, #f4f4f4 50%);
-      }
-
-      .theme-preview-dark {
-        background: linear-gradient(135deg, #161616 50%, #262626 50%);
-      }
-
-      .theme-option-check {
-        position: absolute;
-        bottom: 4px;
-        right: 4px;
-        width: 20px;
-        height: 20px;
-        background-color: var(--accent-primary);
-        border-radius: 50%;
+      .theme-palette-row {
         display: flex;
         align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.2s ease;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
       }
 
-      .theme-option.active .theme-option-check {
-        opacity: 1;
+      .theme-palette-row:hover {
+        background-color: var(--surface-variant);
       }
 
-      .theme-option-check svg {
-        width: 12px;
-        height: 12px;
-        color: white;
-      }
-
-      .theme-option-label {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--text-primary);
-      }
-
-      .auto-theme-toggle {
-        padding: 16px;
-        border-top: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-
-      .auto-theme-info {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .auto-theme-title {
+      .theme-palette-name {
+        flex: 1;
         font-size: 15px;
         font-weight: 500;
         color: var(--text-primary);
       }
 
-      .auto-theme-subtitle {
-        font-size: 13px;
-        color: var(--text-secondary);
+      .theme-palette-swatches {
+        display: flex;
+        gap: 4px;
+        margin-right: 4px;
+      }
+
+      .theme-swatch {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+      }
+
+      .theme-palette-check {
+        width: 20px;
+        height: 20px;
+        margin-left: 8px;
+        color: var(--accent-primary);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .theme-palette-row.active .theme-palette-check {
+        opacity: 1;
       }
 
       .settings-item-danger {
@@ -255,168 +226,73 @@
           <div class="settings-section-title">Appearance</div>
 
           <div class="settings-group">
-            <!-- Theme Selector -->
-            <div class="theme-selector">
-              <!-- Oxocarbon -->
-              <div class="theme-section-label">Oxocarbon</div>
-              <div class="theme-option active" data-theme="light" onclick="setTheme('light')">
-                <div class="theme-option-preview theme-preview-light">
-                  <div class="theme-option-check">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="3"
-                      stroke-linecap="round"
-                      stroke-linejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                </div>
-                <span class="theme-option-label">Light</span>
-              </div>
-              <div class="theme-option" data-theme="dark" onclick="setTheme('dark')">
-                <div class="theme-option-preview theme-preview-dark">
-                  <div class="theme-option-check">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="3"
-                      stroke-linecap="round"
-                      stroke-linejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                </div>
-                <span class="theme-option-label">Dark</span>
-              </div>
-              <!-- spacers for 4-col grid -->
-              <div></div>
-              <div></div>
-
-              <!-- Catppuccin -->
-              <div class="theme-section-label">Catppuccin</div>
-              <div class="theme-option" data-theme="catppuccin-latte" onclick="setTheme('catppuccin-latte')">
-                <div class="theme-option-preview theme-preview-catppuccin-latte">
-                  <div class="theme-option-check">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="3"
-                      stroke-linecap="round"
-                      stroke-linejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                </div>
-                <span class="theme-option-label">Latte</span>
-              </div>
-              <div class="theme-option" data-theme="catppuccin-mocha" onclick="setTheme('catppuccin-mocha')">
-                <div class="theme-option-preview theme-preview-catppuccin-mocha">
-                  <div class="theme-option-check">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="3"
-                      stroke-linecap="round"
-                      stroke-linejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                </div>
-                <span class="theme-option-label">Mocha</span>
-              </div>
-              <div></div>
-              <div></div>
-
-              <!-- Nord -->
-              <div class="theme-section-label">Nord</div>
-              <div class="theme-option" data-theme="nord-light" onclick="setTheme('nord-light')">
-                <div class="theme-option-preview theme-preview-nord-light">
-                  <div class="theme-option-check">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="3"
-                      stroke-linecap="round"
-                      stroke-linejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                </div>
-                <span class="theme-option-label">Snow</span>
-              </div>
-              <div class="theme-option" data-theme="nord-dark" onclick="setTheme('nord-dark')">
-                <div class="theme-option-preview theme-preview-nord-dark">
-                  <div class="theme-option-check">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="3"
-                      stroke-linecap="round"
-                      stroke-linejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                </div>
-                <span class="theme-option-label">Polar</span>
-              </div>
-              <div></div>
-              <div></div>
-
-              <!-- Rosé Pine -->
-              <div class="theme-section-label">Rosé Pine</div>
-              <div class="theme-option" data-theme="rose-pine-dawn" onclick="setTheme('rose-pine-dawn')">
-                <div class="theme-option-preview theme-preview-rose-pine-dawn">
-                  <div class="theme-option-check">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="3"
-                      stroke-linecap="round"
-                      stroke-linejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                </div>
-                <span class="theme-option-label">Dawn</span>
-              </div>
-              <div class="theme-option" data-theme="rose-pine-moon" onclick="setTheme('rose-pine-moon')">
-                <div class="theme-option-preview theme-preview-rose-pine-moon">
-                  <div class="theme-option-check">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="3"
-                      stroke-linecap="round"
-                      stroke-linejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                </div>
-                <span class="theme-option-label">Moon</span>
-              </div>
-              <div></div>
-              <div></div>
-            </div>
-
-            <!-- Auto Theme Toggle -->
-            <div class="auto-theme-toggle">
-              <div class="auto-theme-info">
-                <div class="auto-theme-title">Auto</div>
-                <div class="auto-theme-subtitle">Follow system theme</div>
-              </div>
-              <div class="toggle" id="auto-theme-toggle" onclick="toggleAutoTheme()">
-                <div class="toggle-thumb"></div>
+            <!-- Appearance Mode Segmented Control -->
+            <div class="segmented-control">
+              <div class="segmented-control-inner">
+                <button class="segment-btn" data-mode="system" onclick="setMode('system')">System</button>
+                <button class="segment-btn" data-mode="light" onclick="setMode('light')">Light</button>
+                <button class="segment-btn active" data-mode="dark" onclick="setMode('dark')">Dark</button>
               </div>
             </div>
+
+            <div style="border-top: 1px solid var(--border)"></div>
+
+            <!-- Theme Palette List -->
+            <div class="theme-list-label">Theme</div>
+
+            <div class="theme-palette-row active" data-palette="oxocarbon" onclick="setPalette('oxocarbon')">
+              <span class="theme-palette-name">Oxocarbon</span>
+              <div class="theme-palette-swatches">
+                <div class="theme-swatch" style="background-color: #78a9ff"></div>
+                <div class="theme-swatch" style="background-color: #be95ff"></div>
+                <div class="theme-swatch" style="background-color: #08bdba"></div>
+                <div class="theme-swatch" style="background-color: #ee5396"></div>
+              </div>
+              <svg class="theme-palette-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+
+            <div class="theme-palette-row" data-palette="catppuccin" onclick="setPalette('catppuccin')">
+              <span class="theme-palette-name">Catppuccin</span>
+              <div class="theme-palette-swatches">
+                <div class="theme-swatch" style="background-color: #b4befe"></div>
+                <div class="theme-swatch" style="background-color: #cba6f7"></div>
+                <div class="theme-swatch" style="background-color: #74c7ec"></div>
+                <div class="theme-swatch" style="background-color: #f5c2e7"></div>
+              </div>
+              <svg class="theme-palette-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+
+            <div class="theme-palette-row" data-palette="nord" onclick="setPalette('nord')">
+              <span class="theme-palette-name">Nord</span>
+              <div class="theme-palette-swatches">
+                <div class="theme-swatch" style="background-color: #88c0d0"></div>
+                <div class="theme-swatch" style="background-color: #a3be8c"></div>
+                <div class="theme-swatch" style="background-color: #ebcb8b"></div>
+                <div class="theme-swatch" style="background-color: #b48ead"></div>
+              </div>
+              <svg class="theme-palette-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+
+            <div class="theme-palette-row" data-palette="rosepine" onclick="setPalette('rosepine')">
+              <span class="theme-palette-name">Rosé Pine</span>
+              <div class="theme-palette-swatches">
+                <div class="theme-swatch" style="background-color: #ebbcba"></div>
+                <div class="theme-swatch" style="background-color: #c4a7e7"></div>
+                <div class="theme-swatch" style="background-color: #9ccfd8"></div>
+                <div class="theme-swatch" style="background-color: #f6c177"></div>
+              </div>
+              <svg class="theme-palette-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+
+            <div style="height: 8px"></div>
           </div>
         </div>
 
@@ -768,82 +644,63 @@
     </div>
 
     <script>
-      const ALL_THEMES = [
-        "light",
-        "dark",
-        "catppuccin-latte",
-        "catppuccin-mocha",
-        "nord-light",
-        "nord-dark",
-        "rose-pine-dawn",
-        "rose-pine-moon",
-      ];
-
-      function setTheme(theme) {
-        document.querySelectorAll(".theme-option").forEach((el) => {
-          el.classList.remove("active");
-        });
-        const target = document.querySelector(`.theme-option[data-theme="${theme}"]`);
+      function setMode(mode) {
+        document.querySelectorAll(".segment-btn").forEach((el) => el.classList.remove("active"));
+        const target = document.querySelector(`.segment-btn[data-mode="${mode}"]`);
         if (target) target.classList.add("active");
 
-        if (theme === "light") {
-          document.documentElement.removeAttribute("data-theme");
-        } else {
-          document.documentElement.setAttribute("data-theme", theme);
-        }
-        localStorage.setItem("theme", theme);
+        localStorage.setItem("appearance-mode", mode);
 
-        document.getElementById("auto-theme-toggle").classList.remove("active");
-        localStorage.removeItem("auto-theme");
+        if (mode === "system") {
+          const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          applyVariant(prefersDark ? "dark" : "light");
+        } else {
+          applyVariant(mode);
+        }
       }
 
-      function toggleAutoTheme() {
-        const toggle = document.getElementById("auto-theme-toggle");
-        toggle.classList.toggle("active");
+      function setPalette(palette) {
+        document.querySelectorAll(".theme-palette-row").forEach((el) => el.classList.remove("active"));
+        const target = document.querySelector(`.theme-palette-row[data-palette="${palette}"]`);
+        if (target) target.classList.add("active");
+        localStorage.setItem("palette", palette);
+      }
 
-        if (toggle.classList.contains("active")) {
-          localStorage.setItem("auto-theme", "true");
-
-          if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-            document.documentElement.setAttribute("data-theme", "dark");
-            localStorage.setItem("theme", "dark");
-          } else {
-            document.documentElement.removeAttribute("data-theme");
-            localStorage.setItem("theme", "light");
-          }
+      function applyVariant(variant) {
+        if (variant === "light") {
+          document.documentElement.removeAttribute("data-theme");
         } else {
-          localStorage.removeItem("auto-theme");
+          document.documentElement.setAttribute("data-theme", "dark");
         }
       }
 
       function logout() {
         if (confirm("Are you sure you want to log out?")) {
-          localStorage.removeItem("theme");
-          localStorage.removeItem("auto-theme");
+          localStorage.clear();
           window.location.href = "login.html";
         }
       }
 
       (function () {
-        const savedTheme = localStorage.getItem("theme") || "light";
-        const autoTheme = localStorage.getItem("auto-theme");
+        const mode = localStorage.getItem("appearance-mode") || "dark";
+        const palette = localStorage.getItem("palette") || "oxocarbon";
 
-        if (autoTheme === "true") {
-          document.getElementById("auto-theme-toggle").classList.add("active");
-        }
+        // Restore mode
+        document.querySelectorAll(".segment-btn").forEach((el) => el.classList.remove("active"));
+        const modeBtn = document.querySelector(`.segment-btn[data-mode="${mode}"]`);
+        if (modeBtn) modeBtn.classList.add("active");
 
-        document.querySelectorAll(".theme-option").forEach((el) => {
-          el.classList.remove("active");
-        });
-
-        if (savedTheme === "light") {
-          document.documentElement.removeAttribute("data-theme");
+        if (mode === "system") {
+          const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          applyVariant(prefersDark ? "dark" : "light");
         } else {
-          document.documentElement.setAttribute("data-theme", savedTheme);
+          applyVariant(mode);
         }
 
-        const active = document.querySelector(`.theme-option[data-theme="${savedTheme}"]`);
-        if (active) active.classList.add("active");
+        // Restore palette
+        document.querySelectorAll(".theme-palette-row").forEach((el) => el.classList.remove("active"));
+        const paletteRow = document.querySelector(`.theme-palette-row[data-palette="${palette}"]`);
+        if (paletteRow) paletteRow.classList.add("active");
       })();
     </script>
   </body>

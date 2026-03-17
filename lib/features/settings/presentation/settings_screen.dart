@@ -82,7 +82,12 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => context.push('/settings/logs'),
           ),
           _SettingsTile(icon: Icons.help_outline, title: 'Help & Support', onTap: () {}),
-          _SettingsTile(icon: Icons.security_outlined, title: 'Privacy Policy', onTap: () {}),
+          _SettingsTile(
+            icon: Icons.info_outline,
+            title: 'About',
+            subtitle: 'Stormlight Labs',
+            onTap: () => context.push('/settings/about'),
+          ),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Danger Zone'),
           _SettingsTile(
@@ -95,7 +100,7 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           const SizedBox(height: 24),
-          Center(child: Text('Lazurite v1.0.0 (Phase 2)', style: Theme.of(context).textTheme.bodySmall)),
+          Center(child: Text('Lazurite v1.0.0', style: Theme.of(context).textTheme.bodySmall)),
           const SizedBox(height: 24),
         ],
       ),
@@ -115,160 +120,115 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildThemeSelector(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: Theme.of(context).dividerColor),
-          bottom: BorderSide(color: Theme.of(context).dividerColor),
-        ),
-        color: Theme.of(context).cardColor,
-      ),
-      child: Column(
-        children: [
-          Padding(padding: const EdgeInsets.all(16), child: _buildThemeGrid(context, settingsCubit)),
-          const Divider(height: 1),
-          BlocBuilder<SettingsCubit, SettingsState>(
-            buildWhen: (prev, curr) => prev.useSystemTheme != curr.useSystemTheme,
-            builder: (context, state) {
-              return _SettingsTile(
-                title: 'Auto',
-                subtitle: 'Follow system theme',
-                trailing: Switch(
-                  value: state.useSystemTheme,
-                  onChanged: (value) => settingsCubit.setUseSystemTheme(value),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeGrid(BuildContext context, SettingsCubit settingsCubit) {
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
-        return Column(
-          children: [
-            _buildThemeRow(context, settingsCubit, 'Oxocarbon', AppThemePalette.oxocarbon, state),
-            const SizedBox(height: 16),
-            _buildThemeRow(context, settingsCubit, 'Catppuccin', AppThemePalette.catppuccin, state),
-            const SizedBox(height: 16),
-            _buildThemeRow(context, settingsCubit, 'Nord', AppThemePalette.nord, state),
-            const SizedBox(height: 16),
-            _buildThemeRow(context, settingsCubit, 'Rosé Pine', AppThemePalette.rosePine, state),
-          ],
+        return Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: Theme.of(context).dividerColor),
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            color: Theme.of(context).cardColor,
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<_AppearanceMode>(
+                    segments: const [
+                      ButtonSegment(value: _AppearanceMode.system, label: Text('System')),
+                      ButtonSegment(value: _AppearanceMode.light, label: Text('Light')),
+                      ButtonSegment(value: _AppearanceMode.dark, label: Text('Dark')),
+                    ],
+                    selected: {_AppearanceMode.fromState(state)},
+                    onSelectionChanged: (selected) {
+                      final mode = selected.first;
+                      switch (mode) {
+                        case _AppearanceMode.system:
+                          settingsCubit.setUseSystemTheme(true);
+                        case _AppearanceMode.light:
+                          settingsCubit.setUseSystemTheme(false);
+                          settingsCubit.setThemeVariant(AppThemeVariant.light);
+                        case _AppearanceMode.dark:
+                          settingsCubit.setUseSystemTheme(false);
+                          settingsCubit.setThemeVariant(AppThemeVariant.dark);
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'THEME',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                  ),
+                ),
+              ),
+              for (final palette in AppThemePalette.values)
+                _ThemePaletteRow(
+                  palette: palette,
+                  isSelected: state.themePalette == palette,
+                  onTap: () => settingsCubit.setThemePalette(palette),
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
         );
       },
     );
   }
+}
 
-  Widget _buildThemeRow(
-    BuildContext context,
-    SettingsCubit settingsCubit,
-    String label,
-    AppThemePalette palette,
-    SettingsState state,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _ThemeOption(
-                palette: palette,
-                variant: AppThemeVariant.light,
-                label: 'Light',
-                isSelected: state.themePalette == palette && state.themeVariant == AppThemeVariant.light,
-                onTap: () => settingsCubit.setTheme(palette, AppThemeVariant.light),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _ThemeOption(
-                palette: palette,
-                variant: AppThemeVariant.dark,
-                label: 'Dark',
-                isSelected: state.themePalette == palette && state.themeVariant == AppThemeVariant.dark,
-                onTap: () => settingsCubit.setTheme(palette, AppThemeVariant.dark),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
+enum _AppearanceMode {
+  system,
+  light,
+  dark;
+
+  static _AppearanceMode fromState(SettingsState state) {
+    if (state.useSystemTheme) return system;
+    return state.themeVariant == AppThemeVariant.light ? light : dark;
   }
 }
 
-class _ThemeOption extends StatelessWidget {
-  const _ThemeOption({
-    required this.palette,
-    required this.variant,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
+class _ThemePaletteRow extends StatelessWidget {
+  const _ThemePaletteRow({required this.palette, required this.isSelected, required this.onTap});
 
   final AppThemePalette palette;
-  final AppThemeVariant variant;
-  final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.getTheme(palette, variant);
+    final swatches = AppTheme.getSwatchColors(palette);
 
-    return InkWell(
+    return ListTile(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: isSelected ? Theme.of(context).colorScheme.surfaceContainerHighest : null,
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.outlineVariant,
-                  width: isSelected ? 2 : 1,
-                ),
-                color: theme.scaffoldBackgroundColor,
-              ),
-              child: Stack(
-                children: [
-                  if (isSelected)
-                    Positioned(
-                      bottom: 4,
-                      right: 4,
-                      child: Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
-                        child: Icon(Icons.check, size: 12, color: Theme.of(context).colorScheme.onPrimary),
-                      ),
-                    ),
-                ],
+      title: Text(AppTheme.getPaletteName(palette)),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final color in swatches)
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(label, style: Theme.of(context).textTheme.labelMedium),
+          if (isSelected) ...[
+            const SizedBox(width: 12),
+            Icon(Icons.check, color: Theme.of(context).colorScheme.primary, size: 20),
           ],
-        ),
+        ],
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -232,7 +233,13 @@ class _LogoCard extends StatelessWidget {
             BoxShadow(color: colorScheme.primary.withValues(alpha: 0.24), blurRadius: 28, offset: const Offset(0, 12)),
           ],
         ),
-        child: const Icon(Icons.layers_outlined, color: Colors.white, size: 42),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: SvgPicture.asset(
+            'assets/logo.svg',
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+        ),
       ),
     );
   }

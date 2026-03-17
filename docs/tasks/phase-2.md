@@ -34,17 +34,18 @@
 - [ ] Typeahead autocomplete via `searchActorsTypeahead`
 - [ ] Drift migration: add `search_history` table (query, type, searched_at, account_did)
 - [ ] Persisted search history — display recent queries, tap to re-execute, swipe to delete, cap at 50 per account
+- [ ] Search with `@` should autocomplete with avatars + handles (debounced)
 
 ## M7 — Dev Tools (PDS Explorer)
 
-- [ ] `DevToolsCubit` with request/response state for stateless exploration
-- [ ] Handle / DID input with resolution via `resolveHandle`
-- [ ] Repository overview via `describeRepo` — list collections with record counts
-- [ ] Collection browser via `listRecords` — paginated record list per collection
-- [ ] Record inspector via `getRecord` — pretty-printed JSON with syntax highlighting
-- [ ] AT-URI input — paste `at://` URI to jump directly to a record
-- [ ] Add Dev Tools entry in Settings screen, navigable by all users
-- [ ] Include link to <https://pds.ls> as inspiration (pdsls)
-- [ ] Construct <https://aturi.to> links from AT-URI.
+- [x] `DevToolsCubit` with request/response state for stateless exploration
+- [x] Handle / DID input with resolution via `resolveHandle`
+- [x] Repository overview via `describeRepo` — list collections with record counts
+- [x] Collection browser via `listRecords` — paginated record list per collection
+- [x] Record inspector via `getRecord` — pretty-printed JSON with syntax highlighting
+- [x] AT-URI input — paste `at://` URI to jump directly to a record
+- [x] Add Dev Tools entry in Settings screen, navigable by all users
+- [x] Include link to <https://pds.ls> as inspiration (pdsls)
+- [x] Construct <https://aturi.to> links from AT-URI.
   - ex. `at://did:plc:ewvi7nxzyoun6zhxrhs64oiz/app.bsky.feed.post/3m6mwoadjbp2d` becomes
       <https://aturi.to/did:plc:ewvi7nxzyoun6zhxrhs64oiz/app.bsky.feed.post/3m6mwoadjbp2d>

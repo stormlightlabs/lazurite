@@ -18,7 +18,7 @@ class DevToolsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.open_in_new),
-            tooltip: 'Open pds.ls inspiration',
+            tooltip: 'Go to pds.ls',
             onPressed: () => _openExternalUrl('https://pds.ls'),
           ),
         ],
@@ -263,7 +263,7 @@ class _RepoOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalRepoRecords = state.totalRepoRecords;
-
+    final theme = Theme.of(context);
     return ListView(
       children: [
         Container(
@@ -290,10 +290,9 @@ class _RepoOverview extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           state.did ?? '',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontFamily: 'JetBrains Mono',
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
@@ -306,12 +305,17 @@ class _RepoOverview extends StatelessWidget {
                 spacing: 16,
                 runSpacing: 4,
                 children: [
-                  Text('${state.collections.length} collections', style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    '${state.collections.length} collections',
+                    style: theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.onSurface),
+                  ),
                   Text(
                     totalRepoRecords == null
                         ? (state.isCollectionCountsLoading ? 'Counting records...' : 'Record counts unavailable')
                         : '$totalRepoRecords records',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall!.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -346,7 +350,7 @@ class _CollectionItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(6),
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
-        child: Icon(_getCollectionIcon(collection.name), size: 16, color: Theme.of(context).colorScheme.outline),
+        child: Icon(_getCollectionIcon(collection.name), size: 16, color: Theme.of(context).colorScheme.primary),
       ),
       title: Text(collection.name, style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13)),
       trailing: Row(
@@ -358,7 +362,12 @@ class _CollectionItem extends StatelessWidget {
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(999),
             ),
-            child: Text(collection.countLabel, style: Theme.of(context).textTheme.labelSmall),
+            child: Text(
+              collection.countLabel,
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall!.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
           ),
           const SizedBox(width: 4),
           const Icon(Icons.chevron_right),
@@ -528,29 +537,22 @@ class _RecordInspector extends StatelessWidget {
             children: [
               Text(
                 record.rkey,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontFamily: 'JetBrains Mono',
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.primary),
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
               Text(
                 record.uri,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontFamily: 'JetBrains Mono',
-                  color: Theme.of(context).colorScheme.outline,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.tertiary),
                 overflow: TextOverflow.ellipsis,
               ),
               if (record.cid != null) ...[
                 const SizedBox(height: 2),
                 Text(
                   'CID: ${record.cid!}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontFamily: 'JetBrains Mono',
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.secondary),
                 ),
               ],
               const SizedBox(height: 8),
@@ -606,133 +608,59 @@ class _JsonViewer extends StatelessWidget {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final surfaceVariant = theme.colorScheme.onSurfaceVariant;
+    final keyStyle = theme.textTheme.bodySmall!.copyWith(color: surfaceVariant);
+    final valueStyle = theme.textTheme.bodySmall!.copyWith(color: primaryColor);
+    final strStyle = theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.secondary);
+    final numStyle = theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.tertiary);
+    final boolStyle = theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.primary);
+    final nullStyle = theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.error);
 
     if (value is Map<String, dynamic>) {
-      final spans = <TextSpan>[
-        TextSpan(
-          text: '{\n',
-          style: TextStyle(color: surfaceVariant),
-        ),
-      ];
+      final spans = <TextSpan>[TextSpan(text: '{\n', style: keyStyle)];
       final entries = value.entries.toList();
       for (var i = 0; i < entries.length; i++) {
         final entry = entries[i];
-        spans.add(
-          TextSpan(
-            text: '  ' * (indent + 1),
-            style: TextStyle(color: surfaceVariant),
-          ),
-        );
-        spans.add(
-          TextSpan(
-            text: '"${entry.key}"',
-            style: TextStyle(color: primaryColor),
-          ),
-        );
-        spans.add(
-          TextSpan(
-            text: ': ',
-            style: TextStyle(color: surfaceVariant),
-          ),
-        );
+        spans.add(TextSpan(text: '  ' * (indent + 1), style: keyStyle));
+        spans.add(TextSpan(text: '"${entry.key}"', style: valueStyle));
+        spans.add(TextSpan(text: ': ', style: keyStyle));
         spans.addAll(_buildSpans(context, entry.value, indent + 1));
         if (i < entries.length - 1) {
-          spans.add(
-            TextSpan(
-              text: ',',
-              style: TextStyle(color: surfaceVariant),
-            ),
-          );
+          spans.add(TextSpan(text: ',', style: keyStyle));
         }
-        spans.add(
-          TextSpan(
-            text: '\n',
-            style: TextStyle(color: surfaceVariant),
-          ),
-        );
+        spans.add(TextSpan(text: '\n', style: keyStyle));
       }
-      spans.add(
-        TextSpan(
-          text: '  ' * indent + '}',
-          style: TextStyle(color: surfaceVariant),
-        ),
-      );
+      spans.add(TextSpan(text: '  ' * indent + '}', style: keyStyle));
       return spans;
     }
 
     if (value is List) {
-      final spans = <TextSpan>[
-        TextSpan(
-          text: '[\n',
-          style: TextStyle(color: surfaceVariant),
-        ),
-      ];
+      final spans = <TextSpan>[TextSpan(text: '[\n', style: keyStyle)];
       for (var i = 0; i < value.length; i++) {
-        spans.add(
-          TextSpan(
-            text: '  ' * (indent + 1),
-            style: TextStyle(color: surfaceVariant),
-          ),
-        );
+        spans.add(TextSpan(text: '  ' * (indent + 1), style: keyStyle));
         spans.addAll(_buildSpans(context, value[i], indent + 1));
         if (i < value.length - 1) {
-          spans.add(
-            TextSpan(
-              text: ',',
-              style: TextStyle(color: surfaceVariant),
-            ),
-          );
+          spans.add(TextSpan(text: ',', style: keyStyle));
         }
-        spans.add(
-          TextSpan(
-            text: '\n',
-            style: TextStyle(color: surfaceVariant),
-          ),
-        );
+        spans.add(TextSpan(text: '\n', style: keyStyle));
       }
-      spans.add(
-        TextSpan(
-          text: '  ' * indent + ']',
-          style: TextStyle(color: surfaceVariant),
-        ),
-      );
+      spans.add(TextSpan(text: '  ' * indent + ']', style: keyStyle));
       return spans;
     }
 
     if (value is String) {
-      return [
-        TextSpan(
-          text: '"$value"',
-          style: TextStyle(color: theme.colorScheme.primaryContainer),
-        ),
-      ];
+      return [TextSpan(text: '"$value"', style: strStyle)];
     }
 
     if (value is num) {
-      return [
-        TextSpan(
-          text: value.toString(),
-          style: TextStyle(color: theme.colorScheme.tertiary),
-        ),
-      ];
+      return [TextSpan(text: value.toString(), style: numStyle)];
     }
 
     if (value is bool) {
-      return [
-        TextSpan(
-          text: value.toString(),
-          style: TextStyle(color: theme.colorScheme.secondary),
-        ),
-      ];
+      return [TextSpan(text: value.toString(), style: boolStyle)];
     }
 
     if (value == null) {
-      return [
-        TextSpan(
-          text: 'null',
-          style: TextStyle(color: surfaceVariant),
-        ),
-      ];
+      return [TextSpan(text: 'null', style: nullStyle)];
     }
 
     return [TextSpan(text: value.toString())];

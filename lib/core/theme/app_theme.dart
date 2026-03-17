@@ -93,4 +93,17 @@ class AppTheme {
         return 'dark';
     }
   }
+
+  static List<Color> getSwatchColors(AppThemePalette palette) {
+    switch (palette) {
+      case AppThemePalette.oxocarbon:
+        return const [Color(0xFF78a9ff), Color(0xFFbe95ff), Color(0xFF08bdba), Color(0xFFee5396)];
+      case AppThemePalette.catppuccin:
+        return const [Color(0xFFb4befe), Color(0xFFcba6f7), Color(0xFF74c7ec), Color(0xFFf5c2e7)];
+      case AppThemePalette.nord:
+        return const [Color(0xFF88c0d0), Color(0xFFa3be8c), Color(0xFFebcb8b), Color(0xFFb48ead)];
+      case AppThemePalette.rosePine:
+        return const [Color(0xFFebbcba), Color(0xFFc4a7e7), Color(0xFF9ccfd8), Color(0xFFf6c177)];
+    }
+  }
 }
