@@ -1,9 +1,9 @@
-import 'package:atproto_core/atproto_core.dart' as atp_core;
 import 'package:bluesky/bluesky.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
 import 'package:lazurite/core/logging/logging_navigator_observer.dart';
 import 'package:lazurite/core/router/app_router.dart';
@@ -51,39 +51,11 @@ class LazuriteApp extends StatelessWidget {
   static final _navigatorObserver = LoggingNavigatorObserver();
 
   Bluesky? _createBluesky(AuthState state) {
-    if (!state.isAuthenticated || state.tokens == null) {
+    if (!state.isAuthenticated) {
       return null;
     }
 
-    final tokens = state.tokens!;
-    final service = tokens.service ?? 'bsky.social';
-
-    if (tokens.usesOAuth) {
-      if (tokens.dpopPublicKey == null || tokens.dpopPrivateKey == null || tokens.refreshToken == null) {
-        return null;
-      }
-
-      final oauthSession = atp_core.restoreOAuthSession(
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken!,
-        dPoPNonce: tokens.dpopNonce,
-        publicKey: tokens.dpopPublicKey!,
-        privateKey: tokens.dpopPrivateKey!,
-      );
-      return Bluesky.fromOAuthSession(oauthSession, service: service);
-    }
-
-    if (tokens.refreshToken == null) {
-      return null;
-    }
-
-    final session = atp_core.Session(
-      did: tokens.did,
-      handle: tokens.handle,
-      accessJwt: tokens.accessToken,
-      refreshJwt: tokens.refreshToken!,
-    );
-    return Bluesky.fromSession(session, service: service);
+    return createBlueskyClient(state.tokens);
   }
 
   @override

@@ -5,11 +5,11 @@ import 'dart:io';
 import 'package:atproto/atproto.dart' as atp;
 import 'package:atproto_core/atproto_core.dart' as atcore;
 import 'package:atproto_oauth/atproto_oauth.dart';
-import 'package:bluesky/bluesky.dart';
 import 'package:drift/drift.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -189,7 +189,7 @@ class AuthRepository {
         final refreshedTokens = await _buildOAuthTokens(
           refreshedSession,
           fallbackHandle: currentSession.handle,
-          service: currentSession.service ?? _fallbackService,
+          oauthService: currentSession.service ?? _fallbackService,
         );
 
         await saveSession(refreshedTokens);
@@ -323,7 +323,7 @@ class AuthRepository {
     );
     final oauthSession = await oauthClient.callback(callbackUrl, oauthContext);
     log.i('AuthRepository: OAuth token exchange succeeded for DID ${oauthSession.sub}');
-    final tokens = await _buildOAuthTokens(oauthSession, fallbackHandle: fallbackHandle, service: service);
+    final tokens = await _buildOAuthTokens(oauthSession, fallbackHandle: fallbackHandle, oauthService: service);
     await saveSession(tokens);
     log.i('AuthRepository: OAuth login completed for ${tokens.handle}');
     return tokens;
@@ -332,14 +332,18 @@ class AuthRepository {
   Future<AuthTokens> _buildOAuthTokens(
     OAuthSession session, {
     required String fallbackHandle,
-    required String service,
+    required String oauthService,
   }) async {
     var resolvedHandle = fallbackHandle;
     String? displayName;
     log.d('AuthRepository: Building OAuth tokens for DID ${session.sub}');
+    log.d(
+      'AuthRepository: OAuth session will target PDS '
+      '${session.atprotoPdsEndpoint ?? 'unknown'} via auth service $oauthService',
+    );
 
     try {
-      final authSession = await atp.ATProto.fromOAuthSession(session, service: service).server.getSession();
+      final authSession = await createAtProtoForOAuthSession(session).server.getSession();
       resolvedHandle = authSession.data.handle;
     } catch (e, s) {
       log.w(
@@ -350,7 +354,7 @@ class AuthRepository {
     }
 
     try {
-      final profile = await Bluesky.fromOAuthSession(session, service: service).actor.getProfile(actor: session.sub);
+      final profile = await createBlueskyForOAuthSession(session).actor.getProfile(actor: session.sub);
       displayName = profile.data.displayName;
     } catch (e, s) {
       log.w('AuthRepository: Failed to fetch display name, continuing without it', error: e, stackTrace: s);
@@ -363,7 +367,7 @@ class AuthRepository {
       did: session.sub,
       handle: resolvedHandle,
       displayName: displayName,
-      service: service,
+      service: oauthService,
       dpopNonce: session.$dPoPNonce,
       dpopPublicKey: session.$publicKey,
       dpopPrivateKey: session.$privateKey,

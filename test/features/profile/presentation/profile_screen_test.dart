@@ -85,7 +85,7 @@ void main() {
       () => feedBloc.add(const FeedLoadRequested(actor: 'did:plc:me', filter: FeedFilter.postsNoReplies)),
     ).called(1);
 
-    expect(find.text('River Tam'), findsAtLeastNWidgets(1));
+    expect(find.text('River Tam'), findsOneWidget);
     expect(find.text('@me.bsky.social'), findsOneWidget);
     expect(find.text('Signal and signal boost.'), findsOneWidget);
     expect(find.text('she/her'), findsOneWidget);

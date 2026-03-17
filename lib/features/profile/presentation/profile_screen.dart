@@ -19,6 +19,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+  static const double _headerExpandedHeight = 120;
   static const _tabs = [
     (label: 'Posts', filter: FeedFilter.postsNoReplies),
     (label: 'Replies', filter: FeedFilter.postsAndAuthorThreads),
@@ -89,13 +90,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 headerSliverBuilder: (context, innerBoxIsScrolled) {
                   return [
                     SliverAppBar(
-                      expandedHeight: 220,
+                      expandedHeight: _headerExpandedHeight,
+                      floating: true,
                       pinned: true,
+                      snap: true,
                       stretch: true,
-                      flexibleSpace: FlexibleSpaceBar(
-                        title: Text(profile?.displayName ?? profile?.handle ?? 'Profile'),
-                        background: _buildBanner(profile),
-                      ),
+                      title: innerBoxIsScrolled ? Text(profile?.displayName ?? profile?.handle ?? 'Profile') : null,
+                      flexibleSpace: FlexibleSpaceBar(background: _buildBanner(context, profile)),
                       leading: IconButton(
                         icon: const Icon(Icons.arrow_back),
                         onPressed: () => context.canPop() ? context.pop() : context.go('/'),
@@ -141,32 +142,25 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildBanner(ProfileViewDetailed? profile) {
-    if (profile?.banner == null) {
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blueGrey.shade700, Colors.blueGrey.shade400],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      );
-    }
-
-    return Image.network(
-      profile!.banner!,
-      fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blueGrey.shade700, Colors.blueGrey.shade400],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+  Widget _buildBanner(BuildContext context, ProfileViewDetailed? profile) {
+    final fallback = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.surfaceContainerHighest,
+            Theme.of(context).colorScheme.surfaceContainer,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
     );
+
+    if (profile?.banner == null) {
+      return fallback;
+    }
+
+    return Image.network(profile!.banner!, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback);
   }
 
   Widget _buildProfileError(BuildContext context, String? errorMessage) {
@@ -204,11 +198,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     ];
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Transform.translate(offset: const Offset(0, -36), child: _buildAvatar(profile)),
+          _buildAvatar(profile),
+          const SizedBox(height: 16),
           Text(
             profile.displayName ?? profile.handle,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),

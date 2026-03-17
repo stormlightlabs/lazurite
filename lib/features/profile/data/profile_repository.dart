@@ -1,7 +1,10 @@
 import 'dart:convert';
 
+import 'package:atproto_core/atproto_core.dart' as atp_core;
 import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/bluesky.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 
 class ProfileRepository {
@@ -13,16 +16,22 @@ class ProfileRepository {
   final dynamic _bluesky;
 
   Future<ProfileViewDetailed> getProfile(String actor) async {
+    log.d('ProfileRepository: Loading profile for $actor via ${_describeClientContext()}');
+
     try {
       final response = await _bluesky.actor.getProfile(actor: actor);
       final profile = response.data;
+      log.i('ProfileRepository: Loaded profile ${profile.did} (${profile.handle})');
 
       await _database.cacheProfile(did: profile.did, handle: profile.handle, payload: jsonEncode(profile.toJson()));
+      log.d('ProfileRepository: Cached profile ${profile.did} (${profile.handle})');
 
       return profile;
-    } catch (error) {
+    } catch (error, stackTrace) {
+      log.e('ProfileRepository: Failed to load profile for $actor', error: error, stackTrace: stackTrace);
       final cachedProfile = await _getCachedProfile(actor);
       if (cachedProfile != null) {
+        log.w('ProfileRepository: Using cached profile for $actor after request failure');
         return cachedProfile;
       }
 
@@ -31,15 +40,25 @@ class ProfileRepository {
   }
 
   Future<List<ProfileView>> getProfiles(List<String> actors) async {
+    log.d('ProfileRepository: Loading ${actors.length} profiles via ${_describeClientContext()}');
     final response = await _bluesky.actor.getProfiles(actors: actors);
+    log.i('ProfileRepository: Loaded ${response.data.profiles.length} profiles');
     return response.data.profiles;
   }
 
   Future<ProfileViewDetailed?> getCurrentUserProfile(AuthTokens tokens) async {
+    log.d('ProfileRepository: Loading current user profile for ${tokens.did} via ${_describeClientContext()}');
+
     try {
       final response = await _bluesky.actor.getProfile(actor: tokens.did);
+      log.i('ProfileRepository: Loaded current user profile ${response.data.did} (${response.data.handle})');
       return response.data;
-    } catch (error) {
+    } catch (error, stackTrace) {
+      log.e(
+        'ProfileRepository: Failed to load current user profile for ${tokens.did}',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
@@ -55,9 +74,32 @@ class ProfileRepository {
         )..where((profile) => profile.handle.equals(actor))).getSingleOrNull();
 
     if (cachedProfile == null) {
+      log.d('ProfileRepository: No cached profile found for $actor');
       return null;
     }
 
+    log.d('ProfileRepository: Found cached profile for $actor');
     return ProfileViewDetailed.fromJson(jsonDecode(cachedProfile.payload) as Map<String, dynamic>);
+  }
+
+  String _describeClientContext() {
+    final bluesky = _bluesky;
+    if (bluesky is! Bluesky) {
+      return 'unknown client';
+    }
+
+    final oauthSession = bluesky.oAuthSession;
+    final session = bluesky.session;
+    final configuredService = bluesky.service;
+
+    if (oauthSession != null) {
+      return 'oauth service=$configuredService pds=${oauthSession.atprotoPdsEndpoint ?? 'unknown'}';
+    }
+
+    if (session != null) {
+      return 'session service=$configuredService pds=${session.atprotoPdsEndpoint ?? 'unknown'}';
+    }
+
+    return 'anonymous service=$configuredService';
   }
 }
