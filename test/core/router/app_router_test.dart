@@ -9,6 +9,8 @@ import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
+import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
+import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
@@ -24,12 +26,18 @@ class MockFeedBloc extends MockBloc<FeedEvent, FeedState> implements FeedBloc {}
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
+class MockUnreadCountCubit extends MockCubit<UnreadCountState> implements UnreadCountCubit {}
+
+class MockNotificationRepository extends Mock implements NotificationRepository {}
+
 void main() {
   late MockAuthBloc authBloc;
   late MockFeedPreferencesCubit feedPreferencesCubit;
   late MockProfileBloc profileBloc;
   late MockFeedBloc feedBloc;
   late MockSettingsCubit settingsCubit;
+  late MockUnreadCountCubit unreadCountCubit;
+  late MockNotificationRepository notificationRepository;
 
   const tokens = AuthTokens(
     accessToken: 'access',
@@ -55,6 +63,8 @@ void main() {
     profileBloc = MockProfileBloc();
     feedBloc = MockFeedBloc();
     settingsCubit = MockSettingsCubit();
+    unreadCountCubit = MockUnreadCountCubit();
+    notificationRepository = MockNotificationRepository();
 
     when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
     when(() => feedPreferencesCubit.state).thenReturn(const FeedPreferencesState.loaded(feeds: []));
@@ -69,6 +79,8 @@ void main() {
         useSystemTheme: false,
       ),
     );
+    when(() => unreadCountCubit.state).thenReturn(const UnreadCountState(0));
+    when(() => notificationRepository.getUnreadCount()).thenAnswer((_) async => 0);
 
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
     whenListen(
@@ -96,6 +108,7 @@ void main() {
         useSystemTheme: false,
       ),
     );
+    whenListen(unreadCountCubit, const Stream<UnreadCountState>.empty(), initialState: const UnreadCountState(0));
   });
 
   Widget buildSubject() {
@@ -106,8 +119,12 @@ void main() {
         BlocProvider<ProfileBloc>.value(value: profileBloc),
         BlocProvider<FeedBloc>.value(value: feedBloc),
         BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        BlocProvider<UnreadCountCubit>.value(value: unreadCountCubit),
       ],
-      child: MaterialApp.router(routerConfig: AppRouter(authBloc: authBloc).router),
+      child: RepositoryProvider<NotificationRepository>(
+        create: (_) => notificationRepository,
+        child: MaterialApp.router(routerConfig: AppRouter(authBloc: authBloc).router),
+      ),
     );
   }
 

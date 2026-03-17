@@ -1,3 +1,6 @@
+import 'package:atproto_core/atproto_core.dart';
+import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -60,8 +63,8 @@ void main() {
       expect(find.text('Search posts or people'), findsOneWidget);
       expect(find.text('Posts'), findsOneWidget);
       expect(find.text('People'), findsOneWidget);
-      expect(find.text('Top'), findsOneWidget);
-      expect(find.text('Latest'), findsOneWidget);
+      expect(find.text('Top'), findsNothing);
+      expect(find.text('Latest'), findsNothing);
     });
 
     testWidgets('shows empty state when no search history', (tester) async {
@@ -85,13 +88,70 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('sort toggle changes correctly', (tester) async {
-      await tester.pumpWidget(buildSubject());
+    testWidgets('sort toggle shows when there are results', (tester) async {
+      reset(mockSearchRepository);
+
+      final samplePost = PostView(
+        uri: AtUri.parse('at://did:plc:test/app.bsky.feed.post/1'),
+        cid: 'cid-1',
+        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+        record: {r'$type': 'app.bsky.feed.post', 'text': 'Test post', 'createdAt': DateTime.now().toIso8601String()},
+        indexedAt: DateTime.now(),
+      );
+
+      when(
+        () => mockSearchRepository.searchPosts(
+          query: any(named: 'query'),
+          sort: any(named: 'sort'),
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => SearchPostsResult(posts: [samplePost], hitsTotal: 1));
+
+      when(
+        () => mockSearchRepository.searchActors(
+          query: any(named: 'query'),
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => SearchActorsResult(actors: []));
+
+      when(
+        () => mockSearchRepository.searchActorsTypeahead(
+          query: any(named: 'query'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => []);
+
+      when(() => mockDatabase.getSearchHistory(any(), limit: any(named: 'limit'))).thenAnswer((_) async => []);
+      when(
+        () => mockDatabase.addSearchHistoryEntry(
+          query: any(named: 'query'),
+          type: any(named: 'type'),
+          accountDid: any(named: 'accountDid'),
+        ),
+      ).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: BlocProvider<SearchBloc>(
+            create: (_) =>
+                SearchBloc(searchRepository: mockSearchRepository, database: mockDatabase, accountDid: 'did:plc:test'),
+            child: const SearchScreen(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      final latestButton = find.text('Latest');
-      await tester.tap(latestButton);
+      final searchField = find.byType(TextField);
+      await tester.enterText(searchField, 'test query');
       await tester.pumpAndSettle();
+
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Top'), findsOneWidget);
+      expect(find.text('Latest'), findsOneWidget);
     });
 
     testWidgets('shows search history when available', (tester) async {

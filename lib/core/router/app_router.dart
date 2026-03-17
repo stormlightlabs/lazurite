@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:bluesky/bluesky.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
@@ -15,6 +16,10 @@ import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/logs/presentation/logs_screen.dart';
+import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
+import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
+import 'package:lazurite/features/notifications/data/notification_repository.dart';
+import 'package:lazurite/features/notifications/presentation/notifications_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
@@ -27,6 +32,7 @@ class AppRouter {
   final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
   final GlobalKey<NavigatorState> _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'home');
   final GlobalKey<NavigatorState> _searchNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'search');
+  final GlobalKey<NavigatorState> _notificationsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'notifications');
   final GlobalKey<NavigatorState> _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
   final GlobalKey<NavigatorState> _settingsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'settings');
 
@@ -73,7 +79,28 @@ class AppRouter {
         },
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) {
+          UnreadCountCubit? existingCubit;
+          try {
+            existingCubit = context.read<UnreadCountCubit>();
+          } catch (_) {
+            log.d('UnreadCountCubit not found, creating new one');
+          }
+
+          if (existingCubit != null) {
+            return AppShell(navigationShell: navigationShell);
+          }
+
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) =>
+                    UnreadCountCubit(notificationRepository: NotificationRepository(bluesky: context.read<Bluesky>())),
+              ),
+            ],
+            child: AppShell(navigationShell: navigationShell),
+          );
+        },
         branches: [
           StatefulShellBranch(
             navigatorKey: _homeNavigatorKey,
@@ -88,6 +115,20 @@ class AppRouter {
           StatefulShellBranch(
             navigatorKey: _searchNavigatorKey,
             routes: [GoRoute(path: '/search', builder: (context, state) => const SearchScreen())],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _notificationsNavigatorKey,
+            routes: [
+              GoRoute(
+                path: '/notifications',
+                builder: (context, state) => BlocProvider(
+                  create: (_) => NotificationBloc(
+                    notificationRepository: NotificationRepository(bluesky: context.read<Bluesky>()),
+                  ),
+                  child: const NotificationsScreen(),
+                ),
+              ),
+            ],
           ),
           StatefulShellBranch(
             navigatorKey: _profileNavigatorKey,
