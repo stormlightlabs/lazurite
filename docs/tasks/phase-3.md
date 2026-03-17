@@ -25,50 +25,27 @@
 - [ ] Mark as read via `updateSeen` when notifications screen opens
 - [ ] Tap notification to navigate to relevant post or profile
 
-## M10 — Direct Messages
+## M10 — Post & Profile Actions
 
-- [ ] Conversation list screen via `chat.bsky.convo.listConvos` with pagination
-- [ ] `ConvoListBloc` — events: `ConvosRequested`, `ConvosRefreshed`, `ConvoMuted`, `ConvoUnmuted`
-- [ ] Primary / Requests tab filtering on conversation list
-- [ ] Message thread screen via `chat.bsky.convo.getMessages` with pagination
-- [ ] `MessageBloc` — events: `MessagesRequested`, `MessagesPageLoaded`, `MessageSent`, `MessageDeleted`, `ConvoMarkedRead`
-- [ ] Chat bubble layout — current user right-aligned, others left-aligned
-- [ ] Send messages via `chat.bsky.convo.sendMessage`
-- [ ] New conversation via `chat.bsky.convo.getConvoForMembers`
-- [ ] Long-press to copy individual messages, overflow menu "Copy All" for full thread
-- [ ] Mute / unmute conversations
-- [ ] Mark conversation as read via `chat.bsky.convo.updateRead`
+- [ ] `PostActionRepository` — like, repost, delete via `com.atproto.repo.createRecord` / `deleteRecord`
+- [ ] `PostActionCubit` — optimistic state updates for like / repost toggle with rollback on failure
+- [ ] Like toggle: create `app.bsky.feed.like` record or delete by rkey; update `viewer.like` and `likeCount`
+- [ ] Repost toggle: create `app.bsky.feed.repost` record or delete by rkey; update `viewer.repost` and `repostCount`
+- [ ] Post action bar UI — like, repost, reply, share buttons with animated state transitions
+- [ ] `ProfileActionRepository` — follow, mute, block, report
+- [ ] `ProfileActionCubit` — optimistic follow/mute/block state with rollback
+- [ ] Follow toggle: create `app.bsky.graph.follow` record or delete by rkey; update `viewer.following`
+- [ ] Mute toggle via `app.bsky.graph.muteActor` / `unmuteActor`; update `viewer.muted`
+- [ ] Block toggle: create `app.bsky.graph.block` record or delete by rkey; update `viewer.blocking`
+- [ ] Profile action buttons: Follow / Following / Mute / Block in profile header and overflow menu
+- [ ] Report dialog: reason picker + optional description, submit via `com.atproto.moderation.createReport`
+- [ ] Report for both posts (RepoStrongRef subject) and accounts (RepoRef subject)
+- [ ] Confirmation dialog before mute / block actions
+- [ ] Thread muting via `app.bsky.feed.threadgate` awareness (show muted-thread indicator)
 
-## M11 — Account Switching
-
-- [ ] `AccountSwitcherCubit` exposing account list and active DID
-- [ ] Account switcher bottom sheet UI — list accounts with avatars and handles
-- [ ] Store `active_account_did` in Drift `settings` table
-- [ ] Drift migration: add `account_did` column to `cached_posts` if not present
-- [ ] All user-scoped queries filter by active account DID
-- [ ] Broadcast `AccountSwitched` event to all Blocs on switch
-- [ ] "Add Account" button triggers OAuth flow, inserts new `accounts` row
-- [ ] Silent token refresh on account switch; navigate to login on failure
-
-## M12 — Offline Reading & Network Resilience
-
-- [ ] `ConnectivityCubit` via **connectivity_plus** — expose network state stream
-- [ ] Cache last-fetched feed page as serialised JSON in Drift
-- [ ] Display cached data immediately on launch, refresh in background
-- [ ] "You're offline" banner when connectivity is lost
-- [ ] Disable network-dependent actions (compose, like, repost, follow) when offline with tooltip
-- [ ] Notifications and DM screens show "No connection" empty state when offline with no cache
-
-## M13 — Saved Posts
+## M11 — Saved Posts
 
 - [ ] Drift migration: add `saved_posts` table (id, account_did, post_uri, post_json, saved_at) with unique constraint on (account_did, post_uri)
 - [ ] `SavedPostsCubit` — read/write saved posts, expose stream of saved URIs for icon state
 - [ ] Bookmark icon on post action bar — toggle saved state
 - [ ] Saved posts list screen accessible from profile or settings
-
-## M14 — Jump to Profile
-
-- [ ] Floating action button on search screen
-- [ ] Handle input dialog with autocomplete via `searchActorsTypeahead`
-- [ ] Navigate to profile screen on selection or enter
-- [ ] Update bottom navigation to include Notifications and Messages tabs (5-tab layout)

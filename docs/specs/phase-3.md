@@ -119,123 +119,157 @@ Display an unread count badge on the Notifications nav bar item. Poll
 Build a `NotificationBloc` with events: `NotificationsRequested`,
 `NotificationsRefreshed`, `NotificationsPageLoaded`, `NotificationsMarkedRead`.
 
-## Direct Messages
+## Post & Profile Actions
 
-DMs use the `chat.bsky.*` lexicon namespace. The DM feature has two views: a
-conversation list and a message thread.
+All post and profile interactions use the AT Protocol record model. Actions
+that create a relationship (like, repost, follow, block) write a record via
+`com.atproto.repo.createRecord` and undo by deleting via
+`com.atproto.repo.deleteRecord`. Muting is a server-side procedure call with
+no persistent record.
 
 ### API
 
-| Endpoint                               | Purpose                       |
-| -------------------------------------- | ----------------------------- |
-| `chat.bsky.convo.listConvos`           | Paginated conversation list   |
-| `chat.bsky.convo.getConvo`             | Single conversation metadata  |
-| `chat.bsky.convo.getMessages`          | Paginated messages in a convo |
-| `chat.bsky.convo.sendMessage`          | Send a message                |
-| `chat.bsky.convo.deleteMessageForSelf` | Delete a message locally      |
-| `chat.bsky.convo.muteConvo`            | Mute a conversation           |
-| `chat.bsky.convo.unmuteConvo`          | Unmute a conversation         |
-| `chat.bsky.convo.updateRead`           | Mark conversation as read     |
-| `chat.bsky.convo.getLog`               | Polling for new events        |
+| Endpoint                              | Purpose                                 |
+| ------------------------------------- | --------------------------------------- |
+| `com.atproto.repo.createRecord`       | Create like/repost/follow/block records |
+| `com.atproto.repo.deleteRecord`       | Delete like/repost/follow/block records |
+| `app.bsky.graph.muteActor`            | Mute an account                         |
+| `app.bsky.graph.unmuteActor`          | Unmute an account                       |
+| `com.atproto.moderation.createReport` | Report a post or account                |
 
-### Conversation List
+### Like
 
-`listConvos` returns conversations sorted by last message time. Each convo
-includes `id`, `members` (array of `profileViewBasic`), `lastMessage`,
-`unreadCount`, `muted`.
+Collection: `app.bsky.feed.like`. Record contains a `subject` (RepoStrongRef
+with the post's AT-URI and CID) and `createdAt`.
 
-Filter conversations into two tabs: **Primary** (accepted) and **Requests**
-(conversations the user has not yet responded to). A conversation is a
-"request" if the user has never sent a message in it.
+To unlike, extract the record key (rkey) from the `viewer.like` AT-URI and
+call `deleteRecord` with collection `app.bsky.feed.like` and that rkey.
 
-### Message Thread
+The `PostView.viewer.like` field is non-null when the current user has liked
+the post. Use this to drive the filled/outlined heart icon state.
 
-`getMessages` returns paginated `messageView` objects. Each message has `id`,
-`text`, `sender` (DID), `sentAt`. Messages are displayed in a standard chat
-bubble layout — the current user's messages right-aligned, others left-aligned.
+### Repost
 
-Support long-press to copy individual messages. Provide a "Copy All" option in
-the conversation overflow menu to copy the full thread.
+Collection: `app.bsky.feed.repost`. Record structure is identical to like —
+`subject` (RepoStrongRef) + `createdAt`.
 
-### Sending Messages
+To un-repost, extract the rkey from `viewer.repost` and delete the record.
 
-`sendMessage` takes `convoId` and `message` (object with `text`). To start a
-new conversation, the app calls `chat.bsky.convo.getConvoForMembers` with the
-target DID(s) — this returns an existing convo or creates a new one.
+The `PostView.viewer.repost` field is non-null when the current user has
+reposted. Use this for the repost icon state.
 
-| Endpoint                             | Purpose               |
-| ------------------------------------ | --------------------- |
-| `chat.bsky.convo.getConvoForMembers` | Get or create a convo |
+### Follow
 
-Build a `ConvoListBloc` with events: `ConvosRequested`, `ConvosRefreshed`,
-`ConvoMuted`, `ConvoUnmuted`.
+Collection: `app.bsky.graph.follow`. Record contains `subject` (the target
+user's DID as a string) and `createdAt`.
 
-Build a `MessageBloc` with events: `MessagesRequested`, `MessagesPageLoaded`,
-`MessageSent`, `MessageDeleted`, `ConvoMarkedRead`.
+To unfollow, extract the rkey from `viewer.following` and delete the record.
 
-## Account Switching
+Viewer state fields on profiles:
 
-Support multiple authenticated accounts with full data isolation. The
-`accounts` table (from Phase 1) already supports multiple rows keyed by DID.
+- `viewer.following` — non-null AT-URI if the current user follows this profile
+- `viewer.followedBy` — non-null AT-URI if this profile follows the current user
 
-### Active Account
+### Mute
 
-Store the active account DID in the Drift `settings` table under key
-`active_account_did`. On launch, read this value and restore the session for
-that account.
+Mute and unmute are procedure calls (not record creation):
 
-### Data Isolation
+- `app.bsky.graph.muteActor` — input: `{ actor: DID }`
+- `app.bsky.graph.unmuteActor` — input: `{ actor: DID }`
 
-All user-scoped tables must include an `account_did` FK column. Queries always
-filter by the active account's DID. Tables requiring this constraint:
+Both return empty responses. The `viewer.muted` boolean on profiles reflects
+the current mute state. Muted accounts' posts are still fetched but should be
+visually de-emphasised or filtered in the UI based on user preference.
 
-- `drafts`
-- `saved_posts`
-- `search_history` (Phase 2)
-- `cached_posts` (add `account_did` if not present)
+### Block
 
-### Switching Flow
+Collection: `app.bsky.graph.block`. Record contains `subject` (the target
+user's DID) and `createdAt`.
 
-1. User opens account switcher (bottom sheet or settings).
-2. Selects a different account.
-3. App updates `active_account_did` in settings.
-4. All Blocs receive a `AccountSwitched` event and reload their state for the
-   new account.
-5. If the selected account's tokens are expired, attempt silent refresh. If
-   refresh fails, navigate to login.
+To unblock, extract the rkey from `viewer.blocking` and delete the record.
 
-### Adding Accounts
+Viewer state fields on profiles:
 
-"Add Account" triggers the same OAuth flow from Phase 1. On success, a new row
-is inserted into `accounts`. The new account becomes the active account.
+- `viewer.blocking` — non-null AT-URI if the current user blocks this profile
+- `viewer.blockedBy` — boolean, true if this profile blocks the current user
 
-Build an `AccountSwitcherCubit` that exposes the list of accounts and the
-active DID.
+When a user is blocked, their posts should be hidden from feeds and threads.
+Display a "You have blocked this user" placeholder in their profile view.
 
-## Offline Reading
+### Report
 
-The app should render cached data when the network is unavailable. This builds
-on the `cached_posts` and `cached_profiles` tables from Phase 1.
+Reports use `com.atproto.moderation.createReport` with two subject types:
 
-### Cache Strategy
+| Subject Type    | Usage                  | Fields        |
+| --------------- | ---------------------- | ------------- |
+| `RepoStrongRef` | Report a specific post | `uri` + `cid` |
+| `RepoRef`       | Report an account      | `did`         |
 
-Cache the last-fetched page of each feed (timeline, pinned generators) in Drift
-as serialised JSON. On launch or feed switch, display cached data immediately,
-then fetch fresh data in the background. If the fetch fails, keep showing the
-cache with a "You're offline" banner.
+Report reasons (from `com.atproto.moderation.defs`):
 
-### Offline Indicators
+| Reason             | Description                       |
+| ------------------ | --------------------------------- |
+| `reasonSpam`       | Spam or unsolicited content       |
+| `reasonViolation`  | Violates community guidelines     |
+| `reasonMisleading` | Misleading or deceptive content   |
+| `reasonSexual`     | Unwanted sexual content           |
+| `reasonRude`       | Harassment or rude behaviour      |
+| `reasonOther`      | Other (requires text explanation) |
 
-- A persistent banner at the top of the screen when connectivity is lost.
-- Disable actions that require network (compose, like, repost, follow) and show
-  a tooltip explaining why.
-- Notifications and DM screens show an empty state with "No connection" when
-  offline and no cached data exists.
+The report dialog should present the reason picker and an optional free-text
+description field. Submitting returns a report ID for confirmation.
 
-### Network Detection
+### Optimistic Updates
 
-Use the **connectivity_plus** package to monitor network state changes. Expose
-connectivity as a stream via a `ConnectivityCubit` that all screens observe.
+All toggle actions (like, repost, follow, mute, block) should use optimistic
+UI updates:
+
+1. Immediately update the local state (icon, count, button label).
+2. Fire the API call in the background.
+3. On success, reconcile with the server response (update the viewer URI).
+4. On failure, roll back the local state and show a snackbar error.
+
+Build a `PostActionCubit` that manages per-post action state (like, repost,
+save). It accepts the initial `ViewerState` from the post and exposes
+toggleable methods.
+
+Build a `ProfileActionCubit` that manages per-profile action state (follow,
+mute, block). It accepts the initial `ViewerState` from the profile and
+exposes toggleable methods.
+
+### Post Action Bar
+
+The post action bar appears below every post and contains four buttons:
+
+| Button | Icon   | Tap action    | Long-press        |
+| ------ | ------ | ------------- | ----------------- |
+| Reply  | chat   | Open compose  | —                 |
+| Repost | repeat | Toggle repost | Quote post option |
+| Like   | heart  | Toggle like   | —                 |
+| Share  | share  | Share sheet   | —                 |
+
+The bookmark (save) icon is placed in the post overflow menu alongside
+"Report" and "Copy link".
+
+Like and repost counts are displayed next to their respective icons. Counts
+update optimistically. The repost long-press opens a bottom sheet with
+"Repost" and "Quote Post" options.
+
+### Profile Action Buttons
+
+The profile header shows a primary action button based on the relationship:
+
+| State            | Button label | Tap action     |
+| ---------------- | ------------ | -------------- |
+| Not following    | "Follow"     | Create follow  |
+| Following        | "Following"  | Unfollow sheet |
+| Blocked by them  | —            | No button      |
+| You blocked them | "Unblock"    | Delete block   |
+
+The profile overflow menu (three-dot icon) contains: Mute / Unmute, Block /
+Unblock, Report, Copy DID, Share profile.
+
+Mute and block actions should show a confirmation dialog before proceeding.
 
 ## Saved Posts
 
@@ -264,16 +298,3 @@ profile screen or settings.
 Build a `SavedPostsCubit` that reads/writes the `saved_posts` table and
 exposes a stream of saved post URIs for quick lookup (to show filled vs
 outlined bookmark icons in the feed).
-
-## Jump to Profile
-
-Add a floating action button on the search screen. Tapping it opens a dialog
-with a text field for entering a handle. Use
-`app.bsky.actor.searchActorsTypeahead` to provide autocomplete suggestions as
-the user types. Selecting a result or pressing enter navigates to that user's
-profile screen.
-
-| Endpoint                               | Purpose             |
-| -------------------------------------- | ------------------- |
-| `app.bsky.actor.searchActorsTypeahead` | Handle autocomplete |
-| `app.bsky.actor.getProfile`            | Full profile fetch  |

@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Lazurite - A beautiful Material You Bluesky client for mobile and desktop" />
+    <meta name="author" content="Stormlight Labs" />
+    <title>Lazurite - Coming Soon</title>
+    <link rel="icon" type="image/svg+xml" href="static/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet" />
+
+    <style>
+      :root {
+        --bg-dark: #161616;
+        --surface-dark: #262626;
+        --surface-variant: #393939;
+        --outline: #525252;
+        --text-primary: #f2f4f8;
+        --text-secondary: #dde1e6;
+        --text-tertiary: #697689;
+
+        --primary: #0085ff;
+        --secondary: #78a9ff;
+        --tertiary: #33b1ff;
+        --cyan: #08bdba;
+        --purple: #be95ff;
+
+        --font-display: "Lora", serif;
+        --font-body: "DM Sans", sans-serif;
+        --font-mono: "JetBrains Mono", monospace;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: var(--font-body);
+        background-color: var(--bg-dark);
+        color: var(--text-primary);
+        line-height: 1.6;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 4rem;
+      }
+
+      .logo {
+        font-family: var(--font-display);
+        font-size: 3.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--tertiary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        letter-spacing: -0.02em;
+      }
+
+      .tagline {
+        font-size: 1.25rem;
+        color: var(--text-secondary);
+        font-weight: 400;
+        letter-spacing: 0.01em;
+      }
+
+      main {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      .hero {
+        text-align: center;
+        margin-bottom: 4rem;
+      }
+
+      .hero h1 {
+        font-family: var(--font-display);
+        font-size: 2.5rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: var(--text-primary);
+        line-height: 1.2;
+      }
+
+      .hero p {
+        font-size: 1.125rem;
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+        line-height: 1.8;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--surface-dark);
+        padding: 0.75rem 1.5rem;
+        border-radius: 2rem;
+        border: 1px solid var(--outline);
+        font-size: 0.875rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        margin-bottom: 3rem;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--primary);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 4rem;
+      }
+
+      .feature {
+        background: var(--surface-dark);
+        padding: 2rem;
+        border-radius: 1rem;
+        border: 1px solid var(--outline);
+        transition:
+          transform 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .feature:hover {
+        transform: translateY(-2px);
+        border-color: var(--primary);
+      }
+
+      .feature h3 {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+        color: var(--text-primary);
+      }
+
+      .feature p {
+        color: var(--text-secondary);
+        font-size: 0.9375rem;
+        line-height: 1.6;
+      }
+
+      .feature-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        padding: 12px;
+      }
+
+      .feature-icon img {
+        width: 100%;
+        height: 100%;
+        color: var(--bg-dark);
+      }
+
+      .tech-stack {
+        background: var(--surface-dark);
+        padding: 2rem;
+        border-radius: 1rem;
+        border: 1px solid var(--outline);
+        margin-bottom: 4rem;
+      }
+
+      .tech-stack h2 {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+        color: var(--text-primary);
+      }
+
+      .tech-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .tech-tag {
+        background: var(--surface-variant);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-family: var(--font-mono);
+        color: var(--text-secondary);
+        border: 1px solid transparent;
+        transition: border-color 0.2s ease;
+      }
+
+      .tech-tag:hover {
+        border-color: var(--primary);
+      }
+
+      footer {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-tertiary);
+        font-size: 0.875rem;
+        border-top: 1px solid var(--outline);
+        margin-top: 4rem;
+      }
+
+      footer a {
+        color: var(--primary);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      footer a:hover {
+        color: var(--secondary);
+      }
+
+      .oauth-info {
+        background: var(--surface-variant);
+        padding: 1rem 1.5rem;
+        border-radius: 0.75rem;
+        border-left: 3px solid var(--primary);
+        margin-top: 2rem;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+      }
+
+      .oauth-info a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+      }
+
+      .oauth-info a:hover {
+        color: var(--secondary);
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        .logo {
+          font-size: 2.5rem;
+        }
+
+        .hero h1 {
+          font-size: 2rem;
+        }
+
+        .hero p {
+          font-size: 1rem;
+        }
+
+        .features {
+          grid-template-columns: 1fr;
+        }
+
+        .container {
+          padding: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <header>
+        <div class="logo">Lazurite</div>
+        <p class="tagline">Coming Soon</p>
+      </header>
+
+      <main>
+        <div class="hero">
+          <div class="status-badge">
+            <span class="status-dot"></span>
+            <span>In Active Development</span>
+          </div>
+
+          <h1>A better BlueSky client</h1>
+          <p>
+            Lazurite is a cross-platform mobile and desktop client for Bluesky, with a mobile-first design for Android
+            and iOS, with desktop support for a seamless experience.
+          </p>
+        </div>
+
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">
+              <img src="static/palette.svg" alt="Palette icon" />
+            </div>
+            <h3>Material You Design</h3>
+            <p>Beautiful IBM Oxocarbon-inspired theme with dynamic color adaptation and smooth animations.</p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">
+              <img src="static/message.svg" alt="Message icon" />
+            </div>
+            <h3>Full-Featured</h3>
+            <p>Timeline, threads, profiles, notifications, search, direct messages, and smart folders.</p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">
+              <img src="static/offline.svg" alt="Offline icon" />
+            </div>
+            <h3>Offline-First</h3>
+            <p>Smart caching with Drift database for lightning-fast performance and offline compose.</p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">
+              <img src="static/folder.svg" alt="Folder icon" />
+            </div>
+            <h3>Smart Folders</h3>
+            <p>Create custom local-only feeds with powerful filtering and organization tools.</p>
+          </div>
+        </div>
+
+        <div class="tech-stack">
+          <h2>Built with...</h2>
+          <div class="tech-list">
+            <span class="tech-tag">Flutter</span>
+            <span class="tech-tag">Dart</span>
+            <span class="tech-tag">Material 3</span>
+            <span class="tech-tag">AT Protocol</span>
+          </div>
+        </div>
+
+        <div class="oauth-info">
+          Follow development updates on Bluesky:
+          <a href="https://bsky.app/profile/desertthunder.dev" target="_blank" rel="noopener noreferrer"
+            >@desertthunder.dev</a
+          >
+        </div>
+      </main>
+    </div>
+
+    <footer>
+      <p>
+        Built with ⚡️ by
+        <a href="https://desertthunder.dev" target="_blank">Owais</a>
+        at
+        <a href="https://stormlightlabs.org" target="_blank">Stormlight Labs</a>
+        &middot; Powered by the <a href="https://atproto.com" target="_blank">AT Protocol</a>
+      </p>
+    </footer>
+  </body>
+</html>
