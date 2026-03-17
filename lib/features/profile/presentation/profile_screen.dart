@@ -10,9 +10,10 @@ import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, this.actor});
+  const ProfileScreen({super.key, this.actor, this.showBackButton = false});
 
   final String? actor;
+  final bool showBackButton;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -97,15 +98,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       stretch: true,
                       title: innerBoxIsScrolled ? Text(profile?.displayName ?? profile?.handle ?? 'Profile') : null,
                       flexibleSpace: FlexibleSpaceBar(background: _buildBanner(context, profile)),
-                      leading: IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () => context.canPop() ? context.pop() : context.go('/'),
-                      ),
+                      leading: widget.showBackButton
+                          ? IconButton(
+                              icon: const Icon(Icons.arrow_back),
+                              onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
+                            )
+                          : null,
                       actions: [
-                        IconButton(
-                          icon: const Icon(Icons.settings_outlined),
-                          onPressed: () => context.push('/settings'),
-                        ),
+                        IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => context.go('/settings')),
                       ],
                     ),
                     SliverToBoxAdapter(

@@ -1,5 +1,7 @@
+import 'package:atproto_core/atproto_core.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -258,7 +260,18 @@ void main() {
       build: () =>
           FeedPreferencesCubit(feedRepository: mockFeedRepository, database: database, accountDid: 'did:plc:test'),
       seed: () => FeedPreferencesState.loaded(feeds: [createTestFeed(id: 'feed-1', pinned: true)]),
-      setUp: () {
+      setUp: () async {
+        await database.replaceSavedFeeds('did:plc:test', [
+          SavedFeedsCompanion(
+            id: const Value('feed-1'),
+            accountDid: const Value('did:plc:test'),
+            type: const Value('{"\$type":"app.bsky.actor.defs#savedFeedTypeKnownValue","data":"feed"}'),
+            value: const Value('at://did:plc:test/app.bsky.feed.generator/test'),
+            pinned: const Value(false),
+            sortOrder: const Value(0),
+            updatedAt: Value(DateTime.now()),
+          ),
+        ]);
         when(() => mockFeedRepository.getPreferences()).thenThrow(Exception('API error'));
       },
       act: (cubit) => cubit.pinFeed('feed-1'),
@@ -266,8 +279,25 @@ void main() {
         isA<FeedPreferencesState>().having((s) => s.status, 'status', FeedPreferencesStatus.saving),
         isA<FeedPreferencesState>()
             .having((s) => s.status, 'status', FeedPreferencesStatus.saveError)
+            .having((s) => s.feeds.first.pinned, 'pinned', true)
             .having((s) => s.message, 'message', isNotNull),
       ],
+      verify: (_) async {
+        final cached = await database.getSavedFeeds('did:plc:test');
+        expect(cached.single.pinned, isFalse);
+      },
+    );
+
+    blocTest<FeedPreferencesCubit, FeedPreferencesState>(
+      'addFeed ignores duplicate feed values',
+      build: () =>
+          FeedPreferencesCubit(feedRepository: mockFeedRepository, database: database, accountDid: 'did:plc:test'),
+      seed: () => FeedPreferencesState.loaded(feeds: [createTestFeed(id: 'feed-1', pinned: true)]),
+      act: (cubit) => cubit.addFeed(
+        type: const SavedFeedType.knownValue(data: KnownSavedFeedType.feed),
+        value: 'at://did:plc:test/app.bsky.feed.generator/test',
+      ),
+      expect: () => [],
     );
 
     blocTest<FeedPreferencesCubit, FeedPreferencesState>(
@@ -276,6 +306,7 @@ void main() {
           FeedPreferencesCubit(feedRepository: mockFeedRepository, database: database, accountDid: 'did:plc:test'),
       seed: () => FeedPreferencesState.saveError(
         feeds: [createTestFeed(id: 'feed-1', pinned: true)],
+        generatorViews: const [],
         message: 'Error',
         previousState: FeedPreferencesState.loaded(feeds: [createTestFeed(id: 'feed-1', pinned: false)]),
       ),
@@ -322,6 +353,24 @@ void main() {
 
       expect(copied.status, FeedPreferencesStatus.saving);
       expect(copied.feeds.length, 1);
+    });
+
+    test('displayNameFor prefers hydrated generator metadata', () {
+      final state = FeedPreferencesState.loaded(
+        feeds: [createTestFeed(id: '1')],
+        generatorViews: [
+          GeneratorView(
+            uri: const AtUri('at://did:plc:test/app.bsky.feed.generator/test'),
+            cid: 'cid-1',
+            creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+            did: 'did:plc:test',
+            displayName: 'What\'s Hot',
+            indexedAt: DateTime.utc(2026, 3, 16),
+          ),
+        ],
+      );
+
+      expect(state.displayNameFor(state.feeds.single), 'What\'s Hot');
     });
   });
 }

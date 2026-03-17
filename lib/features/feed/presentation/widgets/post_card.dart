@@ -341,7 +341,7 @@ class PostCard extends StatelessWidget {
           onTap: () {
             final router = GoRouter.maybeOf(context);
             if (router != null) {
-              router.push('/profile?actor=${Uri.encodeQueryComponent(quoted.author.did)}');
+              router.push('/profile/view?actor=${Uri.encodeQueryComponent(quoted.author.did)}');
             }
           },
           borderRadius: BorderRadius.circular(16),

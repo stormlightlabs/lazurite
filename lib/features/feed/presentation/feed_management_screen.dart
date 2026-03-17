@@ -1,4 +1,3 @@
-import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
@@ -116,15 +115,13 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
       },
       itemBuilder: (context, index) {
         final feed = pinnedFeeds[index];
-        final isTimeline =
-            feed.type is SavedFeedTypeKnownValue &&
-            (feed.type as SavedFeedTypeKnownValue).data == KnownSavedFeedType.timeline;
+        final isTimeline = state.isTimeline(feed);
 
         return ListTile(
           key: ValueKey(feed.id),
           leading: isTimeline ? _buildTimelineIcon(context) : _buildFeedIcon(context, feed.value),
-          title: Text(isTimeline ? 'Following' : _getFeedDisplayName(feed.value)),
-          subtitle: Text(isTimeline ? 'Timeline' : 'Custom Feed'),
+          title: Text(state.displayNameFor(feed)),
+          subtitle: Text(state.subtitleFor(feed)),
           trailing: ReorderableDragStartListener(index: index, child: const Icon(Icons.drag_handle)),
         );
       },
@@ -156,14 +153,12 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
   }
 
   Widget _buildPinnedFeedItem(BuildContext context, SavedFeed feed, FeedPreferencesState state) {
-    final isTimeline =
-        feed.type is SavedFeedTypeKnownValue &&
-        (feed.type as SavedFeedTypeKnownValue).data == KnownSavedFeedType.timeline;
+    final isTimeline = state.isTimeline(feed);
 
     return ListTile(
       leading: isTimeline ? _buildTimelineIcon(context) : _buildFeedIcon(context, feed.value),
-      title: Text(isTimeline ? 'Following' : _getFeedDisplayName(feed.value)),
-      subtitle: Text(isTimeline ? 'Timeline' : 'Custom Feed'),
+      title: Text(state.displayNameFor(feed)),
+      subtitle: Text(state.subtitleFor(feed)),
       trailing: IconButton(
         icon: const Icon(Icons.check_circle),
         color: Theme.of(context).colorScheme.primary,
@@ -173,10 +168,13 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
   }
 
   Widget _buildSavedFeedItem(BuildContext context, SavedFeed feed) {
+    final state = context.watch<FeedPreferencesCubit>().state;
+    final description = state.descriptionFor(feed);
+
     return ListTile(
       leading: _buildFeedIcon(context, feed.value),
-      title: Text(_getFeedDisplayName(feed.value)),
-      subtitle: const Text('Custom Feed'),
+      title: Text(state.displayNameFor(feed)),
+      subtitle: Text(description ?? state.subtitleFor(feed)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -331,15 +329,6 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
             )
           : const Icon(Icons.rss_feed, color: Colors.white),
     );
-  }
-
-  String _getFeedDisplayName(String feedUri) {
-    try {
-      final uri = AtUri.parse(feedUri);
-      return uri.rkey;
-    } catch (_) {
-      return feedUri.split('/').lastOrNull ?? feedUri;
-    }
   }
 
   void _confirmRemoveFeed(BuildContext context, String feedId) {

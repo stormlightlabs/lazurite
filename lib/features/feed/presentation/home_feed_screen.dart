@@ -17,7 +17,7 @@ class HomeFeedScreen extends StatefulWidget {
 
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
   late final PageController _pageController;
-  int _currentTabIndex = 0;
+  String? _selectedFeedId;
 
   @override
   void initState() {
@@ -35,27 +35,75 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   Widget build(BuildContext context) {
     return BlocBuilder<FeedPreferencesCubit, FeedPreferencesState>(
       builder: (context, prefsState) {
+        if (prefsState.status == FeedPreferencesStatus.initial || prefsState.status == FeedPreferencesStatus.loading) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        if (prefsState.status == FeedPreferencesStatus.error) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Home')),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Failed to load feeds', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Text(prefsState.message ?? 'Unknown error', textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () => context.read<FeedPreferencesCubit>().loadPreferences(),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         final pinnedFeeds = prefsState.pinnedFeeds;
 
         if (pinnedFeeds.isEmpty) {
           return Scaffold(
             appBar: AppBar(title: const Text('Home')),
-            body: const Center(child: Text('No feeds pinned. Add feeds from settings.')),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('No feeds pinned', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pin a timeline or custom feed to build your home tabs.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton(onPressed: () => context.push('/feeds'), child: const Text('Manage Feeds')),
+                  ],
+                ),
+              ),
+            ),
           );
         }
+
+        final currentTabIndex = _selectedIndexFor(pinnedFeeds);
+        _syncSelectedFeed(pinnedFeeds, currentTabIndex);
 
         return Scaffold(
           appBar: AppBar(
             title: const Text('Home'),
-            actions: [IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => context.push('/feeds'))],
+            actions: [
+              IconButton(icon: const Icon(Icons.dynamic_feed_outlined), onPressed: () => context.push('/feeds')),
+            ],
           ),
           body: Column(
             children: [
-              _buildTabBar(context, pinnedFeeds),
+              _buildTabBar(context, pinnedFeeds, prefsState, currentTabIndex),
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
-                  onPageChanged: (index) => setState(() => _currentTabIndex = index),
+                  onPageChanged: (index) => setState(() => _selectedFeedId = pinnedFeeds[index].id),
                   itemCount: pinnedFeeds.length,
                   itemBuilder: (context, index) =>
                       _FeedListView(feed: pinnedFeeds[index], key: ValueKey(pinnedFeeds[index].id)),
@@ -68,7 +116,41 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     );
   }
 
-  Widget _buildTabBar(BuildContext context, List<SavedFeed> feeds) {
+  void _syncSelectedFeed(List<SavedFeed> feeds, int currentTabIndex) {
+    final selectedFeedId = feeds[currentTabIndex].id;
+    if (_selectedFeedId != selectedFeedId) {
+      _selectedFeedId = selectedFeedId;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_pageController.hasClients) {
+        return;
+      }
+
+      final roundedPage = _pageController.page?.round();
+      if (roundedPage == currentTabIndex) {
+        return;
+      }
+
+      _pageController.jumpToPage(currentTabIndex);
+    });
+  }
+
+  int _selectedIndexFor(List<SavedFeed> feeds) {
+    if (feeds.isEmpty) {
+      return 0;
+    }
+
+    final index = feeds.indexWhere((feed) => feed.id == _selectedFeedId);
+    return index >= 0 ? index : 0;
+  }
+
+  Widget _buildTabBar(
+    BuildContext context,
+    List<SavedFeed> feeds,
+    FeedPreferencesState prefsState,
+    int currentTabIndex,
+  ) {
     return Container(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
@@ -79,7 +161,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           children: feeds.asMap().entries.map((entry) {
             final index = entry.key;
             final feed = entry.value;
-            final isSelected = _currentTabIndex == index;
+            final isSelected = currentTabIndex == index;
 
             return GestureDetector(
               onTap: () {
@@ -88,7 +170,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
                 );
-                setState(() => _currentTabIndex = index);
+                setState(() => _selectedFeedId = feed.id);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -101,7 +183,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   ),
                 ),
                 child: Text(
-                  _getFeedName(feed),
+                  prefsState.displayNameFor(feed),
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     color: isSelected
@@ -115,16 +197,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         ),
       ),
     );
-  }
-
-  String _getFeedName(SavedFeed feed) {
-    if (feed.type is SavedFeedTypeKnownValue) {
-      final knownType = (feed.type as SavedFeedTypeKnownValue).data;
-      if (knownType == KnownSavedFeedType.timeline) {
-        return 'Following';
-      }
-    }
-    return feed.value.split('/').lastOrNull ?? 'Feed';
   }
 }
 

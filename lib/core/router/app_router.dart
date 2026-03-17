@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
@@ -14,8 +15,13 @@ class AppRouter {
   AppRouter({required this.authBloc, this.navigatorObserver});
   final AuthBloc authBloc;
   final NavigatorObserver? navigatorObserver;
+  final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+  final GlobalKey<NavigatorState> _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'home');
+  final GlobalKey<NavigatorState> _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
+  final GlobalKey<NavigatorState> _settingsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'settings');
 
   GoRouter get router => GoRouter(
+    navigatorKey: _rootNavigatorKey,
     refreshListenable: GoRouterRefreshStream(authBloc.stream),
     observers: navigatorObserver != null ? [navigatorObserver!] : null,
     redirect: (context, state) {
@@ -33,15 +39,48 @@ class AppRouter {
       return null;
     },
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const HomeFeedScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(
-        path: '/profile',
-        builder: (context, state) => ProfileScreen(actor: state.uri.queryParameters['actor']),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            navigatorKey: _homeNavigatorKey,
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (context, state) => const HomeFeedScreen(),
+                routes: [GoRoute(path: 'feeds', builder: (context, state) => const FeedManagementScreen())],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _profileNavigatorKey,
+            routes: [
+              GoRoute(
+                path: '/profile',
+                builder: (context, state) => const ProfileScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'view',
+                    builder: (context, state) =>
+                        ProfileScreen(actor: state.uri.queryParameters['actor'], showBackButton: true),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _settingsNavigatorKey,
+            routes: [
+              GoRoute(
+                path: '/settings',
+                builder: (context, state) => const SettingsScreen(),
+                routes: [GoRoute(path: 'logs', builder: (context, state) => const LogsScreen())],
+              ),
+            ],
+          ),
+        ],
       ),
-      GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
-      GoRoute(path: '/logs', builder: (context, state) => const LogsScreen()),
-      GoRoute(path: '/feeds', builder: (context, state) => const FeedManagementScreen()),
     ],
   );
 }

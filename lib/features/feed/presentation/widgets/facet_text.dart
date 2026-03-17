@@ -200,7 +200,7 @@ void _openProfile(BuildContext context, String actor) {
     return;
   }
 
-  router.push('/profile?actor=${Uri.encodeQueryComponent(actor)}');
+  router.push('/profile/view?actor=${Uri.encodeQueryComponent(actor)}');
 }
 
 Uri _searchUri(String tag) => Uri.https('bsky.app', '/search', {'q': '#$tag'});

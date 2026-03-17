@@ -1,638 +1,704 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Messages - Lazurite</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    .messages-container {
-      padding-bottom: 88px;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Messages - Lazurite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
+      rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .messages-container {
+        padding-bottom: 88px;
+      }
 
-    /* Tabs */
-    .msg-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      background-color: var(--bg);
-    }
+      /* Tabs */
+      .msg-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        background-color: var(--bg);
+      }
 
-    .msg-tab {
-      flex: 1;
-      padding: 14px;
-      text-align: center;
-      font-weight: 600;
-      font-size: 15px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s ease;
-      background: none;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-    }
+      .msg-tab {
+        flex: 1;
+        padding: 14px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+      }
 
-    .msg-tab:hover {
-      background-color: var(--surface);
-      color: var(--text-primary);
-    }
+      .msg-tab:hover {
+        background-color: var(--surface);
+        color: var(--text-primary);
+      }
 
-    .msg-tab.active {
-      color: var(--text-primary);
-      border-bottom-color: var(--accent-primary);
-    }
+      .msg-tab.active {
+        color: var(--text-primary);
+        border-bottom-color: var(--accent-primary);
+      }
 
-    .msg-tab-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 18px;
-      height: 18px;
-      padding: 0 5px;
-      border-radius: 9px;
-      background-color: var(--accent-error);
-      color: white;
-      font-size: 10px;
-      font-weight: 700;
-      margin-left: 6px;
-    }
+      .msg-tab-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 9px;
+        background-color: var(--accent-error);
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        margin-left: 6px;
+      }
 
-    /* Conversation Item */
-    .convo-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      position: relative;
-    }
+      /* Conversation Item */
+      .convo-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        position: relative;
+      }
 
-    .convo-item:hover {
-      background-color: var(--surface);
-    }
+      .convo-item:hover {
+        background-color: var(--surface);
+      }
 
-    .convo-item.unread {
-      background-color: var(--surface);
-    }
+      .convo-item.unread {
+        background-color: var(--surface);
+      }
 
-    .convo-avatar {
-      position: relative;
-      flex-shrink: 0;
-    }
+      .convo-avatar {
+        position: relative;
+        flex-shrink: 0;
+      }
 
-    .convo-avatar .avatar {
-      width: 48px;
-      height: 48px;
-    }
+      .convo-avatar .avatar {
+        width: 48px;
+        height: 48px;
+      }
 
-    .convo-unread-dot {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background-color: var(--accent-primary);
-      border: 2px solid var(--bg);
-    }
+      .convo-unread-dot {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--accent-primary);
+        border: 2px solid var(--bg);
+      }
 
-    .convo-info {
-      flex: 1;
-      min-width: 0;
-    }
+      .convo-info {
+        flex: 1;
+        min-width: 0;
+      }
 
-    .convo-header {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 2px;
-    }
+      .convo-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 2px;
+      }
 
-    .convo-name {
-      font-weight: 600;
-      font-size: 15px;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+      .convo-name {
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-    .convo-time {
-      font-size: 12px;
-      color: var(--text-muted);
-      flex-shrink: 0;
-    }
+      .convo-time {
+        font-size: 12px;
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
 
-    .convo-last-message {
-      font-size: 14px;
-      color: var(--text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+      .convo-last-message {
+        font-size: 14px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-    .convo-last-message.unread {
-      color: var(--text-primary);
-      font-weight: 500;
-    }
+      .convo-last-message.unread {
+        color: var(--text-primary);
+        font-weight: 500;
+      }
 
-    .convo-muted-icon {
-      width: 14px;
-      height: 14px;
-      color: var(--text-muted);
-      flex-shrink: 0;
-    }
+      .convo-muted-icon {
+        width: 14px;
+        height: 14px;
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
 
-    /* New Message FAB */
-    .fab-new-message {
-      position: fixed;
-      bottom: 100px;
-      right: calc(50% - 207px + 16px);
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background-color: var(--accent-primary);
-      color: white;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      transition: all 0.2s ease;
-      z-index: 50;
-    }
+      /* New Message FAB */
+      .fab-new-message {
+        position: fixed;
+        bottom: 100px;
+        right: calc(50% - 207px + 16px);
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background-color: var(--accent-primary);
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+        z-index: 50;
+      }
 
-    .fab-new-message:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-    }
+      .fab-new-message:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+      }
 
-    .fab-new-message svg {
-      width: 24px;
-      height: 24px;
-    }
+      .fab-new-message svg {
+        width: 24px;
+        height: 24px;
+      }
 
-    /* Message Thread View */
-    .thread-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      background-color: var(--bg);
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
+      /* Message Thread View */
+      .thread-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        background-color: var(--bg);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
 
-    .thread-back {
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-    }
+      .thread-back {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+      }
 
-    .thread-back svg {
-      width: 24px;
-      height: 24px;
-    }
+      .thread-back svg {
+        width: 24px;
+        height: 24px;
+      }
 
-    .thread-info {
-      flex: 1;
-    }
+      .thread-info {
+        flex: 1;
+      }
 
-    .thread-name {
-      font-weight: 600;
-      font-size: 16px;
-      color: var(--text-primary);
-    }
+      .thread-name {
+        font-weight: 600;
+        font-size: 16px;
+        color: var(--text-primary);
+      }
 
-    .thread-handle {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
+      .thread-handle {
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
 
-    .thread-overflow {
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 8px;
-    }
+      .thread-overflow {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 8px;
+      }
 
-    .thread-overflow svg {
-      width: 20px;
-      height: 20px;
-    }
+      .thread-overflow svg {
+        width: 20px;
+        height: 20px;
+      }
 
-    /* Chat Bubbles */
-    .chat-area {
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding-bottom: 80px;
-    }
+      /* Chat Bubbles */
+      .chat-area {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-bottom: 80px;
+      }
 
-    .chat-bubble-row {
-      display: flex;
-      gap: 8px;
-      max-width: 80%;
-    }
+      .chat-bubble-row {
+        display: flex;
+        gap: 8px;
+        max-width: 80%;
+      }
 
-    .chat-bubble-row.sent {
-      align-self: flex-end;
-      flex-direction: row-reverse;
-    }
+      .chat-bubble-row.sent {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+      }
 
-    .chat-bubble-row.received {
-      align-self: flex-start;
-    }
+      .chat-bubble-row.received {
+        align-self: flex-start;
+      }
 
-    .chat-bubble {
-      padding: 10px 14px;
-      border-radius: 18px;
-      font-size: 15px;
-      line-height: 1.4;
-      position: relative;
-    }
+      .chat-bubble {
+        padding: 10px 14px;
+        border-radius: 18px;
+        font-size: 15px;
+        line-height: 1.4;
+        position: relative;
+      }
 
-    .chat-bubble.sent {
-      background-color: var(--accent-primary);
-      color: white;
-      border-bottom-right-radius: 4px;
-    }
+      .chat-bubble.sent {
+        background-color: var(--accent-primary);
+        color: white;
+        border-bottom-right-radius: 4px;
+      }
 
-    .chat-bubble.received {
-      background-color: var(--surface);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      border-bottom-left-radius: 4px;
-    }
+      .chat-bubble.received {
+        background-color: var(--surface);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+        border-bottom-left-radius: 4px;
+      }
 
-    .chat-time {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 4px;
-      padding: 0 4px;
-    }
+      .chat-time {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 4px;
+        padding: 0 4px;
+      }
 
-    .chat-time.sent {
-      text-align: right;
-    }
+      .chat-time.sent {
+        text-align: right;
+      }
 
-    .chat-date-divider {
-      text-align: center;
-      padding: 12px 0;
-      font-size: 12px;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
+      .chat-date-divider {
+        text-align: center;
+        padding: 12px 0;
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
 
-    /* Message Input */
-    .msg-input-bar {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 414px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 16px;
-      background-color: var(--bg);
-      border-top: 1px solid var(--border);
-      z-index: 100;
-    }
+      /* Message Input */
+      .msg-input-bar {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 414px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        background-color: var(--bg);
+        border-top: 1px solid var(--border);
+        z-index: 100;
+      }
 
-    .msg-input {
-      flex: 1;
-      padding: 10px 16px;
-      border: 1px solid var(--border);
-      border-radius: 9999px;
-      background-color: var(--surface);
-      color: var(--text-primary);
-      font-size: 15px;
-      font-family: var(--font-body);
-      outline: none;
-      transition: border-color 0.2s ease;
-    }
+      .msg-input {
+        flex: 1;
+        padding: 10px 16px;
+        border: 1px solid var(--border);
+        border-radius: 9999px;
+        background-color: var(--surface);
+        color: var(--text-primary);
+        font-size: 15px;
+        font-family: var(--font-body);
+        outline: none;
+        transition: border-color 0.2s ease;
+      }
 
-    .msg-input:focus {
-      border-color: var(--accent-primary);
-    }
+      .msg-input:focus {
+        border-color: var(--accent-primary);
+      }
 
-    .msg-input::placeholder {
-      color: var(--text-muted);
-    }
+      .msg-input::placeholder {
+        color: var(--text-muted);
+      }
 
-    .msg-send-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: none;
-      background-color: var(--accent-primary);
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.2s ease;
-      flex-shrink: 0;
-    }
+      .msg-send-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        background-color: var(--accent-primary);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease;
+        flex-shrink: 0;
+      }
 
-    .msg-send-btn:hover {
-      background-color: var(--accent-primary-hover);
-    }
+      .msg-send-btn:hover {
+        background-color: var(--accent-primary-hover);
+      }
 
-    .msg-send-btn svg {
-      width: 18px;
-      height: 18px;
-    }
+      .msg-send-btn svg {
+        width: 18px;
+        height: 18px;
+      }
 
-    /* Nav badge */
-    .nav-item {
-      position: relative;
-    }
+      /* Nav badge */
+      .nav-item {
+        position: relative;
+      }
 
-    .nav-item-badge {
-      position: absolute;
-      top: 2px;
-      right: 8px;
-      min-width: 18px;
-      height: 18px;
-      padding: 0 5px;
-      border-radius: 9px;
-      background-color: var(--accent-error);
-      color: white;
-      font-size: 10px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+      .nav-item-badge {
+        position: absolute;
+        top: 2px;
+        right: 8px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 9px;
+        background-color: var(--accent-error);
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-    /* View toggle */
-    .view-toggle { display: none; }
-    .view-toggle.active { display: block; }
-  </style>
-</head>
-<body>
-  <div class="mobile-container">
+      /* View toggle */
+      .view-toggle {
+        display: none;
+      }
+      .view-toggle.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mobile-container">
+      <!-- ==================== -->
+      <!-- CONVERSATION LIST VIEW -->
+      <!-- ==================== -->
+      <div class="view-toggle active" id="list-view">
+        <!-- Header -->
+        <header class="header">
+          <h1 class="header-title">Messages</h1>
+          <button class="header-action" onclick="toggleView()">Open Thread</button>
+        </header>
 
-    <!-- ==================== -->
-    <!-- CONVERSATION LIST VIEW -->
-    <!-- ==================== -->
-    <div class="view-toggle active" id="list-view">
+        <!-- Tabs -->
+        <div class="msg-tabs">
+          <button class="msg-tab active">Primary</button>
+          <button class="msg-tab">Requests <span class="msg-tab-badge">2</span></button>
+        </div>
 
-      <!-- Header -->
-      <header class="header">
-        <h1 class="header-title">Messages</h1>
-        <button class="header-action" onclick="toggleView()">Open Thread</button>
-      </header>
+        <div class="messages-container">
+          <!-- Unread conversation -->
+          <div class="convo-item unread">
+            <div class="convo-avatar">
+              <div class="avatar">AS</div>
+              <div class="convo-unread-dot"></div>
+            </div>
+            <div class="convo-info">
+              <div class="convo-header">
+                <span class="convo-name">Alice Smith</span>
+                <span class="convo-time">12m</span>
+              </div>
+              <div class="convo-last-message unread">
+                Hey! Did you see the new federation update? It's really exciting.
+              </div>
+            </div>
+          </div>
 
-      <!-- Tabs -->
-      <div class="msg-tabs">
-        <button class="msg-tab active">Primary</button>
-        <button class="msg-tab">Requests <span class="msg-tab-badge">2</span></button>
+          <!-- Unread conversation -->
+          <div class="convo-item unread">
+            <div class="convo-avatar">
+              <div class="avatar">BJ</div>
+              <div class="convo-unread-dot"></div>
+            </div>
+            <div class="convo-info">
+              <div class="convo-header">
+                <span class="convo-name">Bob Johnson</span>
+                <span class="convo-time">2h</span>
+              </div>
+              <div class="convo-last-message unread">Would love to collaborate on the AT Protocol project</div>
+            </div>
+          </div>
+
+          <!-- Read conversation -->
+          <div class="convo-item">
+            <div class="convo-avatar">
+              <div class="avatar">CW</div>
+            </div>
+            <div class="convo-info">
+              <div class="convo-header">
+                <span class="convo-name">Carol White</span>
+                <span class="convo-time">1d</span>
+              </div>
+              <div class="convo-last-message">Thanks for sharing that article! I'll check it out this weekend.</div>
+            </div>
+          </div>
+
+          <!-- Muted conversation -->
+          <div class="convo-item">
+            <div class="convo-avatar">
+              <div class="avatar">DM</div>
+            </div>
+            <div class="convo-info">
+              <div class="convo-header">
+                <span class="convo-name">David Miller</span>
+                <span class="convo-time">3d</span>
+              </div>
+              <div class="convo-last-message">Sounds good, let's catch up next week then!</div>
+            </div>
+            <svg
+              class="convo-muted-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M11 5L6 9H2v6h4l5 4V5z" />
+              <line x1="23" y1="9" x2="17" y2="15" />
+              <line x1="17" y1="9" x2="23" y2="15" />
+            </svg>
+          </div>
+
+          <!-- Old conversation -->
+          <div class="convo-item">
+            <div class="convo-avatar">
+              <div class="avatar">EL</div>
+            </div>
+            <div class="convo-info">
+              <div class="convo-header">
+                <span class="convo-name">Eva Lee</span>
+                <span class="convo-time">1w</span>
+              </div>
+              <div class="convo-last-message">Great chatting with you at the meetup!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- New Message FAB -->
+        <button class="fab-new-message" title="New message">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </svg>
+        </button>
+
+        <!-- Bottom Navigation -->
+        <nav class="nav-bar">
+          <a href="home.html" class="nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            <span>Home</span>
+          </a>
+
+          <a href="search.html" class="nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span>Search</span>
+          </a>
+
+          <a href="notifications.html" class="nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <span>Alerts</span>
+          </a>
+
+          <a href="messages.html" class="nav-item active">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span class="nav-item-badge">2</span>
+            <span>Chat</span>
+          </a>
+
+          <a href="profile.html" class="nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span>Profile</span>
+          </a>
+        </nav>
       </div>
 
-      <div class="messages-container">
-
-        <!-- Unread conversation -->
-        <div class="convo-item unread">
-          <div class="convo-avatar">
-            <div class="avatar">AS</div>
-            <div class="convo-unread-dot"></div>
+      <!-- ==================== -->
+      <!-- MESSAGE THREAD VIEW -->
+      <!-- ==================== -->
+      <div class="view-toggle" id="thread-view">
+        <!-- Thread Header -->
+        <div class="thread-header">
+          <button class="thread-back" onclick="toggleView()">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <div class="thread-info">
+            <div class="thread-name">Alice Smith</div>
+            <div class="thread-handle">@alice.bsky.social</div>
           </div>
-          <div class="convo-info">
-            <div class="convo-header">
-              <span class="convo-name">Alice Smith</span>
-              <span class="convo-time">12m</span>
-            </div>
-            <div class="convo-last-message unread">Hey! Did you see the new federation update? It's really exciting.</div>
-          </div>
+          <button class="thread-overflow">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="1" />
+              <circle cx="19" cy="12" r="1" />
+              <circle cx="5" cy="12" r="1" />
+            </svg>
+          </button>
         </div>
 
-        <!-- Unread conversation -->
-        <div class="convo-item unread">
-          <div class="convo-avatar">
-            <div class="avatar">BJ</div>
-            <div class="convo-unread-dot"></div>
+        <!-- Chat Area -->
+        <div class="chat-area">
+          <div class="chat-date-divider">Today</div>
+
+          <div class="chat-bubble-row received">
+            <div class="chat-bubble received">Hey! Did you see the new federation update? It's really exciting.</div>
           </div>
-          <div class="convo-info">
-            <div class="convo-header">
-              <span class="convo-name">Bob Johnson</span>
-              <span class="convo-time">2h</span>
+          <div class="chat-time">10:23 AM</div>
+
+          <div class="chat-bubble-row sent">
+            <div class="chat-bubble sent">
+              Yes! I was just reading through the announcement. The self-hosting guide looks much improved.
             </div>
-            <div class="convo-last-message unread">Would love to collaborate on the AT Protocol project</div>
           </div>
+          <div class="chat-time sent">10:25 AM</div>
+
+          <div class="chat-bubble-row received">
+            <div class="chat-bubble received">
+              Right? I'm thinking of setting up my own PDS this weekend. Want to try it together?
+            </div>
+          </div>
+          <div class="chat-time">10:27 AM</div>
+
+          <div class="chat-bubble-row sent">
+            <div class="chat-bubble sent">
+              That sounds great! I've been meaning to do that for a while. Let me know when you're free.
+            </div>
+          </div>
+          <div class="chat-time sent">10:30 AM</div>
+
+          <div class="chat-bubble-row received">
+            <div class="chat-bubble received">
+              Saturday afternoon works for me. We could do a video call and set them up at the same time.
+            </div>
+          </div>
+          <div class="chat-time">10:32 AM</div>
         </div>
 
-        <!-- Read conversation -->
-        <div class="convo-item">
-          <div class="convo-avatar">
-            <div class="avatar">CW</div>
-          </div>
-          <div class="convo-info">
-            <div class="convo-header">
-              <span class="convo-name">Carol White</span>
-              <span class="convo-time">1d</span>
-            </div>
-            <div class="convo-last-message">Thanks for sharing that article! I'll check it out this weekend.</div>
-          </div>
+        <!-- Message Input -->
+        <div class="msg-input-bar">
+          <input class="msg-input" type="text" placeholder="Type a message..." />
+          <button class="msg-send-btn">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </button>
         </div>
-
-        <!-- Muted conversation -->
-        <div class="convo-item">
-          <div class="convo-avatar">
-            <div class="avatar">DM</div>
-          </div>
-          <div class="convo-info">
-            <div class="convo-header">
-              <span class="convo-name">David Miller</span>
-              <span class="convo-time">3d</span>
-            </div>
-            <div class="convo-last-message">Sounds good, let's catch up next week then!</div>
-          </div>
-          <svg class="convo-muted-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 5L6 9H2v6h4l5 4V5z"/>
-            <line x1="23" y1="9" x2="17" y2="15"/>
-            <line x1="17" y1="9" x2="23" y2="15"/>
-          </svg>
-        </div>
-
-        <!-- Old conversation -->
-        <div class="convo-item">
-          <div class="convo-avatar">
-            <div class="avatar">EL</div>
-          </div>
-          <div class="convo-info">
-            <div class="convo-header">
-              <span class="convo-name">Eva Lee</span>
-              <span class="convo-time">1w</span>
-            </div>
-            <div class="convo-last-message">Great chatting with you at the meetup!</div>
-          </div>
-        </div>
-
       </div>
-
-      <!-- New Message FAB -->
-      <button class="fab-new-message" title="New message">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13"/>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-        </svg>
-      </button>
-
-      <!-- Bottom Navigation -->
-      <nav class="nav-bar">
-        <a href="home.html" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-          <span>Home</span>
-        </a>
-
-        <a href="search.html" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <span>Search</span>
-        </a>
-
-        <a href="notifications.html" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-          <span>Alerts</span>
-        </a>
-
-        <a href="messages.html" class="nav-item active">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          <span class="nav-item-badge">2</span>
-          <span>Chat</span>
-        </a>
-
-        <a href="profile.html" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-          <span>Profile</span>
-        </a>
-      </nav>
     </div>
 
-    <!-- ==================== -->
-    <!-- MESSAGE THREAD VIEW -->
-    <!-- ==================== -->
-    <div class="view-toggle" id="thread-view">
+    <script>
+      if (localStorage.getItem("theme")) {
+        const t = localStorage.getItem("theme");
+        if (t !== "light") document.documentElement.setAttribute("data-theme", t);
+      }
 
-      <!-- Thread Header -->
-      <div class="thread-header">
-        <button class="thread-back" onclick="toggleView()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-        <div class="thread-info">
-          <div class="thread-name">Alice Smith</div>
-          <div class="thread-handle">@alice.bsky.social</div>
-        </div>
-        <button class="thread-overflow">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="1"/>
-            <circle cx="19" cy="12" r="1"/>
-            <circle cx="5" cy="12" r="1"/>
-          </svg>
-        </button>
-      </div>
+      function toggleView() {
+        document.getElementById("list-view").classList.toggle("active");
+        document.getElementById("thread-view").classList.toggle("active");
+      }
 
-      <!-- Chat Area -->
-      <div class="chat-area">
-
-        <div class="chat-date-divider">Today</div>
-
-        <div class="chat-bubble-row received">
-          <div class="chat-bubble received">Hey! Did you see the new federation update? It's really exciting.</div>
-        </div>
-        <div class="chat-time">10:23 AM</div>
-
-        <div class="chat-bubble-row sent">
-          <div class="chat-bubble sent">Yes! I was just reading through the announcement. The self-hosting guide looks much improved.</div>
-        </div>
-        <div class="chat-time sent">10:25 AM</div>
-
-        <div class="chat-bubble-row received">
-          <div class="chat-bubble received">Right? I'm thinking of setting up my own PDS this weekend. Want to try it together?</div>
-        </div>
-        <div class="chat-time">10:27 AM</div>
-
-        <div class="chat-bubble-row sent">
-          <div class="chat-bubble sent">That sounds great! I've been meaning to do that for a while. Let me know when you're free.</div>
-        </div>
-        <div class="chat-time sent">10:30 AM</div>
-
-        <div class="chat-bubble-row received">
-          <div class="chat-bubble received">Saturday afternoon works for me. We could do a video call and set them up at the same time.</div>
-        </div>
-        <div class="chat-time">10:32 AM</div>
-
-      </div>
-
-      <!-- Message Input -->
-      <div class="msg-input-bar">
-        <input class="msg-input" type="text" placeholder="Type a message...">
-        <button class="msg-send-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"/>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
-        </button>
-      </div>
-
-    </div>
-
-  </div>
-
-  <script>
-    if (localStorage.getItem('theme')) {
-      const t = localStorage.getItem('theme');
-      if (t !== 'light') document.documentElement.setAttribute('data-theme', t);
-    }
-
-    // Toggle between list and thread views for demo
-    function toggleView() {
-      document.getElementById('list-view').classList.toggle('active');
-      document.getElementById('thread-view').classList.toggle('active');
-    }
-
-    // Tab switching demo
-    document.querySelectorAll('.msg-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.msg-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+      document.querySelectorAll(".msg-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document.querySelectorAll(".msg-tab").forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+        });
       });
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
