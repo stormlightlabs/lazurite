@@ -6,12 +6,12 @@ import 'package:lazurite/core/database/tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Accounts, CachedProfiles, CachedPosts, Settings, SavedFeeds, SearchHistory])
+@DriftDatabase(tables: [Accounts, CachedProfiles, CachedPosts, Settings, SavedFeeds, SearchHistory, Drafts])
 class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -31,6 +31,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) {
         await migrator.createTable(searchHistory);
+      }
+      if (from < 5) {
+        await migrator.createTable(drafts);
       }
     },
   );
@@ -175,5 +178,40 @@ class AppDatabase extends _$AppDatabase {
         await deleteSearchHistoryEntry(entry.id);
       }
     }
+  }
+
+  Future<List<DraftEntry>> getDrafts(String accountDid) async {
+    return (select(drafts)
+          ..where((d) => d.accountDid.equals(accountDid))
+          ..orderBy([
+            (d) => OrderingTerm(expression: d.scheduledAt, mode: OrderingMode.desc),
+            (d) => OrderingTerm(expression: d.updatedAt, mode: OrderingMode.desc),
+          ]))
+        .get();
+  }
+
+  Future<DraftEntry?> getDraft(int id) async {
+    return (select(drafts)..where((d) => d.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<int> saveDraft(DraftsCompanion draft) async {
+    if (draft.id.present) {
+      await updateDraft(draft.id.value, draft);
+      return draft.id.value;
+    }
+    return into(drafts).insert(draft);
+  }
+
+  Future<int> updateDraft(int id, DraftsCompanion draft) async {
+    final query = update(drafts)..where((d) => d.id.equals(id));
+    return query.write(draft.copyWith(updatedAt: Value(DateTime.now())));
+  }
+
+  Future<int> deleteDraft(int id) async {
+    return (delete(drafts)..where((d) => d.id.equals(id))).go();
+  }
+
+  Future<int> deleteAllDrafts(String accountDid) async {
+    return (delete(drafts)..where((d) => d.accountDid.equals(accountDid))).go();
   }
 }

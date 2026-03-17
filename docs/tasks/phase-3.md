@@ -2,17 +2,21 @@
 
 ## M8 — Post Composition
 
-- [ ] Full-screen compose modal with text input, live grapheme counter (300 max), and submit button
-- [ ] `ComposeBloc` — events: `TextChanged`, `MediaAttached`, `MediaRemoved`, `AltTextUpdated`, `DraftSaved`, `DraftLoaded`, `PostScheduled`, `PostSubmitted`
-- [ ] Image attachment via `uploadBlob` — up to 4 images, alt text input per image
-- [ ] Live facet detection and preview via `bluesky_text` (mentions, links, hashtags)
-- [ ] Post creation via `com.atproto.repo.createRecord` with `app.bsky.feed.post` collection
-- [ ] Reply support — pass `parent` + `root` refs when composing from a post thread
-- [ ] Drift migration: add `drafts` table (id, account_did, text, reply_uri, embed_json, media_paths, created_at, updated_at, scheduled_at)
-- [ ] Draft save on network failure, explicit save, and back-navigation
-- [ ] Drafts list UI accessible from compose toolbar
-- [ ] Scheduled posts — date/time picker, background task via WorkManager / BGTaskScheduler
-- [ ] Floating action button on home screen to open compose modal
+- [x] Full-screen compose modal with text input, live grapheme counter (300 max), and submit button
+- [x] `ComposeBloc` — events: `TextChanged`, `MediaAttached`, `MediaRemoved`, `AltTextUpdated`, `VideoAttached`, `VideoRemoved`, `DraftSaved`, `DraftLoaded`, `PostScheduled`, `PostSubmitted`
+- [x] Image attachment via `uploadBlob` — up to 4 images, alt text input per image, file size (1 MB max) and MIME type (JPEG, PNG, WebP) validation
+- [x] Video attachment via `app.bsky.video.uploadVideo` — 1 per post (mutually exclusive with images), 100 MB max, MP4 only
+- [x] Video upload quota check via `getUploadLimits` before upload; show limit message if `canUpload` is false
+- [x] Video processing job polling via `getJobStatus` with progress indicator; handle `JOB_STATE_FAILED` with error display and retry
+- [x] Video embed via `app.bsky.embed.video` with alt text, aspectRatio, and optional captions
+- [x] Live facet detection and preview via `bluesky_text` (mentions, links, hashtags)
+- [x] Post creation via `com.atproto.repo.createRecord` with `app.bsky.feed.post` collection
+- [x] Reply support — pass `parent` + `root` refs when composing from a post thread
+- [x] Drift migration: add `drafts` table (id, account_did, text, reply_uri, embed_json, media_paths, created_at, updated_at, scheduled_at)
+- [x] Draft save on network failure, explicit save, and back-navigation
+- [x] Drafts list UI accessible from compose toolbar
+- [x] Scheduled posts — date/time picker, background task via WorkManager / BGTaskScheduler
+- [x] Floating action button on home screen to open compose modal
 
 ## M9 — Notifications
 

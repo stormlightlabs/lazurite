@@ -45,5 +45,15 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- WorkManager / BGTaskScheduler task identifiers for scheduled posts -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>lazurite.scheduled_post</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>processing</string>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>

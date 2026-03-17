@@ -2,9 +2,8 @@
 
 ## Post Composition
 
-Posts are created via `com.atproto.repo.createRecord` with collection
-`app.bsky.feed.post`. The compose screen is a full-screen modal opened from a
-floating action button on the home screen.
+Posts are created via `com.atproto.repo.createRecord` with collection `app.bsky.feed.post`.
+The compose screen is a full-screen modal opened from a floating action button on the home screen.
 
 ### Post Record Structure
 
@@ -19,8 +18,7 @@ floating action button on the home screen.
 
 ### Media Uploads
 
-Upload images via `com.atproto.repo.uploadBlob`. Returns a `blob` ref used in
-the embed object. No GIF support — images only.
+Upload images via `com.atproto.repo.uploadBlob`. Returns a `blob` ref used in the embed object.
 
 | Constraint     | Value                              |
 | -------------- | ---------------------------------- |
@@ -29,26 +27,57 @@ the embed object. No GIF support — images only.
 | Accepted types | JPEG, PNG, WebP                    |
 | Alt text       | Required UI field, optional in API |
 
-Embed type for images: `app.bsky.embed.images`. Each image entry has `image`
-(blob ref), `alt` (string), and optional `aspectRatio` (`width` / `height`).
+Embed type for images: `app.bsky.embed.images`.
+Each image entry has `image` (blob ref), `alt` (string), and optional `aspectRatio` (`width` / `height`).
+
+### Video Uploads
+
+Upload video via `app.bsky.video.uploadVideo` on the `video.bsky.app` service.
+Video processing is asynchronous — the endpoint returns a `JobStatus` with a `jobId`.
+Poll `app.bsky.video.getJobStatus` until `state` is `JOB_STATE_COMPLETED` (returns the final `blob` ref) or `JOB_STATE_FAILED`.
+
+Before uploading, call `app.bsky.video.getUploadLimits` to check the user's remaining daily quota (`canUpload`, `remainingDailyVideos`, `remainingDailyBytes`).
+If the user cannot upload, show the server-provided `message` or a fallback explaining the daily limit.
+
+| Constraint     | Value                                        |
+| -------------- | -------------------------------------------- |
+| Max videos     | 1 per post (mutually exclusive with images)  |
+| Max file size  | 100 MB                                       |
+| Accepted types | MP4                                          |
+| Alt text       | Optional UI field                            |
+| Captions       | Optional; `EmbedVideoCaption` with lang code |
+
+Embed type for video: `app.bsky.embed.video`. Fields:
+
+| Field          | Type                | Description                            |
+| -------------- | ------------------- | -------------------------------------- |
+| `video`        | blob                | Processed video blob from job status   |
+| `alt`          | string              | Accessibility description              |
+| `aspectRatio`  | object              | `width` / `height` integers            |
+| `captions`     | array               | Caption files with BCP-47 `lang` codes |
+| `presentation` | string              | `"default"` or `"gif"` playback hint   |
+
+The compose screen must show a progress indicator during video upload and processing.
+Disable the submit button until processing completes. If the job fails, display the error message from `JobStatus.error` and allow the user to retry or remove the video.
+
+A post embeds either images **or** a video, never both. When a video is attached, the image picker should be disabled (and vice versa).
+Switching media type should prompt the user to confirm replacing the existing attachment(s).
 
 ### Facet Detection
 
-Use **bluesky_text** to detect mentions, links, and hashtags in the post text
-and produce the `facets` array automatically before submission. The compose
-screen should render a live preview of detected facets with colour-coded
-highlights as the user types.
+Use **bluesky_text** to detect mentions, links, and hashtags in the post text and produce the `facets` array automatically before submission.
+The compose screen should render a live preview of detected facets with color-coded highlights as the user types.
 
 ### Grapheme Counter
 
-Display a live character counter showing remaining graphemes (300 max). Use
-Dart's `Characters` class for accurate grapheme cluster counting. Disable the
-submit button when the count exceeds 300 or the text is empty.
+Display a live character counter showing remaining graphemes (300 max).
+Use Dart's `Characters` class for accurate grapheme cluster counting.
+Disable the submit button when the count exceeds 300 or the text is empty.
 
 ### Drafts
 
-Persist unsent posts locally in a Drift `drafts` table. On network failure or
-explicit save, always store the draft. Drafts are account-scoped.
+Persist unsent posts locally in a Drift `drafts` table.
+On network failure or explicit save, always store the draft. Drafts are account-scoped.
 
 | Column        | Type     | Notes                                    |
 | ------------- | -------- | ---------------------------------------- |
@@ -66,18 +95,14 @@ Tapping a draft loads it back into the composer for editing / sending.
 
 ### Scheduled Posts
 
-Schedule posts for future publication using a local scheduler. Store the
-scheduled time alongside the draft. Use a `WorkManager` (Android) /
-`BGTaskScheduler` (iOS) background task to submit the post at the scheduled
-time. If the device is offline at the scheduled time, queue the post and retry
-when connectivity resumes.
+Schedule posts for future publication using a local scheduler.
+Store the scheduled time alongside the draft. Use a `WorkManager` (Android) / `BGTaskScheduler` (iOS) background task to submit the post at the scheduled time.
+If the device is offline at the scheduled time, queue the post and retry when connectivity resumes.
 
-Add a `scheduled_at` (nullable datetime) column to the `drafts` table. When
-non-null, the draft is treated as scheduled rather than a regular draft.
+Add a `scheduled_at` (nullable datetime) column to the `drafts` table.
+When non-null, the draft is treated as scheduled rather than a regular draft.
 
-Build a `ComposeBloc` with events: `TextChanged`, `MediaAttached`,
-`MediaRemoved`, `AltTextUpdated`, `DraftSaved`, `DraftLoaded`,
-`PostScheduled`, `PostSubmitted`.
+Build a `ComposeBloc` with events: `TextChanged`, `MediaAttached`, `MediaRemoved`, `AltTextUpdated`, `VideoAttached`, `VideoRemoved`, `DraftSaved`, `DraftLoaded`, `PostScheduled`, `PostSubmitted`.
 
 ## Notifications
 
@@ -108,24 +133,20 @@ No push notifications in this phase — polling only.
 
 ### Rendering
 
-Group notifications by day. Each notification row shows the author avatar, the
-reason icon, a summary line, and an optional post preview snippet. Tapping a
-notification navigates to the relevant post or profile.
+Group notifications by day. Each notification row shows the author avatar, the reason icon, a summary line, and an optional post preview snippet.
+Tapping a notification navigates to the relevant post or profile.
 
-Display an unread count badge on the Notifications nav bar item. Poll
-`getUnreadCount` on a 30-second interval when the app is foregrounded. Call
-`updateSeen` when the notifications screen is opened.
+Display an unread count badge on the Notifications nav bar item.
+Poll `getUnreadCount` on a 30-second interval when the app is foregrounded.
+Call `updateSeen` when the notifications screen is opened.
 
-Build a `NotificationBloc` with events: `NotificationsRequested`,
-`NotificationsRefreshed`, `NotificationsPageLoaded`, `NotificationsMarkedRead`.
+Build a `NotificationBloc` with events: `NotificationsRequested`, `NotificationsRefreshed`, `NotificationsPageLoaded`, `NotificationsMarkedRead`.
 
 ## Post & Profile Actions
 
-All post and profile interactions use the AT Protocol record model. Actions
-that create a relationship (like, repost, follow, block) write a record via
-`com.atproto.repo.createRecord` and undo by deleting via
-`com.atproto.repo.deleteRecord`. Muting is a server-side procedure call with
-no persistent record.
+All post and profile interactions use the AT Protocol record model.
+Actions that create a relationship (like, repost, follow, block) write a record via `com.atproto.repo.createRecord` and undo by deleting via `com.atproto.repo.deleteRecord`.
+Muting is a server-side procedure call with no persistent record.
 
 ### API
 
@@ -139,29 +160,26 @@ no persistent record.
 
 ### Like
 
-Collection: `app.bsky.feed.like`. Record contains a `subject` (RepoStrongRef
-with the post's AT-URI and CID) and `createdAt`.
+Collection: `app.bsky.feed.like`.
+Record contains a `subject` (RepoStrongRef with the post's AT-URI and CID) and `createdAt`.
 
-To unlike, extract the record key (rkey) from the `viewer.like` AT-URI and
-call `deleteRecord` with collection `app.bsky.feed.like` and that rkey.
+To unlike, extract the record key (rkey) from the `viewer.like` AT-URI and call `deleteRecord` with collection `app.bsky.feed.like` and that rkey.
 
-The `PostView.viewer.like` field is non-null when the current user has liked
-the post. Use this to drive the filled/outlined heart icon state.
+The `PostView.viewer.like` field is non-null when the current user has liked the post.
+Use this to drive the filled/outlined heart icon state.
 
 ### Repost
 
-Collection: `app.bsky.feed.repost`. Record structure is identical to like —
-`subject` (RepoStrongRef) + `createdAt`.
+Collection: `app.bsky.feed.repost`. Record structure is identical to like — `subject` (RepoStrongRef) + `createdAt`.
 
 To un-repost, extract the rkey from `viewer.repost` and delete the record.
 
-The `PostView.viewer.repost` field is non-null when the current user has
-reposted. Use this for the repost icon state.
+The `PostView.viewer.repost` field is non-null when the current user has reposted.
+Use this for the repost icon state.
 
 ### Follow
 
-Collection: `app.bsky.graph.follow`. Record contains `subject` (the target
-user's DID as a string) and `createdAt`.
+Collection: `app.bsky.graph.follow`. Record contains `subject` (the target user's DID as a string) and `createdAt`.
 
 To unfollow, extract the rkey from `viewer.following` and delete the record.
 
@@ -177,14 +195,12 @@ Mute and unmute are procedure calls (not record creation):
 - `app.bsky.graph.muteActor` — input: `{ actor: DID }`
 - `app.bsky.graph.unmuteActor` — input: `{ actor: DID }`
 
-Both return empty responses. The `viewer.muted` boolean on profiles reflects
-the current mute state. Muted accounts' posts are still fetched but should be
-visually de-emphasised or filtered in the UI based on user preference.
+Both return empty responses. The `viewer.muted` boolean on profiles reflects the current mute state.
+Muted accounts' posts are still fetched but should be visually de-emphasised or filtered in the UI based on user preference.
 
 ### Block
 
-Collection: `app.bsky.graph.block`. Record contains `subject` (the target
-user's DID) and `createdAt`.
+Collection: `app.bsky.graph.block`. Record contains `subject` (the target user's DID) and `createdAt`.
 
 To unblock, extract the rkey from `viewer.blocking` and delete the record.
 
@@ -216,26 +232,24 @@ Report reasons (from `com.atproto.moderation.defs`):
 | `reasonRude`       | Harassment or rude behaviour      |
 | `reasonOther`      | Other (requires text explanation) |
 
-The report dialog should present the reason picker and an optional free-text
-description field. Submitting returns a report ID for confirmation.
+The report dialog should present the reason picker and an optional free-text description field.
+Submitting returns a report ID for confirmation.
 
 ### Optimistic Updates
 
-All toggle actions (like, repost, follow, mute, block) should use optimistic
-UI updates:
+All toggle actions (like, repost, follow, mute, block) should use optimistic UI updates:
 
 1. Immediately update the local state (icon, count, button label).
 2. Fire the API call in the background.
 3. On success, reconcile with the server response (update the viewer URI).
 4. On failure, roll back the local state and show a snackbar error.
 
-Build a `PostActionCubit` that manages per-post action state (like, repost,
-save). It accepts the initial `ViewerState` from the post and exposes
+Build a `PostActionCubit` that manages per-post action state (like, repost, save).
+It accepts the initial `ViewerState` from the post and exposes
 toggleable methods.
 
-Build a `ProfileActionCubit` that manages per-profile action state (follow,
-mute, block). It accepts the initial `ViewerState` from the profile and
-exposes toggleable methods.
+Build a `ProfileActionCubit` that manages per-profile action state (follow, mute, block).
+It accepts the initial `ViewerState` from the profile and exposes toggleable methods.
 
 ### Post Action Bar
 
@@ -248,12 +262,10 @@ The post action bar appears below every post and contains four buttons:
 | Like   | heart  | Toggle like   | —                 |
 | Share  | share  | Share sheet   | —                 |
 
-The bookmark (save) icon is placed in the post overflow menu alongside
-"Report" and "Copy link".
+The bookmark (save) icon is placed in the post overflow menu alongside "Report" and "Copy link".
 
-Like and repost counts are displayed next to their respective icons. Counts
-update optimistically. The repost long-press opens a bottom sheet with
-"Repost" and "Quote Post" options.
+Like and repost counts are displayed next to their respective icons. Counts update optimistically.
+The repost long-press opens a bottom sheet with "Repost" and "Quote Post" options.
 
 ### Profile Action Buttons
 
@@ -266,16 +278,14 @@ The profile header shows a primary action button based on the relationship:
 | Blocked by them  | —            | No button      |
 | You blocked them | "Unblock"    | Delete block   |
 
-The profile overflow menu (three-dot icon) contains: Mute / Unmute, Block /
-Unblock, Report, Copy DID, Share profile.
+The profile overflow menu (three-dot icon) contains: Mute / Unmute, Block / Unblock, Report, Copy DID, Share profile.
 
 Mute and block actions should show a confirmation dialog before proceeding.
 
 ## Saved Posts
 
-Allow users to bookmark posts locally for later reading. Saved posts are stored
-only in Drift — nothing is written to the network. This is intentionally
-private and local-only.
+Allow users to bookmark posts locally for later reading. Saved posts are stored only in Drift — nothing is written to the network.
+This is intentionally private and local-only.
 
 ### Drift Table
 
@@ -291,10 +301,7 @@ Unique constraint on (`account_did`, `post_uri`).
 
 ### UI
 
-Add a "Save" action (bookmark icon) to the post action bar. Tapping toggles
-the saved state. Saved posts are viewable from a "Saved" section in the
-profile screen or settings.
+Add a "Save" action (bookmark icon) to the post action bar. Tapping toggles the saved state.
+Saved posts are viewable from a "Saved" section in the profile screen or settings.
 
-Build a `SavedPostsCubit` that reads/writes the `saved_posts` table and
-exposes a stream of saved post URIs for quick lookup (to show filled vs
-outlined bookmark icons in the feed).
+Build a `SavedPostsCubit` that reads/writes the `saved_posts` table and exposes a stream of saved post URIs for quick lookup (to show filled vs outlined bookmark icons in the feed).

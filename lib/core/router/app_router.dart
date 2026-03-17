@@ -2,9 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:bluesky/bluesky.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
+import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
+import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
+import 'package:lazurite/features/compose/presentation/compose_screen.dart';
 import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
@@ -44,6 +50,28 @@ class AppRouter {
     },
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/compose',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final args = state.extra as ComposeRouteArgs?;
+          return BlocProvider(
+            create: (_) => ComposeBloc(
+              composeRepository: ComposeRepository(bluesky: context.read<Bluesky>()),
+              database: context.read<AppDatabase>(),
+              accountDid: context.read<String>(),
+            ),
+            child: ComposeScreen(
+              replyParentUri: args?.replyParentUri,
+              replyParentCid: args?.replyParentCid,
+              replyRootUri: args?.replyRootUri,
+              replyRootCid: args?.replyRootCid,
+              replyAuthorHandle: args?.replyAuthorHandle,
+              draftId: args?.draftId,
+            ),
+          );
+        },
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/scheduler/post_scheduler.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
 import 'package:lazurite/core/logging/logging_navigator_observer.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
@@ -26,6 +27,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await log.initialize();
+  await PostScheduler.initialize();
   Bloc.observer = LoggingBlocObserver();
 
   final database = AppDatabase();
@@ -141,6 +143,9 @@ class _LazuriteAppState extends State<LazuriteApp> {
               ),
               RepositoryProvider.value(value: feedRepository),
               RepositoryProvider.value(value: searchRepository),
+              RepositoryProvider.value(value: bluesky),
+              RepositoryProvider.value(value: widget.database),
+              RepositoryProvider.value(value: accountDid),
             ],
             child: appShell,
           );

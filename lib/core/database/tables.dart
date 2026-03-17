@@ -74,3 +74,19 @@ class SearchHistory extends Table {
   DateTimeColumn get searchedAt => dateTime().withDefault(currentDateAndTime)();
   TextColumn get accountDid => text()();
 }
+
+@DataClassName('DraftEntry')
+class Drafts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get accountDid => text()();
+  TextColumn get content => text()();
+  TextColumn get replyUri => text().nullable()();
+  TextColumn get replyCid => text().nullable()();
+  TextColumn get rootUri => text().nullable()();
+  TextColumn get rootCid => text().nullable()();
+  TextColumn get embedJson => text().nullable()();
+  TextColumn get mediaPaths => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get scheduledAt => dateTime().nullable()();
+}
