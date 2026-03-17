@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
-import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
 import 'package:lazurite/core/logging/logging_navigator_observer.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/router/app_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
+import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
@@ -109,6 +110,7 @@ class LazuriteApp extends StatelessWidget {
                     FeedPreferencesCubit(feedRepository: feedRepository, database: database, accountDid: accountDid)
                       ..loadPreferences(),
               ),
+              BlocProvider(create: (_) => DevToolsCubit(atproto: bluesky.atproto)),
               RepositoryProvider.value(value: feedRepository),
             ],
             child: appShell,

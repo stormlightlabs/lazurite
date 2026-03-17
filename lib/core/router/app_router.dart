@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
+import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/logs/presentation/logs_screen.dart';
@@ -75,7 +76,10 @@ class AppRouter {
               GoRoute(
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
-                routes: [GoRoute(path: 'logs', builder: (context, state) => const LogsScreen())],
+                routes: [
+                  GoRoute(path: 'logs', builder: (context, state) => const LogsScreen()),
+                  GoRoute(path: 'devtools', builder: (context, state) => const DevToolsScreen()),
+                ],
               ),
             ],
           ),

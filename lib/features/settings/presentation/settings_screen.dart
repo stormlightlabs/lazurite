@@ -69,7 +69,12 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'About'),
-          _SettingsTile(icon: Icons.code_outlined, title: 'Dev Tools', subtitle: 'PDS Explorer', onTap: () {}),
+          _SettingsTile(
+            icon: Icons.code_outlined,
+            title: 'Dev Tools',
+            subtitle: 'PDS Explorer',
+            onTap: () => context.push('/settings/devtools'),
+          ),
           _SettingsTile(
             icon: Icons.description_outlined,
             title: 'Logs',

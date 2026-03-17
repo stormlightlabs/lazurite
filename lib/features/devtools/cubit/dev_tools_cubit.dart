@@ -1,0 +1,473 @@
+import 'dart:async';
+
+import 'package:atproto/atproto.dart';
+import 'package:atproto/com_atproto_identity_resolvehandle.dart';
+import 'package:atproto/com_atproto_repo_describerepo.dart';
+import 'package:atproto/com_atproto_repo_getrecord.dart';
+import 'package:atproto/com_atproto_repo_listrecords.dart';
+import 'package:atproto_core/atproto_core.dart';
+import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
+
+part 'dev_tools_state.dart';
+
+abstract interface class DevToolsRepository {
+  Future<IdentityResolveHandleOutput> resolveHandle({required String handle});
+
+  Future<RepoDescribeRepoOutput> describeRepo({required String repo});
+
+  Future<RepoListRecordsOutput> listRecords({
+    required String repo,
+    required String collection,
+    int? limit,
+    String? cursor,
+    bool? reverse,
+  });
+
+  Future<RepoGetRecordOutput> getRecord({required String repo, required String collection, required String rkey});
+}
+
+final class AtprotoDevToolsRepository implements DevToolsRepository {
+  const AtprotoDevToolsRepository({required ATProto atproto}) : _atproto = atproto;
+
+  final ATProto _atproto;
+
+  @override
+  Future<IdentityResolveHandleOutput> resolveHandle({required String handle}) async {
+    final response = await _atproto.identity.resolveHandle(handle: handle);
+    return response.data;
+  }
+
+  @override
+  Future<RepoDescribeRepoOutput> describeRepo({required String repo}) async {
+    final response = await _atproto.repo.describeRepo(repo: repo);
+    return response.data;
+  }
+
+  @override
+  Future<RepoListRecordsOutput> listRecords({
+    required String repo,
+    required String collection,
+    int? limit,
+    String? cursor,
+    bool? reverse,
+  }) async {
+    final response = await _atproto.repo.listRecords(
+      repo: repo,
+      collection: collection,
+      limit: limit,
+      cursor: cursor,
+      reverse: reverse,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<RepoGetRecordOutput> getRecord({
+    required String repo,
+    required String collection,
+    required String rkey,
+  }) async {
+    final response = await _atproto.repo.getRecord(repo: repo, collection: collection, rkey: rkey);
+    return response.data;
+  }
+}
+
+class DevToolsCubit extends Cubit<DevToolsState> {
+  DevToolsCubit({ATProto? atproto, DevToolsRepository? repository})
+    : assert(atproto != null || repository != null, 'Provide either atproto or repository'),
+      _repository = repository ?? AtprotoDevToolsRepository(atproto: atproto!),
+      super(const DevToolsState());
+
+  static const _pageSize = 50;
+  static const _countPageSize = 100;
+
+  final DevToolsRepository _repository;
+  int _resolveRequestId = 0;
+  int _collectionRequestId = 0;
+  int _recordRequestId = 0;
+
+  Future<void> resolve(String input) async {
+    final query = input.trim();
+    if (query.isEmpty) {
+      clearInput();
+      return;
+    }
+
+    final resolveRequestId = _beginResolveRequest();
+    emit(const DevToolsState(status: DevToolsStatus.loading));
+
+    try {
+      if (query.startsWith('at://')) {
+        await _resolveAtUri(query, resolveRequestId);
+        return;
+      }
+
+      final identity = await _resolveIdentity(query);
+      if (!_isActiveResolveRequest(resolveRequestId)) {
+        return;
+      }
+
+      final repo = await _repository.describeRepo(repo: identity.did);
+      if (!_isActiveResolveRequest(resolveRequestId)) {
+        return;
+      }
+
+      emit(_buildRepoState(repo: repo, did: identity.did, handle: identity.handle, status: DevToolsStatus.repoLoaded));
+      unawaited(_loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did));
+    } catch (error, stackTrace) {
+      log.e('DevToolsCubit: Failed to resolve repo', error: error, stackTrace: stackTrace);
+      if (_isActiveResolveRequest(resolveRequestId)) {
+        emit(state.copyWith(status: DevToolsStatus.error, errorMessage: _formatError(error)));
+      }
+    }
+  }
+
+  Future<void> loadCollection(String collection) async {
+    if (state.did == null) return;
+
+    final collectionRequestId = _beginCollectionRequest();
+    emit(state.copyWith(status: DevToolsStatus.loading, errorMessage: null));
+
+    try {
+      final response = await _repository.listRecords(repo: state.did!, collection: collection, limit: _pageSize);
+      if (!_isActiveCollectionRequest(collectionRequestId)) {
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          status: DevToolsStatus.collectionLoaded,
+          selectedCollection: collection,
+          records: response.records,
+          recordsCursor: response.cursor,
+          selectedRecord: null,
+          errorMessage: null,
+        ),
+      );
+    } catch (error, stackTrace) {
+      log.e('DevToolsCubit: Failed to load collection', error: error, stackTrace: stackTrace);
+      if (_isActiveCollectionRequest(collectionRequestId)) {
+        emit(state.copyWith(status: DevToolsStatus.error, errorMessage: _formatError(error)));
+      }
+    }
+  }
+
+  Future<void> loadMoreRecords() async {
+    if (state.did == null || state.selectedCollection == null || state.recordsCursor == null) return;
+
+    emit(state.copyWith(status: DevToolsStatus.loadingMore, errorMessage: null));
+
+    final activeCollectionRequestId = _collectionRequestId;
+    try {
+      final response = await _repository.listRecords(
+        repo: state.did!,
+        collection: state.selectedCollection!,
+        cursor: state.recordsCursor,
+        limit: _pageSize,
+      );
+      if (!_isActiveCollectionRequest(activeCollectionRequestId)) {
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          status: DevToolsStatus.collectionLoaded,
+          records: [...?state.records, ...response.records],
+          recordsCursor: response.cursor,
+          errorMessage: null,
+        ),
+      );
+    } catch (error, stackTrace) {
+      log.e('DevToolsCubit: Failed to load more records', error: error, stackTrace: stackTrace);
+      if (_isActiveCollectionRequest(activeCollectionRequestId)) {
+        emit(state.copyWith(status: DevToolsStatus.error, errorMessage: _formatError(error)));
+      }
+    }
+  }
+
+  Future<void> loadRecord(RepoListRecordsRecord record) async {
+    if (state.did == null) return;
+
+    final recordRequestId = _beginRecordRequest();
+    emit(state.copyWith(status: DevToolsStatus.loading, errorMessage: null));
+
+    try {
+      final resolvedRecord = await _repository.getRecord(
+        repo: state.did!,
+        collection: record.uri.collection.toString(),
+        rkey: record.uri.rkey,
+      );
+      if (!_isActiveRecordRequest(recordRequestId)) {
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          status: DevToolsStatus.recordLoaded,
+          selectedRecord: RecordInfo(
+            uri: resolvedRecord.uri.toString(),
+            cid: resolvedRecord.cid,
+            value: resolvedRecord.value,
+          ),
+          errorMessage: null,
+        ),
+      );
+    } catch (error, stackTrace) {
+      log.e('DevToolsCubit: Failed to load record', error: error, stackTrace: stackTrace);
+      if (_isActiveRecordRequest(recordRequestId)) {
+        emit(state.copyWith(status: DevToolsStatus.error, errorMessage: _formatError(error)));
+      }
+    }
+  }
+
+  void goBackToCollection() {
+    _recordRequestId++;
+    if (state.selectedCollection != null) {
+      emit(state.copyWith(status: DevToolsStatus.collectionLoaded, selectedRecord: null));
+    } else {
+      emit(
+        state.copyWith(
+          status: DevToolsStatus.repoLoaded,
+          selectedCollection: null,
+          records: null,
+          recordsCursor: null,
+          selectedRecord: null,
+        ),
+      );
+    }
+  }
+
+  void goBackToRepo() {
+    _collectionRequestId++;
+    _recordRequestId++;
+    emit(
+      state.copyWith(
+        status: DevToolsStatus.repoLoaded,
+        selectedCollection: null,
+        records: null,
+        recordsCursor: null,
+        selectedRecord: null,
+      ),
+    );
+  }
+
+  void clearInput() {
+    _beginResolveRequest();
+    emit(const DevToolsState());
+  }
+
+  int _beginResolveRequest() {
+    _resolveRequestId++;
+    _collectionRequestId++;
+    _recordRequestId++;
+    return _resolveRequestId;
+  }
+
+  int _beginCollectionRequest() {
+    _collectionRequestId++;
+    _recordRequestId++;
+    return _collectionRequestId;
+  }
+
+  int _beginRecordRequest() {
+    _recordRequestId++;
+    return _recordRequestId;
+  }
+
+  bool _isActiveResolveRequest(int requestId) => requestId == _resolveRequestId;
+
+  bool _isActiveCollectionRequest(int requestId) => requestId == _collectionRequestId;
+
+  bool _isActiveRecordRequest(int requestId) => requestId == _recordRequestId;
+
+  Future<void> _resolveAtUri(String input, int resolveRequestId) async {
+    final atUri = _parseAtUri(input);
+    final identity = await _resolveIdentity(atUri.hostname);
+    if (!_isActiveResolveRequest(resolveRequestId)) {
+      return;
+    }
+
+    final repo = await _repository.describeRepo(repo: identity.did);
+    if (!_isActiveResolveRequest(resolveRequestId)) {
+      return;
+    }
+
+    final collection = _collectionFromAtUri(atUri);
+    final rkey = _rkeyFromAtUri(atUri);
+
+    if (collection == null) {
+      emit(_buildRepoState(repo: repo, did: identity.did, handle: identity.handle, status: DevToolsStatus.repoLoaded));
+      unawaited(_loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did));
+      return;
+    }
+
+    final records = await _repository.listRecords(repo: identity.did, collection: collection, limit: _pageSize);
+    if (!_isActiveResolveRequest(resolveRequestId)) {
+      return;
+    }
+
+    if (rkey == null) {
+      emit(
+        _buildRepoState(
+          repo: repo,
+          did: identity.did,
+          handle: identity.handle,
+          status: DevToolsStatus.collectionLoaded,
+          selectedCollection: collection,
+          records: records.records,
+          recordsCursor: records.cursor,
+        ),
+      );
+      unawaited(_loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did));
+      return;
+    }
+
+    final record = await _repository.getRecord(repo: identity.did, collection: collection, rkey: rkey);
+    if (!_isActiveResolveRequest(resolveRequestId)) {
+      return;
+    }
+
+    emit(
+      _buildRepoState(
+        repo: repo,
+        did: identity.did,
+        handle: identity.handle,
+        status: DevToolsStatus.recordLoaded,
+        selectedCollection: collection,
+        records: records.records,
+        recordsCursor: records.cursor,
+        selectedRecord: RecordInfo(uri: record.uri.toString(), cid: record.cid, value: record.value),
+      ),
+    );
+    unawaited(_loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did));
+  }
+
+  Future<({String did, String? handle})> _resolveIdentity(String input) async {
+    if (input.startsWith('did:')) {
+      return (did: input, handle: null);
+    }
+
+    final response = await _repository.resolveHandle(handle: input);
+    return (did: response.did, handle: input);
+  }
+
+  AtUri _parseAtUri(String input) {
+    try {
+      return AtUri.parse(input);
+    } on FormatException {
+      throw const FormatException('Invalid AT-URI');
+    }
+  }
+
+  String? _collectionFromAtUri(AtUri atUri) {
+    final segments = atUri.pathname.split('/').where((segment) => segment.isNotEmpty).toList();
+    if (segments.isEmpty) {
+      return null;
+    }
+
+    return segments.first;
+  }
+
+  String? _rkeyFromAtUri(AtUri atUri) {
+    final segments = atUri.pathname.split('/').where((segment) => segment.isNotEmpty).toList();
+    if (segments.length < 2) {
+      return null;
+    }
+
+    return segments[1];
+  }
+
+  DevToolsState _buildRepoState({
+    required RepoDescribeRepoOutput repo,
+    required String did,
+    required String? handle,
+    required DevToolsStatus status,
+    String? selectedCollection,
+    List<RepoListRecordsRecord>? records,
+    String? recordsCursor,
+    RecordInfo? selectedRecord,
+  }) {
+    return DevToolsState(
+      status: status,
+      did: did,
+      handle: handle ?? repo.handle,
+      repoHandle: repo.handle,
+      collections: repo.collections.map(CollectionSummary.new).toList(growable: false),
+      isCollectionCountsLoading: repo.collections.isNotEmpty,
+      selectedCollection: selectedCollection,
+      records: records,
+      recordsCursor: recordsCursor,
+      selectedRecord: selectedRecord,
+    );
+  }
+
+  Future<void> _loadCollectionCounts({required int resolveRequestId, required String did}) async {
+    if (state.collections.isEmpty) {
+      if (_isActiveResolveRequest(resolveRequestId)) {
+        emit(state.copyWith(isCollectionCountsLoading: false));
+      }
+      return;
+    }
+
+    final countsByCollection = <String, int>{};
+    for (final collection in state.collections) {
+      if (!_isActiveResolveRequest(resolveRequestId)) {
+        return;
+      }
+
+      countsByCollection[collection.name] = await _countRecords(did: did, collection: collection.name);
+      if (!_isActiveResolveRequest(resolveRequestId)) {
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          collections: _mergeCollectionCounts(state.collections, countsByCollection),
+          isCollectionCountsLoading: countsByCollection.length < state.collections.length,
+        ),
+      );
+    }
+  }
+
+  Future<int> _countRecords({required String did, required String collection}) async {
+    var total = 0;
+    String? cursor;
+
+    do {
+      final response = await _repository.listRecords(
+        repo: did,
+        collection: collection,
+        limit: _countPageSize,
+        cursor: cursor,
+      );
+      total += response.records.length;
+      cursor = response.cursor;
+    } while (cursor != null && cursor.isNotEmpty);
+
+    return total;
+  }
+
+  List<CollectionSummary> _mergeCollectionCounts(
+    List<CollectionSummary> collections,
+    Map<String, int> countsByCollection,
+  ) {
+    return collections
+        .map(
+          (collection) => CollectionSummary(
+            collection.name,
+            recordCount: countsByCollection[collection.name] ?? collection.recordCount,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  String _formatError(Object error) {
+    if (error is FormatException) {
+      return error.message;
+    }
+
+    return error.toString();
+  }
+}
