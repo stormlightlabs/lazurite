@@ -65,3 +65,12 @@ class SavedFeeds extends Table {
   @override
   Set<Column> get primaryKey => {id, accountDid};
 }
+
+@DataClassName('SearchHistoryEntry')
+class SearchHistory extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get query => text()();
+  TextColumn get type => text()();
+  DateTimeColumn get searchedAt => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get accountDid => text()();
+}

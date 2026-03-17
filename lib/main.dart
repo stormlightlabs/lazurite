@@ -17,6 +17,8 @@ import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
+import 'package:lazurite/features/search/bloc/search_bloc.dart';
+import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
@@ -114,6 +116,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
           }
 
           final feedRepository = FeedRepository(bluesky: bluesky);
+          final searchRepository = SearchRepository(bluesky: bluesky);
           final accountDid = authState.tokens?.did ?? '';
 
           return MultiBlocProvider(
@@ -132,7 +135,12 @@ class _LazuriteAppState extends State<LazuriteApp> {
                 )..loadPreferences(),
               ),
               BlocProvider(create: (_) => DevToolsCubit(atproto: bluesky.atproto)),
+              BlocProvider(
+                create: (_) =>
+                    SearchBloc(searchRepository: searchRepository, database: widget.database, accountDid: accountDid),
+              ),
               RepositoryProvider.value(value: feedRepository),
+              RepositoryProvider.value(value: searchRepository),
             ],
             child: appShell,
           );

@@ -6,12 +6,12 @@ import 'package:lazurite/core/database/tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Accounts, CachedProfiles, CachedPosts, Settings, SavedFeeds])
+@DriftDatabase(tables: [Accounts, CachedProfiles, CachedPosts, Settings, SavedFeeds, SearchHistory])
 class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -28,6 +28,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 3) {
         await migrator.createTable(savedFeeds);
+      }
+      if (from < 4) {
+        await migrator.createTable(searchHistory);
       }
     },
   );
@@ -139,5 +142,38 @@ class AppDatabase extends _$AppDatabase {
         await insertSavedFeed(feed);
       }
     });
+  }
+
+  Future<List<SearchHistoryEntry>> getSearchHistory(String accountDid, {int limit = 50}) =>
+      (select(searchHistory)
+            ..where((h) => h.accountDid.equals(accountDid))
+            ..orderBy([(h) => OrderingTerm.desc(h.searchedAt)])
+            ..limit(limit))
+          .get();
+
+  Future<int> insertSearchHistory(SearchHistoryCompanion entry) => into(searchHistory).insert(entry);
+
+  Future<int> deleteSearchHistoryEntry(int id) => (delete(searchHistory)..where((h) => h.id.equals(id))).go();
+
+  Future<int> clearSearchHistory(String accountDid) =>
+      (delete(searchHistory)..where((h) => h.accountDid.equals(accountDid))).go();
+
+  Future<void> addSearchHistoryEntry({required String query, required String type, required String accountDid}) async {
+    await insertSearchHistory(
+      SearchHistoryCompanion(
+        query: Value(query),
+        type: Value(type),
+        accountDid: Value(accountDid),
+        searchedAt: Value(DateTime.now()),
+      ),
+    );
+
+    final entries = await getSearchHistory(accountDid, limit: 100);
+    if (entries.length > 50) {
+      final toDelete = entries.skip(50);
+      for (final entry in toDelete) {
+        await deleteSearchHistoryEntry(entry.id);
+      }
+    }
   }
 }

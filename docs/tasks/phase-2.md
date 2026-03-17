@@ -27,14 +27,14 @@
 
 ## M6 — Search
 
-- [ ] Search screen with text input, sort toggle (`top` / `latest`), and result tabs (posts / actors)
-- [ ] `SearchBloc` — events: `QuerySubmitted`, `TypeaheadRequested`, `HistoryCleared`, `HistoryEntryDeleted`
-- [ ] Post search via `searchPosts` with paginated results
-- [ ] Actor search via `searchActors` with paginated results
-- [ ] Typeahead autocomplete via `searchActorsTypeahead`
-- [ ] Drift migration: add `search_history` table (query, type, searched_at, account_did)
-- [ ] Persisted search history — display recent queries, tap to re-execute, swipe to delete, cap at 50 per account
-- [ ] Search with `@` should autocomplete with avatars + handles (debounced)
+- [x] Search screen with text input, sort toggle (`top` / `latest`), and result tabs (posts / actors)
+- [x] `SearchBloc` — events: `QuerySubmitted`, `TypeaheadRequested`, `HistoryCleared`, `HistoryEntryDeleted`
+- [x] Post search via `searchPosts` with paginated results
+- [x] Actor search via `searchActors` with paginated results
+- [x] Typeahead autocomplete via `searchActorsTypeahead`
+- [x] Drift migration: add `search_history` table (query, type, searched_at, account_did)
+- [x] Persisted search history — display recent queries, tap to re-execute, swipe to delete, cap at 50 per account
+- [x] Search with `@` should autocomplete with avatars + handles (debounced)
 
 ## M7 — Dev Tools (PDS Explorer)
 

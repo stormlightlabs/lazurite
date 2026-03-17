@@ -10,6 +10,7 @@ import 'package:lazurite/features/feed/presentation/feed_management_screen.dart'
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/logs/presentation/logs_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
+import 'package:lazurite/features/search/presentation/search_screen.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 
@@ -19,6 +20,7 @@ class AppRouter {
   final NavigatorObserver? navigatorObserver;
   final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
   final GlobalKey<NavigatorState> _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'home');
+  final GlobalKey<NavigatorState> _searchNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'search');
   final GlobalKey<NavigatorState> _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
   final GlobalKey<NavigatorState> _settingsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'settings');
 
@@ -54,6 +56,10 @@ class AppRouter {
                 routes: [GoRoute(path: 'feeds', builder: (context, state) => const FeedManagementScreen())],
               ),
             ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _searchNavigatorKey,
+            routes: [GoRoute(path: '/search', builder: (context, state) => const SearchScreen())],
           ),
           StatefulShellBranch(
             navigatorKey: _profileNavigatorKey,

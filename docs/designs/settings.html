@@ -248,7 +248,14 @@
                 <div class="theme-swatch" style="background-color: #08bdba"></div>
                 <div class="theme-swatch" style="background-color: #ee5396"></div>
               </div>
-              <svg class="theme-palette-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <svg
+                class="theme-palette-check"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -261,7 +268,14 @@
                 <div class="theme-swatch" style="background-color: #74c7ec"></div>
                 <div class="theme-swatch" style="background-color: #f5c2e7"></div>
               </div>
-              <svg class="theme-palette-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <svg
+                class="theme-palette-check"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -274,7 +288,14 @@
                 <div class="theme-swatch" style="background-color: #ebcb8b"></div>
                 <div class="theme-swatch" style="background-color: #b48ead"></div>
               </div>
-              <svg class="theme-palette-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <svg
+                class="theme-palette-check"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -287,7 +308,14 @@
                 <div class="theme-swatch" style="background-color: #9ccfd8"></div>
                 <div class="theme-swatch" style="background-color: #f6c177"></div>
               </div>
-              <svg class="theme-palette-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <svg
+                class="theme-palette-check"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -685,7 +713,6 @@
         const mode = localStorage.getItem("appearance-mode") || "dark";
         const palette = localStorage.getItem("palette") || "oxocarbon";
 
-        // Restore mode
         document.querySelectorAll(".segment-btn").forEach((el) => el.classList.remove("active"));
         const modeBtn = document.querySelector(`.segment-btn[data-mode="${mode}"]`);
         if (modeBtn) modeBtn.classList.add("active");
@@ -697,7 +724,6 @@
           applyVariant(mode);
         }
 
-        // Restore palette
         document.querySelectorAll(".theme-palette-row").forEach((el) => el.classList.remove("active"));
         const paletteRow = document.querySelector(`.theme-palette-row[data-palette="${palette}"]`);
         if (paletteRow) paletteRow.classList.add("active");

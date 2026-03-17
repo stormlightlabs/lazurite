@@ -106,7 +106,9 @@ class DevToolsState extends Equatable {
           : selectedCollection as String?,
       records: identical(records, _devToolsStateNoChange) ? this.records : records as List<RepoListRecordsRecord>?,
       recordsCursor: identical(recordsCursor, _devToolsStateNoChange) ? this.recordsCursor : recordsCursor as String?,
-      selectedRecord: identical(selectedRecord, _devToolsStateNoChange) ? this.selectedRecord : selectedRecord as RecordInfo?,
+      selectedRecord: identical(selectedRecord, _devToolsStateNoChange)
+          ? this.selectedRecord
+          : selectedRecord as RecordInfo?,
       errorMessage: identical(errorMessage, _devToolsStateNoChange) ? this.errorMessage : errorMessage as String?,
     );
   }
