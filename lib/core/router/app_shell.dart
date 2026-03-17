@@ -13,11 +13,13 @@ class AppShell extends StatelessWidget {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
+        height: 50,
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) {
           navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex);
         },
+        indicatorShape: RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(10)),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
         destinations: _destinations,
       ),

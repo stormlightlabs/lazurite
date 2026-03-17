@@ -20,14 +20,14 @@
 
 ## M9 — Notifications
 
-- [ ] Notifications screen with grouped-by-day notification list
-- [ ] `NotificationBloc` — events: `NotificationsRequested`, `NotificationsRefreshed`, `NotificationsPageLoaded`, `NotificationsMarkedRead`
-- [ ] Fetch notifications via `listNotifications` with cursor pagination
-- [ ] Render all notification reasons: like, repost, follow, mention, reply, quote
-- [ ] Each notification row: author avatar, reason icon, summary text, optional post preview
-- [ ] Unread count badge on nav bar via `getUnreadCount` polling (30s interval)
-- [ ] Mark as read via `updateSeen` when notifications screen opens
-- [ ] Tap notification to navigate to relevant post or profile
+- [x] Notifications screen with grouped-by-day notification list
+- [x] `NotificationBloc` — events: `NotificationsRequested`, `NotificationsRefreshed`, `NotificationsPageLoaded`, `NotificationsMarkedRead`
+- [x] Fetch notifications via `listNotifications` with cursor pagination
+- [x] Render all notification reasons: like, repost, follow, mention, reply, quote
+- [x] Each notification row: author avatar, reason icon, summary text, optional post preview
+- [x] Unread count badge on nav bar via `getUnreadCount` polling (30s interval)
+- [x] Mark as read via `updateSeen` when notifications screen opens
+- [x] Tap notification to navigate to relevant post or profile
 
 ## M10 — Post & Profile Actions
 

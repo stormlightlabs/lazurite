@@ -13,7 +13,7 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: _title(context),
         actions: [
           TextButton(
             onPressed: () {
@@ -116,6 +116,8 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _title(BuildContext context) => Text('Settings', style: Theme.of(context).textTheme.titleLarge);
 
   Widget _buildThemeSelector(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();

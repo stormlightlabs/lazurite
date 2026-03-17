@@ -41,7 +41,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
         if (prefsState.status == FeedPreferencesStatus.error) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Home')),
+            appBar: AppBar(title: _title),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -64,7 +64,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
         if (pinnedFeeds.isEmpty) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Home')),
+            appBar: AppBar(title: _title),
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -92,7 +92,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Home'),
+            title: _title,
             actions: [IconButton(icon: const Icon(Icons.rss_feed), onPressed: () => context.push('/feeds'))],
           ),
           body: Column(
@@ -146,6 +146,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final index = feeds.indexWhere((feed) => feed.id == _selectedFeedId);
     return index >= 0 ? index : 0;
   }
+
+  Widget get _title => Text('Home', style: Theme.of(context).textTheme.titleLarge);
 
   Widget _buildTabBar(
     BuildContext context,

@@ -20,7 +20,7 @@ void main() {
     final sampleNotification = bsky.Notification(
       uri: AtUri.parse('at://did:plc:author/app.bsky.feed.post/abc'),
       cid: 'cid-123',
-      author: ProfileView(did: 'did:plc:author', handle: 'author.bsky.social'),
+      author: const ProfileView(did: 'did:plc:author', handle: 'author.bsky.social'),
       reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.like),
       record: {r'$type': 'app.bsky.feed.post', 'text': 'Hello world'},
       isRead: false,
@@ -77,7 +77,7 @@ void main() {
         final secondNotification = bsky.Notification(
           uri: AtUri.parse('at://did:plc:author2/app.bsky.feed.post/def'),
           cid: 'cid-456',
-          author: ProfileView(did: 'did:plc:author2', handle: 'author2.bsky.social'),
+          author: const ProfileView(did: 'did:plc:author2', handle: 'author2.bsky.social'),
           reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.follow),
           record: {},
           isRead: true,
@@ -155,7 +155,7 @@ void main() {
         final newNotification = bsky.Notification(
           uri: AtUri.parse('at://did:plc:new/app.bsky.feed.post/new'),
           cid: 'cid-new',
-          author: ProfileView(did: 'did:plc:new', handle: 'new.bsky.social'),
+          author: const ProfileView(did: 'did:plc:new', handle: 'new.bsky.social'),
           reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.repost),
           record: {},
           isRead: false,

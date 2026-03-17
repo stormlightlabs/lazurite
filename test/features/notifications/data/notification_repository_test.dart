@@ -18,7 +18,7 @@ void main() {
     final sampleNotification = bsky.Notification(
       uri: AtUri.parse('at://did:plc:author/app.bsky.feed.post/abc'),
       cid: 'cid-123',
-      author: ProfileView(did: 'did:plc:author', handle: 'author.bsky.social'),
+      author: const ProfileView(did: 'did:plc:author', handle: 'author.bsky.social'),
       reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.like),
       record: {r'$type': 'app.bsky.feed.post', 'text': 'Hello world'},
       isRead: false,
@@ -97,7 +97,7 @@ void main() {
       final notification = bsky.Notification(
         uri: AtUri.parse('at://did:plc:test/app.bsky.notification/1'),
         cid: 'cid',
-        author: ProfileView(did: 'did:plc:test', handle: 'test.bsky.social'),
+        author: const ProfileView(did: 'did:plc:test', handle: 'test.bsky.social'),
         reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.follow),
         record: {},
         isRead: true,

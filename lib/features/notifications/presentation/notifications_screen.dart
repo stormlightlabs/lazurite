@@ -48,11 +48,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     context.read<UnreadCountCubit>().refresh();
   }
 
+  Widget get _title => Text('Notifications', style: Theme.of(context).textTheme.titleMedium);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: _title,
         actions: [TextButton(onPressed: _markAllRead, child: const Text('Mark All Read'))],
       ),
       body: BlocBuilder<NotificationBloc, NotificationState>(
