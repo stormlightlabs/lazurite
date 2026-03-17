@@ -11,6 +11,7 @@ import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
+import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
@@ -92,6 +93,9 @@ class LazuriteApp extends StatelessWidget {
             return appShell;
           }
 
+          final feedRepository = FeedRepository(bluesky: bluesky);
+          final accountDid = authState.tokens?.did ?? '';
+
           return MultiBlocProvider(
             providers: [
               BlocProvider(
@@ -99,9 +103,13 @@ class LazuriteApp extends StatelessWidget {
                   profileRepository: ProfileRepository(database: database, bluesky: bluesky),
                 ),
               ),
+              BlocProvider(create: (_) => FeedBloc(feedRepository: feedRepository)),
               BlocProvider(
-                create: (_) => FeedBloc(feedRepository: FeedRepository(bluesky: bluesky)),
+                create: (_) =>
+                    FeedPreferencesCubit(feedRepository: feedRepository, database: database, accountDid: accountDid)
+                      ..loadPreferences(),
               ),
+              RepositoryProvider.value(value: feedRepository),
             ],
             child: appShell,
           );

@@ -51,3 +51,17 @@ class Settings extends Table {
   @override
   Set<Column> get primaryKey => {key};
 }
+
+@DataClassName('SavedFeedEntry')
+class SavedFeeds extends Table {
+  TextColumn get id => text()();
+  TextColumn get accountDid => text()();
+  TextColumn get type => text()();
+  TextColumn get value => text()();
+  BoolColumn get pinned => boolean().withDefault(const Constant(false))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id, accountDid};
+}

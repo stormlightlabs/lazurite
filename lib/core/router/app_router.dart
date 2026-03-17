@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
-import 'package:lazurite/features/auth/presentation/home_screen.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
+import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
+import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/logs/presentation/logs_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
@@ -32,7 +33,7 @@ class AppRouter {
       return null;
     },
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+      GoRoute(path: '/', builder: (context, state) => const HomeFeedScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/profile',
@@ -40,6 +41,7 @@ class AppRouter {
       ),
       GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
       GoRoute(path: '/logs', builder: (context, state) => const LogsScreen()),
+      GoRoute(path: '/feeds', builder: (context, state) => const FeedManagementScreen()),
     ],
   );
 }

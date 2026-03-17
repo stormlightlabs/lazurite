@@ -6,12 +6,12 @@ import 'package:lazurite/core/database/tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Accounts, CachedProfiles, CachedPosts, Settings])
+@DriftDatabase(tables: [Accounts, CachedProfiles, CachedPosts, Settings, SavedFeeds])
 class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -25,6 +25,9 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(accounts, accounts.dpopNonce);
         await migrator.createTable(cachedProfiles);
         await migrator.createTable(cachedPosts);
+      }
+      if (from < 3) {
+        await migrator.createTable(savedFeeds);
       }
     },
   );
@@ -114,4 +117,27 @@ class AppDatabase extends _$AppDatabase {
   );
 
   Future<int> deleteSetting(String key) => (delete(settings)..where((s) => s.key.equals(key))).go();
+
+  Future<List<SavedFeedEntry>> getSavedFeeds(String accountDid) =>
+      (select(savedFeeds)
+            ..where((f) => f.accountDid.equals(accountDid))
+            ..orderBy([(f) => OrderingTerm.asc(f.sortOrder)]))
+          .get();
+
+  Future<int> insertSavedFeed(SavedFeedsCompanion feed) => into(savedFeeds).insert(feed, mode: InsertMode.replace);
+
+  Future<int> deleteSavedFeed(String id, String accountDid) =>
+      (delete(savedFeeds)..where((f) => f.id.equals(id) & f.accountDid.equals(accountDid))).go();
+
+  Future<int> deleteAllSavedFeeds(String accountDid) =>
+      (delete(savedFeeds)..where((f) => f.accountDid.equals(accountDid))).go();
+
+  Future<void> replaceSavedFeeds(String accountDid, List<SavedFeedsCompanion> feeds) async {
+    await transaction(() async {
+      await deleteAllSavedFeeds(accountDid);
+      for (final feed in feeds) {
+        await insertSavedFeed(feed);
+      }
+    });
+  }
 }

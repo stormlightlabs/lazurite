@@ -20,7 +20,7 @@ test *paths='':
     flutter test {{ paths }} --fail-fast --timeout=120s
 
 generate:
-    dart run build_runner build --delete-conflicting-outputs
+    flutter pub run build_runner build --delete-conflicting-outputs
 
 # Run code gen
 gen: generate format

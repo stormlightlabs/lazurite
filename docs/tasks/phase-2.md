@@ -17,13 +17,13 @@
 
 ## M5 — Feeds
 
-- [ ] Build home screen with horizontally-swipable tab bar (one tab per pinned feed)
-- [ ] Implement timeline feed via `getTimeline` with cursor pagination
-- [ ] Implement feed generator rendering via `getFeed` (AT-URI + pagination)
-- [ ] `FeedPreferencesCubit` — read/write `savedFeedsPrefV2` via `getPreferences` / `putPreferences`
-- [ ] Cache feed preferences in Drift for offline access
-- [ ] Feed discovery screen via `getSuggestedFeeds` — browse and add generators
-- [ ] Feed management UI — pin/unpin, drag-to-reorder, remove saved feeds
+- [x] Build home screen with horizontally-swipable tab bar (one tab per pinned feed)
+- [x] Implement timeline feed via `getTimeline` with cursor pagination
+- [x] Implement feed generator rendering via `getFeed` (AT-URI + pagination)
+- [x] `FeedPreferencesCubit` — read/write `savedFeedsPrefV2` via `getPreferences` / `putPreferences`
+- [x] Cache feed preferences in Drift for offline access
+- [x] Feed discovery screen via `getSuggestedFeeds` — browse and add generators
+- [x] Feed management UI — pin/unpin, drag-to-reorder, remove saved feeds
 
 ## M6 — Search
 
