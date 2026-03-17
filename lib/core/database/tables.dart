@@ -90,3 +90,15 @@ class Drafts extends Table {
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get scheduledAt => dateTime().nullable()();
 }
+
+@DataClassName('SavedPostEntry')
+class SavedPosts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get accountDid => text()();
+  TextColumn get postUri => text()();
+  TextColumn get postJson => text()();
+  DateTimeColumn get savedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<String> get customConstraints => ['UNIQUE (account_did, post_uri)'];
+}

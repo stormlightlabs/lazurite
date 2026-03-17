@@ -132,20 +132,19 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.text('Home'), findsAtLeastNWidgets(1));
-    expect(find.text('Profile'), findsAtLeastNWidgets(1));
-    expect(find.text('Settings'), findsAtLeastNWidgets(1));
+    expect(find.byIcon(Icons.home), findsOneWidget);
+    expect(find.byIcon(Icons.person_outline), findsOneWidget);
+    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
     expect(find.text('No feeds pinned'), findsOneWidget);
 
-    await tester.tap(find.text('Profile').last);
+    await tester.tap(find.byIcon(Icons.person_outline).first);
     await tester.pumpAndSettle();
 
     expect(find.text('River Tam'), findsOneWidget);
 
-    await tester.tap(find.text('Settings').last);
+    await tester.tap(find.byIcon(Icons.settings_outlined).first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Settings'), findsAtLeastNWidgets(1));
     expect(find.text('APPEARANCE'), findsOneWidget);
   });
 }

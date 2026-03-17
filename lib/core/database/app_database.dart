@@ -6,12 +6,12 @@ import 'package:lazurite/core/database/tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Accounts, CachedProfiles, CachedPosts, Settings, SavedFeeds, SearchHistory, Drafts])
+@DriftDatabase(tables: [Accounts, CachedProfiles, CachedPosts, Settings, SavedFeeds, SearchHistory, Drafts, SavedPosts])
 class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -34,6 +34,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 5) {
         await migrator.createTable(drafts);
+      }
+      if (from < 6) {
+        await migrator.createTable(savedPosts);
       }
     },
   );
@@ -213,5 +216,58 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteAllDrafts(String accountDid) async {
     return (delete(drafts)..where((d) => d.accountDid.equals(accountDid))).go();
+  }
+
+  Future<List<SavedPostEntry>> getSavedPosts(String accountDid) async {
+    return (select(savedPosts)
+          ..where((s) => s.accountDid.equals(accountDid))
+          ..orderBy([(s) => OrderingTerm.desc(s.savedAt)]))
+        .get();
+  }
+
+  Future<SavedPostEntry?> getSavedPost(String accountDid, String postUri) async {
+    return (select(
+      savedPosts,
+    )..where((s) => s.accountDid.equals(accountDid) & s.postUri.equals(postUri))).getSingleOrNull();
+  }
+
+  Future<bool> isPostSaved(String accountDid, String postUri) async {
+    final saved = await getSavedPost(accountDid, postUri);
+    return saved != null;
+  }
+
+  Future<int> savePost(SavedPostsCompanion post) async {
+    return into(savedPosts).insert(post);
+  }
+
+  Future<int> unsavePost(String accountDid, String postUri) async {
+    return (delete(savedPosts)..where((s) => s.accountDid.equals(accountDid) & s.postUri.equals(postUri))).go();
+  }
+
+  Future<int> unsavePostById(int id) async {
+    return (delete(savedPosts)..where((s) => s.id.equals(id))).go();
+  }
+
+  Future<int> deleteAllSavedPosts(String accountDid) async {
+    return (delete(savedPosts)..where((s) => s.accountDid.equals(accountDid))).go();
+  }
+
+  Stream<List<SavedPostEntry>> watchSavedPosts(String accountDid) {
+    return (select(savedPosts)
+          ..where((s) => s.accountDid.equals(accountDid))
+          ..orderBy([(s) => OrderingTerm.desc(s.savedAt)]))
+        .watch();
+  }
+
+  Stream<bool> watchIsPostSaved(String accountDid, String postUri) {
+    return (select(savedPosts)..where((s) => s.accountDid.equals(accountDid) & s.postUri.equals(postUri)))
+        .watchSingleOrNull()
+        .map((saved) => saved != null);
+  }
+
+  Stream<Set<String>> watchSavedPostUris(String accountDid) {
+    return (select(
+      savedPosts,
+    )..where((s) => s.accountDid.equals(accountDid))).watch().map((posts) => posts.map((p) => p.postUri).toSet());
   }
 }
