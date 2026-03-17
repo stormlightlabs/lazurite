@@ -93,9 +93,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Home'),
-            actions: [
-              IconButton(icon: const Icon(Icons.dynamic_feed_outlined), onPressed: () => context.push('/feeds')),
-            ],
+            actions: [IconButton(icon: const Icon(Icons.rss_feed), onPressed: () => context.push('/feeds'))],
           ),
           body: Column(
             children: [

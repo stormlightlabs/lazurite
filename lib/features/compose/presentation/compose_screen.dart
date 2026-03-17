@@ -71,9 +71,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
   Future<void> _pickImage() async {
     final state = context.read<ComposeBloc>().state;
+    final theme = Theme.of(context);
     if (!state.canAddMoreMedia) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Maximum 4 images allowed')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Maximum 4 images allowed', style: TextStyle(color: theme.colorScheme.error)),
+          ),
+        );
       }
       return;
     }
@@ -264,17 +269,17 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
+                        border: Border(bottom: BorderSide(color: _theme.dividerColor)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Drafts', style: Theme.of(context).textTheme.titleLarge),
+                          Text('Drafts', style: _theme.textTheme.titleLarge),
                           Text(
                             '${state.drafts.length} draft${state.drafts.length != 1 ? 's' : ''}',
                             style: Theme.of(
                               context,
-                            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            ).textTheme.bodyMedium?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -293,19 +298,19 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             ),
                             subtitle: Row(
                               children: [
-                                Text(_formatDraftTime(draft.updatedAt), style: Theme.of(context).textTheme.bodySmall),
+                                Text(_formatDraftTime(draft.updatedAt), style: _theme.textTheme.bodySmall),
                                 if (draft.scheduledAt != null) ...[
                                   const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.primaryContainer,
+                                      color: _theme.colorScheme.primaryContainer,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
                                       'Scheduled',
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                      style: _theme.textTheme.bodySmall?.copyWith(
+                                        color: _theme.colorScheme.onPrimaryContainer,
                                       ),
                                     ),
                                   ),
@@ -313,10 +318,10 @@ class _ComposeScreenState extends State<ComposeScreen> {
                               ],
                             ),
                             trailing: IconButton(
-                              icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                              icon: Icon(Icons.delete_outline, color: _theme.colorScheme.error),
                               onPressed: () {
                                 final bloc = context.read<ComposeBloc>();
-                                final theme = Theme.of(context);
+                                final theme = _theme;
                                 showDialog<bool>(
                                   context: context,
                                   builder: (dialogContext) => AlertDialog(
@@ -390,6 +395,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
     };
   }
 
+  ThemeData get _theme => Theme.of(context);
+
   void _submitPost() {
     context.read<ComposeBloc>().add(const PostSubmitted());
   }
@@ -397,7 +404,12 @@ class _ComposeScreenState extends State<ComposeScreen> {
   void _saveDraft() {
     context.read<ComposeBloc>().add(const DraftSaved());
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Draft saved')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Draft saved', style: TextStyle(color: _theme.colorScheme.onPrimary)),
+          backgroundColor: _theme.colorScheme.primary,
+        ),
+      );
     }
   }
 
@@ -445,6 +457,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
   Widget build(BuildContext context) {
     return BlocListener<ComposeBloc, ComposeState>(
       listener: (context, state) {
+        final theme = Theme.of(context);
+
         if (state.text != _textController.text) {
           _textController.text = state.text;
           _textController.selection = TextSelection.collapsed(offset: state.text.length);
@@ -455,7 +469,11 @@ class _ComposeScreenState extends State<ComposeScreen> {
         }
 
         if (state.hasError && state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!, style: TextStyle(color: theme.colorScheme.error)),
+            ),
+          );
         }
       },
       child: PopScope(
@@ -498,23 +516,23 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
+                        color: _theme.colorScheme.surfaceContainerHighest,
+                        border: Border(bottom: BorderSide(color: _theme.dividerColor)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.reply, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          Icon(Icons.reply, size: 16, color: _theme.colorScheme.onSurfaceVariant),
                           const SizedBox(width: 8),
                           Text(
                             'Replying to ',
                             style: Theme.of(
                               context,
-                            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            ).textTheme.bodySmall?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
                           ),
                           Text(
                             '@${widget.replyAuthorHandle}',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
+                            style: _theme.textTheme.bodySmall?.copyWith(
+                              color: _theme.colorScheme.primary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -536,7 +554,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
                       ),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5),
+                      style: _theme.textTheme.bodyLarge?.copyWith(height: 1.5),
                     ),
                   ),
                 ),
@@ -548,26 +566,26 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
+                        color: _theme.colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.schedule, size: 16, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                          Icon(Icons.schedule, size: 16, color: _theme.colorScheme.onPrimaryContainer),
                           const SizedBox(width: 8),
                           Text(
                             'Scheduled for ${DateFormat('MMM d, h:mm a').format(state.scheduledAt!)}',
                             style: Theme.of(
                               context,
-                            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer),
+                            ).textTheme.bodySmall?.copyWith(color: _theme.colorScheme.onPrimaryContainer),
                           ),
                           const SizedBox(width: 8),
                           GestureDetector(
                             onTap: () {
                               context.read<ComposeBloc>().add(const ScheduleCleared());
                             },
-                            child: Icon(Icons.close, size: 16, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                            child: Icon(Icons.close, size: 16, color: _theme.colorScheme.onPrimaryContainer),
                           ),
                         ],
                       ),
@@ -609,15 +627,15 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: attachment.altText.isNotEmpty
-                                            ? Theme.of(context).colorScheme.primary
+                                            ? _theme.colorScheme.primary
                                             : Colors.black54,
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
                                         'ALT',
-                                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                        style: _theme.textTheme.labelSmall?.copyWith(
                                           color: attachment.altText.isNotEmpty
-                                              ? Theme.of(context).colorScheme.onPrimary
+                                              ? _theme.colorScheme.onPrimary
                                               : Colors.white,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -656,11 +674,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color: _theme.colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: video.hasError ? Theme.of(context).colorScheme.error : Theme.of(context).dividerColor,
-                        ),
+                        border: Border.all(color: video.hasError ? _theme.colorScheme.error : _theme.dividerColor),
                       ),
                       child: Row(
                         children: [
@@ -668,7 +684,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primaryContainer,
+                              color: _theme.colorScheme.primaryContainer,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: video.isActive
@@ -684,8 +700,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                 : Icon(
                                     video.hasError ? Icons.error_outline : Icons.videocam_outlined,
                                     color: video.hasError
-                                        ? Theme.of(context).colorScheme.error
-                                        : Theme.of(context).colorScheme.onPrimaryContainer,
+                                        ? _theme.colorScheme.error
+                                        : _theme.colorScheme.onPrimaryContainer,
                                   ),
                           ),
                           const SizedBox(width: 12),
@@ -695,17 +711,17 @@ class _ComposeScreenState extends State<ComposeScreen> {
                               children: [
                                 Text(
                                   video.localPath.split('/').last,
-                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  style: _theme.textTheme.bodyMedium,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   _videoStatusLabel(video),
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  style: _theme.textTheme.bodySmall?.copyWith(
                                     color: video.hasError
-                                        ? Theme.of(context).colorScheme.error
-                                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                                        ? _theme.colorScheme.error
+                                        : _theme.colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                                 if (video.isActive && video.uploadProgress > 0) ...[
@@ -724,14 +740,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
                               tooltip: 'Add alt text',
                               onPressed: () => _showVideoAltTextDialog(video.altText),
                               color: video.altText.isNotEmpty
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ? _theme.colorScheme.primary
+                                  : _theme.colorScheme.onSurfaceVariant,
                             ),
                           ],
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: () => context.read<ComposeBloc>().add(const VideoRemoved()),
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: _theme.colorScheme.onSurfaceVariant,
                           ),
                         ],
                       ),
@@ -741,7 +757,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+                    border: Border(top: BorderSide(color: _theme.dividerColor)),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: SafeArea(
@@ -754,8 +770,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                               icon: Icon(
                                 Icons.image_outlined,
                                 color: state.canAddMoreMedia
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                    ? _theme.colorScheme.primary
+                                    : _theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                               ),
                               tooltip: 'Add image',
                             );
@@ -768,8 +784,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                               icon: Icon(
                                 Icons.videocam_outlined,
                                 color: state.canAddVideo
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                    ? _theme.colorScheme.primary
+                                    : _theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                               ),
                               tooltip: 'Add video',
                             );
@@ -777,12 +793,12 @@ class _ComposeScreenState extends State<ComposeScreen> {
                         ),
                         IconButton(
                           onPressed: _showDraftsDialog,
-                          icon: Icon(Icons.drive_file_rename_outline, color: Theme.of(context).colorScheme.primary),
+                          icon: Icon(Icons.drive_file_rename_outline, color: _theme.colorScheme.primary),
                           tooltip: 'Drafts',
                         ),
                         IconButton(
                           onPressed: _showSchedulePicker,
-                          icon: Icon(Icons.schedule, color: Theme.of(context).colorScheme.primary),
+                          icon: Icon(Icons.schedule, color: _theme.colorScheme.primary),
                           tooltip: 'Schedule',
                         ),
                         const Spacer(),
@@ -876,14 +892,14 @@ class _CharCounter extends StatelessWidget {
   Widget build(BuildContext context) {
     final remaining = maxCount - count;
     final progress = count / maxCount;
-
+    final theme = Theme.of(context);
     Color color;
     if (progress < 0.8) {
-      color = Theme.of(context).colorScheme.primary;
+      color = theme.colorScheme.primary;
     } else if (progress < 0.95) {
-      color = Theme.of(context).colorScheme.error.withValues(alpha: 0.7);
+      color = theme.colorScheme.error.withValues(alpha: 0.7);
     } else {
-      color = Theme.of(context).colorScheme.error;
+      color = theme.colorScheme.error;
     }
 
     return Row(
@@ -904,7 +920,7 @@ class _CharCounter extends StatelessWidget {
             painter: _ProgressRingPainter(
               progress: progress.clamp(0.0, 1.0),
               color: color,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
             ),
           ),
         ),
