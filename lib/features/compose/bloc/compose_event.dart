@@ -131,3 +131,17 @@ class ReplyContextSet extends ComposeEvent {
 class ReplyContextCleared extends ComposeEvent {
   const ReplyContextCleared();
 }
+
+class QuoteContextSet extends ComposeEvent {
+  const QuoteContextSet({required this.quoteUri, required this.quoteCid});
+
+  final String quoteUri;
+  final String quoteCid;
+
+  @override
+  List<Object?> get props => [quoteUri, quoteCid];
+}
+
+class QuoteContextCleared extends ComposeEvent {
+  const QuoteContextCleared();
+}

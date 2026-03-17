@@ -21,6 +21,9 @@ import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
+import 'package:lazurite/features/feed/data/post_action_repository.dart';
+import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
 Future<void> main() async {
@@ -119,6 +122,8 @@ class _LazuriteAppState extends State<LazuriteApp> {
 
           final feedRepository = FeedRepository(bluesky: bluesky);
           final searchRepository = SearchRepository(bluesky: bluesky);
+          final postActionRepository = PostActionRepository(bluesky: bluesky);
+          final profileActionRepository = ProfileActionRepository(bluesky: bluesky);
           final accountDid = authState.tokens?.did ?? '';
 
           return MultiBlocProvider(
@@ -141,8 +146,13 @@ class _LazuriteAppState extends State<LazuriteApp> {
                 create: (_) =>
                     SearchBloc(searchRepository: searchRepository, database: widget.database, accountDid: accountDid),
               ),
+              BlocProvider(
+                create: (_) => SavedPostsCubit(database: widget.database, accountDid: accountDid),
+              ),
               RepositoryProvider.value(value: feedRepository),
               RepositoryProvider.value(value: searchRepository),
+              RepositoryProvider.value(value: postActionRepository),
+              RepositoryProvider.value(value: profileActionRepository),
               RepositoryProvider.value(value: bluesky),
               RepositoryProvider.value(value: widget.database),
               RepositoryProvider.value(value: accountDid),

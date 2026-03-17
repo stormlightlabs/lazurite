@@ -73,6 +73,8 @@ class ComposeState extends Equatable {
     this.replyParentCid,
     this.replyRootUri,
     this.replyRootCid,
+    this.quoteUri,
+    this.quoteCid,
     this.errorMessage,
     this.drafts = const [],
     this.isSavingDraft = false,
@@ -95,6 +97,8 @@ class ComposeState extends Equatable {
     String? replyParentCid,
     String? replyRootUri,
     String? replyRootCid,
+    String? quoteUri,
+    String? quoteCid,
     VideoAttachment? videoAttachment,
   }) : this._(
          status: ComposeStatus.ready,
@@ -109,6 +113,8 @@ class ComposeState extends Equatable {
          replyParentCid: replyParentCid,
          replyRootUri: replyRootUri,
          replyRootCid: replyRootCid,
+         quoteUri: quoteUri,
+         quoteCid: quoteCid,
          videoAttachment: videoAttachment,
          canSubmit: !isOverLimit && !isEmpty,
        );
@@ -125,6 +131,8 @@ class ComposeState extends Equatable {
   final String? replyParentCid;
   final String? replyRootUri;
   final String? replyRootCid;
+  final String? quoteUri;
+  final String? quoteCid;
   final String? errorMessage;
   final List<DraftEntry> drafts;
   final bool isSavingDraft;
@@ -142,6 +150,7 @@ class ComposeState extends Equatable {
   bool get canAddVideo => mediaAttachments.isEmpty && videoAttachment == null;
   bool get hasScheduledTime => scheduledAt != null;
   bool get isReply => replyParentUri != null;
+  bool get isQuote => quoteUri != null;
 
   ComposeState copyWith({
     ComposeStatus? status,
@@ -156,6 +165,8 @@ class ComposeState extends Equatable {
     Object? replyParentCid = const _Undefined(),
     Object? replyRootUri = const _Undefined(),
     Object? replyRootCid = const _Undefined(),
+    Object? quoteUri = const _Undefined(),
+    Object? quoteCid = const _Undefined(),
     Object? errorMessage = const _Undefined(),
     List<DraftEntry>? drafts,
     bool? isSavingDraft,
@@ -176,6 +187,8 @@ class ComposeState extends Equatable {
       replyParentCid: replyParentCid is _Undefined ? this.replyParentCid : replyParentCid as String?,
       replyRootUri: replyRootUri is _Undefined ? this.replyRootUri : replyRootUri as String?,
       replyRootCid: replyRootCid is _Undefined ? this.replyRootCid : replyRootCid as String?,
+      quoteUri: quoteUri is _Undefined ? this.quoteUri : quoteUri as String?,
+      quoteCid: quoteCid is _Undefined ? this.quoteCid : quoteCid as String?,
       errorMessage: errorMessage is _Undefined ? this.errorMessage : errorMessage as String?,
       drafts: drafts ?? this.drafts,
       isSavingDraft: isSavingDraft ?? this.isSavingDraft,
@@ -199,6 +212,8 @@ class ComposeState extends Equatable {
     replyParentCid,
     replyRootUri,
     replyRootCid,
+    quoteUri,
+    quoteCid,
     errorMessage,
     drafts,
     isSavingDraft,

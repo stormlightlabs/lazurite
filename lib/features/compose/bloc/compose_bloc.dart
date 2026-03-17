@@ -51,6 +51,8 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     on<PostSubmitted>(_onPostSubmitted);
     on<ReplyContextSet>(_onReplyContextSet);
     on<ReplyContextCleared>(_onReplyContextCleared);
+    on<QuoteContextSet>(_onQuoteContextSet);
+    on<QuoteContextCleared>(_onQuoteContextCleared);
   }
 
   final ComposeRepository _composeRepository;
@@ -346,6 +348,14 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     emit(state.copyWith(replyParentUri: null, replyParentCid: null, replyRootUri: null, replyRootCid: null));
   }
 
+  Future<void> _onQuoteContextSet(QuoteContextSet event, Emitter<ComposeState> emit) async {
+    emit(state.copyWith(quoteUri: event.quoteUri, quoteCid: event.quoteCid));
+  }
+
+  Future<void> _onQuoteContextCleared(QuoteContextCleared event, Emitter<ComposeState> emit) async {
+    emit(state.copyWith(quoteUri: null, quoteCid: null));
+  }
+
   Future<void> _onPostSubmitted(PostSubmitted event, Emitter<ComposeState> emit) async {
     if (!state.canSubmit || state.isOverLimit) return;
 
@@ -442,7 +452,12 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         };
       } else if (state.videoAttachment?.isReady == true) {
         final blob = state.videoAttachment!.blob!;
-        embed = {'\$type': 'app.bsky.embed.video', 'video': blob.toJson(), 'alt': state.videoAttachment!.altText};
+        embed = {r'$type': 'app.bsky.embed.video', 'video': blob.toJson(), 'alt': state.videoAttachment!.altText};
+      } else if (state.quoteUri != null && state.quoteCid != null) {
+        embed = {
+          r'$type': 'app.bsky.embed.record',
+          'record': {'uri': state.quoteUri, 'cid': state.quoteCid},
+        };
       }
 
       Map<String, dynamic>? reply;

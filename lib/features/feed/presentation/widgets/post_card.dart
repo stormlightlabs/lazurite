@@ -13,9 +13,10 @@ import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PostCard extends StatelessWidget {
-  const PostCard({super.key, required this.feedViewPost});
+  const PostCard({super.key, required this.feedViewPost, this.actionBar});
 
   final FeedViewPost feedViewPost;
+  final Widget? actionBar;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +41,7 @@ class PostCard extends StatelessWidget {
             ],
             if (embed != null) ...[const SizedBox(height: 12), embed],
             const SizedBox(height: 12),
-            _buildActions(context),
+            actionBar ?? _buildActions(context),
           ],
         ),
       ),

@@ -4,9 +4,10 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
-import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -348,7 +349,8 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
             );
           }
 
-          return PostCard(feedViewPost: _posts[index]);
+          final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+          return PostCardWithActions(feedViewPost: _posts[index], accountDid: accountDid);
         },
       ),
     );

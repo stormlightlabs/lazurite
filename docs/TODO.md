@@ -14,6 +14,10 @@
 - Instead of tabs, navigating to a record through dev tools should instead show
   - A drawer on Tablet
   - Cards (stacked) on Mobile, with swipe to go back
+- Post interactions are off -> selecting a quoted post opens that user's profile.
+  - Tapping a post doesn't doesn't go to the post
+  - Tapping a user's avatar in a post doesn't go to their profile
+  - We need to add a post screen that renders a thread
 
 ## Enhancements
 

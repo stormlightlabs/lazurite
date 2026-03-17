@@ -5,6 +5,9 @@ class ComposeRouteArgs {
     this.replyRootUri,
     this.replyRootCid,
     this.replyAuthorHandle,
+    this.quoteUri,
+    this.quoteCid,
+    this.quoteAuthorHandle,
     this.draftId,
   });
 
@@ -13,5 +16,8 @@ class ComposeRouteArgs {
   final String? replyRootUri;
   final String? replyRootCid;
   final String? replyAuthorHandle;
+  final String? quoteUri;
+  final String? quoteCid;
+  final String? quoteAuthorHandle;
   final int? draftId;
 }

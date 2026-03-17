@@ -53,6 +53,12 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Manage pinned and saved feeds',
             onTap: () => context.push('/feeds'),
           ),
+          _SettingsTile(
+            icon: Icons.bookmark_outline,
+            title: 'Saved Posts',
+            subtitle: 'View your saved posts',
+            onTap: () => context.push('/saved'),
+          ),
           _SettingsTile(icon: Icons.person_outline, title: 'Edit Profile', subtitle: 'Name, bio, avatar', onTap: () {}),
           _SettingsTile(icon: Icons.lock_outline, title: 'Privacy', subtitle: 'Visibility settings', onTap: () {}),
           const SizedBox(height: 24),

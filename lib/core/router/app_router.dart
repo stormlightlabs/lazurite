@@ -21,6 +21,7 @@ import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/notifications/presentation/notifications_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
+import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
@@ -73,10 +74,17 @@ class AppRouter {
               replyRootUri: args?.replyRootUri,
               replyRootCid: args?.replyRootCid,
               replyAuthorHandle: args?.replyAuthorHandle,
+              quoteUri: args?.quoteUri,
+              quoteCid: args?.quoteCid,
+              quoteAuthorHandle: args?.quoteAuthorHandle,
               draftId: args?.draftId,
             ),
           );
         },
+      ),
+      GoRoute(
+        path: '/saved',
+        builder: (context, state) => SavedPostsScreen(accountDid: context.read<String>()),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

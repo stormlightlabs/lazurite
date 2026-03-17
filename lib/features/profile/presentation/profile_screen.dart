@@ -1,12 +1,17 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
-import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
+import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
+import 'package:lazurite/features/profile/data/profile_action_repository.dart';
+import 'package:lazurite/features/profile/presentation/widgets/profile_action_buttons.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -86,6 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           return BlocBuilder<FeedBloc, FeedState>(
             builder: (context, feedState) {
               final profile = profileState.profile;
+              final isOwnProfile = profile?.did == _resolvedActor;
 
               return NestedScrollView(
                 headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -115,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           child: Center(child: CircularProgressIndicator()),
                         ),
                         ProfileStatus.error => _buildProfileError(context, profileState.errorMessage),
-                        _ => _buildProfileSummary(context, profile),
+                        _ => _buildProfileSummary(context, profile, isOwnProfile),
                       },
                     ),
                     SliverPersistentHeader(
@@ -179,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildProfileSummary(BuildContext context, ProfileViewDetailed? profile) {
+  Widget _buildProfileSummary(BuildContext context, ProfileViewDetailed? profile, bool isOwnProfile) {
     if (profile == null) {
       return const SizedBox.shrink();
     }
@@ -233,6 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               _buildStat(context, profile.postsCount ?? 0, 'Posts'),
             ],
           ),
+          if (!isOwnProfile) ...[const SizedBox(height: 16), _buildProfileActions(context, profile)],
         ],
       ),
     );
@@ -310,6 +317,82 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
+  Widget _buildProfileActions(BuildContext context, ProfileViewDetailed profile) {
+    final viewer = profile.viewer;
+
+    return BlocProvider(
+      create: (context) => ProfileActionCubit(
+        profileActionRepository: context.read<ProfileActionRepository>(),
+        actorDid: profile.did,
+        isFollowing: viewer?.following != null,
+        isMuted: viewer?.muted ?? false,
+        isBlocked: viewer?.blocking != null,
+        isBlockedBy: viewer?.blockedBy ?? false,
+        followUri: viewer?.following?.toString(),
+        blockUri: viewer?.blocking?.toString(),
+      ),
+      child: BlocConsumer<ProfileActionCubit, ProfileActionState>(
+        listener: (context, state) {
+          if (state.error != null) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.error!), behavior: SnackBarBehavior.floating));
+            context.read<ProfileActionCubit>().clearError();
+          }
+        },
+        builder: (context, state) => ProfileActionButtons(
+          isFollowing: state.isFollowing,
+          isMuted: state.isMuted,
+          isBlocked: state.isBlocked,
+          isBlockedBy: state.isBlockedBy,
+          isLoadingFollow: state.isLoadingFollow,
+          isLoadingMute: state.isLoadingMute,
+          isLoadingBlock: state.isLoadingBlock,
+          onFollow: () => context.read<ProfileActionCubit>().toggleFollow(),
+          onUnfollow: () => context.read<ProfileActionCubit>().toggleFollow(),
+          onMute: () => context.read<ProfileActionCubit>().toggleMute(),
+          onUnmute: () => context.read<ProfileActionCubit>().toggleMute(),
+          onBlock: () => context.read<ProfileActionCubit>().toggleBlock(),
+          onUnblock: () => context.read<ProfileActionCubit>().toggleBlock(),
+          onMore: () => _showProfileMoreOptions(context, profile),
+        ),
+      ),
+    );
+  }
+
+  void _showProfileMoreOptions(BuildContext context, ProfileViewDetailed profile) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('Copy DID'),
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: profile.did));
+                Navigator.pop(sheetContext);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('DID copied to clipboard'), behavior: SnackBarBehavior.floating),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('Share Profile'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                final url = 'https://bsky.app/profile/${profile.handle}';
+                Share.share(url);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildFeedList(FeedState feedState, FeedFilter tabFilter) {
     if (feedState.isLoading && feedState.filter == tabFilter) {
       return const Center(child: CircularProgressIndicator());
@@ -350,7 +433,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               );
             }
 
-            return PostCard(feedViewPost: feedState.posts[index]);
+            return PostCardWithActions(feedViewPost: feedState.posts[index], accountDid: _resolvedActor ?? '');
           },
         ),
       ),

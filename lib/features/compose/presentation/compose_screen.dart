@@ -17,6 +17,9 @@ class ComposeScreen extends StatefulWidget {
     this.replyRootUri,
     this.replyRootCid,
     this.replyAuthorHandle,
+    this.quoteUri,
+    this.quoteCid,
+    this.quoteAuthorHandle,
     this.draftId,
   });
 
@@ -25,6 +28,9 @@ class ComposeScreen extends StatefulWidget {
   final String? replyRootUri;
   final String? replyRootCid;
   final String? replyAuthorHandle;
+  final String? quoteUri;
+  final String? quoteCid;
+  final String? quoteAuthorHandle;
   final int? draftId;
 
   @override
@@ -53,6 +59,10 @@ class _ComposeScreenState extends State<ComposeScreen> {
           rootCid: widget.replyRootCid ?? widget.replyParentCid!,
         ),
       );
+    }
+
+    if (widget.quoteUri != null && widget.quoteCid != null) {
+      context.read<ComposeBloc>().add(QuoteContextSet(quoteUri: widget.quoteUri!, quoteCid: widget.quoteCid!));
     }
 
     _textController.addListener(_onTextChanged);
