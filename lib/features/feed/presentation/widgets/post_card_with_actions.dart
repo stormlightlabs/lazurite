@@ -83,6 +83,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
               replyCount: post.replyCount ?? 0,
               repostCount: postActionState.repostCount,
               likeCount: postActionState.likeCount,
+              saveCount: post.bookmarkCount ?? 0,
               isLiked: postActionState.isLiked,
               isReposted: postActionState.isReposted,
               isSaved: savedState.isSaved(post.uri.toString()),
@@ -95,6 +96,9 @@ class _PostCardWithActionsContent extends StatelessWidget {
               onQuote: () => _onQuote(context),
               onLike: () => context.read<PostActionCubit>().toggleLike(),
               onSave: () {
+                unawaited(_onToggleSave(context));
+              },
+              onLongPressSave: () {
                 unawaited(_onToggleSave(context));
               },
               onMore: () => _showMoreOptions(context),

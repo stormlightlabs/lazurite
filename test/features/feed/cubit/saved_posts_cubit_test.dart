@@ -243,6 +243,54 @@ void main() {
         expect(state.isSaved('uri1'), isTrue);
         expect(state.isSaved('uri3'), isFalse);
       });
+
+      test('saveTypeForUri returns correct save type', () {
+        const state = SavedPostsState(
+          status: SavedPostsStatus.loaded,
+          savedUris: {'uri1'},
+          saveTypeByUri: {'uri1': 'local'},
+        );
+
+        expect(state.saveTypeForUri('uri1'), equals('local'));
+        expect(state.saveTypeForUri('uri2'), isNull);
+      });
+
+      test('saveTypeByUri is included in props', () {
+        const state1 = SavedPostsState(
+          status: SavedPostsStatus.loaded,
+          savedUris: {'uri1'},
+          saveTypeByUri: {'uri1': 'local'},
+        );
+        const state2 = SavedPostsState(
+          status: SavedPostsStatus.loaded,
+          savedUris: {'uri1'},
+          saveTypeByUri: {'uri1': 'cloud'},
+        );
+
+        expect(state1, isNot(equals(state2)));
+      });
+    });
+
+    group('saveType', () {
+      test('toggleSave saves post with local saveType', () async {
+        final cubit = SavedPostsCubit(database: database, accountDid: testAccountDid);
+
+        await cubit.toggleSave(postUri: testPostUri1, postJson: testPostJson1);
+
+        final posts = await database.getSavedPosts(testAccountDid);
+        expect(posts.length, 1);
+        expect(posts.first.saveType, equals('local'));
+      });
+
+      test('saveTypeForUri returns local after saving', () async {
+        final cubit = SavedPostsCubit(database: database, accountDid: testAccountDid);
+
+        await cubit.toggleSave(postUri: testPostUri1, postJson: testPostJson1);
+        await cubit.loadSavedPosts();
+
+        expect(cubit.state.saveTypeForUri(testPostUri1), equals('local'));
+        expect(cubit.state.saveTypeForUri(testPostUri2), isNull);
+      });
     });
   });
 }

@@ -11,32 +11,41 @@ class SavedPostsState extends Equatable {
     this.status = SavedPostsStatus.initial,
     this.savedPosts = const [],
     this.savedUris = const {},
+    this.saveTypeByUri = const {},
     this.error,
   });
 
   final SavedPostsStatus status;
   final List<SavedPostEntry> savedPosts;
   final Set<String> savedUris;
+
+  /// Maps post URI to its save type: 'local' or 'cloud'.
+  final Map<String, String> saveTypeByUri;
   final String? error;
 
   bool isSaved(String postUri) => savedUris.contains(postUri);
+
+  /// Returns the save type for [postUri], or null if not saved.
+  String? saveTypeForUri(String postUri) => saveTypeByUri[postUri];
 
   SavedPostsState copyWith({
     SavedPostsStatus? status,
     List<SavedPostEntry>? savedPosts,
     Set<String>? savedUris,
+    Map<String, String>? saveTypeByUri,
     String? error,
   }) {
     return SavedPostsState(
       status: status ?? this.status,
       savedPosts: savedPosts ?? this.savedPosts,
       savedUris: savedUris ?? this.savedUris,
+      saveTypeByUri: saveTypeByUri ?? this.saveTypeByUri,
       error: error ?? this.error,
     );
   }
 
   @override
-  List<Object?> get props => [status, savedPosts, savedUris, error];
+  List<Object?> get props => [status, savedPosts, savedUris, saveTypeByUri, error];
 }
 
 enum SavedPostsStatus { initial, loading, loaded, error }
@@ -51,14 +60,14 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
 
   final AppDatabase _database;
   final String _accountDid;
-  StreamSubscription<Set<String>>? _savedUrisSubscription;
+  StreamSubscription<Map<String, String>>? _savedUrisSubscription;
 
   void _init() {
     _savedUrisSubscription = _database
-        .watchSavedPostUris(_accountDid)
+        .watchSavedPostsWithType(_accountDid)
         .listen(
-          (uris) {
-            emit(state.copyWith(savedUris: uris));
+          (typeByUri) {
+            emit(state.copyWith(savedUris: typeByUri.keys.toSet(), saveTypeByUri: typeByUri));
           },
           onError: (error) {
             log.e('Error watching saved post URIs', error: error);
@@ -92,6 +101,7 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
             accountDid: Value(_accountDid),
             postUri: Value(postUri),
             postJson: Value(postJson),
+            saveType: const Value('local'),
             savedAt: Value(DateTime.now()),
           ),
         );

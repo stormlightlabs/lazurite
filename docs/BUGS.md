@@ -13,8 +13,8 @@ updated: 2026-03-17
 - [x] [6. Viewer State on Own Posts](#6-viewer-state-on-own-posts)
 - [x] [7. Saved Posts Screen — Render Actual Posts](#7-saved-posts-screen--render-actual-posts)
 - [x] [8. Saved Posts — Accessible from Profile](#8-saved-posts--accessible-from-profile)
-- [ ] [9. Saved Posts — Long Press for Local, Tap for Menu](#9-saved-posts--long-press-for-local-tap-for-menu)
-- [ ] [10. Saved Posts — Show Save Counts](#10-saved-posts--show-save-counts)
+- [x] [9. Saved Posts — Long Press for Local, Tap for Menu](#9-saved-posts--long-press-for-local-tap-for-menu)
+- [x] [10. Saved Posts — Show Save Counts](#10-saved-posts--show-save-counts)
 - [ ] [11. Failed Action Snackbar with Revert](#11-failed-action-snackbar-with-revert)
 - [ ] [12. Delete Post — Remove from Feed](#12-delete-post--remove-from-feed)
 

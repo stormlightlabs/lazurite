@@ -97,6 +97,7 @@ class SavedPosts extends Table {
   TextColumn get accountDid => text()();
   TextColumn get postUri => text()();
   TextColumn get postJson => text()();
+  TextColumn get saveType => text().withDefault(const Constant('local'))();
   DateTimeColumn get savedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override

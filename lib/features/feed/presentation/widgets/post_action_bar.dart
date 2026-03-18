@@ -9,6 +9,7 @@ class PostActionBar extends StatelessWidget {
     required this.replyCount,
     required this.repostCount,
     required this.likeCount,
+    required this.saveCount,
     required this.isLiked,
     required this.isReposted,
     required this.isSaved,
@@ -20,6 +21,7 @@ class PostActionBar extends StatelessWidget {
     this.onLike,
     this.onShare,
     this.onSave,
+    this.onLongPressSave,
     this.onMore,
     this.isLoadingLike = false,
     this.isLoadingRepost = false,
@@ -28,6 +30,7 @@ class PostActionBar extends StatelessWidget {
   final int replyCount;
   final int repostCount;
   final int likeCount;
+  final int saveCount;
   final bool isLiked;
   final bool isReposted;
   final bool isSaved;
@@ -39,6 +42,7 @@ class PostActionBar extends StatelessWidget {
   final VoidCallback? onLike;
   final VoidCallback? onShare;
   final VoidCallback? onSave;
+  final VoidCallback? onLongPressSave;
   final VoidCallback? onMore;
   final bool isLoadingLike;
   final bool isLoadingRepost;
@@ -77,11 +81,12 @@ class PostActionBar extends StatelessWidget {
         _ActionButton(
           icon: isSaved ? Icons.bookmark : Icons.bookmark_outline,
           activeIcon: Icons.bookmark,
-          count: 0,
+          count: saveCount,
           isActive: isSaved,
-          onTap: onSave,
+          onTap: onSave != null ? () => _showSaveOptions(context) : null,
+          onLongPress: onLongPressSave,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
-          activeColor: Theme.of(context).colorScheme.primary,
+          activeColor: Colors.amber,
         ),
         _ActionButton(
           icon: Icons.share_outlined,
@@ -129,6 +134,40 @@ class PostActionBar extends StatelessWidget {
                   onQuote?.call();
                 },
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSaveOptions(BuildContext context) {
+    HapticFeedback.mediumImpact();
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(
+                isSaved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined,
+                color: Colors.amber,
+              ),
+              title: Text(isSaved ? 'Remove local save' : 'Save locally'),
+              onTap: () {
+                Navigator.pop(context);
+                onSave?.call();
+              },
+            ),
+            ListTile(
+              enabled: false,
+              leading: Icon(
+                Icons.cloud_outlined,
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              ),
+              title: const Text('Save to Bluesky'),
+              subtitle: const Text('Coming soon'),
+            ),
           ],
         ),
       ),

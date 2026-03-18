@@ -252,9 +252,10 @@ class _FocusedPostContent extends StatelessWidget {
         return BlocBuilder<SavedPostsCubit, SavedPostsState>(
           builder: (context, savedState) {
             return PostActionBar(
-              replyCount: 0,
-              repostCount: 0,
-              likeCount: 0,
+              replyCount: post.replyCount ?? 0,
+              repostCount: postActionState.repostCount,
+              likeCount: postActionState.likeCount,
+              saveCount: post.bookmarkCount ?? 0,
               isLiked: postActionState.isLiked,
               isReposted: postActionState.isReposted,
               isSaved: savedState.isSaved(post.uri.toString()),
@@ -267,6 +268,9 @@ class _FocusedPostContent extends StatelessWidget {
               onQuote: () => _onQuote(context),
               onLike: () => context.read<PostActionCubit>().toggleLike(),
               onSave: () {
+                unawaited(_onToggleSave(context));
+              },
+              onLongPressSave: () {
                 unawaited(_onToggleSave(context));
               },
               onMore: () => _showMoreOptions(context),

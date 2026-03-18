@@ -2709,6 +2709,16 @@ class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, Saved
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _saveTypeMeta = const VerificationMeta('saveType');
+  @override
+  late final GeneratedColumn<String> saveType = GeneratedColumn<String>(
+    'save_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('local'),
+  );
   static const VerificationMeta _savedAtMeta = const VerificationMeta('savedAt');
   @override
   late final GeneratedColumn<DateTime> savedAt = GeneratedColumn<DateTime>(
@@ -2720,7 +2730,7 @@ class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, Saved
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, accountDid, postUri, postJson, savedAt];
+  List<GeneratedColumn> get $columns => [id, accountDid, postUri, postJson, saveType, savedAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2748,6 +2758,9 @@ class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, Saved
     } else if (isInserting) {
       context.missing(_postJsonMeta);
     }
+    if (data.containsKey('save_type')) {
+      context.handle(_saveTypeMeta, saveType.isAcceptableOrUnknown(data['save_type']!, _saveTypeMeta));
+    }
     if (data.containsKey('saved_at')) {
       context.handle(_savedAtMeta, savedAt.isAcceptableOrUnknown(data['saved_at']!, _savedAtMeta));
     }
@@ -2764,6 +2777,7 @@ class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, Saved
       accountDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}account_did'])!,
       postUri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}post_uri'])!,
       postJson: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}post_json'])!,
+      saveType: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}save_type'])!,
       savedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}saved_at'])!,
     );
   }
@@ -2779,12 +2793,14 @@ class SavedPostEntry extends DataClass implements Insertable<SavedPostEntry> {
   final String accountDid;
   final String postUri;
   final String postJson;
+  final String saveType;
   final DateTime savedAt;
   const SavedPostEntry({
     required this.id,
     required this.accountDid,
     required this.postUri,
     required this.postJson,
+    required this.saveType,
     required this.savedAt,
   });
   @override
@@ -2794,6 +2810,7 @@ class SavedPostEntry extends DataClass implements Insertable<SavedPostEntry> {
     map['account_did'] = Variable<String>(accountDid);
     map['post_uri'] = Variable<String>(postUri);
     map['post_json'] = Variable<String>(postJson);
+    map['save_type'] = Variable<String>(saveType);
     map['saved_at'] = Variable<DateTime>(savedAt);
     return map;
   }
@@ -2804,6 +2821,7 @@ class SavedPostEntry extends DataClass implements Insertable<SavedPostEntry> {
       accountDid: Value(accountDid),
       postUri: Value(postUri),
       postJson: Value(postJson),
+      saveType: Value(saveType),
       savedAt: Value(savedAt),
     );
   }
@@ -2815,6 +2833,7 @@ class SavedPostEntry extends DataClass implements Insertable<SavedPostEntry> {
       accountDid: serializer.fromJson<String>(json['accountDid']),
       postUri: serializer.fromJson<String>(json['postUri']),
       postJson: serializer.fromJson<String>(json['postJson']),
+      saveType: serializer.fromJson<String>(json['saveType']),
       savedAt: serializer.fromJson<DateTime>(json['savedAt']),
     );
   }
@@ -2826,24 +2845,33 @@ class SavedPostEntry extends DataClass implements Insertable<SavedPostEntry> {
       'accountDid': serializer.toJson<String>(accountDid),
       'postUri': serializer.toJson<String>(postUri),
       'postJson': serializer.toJson<String>(postJson),
+      'saveType': serializer.toJson<String>(saveType),
       'savedAt': serializer.toJson<DateTime>(savedAt),
     };
   }
 
-  SavedPostEntry copyWith({int? id, String? accountDid, String? postUri, String? postJson, DateTime? savedAt}) =>
-      SavedPostEntry(
-        id: id ?? this.id,
-        accountDid: accountDid ?? this.accountDid,
-        postUri: postUri ?? this.postUri,
-        postJson: postJson ?? this.postJson,
-        savedAt: savedAt ?? this.savedAt,
-      );
+  SavedPostEntry copyWith({
+    int? id,
+    String? accountDid,
+    String? postUri,
+    String? postJson,
+    String? saveType,
+    DateTime? savedAt,
+  }) => SavedPostEntry(
+    id: id ?? this.id,
+    accountDid: accountDid ?? this.accountDid,
+    postUri: postUri ?? this.postUri,
+    postJson: postJson ?? this.postJson,
+    saveType: saveType ?? this.saveType,
+    savedAt: savedAt ?? this.savedAt,
+  );
   SavedPostEntry copyWithCompanion(SavedPostsCompanion data) {
     return SavedPostEntry(
       id: data.id.present ? data.id.value : this.id,
       accountDid: data.accountDid.present ? data.accountDid.value : this.accountDid,
       postUri: data.postUri.present ? data.postUri.value : this.postUri,
       postJson: data.postJson.present ? data.postJson.value : this.postJson,
+      saveType: data.saveType.present ? data.saveType.value : this.saveType,
       savedAt: data.savedAt.present ? data.savedAt.value : this.savedAt,
     );
   }
@@ -2855,13 +2883,14 @@ class SavedPostEntry extends DataClass implements Insertable<SavedPostEntry> {
           ..write('accountDid: $accountDid, ')
           ..write('postUri: $postUri, ')
           ..write('postJson: $postJson, ')
+          ..write('saveType: $saveType, ')
           ..write('savedAt: $savedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, accountDid, postUri, postJson, savedAt);
+  int get hashCode => Object.hash(id, accountDid, postUri, postJson, saveType, savedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2870,6 +2899,7 @@ class SavedPostEntry extends DataClass implements Insertable<SavedPostEntry> {
           other.accountDid == this.accountDid &&
           other.postUri == this.postUri &&
           other.postJson == this.postJson &&
+          other.saveType == this.saveType &&
           other.savedAt == this.savedAt);
 }
 
@@ -2878,12 +2908,14 @@ class SavedPostsCompanion extends UpdateCompanion<SavedPostEntry> {
   final Value<String> accountDid;
   final Value<String> postUri;
   final Value<String> postJson;
+  final Value<String> saveType;
   final Value<DateTime> savedAt;
   const SavedPostsCompanion({
     this.id = const Value.absent(),
     this.accountDid = const Value.absent(),
     this.postUri = const Value.absent(),
     this.postJson = const Value.absent(),
+    this.saveType = const Value.absent(),
     this.savedAt = const Value.absent(),
   });
   SavedPostsCompanion.insert({
@@ -2891,6 +2923,7 @@ class SavedPostsCompanion extends UpdateCompanion<SavedPostEntry> {
     required String accountDid,
     required String postUri,
     required String postJson,
+    this.saveType = const Value.absent(),
     this.savedAt = const Value.absent(),
   }) : accountDid = Value(accountDid),
        postUri = Value(postUri),
@@ -2900,6 +2933,7 @@ class SavedPostsCompanion extends UpdateCompanion<SavedPostEntry> {
     Expression<String>? accountDid,
     Expression<String>? postUri,
     Expression<String>? postJson,
+    Expression<String>? saveType,
     Expression<DateTime>? savedAt,
   }) {
     return RawValuesInsertable({
@@ -2907,6 +2941,7 @@ class SavedPostsCompanion extends UpdateCompanion<SavedPostEntry> {
       if (accountDid != null) 'account_did': accountDid,
       if (postUri != null) 'post_uri': postUri,
       if (postJson != null) 'post_json': postJson,
+      if (saveType != null) 'save_type': saveType,
       if (savedAt != null) 'saved_at': savedAt,
     });
   }
@@ -2916,6 +2951,7 @@ class SavedPostsCompanion extends UpdateCompanion<SavedPostEntry> {
     Value<String>? accountDid,
     Value<String>? postUri,
     Value<String>? postJson,
+    Value<String>? saveType,
     Value<DateTime>? savedAt,
   }) {
     return SavedPostsCompanion(
@@ -2923,6 +2959,7 @@ class SavedPostsCompanion extends UpdateCompanion<SavedPostEntry> {
       accountDid: accountDid ?? this.accountDid,
       postUri: postUri ?? this.postUri,
       postJson: postJson ?? this.postJson,
+      saveType: saveType ?? this.saveType,
       savedAt: savedAt ?? this.savedAt,
     );
   }
@@ -2942,6 +2979,9 @@ class SavedPostsCompanion extends UpdateCompanion<SavedPostEntry> {
     if (postJson.present) {
       map['post_json'] = Variable<String>(postJson.value);
     }
+    if (saveType.present) {
+      map['save_type'] = Variable<String>(saveType.value);
+    }
     if (savedAt.present) {
       map['saved_at'] = Variable<DateTime>(savedAt.value);
     }
@@ -2955,6 +2995,7 @@ class SavedPostsCompanion extends UpdateCompanion<SavedPostEntry> {
           ..write('accountDid: $accountDid, ')
           ..write('postUri: $postUri, ')
           ..write('postJson: $postJson, ')
+          ..write('saveType: $saveType, ')
           ..write('savedAt: $savedAt')
           ..write(')'))
         .toString();
@@ -4270,6 +4311,7 @@ typedef $$SavedPostsTableCreateCompanionBuilder =
       required String accountDid,
       required String postUri,
       required String postJson,
+      Value<String> saveType,
       Value<DateTime> savedAt,
     });
 typedef $$SavedPostsTableUpdateCompanionBuilder =
@@ -4278,6 +4320,7 @@ typedef $$SavedPostsTableUpdateCompanionBuilder =
       Value<String> accountDid,
       Value<String> postUri,
       Value<String> postJson,
+      Value<String> saveType,
       Value<DateTime> savedAt,
     });
 
@@ -4299,6 +4342,9 @@ class $$SavedPostsTableFilterComposer extends Composer<_$AppDatabase, $SavedPost
 
   ColumnFilters<String> get postJson =>
       $composableBuilder(column: $table.postJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get saveType =>
+      $composableBuilder(column: $table.saveType, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get savedAt =>
       $composableBuilder(column: $table.savedAt, builder: (column) => ColumnFilters(column));
@@ -4323,6 +4369,9 @@ class $$SavedPostsTableOrderingComposer extends Composer<_$AppDatabase, $SavedPo
   ColumnOrderings<String> get postJson =>
       $composableBuilder(column: $table.postJson, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get saveType =>
+      $composableBuilder(column: $table.saveType, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get savedAt =>
       $composableBuilder(column: $table.savedAt, builder: (column) => ColumnOrderings(column));
 }
@@ -4342,6 +4391,8 @@ class $$SavedPostsTableAnnotationComposer extends Composer<_$AppDatabase, $Saved
   GeneratedColumn<String> get postUri => $composableBuilder(column: $table.postUri, builder: (column) => column);
 
   GeneratedColumn<String> get postJson => $composableBuilder(column: $table.postJson, builder: (column) => column);
+
+  GeneratedColumn<String> get saveType => $composableBuilder(column: $table.saveType, builder: (column) => column);
 
   GeneratedColumn<DateTime> get savedAt => $composableBuilder(column: $table.savedAt, builder: (column) => column);
 }
@@ -4375,12 +4426,14 @@ class $$SavedPostsTableTableManager
                 Value<String> accountDid = const Value.absent(),
                 Value<String> postUri = const Value.absent(),
                 Value<String> postJson = const Value.absent(),
+                Value<String> saveType = const Value.absent(),
                 Value<DateTime> savedAt = const Value.absent(),
               }) => SavedPostsCompanion(
                 id: id,
                 accountDid: accountDid,
                 postUri: postUri,
                 postJson: postJson,
+                saveType: saveType,
                 savedAt: savedAt,
               ),
           createCompanionCallback:
@@ -4389,12 +4442,14 @@ class $$SavedPostsTableTableManager
                 required String accountDid,
                 required String postUri,
                 required String postJson,
+                Value<String> saveType = const Value.absent(),
                 Value<DateTime> savedAt = const Value.absent(),
               }) => SavedPostsCompanion.insert(
                 id: id,
                 accountDid: accountDid,
                 postUri: postUri,
                 postJson: postJson,
+                saveType: saveType,
                 savedAt: savedAt,
               ),
           withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),

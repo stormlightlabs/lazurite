@@ -43,6 +43,7 @@ SavedPostEntry _makeEntry({
     accountDid: 'did:plc:me',
     postUri: postUri,
     postJson: postJson,
+    saveType: 'local',
     savedAt: DateTime.utc(2026, 3, 15),
   );
 }
@@ -58,7 +59,7 @@ void main() {
     mockPostActionRepository = MockPostActionRepository();
 
     // Default stubs: empty saved posts
-    when(() => mockDatabase.watchSavedPostUris(testAccountDid)).thenAnswer((_) => Stream.value({}));
+    when(() => mockDatabase.watchSavedPostsWithType(testAccountDid)).thenAnswer((_) => Stream.value({}));
     when(() => mockDatabase.getSavedPosts(testAccountDid)).thenAnswer((_) => Future.value([]));
   });
 
@@ -89,8 +90,8 @@ void main() {
 
     when(() => mockDatabase.getSavedPosts(testAccountDid)).thenAnswer((_) => Future.value([entry]));
     when(
-      () => mockDatabase.watchSavedPostUris(testAccountDid),
-    ).thenAnswer((_) => Stream.value({postView.uri.toString()}));
+      () => mockDatabase.watchSavedPostsWithType(testAccountDid),
+    ).thenAnswer((_) => Stream.value({postView.uri.toString(): 'local'}));
 
     await tester.pumpWidget(buildSubject());
     await tester.pump();
@@ -102,7 +103,9 @@ void main() {
     final entry = _makeEntry(postJson: 'not valid json {{{');
 
     when(() => mockDatabase.getSavedPosts(testAccountDid)).thenAnswer((_) => Future.value([entry]));
-    when(() => mockDatabase.watchSavedPostUris(testAccountDid)).thenAnswer((_) => Stream.value({entry.postUri}));
+    when(
+      () => mockDatabase.watchSavedPostsWithType(testAccountDid),
+    ).thenAnswer((_) => Stream.value({entry.postUri: 'local'}));
 
     await tester.pumpWidget(buildSubject());
     await tester.pump();
@@ -122,8 +125,8 @@ void main() {
       return Future.value(callCount == 1 ? [entry] : <SavedPostEntry>[]);
     });
     when(
-      () => mockDatabase.watchSavedPostUris(testAccountDid),
-    ).thenAnswer((_) => Stream.value({postView.uri.toString()}));
+      () => mockDatabase.watchSavedPostsWithType(testAccountDid),
+    ).thenAnswer((_) => Stream.value({postView.uri.toString(): 'local'}));
     when(() => mockDatabase.unsavePostById(entry.id)).thenAnswer((_) => Future.value(1));
 
     await tester.pumpWidget(buildSubject());

@@ -11,7 +11,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -37,6 +37,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 6) {
         await migrator.createTable(savedPosts);
+      }
+      if (from < 7) {
+        await migrator.addColumn(savedPosts, savedPosts.saveType);
       }
     },
   );
@@ -269,5 +272,11 @@ class AppDatabase extends _$AppDatabase {
     return (select(
       savedPosts,
     )..where((s) => s.accountDid.equals(accountDid))).watch().map((posts) => posts.map((p) => p.postUri).toSet());
+  }
+
+  Stream<Map<String, String>> watchSavedPostsWithType(String accountDid) {
+    return (select(savedPosts)..where((s) => s.accountDid.equals(accountDid))).watch().map(
+      (posts) => {for (final p in posts) p.postUri: p.saveType},
+    );
   }
 }
