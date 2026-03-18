@@ -9,9 +9,10 @@ import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
-import 'package:lazurite/features/feed/presentation/media/image_media_actions.dart';
+import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
+import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
+import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PostCard extends StatelessWidget {
@@ -301,7 +302,7 @@ class PostCard extends StatelessWidget {
 
   Widget _buildVideoEmbed(BuildContext context, EmbedVideoView video) {
     return InkWell(
-      onTap: () => _launchExternal(Uri.parse(video.playlist)),
+      onTap: () => _openVideoViewer(context, video),
       borderRadius: BorderRadius.circular(16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -559,13 +560,9 @@ class PostCard extends StatelessWidget {
 
     switch (selected) {
       case _ImageThumbnailAction.save:
-        await ImageMediaActions.downloadImage(
-          context,
-          image.fullsize,
-          suggestedName: _downloadFileName(image.fullsize),
-        );
+        await MediaActions.downloadImage(context, image.fullsize, suggestedName: _downloadFileName(image.fullsize));
       case _ImageThumbnailAction.share:
-        await ImageMediaActions.shareImage(context, image.fullsize);
+        await MediaActions.shareImage(context, image.fullsize);
     }
   }
 
@@ -575,6 +572,21 @@ class PostCard extends StatelessWidget {
     final uri = Uri.tryParse(url);
     final segment = uri?.pathSegments.isNotEmpty == true ? uri!.pathSegments.last : 'image.jpg';
     return segment.isEmpty ? 'image.jpg' : segment;
+  }
+
+  void _openVideoViewer(BuildContext context, EmbedVideoView video) {
+    final ratio = video.aspectRatio == null ? null : video.aspectRatio!.width / video.aspectRatio!.height;
+    final isGif = video.presentation?.knownValue == KnownEmbedVideoViewPresentation.gif;
+    GoRouter.maybeOf(context)?.push(
+      '/video',
+      extra: VideoPlayerRouteArgs(
+        playlistUrl: video.playlist,
+        thumbnailUrl: video.thumbnail,
+        altText: video.alt,
+        aspectRatio: ratio,
+        isGif: isGif,
+      ),
+    );
   }
 }
 

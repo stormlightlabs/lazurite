@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:photo_view/photo_view_gallery.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:lazurite/features/feed/presentation/media/image_media_actions.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
+import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
+import 'package:photo_view/photo_view_gallery.dart';
 
 class ImageViewerScreen extends StatefulWidget {
   const ImageViewerScreen({super.key, required this.args});
@@ -65,7 +65,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
           ),
           IconButton(
             tooltip: 'Share',
-            onPressed: () => ImageMediaActions.shareImage(context, image.fullsizeUrl),
+            onPressed: () => MediaActions.shareImage(context, image.fullsizeUrl),
             icon: const Icon(Icons.share_outlined),
           ),
         ],
@@ -177,7 +177,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
     });
 
     final image = widget.args.images[_currentIndex];
-    await ImageMediaActions.downloadImage(
+    await MediaActions.downloadImage(
       context,
       image.fullsizeUrl,
       onProgress: (value) {

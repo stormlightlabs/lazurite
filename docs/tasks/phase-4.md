@@ -29,13 +29,13 @@
 
 ### Video Player
 
-- [ ] `VideoPlayerScreen` — `chewie` wrapping `VideoPlayerController.networkUrl` with HLS `playlist` URL
-- [ ] Video player uses embed `aspectRatio` when available, defaults to 16:9
-- [ ] Video thumbnail as placeholder until player initialises; controller disposed on screen pop
-- [ ] GIF-presentation mode — auto-play, loop, muted, controls hidden when `presentation` is `"gif"`
-- [ ] Download button in video player toolbar — parse `.m3u8` for highest-bandwidth variant URL, download MP4 via `dio` with progress, save via `gal`
-- [ ] Declare `NSPhotoLibraryAddUsageDescription` in `Info.plist` and storage permissions in `AndroidManifest.xml`
-- [ ] Replace `_launchExternal` calls for image/video embeds in `PostCard` with navigation to the new viewer screens
+- [x] `VideoPlayerScreen` — `chewie` wrapping `VideoPlayerController.networkUrl` with HLS `playlist` URL
+- [x] Video player uses embed `aspectRatio` when available, defaults to 16:9
+- [x] Video thumbnail as placeholder until player initialises; controller disposed on screen pop
+- [x] GIF-presentation mode — auto-play, loop, muted, controls hidden when `presentation` is `"gif"`
+- [x] Download button in video player toolbar — parse `.m3u8` for highest-bandwidth variant URL, download MP4 via `dio` with progress, save via `gal`
+- [x] Declare `NSPhotoLibraryAddUsageDescription` in `Info.plist` and storage permissions in `AndroidManifest.xml`
+- [x] Replace `_launchExternal` calls for image/video embeds in `PostCard` with navigation to the new viewer screens
 
 ## M14 — Account Switching
 

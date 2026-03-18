@@ -15,9 +15,11 @@ import 'package:lazurite/features/compose/presentation/compose_screen.dart';
 import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
-import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_screen.dart';
+import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
 import 'package:lazurite/features/feed/presentation/post_thread_screen.dart';
+import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
+import 'package:lazurite/features/feed/presentation/media/video_player_screen.dart';
 import 'package:lazurite/features/logs/presentation/logs_screen.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
@@ -106,6 +108,14 @@ class AppRouter {
         builder: (context, state) {
           final args = state.extra as ImageViewerRouteArgs;
           return ImageViewerScreen(args: args);
+        },
+      ),
+      GoRoute(
+        path: '/video',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final args = state.extra as VideoPlayerRouteArgs;
+          return VideoPlayerScreen(args: args);
         },
       ),
       GoRoute(
