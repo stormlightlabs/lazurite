@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +40,8 @@ void main() {
   late MockSettingsCubit settingsCubit;
   late MockUnreadCountCubit unreadCountCubit;
   late MockNotificationRepository notificationRepository;
+  late StreamController<AuthState> authController;
+  late AuthState currentAuthState;
 
   const tokens = AuthTokens(
     accessToken: 'access',
@@ -65,8 +69,10 @@ void main() {
     settingsCubit = MockSettingsCubit();
     unreadCountCubit = MockUnreadCountCubit();
     notificationRepository = MockNotificationRepository();
+    authController = StreamController<AuthState>.broadcast();
+    currentAuthState = const AuthState.authenticated(tokens);
 
-    when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
+    when(() => authBloc.state).thenAnswer((_) => currentAuthState);
     when(() => feedPreferencesCubit.state).thenReturn(const FeedPreferencesState.loaded(feeds: []));
     when(() => profileBloc.state).thenReturn(ProfileState.loaded(profile: profile));
     when(() => feedBloc.state).thenReturn(
@@ -82,7 +88,7 @@ void main() {
     when(() => unreadCountCubit.state).thenReturn(const UnreadCountState(0));
     when(() => notificationRepository.getUnreadCount()).thenAnswer((_) async => 0);
 
-    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
+    whenListen(authBloc, authController.stream, initialState: currentAuthState);
     whenListen(
       feedPreferencesCubit,
       const Stream<FeedPreferencesState>.empty(),
@@ -111,6 +117,10 @@ void main() {
     whenListen(unreadCountCubit, const Stream<UnreadCountState>.empty(), initialState: const UnreadCountState(0));
   });
 
+  tearDown(() async {
+    await authController.close();
+  });
+
   Widget buildSubject() {
     return MultiBlocProvider(
       providers: [
@@ -128,23 +138,89 @@ void main() {
     );
   }
 
-  testWidgets('renders bottom navigation and switches authenticated branches', (tester) async {
+  testWidgets('opens the side menu and switches authenticated branches', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.home), findsOneWidget);
-    expect(find.byIcon(Icons.person_outline), findsOneWidget);
-    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+    expect(find.byTooltip('Open menu'), findsOneWidget);
     expect(find.text('No feeds pinned'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.person_outline).first);
+    await tester.tap(find.byTooltip('Open menu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Menu'), findsOneWidget);
+    expect(find.text('New Post'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Log Out'), 200, scrollable: find.byType(Scrollable).last);
+    expect(find.text('Log Out'), findsOneWidget);
+
+    await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
 
     expect(find.text('River Tam'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.settings_outlined).first);
+    await tester.tap(find.byTooltip('Open menu'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
 
     expect(find.text('APPEARANCE'), findsOneWidget);
+  });
+
+  testWidgets('redirects to login after logout without crashing on the settings branch', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    final widget = MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>.value(value: authBloc),
+        BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
+        BlocProvider<ProfileBloc>.value(value: profileBloc),
+        BlocProvider<FeedBloc>.value(value: feedBloc),
+        BlocProvider<SettingsCubit>.value(value: settingsCubit),
+      ],
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          final app = MaterialApp.router(routerConfig: router);
+          if (!state.isAuthenticated) {
+            return app;
+          }
+
+          return MultiBlocProvider(
+            providers: [BlocProvider<UnreadCountCubit>.value(value: unreadCountCubit)],
+            child: RepositoryProvider<NotificationRepository>.value(value: notificationRepository, child: app),
+          );
+        },
+      ),
+    );
+
+    await tester.pumpWidget(widget);
+    await tester.pumpAndSettle();
+
+    router.go('/settings');
+    await tester.pumpAndSettle();
+
+    expect(find.text('APPEARANCE'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Log Out'));
+    await tester.pump();
+
+    verify(() => authBloc.add(const LogoutRequested())).called(1);
+
+    currentAuthState = const AuthState.unauthenticated();
+    authController.add(currentAuthState);
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Continue with BlueSky OAuth'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    router.dispose();
   });
 }

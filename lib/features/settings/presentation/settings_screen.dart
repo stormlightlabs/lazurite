@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
@@ -13,14 +14,15 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const AppShellMenuButton(),
         title: _title(context),
         actions: [
-          TextButton(
+          IconButton(
+            tooltip: 'Log Out',
             onPressed: () {
               context.read<AuthBloc>().add(const LogoutRequested());
-              context.go('/login');
             },
-            child: Text('Log Out', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
           ),
         ],
       ),
@@ -102,7 +104,6 @@ class SettingsScreen extends StatelessWidget {
             isDestructive: true,
             onTap: () {
               context.read<AuthBloc>().add(const LogoutRequested());
-              context.go('/login');
             },
           ),
           const SizedBox(height: 24),
@@ -144,26 +145,29 @@ class SettingsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: SizedBox(
                   width: double.infinity,
-                  child: SegmentedButton<_AppearanceMode>(
-                    segments: const [
-                      ButtonSegment(value: _AppearanceMode.system, label: Text('System')),
-                      ButtonSegment(value: _AppearanceMode.light, label: Text('Light')),
-                      ButtonSegment(value: _AppearanceMode.dark, label: Text('Dark')),
-                    ],
-                    selected: {_AppearanceMode.fromState(state)},
-                    onSelectionChanged: (selected) {
-                      final mode = selected.first;
-                      switch (mode) {
-                        case _AppearanceMode.system:
-                          settingsCubit.setUseSystemTheme(true);
-                        case _AppearanceMode.light:
-                          settingsCubit.setUseSystemTheme(false);
-                          settingsCubit.setThemeVariant(AppThemeVariant.light);
-                        case _AppearanceMode.dark:
-                          settingsCubit.setUseSystemTheme(false);
-                          settingsCubit.setThemeVariant(AppThemeVariant.dark);
-                      }
-                    },
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SegmentedButton<_AppearanceMode>(
+                      segments: const [
+                        ButtonSegment(value: _AppearanceMode.system, label: Text('System')),
+                        ButtonSegment(value: _AppearanceMode.light, label: Text('Light')),
+                        ButtonSegment(value: _AppearanceMode.dark, label: Text('Dark')),
+                      ],
+                      selected: {_AppearanceMode.fromState(state)},
+                      onSelectionChanged: (selected) {
+                        final mode = selected.first;
+                        switch (mode) {
+                          case _AppearanceMode.system:
+                            settingsCubit.setUseSystemTheme(true);
+                          case _AppearanceMode.light:
+                            settingsCubit.setUseSystemTheme(false);
+                            settingsCubit.setThemeVariant(AppThemeVariant.light);
+                          case _AppearanceMode.dark:
+                            settingsCubit.setUseSystemTheme(false);
+                            settingsCubit.setThemeVariant(AppThemeVariant.dark);
+                        }
+                      },
+                    ),
                   ),
                 ),
               ),

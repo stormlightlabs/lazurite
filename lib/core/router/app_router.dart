@@ -104,6 +104,10 @@ class AppRouter {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
+          if (!context.read<AuthBloc>().state.isAuthenticated) {
+            return AppShell(navigationShell: navigationShell);
+          }
+
           UnreadCountCubit? existingCubit;
           try {
             existingCubit = context.read<UnreadCountCubit>();

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
@@ -110,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               icon: const Icon(Icons.arrow_back),
                               onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
                             )
-                          : null,
+                          : const AppShellMenuButton(),
                       actions: [
                         IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => context.go('/settings')),
                       ],

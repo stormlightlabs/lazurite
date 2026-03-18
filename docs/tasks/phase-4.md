@@ -16,7 +16,7 @@
 
 ## M13 — Media Playback & Download
 
-- [ ] Add `photo_view`, `video_player`, `chewie`, `dio`, `gal`, `permission_handler` to `pubspec.yaml`
+- [x] Add `photo_view`, `video_player`, `chewie`, `dio`, `gal`, `permission_handler` to `pubspec.yaml`
 - [ ] `ImageViewerScreen` — full-screen `PageView` of `PhotoView` widgets loading `fullsize` URLs with hero animation from thumbnail
 - [ ] Page indicator for multi-image posts; alt text bar at the bottom of each page
 - [ ] Swipe-down-to-dismiss gesture on image viewer

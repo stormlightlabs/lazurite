@@ -149,8 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     children: [
                                       const Icon(Icons.bug_report_outlined),
                                       const SizedBox(width: 8),
-                                      Text('App Password Login', style: theme.textTheme.titleMedium),
-                                      const Spacer(),
+                                      Expanded(child: Text('App Password Login', style: theme.textTheme.titleMedium)),
                                       TextButton(
                                         onPressed: () {
                                           setState(() {

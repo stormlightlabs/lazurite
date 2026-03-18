@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 
@@ -129,6 +130,8 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       child: Row(
         children: [
+          const AppShellMenuButton(),
+          const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: _searchController,

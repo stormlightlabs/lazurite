@@ -4,6 +4,7 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
@@ -42,7 +43,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
         if (prefsState.status == FeedPreferencesStatus.error) {
           return Scaffold(
-            appBar: AppBar(title: _title),
+            appBar: AppBar(leading: const AppShellMenuButton(), title: _title),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -65,7 +66,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
         if (pinnedFeeds.isEmpty) {
           return Scaffold(
-            appBar: AppBar(title: _title),
+            appBar: AppBar(leading: const AppShellMenuButton(), title: _title),
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -93,6 +94,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
         return Scaffold(
           appBar: AppBar(
+            leading: const AppShellMenuButton(),
             title: _title,
             actions: [IconButton(icon: const Icon(Icons.rss_feed), onPressed: () => context.push('/feeds'))],
           ),

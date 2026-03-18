@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
 import 'package:lazurite/features/messages/presentation/widgets/convo_list_item.dart';
@@ -64,6 +65,7 @@ class _ConvoListScreenState extends State<ConvoListScreen> with SingleTickerProv
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const AppShellMenuButton(),
         title: Text('Messages', style: Theme.of(context).textTheme.titleMedium),
         bottom: TabBar(
           controller: _tabController,
