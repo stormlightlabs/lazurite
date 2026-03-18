@@ -6,35 +6,19 @@ Lazurite is a cross-platform Bluesky client built with Flutter and Dart using Ma
 
 ## Features
 
-### Home Feed
+### Home Feed & Composer
 
-View your personal timeline with support for threads and media.
+| Home Feed                                                       | Composer                                                                                  | Profile                                                          |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| ![Home Feed](./docs/images/home-feed.png)                       | ![Compose Screenshot](https://placehold.co/400x800/4CAF50/FFFFFF?text=Compose+Screenshot) | ![Profile](./docs/images/profile.png)                            |
+| View your personal timeline with support for threads and media. | Create new posts with rich text and media attachments. Supports replies and quoting.      | View detailed actor profiles, including their feed and metadata. |
 
-![Home Feed Screenshot](https://placehold.co/400x800/2196F3/FFFFFF?text=Home+Feed+Screenshot)
+### Search & Profile
 
-### Compose
-
-Create new posts with rich text and media attachments. Supports replies and quoting.
-
-![Compose Screenshot](https://placehold.co/400x800/4CAF50/FFFFFF?text=Compose+Screenshot)
-
-### Search
-
-Discover people and posts across the Bluesky network.
-
-![Search Screenshot](https://placehold.co/400x800/FF9800/FFFFFF?text=Search+Screenshot)
-
-### Profile
-
-View detailed actor profiles, including their feed and metadata.
-
-![Profile Screenshot](https://placehold.co/400x800/9C27B0/FFFFFF?text=Profile+Screenshot)
-
-### Developer Tools
-
-Built-in logs and developer utilities for exploring the AT Protocol.
-
-![DevTools Screenshot](https://placehold.co/400x800/607D8B/FFFFFF?text=Dev+Tools+Screenshot)
+| Search                                                | About                                | DevTools                                                                              |
+| ----------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
+| ![Search Results](./docs/images/search.png)           | ![About](./docs/images/about.png)    | ![DevTools](./docs/images/dev-tools.png)                                              |
+| Discover people and posts across the Bluesky network. | About (showing Rose Pine Moon theme) | Built-in logs and developer utilities for exploring the AT Protocol (Rose Pine Dawn). |
 
 ### Offline Support & Drafts
 
@@ -124,5 +108,6 @@ Powered by **Drift**, the following tables are currently implemented:
 ## Credits
 
 - Typography inspiration from [Anisota](https://anisota.net/) by [Dame.is](https://dame.is).
-- Inspired by [Witchsky](https://witchsky.app/).
+- Custom theming inspired by [Witchsky](https://witchsky.app/).
 - DevTools (AT Protocol Explorer) inspiration from [pdsls](https://pds.ls/)
+- AT URI links pass through [aturi.to](https://aturi.to/)
