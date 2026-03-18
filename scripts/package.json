@@ -1,0 +1,26 @@
+{
+  "name": "lazurite-splash-generator",
+  "version": "1.0.0",
+  "description": "CLI tool to generate splash screen images for Lazurite app",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run index.ts",
+    "build": "bun build index.ts --outfile=dist/splash-gen --target=bun",
+    "generate": "bun run index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/inquirer": "^9.0.9",
+    "canvas": "^3.2.1",
+    "chalk": "^5.6.2",
+    "inquirer": "^13.3.2",
+    "sharp": "^0.34.5"
+  }
+}
