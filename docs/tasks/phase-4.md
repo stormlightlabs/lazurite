@@ -59,10 +59,10 @@
 
 ## M16 — Jump to Profile
 
-- [ ] Floating action button on search screen
-- [ ] Handle input dialog with autocomplete via `searchActorsTypeahead`
-- [ ] Navigate to profile screen on selection or enter
-- [ ] Update bottom navigation to include Notifications and Messages tabs (5-tab layout)
+- [x] Floating action button on search screen
+- [x] Handle input dialog with autocomplete via `searchActorsTypeahead`
+- [x] Navigate to profile screen on selection or enter
+- [x] Update bottom navigation to include Notifications and Messages tabs (5-tab layout)
 
 ## M17 — Labelers & Content Moderation
 

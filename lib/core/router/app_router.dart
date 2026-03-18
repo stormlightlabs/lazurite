@@ -90,6 +90,7 @@ class AppRouter {
               quoteCid: args?.quoteCid,
               quoteAuthorHandle: args?.quoteAuthorHandle,
               draftId: args?.draftId,
+              initialText: args?.initialText,
             ),
           );
         },

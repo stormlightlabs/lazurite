@@ -21,6 +21,7 @@ class ComposeScreen extends StatefulWidget {
     this.quoteCid,
     this.quoteAuthorHandle,
     this.draftId,
+    this.initialText,
   });
 
   final String? replyParentUri;
@@ -32,6 +33,7 @@ class ComposeScreen extends StatefulWidget {
   final String? quoteCid;
   final String? quoteAuthorHandle;
   final int? draftId;
+  final String? initialText;
 
   @override
   State<ComposeScreen> createState() => _ComposeScreenState();
@@ -46,6 +48,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
   void initState() {
     super.initState();
     _textController = _FacetHighlightController();
+    if (widget.initialText?.isNotEmpty ?? false) {
+      _textController.text = widget.initialText!;
+    }
 
     if (widget.draftId != null) {
       context.read<ComposeBloc>().add(DraftLoaded(widget.draftId!));
@@ -67,6 +72,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
     }
 
     _textController.addListener(_onTextChanged);
+    if (widget.initialText?.isNotEmpty ?? false) {
+      context.read<ComposeBloc>().add(TextChanged(widget.initialText!));
+    }
   }
 
   @override

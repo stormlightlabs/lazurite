@@ -9,6 +9,7 @@ class ComposeRouteArgs {
     this.quoteCid,
     this.quoteAuthorHandle,
     this.draftId,
+    this.initialText,
   });
 
   final String? replyParentUri;
@@ -20,4 +21,5 @@ class ComposeRouteArgs {
   final String? quoteCid;
   final String? quoteAuthorHandle;
   final int? draftId;
+  final String? initialText;
 }

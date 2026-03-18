@@ -73,6 +73,23 @@ void main() {
 
         expect(find.text('-5'), findsOneWidget);
       });
+
+      testWidgets('prefills initial text and dispatches TextChanged when provided', (tester) async {
+        seedState(const ComposeState.ready(text: '@river.bsky.social ', graphemeCount: 19, isEmpty: false));
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: BlocProvider<ComposeBloc>.value(
+              value: mockBloc,
+              child: const ComposeScreen(initialText: '@river.bsky.social '),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('@river.bsky.social '), findsOneWidget);
+        verify(() => mockBloc.add(const TextChanged('@river.bsky.social '))).called(1);
+      });
     });
 
     group('inline drafts panel (Bug #3)', () {

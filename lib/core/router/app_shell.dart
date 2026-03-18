@@ -142,7 +142,7 @@ class _AppMenu extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
                 child: Row(
                   children: [
-                    Text('Menu', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    Text('Lazurite', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                     const Spacer(),
                     IconButton(
                       tooltip: 'Close menu',

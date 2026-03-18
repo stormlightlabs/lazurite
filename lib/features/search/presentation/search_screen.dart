@@ -100,9 +100,130 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  void _openJumpToProfileDialog() {
+    final controller = TextEditingController();
+    final searchBloc = context.read<SearchBloc>();
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return BlocProvider.value(
+          value: searchBloc,
+          child: StatefulBuilder(
+            builder: (context, setDialogState) {
+              void submitHandle([String? value]) {
+                final rawValue = (value ?? controller.text).trim();
+                final handle = rawValue.startsWith('@') ? rawValue.substring(1).trim() : rawValue;
+                if (handle.isEmpty) {
+                  return;
+                }
+
+                searchBloc.add(const TypeaheadRequested(query: ''));
+                Navigator.of(dialogContext).pop();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    GoRouter.of(this.context).push('/profile/view?actor=${Uri.encodeQueryComponent(handle)}');
+                  }
+                });
+              }
+
+              return AlertDialog(
+                title: const Text('Jump to profile'),
+                content: SizedBox(
+                  width: 420,
+                  child: BlocBuilder<SearchBloc, SearchState>(
+                    builder: (context, state) {
+                      final hasResults = state.typeaheadActors.isNotEmpty;
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: controller,
+                            autofocus: true,
+                            autocorrect: false,
+                            textInputAction: TextInputAction.search,
+                            decoration: const InputDecoration(
+                              labelText: 'Handle',
+                              hintText: 'alice.bsky.social',
+                              prefixText: '@',
+                              border: OutlineInputBorder(),
+                            ),
+                            onChanged: (value) {
+                              setDialogState(() {});
+                              searchBloc.add(TypeaheadRequested(query: value.isEmpty ? '' : '@$value'));
+                            },
+                            onSubmitted: submitHandle,
+                          ),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.topLeft,
+                            // TODO: hide this when there are > 3 chars in the text field
+                            child: Text(
+                              'Start typing to search handles.',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 180),
+                            curve: Curves.easeOutCubic,
+                            alignment: Alignment.topCenter,
+                            child: hasResults
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 12),
+                                    child: SizedBox(
+                                      height: 220,
+                                      child: ListView.builder(
+                                        shrinkWrap: true,
+                                        itemCount: state.typeaheadActors.length,
+                                        itemBuilder: (context, index) {
+                                          final actor = state.typeaheadActors[index];
+                                          return _ActorListTile(
+                                            actor: actor,
+                                            onTap: () {
+                                              controller.text = actor.handle;
+                                              submitHandle(actor.did);
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      searchBloc.add(const TypeaheadRequested(query: ''));
+                      Navigator.of(dialogContext).pop();
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: controller.text.trim().isEmpty ? null : submitHandle,
+                    child: const Text('Open'),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openJumpToProfileDialog,
+        icon: const Icon(Icons.person_search),
+        label: const Text('Jump to profile'),
+      ),
       body: SafeArea(
         child: BlocBuilder<SearchBloc, SearchState>(
           builder: (context, state) {

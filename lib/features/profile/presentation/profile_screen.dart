@@ -11,6 +11,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actio
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
+import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/profile/presentation/widgets/profile_action_buttons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -147,6 +148,27 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           );
         },
       ),
+      floatingActionButton: _buildComposeFab(context),
+    );
+  }
+
+  Widget? _buildComposeFab(BuildContext context) {
+    return BlocBuilder<ProfileBloc, ProfileState>(
+      builder: (context, state) {
+        final profile = state.profile;
+        if (profile == null) {
+          return const SizedBox.shrink();
+        }
+
+        final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
+        final isOwnProfile = profile.did == currentUserDid;
+        final initialText = isOwnProfile ? null : '@${profile.handle} ';
+
+        return FloatingActionButton(
+          onPressed: () => context.push('/compose', extra: ComposeRouteArgs(initialText: initialText)),
+          child: const Icon(Icons.add),
+        );
+      },
     );
   }
 

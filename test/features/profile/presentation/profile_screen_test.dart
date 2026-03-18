@@ -3,7 +3,9 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
@@ -150,5 +152,58 @@ void main() {
     verify(
       () => feedBloc.add(const FeedLoadRequested(actor: 'did:plc:me', filter: FeedFilter.postsWithMedia)),
     ).called(1);
+  });
+
+  testWidgets('compose FAB on other profiles prefills the mentioned handle', (tester) async {
+    const otherProfile = ProfileViewDetailed(
+      did: 'did:plc:other',
+      handle: 'other.bsky.social',
+      displayName: 'Other User',
+    );
+    when(() => profileBloc.state).thenReturn(const ProfileState.loaded(profile: otherProfile));
+    whenListen(
+      profileBloc,
+      const Stream<ProfileState>.empty(),
+      initialState: const ProfileState.loaded(profile: otherProfile),
+    );
+    final mockProfileActionRepository = MockProfileActionRepository();
+
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => RepositoryProvider<ProfileActionRepository>.value(
+            value: mockProfileActionRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: authBloc),
+                BlocProvider<ProfileBloc>.value(value: profileBloc),
+                BlocProvider<FeedBloc>.value(value: feedBloc),
+              ],
+              child: const ProfileScreen(actor: 'did:plc:other', showBackButton: true),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/compose',
+          builder: (context, state) {
+            final args = state.extra as ComposeRouteArgs?;
+            return Scaffold(body: Text(args?.initialText ?? ''));
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('@other.bsky.social '), findsOneWidget);
+
+    router.dispose();
   });
 }
