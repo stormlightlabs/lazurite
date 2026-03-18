@@ -51,10 +51,7 @@ class PostCard extends StatelessWidget {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: actionBar ?? _buildActions(context),
-          ),
+          Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), child: actionBar ?? _buildActions(context)),
         ],
       ),
     );
@@ -357,7 +354,7 @@ class PostCard extends StatelessWidget {
           onTap: () {
             final router = GoRouter.maybeOf(context);
             if (router != null) {
-              router.push('/profile/view?actor=${Uri.encodeQueryComponent(quoted.author.did)}');
+              router.push('/post?uri=${Uri.encodeComponent(quoted.uri.toString())}');
             }
           },
           borderRadius: BorderRadius.circular(16),

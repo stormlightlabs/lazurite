@@ -259,7 +259,11 @@ class NotificationListItem extends StatelessWidget {
     if (reason.isKnownValue && reason.knownValue == bsky.KnownNotificationReason.follow) {
       context.push('/profile/view?actor=${notification.author.did}');
     } else {
-      final uri = notification.uri;
+      final isLikeOrRepost =
+          reason.isKnownValue &&
+          (reason.knownValue == bsky.KnownNotificationReason.like ||
+              reason.knownValue == bsky.KnownNotificationReason.repost);
+      final uri = isLikeOrRepost ? (notification.reasonSubject ?? notification.uri) : notification.uri;
       context.push('/post?uri=${Uri.encodeComponent(uri.toString())}');
     }
   }

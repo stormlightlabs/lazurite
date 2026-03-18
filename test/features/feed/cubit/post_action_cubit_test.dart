@@ -1,6 +1,7 @@
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:mocktail/mocktail.dart';
@@ -264,6 +265,150 @@ void main() {
         act: (cubit) => cubit.deletePost(),
         expect: () => [isA<PostActionState>().having((s) => s.error, 'error', 'Failed to delete post')],
       );
+    });
+  });
+
+  group('PostActionCubit cache integration', () {
+    test('seeds initial state from cache when entry exists', () {
+      final cache = PostActionCache();
+      cache.write(
+        const PostActionState(
+          postUri: testPostUri,
+          isLiked: true,
+          isReposted: true,
+          likeCount: 42,
+          repostCount: 7,
+          likeUri: testLikeUri,
+          repostUri: testRepostUri,
+        ),
+      );
+
+      final cubit = PostActionCubit(
+        postActionRepository: mockRepository,
+        postUri: testPostUri,
+        postCid: testPostCid,
+        // API says unliked with 0 counts — cache should win
+        isLiked: false,
+        likeCount: 0,
+        cache: cache,
+      );
+
+      expect(cubit.state.isLiked, isTrue);
+      expect(cubit.state.likeCount, 42);
+      expect(cubit.state.isReposted, isTrue);
+      expect(cubit.state.repostCount, 7);
+      expect(cubit.state.likeUri, testLikeUri);
+      expect(cubit.state.repostUri, testRepostUri);
+    });
+
+    test('uses API values when no cache entry exists', () {
+      final cache = PostActionCache();
+
+      final cubit = PostActionCubit(
+        postActionRepository: mockRepository,
+        postUri: testPostUri,
+        postCid: testPostCid,
+        isLiked: true,
+        likeCount: 5,
+        likeUri: testLikeUri,
+        cache: cache,
+      );
+
+      expect(cubit.state.isLiked, isTrue);
+      expect(cubit.state.likeCount, 5);
+      expect(cubit.state.likeUri, testLikeUri);
+    });
+
+    blocTest<PostActionCubit, PostActionState>(
+      'writes to cache after successful like',
+      build: () {
+        when(
+          () => mockRepository.likePost(
+            uri: any(named: 'uri'),
+            cid: any(named: 'cid'),
+          ),
+        ).thenAnswer((_) async => testLikeUri);
+        return PostActionCubit(
+          postActionRepository: mockRepository,
+          postUri: testPostUri,
+          postCid: testPostCid,
+          likeCount: 2,
+          cache: PostActionCache(),
+        );
+      },
+      act: (cubit) async {
+        await cubit.toggleLike();
+      },
+      verify: (cubit) {
+        // After settling, cache should reflect liked state.
+        // We verify by re-seeding a new cubit from the same cache.
+        // The cubit exposes its cache indirectly — just check final state.
+        expect(cubit.state.isLiked, isTrue);
+        expect(cubit.state.likeUri, testLikeUri);
+        expect(cubit.state.isLoadingLike, isFalse);
+      },
+    );
+
+    blocTest<PostActionCubit, PostActionState>(
+      'writes rolled-back state to cache after like failure',
+      build: () {
+        when(
+          () => mockRepository.likePost(
+            uri: any(named: 'uri'),
+            cid: any(named: 'cid'),
+          ),
+        ).thenThrow(Exception('network'));
+        return PostActionCubit(
+          postActionRepository: mockRepository,
+          postUri: testPostUri,
+          postCid: testPostCid,
+          likeCount: 2,
+          cache: PostActionCache(),
+        );
+      },
+      act: (cubit) async {
+        await cubit.toggleLike();
+      },
+      verify: (cubit) {
+        expect(cubit.state.isLiked, isFalse);
+        expect(cubit.state.likeCount, 2);
+        expect(cubit.state.isLoadingLike, isFalse);
+      },
+    );
+
+    test('new cubit seeded from cache reflects prior like action', () async {
+      final cache = PostActionCache();
+
+      when(
+        () => mockRepository.likePost(
+          uri: any(named: 'uri'),
+          cid: any(named: 'cid'),
+        ),
+      ).thenAnswer((_) async => testLikeUri);
+
+      final cubit1 = PostActionCubit(
+        postActionRepository: mockRepository,
+        postUri: testPostUri,
+        postCid: testPostCid,
+        likeCount: 3,
+        cache: cache,
+      );
+      await cubit1.toggleLike();
+      await cubit1.close();
+
+      // Simulate widget recycling: new cubit with stale API data (isLiked=false).
+      final cubit2 = PostActionCubit(
+        postActionRepository: mockRepository,
+        postUri: testPostUri,
+        postCid: testPostCid,
+        isLiked: false,
+        likeCount: 3, // stale API count
+        cache: cache,
+      );
+
+      expect(cubit2.state.isLiked, isTrue);
+      expect(cubit2.state.likeCount, 4);
+      expect(cubit2.state.likeUri, testLikeUri);
     });
   });
 

@@ -2,6 +2,7 @@ import 'package:atproto_core/atproto_core.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 
 class PostActionState extends Equatable {
@@ -80,10 +81,12 @@ class PostActionCubit extends Cubit<PostActionState> {
     int repostCount = 0,
     String? likeUri,
     String? repostUri,
+    PostActionCache? cache,
   }) : _postActionRepository = postActionRepository,
        _postCid = postCid,
+       _cache = cache,
        super(
-         PostActionState(
+         _buildInitialState(
            postUri: postUri,
            isLiked: isLiked,
            isReposted: isReposted,
@@ -91,11 +94,48 @@ class PostActionCubit extends Cubit<PostActionState> {
            repostCount: repostCount,
            likeUri: likeUri,
            repostUri: repostUri,
+           cache: cache,
          ),
        );
 
   final PostActionRepository _postActionRepository;
   final String _postCid;
+  final PostActionCache? _cache;
+
+  static PostActionState _buildInitialState({
+    required String postUri,
+    required bool isLiked,
+    required bool isReposted,
+    required int likeCount,
+    required int repostCount,
+    String? likeUri,
+    String? repostUri,
+    PostActionCache? cache,
+  }) {
+    final cached = cache?.read(postUri);
+    if (cached != null) {
+      return PostActionState(
+        postUri: postUri,
+        isLiked: cached.isLiked,
+        isReposted: cached.isReposted,
+        likeCount: cached.likeCount,
+        repostCount: cached.repostCount,
+        likeUri: cached.likeUri,
+        repostUri: cached.repostUri,
+      );
+    }
+    return PostActionState(
+      postUri: postUri,
+      isLiked: isLiked,
+      isReposted: isReposted,
+      likeCount: likeCount,
+      repostCount: repostCount,
+      likeUri: likeUri,
+      repostUri: repostUri,
+    );
+  }
+
+  void _persistToCache() => _cache?.write(state);
 
   Future<void> toggleLike() async {
     if (state.isLoadingLike) return;
@@ -137,6 +177,8 @@ class PostActionCubit extends Cubit<PostActionState> {
           error: 'Failed to ${wasLiked ? 'unlike' : 'like'} post',
         ),
       );
+    } finally {
+      _persistToCache();
     }
   }
 
@@ -180,6 +222,8 @@ class PostActionCubit extends Cubit<PostActionState> {
           error: 'Failed to ${wasReposted ? 'unrepost' : 'repost'} post',
         ),
       );
+    } finally {
+      _persistToCache();
     }
   }
 

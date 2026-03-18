@@ -21,6 +21,7 @@ import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
@@ -152,6 +153,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
               RepositoryProvider.value(value: feedRepository),
               RepositoryProvider.value(value: searchRepository),
               RepositoryProvider.value(value: postActionRepository),
+              RepositoryProvider(create: (_) => PostActionCache()),
               RepositoryProvider.value(value: profileActionRepository),
               RepositoryProvider.value(value: bluesky),
               RepositoryProvider.value(value: widget.database),

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cubit.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
@@ -28,8 +29,8 @@ class PostCardWithActions extends StatelessWidget {
     final viewer = post.viewer;
 
     return BlocProvider(
-      create: (_) => PostActionCubit(
-        postActionRepository: context.read<PostActionRepository>(),
+      create: (ctx) => PostActionCubit(
+        postActionRepository: ctx.read<PostActionRepository>(),
         postUri: post.uri.toString(),
         postCid: post.cid,
         isLiked: viewer?.like != null,
@@ -38,6 +39,7 @@ class PostCardWithActions extends StatelessWidget {
         repostCount: post.repostCount ?? 0,
         likeUri: viewer?.like?.toString(),
         repostUri: viewer?.repost?.toString(),
+        cache: ctx.read<PostActionCache>(),
       ),
       child: _PostCardWithActionsContent(feedViewPost: feedViewPost, accountDid: accountDid),
     );

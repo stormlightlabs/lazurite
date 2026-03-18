@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_embed_external.dart';
+import 'package:bluesky/app_bsky_embed_record.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/app_bsky_richtext_facet.dart';
@@ -27,7 +28,9 @@ FeedViewPost _makePost({String text = 'Hello'}) {
 void main() {
   Widget buildSubject(FeedViewPost post, {VoidCallback? onTap}) {
     return MaterialApp(
-      home: Scaffold(body: PostCard(feedViewPost: post, onTap: onTap)),
+      home: Scaffold(
+        body: PostCard(feedViewPost: post, onTap: onTap),
+      ),
     );
   }
 
@@ -111,6 +114,61 @@ void main() {
     // Should not throw when tapping without a callback.
     await tester.tap(find.text('test.bsky.social', findRichText: true).first);
     await tester.pump();
+  });
+
+  testWidgets('tapping quoted post navigates to /post with quoted uri', (tester) async {
+    final quotedUri = AtUri.parse('at://did:plc:quoted/app.bsky.feed.post/quoted123');
+    final record = FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16));
+    final quotedRecord = FeedPostRecord(text: 'Quoted text', createdAt: DateTime.utc(2026, 3, 15));
+    final post = FeedViewPost(
+      post: PostView(
+        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
+        cid: 'cid-xyz',
+        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+        record: record.toJson(),
+        indexedAt: DateTime.utc(2026, 3, 16),
+        embed: UPostViewEmbed.embedRecordView(
+          data: EmbedRecordView(
+            record: UEmbedRecordViewRecord.embedRecordViewRecord(
+              data: EmbedRecordViewRecord(
+                uri: quotedUri,
+                cid: 'cid-quoted',
+                author: const ProfileViewBasic(did: 'did:plc:quoted', handle: 'quoted.bsky.social'),
+                value: quotedRecord.toJson(),
+                indexedAt: DateTime.utc(2026, 3, 15),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    String? pushedRoute;
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(body: PostCard(feedViewPost: post)),
+        ),
+        GoRoute(
+          path: '/post',
+          builder: (context, state) {
+            pushedRoute = state.uri.toString();
+            return const Scaffold(body: Text('post thread'));
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Quoted text', findRichText: true));
+    await tester.pumpAndSettle();
+
+    expect(pushedRoute, isNotNull);
+    expect(Uri.parse(pushedRoute!).path, '/post');
+    expect(Uri.decodeComponent(Uri.parse(pushedRoute!).queryParameters['uri']!), quotedUri.toString());
   });
 
   testWidgets('tapping avatar navigates to author profile', (tester) async {
