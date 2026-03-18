@@ -6,8 +6,8 @@ updated: 2026-03-17
 ## Checklist
 
 - [x] [1. Post Thread Screen](#1-post-thread-screen)
-- [ ] [2. Post Tap Navigation](#2-post-tap-navigation)
-- [ ] [3. Avatar Tap Navigation](#3-avatar-tap-navigation)
+- [x] [2. Post Tap Navigation](#2-post-tap-navigation)
+- [x] [3. Avatar Tap Navigation](#3-avatar-tap-navigation)
 - [ ] [4. Quoted Post Tap Navigation](#4-quoted-post-tap-navigation)
 - [ ] [5. Notification Tap Navigation](#5-notification-tap-navigation)
 - [ ] [6. Viewer State on Own Posts](#6-viewer-state-on-own-posts)

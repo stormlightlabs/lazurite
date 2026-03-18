@@ -62,7 +62,11 @@ class _PostCardWithActionsContent extends StatelessWidget {
           context.read<PostActionCubit>().clearError();
         }
       },
-      child: PostCard(feedViewPost: feedViewPost, actionBar: _buildActionBar(context)),
+      child: PostCard(
+        feedViewPost: feedViewPost,
+        actionBar: _buildActionBar(context),
+        onTap: () => context.push('/post?uri=${Uri.encodeQueryComponent(feedViewPost.post.uri.toString())}'),
+      ),
     );
   }
 

@@ -8,12 +8,26 @@ import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/app_bsky_richtext_facet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 
+FeedViewPost _makePost({String text = 'Hello'}) {
+  final record = FeedPostRecord(text: text, createdAt: DateTime.utc(2026, 3, 16));
+  return FeedViewPost(
+    post: PostView(
+      uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
+      cid: 'cid-xyz',
+      author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+      record: record.toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
+    ),
+  );
+}
+
 void main() {
-  Widget buildSubject(FeedViewPost post) {
+  Widget buildSubject(FeedViewPost post, {VoidCallback? onTap}) {
     return MaterialApp(
-      home: Scaffold(body: PostCard(feedViewPost: post)),
+      home: Scaffold(body: PostCard(feedViewPost: post, onTap: onTap)),
     );
   }
 
@@ -78,5 +92,53 @@ void main() {
     expect(find.text('Example Article'), findsOneWidget);
     expect(find.text('A useful external card'), findsOneWidget);
     expect(find.text('example.com'), findsOneWidget);
+  });
+
+  testWidgets('calls onTap when content area is tapped', (tester) async {
+    var tapped = false;
+    final post = _makePost();
+
+    await tester.pumpWidget(buildSubject(post, onTap: () => tapped = true));
+
+    // Tap the author handle which is in the content InkWell (not the action bar).
+    await tester.tap(find.text('test.bsky.social', findRichText: true).first);
+    expect(tapped, isTrue);
+  });
+
+  testWidgets('does not call onTap when onTap is null', (tester) async {
+    final post = _makePost();
+    await tester.pumpWidget(buildSubject(post));
+    // Should not throw when tapping without a callback.
+    await tester.tap(find.text('test.bsky.social', findRichText: true).first);
+    await tester.pump();
+  });
+
+  testWidgets('tapping avatar navigates to author profile', (tester) async {
+    final post = _makePost();
+    String? pushedRoute;
+
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(body: PostCard(feedViewPost: post)),
+        ),
+        GoRoute(
+          path: '/profile/view',
+          builder: (context, state) {
+            pushedRoute = state.uri.toString();
+            return const Scaffold(body: Text('profile'));
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(CircleAvatar));
+    await tester.pumpAndSettle();
+
+    expect(pushedRoute, contains('did%3Aplc%3Atest'));
   });
 }

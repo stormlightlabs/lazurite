@@ -13,10 +13,11 @@ import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PostCard extends StatelessWidget {
-  const PostCard({super.key, required this.feedViewPost, this.actionBar});
+  const PostCard({super.key, required this.feedViewPost, this.actionBar, this.onTap});
 
   final FeedViewPost feedViewPost;
   final Widget? actionBar;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -28,22 +29,33 @@ class PostCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 1),
       elevation: 0,
       shape: const RoundedRectangleBorder(),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, post.author, record?.createdAt ?? post.indexedAt),
-            if (record?.reply != null) ...[const SizedBox(height: 8), _buildReplyLabel(context)],
-            if (record != null && record.text.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              FacetText(text: record.text, facets: record.facets, style: Theme.of(context).textTheme.bodyLarge),
-            ],
-            if (embed != null) ...[const SizedBox(height: 12), embed],
-            const SizedBox(height: 12),
-            actionBar ?? _buildActions(context),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context, post.author, record?.createdAt ?? post.indexedAt),
+                  if (record?.reply != null) ...[const SizedBox(height: 8), _buildReplyLabel(context)],
+                  if (record != null && record.text.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    FacetText(text: record.text, facets: record.facets, style: Theme.of(context).textTheme.bodyLarge),
+                  ],
+                  if (embed != null) ...[const SizedBox(height: 12), embed],
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: actionBar ?? _buildActions(context),
+          ),
+        ],
       ),
     );
   }
@@ -52,13 +64,16 @@ class PostCard extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CircleAvatar(
-          radius: 22,
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-          backgroundImage: author.avatar != null ? NetworkImage(author.avatar!) : null,
-          child: author.avatar == null
-              ? Text(_initials(author.displayName ?? author.handle), style: Theme.of(context).textTheme.labelLarge)
-              : null,
+        GestureDetector(
+          onTap: () => GoRouter.maybeOf(context)?.push('/profile/view?actor=${Uri.encodeQueryComponent(author.did)}'),
+          child: CircleAvatar(
+            radius: 22,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            backgroundImage: author.avatar != null ? NetworkImage(author.avatar!) : null,
+            child: author.avatar == null
+                ? Text(_initials(author.displayName ?? author.handle), style: Theme.of(context).textTheme.labelLarge)
+                : null,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
