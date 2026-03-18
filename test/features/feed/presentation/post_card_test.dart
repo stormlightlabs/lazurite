@@ -103,7 +103,6 @@ void main() {
 
     await tester.pumpWidget(buildSubject(post, onTap: () => tapped = true));
 
-    // Tap the author handle which is in the content InkWell (not the action bar).
     await tester.tap(find.text('test.bsky.social', findRichText: true).first);
     expect(tapped, isTrue);
   });
@@ -111,7 +110,6 @@ void main() {
   testWidgets('does not call onTap when onTap is null', (tester) async {
     final post = _makePost();
     await tester.pumpWidget(buildSubject(post));
-    // Should not throw when tapping without a callback.
     await tester.tap(find.text('test.bsky.social', findRichText: true).first);
     await tester.pump();
   });

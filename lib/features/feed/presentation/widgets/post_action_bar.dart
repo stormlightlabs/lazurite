@@ -13,6 +13,7 @@ class PostActionBar extends StatelessWidget {
     required this.isLiked,
     required this.isReposted,
     required this.isSaved,
+    this.saveType,
     required this.postUri,
     this.postCid,
     this.onReply,
@@ -22,6 +23,8 @@ class PostActionBar extends StatelessWidget {
     this.onShare,
     this.onSave,
     this.onLongPressSave,
+    this.onCloudSave,
+    this.onCloudUnsave,
     this.onMore,
     this.isLoadingLike = false,
     this.isLoadingRepost = false,
@@ -34,6 +37,7 @@ class PostActionBar extends StatelessWidget {
   final bool isLiked;
   final bool isReposted;
   final bool isSaved;
+  final String? saveType;
   final String postUri;
   final String? postCid;
   final VoidCallback? onReply;
@@ -43,6 +47,8 @@ class PostActionBar extends StatelessWidget {
   final VoidCallback? onShare;
   final VoidCallback? onSave;
   final VoidCallback? onLongPressSave;
+  final VoidCallback? onCloudSave;
+  final VoidCallback? onCloudUnsave;
   final VoidCallback? onMore;
   final bool isLoadingLike;
   final bool isLoadingRepost;
@@ -86,7 +92,9 @@ class PostActionBar extends StatelessWidget {
           onTap: onSave != null ? () => _showSaveOptions(context) : null,
           onLongPress: onLongPressSave,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
-          activeColor: Colors.amber,
+          activeColor: (saveType == 'cloud' || saveType == 'both')
+              ? Theme.of(context).colorScheme.primary
+              : Colors.amber,
         ),
         _ActionButton(
           icon: Icons.share_outlined,
@@ -142,6 +150,8 @@ class PostActionBar extends StatelessWidget {
 
   void _showSaveOptions(BuildContext context) {
     HapticFeedback.mediumImpact();
+    final isLocalSaved = isSaved && (saveType == 'local' || saveType == 'both');
+    final isCloudSaved = saveType == 'cloud' || saveType == 'both';
     showModalBottomSheet<void>(
       context: context,
       builder: (context) => SafeArea(
@@ -150,23 +160,29 @@ class PostActionBar extends StatelessWidget {
           children: [
             ListTile(
               leading: Icon(
-                isSaved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined,
+                isLocalSaved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined,
                 color: Colors.amber,
               ),
-              title: Text(isSaved ? 'Remove local save' : 'Save locally'),
+              title: Text(isLocalSaved ? 'Remove local save' : 'Save locally'),
               onTap: () {
                 Navigator.pop(context);
                 onSave?.call();
               },
             ),
             ListTile(
-              enabled: false,
               leading: Icon(
-                Icons.cloud_outlined,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                isCloudSaved ? Icons.cloud_off_outlined : Icons.cloud_outlined,
+                color: Theme.of(context).colorScheme.primary,
               ),
-              title: const Text('Save to Bluesky'),
-              subtitle: const Text('Coming soon'),
+              title: Text(isCloudSaved ? 'Remove from Bluesky' : 'Save to Bluesky'),
+              onTap: () {
+                Navigator.pop(context);
+                if (isCloudSaved) {
+                  onCloudUnsave?.call();
+                } else {
+                  onCloudSave?.call();
+                }
+              },
             ),
           ],
         ),

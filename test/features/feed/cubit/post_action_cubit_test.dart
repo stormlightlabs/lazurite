@@ -287,7 +287,6 @@ void main() {
         postActionRepository: mockRepository,
         postUri: testPostUri,
         postCid: testPostCid,
-        // API says unliked with 0 counts — cache should win
         isLiked: false,
         likeCount: 0,
         cache: cache,
@@ -340,9 +339,6 @@ void main() {
         await cubit.toggleLike();
       },
       verify: (cubit) {
-        // After settling, cache should reflect liked state.
-        // We verify by re-seeding a new cubit from the same cache.
-        // The cubit exposes its cache indirectly — just check final state.
         expect(cubit.state.isLiked, isTrue);
         expect(cubit.state.likeUri, testLikeUri);
         expect(cubit.state.isLoadingLike, isFalse);
@@ -396,13 +392,12 @@ void main() {
       await cubit1.toggleLike();
       await cubit1.close();
 
-      // Simulate widget recycling: new cubit with stale API data (isLiked=false).
       final cubit2 = PostActionCubit(
         postActionRepository: mockRepository,
         postUri: testPostUri,
         postCid: testPostCid,
         isLiked: false,
-        likeCount: 3, // stale API count
+        likeCount: 3,
         cache: cache,
       );
 

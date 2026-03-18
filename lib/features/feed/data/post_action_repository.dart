@@ -1,5 +1,6 @@
 import 'package:atproto/com_atproto_repo_strongref.dart';
 import 'package:atproto_core/atproto_core.dart';
+import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
 import 'package:bluesky/bluesky.dart';
 
 class PostActionRepository {
@@ -38,6 +39,19 @@ class PostActionRepository {
   Future<void> deletePost({required String postUri}) async {
     final rkey = _extractRkey(postUri);
     await _bluesky.feed.post.delete(rkey: rkey);
+  }
+
+  Future<void> createBookmark({required AtUri uri, required String cid}) async {
+    await _bluesky.bookmark.createBookmark(uri: uri, cid: cid);
+  }
+
+  Future<void> deleteBookmark({required AtUri uri}) async {
+    await _bluesky.bookmark.deleteBookmark(uri: uri);
+  }
+
+  Future<BookmarkGetBookmarksOutput> getBookmarks({int? limit, String? cursor}) async {
+    final response = await _bluesky.bookmark.getBookmarks(limit: limit, cursor: cursor);
+    return response.data;
   }
 
   String _extractRkey(String uri) {

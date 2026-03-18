@@ -15,8 +15,9 @@ updated: 2026-03-17
 - [x] [8. Saved Posts — Accessible from Profile](#8-saved-posts--accessible-from-profile)
 - [x] [9. Saved Posts — Long Press for Local, Tap for Menu](#9-saved-posts--long-press-for-local-tap-for-menu)
 - [x] [10. Saved Posts — Show Save Counts](#10-saved-posts--show-save-counts)
-- [ ] [11. Failed Action Snackbar with Revert](#11-failed-action-snackbar-with-revert)
-- [ ] [12. Delete Post — Remove from Feed](#12-delete-post--remove-from-feed)
+- [ ] [11. Saved Posts — Cloud Save via AT Protocol](#11-saved-posts--cloud-save-via-at-protocol)
+- [ ] [12. Failed Action Snackbar with Revert](#12-failed-action-snackbar-with-revert)
+- [ ] [13. Delete Post — Remove from Feed](#13-delete-post--remove-from-feed)
 
 ## 1. Post Thread Screen
 
@@ -253,7 +254,51 @@ are never fetched or displayed.
 - Edit: `lib/features/feed/presentation/widgets/post_action_bar.dart` — use the passed
   count instead of hardcoded `0`
 
-## 11. Failed Action Snackbar with Revert
+## 11. Saved Posts — Cloud Save via AT Protocol
+
+**Status:** Not implemented — "Save to Bluesky" option is disabled with "Coming soon" placeholder.
+
+**Problem:** The save menu in `PostActionBar._showSaveOptions()` has a disabled "Save to
+Bluesky" option. The `bluesky` package already exposes a bookmark API
+(`app.bsky.bookmark.*`) but it is not wired up. Currently all saves are local-only.
+
+**Fix:**
+
+- Add bookmark methods to `PostActionRepository` using the existing `_bluesky.bookmark`
+  service:
+  - `createBookmark({uri, cid})` → `_bluesky.bookmark.createBookmark(uri, cid)`
+  - `deleteBookmark({uri})` → `_bluesky.bookmark.deleteBookmark(uri)`
+  - `getBookmarks({limit, cursor})` → `_bluesky.bookmark.getBookmarks(limit, cursor)`
+- Add `cloudSave` and `cloudUnsave` methods to `SavedPostsCubit`:
+  - Call `PostActionRepository.createBookmark` / `deleteBookmark`.
+  - On success, upsert the local DB row with `saveType: 'cloud'` (or `'both'` if already
+    saved locally). On cloud unsave, downgrade `saveType` to `'local'` if a local save
+    exists, or delete the row entirely.
+  - Use optimistic UI: update the icon immediately, revert on failure.
+- Enable the "Save to Bluesky" / "Remove from Bluesky" option in
+  `PostActionBar._showSaveOptions()` and wire it to `SavedPostsCubit.cloudSave` /
+  `cloudUnsave` via a new callback.
+- Distinguish cloud vs local saves visually:
+  - Local-only: amber/gold bookmark icon.
+  - Cloud (or both): primary/blue bookmark icon.
+  - `PostActionBar` already receives `isSaved`; extend it with a `saveType` parameter
+    (or similar) so the icon color reflects the save type.
+- Add a one-time sync on login: call `getBookmarks` (paginated) and merge results into
+  the local DB so cloud saves made on other clients appear. Mark these as `saveType:
+  'cloud'`.
+
+**Files:**
+
+- Edit: `lib/features/feed/data/post_action_repository.dart` — add `createBookmark`,
+  `deleteBookmark`, `getBookmarks` methods
+- Edit: `lib/features/feed/cubit/saved_posts_cubit.dart` — add `cloudSave`,
+  `cloudUnsave`, `syncCloudBookmarks` methods; handle `saveType` transitions
+- Edit: `lib/features/feed/presentation/widgets/post_action_bar.dart` — enable cloud
+  save option, accept `saveType` parameter, update icon color logic
+- Edit: `lib/features/feed/presentation/widgets/post_card_with_actions.dart` — pass
+  `saveType` and cloud save/unsave callbacks to `PostActionBar`
+
+## 12. Failed Action Snackbar with Revert
 
 **Status:** Partially implemented — rollback works but snackbar is basic.
 
@@ -278,7 +323,7 @@ a snackbar via `BlocListener` in `post_card_with_actions.dart` (lines 55-64). Ho
 - Edit: `lib/features/feed/presentation/widgets/post_action_bar.dart` — show loading
   state visually on like/repost buttons
 
-## 12. Delete Post — Remove from Feed
+## 13. Delete Post — Remove from Feed
 
 **Status:** Incomplete — post is deleted on the server but remains visible in the feed.
 

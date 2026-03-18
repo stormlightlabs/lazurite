@@ -87,6 +87,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
               isLiked: postActionState.isLiked,
               isReposted: postActionState.isReposted,
               isSaved: savedState.isSaved(post.uri.toString()),
+              saveType: savedState.saveTypeForUri(post.uri.toString()),
               postUri: post.uri.toString(),
               postCid: post.cid,
               isLoadingLike: postActionState.isLoadingLike,
@@ -100,6 +101,12 @@ class _PostCardWithActionsContent extends StatelessWidget {
               },
               onLongPressSave: () {
                 unawaited(_onToggleSave(context));
+              },
+              onCloudSave: () {
+                unawaited(_onCloudSave(context));
+              },
+              onCloudUnsave: () {
+                unawaited(_onCloudUnsave(context));
               },
               onMore: () => _showMoreOptions(context),
             );
@@ -153,6 +160,22 @@ class _PostCardWithActionsContent extends StatelessWidget {
 
     await HapticFeedback.lightImpact();
     await cubit.toggleSave(postUri: post.uri.toString(), postJson: jsonEncode(post.toJson()));
+  }
+
+  Future<void> _onCloudSave(BuildContext context) async {
+    final cubit = context.read<SavedPostsCubit>();
+    final post = feedViewPost.post;
+
+    await HapticFeedback.lightImpact();
+    await cubit.cloudSave(postUri: post.uri.toString(), cid: post.cid, postJson: jsonEncode(post.toJson()));
+  }
+
+  Future<void> _onCloudUnsave(BuildContext context) async {
+    final cubit = context.read<SavedPostsCubit>();
+    final post = feedViewPost.post;
+
+    await HapticFeedback.lightImpact();
+    await cubit.cloudUnsave(post.uri.toString());
   }
 
   void _showMoreOptions(BuildContext context) {

@@ -10,8 +10,11 @@ Widget _buildBar({
   bool isLiked = false,
   bool isReposted = false,
   bool isSaved = false,
+  String? saveType,
   VoidCallback? onSave,
   VoidCallback? onLongPressSave,
+  VoidCallback? onCloudSave,
+  VoidCallback? onCloudUnsave,
   VoidCallback? onRepost,
   VoidCallback? onLike,
   VoidCallback? onReply,
@@ -26,9 +29,12 @@ Widget _buildBar({
         isLiked: isLiked,
         isReposted: isReposted,
         isSaved: isSaved,
+        saveType: saveType,
         postUri: 'at://did:plc:author/app.bsky.feed.post/abc123',
         onSave: onSave,
         onLongPressSave: onLongPressSave,
+        onCloudSave: onCloudSave,
+        onCloudUnsave: onCloudUnsave,
         onRepost: onRepost,
         onLike: onLike,
         onReply: onReply,
@@ -50,8 +56,6 @@ void main() {
 
     testWidgets('does not show saveCount when zero', (tester) async {
       await tester.pumpWidget(_buildBar(saveCount: 0));
-
-      // Count of 0 is not shown — only counts > 0 are rendered
       expect(find.text('0'), findsNothing);
     });
 
@@ -81,7 +85,7 @@ void main() {
     });
 
     testWidgets('save menu shows Remove label when already saved', (tester) async {
-      await tester.pumpWidget(_buildBar(isSaved: true, onSave: () {}));
+      await tester.pumpWidget(_buildBar(isSaved: true, saveType: 'local', onSave: () {}));
 
       await tester.tap(find.byIcon(Icons.bookmark));
       await tester.pumpAndSettle();
@@ -102,11 +106,48 @@ void main() {
       expect(saveCalled, isTrue);
     });
 
-    testWidgets('bookmark icon is amber when saved', (tester) async {
-      await tester.pumpWidget(_buildBar(isSaved: true, onSave: () {}));
+    testWidgets('bookmark icon is amber when saved locally', (tester) async {
+      await tester.pumpWidget(_buildBar(isSaved: true, saveType: 'local', onSave: () {}));
 
       final icon = tester.widget<Icon>(find.byIcon(Icons.bookmark));
       expect(icon.color, equals(Colors.amber));
+    });
+
+    testWidgets('tapping Save to Bluesky calls onCloudSave', (tester) async {
+      var cloudSaveCalled = false;
+      await tester.pumpWidget(_buildBar(onSave: () {}, onCloudSave: () => cloudSaveCalled = true));
+
+      await tester.tap(find.byIcon(Icons.bookmark_outline));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Save to Bluesky'));
+      await tester.pumpAndSettle();
+
+      expect(cloudSaveCalled, isTrue);
+    });
+
+    testWidgets('save menu shows Remove from Bluesky when cloud saved', (tester) async {
+      await tester.pumpWidget(_buildBar(isSaved: true, saveType: 'cloud', onSave: () {}, onCloudUnsave: () {}));
+
+      await tester.tap(find.byIcon(Icons.bookmark));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Remove from Bluesky'), findsOneWidget);
+    });
+
+    testWidgets('tapping Remove from Bluesky calls onCloudUnsave', (tester) async {
+      var cloudUnsaveCalled = false;
+      await tester.pumpWidget(
+        _buildBar(isSaved: true, saveType: 'cloud', onSave: () {}, onCloudUnsave: () => cloudUnsaveCalled = true),
+      );
+
+      await tester.tap(find.byIcon(Icons.bookmark));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Remove from Bluesky'));
+      await tester.pumpAndSettle();
+
+      expect(cloudUnsaveCalled, isTrue);
     });
   });
 }

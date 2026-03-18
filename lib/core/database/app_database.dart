@@ -255,6 +255,12 @@ class AppDatabase extends _$AppDatabase {
     return (delete(savedPosts)..where((s) => s.accountDid.equals(accountDid))).go();
   }
 
+  Future<bool> updateSaveType(String accountDid, String postUri, String saveType) async {
+    final query = update(savedPosts)..where((s) => s.accountDid.equals(accountDid) & s.postUri.equals(postUri));
+    final rowsAffected = await query.write(SavedPostsCompanion(saveType: Value(saveType)));
+    return rowsAffected > 0;
+  }
+
   Stream<List<SavedPostEntry>> watchSavedPosts(String accountDid) {
     return (select(savedPosts)
           ..where((s) => s.accountDid.equals(accountDid))

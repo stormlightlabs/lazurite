@@ -1,3 +1,5 @@
+import 'package:atproto_core/atproto_core.dart';
+import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 
@@ -5,6 +7,7 @@ class MockPostActionRepository implements PostActionRepository {
   final Map<String, dynamic> _likes = {};
   final Map<String, dynamic> _reposts = {};
   final Set<String> _deletedPosts = {};
+  final Map<String, String> _bookmarks = {};
 
   @override
   Future<String> likePost({required dynamic uri, required String cid}) async {
@@ -35,9 +38,25 @@ class MockPostActionRepository implements PostActionRepository {
     _deletedPosts.add(postUri);
   }
 
+  @override
+  Future<void> createBookmark({required AtUri uri, required String cid}) async {
+    _bookmarks[uri.toString()] = cid;
+  }
+
+  @override
+  Future<void> deleteBookmark({required AtUri uri}) async {
+    _bookmarks.remove(uri.toString());
+  }
+
+  @override
+  Future<BookmarkGetBookmarksOutput> getBookmarks({int? limit, String? cursor}) async {
+    return const BookmarkGetBookmarksOutput(bookmarks: []);
+  }
+
   bool isLiked(String postUri) => _likes.containsKey(postUri);
   bool isReposted(String postUri) => _reposts.containsKey(postUri);
   bool isDeleted(String postUri) => _deletedPosts.contains(postUri);
+  bool isBookmarked(String postUri) => _bookmarks.containsKey(postUri);
   String? getLikeUri(String postUri) => _likes[postUri];
   String? getRepostUri(String postUri) => _reposts[postUri];
 }
@@ -148,6 +167,46 @@ void main() {
         await repository.repostPost(uri: uri, cid: testCid);
         expect(repository.isLiked(uri.toString()), isTrue);
         expect(repository.isReposted(uri.toString()), isTrue);
+      });
+    });
+
+    group('createBookmark', () {
+      test('should add bookmark', () async {
+        final uri = AtUri.parse('at://did:plc:test/app.bsky.feed.post/abc123');
+
+        expect(repository.isBookmarked(uri.toString()), isFalse);
+
+        await repository.createBookmark(uri: uri, cid: testCid);
+
+        expect(repository.isBookmarked(uri.toString()), isTrue);
+      });
+    });
+
+    group('deleteBookmark', () {
+      test('should remove bookmark', () async {
+        final uri = AtUri.parse('at://did:plc:test/app.bsky.feed.post/abc123');
+        await repository.createBookmark(uri: uri, cid: testCid);
+
+        expect(repository.isBookmarked(uri.toString()), isTrue);
+
+        await repository.deleteBookmark(uri: uri);
+
+        expect(repository.isBookmarked(uri.toString()), isFalse);
+      });
+    });
+
+    group('getBookmarks', () {
+      test('should return empty bookmarks list', () async {
+        final output = await repository.getBookmarks();
+
+        expect(output.bookmarks, isEmpty);
+        expect(output.cursor, isNull);
+      });
+
+      test('should accept limit and cursor params', () async {
+        final output = await repository.getBookmarks(limit: 10, cursor: 'abc');
+
+        expect(output.bookmarks, isEmpty);
       });
     });
   });

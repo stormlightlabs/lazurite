@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
+import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -18,8 +19,11 @@ class SavedPostsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          SavedPostsCubit(database: context.read<AppDatabase>(), accountDid: accountDid)..loadSavedPosts(),
+      create: (context) => SavedPostsCubit(
+        database: context.read<AppDatabase>(),
+        accountDid: accountDid,
+        postActionRepository: context.read<PostActionRepository>(),
+      )..loadSavedPosts(),
       child: const _SavedPostsContent(),
     );
   }

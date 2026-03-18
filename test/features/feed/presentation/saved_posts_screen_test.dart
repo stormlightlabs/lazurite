@@ -7,6 +7,7 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
@@ -58,9 +59,14 @@ void main() {
     mockDatabase = MockAppDatabase();
     mockPostActionRepository = MockPostActionRepository();
 
-    // Default stubs: empty saved posts
     when(() => mockDatabase.watchSavedPostsWithType(testAccountDid)).thenAnswer((_) => Stream.value({}));
     when(() => mockDatabase.getSavedPosts(testAccountDid)).thenAnswer((_) => Future.value([]));
+    when(
+      () => mockPostActionRepository.getBookmarks(
+        limit: any(named: 'limit'),
+        cursor: any(named: 'cursor'),
+      ),
+    ).thenAnswer((_) async => const BookmarkGetBookmarksOutput(bookmarks: []));
   });
 
   Widget buildSubject() {
@@ -146,7 +152,6 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
 
-    // First frame shows loading since getSavedPosts hasn't resolved yet
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     completer.complete([]);

@@ -148,7 +148,11 @@ class _LazuriteAppState extends State<LazuriteApp> {
                     SearchBloc(searchRepository: searchRepository, database: widget.database, accountDid: accountDid),
               ),
               BlocProvider(
-                create: (_) => SavedPostsCubit(database: widget.database, accountDid: accountDid),
+                create: (_) => SavedPostsCubit(
+                  database: widget.database,
+                  accountDid: accountDid,
+                  postActionRepository: postActionRepository,
+                ),
               ),
               RepositoryProvider.value(value: feedRepository),
               RepositoryProvider.value(value: searchRepository),
