@@ -429,7 +429,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
     final hasContent = state.text.trim().isNotEmpty || state.mediaAttachments.isNotEmpty;
 
-    if (hasContent) {
+    if (hasContent && state.isDraftDirty) {
       showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(

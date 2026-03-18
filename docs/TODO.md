@@ -6,11 +6,16 @@
 
 ## UX
 
+### Composer
+
 - Odd behavior when saving drafts: can save draft via the button but hitting cancel
   prompts to save or discard.
 - Character count doesn't have "initial state" (completely full)
 - Composer is collosal -> We should show drafts on half the screen, with the option
   to toggle it closed.
+
+### Dev Tools
+
 - Instead of tabs, navigating to a record through dev tools should instead show
   - A drawer on Tablet
   - Cards (stacked) on Mobile, with swipe to go back

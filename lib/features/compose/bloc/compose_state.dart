@@ -81,6 +81,7 @@ class ComposeState extends Equatable {
     this.isLoadingDrafts = false,
     this.canSubmit = false,
     this.videoAttachment,
+    this.isDraftDirty = true,
   });
 
   const ComposeState.initial() : this._(status: ComposeStatus.initial);
@@ -100,6 +101,7 @@ class ComposeState extends Equatable {
     String? quoteUri,
     String? quoteCid,
     VideoAttachment? videoAttachment,
+    bool isDraftDirty = true,
   }) : this._(
          status: ComposeStatus.ready,
          text: text,
@@ -117,6 +119,7 @@ class ComposeState extends Equatable {
          quoteCid: quoteCid,
          videoAttachment: videoAttachment,
          canSubmit: !isOverLimit && !isEmpty,
+         isDraftDirty: isDraftDirty,
        );
 
   final ComposeStatus status;
@@ -139,6 +142,7 @@ class ComposeState extends Equatable {
   final bool isLoadingDrafts;
   final bool canSubmit;
   final VideoAttachment? videoAttachment;
+  final bool isDraftDirty;
 
   bool get isSubmitting => status == ComposeStatus.submitting;
   bool get hasError => status == ComposeStatus.error;
@@ -173,6 +177,7 @@ class ComposeState extends Equatable {
     bool? isLoadingDrafts,
     bool? canSubmit,
     Object? videoAttachment = const _Undefined(),
+    bool? isDraftDirty,
   }) {
     return ComposeState._(
       status: status ?? this.status,
@@ -195,6 +200,7 @@ class ComposeState extends Equatable {
       isLoadingDrafts: isLoadingDrafts ?? this.isLoadingDrafts,
       canSubmit: canSubmit ?? this.canSubmit,
       videoAttachment: videoAttachment is _Undefined ? this.videoAttachment : videoAttachment as VideoAttachment?,
+      isDraftDirty: isDraftDirty ?? this.isDraftDirty,
     );
   }
 
@@ -220,6 +226,7 @@ class ComposeState extends Equatable {
     isLoadingDrafts,
     canSubmit,
     videoAttachment,
+    isDraftDirty,
   ];
 }
 

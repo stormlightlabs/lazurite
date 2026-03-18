@@ -37,6 +37,8 @@ dependencies:
   cross_file: ^0.3.4+2
   characters: ^1.4.0
   workmanager: ^0.5.2
+  plugin_platform_interface: ^2.1.8
+  url_launcher_platform_interface: ^2.3.2
 
 dev_dependencies:
   flutter_test:

@@ -72,6 +72,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         isOverLimit: isOverLimit,
         isEmpty: isEmpty,
         canSubmit: !isOverLimit && !isEmpty && !(state.videoAttachment?.isActive ?? false),
+        isDraftDirty: true,
       ),
     );
   }
@@ -83,7 +84,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
       ..add(MediaAttachment(localPath: event.path, width: event.width, height: event.height));
     final isEmpty = state.text.trim().isEmpty && attachments.isEmpty;
 
-    emit(state.copyWith(mediaAttachments: attachments, isEmpty: isEmpty, canSubmit: !state.isOverLimit && !isEmpty));
+    emit(state.copyWith(mediaAttachments: attachments, isEmpty: isEmpty, canSubmit: !state.isOverLimit && !isEmpty, isDraftDirty: true));
   }
 
   Future<void> _onMediaRemoved(MediaRemoved event, Emitter<ComposeState> emit) async {
@@ -92,7 +93,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     final attachments = List<MediaAttachment>.from(state.mediaAttachments)..removeAt(event.index);
     final isEmpty = state.text.trim().isEmpty && attachments.isEmpty && state.videoAttachment == null;
 
-    emit(state.copyWith(mediaAttachments: attachments, isEmpty: isEmpty, canSubmit: !state.isOverLimit && !isEmpty));
+    emit(state.copyWith(mediaAttachments: attachments, isEmpty: isEmpty, canSubmit: !state.isOverLimit && !isEmpty, isDraftDirty: true));
   }
 
   Future<void> _onAltTextUpdated(AltTextUpdated event, Emitter<ComposeState> emit) async {
@@ -231,7 +232,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         updatedAt: Value(DateTime.now()),
       );
       final id = await _database.saveDraft(draft);
-      emit(state.copyWith(draftId: id, isSavingDraft: false));
+      emit(state.copyWith(draftId: id, isSavingDraft: false, isDraftDirty: false));
     } catch (e, stackTrace) {
       log.e('Failed to save draft', error: e, stackTrace: stackTrace);
       emit(state.copyWith(isSavingDraft: false));
@@ -292,6 +293,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
           replyParentCid: draft.replyCid,
           replyRootUri: draft.rootUri,
           replyRootCid: draft.rootCid,
+          isDraftDirty: false,
         ).copyWith(
           graphemeCount: graphemeCount,
           isOverLimit: isOverLimit,

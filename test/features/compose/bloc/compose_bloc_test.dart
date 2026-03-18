@@ -58,6 +58,80 @@ void main() {
       expect(composeBloc.state.canSubmit, false);
     });
 
+    group('isDraftDirty', () {
+      test('initial state has isDraftDirty true', () {
+        expect(composeBloc.state.isDraftDirty, true);
+      });
+
+      blocTest<ComposeBloc, ComposeState>(
+        'isDraftDirty is true after text changed',
+        build: () => composeBloc,
+        seed: () => const ComposeState.ready(isDraftDirty: false),
+        act: (bloc) => bloc.add(const TextChanged('Hello')),
+        expect: () => [isA<ComposeState>().having((s) => s.isDraftDirty, 'isDraftDirty', true)],
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'isDraftDirty is true after media attached',
+        build: () => composeBloc,
+        seed: () => const ComposeState.ready(isDraftDirty: false),
+        act: (bloc) => bloc.add(const MediaAttached('/path/to/image.jpg')),
+        expect: () => [isA<ComposeState>().having((s) => s.isDraftDirty, 'isDraftDirty', true)],
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'isDraftDirty is true after media removed',
+        build: () => composeBloc,
+        seed: () => const ComposeState.ready(
+          mediaAttachments: [MediaAttachment(localPath: '/1.jpg')],
+          isDraftDirty: false,
+        ),
+        act: (bloc) => bloc.add(const MediaRemoved(0)),
+        expect: () => [isA<ComposeState>().having((s) => s.isDraftDirty, 'isDraftDirty', true)],
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'isDraftDirty is false after draft saved successfully',
+        build: () {
+          when(() => mockDatabase.saveDraft(any())).thenAnswer((_) async => 1);
+          return composeBloc;
+        },
+        seed: () => const ComposeState.ready(text: 'Hello', isDraftDirty: true),
+        act: (bloc) => bloc.add(const DraftSaved()),
+        expect: () => [
+          isA<ComposeState>().having((s) => s.isSavingDraft, 'isSavingDraft', true),
+          isA<ComposeState>().having((s) => s.isDraftDirty, 'isDraftDirty', false),
+        ],
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'isDraftDirty is false after draft loaded',
+        build: () {
+          when(() => mockDatabase.getDraft(1)).thenAnswer((_) async => _makeDraft(content: 'Draft text'));
+          return composeBloc;
+        },
+        act: (bloc) => bloc.add(const DraftLoaded(1)),
+        expect: () => [isA<ComposeState>().having((s) => s.isDraftDirty, 'isDraftDirty', false)],
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'isDraftDirty becomes true after editing a loaded draft',
+        build: () {
+          when(() => mockDatabase.getDraft(1)).thenAnswer((_) async => _makeDraft(content: 'Draft text'));
+          return composeBloc;
+        },
+        act: (bloc) async {
+          bloc.add(const DraftLoaded(1));
+          await Future<void>.delayed(Duration.zero);
+          bloc.add(const TextChanged('Draft text edited'));
+        },
+        expect: () => [
+          isA<ComposeState>().having((s) => s.isDraftDirty, 'isDraftDirty', false),
+          isA<ComposeState>().having((s) => s.isDraftDirty, 'isDraftDirty', true),
+        ],
+      );
+    });
+
     group('TextChanged', () {
       blocTest<ComposeBloc, ComposeState>(
         'emits correct state when text changes',
