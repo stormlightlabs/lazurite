@@ -550,7 +550,7 @@ void main() {
             bookmarks: [
               BookmarkView(
                 subject: RepoStrongRef(uri: testUri, cid: 'cid1'),
-                item: UBookmarkViewItem.unknown(data: {}),
+                item: const UBookmarkViewItem.unknown(data: {}),
               ),
             ],
           ),
@@ -590,7 +590,7 @@ void main() {
             bookmarks: [
               BookmarkView(
                 subject: RepoStrongRef(uri: testUri, cid: 'cid1'),
-                item: UBookmarkViewItem.unknown(data: {}),
+                item: const UBookmarkViewItem.unknown(data: {}),
               ),
             ],
           ),

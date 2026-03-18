@@ -40,6 +40,7 @@ class ComposeScreen extends StatefulWidget {
 class _ComposeScreenState extends State<ComposeScreen> {
   late final _FacetHighlightController _textController;
   final ImagePicker _imagePicker = ImagePicker();
+  bool _showDrafts = false;
 
   @override
   void initState() {
@@ -249,128 +250,12 @@ class _ComposeScreenState extends State<ComposeScreen> {
     }
   }
 
-  Future<void> _showDraftsDialog() async {
-    final bloc = context.read<ComposeBloc>();
-    bloc.add(const DraftsRequested());
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => BlocProvider.value(
-        value: bloc,
-        child: BlocBuilder<ComposeBloc, ComposeState>(
-          builder: (context, state) {
-            if (state.isLoadingDrafts) {
-              return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
-            }
-
-            if (state.drafts.isEmpty) {
-              return const SizedBox(height: 150, child: Center(child: Text('No drafts saved')));
-            }
-
-            return DraggableScrollableSheet(
-              initialChildSize: 0.6,
-              minChildSize: 0.3,
-              maxChildSize: 0.9,
-              expand: false,
-              builder: (context, scrollController) {
-                return Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(color: _theme.dividerColor)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Drafts', style: _theme.textTheme.titleLarge),
-                          Text(
-                            '${state.drafts.length} draft${state.drafts.length != 1 ? 's' : ''}',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.builder(
-                        controller: scrollController,
-                        itemCount: state.drafts.length,
-                        itemBuilder: (context, index) {
-                          final draft = state.drafts[index];
-                          return ListTile(
-                            title: Text(
-                              draft.content.isEmpty ? '(No text)' : draft.content,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: Row(
-                              children: [
-                                Text(_formatDraftTime(draft.updatedAt), style: _theme.textTheme.bodySmall),
-                                if (draft.scheduledAt != null) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: _theme.colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      'Scheduled',
-                                      style: _theme.textTheme.bodySmall?.copyWith(
-                                        color: _theme.colorScheme.onPrimaryContainer,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            trailing: IconButton(
-                              icon: Icon(Icons.delete_outline, color: _theme.colorScheme.error),
-                              onPressed: () {
-                                final bloc = context.read<ComposeBloc>();
-                                final theme = _theme;
-                                showDialog<bool>(
-                                  context: context,
-                                  builder: (dialogContext) => AlertDialog(
-                                    title: const Text('Delete Draft?'),
-                                    content: const Text('This action cannot be undone.'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.of(dialogContext).pop(false),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => Navigator.of(dialogContext).pop(true),
-                                        child: Text('Delete', style: TextStyle(color: theme.colorScheme.error)),
-                                      ),
-                                    ],
-                                  ),
-                                ).then((confirmed) {
-                                  if (confirmed == true && mounted) {
-                                    bloc.add(DraftDeleted(draft.id));
-                                  }
-                                });
-                              },
-                            ),
-                            onTap: () {
-                              Navigator.pop(context);
-                              context.read<ComposeBloc>().add(DraftLoaded(draft.id));
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
+  void _toggleDrafts() {
+    final willShow = !_showDrafts;
+    setState(() => _showDrafts = willShow);
+    if (willShow) {
+      context.read<ComposeBloc>().add(const DraftsRequested());
+    }
   }
 
   String _formatDraftTime(DateTime dateTime) {
@@ -403,6 +288,121 @@ class _ComposeScreenState extends State<ComposeScreen> {
       VideoUploadStatus.ready => video.altText.isNotEmpty ? 'Ready · "${video.altText}"' : 'Ready',
       VideoUploadStatus.error => video.errorMessage ?? 'Upload failed',
     };
+  }
+
+  Widget _buildDraftsPanel() {
+    return BlocBuilder<ComposeBloc, ComposeState>(
+      builder: (context, state) {
+        return Container(
+          constraints: const BoxConstraints(maxHeight: 280),
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: _theme.dividerColor)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Drafts', style: _theme.textTheme.titleMedium),
+                    if (state.drafts.isNotEmpty)
+                      Text(
+                        '${state.drafts.length} draft${state.drafts.length != 1 ? 's' : ''}',
+                        style: _theme.textTheme.bodySmall?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
+                      ),
+                  ],
+                ),
+              ),
+              if (state.isLoadingDrafts)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (state.drafts.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Text('No drafts saved', style: _theme.textTheme.bodyMedium?.copyWith(color: _theme.colorScheme.onSurfaceVariant)),
+                  ),
+                )
+              else
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: state.drafts.length,
+                    itemBuilder: (context, index) {
+                      final draft = state.drafts[index];
+                      return ListTile(
+                        dense: true,
+                        title: Text(
+                          draft.content.isEmpty ? '(No text)' : draft.content,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Row(
+                          children: [
+                            Text(_formatDraftTime(draft.updatedAt), style: _theme.textTheme.bodySmall),
+                            if (draft.scheduledAt != null) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _theme.colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'Scheduled',
+                                  style: _theme.textTheme.bodySmall?.copyWith(
+                                    color: _theme.colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete_outline, color: _theme.colorScheme.error),
+                          onPressed: () {
+                            final bloc = context.read<ComposeBloc>();
+                            final theme = _theme;
+                            showDialog<bool>(
+                              context: context,
+                              builder: (dialogContext) => AlertDialog(
+                                title: const Text('Delete Draft?'),
+                                content: const Text('This action cannot be undone.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                                    child: Text('Delete', style: TextStyle(color: theme.colorScheme.error)),
+                                  ),
+                                ],
+                              ),
+                            ).then((confirmed) {
+                              if (confirmed == true && mounted) {
+                                bloc.add(DraftDeleted(draft.id));
+                              }
+                            });
+                          },
+                        ),
+                        onTap: () {
+                          setState(() => _showDrafts = false);
+                          context.read<ComposeBloc>().add(DraftLoaded(draft.id));
+                        },
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   ThemeData get _theme => Theme.of(context);
@@ -764,6 +764,11 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     );
                   },
                 ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  child: _showDrafts ? _buildDraftsPanel() : const SizedBox.shrink(),
+                ),
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
@@ -802,7 +807,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                           },
                         ),
                         IconButton(
-                          onPressed: _showDraftsDialog,
+                          onPressed: _toggleDrafts,
                           icon: Icon(Icons.drive_file_rename_outline, color: _theme.colorScheme.primary),
                           tooltip: 'Drafts',
                         ),
@@ -915,13 +920,12 @@ class _CharCounter extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (count > 0)
-          Text(
-            '$remaining',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: color, fontFeatures: const [FontFeature.tabularFigures()]),
-          ),
+        Text(
+          '$remaining',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: color, fontFeatures: const [FontFeature.tabularFigures()]),
+        ),
         const SizedBox(width: 8),
         SizedBox(
           width: 28,
