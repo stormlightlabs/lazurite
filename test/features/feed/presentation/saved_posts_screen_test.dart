@@ -1,0 +1,152 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:atproto_core/atproto_core.dart';
+import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
+import 'package:lazurite/features/feed/data/post_action_repository.dart';
+import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockAppDatabase extends Mock implements AppDatabase {}
+
+class MockPostActionRepository extends Mock implements PostActionRepository {}
+
+PostView _makePostView({
+  String did = 'did:plc:author',
+  String handle = 'author.bsky.social',
+  String rkey = 'abc123',
+  String text = 'Hello world',
+}) {
+  return PostView(
+    uri: AtUri('at://$did/app.bsky.feed.post/$rkey'),
+    cid: 'cid-$rkey',
+    author: ProfileViewBasic(did: did, handle: handle),
+    record: {r'$type': 'app.bsky.feed.post', 'text': text, 'createdAt': DateTime.utc(2026, 3, 15).toIso8601String()},
+    indexedAt: DateTime.utc(2026, 3, 15),
+  );
+}
+
+SavedPostEntry _makeEntry({
+  int id = 1,
+  String postUri = 'at://did:plc:author/app.bsky.feed.post/abc123',
+  required String postJson,
+}) {
+  return SavedPostEntry(
+    id: id,
+    accountDid: 'did:plc:me',
+    postUri: postUri,
+    postJson: postJson,
+    savedAt: DateTime.utc(2026, 3, 15),
+  );
+}
+
+void main() {
+  late MockAppDatabase mockDatabase;
+  late MockPostActionRepository mockPostActionRepository;
+
+  const testAccountDid = 'did:plc:me';
+
+  setUp(() {
+    mockDatabase = MockAppDatabase();
+    mockPostActionRepository = MockPostActionRepository();
+
+    // Default stubs: empty saved posts
+    when(() => mockDatabase.watchSavedPostUris(testAccountDid)).thenAnswer((_) => Stream.value({}));
+    when(() => mockDatabase.getSavedPosts(testAccountDid)).thenAnswer((_) => Future.value([]));
+  });
+
+  Widget buildSubject() {
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<AppDatabase>.value(value: mockDatabase),
+        RepositoryProvider<PostActionRepository>.value(value: mockPostActionRepository),
+        RepositoryProvider<PostActionCache>(create: (_) => PostActionCache()),
+        RepositoryProvider<String>.value(value: testAccountDid),
+      ],
+      child: const MaterialApp(home: SavedPostsScreen(accountDid: testAccountDid)),
+    );
+  }
+
+  testWidgets('shows empty state when no saved posts', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pump();
+
+    expect(find.text('No saved posts'), findsOneWidget);
+    expect(find.text('Posts you save will appear here'), findsOneWidget);
+  });
+
+  testWidgets('renders PostCardWithActions for a saved post with valid postJson', (tester) async {
+    final postView = _makePostView(text: 'Saved post content');
+    final postJson = jsonEncode(postView.toJson());
+    final entry = _makeEntry(postUri: postView.uri.toString(), postJson: postJson);
+
+    when(() => mockDatabase.getSavedPosts(testAccountDid)).thenAnswer((_) => Future.value([entry]));
+    when(
+      () => mockDatabase.watchSavedPostUris(testAccountDid),
+    ).thenAnswer((_) => Stream.value({postView.uri.toString()}));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pump();
+
+    expect(find.byType(PostCardWithActions), findsOneWidget);
+  });
+
+  testWidgets('renders fallback card when postJson is invalid', (tester) async {
+    final entry = _makeEntry(postJson: 'not valid json {{{');
+
+    when(() => mockDatabase.getSavedPosts(testAccountDid)).thenAnswer((_) => Future.value([entry]));
+    when(() => mockDatabase.watchSavedPostUris(testAccountDid)).thenAnswer((_) => Stream.value({entry.postUri}));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pump();
+
+    expect(find.text('Saved Post'), findsOneWidget);
+    expect(find.byType(PostCardWithActions), findsNothing);
+  });
+
+  testWidgets('swipe to dismiss calls unsavePostById', (tester) async {
+    final postView = _makePostView();
+    final postJson = jsonEncode(postView.toJson());
+    final entry = _makeEntry(postUri: postView.uri.toString(), postJson: postJson);
+
+    var callCount = 0;
+    when(() => mockDatabase.getSavedPosts(testAccountDid)).thenAnswer((_) {
+      callCount++;
+      return Future.value(callCount == 1 ? [entry] : <SavedPostEntry>[]);
+    });
+    when(
+      () => mockDatabase.watchSavedPostUris(testAccountDid),
+    ).thenAnswer((_) => Stream.value({postView.uri.toString()}));
+    when(() => mockDatabase.unsavePostById(entry.id)).thenAnswer((_) => Future.value(1));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pump();
+
+    expect(find.byType(Dismissible), findsOneWidget);
+
+    await tester.drag(find.byType(Dismissible), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+
+    verify(() => mockDatabase.unsavePostById(entry.id)).called(1);
+  });
+
+  testWidgets('shows loading indicator while loading', (tester) async {
+    final completer = Completer<List<SavedPostEntry>>();
+    when(() => mockDatabase.getSavedPosts(testAccountDid)).thenAnswer((_) => completer.future);
+
+    await tester.pumpWidget(buildSubject());
+
+    // First frame shows loading since getSavedPosts hasn't resolved yet
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    completer.complete([]);
+    await tester.pumpAndSettle();
+  });
+}

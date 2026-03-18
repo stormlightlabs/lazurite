@@ -1,9 +1,13 @@
+import 'dart:convert';
+
+import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:share_plus/share_plus.dart';
 
 class SavedPostsScreen extends StatelessWidget {
@@ -140,8 +144,21 @@ class _SavedPostCard extends StatelessWidget {
   final SavedPostEntry savedPost;
   final VoidCallback onUnsave;
 
+  FeedViewPost? _deserializePost() {
+    try {
+      final json = jsonDecode(savedPost.postJson) as Map<String, dynamic>;
+      return FeedViewPost(post: PostView.fromJson(json));
+    } catch (e) {
+      log.e('Failed to deserialize saved post', error: e);
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final feedViewPost = _deserializePost();
+    final accountDid = context.read<String>();
+
     return Dismissible(
       key: ValueKey(savedPost.id),
       direction: DismissDirection.endToStart,
@@ -149,63 +166,38 @@ class _SavedPostCard extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
         color: Theme.of(context).colorScheme.error,
-        child: Icon(Icons.delete, color: Theme.of(context).colorScheme.onError),
+        child: Icon(Icons.bookmark_remove, color: Theme.of(context).colorScheme.onError),
       ),
       onDismissed: (_) => onUnsave(),
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: ListTile(
-          leading: const Icon(Icons.bookmark),
-          title: const Text('Saved Post'),
-          subtitle: Text('Saved on ${_formatDate(savedPost.savedAt)}', style: Theme.of(context).textTheme.bodySmall),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.open_in_new),
-                onPressed: () => _openPost(context),
-                tooltip: 'Open post',
-              ),
-              IconButton(
-                icon: const Icon(Icons.share_outlined),
-                onPressed: () => _sharePost(context),
-                tooltip: 'Share',
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _confirmUnsave(context),
-                tooltip: 'Remove',
-              ),
-            ],
-          ),
-        ),
-      ),
+      child: feedViewPost != null
+          ? PostCardWithActions(feedViewPost: feedViewPost, accountDid: accountDid)
+          : _buildFallback(context),
     );
   }
 
-  void _openPost(BuildContext context) => context.push('/post/${Uri.encodeComponent(savedPost.postUri)}');
-
-  void _sharePost(BuildContext context) {
-    final bskyUrl = _convertAtUriToBskyUrl(savedPost.postUri);
-    Share.share(bskyUrl);
-  }
-
-  void _confirmUnsave(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remove Saved Post?'),
-        content: const Text('This will remove the post from your saved list.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onUnsave();
-            },
-            child: const Text('Remove'),
-          ),
-        ],
+  Widget _buildFallback(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ListTile(
+        leading: const Icon(Icons.bookmark),
+        title: const Text('Saved Post'),
+        subtitle: Text('Saved on ${_formatDate(savedPost.savedAt)}', style: Theme.of(context).textTheme.bodySmall),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.open_in_new),
+              onPressed: () => context.push('/post?uri=${Uri.encodeQueryComponent(savedPost.postUri)}'),
+              tooltip: 'Open post',
+            ),
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              onPressed: () => Share.share(_convertAtUriToBskyUrl(savedPost.postUri)),
+              tooltip: 'Share',
+            ),
+            IconButton(icon: const Icon(Icons.delete_outline), onPressed: onUnsave, tooltip: 'Remove'),
+          ],
+        ),
       ),
     );
   }

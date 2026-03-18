@@ -91,7 +91,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           return BlocBuilder<FeedBloc, FeedState>(
             builder: (context, feedState) {
               final profile = profileState.profile;
-              final isOwnProfile = profile?.did == _resolvedActor;
+              final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
+              final isOwnProfile = profile?.did == currentUserDid;
 
               return NestedScrollView(
                 headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -239,6 +240,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               _buildStat(context, profile.postsCount ?? 0, 'Posts'),
             ],
           ),
+          if (isOwnProfile) ...[
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/saved'),
+              icon: const Icon(Icons.bookmark_outline),
+              label: const Text('Saved Posts'),
+            ),
+          ],
           if (!isOwnProfile) ...[const SizedBox(height: 16), _buildProfileActions(context, profile)],
         ],
       ),

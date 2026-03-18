@@ -7,6 +7,7 @@ import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
+import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -15,6 +16,8 @@ class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 class MockProfileBloc extends MockBloc<ProfileEvent, ProfileState> implements ProfileBloc {}
 
 class MockFeedBloc extends MockBloc<FeedEvent, FeedState> implements FeedBloc {}
+
+class MockProfileActionRepository extends Mock implements ProfileActionRepository {}
 
 void main() {
   late MockAuthBloc authBloc;
@@ -91,6 +94,44 @@ void main() {
     expect(find.text('she/her'), findsOneWidget);
     expect(find.text('river.example'), findsOneWidget);
     expect(find.text('Joined March 2024'), findsOneWidget);
+  });
+
+  testWidgets('shows Saved Posts button on own profile', (tester) async {
+    await tester.pumpWidget(buildSubject());
+
+    expect(find.text('Saved Posts'), findsOneWidget);
+  });
+
+  testWidgets('does not show Saved Posts button on other profiles', (tester) async {
+    const otherProfile = ProfileViewDetailed(
+      did: 'did:plc:other',
+      handle: 'other.bsky.social',
+      displayName: 'Other User',
+    );
+    when(() => profileBloc.state).thenReturn(const ProfileState.loaded(profile: otherProfile));
+    whenListen(
+      profileBloc,
+      const Stream<ProfileState>.empty(),
+      initialState: const ProfileState.loaded(profile: otherProfile),
+    );
+
+    final mockProfileActionRepository = MockProfileActionRepository();
+
+    final widget = MultiRepositoryProvider(
+      providers: [RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository)],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<ProfileBloc>.value(value: profileBloc),
+          BlocProvider<FeedBloc>.value(value: feedBloc),
+        ],
+        child: const MaterialApp(home: ProfileScreen(actor: 'did:plc:other', showBackButton: true)),
+      ),
+    );
+
+    await tester.pumpWidget(widget);
+
+    expect(find.text('Saved Posts'), findsNothing);
   });
 
   testWidgets('maps tabs to the expected server filters', (tester) async {
