@@ -1,0 +1,1003 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Home - Lazurite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
+      rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .feed-container {
+        padding-bottom: 88px;
+      }
+
+      .compose-box {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+        background-color: var(--bg);
+      }
+
+      .compose-inner {
+        display: flex;
+        gap: 12px;
+      }
+
+      .compose-input-wrapper {
+        flex: 1;
+      }
+
+      .compose-input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 16px;
+        resize: none;
+        outline: none;
+        font-family: inherit;
+        min-height: 24px;
+      }
+
+      .compose-input::placeholder {
+        color: var(--text-muted);
+      }
+
+      .compose-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+        padding-left: 60px;
+      }
+
+      .compose-tools {
+        display: flex;
+        gap: 8px;
+      }
+
+      .compose-tool {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: var(--accent-primary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease;
+      }
+
+      .compose-tool:hover {
+        background-color: rgba(0, 102, 255, 0.1);
+      }
+
+      .compose-tool svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .compose-submit {
+        padding: 8px 20px;
+        border-radius: 9999px;
+        border: none;
+        background-color: var(--accent-primary);
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      .compose-submit:hover {
+        background-color: var(--accent-primary-hover);
+      }
+
+      .feed-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        background-color: var(--bg);
+      }
+
+      .feed-tab {
+        flex: 1;
+        padding: 16px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+      }
+
+      .feed-tab:hover {
+        background-color: var(--surface);
+        color: var(--text-primary);
+      }
+
+      .feed-tab.active {
+        color: var(--text-primary);
+        border-bottom-color: var(--accent-primary);
+      }
+
+      .post-facet-mention {
+        color: var(--accent-primary);
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .post-facet-mention:hover {
+        text-decoration: underline;
+      }
+
+      .post-facet-hashtag {
+        color: var(--accent-secondary);
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .post-facet-hashtag:hover {
+        text-decoration: underline;
+      }
+
+      .post-facet-link {
+        color: var(--accent-primary);
+        text-decoration: underline;
+      }
+
+      .post-embed {
+        margin-top: 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .post-embed-image {
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(135deg, var(--surface) 0%, var(--surface-variant) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+      }
+
+      .post-embed-content {
+        padding: 12px;
+      }
+
+      .post-embed-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+
+      .post-embed-url {
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      .menu-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 200;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.2s ease,
+          visibility 0.2s ease;
+      }
+
+      .menu-overlay.open {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .side-menu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 280px;
+        max-width: 80%;
+        height: 100%;
+        background-color: var(--surface);
+        z-index: 201;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        overflow-y: auto;
+      }
+
+      .side-menu.open {
+        transform: translateX(0);
+      }
+
+      .menu-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .menu-close {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease;
+      }
+
+      .menu-close:hover {
+        background-color: var(--surface-variant);
+      }
+
+      .menu-close svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .menu-user {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .menu-user-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background-color: var(--surface-variant);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .menu-user-info {
+        flex: 1;
+      }
+
+      .menu-user-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 15px;
+      }
+
+      .menu-user-handle {
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+
+      .menu-nav {
+        padding: 8px 0;
+      }
+
+      .menu-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: background-color 0.2s ease;
+      }
+
+      .menu-nav-item:hover {
+        background-color: var(--surface-variant);
+      }
+
+      .menu-nav-item svg {
+        width: 22px;
+        height: 22px;
+        color: var(--text-secondary);
+      }
+
+      .menu-nav-item span {
+        font-size: 15px;
+        font-weight: 500;
+      }
+
+      .menu-divider {
+        height: 1px;
+        background-color: var(--border);
+        margin: 8px 16px;
+      }
+
+      .header-menu-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: var(--accent-primary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease;
+      }
+
+      .header-menu-btn:hover {
+        background-color: rgba(0, 102, 255, 0.1);
+      }
+
+      .header-menu-btn svg {
+        width: 24px;
+        height: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mobile-container">
+      <!-- Menu Overlay -->
+      <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+      <!-- Side Menu -->
+      <nav class="side-menu" id="sideMenu">
+        <div class="menu-header">
+          <span style="font-weight: 600; color: var(--text-primary)">Menu</span>
+          <button class="menu-close" onclick="closeMenu()">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <a href="profile.html" class="menu-user">
+          <div class="menu-user-avatar">JD</div>
+          <div class="menu-user-info">
+            <div class="menu-user-name">John Doe</div>
+            <div class="menu-user-handle">@johndoe.bsky.social</div>
+          </div>
+        </a>
+
+        <div class="menu-nav">
+          <a href="home.html" class="menu-nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Home</span>
+          </a>
+
+          <a href="search.html" class="menu-nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Search</span>
+          </a>
+
+          <a href="feeds.html" class="menu-nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M4 11a9 9 0 0 1 9 9"></path>
+              <path d="M4 4a16 16 0 0 1 16 16"></path>
+              <circle cx="5" cy="19" r="1"></circle>
+            </svg>
+            <span>Feeds</span>
+          </a>
+
+          <a href="notifications.html" class="menu-nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span>Notifications</span>
+          </a>
+
+          <a href="messages.html" class="menu-nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>Messages</span>
+          </a>
+
+          <a href="profile.html" class="menu-nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Profile</span>
+          </a>
+
+          <div class="menu-divider"></div>
+
+          <a href="compose.html" class="menu-nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>New Post</span>
+          </a>
+
+          <a href="settings.html" class="menu-nav-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Settings</span>
+          </a>
+
+          <div class="menu-divider"></div>
+
+          <a href="login.html" class="menu-nav-item" style="color: var(--accent-error);" onclick="logout(event)">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Log Out</span>
+          </a>
+        </div>
+      </nav>
+
+      <!-- Header -->
+      <header class="header">
+        <button class="header-menu-btn" onclick="openMenu()">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <h1 class="header-title">Home</h1>
+        <button class="header-action">Settings</button>
+      </header>
+
+      <div class="feed-container">
+        <!-- Compose Box -->
+        <div class="compose-box">
+          <div class="compose-inner">
+            <div class="avatar avatar-sm">JD</div>
+            <div class="compose-input-wrapper">
+              <textarea class="compose-input" placeholder="What's on your mind?" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="compose-actions">
+            <div class="compose-tools">
+              <button class="compose-tool" title="Add image">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </button>
+              <button class="compose-tool" title="Add GIF">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <text x="4" y="16" font-family="inherit" font-size="12" font-weight="bold" fill="currentColor">
+                    GIF
+                  </text>
+                </svg>
+              </button>
+              <button class="compose-tool" title="Add poll">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10" />
+                  <line x1="12" y1="20" x2="12" y2="4" />
+                  <line x1="6" y1="20" x2="6" y2="14" />
+                </svg>
+              </button>
+              <button class="compose-tool" title="Emoji">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                  <line x1="9" y1="9" x2="9.01" y2="9" />
+                  <line x1="15" y1="9" x2="15.01" y2="9" />
+                </svg>
+              </button>
+            </div>
+            <button class="compose-submit">Post</button>
+          </div>
+        </div>
+
+        <!-- Feed Tabs -->
+        <div class="feed-tabs">
+          <button class="feed-tab active">Following</button>
+          <button class="feed-tab">Discover</button>
+        </div>
+
+        <!-- Post 1 -->
+        <article class="post-card">
+          <div class="post-header">
+            <div class="avatar">AS</div>
+            <div class="post-author">
+              <div class="post-author-name">Alice Smith</div>
+              <div class="post-author-handle">@alice.bsky.social · <span class="post-timestamp">2h</span></div>
+            </div>
+          </div>
+
+          <div class="post-content">
+            Just launched my new project! 🚀 Check out the demo at <a href="#" class="post-facet-link">example.com</a>.
+            Special thanks to <a href="#" class="post-facet-mention">@bob.bsky.social</a> for the help!
+            <a href="#" class="post-facet-hashtag">#buildinpublic</a> <a href="#" class="post-facet-hashtag">#dev</a>
+          </div>
+
+          <div class="post-embed">
+            <div class="post-embed-image">[Project Screenshot]</div>
+            <div class="post-embed-content">
+              <div class="post-embed-title">My Awesome Project</div>
+              <div class="post-embed-url">example.com</div>
+            </div>
+          </div>
+
+          <div class="post-actions">
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                  d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+              12
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9" />
+                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                <polyline points="7 23 3 19 7 15" />
+                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+              5
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              48
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+            </button>
+          </div>
+        </article>
+
+        <!-- Post 2 -->
+        <article class="post-card">
+          <div class="post-header">
+            <div class="avatar">BJ</div>
+            <div class="post-author">
+              <div class="post-author-name">Bob Johnson</div>
+              <div class="post-author-handle">@bob.bsky.social · <span class="post-timestamp">4h</span></div>
+            </div>
+          </div>
+
+          <div class="post-content">
+            Working on some exciting features for the next release! Here's a sneak peek of what's coming: improved
+            search, better notifications, and dark mode support. <a href="#" class="post-facet-hashtag">#bluesky</a>
+            <a href="#" class="post-facet-hashtag">#atproto</a>
+          </div>
+
+          <div class="post-actions">
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                  d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+              8
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9" />
+                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                <polyline points="7 23 3 19 7 15" />
+                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+              24
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              156
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+            </button>
+          </div>
+        </article>
+
+        <!-- Post 3 - Rich Facets -->
+        <article class="post-card">
+          <div class="post-header">
+            <div class="avatar">CW</div>
+            <div class="post-author">
+              <div class="post-author-name">Carol White</div>
+              <div class="post-author-handle">@carol.dev · <span class="post-timestamp">6h</span></div>
+            </div>
+          </div>
+
+          <div class="post-content">
+            The <a href="#" class="post-facet-mention">@atproto</a> team has been doing amazing work! Read their latest
+            blog post about federation: <a href="#" class="post-facet-link">atproto.com/blog/federation</a>
+
+            <br /><br />
+
+            Key highlights: • Self-hosting guides • PDS (Personal Data Server) setup • Relay infrastructure
+
+            <br /><br />
+
+            <a href="#" class="post-facet-hashtag">#atprotocol</a>
+            <a href="#" class="post-facet-hashtag">#decentralized</a>
+            <a href="#" class="post-facet-hashtag">#socialweb</a>
+          </div>
+
+          <div class="post-actions">
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                  d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+              34
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9" />
+                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                <polyline points="7 23 3 19 7 15" />
+                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+              12
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              289
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+            </button>
+          </div>
+        </article>
+
+        <!-- Post 4 -->
+        <article class="post-card">
+          <div class="post-header">
+            <div class="avatar">DM</div>
+            <div class="post-author">
+              <div class="post-author-name">David Miller</div>
+              <div class="post-author-handle">@davidm.bsky.social · <span class="post-timestamp">8h</span></div>
+            </div>
+          </div>
+
+          <div class="post-content">
+            Beautiful sunset from my hike today! 🌅 <a href="#" class="post-facet-hashtag">#nature</a>
+            <a href="#" class="post-facet-hashtag">#photography</a> <a href="#" class="post-facet-hashtag">#hiking</a>
+          </div>
+
+          <div class="post-embed">
+            <div class="post-embed-image">[Sunset Photo]</div>
+          </div>
+
+          <div class="post-actions">
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                  d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+              6
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9" />
+                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                <polyline points="7 23 3 19 7 15" />
+                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+              18
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              423
+            </button>
+            <button class="post-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <nav class="nav-bar">
+        <a href="home.html" class="nav-item active">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          <span>Home</span>
+        </a>
+
+        <a href="profile.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span>Profile</span>
+        </a>
+
+        <a href="settings.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <script>
+      function openMenu() {
+        document.getElementById("menuOverlay").classList.add("open");
+        document.getElementById("sideMenu").classList.add("open");
+      }
+
+      function closeMenu() {
+        document.getElementById("menuOverlay").classList.remove("open");
+        document.getElementById("sideMenu").classList.remove("open");
+      }
+
+      function logout(e) {
+        e.preventDefault();
+        if (confirm("Are you sure you want to log out?")) {
+          localStorage.clear();
+          window.location.href = "login.html";
+        }
+      }
+
+      if (localStorage.getItem("theme") === "dark") {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    </script>
+  </body>
+</html>

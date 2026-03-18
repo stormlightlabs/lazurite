@@ -7,8 +7,10 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/scheduler/post_scheduler.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
 import 'package:lazurite/core/logging/logging_navigator_observer.dart';
+import 'package:bluesky/bluesky_chat.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/router/app_router.dart';
+import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
@@ -80,11 +82,13 @@ class _LazuriteAppState extends State<LazuriteApp> {
   }
 
   Bluesky? _createBluesky(AuthState state) {
-    if (!state.isAuthenticated) {
-      return null;
-    }
-
+    if (!state.isAuthenticated) return null;
     return createBlueskyClient(state.tokens);
+  }
+
+  BlueskyChat? _createBlueskyChat(AuthState state) {
+    if (!state.isAuthenticated) return null;
+    return createBlueSkyChatClient(state.tokens);
   }
 
   @override
@@ -97,6 +101,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
       child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
           final bluesky = _createBluesky(authState);
+          final blueskyChat = _createBlueskyChat(authState);
           final appShell = BlocBuilder<SettingsCubit, SettingsState>(
             builder: (context, settingsState) {
               final themeMode = settingsState.useSystemTheme
@@ -117,7 +122,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
             },
           );
 
-          if (bluesky == null) {
+          if (bluesky == null || blueskyChat == null) {
             return appShell;
           }
 
@@ -160,6 +165,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
               RepositoryProvider(create: (_) => PostActionCache()),
               RepositoryProvider.value(value: profileActionRepository),
               RepositoryProvider.value(value: bluesky),
+              RepositoryProvider(create: (_) => ConvoRepository(chat: blueskyChat)),
               RepositoryProvider.value(value: widget.database),
               RepositoryProvider.value(value: accountDid),
             ],

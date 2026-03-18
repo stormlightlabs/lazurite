@@ -2,15 +2,15 @@
 
 ## M12 — Direct Messages
 
-- [ ] Conversation list screen via `chat.bsky.convo.listConvos` with pagination
+- [x] Conversation list screen via `chat.bsky.convo.listConvos` with pagination
 - [x] `ConvoListBloc` — events: `ConvosRequested`, `ConvosRefreshed`, `ConvoMuted`, `ConvoUnmuted`
 - [x] Primary / Requests tab filtering on conversation list
-- [ ] Message thread screen via `chat.bsky.convo.getMessages` with pagination
+- [x] Message thread screen via `chat.bsky.convo.getMessages` with pagination
 - [x] `MessageBloc` — events: `MessagesRequested`, `MessagesPageLoaded`, `MessageSent`, `MessageDeleted`, `ConvoMarkedRead`
-- [ ] Chat bubble layout — current user right-aligned, others left-aligned
+- [x] Chat bubble layout — current user right-aligned, others left-aligned
 - [x] Send messages via `chat.bsky.convo.sendMessage`
 - [x] New conversation via `chat.bsky.convo.getConvoForMembers`
-- [ ] Long-press to copy individual messages, overflow menu "Copy All" for full thread
+- [x] Long-press to copy individual messages, overflow menu "Copy All" for full thread
 - [x] Mute / unmute conversations
 - [x] Mark conversation as read via `chat.bsky.convo.updateRead`
 

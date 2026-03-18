@@ -3,7 +3,7 @@
     "client_name": "Lazurite",
     "client_uri": "https://lazurite.stormlightlabs.org",
     "redirect_uris": ["http://127.0.0.1/callback"],
-    "scope": "atproto transition:generic",
+    "scope": "atproto transition:generic transition:chat.bsky",
     "grant_types": ["authorization_code", "refresh_token"],
     "response_types": ["code"],
     "token_endpoint_auth_method": "none",

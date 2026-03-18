@@ -138,5 +138,21 @@ void main() {
       act: (bloc) => bloc.add(const ConvoMuted(convoId: 'c1')),
       expect: () => [],
     );
+
+    blocTest<ConvoListBloc, ConvoListState>(
+      'switches active tab on ConvoTabChanged',
+      build: () => ConvoListBloc(convoRepository: mockConvoRepository),
+      seed: () => const ConvoListState.loaded(convos: [], cursor: null, hasMore: false),
+      act: (bloc) => bloc.add(const ConvoTabChanged(tab: ConvoTab.requests)),
+      expect: () => [predicate<ConvoListState>((state) => state.activeTab == ConvoTab.requests)],
+    );
+
+    blocTest<ConvoListBloc, ConvoListState>(
+      'switches back to primary tab on ConvoTabChanged',
+      build: () => ConvoListBloc(convoRepository: mockConvoRepository),
+      seed: () => const ConvoListState.loaded(convos: [], cursor: null, hasMore: false, activeTab: ConvoTab.requests),
+      act: (bloc) => bloc.add(const ConvoTabChanged(tab: ConvoTab.primary)),
+      expect: () => [predicate<ConvoListState>((state) => state.activeTab == ConvoTab.primary)],
+    );
   });
 }

@@ -20,8 +20,9 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   }
 
   final ConvoRepository _convoRepository;
-  // FIXME: use this
   final String _currentUserDid;
+
+  String get currentUserDid => _currentUserDid;
 
   Future<void> _onMessagesRequested(MessagesRequested event, Emitter<MessageState> emit) async {
     emit(const MessageState.loading());
@@ -39,6 +40,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       );
     } catch (error) {
       emit(MessageState.error('Failed to load messages: $error'));
+      log.e('Failed to load messages: $error');
     }
   }
 
@@ -62,6 +64,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       );
     } catch (error) {
       emit(state.copyWith(isLoadingMore: false, hasMore: false));
+      log.e('Failed to load more messages: $error');
     }
   }
 

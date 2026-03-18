@@ -15,6 +15,7 @@ class ConvoListBloc extends Bloc<ConvoListEvent, ConvoListState> {
     on<ConvosRefreshed>(_onConvosRefreshed);
     on<ConvoMuted>(_onConvoMuted);
     on<ConvoUnmuted>(_onConvoUnmuted);
+    on<ConvoTabChanged>(_onConvoTabChanged);
   }
 
   final ConvoRepository _convoRepository;
@@ -72,5 +73,9 @@ class ConvoListBloc extends Bloc<ConvoListEvent, ConvoListState> {
     } catch (error) {
       log.w('Failed to unmute conversation ${event.convoId}: $error');
     }
+  }
+
+  void _onConvoTabChanged(ConvoTabChanged event, Emitter<ConvoListState> emit) {
+    emit(state.copyWith(activeTab: event.tab));
   }
 }

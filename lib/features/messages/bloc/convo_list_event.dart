@@ -37,3 +37,12 @@ class ConvoUnmuted extends ConvoListEvent {
   @override
   List<Object?> get props => [convoId];
 }
+
+class ConvoTabChanged extends ConvoListEvent {
+  const ConvoTabChanged({required this.tab});
+
+  final ConvoTab tab;
+
+  @override
+  List<Object?> get props => [tab];
+}

@@ -24,6 +24,12 @@ import 'package:lazurite/features/notifications/presentation/notifications_scree
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
+import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
+import 'package:lazurite/features/messages/bloc/message_bloc.dart';
+import 'package:lazurite/features/messages/data/convo_repository.dart';
+import 'package:lazurite/features/messages/presentation/convo_list_screen.dart';
+import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
+import 'package:lazurite/features/messages/presentation/message_thread_screen.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 
@@ -36,6 +42,7 @@ class AppRouter {
   final GlobalKey<NavigatorState> _searchNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'search');
   final GlobalKey<NavigatorState> _notificationsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'notifications');
   final GlobalKey<NavigatorState> _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
+  final GlobalKey<NavigatorState> _messagesNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'messages');
   final GlobalKey<NavigatorState> _settingsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'settings');
 
   GoRouter get router => GoRouter(
@@ -158,6 +165,34 @@ class AppRouter {
                     path: 'view',
                     builder: (context, state) =>
                         ProfileScreen(actor: state.uri.queryParameters['actor'], showBackButton: true),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _messagesNavigatorKey,
+            routes: [
+              GoRoute(
+                path: '/messages',
+                builder: (context, state) => BlocProvider(
+                  create: (_) => ConvoListBloc(convoRepository: context.read<ConvoRepository>()),
+                  child: const ConvoListScreen(),
+                ),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) {
+                      final convoId = state.pathParameters['id']!;
+                      final args = state.extra as MessageThreadRouteArgs?;
+                      return BlocProvider(
+                        create: (_) => MessageBloc(
+                          convoRepository: context.read<ConvoRepository>(),
+                          currentUserDid: context.read<String>(),
+                        ),
+                        child: MessageThreadScreen(convoId: convoId, title: args?.title ?? 'Conversation'),
+                      );
+                    },
                   ),
                 ],
               ),
