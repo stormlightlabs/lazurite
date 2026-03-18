@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
+import 'package:lazurite/features/feed/presentation/media/image_media_actions.dart';
+import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PostCard extends StatelessWidget {
@@ -200,6 +202,7 @@ class PostCard extends StatelessWidget {
   Widget _buildImagesEmbed(BuildContext context, List<EmbedImagesViewImage> images) {
     final crossAxisCount = images.length == 1 ? 1 : 2;
     final childAspectRatio = images.length == 1 ? 16 / 9 : 1.0;
+    final postUri = feedViewPost.post.uri.toString();
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -215,14 +218,22 @@ class PostCard extends StatelessWidget {
         ),
         itemBuilder: (context, index) {
           final image = images[index];
-          return InkWell(
-            onTap: () => _launchExternal(Uri.parse(image.fullsize)),
-            child: Image.network(
-              image.thumb,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => ColoredBox(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: const Center(child: Icon(Icons.image_not_supported_outlined)),
+          final heroTag = _imageHeroTag(postUri, index);
+
+          return GestureDetector(
+            onLongPressStart: (details) => _showImageContextMenu(context, details.globalPosition, image: image),
+            child: InkWell(
+              onTap: () => _openImageViewer(context, images, initialIndex: index),
+              child: Hero(
+                tag: heroTag,
+                child: Image.network(
+                  image.thumb,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => ColoredBox(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: const Center(child: Icon(Icons.image_not_supported_outlined)),
+                  ),
+                ),
               ),
             ),
           );
@@ -509,8 +520,66 @@ class PostCard extends StatelessWidget {
 
     return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
   }
+
+  void _openImageViewer(BuildContext context, List<EmbedImagesViewImage> images, {required int initialIndex}) {
+    GoRouter.maybeOf(context)?.push(
+      '/images',
+      extra: ImageViewerRouteArgs(
+        images: [
+          for (var i = 0; i < images.length; i++)
+            ImageViewerItem(
+              fullsizeUrl: images[i].fullsize,
+              thumbnailUrl: images[i].thumb,
+              altText: images[i].alt,
+              heroTag: _imageHeroTag(feedViewPost.post.uri.toString(), i),
+            ),
+        ],
+        initialIndex: initialIndex,
+      ),
+    );
+  }
+
+  Future<void> _showImageContextMenu(
+    BuildContext context,
+    Offset globalPosition, {
+    required EmbedImagesViewImage image,
+  }) async {
+    final selected = await showMenu<_ImageThumbnailAction>(
+      context: context,
+      position: RelativeRect.fromLTRB(globalPosition.dx, globalPosition.dy, globalPosition.dx, globalPosition.dy),
+      items: const [
+        PopupMenuItem<_ImageThumbnailAction>(value: _ImageThumbnailAction.save, child: Text('Save image')),
+        PopupMenuItem<_ImageThumbnailAction>(value: _ImageThumbnailAction.share, child: Text('Share')),
+      ],
+    );
+
+    if (!context.mounted || selected == null) {
+      return;
+    }
+
+    switch (selected) {
+      case _ImageThumbnailAction.save:
+        await ImageMediaActions.downloadImage(
+          context,
+          image.fullsize,
+          suggestedName: _downloadFileName(image.fullsize),
+        );
+      case _ImageThumbnailAction.share:
+        await ImageMediaActions.shareImage(context, image.fullsize);
+    }
+  }
+
+  String _imageHeroTag(String postUri, int index) => 'post-image-$postUri-$index';
+
+  String _downloadFileName(String url) {
+    final uri = Uri.tryParse(url);
+    final segment = uri?.pathSegments.isNotEmpty == true ? uri!.pathSegments.last : 'image.jpg';
+    return segment.isEmpty ? 'image.jpg' : segment;
+  }
 }
 
 Future<void> _launchExternal(Uri url) async {
   await launchUrl(url, mode: LaunchMode.externalApplication);
 }
+
+enum _ImageThumbnailAction { save, share }

@@ -17,12 +17,18 @@
 ## M13 — Media Playback & Download
 
 - [x] Add `photo_view`, `video_player`, `chewie`, `dio`, `gal`, `permission_handler` to `pubspec.yaml`
-- [ ] `ImageViewerScreen` — full-screen `PageView` of `PhotoView` widgets loading `fullsize` URLs with hero animation from thumbnail
-- [ ] Page indicator for multi-image posts; alt text bar at the bottom of each page
-- [ ] Swipe-down-to-dismiss gesture on image viewer
-- [ ] Download button in image viewer toolbar — request permission, download via `dio` with progress indicator, save via `gal`, show snackbar result
-- [ ] Share button in image viewer toolbar via `share_plus`
-- [ ] Long-press context menu on image thumbnails in post cards — "Save image" and "Share" options
+
+### Images
+
+- [x] `ImageViewerScreen` — full-screen `PageView` of `PhotoView` widgets loading `fullsize` URLs with hero animation from thumbnail
+- [x] Page indicator for multi-image posts; alt text bar at the bottom of each page
+- [x] Swipe-down-to-dismiss gesture on image viewer
+- [x] Download button in image viewer toolbar — request permission, download via `dio` with progress indicator, save via `gal`, show snackbar result
+- [x] Share button in image viewer toolbar via `share_plus`
+- [x] Long-press context menu on image thumbnails in post cards — "Save image" and "Share" options
+
+### Video Player
+
 - [ ] `VideoPlayerScreen` — `chewie` wrapping `VideoPlayerController.networkUrl` with HLS `playlist` URL
 - [ ] Video player uses embed `aspectRatio` when available, defaults to 16:9
 - [ ] Video thumbnail as placeholder until player initialises; controller disposed on screen pop

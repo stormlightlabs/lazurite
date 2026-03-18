@@ -1,3 +1,4 @@
+import 'package:bluesky/bluesky.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -69,6 +70,7 @@ class _AppMenu extends StatelessWidget {
     final tokens = rootContext.watch<AuthBloc>().state.tokens;
     final displayName = tokens?.displayName ?? tokens?.handle ?? 'Guest';
     final handle = tokens?.handle ?? 'Sign in required';
+    final did = tokens?.did;
     final initials = _initialsFor(tokens?.displayName ?? tokens?.handle ?? 'L');
     final drawerWidth = (MediaQuery.sizeOf(context).width * 0.82).clamp(280.0, 320.0).toDouble();
 
@@ -105,8 +107,7 @@ class _AppMenu extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        // TODO: Add user avatar (keep initials as fallback)
-                        CircleAvatar(radius: 24, child: Text(initials)),
+                        _MenuProfileAvatar(did: did, initials: initials),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -260,6 +261,64 @@ class _AppMenu extends StatelessWidget {
     }
 
     return parts.map((part) => part.characters.first.toUpperCase()).join();
+  }
+}
+
+class _MenuProfileAvatar extends StatefulWidget {
+  const _MenuProfileAvatar({required this.did, required this.initials});
+
+  final String? did;
+  final String initials;
+
+  @override
+  State<_MenuProfileAvatar> createState() => _MenuProfileAvatarState();
+}
+
+class _MenuProfileAvatarState extends State<_MenuProfileAvatar> {
+  Future<String?>? _avatarFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _avatarFuture = _loadAvatar();
+  }
+
+  @override
+  void didUpdateWidget(covariant _MenuProfileAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.did != widget.did) {
+      _avatarFuture = _loadAvatar();
+    }
+  }
+
+  Future<String?> _loadAvatar() async {
+    final did = widget.did;
+    if (did == null || did.isEmpty) {
+      return null;
+    }
+
+    try {
+      final profile = await context.read<Bluesky>().actor.getProfile(actor: did);
+      return profile.data.avatar;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: _avatarFuture,
+      builder: (context, snapshot) {
+        final avatarUrl = snapshot.data;
+        return CircleAvatar(
+          radius: 24,
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+          child: avatarUrl == null ? Text(widget.initials) : null,
+        );
+      },
+    );
   }
 }
 
