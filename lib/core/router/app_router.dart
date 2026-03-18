@@ -15,6 +15,7 @@ import 'package:lazurite/features/compose/presentation/compose_screen.dart';
 import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
+import 'package:lazurite/features/feed/presentation/post_thread_screen.dart';
 import 'package:lazurite/features/logs/presentation/logs_screen.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
@@ -80,6 +81,14 @@ class AppRouter {
               draftId: args?.draftId,
             ),
           );
+        },
+      ),
+      GoRoute(
+        path: '/post',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final uri = state.uri.queryParameters['uri'] ?? '';
+          return PostThreadScreen(postUri: Uri.decodeComponent(uri));
         },
       ),
       GoRoute(

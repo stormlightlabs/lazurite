@@ -5,7 +5,7 @@ updated: 2026-03-17
 
 ## Checklist
 
-- [ ] [1. Post Thread Screen](#1-post-thread-screen)
+- [x] [1. Post Thread Screen](#1-post-thread-screen)
 - [ ] [2. Post Tap Navigation](#2-post-tap-navigation)
 - [ ] [3. Avatar Tap Navigation](#3-avatar-tap-navigation)
 - [ ] [4. Quoted Post Tap Navigation](#4-quoted-post-tap-navigation)
