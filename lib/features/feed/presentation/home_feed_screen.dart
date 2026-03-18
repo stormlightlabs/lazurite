@@ -112,6 +112,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () => context.push('/compose'),
+            shape: const CircleBorder(),
             child: const Icon(Icons.add),
           ),
         );
