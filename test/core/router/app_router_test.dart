@@ -156,7 +156,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Log Out'), 200, scrollable: find.byType(Scrollable).last);
     expect(find.text('Log Out'), findsOneWidget);
 
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.text('Profile').last);
     await tester.pumpAndSettle();
 
     expect(find.text('River Tam'), findsOneWidget);
@@ -164,7 +164,7 @@ void main() {
     await tester.tap(find.byTooltip('Open menu'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Settings'));
+    await tester.tap(find.text('Settings').last);
     await tester.pumpAndSettle();
 
     expect(find.text('APPEARANCE'), findsOneWidget);

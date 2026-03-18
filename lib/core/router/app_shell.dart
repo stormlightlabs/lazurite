@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
+import 'package:provider/provider.dart';
 
 class AppShellScope extends InheritedWidget {
   const AppShellScope({super.key, required super.child, required this.openMenu});
@@ -53,7 +54,64 @@ class _AppShellState extends State<AppShell> {
         key: _scaffoldKey,
         drawer: _AppMenu(navigationShell: widget.navigationShell, rootContext: context),
         body: widget.navigationShell,
+        bottomNavigationBar: NavigationBar(
+          height: 50,
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          selectedIndex: widget.navigationShell.currentIndex,
+          onDestinationSelected: (index) {
+            widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
+          },
+          indicatorShape: RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(10)),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+          destinations: _destinations,
+        ),
       ),
+    );
+  }
+
+  List<Widget> get _destinations => [
+    const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+    const NavigationDestination(icon: Icon(Icons.search_outlined), selectedIcon: Icon(Icons.search), label: 'Search'),
+    const NavigationDestination(
+      icon: _NotificationDestinationIcon(selected: false),
+      selectedIcon: _NotificationDestinationIcon(selected: true),
+      label: 'Notifications',
+    ),
+    const NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+    const NavigationDestination(
+      icon: Icon(Icons.chat_bubble_outline),
+      selectedIcon: Icon(Icons.chat_bubble),
+      label: 'Messages',
+    ),
+    const NavigationDestination(
+      icon: Icon(Icons.settings_outlined),
+      selectedIcon: Icon(Icons.settings),
+      label: 'Settings',
+    ),
+  ];
+}
+
+class _NotificationDestinationIcon extends StatelessWidget {
+  const _NotificationDestinationIcon({required this.selected});
+
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final unreadCountCubit = Provider.of<UnreadCountCubit?>(context, listen: false);
+    if (unreadCountCubit == null) {
+      return Icon(selected ? Icons.notifications : Icons.notifications_outlined);
+    }
+
+    return BlocBuilder<UnreadCountCubit, UnreadCountState>(
+      bloc: unreadCountCubit,
+      builder: (context, state) {
+        return Badge(
+          isLabelVisible: state.hasUnread,
+          label: Text(state.count > 99 ? '99+' : state.count.toString(), style: const TextStyle(fontSize: 10)),
+          child: Icon(selected ? Icons.notifications : Icons.notifications_outlined),
+        );
+      },
     );
   }
 }
