@@ -31,25 +31,25 @@
 
 ## M10 — Post & Profile Actions
 
-- [ ] `PostActionRepository` — like, repost, delete via `com.atproto.repo.createRecord` / `deleteRecord`
-- [ ] `PostActionCubit` — optimistic state updates for like / repost toggle with rollback on failure
-- [ ] Like toggle: create `app.bsky.feed.like` record or delete by rkey; update `viewer.like` and `likeCount`
-- [ ] Repost toggle: create `app.bsky.feed.repost` record or delete by rkey; update `viewer.repost` and `repostCount`
-- [ ] Post action bar UI — like, repost, reply, share buttons with animated state transitions
-- [ ] `ProfileActionRepository` — follow, mute, block, report
-- [ ] `ProfileActionCubit` — optimistic follow/mute/block state with rollback
-- [ ] Follow toggle: create `app.bsky.graph.follow` record or delete by rkey; update `viewer.following`
-- [ ] Mute toggle via `app.bsky.graph.muteActor` / `unmuteActor`; update `viewer.muted`
-- [ ] Block toggle: create `app.bsky.graph.block` record or delete by rkey; update `viewer.blocking`
-- [ ] Profile action buttons: Follow / Following / Mute / Block in profile header and overflow menu
-- [ ] Report dialog: reason picker + optional description, submit via `com.atproto.moderation.createReport`
-- [ ] Report for both posts (RepoStrongRef subject) and accounts (RepoRef subject)
-- [ ] Confirmation dialog before mute / block actions
-- [ ] Thread muting via `app.bsky.feed.threadgate` awareness (show muted-thread indicator)
+- [x] `PostActionRepository` — like, repost, delete via `com.atproto.repo.createRecord` / `deleteRecord`
+- [x] `PostActionCubit` — optimistic state updates for like / repost toggle with rollback on failure
+- [x] Like toggle: create `app.bsky.feed.like` record or delete by rkey; update `viewer.like` and `likeCount`
+- [x] Repost toggle: create `app.bsky.feed.repost` record or delete by rkey; update `viewer.repost` and `repostCount`
+- [x] Post action bar UI — like, repost, reply, share buttons with animated state transitions
+- [x] `ProfileActionRepository` — follow, mute, block, report
+- [x] `ProfileActionCubit` — optimistic follow/mute/block state with rollback
+- [x] Follow toggle: create `app.bsky.graph.follow` record or delete by rkey; update `viewer.following`
+- [x] Mute toggle via `app.bsky.graph.muteActor` / `unmuteActor`; update `viewer.muted`
+- [x] Block toggle: create `app.bsky.graph.block` record or delete by rkey; update `viewer.blocking`
+- [x] Profile action buttons: Follow / Following / Mute / Block in profile header and overflow menu
+- [x] Report dialog: reason picker + optional description, submit via `com.atproto.moderation.createReport`
+- [x] Report for both posts (RepoStrongRef subject) and accounts (RepoRef subject)
+- [x] Confirmation dialog before mute / block actions
+- [x] Thread muting via `app.bsky.feed.threadgate` awareness (show muted-thread indicator)
 
 ## M11 — Saved Posts
 
-- [ ] Drift migration: add `saved_posts` table (id, account_did, post_uri, post_json, saved_at) with unique constraint on (account_did, post_uri)
-- [ ] `SavedPostsCubit` — read/write saved posts, expose stream of saved URIs for icon state
-- [ ] Bookmark icon on post action bar — toggle saved state
-- [ ] Saved posts list screen accessible from profile or settings
+- [x] Drift migration: add `saved_posts` table (id, account_did, post_uri, post_json, saved_at) with unique constraint on (account_did, post_uri)
+- [x] `SavedPostsCubit` — read/write saved posts, expose stream of saved URIs for icon state
+- [x] Bookmark icon on post action bar — toggle saved state
+- [x] Saved posts list screen accessible from profile or settings

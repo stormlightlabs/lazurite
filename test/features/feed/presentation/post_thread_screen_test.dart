@@ -302,7 +302,7 @@ void main() {
       final parents = _extractParentChain(thread);
 
       expect(parents.length, 2);
-      expect(parents[0].post.cid, 'cid-gp'); // oldest first
+      expect(parents[0].post.cid, 'cid-gp');
       expect(parents[1].post.cid, 'cid-p');
     });
 

@@ -6,12 +6,24 @@ import 'package:lazurite/core/database/tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Accounts, CachedProfiles, CachedPosts, Settings, SavedFeeds, SearchHistory, Drafts, SavedPosts])
+@DriftDatabase(
+  tables: [
+    Accounts,
+    CachedProfiles,
+    CachedPosts,
+    Settings,
+    SavedFeeds,
+    SearchHistory,
+    Drafts,
+    SavedPosts,
+    LabelerCache,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -40,6 +52,12 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 7) {
         await migrator.addColumn(savedPosts, savedPosts.saveType);
+      }
+      if (from < 8) {
+        await migrator.addColumn(cachedPosts, cachedPosts.accountDid);
+      }
+      if (from < 9) {
+        await migrator.createTable(labelerCache);
       }
     },
   );
@@ -285,4 +303,21 @@ class AppDatabase extends _$AppDatabase {
       (posts) => {for (final p in posts) p.postUri: p.saveType},
     );
   }
+
+  Future<LabelerCacheEntry?> getLabelerCache(String labelerDid) =>
+      (select(labelerCache)..where((l) => l.labelerDid.equals(labelerDid))).getSingleOrNull();
+
+  Future<List<LabelerCacheEntry>> getAllLabelerCache() => select(labelerCache).get();
+
+  Future<int> upsertLabelerCache(String labelerDid, String policiesJson) => into(labelerCache).insert(
+    LabelerCacheCompanion(
+      labelerDid: Value(labelerDid),
+      policiesJson: Value(policiesJson),
+      fetchedAt: Value(DateTime.now()),
+    ),
+    mode: InsertMode.replace,
+  );
+
+  Future<int> deleteLabelerCache(String labelerDid) =>
+      (delete(labelerCache)..where((l) => l.labelerDid.equals(labelerDid))).go();
 }

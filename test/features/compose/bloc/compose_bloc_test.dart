@@ -82,10 +82,8 @@ void main() {
       blocTest<ComposeBloc, ComposeState>(
         'isDraftDirty is true after media removed',
         build: () => composeBloc,
-        seed: () => const ComposeState.ready(
-          mediaAttachments: [MediaAttachment(localPath: '/1.jpg')],
-          isDraftDirty: false,
-        ),
+        seed: () =>
+            const ComposeState.ready(mediaAttachments: [MediaAttachment(localPath: '/1.jpg')], isDraftDirty: false),
         act: (bloc) => bloc.add(const MediaRemoved(0)),
         expect: () => [isA<ComposeState>().having((s) => s.isDraftDirty, 'isDraftDirty', true)],
       );

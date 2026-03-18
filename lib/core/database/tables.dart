@@ -34,6 +34,7 @@ class CachedProfiles extends Table {
 class CachedPosts extends Table {
   TextColumn get uri => text()();
   TextColumn get authorDid => text()();
+  TextColumn get accountDid => text().nullable()();
   TextColumn get payload => text()();
   DateTimeColumn get createdAt => dateTime().nullable()();
   DateTimeColumn get fetchedAt => dateTime().withDefault(currentDateAndTime)();
@@ -102,4 +103,14 @@ class SavedPosts extends Table {
 
   @override
   List<String> get customConstraints => ['UNIQUE (account_did, post_uri)'];
+}
+
+@DataClassName('LabelerCacheEntry')
+class LabelerCache extends Table {
+  TextColumn get labelerDid => text()();
+  TextColumn get policiesJson => text()();
+  DateTimeColumn get fetchedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {labelerDid};
 }

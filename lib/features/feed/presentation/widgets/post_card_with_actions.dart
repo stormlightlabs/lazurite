@@ -58,13 +58,12 @@ class _PostCardWithActionsContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<PostActionCubit, PostActionState>(
       listenWhen: (previous, current) =>
-          (previous.error != current.error && current.error != null) ||
-          (!previous.isDeleted && current.isDeleted),
+          (previous.error != current.error && current.error != null) || (!previous.isDeleted && current.isDeleted),
       listener: (context, state) {
         if (state.isDeleted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Post deleted'), behavior: SnackBarBehavior.floating),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Post deleted'), behavior: SnackBarBehavior.floating));
           onDeleted?.call();
           return;
         }

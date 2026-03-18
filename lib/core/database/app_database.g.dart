@@ -894,6 +894,15 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _accountDidMeta = const VerificationMeta('accountDid');
+  @override
+  late final GeneratedColumn<String> accountDid = GeneratedColumn<String>(
+    'account_did',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _payloadMeta = const VerificationMeta('payload');
   @override
   late final GeneratedColumn<String> payload = GeneratedColumn<String>(
@@ -923,7 +932,7 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [uri, authorDid, payload, createdAt, fetchedAt];
+  List<GeneratedColumn> get $columns => [uri, authorDid, accountDid, payload, createdAt, fetchedAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -942,6 +951,9 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
       context.handle(_authorDidMeta, authorDid.isAcceptableOrUnknown(data['author_did']!, _authorDidMeta));
     } else if (isInserting) {
       context.missing(_authorDidMeta);
+    }
+    if (data.containsKey('account_did')) {
+      context.handle(_accountDidMeta, accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta));
     }
     if (data.containsKey('payload')) {
       context.handle(_payloadMeta, payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta));
@@ -965,6 +977,7 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
     return CachedPost(
       uri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}uri'])!,
       authorDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}author_did'])!,
+      accountDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}account_did']),
       payload: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}payload'])!,
       createdAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}created_at']),
       fetchedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}fetched_at'])!,
@@ -980,12 +993,14 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
 class CachedPost extends DataClass implements Insertable<CachedPost> {
   final String uri;
   final String authorDid;
+  final String? accountDid;
   final String payload;
   final DateTime? createdAt;
   final DateTime fetchedAt;
   const CachedPost({
     required this.uri,
     required this.authorDid,
+    this.accountDid,
     required this.payload,
     this.createdAt,
     required this.fetchedAt,
@@ -995,6 +1010,9 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
     final map = <String, Expression>{};
     map['uri'] = Variable<String>(uri);
     map['author_did'] = Variable<String>(authorDid);
+    if (!nullToAbsent || accountDid != null) {
+      map['account_did'] = Variable<String>(accountDid);
+    }
     map['payload'] = Variable<String>(payload);
     if (!nullToAbsent || createdAt != null) {
       map['created_at'] = Variable<DateTime>(createdAt);
@@ -1007,6 +1025,7 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
     return CachedPostsCompanion(
       uri: Value(uri),
       authorDid: Value(authorDid),
+      accountDid: accountDid == null && nullToAbsent ? const Value.absent() : Value(accountDid),
       payload: Value(payload),
       createdAt: createdAt == null && nullToAbsent ? const Value.absent() : Value(createdAt),
       fetchedAt: Value(fetchedAt),
@@ -1018,6 +1037,7 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
     return CachedPost(
       uri: serializer.fromJson<String>(json['uri']),
       authorDid: serializer.fromJson<String>(json['authorDid']),
+      accountDid: serializer.fromJson<String?>(json['accountDid']),
       payload: serializer.fromJson<String>(json['payload']),
       createdAt: serializer.fromJson<DateTime?>(json['createdAt']),
       fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
@@ -1029,6 +1049,7 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
     return <String, dynamic>{
       'uri': serializer.toJson<String>(uri),
       'authorDid': serializer.toJson<String>(authorDid),
+      'accountDid': serializer.toJson<String?>(accountDid),
       'payload': serializer.toJson<String>(payload),
       'createdAt': serializer.toJson<DateTime?>(createdAt),
       'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
@@ -1038,12 +1059,14 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
   CachedPost copyWith({
     String? uri,
     String? authorDid,
+    Value<String?> accountDid = const Value.absent(),
     String? payload,
     Value<DateTime?> createdAt = const Value.absent(),
     DateTime? fetchedAt,
   }) => CachedPost(
     uri: uri ?? this.uri,
     authorDid: authorDid ?? this.authorDid,
+    accountDid: accountDid.present ? accountDid.value : this.accountDid,
     payload: payload ?? this.payload,
     createdAt: createdAt.present ? createdAt.value : this.createdAt,
     fetchedAt: fetchedAt ?? this.fetchedAt,
@@ -1052,6 +1075,7 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
     return CachedPost(
       uri: data.uri.present ? data.uri.value : this.uri,
       authorDid: data.authorDid.present ? data.authorDid.value : this.authorDid,
+      accountDid: data.accountDid.present ? data.accountDid.value : this.accountDid,
       payload: data.payload.present ? data.payload.value : this.payload,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
@@ -1063,6 +1087,7 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
     return (StringBuffer('CachedPost(')
           ..write('uri: $uri, ')
           ..write('authorDid: $authorDid, ')
+          ..write('accountDid: $accountDid, ')
           ..write('payload: $payload, ')
           ..write('createdAt: $createdAt, ')
           ..write('fetchedAt: $fetchedAt')
@@ -1071,13 +1096,14 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
   }
 
   @override
-  int get hashCode => Object.hash(uri, authorDid, payload, createdAt, fetchedAt);
+  int get hashCode => Object.hash(uri, authorDid, accountDid, payload, createdAt, fetchedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is CachedPost &&
           other.uri == this.uri &&
           other.authorDid == this.authorDid &&
+          other.accountDid == this.accountDid &&
           other.payload == this.payload &&
           other.createdAt == this.createdAt &&
           other.fetchedAt == this.fetchedAt);
@@ -1086,6 +1112,7 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
 class CachedPostsCompanion extends UpdateCompanion<CachedPost> {
   final Value<String> uri;
   final Value<String> authorDid;
+  final Value<String?> accountDid;
   final Value<String> payload;
   final Value<DateTime?> createdAt;
   final Value<DateTime> fetchedAt;
@@ -1093,6 +1120,7 @@ class CachedPostsCompanion extends UpdateCompanion<CachedPost> {
   const CachedPostsCompanion({
     this.uri = const Value.absent(),
     this.authorDid = const Value.absent(),
+    this.accountDid = const Value.absent(),
     this.payload = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.fetchedAt = const Value.absent(),
@@ -1101,6 +1129,7 @@ class CachedPostsCompanion extends UpdateCompanion<CachedPost> {
   CachedPostsCompanion.insert({
     required String uri,
     required String authorDid,
+    this.accountDid = const Value.absent(),
     required String payload,
     this.createdAt = const Value.absent(),
     this.fetchedAt = const Value.absent(),
@@ -1111,6 +1140,7 @@ class CachedPostsCompanion extends UpdateCompanion<CachedPost> {
   static Insertable<CachedPost> custom({
     Expression<String>? uri,
     Expression<String>? authorDid,
+    Expression<String>? accountDid,
     Expression<String>? payload,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? fetchedAt,
@@ -1119,6 +1149,7 @@ class CachedPostsCompanion extends UpdateCompanion<CachedPost> {
     return RawValuesInsertable({
       if (uri != null) 'uri': uri,
       if (authorDid != null) 'author_did': authorDid,
+      if (accountDid != null) 'account_did': accountDid,
       if (payload != null) 'payload': payload,
       if (createdAt != null) 'created_at': createdAt,
       if (fetchedAt != null) 'fetched_at': fetchedAt,
@@ -1129,6 +1160,7 @@ class CachedPostsCompanion extends UpdateCompanion<CachedPost> {
   CachedPostsCompanion copyWith({
     Value<String>? uri,
     Value<String>? authorDid,
+    Value<String?>? accountDid,
     Value<String>? payload,
     Value<DateTime?>? createdAt,
     Value<DateTime>? fetchedAt,
@@ -1137,6 +1169,7 @@ class CachedPostsCompanion extends UpdateCompanion<CachedPost> {
     return CachedPostsCompanion(
       uri: uri ?? this.uri,
       authorDid: authorDid ?? this.authorDid,
+      accountDid: accountDid ?? this.accountDid,
       payload: payload ?? this.payload,
       createdAt: createdAt ?? this.createdAt,
       fetchedAt: fetchedAt ?? this.fetchedAt,
@@ -1152,6 +1185,9 @@ class CachedPostsCompanion extends UpdateCompanion<CachedPost> {
     }
     if (authorDid.present) {
       map['author_did'] = Variable<String>(authorDid.value);
+    }
+    if (accountDid.present) {
+      map['account_did'] = Variable<String>(accountDid.value);
     }
     if (payload.present) {
       map['payload'] = Variable<String>(payload.value);
@@ -1173,6 +1209,7 @@ class CachedPostsCompanion extends UpdateCompanion<CachedPost> {
     return (StringBuffer('CachedPostsCompanion(')
           ..write('uri: $uri, ')
           ..write('authorDid: $authorDid, ')
+          ..write('accountDid: $accountDid, ')
           ..write('payload: $payload, ')
           ..write('createdAt: $createdAt, ')
           ..write('fetchedAt: $fetchedAt, ')
@@ -3002,6 +3039,234 @@ class SavedPostsCompanion extends UpdateCompanion<SavedPostEntry> {
   }
 }
 
+class $LabelerCacheTable extends LabelerCache with TableInfo<$LabelerCacheTable, LabelerCacheEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LabelerCacheTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _labelerDidMeta = const VerificationMeta('labelerDid');
+  @override
+  late final GeneratedColumn<String> labelerDid = GeneratedColumn<String>(
+    'labeler_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _policiesJsonMeta = const VerificationMeta('policiesJson');
+  @override
+  late final GeneratedColumn<String> policiesJson = GeneratedColumn<String>(
+    'policies_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta('fetchedAt');
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [labelerDid, policiesJson, fetchedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'labeler_cache';
+  @override
+  VerificationContext validateIntegrity(Insertable<LabelerCacheEntry> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('labeler_did')) {
+      context.handle(_labelerDidMeta, labelerDid.isAcceptableOrUnknown(data['labeler_did']!, _labelerDidMeta));
+    } else if (isInserting) {
+      context.missing(_labelerDidMeta);
+    }
+    if (data.containsKey('policies_json')) {
+      context.handle(_policiesJsonMeta, policiesJson.isAcceptableOrUnknown(data['policies_json']!, _policiesJsonMeta));
+    } else if (isInserting) {
+      context.missing(_policiesJsonMeta);
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(_fetchedAtMeta, fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {labelerDid};
+  @override
+  LabelerCacheEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LabelerCacheEntry(
+      labelerDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}labeler_did'])!,
+      policiesJson: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}policies_json'])!,
+      fetchedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}fetched_at'])!,
+    );
+  }
+
+  @override
+  $LabelerCacheTable createAlias(String alias) {
+    return $LabelerCacheTable(attachedDatabase, alias);
+  }
+}
+
+class LabelerCacheEntry extends DataClass implements Insertable<LabelerCacheEntry> {
+  final String labelerDid;
+  final String policiesJson;
+  final DateTime fetchedAt;
+  const LabelerCacheEntry({required this.labelerDid, required this.policiesJson, required this.fetchedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['labeler_did'] = Variable<String>(labelerDid);
+    map['policies_json'] = Variable<String>(policiesJson);
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    return map;
+  }
+
+  LabelerCacheCompanion toCompanion(bool nullToAbsent) {
+    return LabelerCacheCompanion(
+      labelerDid: Value(labelerDid),
+      policiesJson: Value(policiesJson),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory LabelerCacheEntry.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LabelerCacheEntry(
+      labelerDid: serializer.fromJson<String>(json['labelerDid']),
+      policiesJson: serializer.fromJson<String>(json['policiesJson']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'labelerDid': serializer.toJson<String>(labelerDid),
+      'policiesJson': serializer.toJson<String>(policiesJson),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+    };
+  }
+
+  LabelerCacheEntry copyWith({String? labelerDid, String? policiesJson, DateTime? fetchedAt}) => LabelerCacheEntry(
+    labelerDid: labelerDid ?? this.labelerDid,
+    policiesJson: policiesJson ?? this.policiesJson,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  LabelerCacheEntry copyWithCompanion(LabelerCacheCompanion data) {
+    return LabelerCacheEntry(
+      labelerDid: data.labelerDid.present ? data.labelerDid.value : this.labelerDid,
+      policiesJson: data.policiesJson.present ? data.policiesJson.value : this.policiesJson,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LabelerCacheEntry(')
+          ..write('labelerDid: $labelerDid, ')
+          ..write('policiesJson: $policiesJson, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(labelerDid, policiesJson, fetchedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LabelerCacheEntry &&
+          other.labelerDid == this.labelerDid &&
+          other.policiesJson == this.policiesJson &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class LabelerCacheCompanion extends UpdateCompanion<LabelerCacheEntry> {
+  final Value<String> labelerDid;
+  final Value<String> policiesJson;
+  final Value<DateTime> fetchedAt;
+  final Value<int> rowid;
+  const LabelerCacheCompanion({
+    this.labelerDid = const Value.absent(),
+    this.policiesJson = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LabelerCacheCompanion.insert({
+    required String labelerDid,
+    required String policiesJson,
+    this.fetchedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : labelerDid = Value(labelerDid),
+       policiesJson = Value(policiesJson);
+  static Insertable<LabelerCacheEntry> custom({
+    Expression<String>? labelerDid,
+    Expression<String>? policiesJson,
+    Expression<DateTime>? fetchedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (labelerDid != null) 'labeler_did': labelerDid,
+      if (policiesJson != null) 'policies_json': policiesJson,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LabelerCacheCompanion copyWith({
+    Value<String>? labelerDid,
+    Value<String>? policiesJson,
+    Value<DateTime>? fetchedAt,
+    Value<int>? rowid,
+  }) {
+    return LabelerCacheCompanion(
+      labelerDid: labelerDid ?? this.labelerDid,
+      policiesJson: policiesJson ?? this.policiesJson,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (labelerDid.present) {
+      map['labeler_did'] = Variable<String>(labelerDid.value);
+    }
+    if (policiesJson.present) {
+      map['policies_json'] = Variable<String>(policiesJson.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LabelerCacheCompanion(')
+          ..write('labelerDid: $labelerDid, ')
+          ..write('policiesJson: $policiesJson, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3013,6 +3278,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SearchHistoryTable searchHistory = $SearchHistoryTable(this);
   late final $DraftsTable drafts = $DraftsTable(this);
   late final $SavedPostsTable savedPosts = $SavedPostsTable(this);
+  late final $LabelerCacheTable labelerCache = $LabelerCacheTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
@@ -3025,6 +3291,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     searchHistory,
     drafts,
     savedPosts,
+    labelerCache,
   ];
 }
 
@@ -3441,6 +3708,7 @@ typedef $$CachedPostsTableCreateCompanionBuilder =
     CachedPostsCompanion Function({
       required String uri,
       required String authorDid,
+      Value<String?> accountDid,
       required String payload,
       Value<DateTime?> createdAt,
       Value<DateTime> fetchedAt,
@@ -3450,6 +3718,7 @@ typedef $$CachedPostsTableUpdateCompanionBuilder =
     CachedPostsCompanion Function({
       Value<String> uri,
       Value<String> authorDid,
+      Value<String?> accountDid,
       Value<String> payload,
       Value<DateTime?> createdAt,
       Value<DateTime> fetchedAt,
@@ -3468,6 +3737,9 @@ class $$CachedPostsTableFilterComposer extends Composer<_$AppDatabase, $CachedPo
 
   ColumnFilters<String> get authorDid =>
       $composableBuilder(column: $table.authorDid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get accountDid =>
+      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get payload =>
       $composableBuilder(column: $table.payload, builder: (column) => ColumnFilters(column));
@@ -3493,6 +3765,9 @@ class $$CachedPostsTableOrderingComposer extends Composer<_$AppDatabase, $Cached
   ColumnOrderings<String> get authorDid =>
       $composableBuilder(column: $table.authorDid, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get accountDid =>
+      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get payload =>
       $composableBuilder(column: $table.payload, builder: (column) => ColumnOrderings(column));
 
@@ -3514,6 +3789,8 @@ class $$CachedPostsTableAnnotationComposer extends Composer<_$AppDatabase, $Cach
   GeneratedColumn<String> get uri => $composableBuilder(column: $table.uri, builder: (column) => column);
 
   GeneratedColumn<String> get authorDid => $composableBuilder(column: $table.authorDid, builder: (column) => column);
+
+  GeneratedColumn<String> get accountDid => $composableBuilder(column: $table.accountDid, builder: (column) => column);
 
   GeneratedColumn<String> get payload => $composableBuilder(column: $table.payload, builder: (column) => column);
 
@@ -3549,6 +3826,7 @@ class $$CachedPostsTableTableManager
               ({
                 Value<String> uri = const Value.absent(),
                 Value<String> authorDid = const Value.absent(),
+                Value<String?> accountDid = const Value.absent(),
                 Value<String> payload = const Value.absent(),
                 Value<DateTime?> createdAt = const Value.absent(),
                 Value<DateTime> fetchedAt = const Value.absent(),
@@ -3556,6 +3834,7 @@ class $$CachedPostsTableTableManager
               }) => CachedPostsCompanion(
                 uri: uri,
                 authorDid: authorDid,
+                accountDid: accountDid,
                 payload: payload,
                 createdAt: createdAt,
                 fetchedAt: fetchedAt,
@@ -3565,6 +3844,7 @@ class $$CachedPostsTableTableManager
               ({
                 required String uri,
                 required String authorDid,
+                Value<String?> accountDid = const Value.absent(),
                 required String payload,
                 Value<DateTime?> createdAt = const Value.absent(),
                 Value<DateTime> fetchedAt = const Value.absent(),
@@ -3572,6 +3852,7 @@ class $$CachedPostsTableTableManager
               }) => CachedPostsCompanion.insert(
                 uri: uri,
                 authorDid: authorDid,
+                accountDid: accountDid,
                 payload: payload,
                 createdAt: createdAt,
                 fetchedAt: fetchedAt,
@@ -4472,6 +4753,140 @@ typedef $$SavedPostsTableProcessedTableManager =
       SavedPostEntry,
       PrefetchHooks Function()
     >;
+typedef $$LabelerCacheTableCreateCompanionBuilder =
+    LabelerCacheCompanion Function({
+      required String labelerDid,
+      required String policiesJson,
+      Value<DateTime> fetchedAt,
+      Value<int> rowid,
+    });
+typedef $$LabelerCacheTableUpdateCompanionBuilder =
+    LabelerCacheCompanion Function({
+      Value<String> labelerDid,
+      Value<String> policiesJson,
+      Value<DateTime> fetchedAt,
+      Value<int> rowid,
+    });
+
+class $$LabelerCacheTableFilterComposer extends Composer<_$AppDatabase, $LabelerCacheTable> {
+  $$LabelerCacheTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get labelerDid =>
+      $composableBuilder(column: $table.labelerDid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get policiesJson =>
+      $composableBuilder(column: $table.policiesJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$LabelerCacheTableOrderingComposer extends Composer<_$AppDatabase, $LabelerCacheTable> {
+  $$LabelerCacheTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get labelerDid =>
+      $composableBuilder(column: $table.labelerDid, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get policiesJson =>
+      $composableBuilder(column: $table.policiesJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$LabelerCacheTableAnnotationComposer extends Composer<_$AppDatabase, $LabelerCacheTable> {
+  $$LabelerCacheTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get labelerDid => $composableBuilder(column: $table.labelerDid, builder: (column) => column);
+
+  GeneratedColumn<String> get policiesJson =>
+      $composableBuilder(column: $table.policiesJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fetchedAt => $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$LabelerCacheTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LabelerCacheTable,
+          LabelerCacheEntry,
+          $$LabelerCacheTableFilterComposer,
+          $$LabelerCacheTableOrderingComposer,
+          $$LabelerCacheTableAnnotationComposer,
+          $$LabelerCacheTableCreateCompanionBuilder,
+          $$LabelerCacheTableUpdateCompanionBuilder,
+          (LabelerCacheEntry, BaseReferences<_$AppDatabase, $LabelerCacheTable, LabelerCacheEntry>),
+          LabelerCacheEntry,
+          PrefetchHooks Function()
+        > {
+  $$LabelerCacheTableTableManager(_$AppDatabase db, $LabelerCacheTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$LabelerCacheTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$LabelerCacheTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$LabelerCacheTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> labelerDid = const Value.absent(),
+                Value<String> policiesJson = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LabelerCacheCompanion(
+                labelerDid: labelerDid,
+                policiesJson: policiesJson,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String labelerDid,
+                required String policiesJson,
+                Value<DateTime> fetchedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LabelerCacheCompanion.insert(
+                labelerDid: labelerDid,
+                policiesJson: policiesJson,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LabelerCacheTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LabelerCacheTable,
+      LabelerCacheEntry,
+      $$LabelerCacheTableFilterComposer,
+      $$LabelerCacheTableOrderingComposer,
+      $$LabelerCacheTableAnnotationComposer,
+      $$LabelerCacheTableCreateCompanionBuilder,
+      $$LabelerCacheTableUpdateCompanionBuilder,
+      (LabelerCacheEntry, BaseReferences<_$AppDatabase, $LabelerCacheTable, LabelerCacheEntry>),
+      LabelerCacheEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4484,4 +4899,5 @@ class $AppDatabaseManager {
   $$SearchHistoryTableTableManager get searchHistory => $$SearchHistoryTableTableManager(_db, _db.searchHistory);
   $$DraftsTableTableManager get drafts => $$DraftsTableTableManager(_db, _db.drafts);
   $$SavedPostsTableTableManager get savedPosts => $$SavedPostsTableTableManager(_db, _db.savedPosts);
+  $$LabelerCacheTableTableManager get labelerCache => $$LabelerCacheTableTableManager(_db, _db.labelerCache);
 }

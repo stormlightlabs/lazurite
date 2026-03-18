@@ -130,7 +130,9 @@ void main() {
       });
 
       testWidgets('shows draft items when drafts are loaded', (tester) async {
-        seedState(const ComposeState.ready().copyWith(drafts: [_makeDraft(content: 'My saved draft')], isLoadingDrafts: false));
+        seedState(
+          const ComposeState.ready().copyWith(drafts: [_makeDraft(content: 'My saved draft')], isLoadingDrafts: false),
+        );
 
         await tester.pumpWidget(buildSubject());
         await tester.pump();

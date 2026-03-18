@@ -39,6 +39,7 @@ dependencies:
   workmanager: ^0.5.2
   plugin_platform_interface: ^2.1.8
   url_launcher_platform_interface: ^2.3.2
+  connectivity_plus: ^7.0.0
 
 dev_dependencies:
   flutter_test:

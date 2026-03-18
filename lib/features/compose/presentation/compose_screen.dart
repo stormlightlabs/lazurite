@@ -324,7 +324,10 @@ class _ComposeScreenState extends State<ComposeScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Center(
-                    child: Text('No drafts saved', style: _theme.textTheme.bodyMedium?.copyWith(color: _theme.colorScheme.onSurfaceVariant)),
+                    child: Text(
+                      'No drafts saved',
+                      style: _theme.textTheme.bodyMedium?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
+                    ),
                   ),
                 )
               else

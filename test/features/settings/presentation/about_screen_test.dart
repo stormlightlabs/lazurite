@@ -108,7 +108,6 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pump();
 
-      // GitHub SVG, Tangled SVG, email icon — wrapped in _LinkIcon (InkWell)
       expect(find.byType(InkWell), findsNWidgets(3));
     });
   });

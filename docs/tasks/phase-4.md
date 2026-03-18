@@ -3,23 +3,23 @@
 ## M12 — Direct Messages
 
 - [ ] Conversation list screen via `chat.bsky.convo.listConvos` with pagination
-- [ ] `ConvoListBloc` — events: `ConvosRequested`, `ConvosRefreshed`, `ConvoMuted`, `ConvoUnmuted`
-- [ ] Primary / Requests tab filtering on conversation list
+- [x] `ConvoListBloc` — events: `ConvosRequested`, `ConvosRefreshed`, `ConvoMuted`, `ConvoUnmuted`
+- [x] Primary / Requests tab filtering on conversation list
 - [ ] Message thread screen via `chat.bsky.convo.getMessages` with pagination
-- [ ] `MessageBloc` — events: `MessagesRequested`, `MessagesPageLoaded`, `MessageSent`, `MessageDeleted`, `ConvoMarkedRead`
+- [x] `MessageBloc` — events: `MessagesRequested`, `MessagesPageLoaded`, `MessageSent`, `MessageDeleted`, `ConvoMarkedRead`
 - [ ] Chat bubble layout — current user right-aligned, others left-aligned
-- [ ] Send messages via `chat.bsky.convo.sendMessage`
-- [ ] New conversation via `chat.bsky.convo.getConvoForMembers`
+- [x] Send messages via `chat.bsky.convo.sendMessage`
+- [x] New conversation via `chat.bsky.convo.getConvoForMembers`
 - [ ] Long-press to copy individual messages, overflow menu "Copy All" for full thread
-- [ ] Mute / unmute conversations
-- [ ] Mark conversation as read via `chat.bsky.convo.updateRead`
+- [x] Mute / unmute conversations
+- [x] Mark conversation as read via `chat.bsky.convo.updateRead`
 
 ## M13 — Account Switching
 
-- [ ] `AccountSwitcherCubit` exposing account list and active DID
+- [x] `AccountSwitcherCubit` exposing account list and active DID
 - [ ] Account switcher bottom sheet UI — list accounts with avatars and handles
-- [ ] Store `active_account_did` in Drift `settings` table
-- [ ] Drift migration: add `account_did` column to `cached_posts` if not present
+- [x] Store `active_account_did` in Drift `settings` table
+- [x] Drift migration: add `account_did` column to `cached_posts` if not present
 - [ ] All user-scoped queries filter by active account DID
 - [ ] Broadcast `AccountSwitched` event to all Blocs on switch
 - [ ] "Add Account" button triggers OAuth flow, inserts new `accounts` row
@@ -27,7 +27,7 @@
 
 ## M14 — Offline Reading & Network Resilience
 
-- [ ] `ConnectivityCubit` via **connectivity_plus** — expose network state stream
+- [x] `ConnectivityCubit` via **connectivity_plus** — expose network state stream
 - [ ] Cache last-fetched feed page as serialised JSON in Drift
 - [ ] Display cached data immediately on launch, refresh in background
 - [ ] "You're offline" banner when connectivity is lost
@@ -43,9 +43,9 @@
 
 ## M16 — Labelers & Content Moderation
 
-- [ ] Fetch user's labeler subscriptions from preferences via `app.bsky.actor.getPreferences` (`labelersPref`)
+- [x] Fetch user's labeler subscriptions from preferences via `app.bsky.actor.getPreferences` (`labelersPref`)
 - [ ] Include subscribed labeler DIDs in `atproto-accept-labelers` header on all XRPC requests
-- [ ] `ModerationService` — wraps the `bluesky` package's `moderatePost`, `moderateProfile`, `moderateNotification` functions
+- [x] `ModerationService` — wraps the `bluesky` package's `moderatePost`, `moderateProfile`, `moderateNotification` functions
 - [ ] Run moderation decisions on all displayed posts and profiles
 - [ ] Apply `ModerationUI` results: filter, blur, alert, inform per display context (contentList, contentView, contentMedia, avatar, profileList, profileView)
 - [ ] Blur overlay on posts/media with click-through "Show content" button
@@ -58,4 +58,4 @@
 - [ ] Adult content toggle (requires `adultContentEnabled` preference)
 - [ ] Self-label support — render self-labels embedded in posts and profiles
 - [ ] Labeler detail screen: show labeler creator, policies, and custom label definitions with localised names
-- [ ] Drift table: `labeler_cache` (labeler_did, policies_json, fetched_at) for offline label definition lookup
+- [x] Drift table: `labeler_cache` (labeler_did, policies_json, fetched_at) for offline label definition lookup

@@ -26,10 +26,9 @@ async function generateSplashScreen(
 
   const minDim = Math.min(width, height);
   const logoSize = minDim * 0.22;
-  const gap = minDim * 0.04; // Gap between logo and text (like 16px in about screen)
+  const gap = minDim * 0.04;
   const fontSize = minDim * 0.07;
 
-  // Calculate total height of logo + gap + text to center the group
   const totalGroupHeight = logoSize + gap + fontSize;
   const groupCenterY = height / 2;
   const logoY = groupCenterY - totalGroupHeight / 2;
