@@ -54,6 +54,81 @@ Build a `ConvoListBloc` with events: `ConvosRequested`, `ConvosRefreshed`,
 Build a `MessageBloc` with events: `MessagesRequested`, `MessagesPageLoaded`,
 `MessageSent`, `MessageDeleted`, `ConvoMarkedRead`.
 
+## Media Playback & Download
+
+Currently images open in an external browser and videos launch an external app
+via `url_launcher`. This milestone adds in-app media viewing and the ability to
+save media to the device gallery.
+
+### Packages
+
+| Package              | Purpose                                                         |
+| -------------------- | --------------------------------------------------------------- |
+| `photo_view`         | Pinch-to-zoom and pan for full-screen images                    |
+| `video_player`       | Flutter's official video playback plugin (HLS support built-in) |
+| `chewie`             | Material-styled controls wrapper around `video_player`          |
+| `dio`                | HTTP downloads with progress callbacks                          |
+| `gal`                | Save images and videos to the device gallery                    |
+| `permission_handler` | Request photo-library / storage write permissions               |
+
+### Image Viewer
+
+Tapping an image in a post opens a full-screen `ImageViewerScreen`. The screen
+is a `PageView` so multi-image posts are swipeable. Each page contains a
+`PhotoView` widget wrapping an `Image.network` of the `fullsize` URL. A hero
+animation on the thumbnail provides a smooth transition.
+
+The viewer has a transparent app bar with a close button, a download button, and
+a share button. Swiping down dismisses the viewer. The current page indicator
+appears at the bottom for multi-image posts.
+
+Alt text, when present, is shown in a semi-transparent bar at the bottom of
+each page.
+
+### Video Player
+
+Tapping a video embed opens a `VideoPlayerScreen`. The player uses `chewie`
+wrapping Flutter's `VideoPlayerController.networkUrl` pointed at the HLS
+`playlist` URL. Controls include play/pause, seek bar, elapsed/total time,
+fullscreen toggle, and a mute button.
+
+The video thumbnail is shown as a placeholder until the player initialises. If
+the embed has an `aspectRatio`, the player container uses it; otherwise it
+defaults to 16:9. The player disposes its controller on screen pop.
+
+For GIF-style videos (`presentation: "gif"`), the player auto-plays in a loop
+with controls hidden and audio muted.
+
+### Downloading Media
+
+A download button appears in the image viewer toolbar and the video player
+toolbar. The download flow:
+
+1. Check and request write permission via `permission_handler` (photo library
+   on iOS, storage or media-store on Android).
+2. Download the file using `dio` with a progress callback driving a circular
+   progress indicator on the button.
+3. Save the file to the device gallery via `gal`.
+4. Show a snackbar confirming success or displaying the error.
+
+For images, the download URL is the `fullsize` URL. For videos, download the
+highest-quality variant from the HLS playlist. Parse the `.m3u8` manifest to
+find the highest-bandwidth variant URL, then download that MP4 stream.
+
+Long-press on an image thumbnail in a post (without entering the viewer) should
+show a context menu with "Save image" and "Share" options.
+
+### Permissions
+
+| Platform    | Permission                              | When Requested         |
+| ----------- | --------------------------------------- | ---------------------- |
+| iOS         | `NSPhotoLibraryAddUsageDescription`     | First download attempt |
+| Android 13+ | `READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO` | First download attempt |
+| Android <13 | `WRITE_EXTERNAL_STORAGE`                | First download attempt |
+
+Declare permissions in `AndroidManifest.xml` and `Info.plist`. The app only
+requests permission at the moment of download, not on launch.
+
 ## Account Switching
 
 Support multiple authenticated accounts with full data isolation. The
