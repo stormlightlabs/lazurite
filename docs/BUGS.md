@@ -15,9 +15,9 @@ updated: 2026-03-17
 - [x] [8. Saved Posts — Accessible from Profile](#8-saved-posts--accessible-from-profile)
 - [x] [9. Saved Posts — Long Press for Local, Tap for Menu](#9-saved-posts--long-press-for-local-tap-for-menu)
 - [x] [10. Saved Posts — Show Save Counts](#10-saved-posts--show-save-counts)
-- [ ] [11. Saved Posts — Cloud Save via AT Protocol](#11-saved-posts--cloud-save-via-at-protocol)
-- [ ] [12. Failed Action Snackbar with Revert](#12-failed-action-snackbar-with-revert)
-- [ ] [13. Delete Post — Remove from Feed](#13-delete-post--remove-from-feed)
+- [x] [11. Saved Posts — Cloud Save via AT Protocol](#11-saved-posts--cloud-save-via-at-protocol)
+- [x] [12. Failed Action Snackbar with Revert](#12-failed-action-snackbar-with-revert)
+- [x] [13. Delete Post — Remove from Feed](#13-delete-post--remove-from-feed)
 
 ## 1. Post Thread Screen
 

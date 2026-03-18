@@ -18,10 +18,11 @@ import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/report_dialog.dart';
 
 class PostCardWithActions extends StatelessWidget {
-  const PostCardWithActions({super.key, required this.feedViewPost, required this.accountDid});
+  const PostCardWithActions({super.key, required this.feedViewPost, required this.accountDid, this.onDeleted});
 
   final FeedViewPost feedViewPost;
   final String accountDid;
+  final VoidCallback? onDeleted;
 
   @override
   Widget build(BuildContext context) {
@@ -41,27 +42,54 @@ class PostCardWithActions extends StatelessWidget {
         repostUri: viewer?.repost?.toString(),
         cache: ctx.read<PostActionCache>(),
       ),
-      child: _PostCardWithActionsContent(feedViewPost: feedViewPost, accountDid: accountDid),
+      child: _PostCardWithActionsContent(feedViewPost: feedViewPost, accountDid: accountDid, onDeleted: onDeleted),
     );
   }
 }
 
 class _PostCardWithActionsContent extends StatelessWidget {
-  const _PostCardWithActionsContent({required this.feedViewPost, required this.accountDid});
+  const _PostCardWithActionsContent({required this.feedViewPost, required this.accountDid, this.onDeleted});
 
   final FeedViewPost feedViewPost;
   final String accountDid;
+  final VoidCallback? onDeleted;
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<PostActionCubit, PostActionState>(
-      listenWhen: (previous, current) => previous.error != current.error && current.error != null,
+      listenWhen: (previous, current) =>
+          (previous.error != current.error && current.error != null) ||
+          (!previous.isDeleted && current.isDeleted),
       listener: (context, state) {
+        if (state.isDeleted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Post deleted'), behavior: SnackBarBehavior.floating),
+          );
+          onDeleted?.call();
+          return;
+        }
         if (state.error != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.error!), behavior: SnackBarBehavior.floating));
-          context.read<PostActionCubit>().clearError();
+          final cubit = context.read<PostActionCubit>();
+          final error = state.error!;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error),
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'Retry',
+                onPressed: () {
+                  if (error.contains('like')) {
+                    cubit.toggleLike();
+                  } else if (error.contains('repost')) {
+                    cubit.toggleRepost();
+                  } else if (error.contains('delete')) {
+                    cubit.deletePost();
+                  }
+                },
+              ),
+            ),
+          );
+          cubit.clearError();
         }
       },
       child: PostCard(

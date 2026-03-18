@@ -16,6 +16,7 @@ class PostActionState extends Equatable {
     this.repostUri,
     this.isLoadingLike = false,
     this.isLoadingRepost = false,
+    this.isDeleted = false,
     this.error,
   });
 
@@ -28,6 +29,7 @@ class PostActionState extends Equatable {
   final String? repostUri;
   final bool isLoadingLike;
   final bool isLoadingRepost;
+  final bool isDeleted;
   final String? error;
 
   PostActionState copyWith({
@@ -39,6 +41,7 @@ class PostActionState extends Equatable {
     String? repostUri,
     bool? isLoadingLike,
     bool? isLoadingRepost,
+    bool? isDeleted,
     String? error,
   }) {
     return PostActionState(
@@ -51,6 +54,7 @@ class PostActionState extends Equatable {
       repostUri: repostUri ?? this.repostUri,
       isLoadingLike: isLoadingLike ?? this.isLoadingLike,
       isLoadingRepost: isLoadingRepost ?? this.isLoadingRepost,
+      isDeleted: isDeleted ?? this.isDeleted,
       error: error ?? this.error,
     );
   }
@@ -66,6 +70,7 @@ class PostActionState extends Equatable {
     repostUri,
     isLoadingLike,
     isLoadingRepost,
+    isDeleted,
     error,
   ];
 }
@@ -230,6 +235,7 @@ class PostActionCubit extends Cubit<PostActionState> {
   Future<void> deletePost() async {
     try {
       await _postActionRepository.deletePost(postUri: state.postUri);
+      emit(state.copyWith(isDeleted: true));
     } catch (error) {
       log.e('Failed to delete post', error: error);
       emit(state.copyWith(error: 'Failed to delete post'));
@@ -237,6 +243,21 @@ class PostActionCubit extends Cubit<PostActionState> {
   }
 
   void clearError() {
-    emit(state.copyWith(error: null));
+    if (state.error == null) return;
+    emit(
+      PostActionState(
+        postUri: state.postUri,
+        isLiked: state.isLiked,
+        isReposted: state.isReposted,
+        likeCount: state.likeCount,
+        repostCount: state.repostCount,
+        likeUri: state.likeUri,
+        repostUri: state.repostUri,
+        isLoadingLike: state.isLoadingLike,
+        isLoadingRepost: state.isLoadingRepost,
+        isDeleted: state.isDeleted,
+        error: null,
+      ),
+    );
   }
 }

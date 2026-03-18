@@ -245,12 +245,13 @@ void main() {
 
     group('deletePost', () {
       blocTest<PostActionCubit, PostActionState>(
-        'calls deletePost on repository',
+        'emits isDeleted true on success',
         build: () {
           when(() => mockRepository.deletePost(postUri: testPostUri)).thenAnswer((_) async => {});
           return PostActionCubit(postActionRepository: mockRepository, postUri: testPostUri, postCid: testPostCid);
         },
         act: (cubit) => cubit.deletePost(),
+        expect: () => [isA<PostActionState>().having((s) => s.isDeleted, 'isDeleted', isTrue)],
         verify: (_) {
           verify(() => mockRepository.deletePost(postUri: testPostUri)).called(1);
         },
@@ -264,6 +265,23 @@ void main() {
         },
         act: (cubit) => cubit.deletePost(),
         expect: () => [isA<PostActionState>().having((s) => s.error, 'error', 'Failed to delete post')],
+      );
+    });
+
+    group('clearError', () {
+      blocTest<PostActionCubit, PostActionState>(
+        'clears error from state',
+        build: () => PostActionCubit(postActionRepository: mockRepository, postUri: testPostUri, postCid: testPostCid),
+        seed: () => const PostActionState(postUri: testPostUri, error: 'some error'),
+        act: (cubit) => cubit.clearError(),
+        expect: () => [isA<PostActionState>().having((s) => s.error, 'error', isNull)],
+      );
+
+      blocTest<PostActionCubit, PostActionState>(
+        'does nothing when error is already null',
+        build: () => PostActionCubit(postActionRepository: mockRepository, postUri: testPostUri, postCid: testPostCid),
+        act: (cubit) => cubit.clearError(),
+        expect: () => [],
       );
     });
   });
@@ -419,6 +437,7 @@ void main() {
         repostUri: testRepostUri,
         isLoadingLike: true,
         isLoadingRepost: false,
+        isDeleted: false,
         error: 'test error',
       );
 
@@ -432,6 +451,7 @@ void main() {
         repostUri: testRepostUri,
         isLoadingLike: true,
         isLoadingRepost: false,
+        isDeleted: false,
         error: 'test error',
       );
 

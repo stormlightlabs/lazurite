@@ -350,7 +350,15 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
           }
 
           final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
-          return PostCardWithActions(feedViewPost: _posts[index], accountDid: accountDid);
+          final post = _posts[index];
+          return PostCardWithActions(
+            feedViewPost: post,
+            accountDid: accountDid,
+            onDeleted: () {
+              final uri = post.post.uri.toString();
+              setState(() => _posts.removeWhere((p) => p.post.uri.toString() == uri));
+            },
+          );
         },
       ),
     );
