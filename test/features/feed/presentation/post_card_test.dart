@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 
 FeedViewPost _makePost({String text = 'Hello'}) {
   final record = FeedPostRecord(text: text, createdAt: DateTime.utc(2026, 3, 16));
@@ -114,6 +115,21 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('renders handle uppercase in header', (tester) async {
+    final post = _makePost();
+    await tester.pumpWidget(buildSubject(post));
+
+    expect(find.text('@TEST.BSKY.SOCIAL'), findsOneWidget);
+  });
+
+  testWidgets('renders PostCardFooter instead of CircleAvatar', (tester) async {
+    final post = _makePost();
+    await tester.pumpWidget(buildSubject(post));
+
+    expect(find.byType(CircleAvatar), findsNothing);
+    expect(find.byType(PostCardFooter), findsOneWidget);
+  });
+
   testWidgets('tapping quoted post navigates to /post with quoted uri', (tester) async {
     final quotedUri = AtUri.parse('at://did:plc:quoted/app.bsky.feed.post/quoted123');
     final record = FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16));
@@ -192,7 +208,7 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(CircleAvatar));
+    await tester.tap(find.byKey(const ValueKey('post_card_avatar')));
     await tester.pumpAndSettle();
 
     expect(pushedRoute, contains('did%3Aplc%3Atest'));

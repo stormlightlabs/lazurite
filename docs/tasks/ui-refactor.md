@@ -21,12 +21,12 @@
 
 ## M2 — Post Card Variants
 
-- [ ] Refactor `PostCard` to the linear variant: square avatars, uppercase handle, bordered footer
-- [ ] New `GridPostCard` widget — image region, content region, footer
-- [ ] Text-only grid card variant (no image — expanded body text)
-- [ ] Shared `PostCardFooter` widget (action icons left, timestamp right, top border)
-- [ ] Wire both variants to `PostCardWithActions` for action state management
-- [ ] Tests for both card variants (golden or widget tests)
+- [x] Refactor `PostCard` to the linear variant: square avatars, uppercase handle, bordered footer
+- [x] New `GridPostCard` widget — image region, content region, footer
+- [x] Text-only grid card variant (no image — expanded body text)
+- [x] Shared `PostCardFooter` widget (action icons left, timestamp right, top border)
+- [x] Wire both variants to `PostCardWithActions` for action state management
+- [x] Tests for both card variants
 
 ## M3 — Home Feed Grid Layout
 

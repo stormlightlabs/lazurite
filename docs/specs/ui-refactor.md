@@ -63,8 +63,11 @@ Changes:
   `onSurfaceVariant`
 - Body text: `bodySmall`, `line-clamp: 2` (via `maxLines: 2, overflow: ellipsis`)
 - Action bar: move inside a top-bordered footer area
-  (`border-t outlineVariant`). Icons only (chat, repeat, favorite) in a left-aligned
-  row. Timestamp right-aligned in the same row
+  (`border-t outlineVariant`). Icons only (chat, repeat, favorite, save) in a
+  left-aligned row. Timestamp right-aligned in the same row
+- Save icon: bookmark icon that opens local/cloud save options on tap (same
+  behaviour as the previous action bar). Active state: amber for local-only saves,
+  `primary` for cloud saves
 - Embed images: keep existing grid logic, but use square aspect ratio in grid view
 
 ## Post Card — Grid Layout
@@ -79,7 +82,7 @@ Structure (top-to-bottom):
 2. **Content region** (padding `16`):
    - Author row: `5×5` square avatar + handle (same style as linear)
    - Body text: `bodySmall`, `maxLines: 2`, ellipsis
-   - Footer: top-bordered, icons left, relative timestamp right
+   - Footer: top-bordered, icons left (chat, repeat, favorite, save), relative timestamp right
 
 Text-only variant (no image): content region expands to fill the card with
 larger body text (`titleMedium`, `tracking: tight`). Secondary text below in

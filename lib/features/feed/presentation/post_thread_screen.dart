@@ -186,22 +186,25 @@ class _FocusedPostContent extends StatelessWidget {
 
     return PostCard(
       feedViewPost: FeedViewPost(post: post),
-      actionBar: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 4),
-          Text(
-            _formatTimestamp(timestamp),
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-          const Divider(),
-          _buildStats(context, post),
-          const Divider(height: 1),
-          const SizedBox(height: 4),
-          _buildActionBar(context, post),
-        ],
+      actionBar: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              _formatTimestamp(timestamp),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
+            const Divider(),
+            _buildStats(context, post),
+            const Divider(height: 1),
+            const SizedBox(height: 4),
+            _buildActionBar(context, post),
+          ],
+        ),
       ),
     );
   }
