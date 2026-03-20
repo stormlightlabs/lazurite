@@ -25,7 +25,9 @@ class _ConvoListScreenState extends State<ConvoListScreen> with SingleTickerProv
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_onTabChanged);
     _scrollController.addListener(_onScroll);
-    context.read<ConvoListBloc>().add(const ConvosRequested());
+    if (context.read<ConvoListBloc>().state.status == ConvoListStatus.initial) {
+      context.read<ConvoListBloc>().add(const ConvosRequested());
+    }
   }
 
   @override

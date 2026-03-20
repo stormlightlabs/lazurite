@@ -12,19 +12,6 @@ class ConvoRepository {
     return ConvoListResult(convos: response.data.convos, cursor: response.data.cursor);
   }
 
-  Future<int> getUnreadCount({int limit = 100}) async {
-    var totalUnread = 0;
-    String? cursor;
-
-    do {
-      final result = await listConvos(cursor: cursor, limit: limit);
-      totalUnread += result.convos.fold<int>(0, (sum, convo) => sum + convo.unreadCount);
-      cursor = result.cursor;
-    } while (cursor != null);
-
-    return totalUnread;
-  }
-
   Future<ConvoView> getConvoForMembers(List<String> dids) async {
     final response = await _chat.convo.getConvoForMembers(members: dids);
     return response.data.convo;

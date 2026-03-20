@@ -2,6 +2,7 @@ import 'package:bluesky/chat_bsky_convo_getmessages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/bloc/message_bloc.dart';
 import 'package:lazurite/features/messages/presentation/widgets/message_bubble.dart';
 
@@ -31,6 +32,9 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
 
   @override
   void dispose() {
+    try {
+      context.read<ConvoListBloc>().add(const ConvosRefreshed());
+    } catch (_) {}
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();

@@ -1,4 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:bluesky/chat_bsky_convo_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,12 +7,16 @@ import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
+class MockConvoListBloc extends MockBloc<ConvoListEvent, ConvoListState> implements ConvoListBloc {}
+
 void main() {
   late MockAuthBloc authBloc;
+  late MockConvoListBloc convoListBloc;
 
   const tokens = AuthTokens(
     accessToken: 'access',
@@ -23,8 +28,15 @@ void main() {
 
   setUp(() {
     authBloc = MockAuthBloc();
+    convoListBloc = MockConvoListBloc();
     when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
+    when(() => convoListBloc.state).thenReturn(const ConvoListState.loaded(convos: [], cursor: null, hasMore: false));
+    whenListen(
+      convoListBloc,
+      const Stream<ConvoListState>.empty(),
+      initialState: const ConvoListState.loaded(convos: [], cursor: null, hasMore: false),
+    );
   });
 
   Widget buildSubject({
@@ -33,8 +45,11 @@ void main() {
     List<Widget>? actions,
     bool showAvatar = true,
   }) {
-    return BlocProvider<AuthBloc>.value(
-      value: authBloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>.value(value: authBloc),
+        BlocProvider<ConvoListBloc>.value(value: convoListBloc),
+      ],
       child: MaterialApp(
         home: Scaffold(
           appBar: LazuriteAppBar(sectionLabel: sectionLabel, bottom: bottom, actions: actions, showAvatar: showAvatar),
@@ -104,6 +119,25 @@ void main() {
 
     expect(find.byIcon(Icons.chat_bubble_outline), findsOneWidget);
     expect(find.text('RT'), findsNothing);
+  });
+
+  testWidgets('AppBarMessagesButton shows unread badge from shared convo list state', (tester) async {
+    const unreadConvo = ConvoView(id: 'c1', rev: 'rev-1', members: [], muted: false, unreadCount: 3);
+    when(
+      () => convoListBloc.state,
+    ).thenReturn(const ConvoListState.loaded(convos: [unreadConvo], cursor: null, hasMore: false));
+    whenListen(
+      convoListBloc,
+      const Stream<ConvoListState>.empty(),
+      initialState: const ConvoListState.loaded(convos: [unreadConvo], cursor: null, hasMore: false),
+    );
+
+    await tester.pumpWidget(
+      buildSubject(sectionLabel: 'Home', showAvatar: false, actions: [const AppBarMessagesButton()]),
+    );
+    await tester.pump();
+
+    expect(find.text('3'), findsOneWidget);
   });
 
   testWidgets('preferred size height is 64 without bottom widget', (tester) async {

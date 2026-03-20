@@ -10,6 +10,7 @@ import 'package:lazurite/core/logging/logging_navigator_observer.dart';
 import 'package:bluesky/bluesky_chat.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/router/app_router.dart';
+import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
@@ -130,6 +131,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
           final searchRepository = SearchRepository(bluesky: bluesky);
           final postActionRepository = PostActionRepository(bluesky: bluesky);
           final profileActionRepository = ProfileActionRepository(bluesky: bluesky);
+          final convoRepository = ConvoRepository(chat: blueskyChat);
           final accountDid = authState.tokens?.did ?? '';
 
           return MultiBlocProvider(
@@ -153,6 +155,9 @@ class _LazuriteAppState extends State<LazuriteApp> {
                     SearchBloc(searchRepository: searchRepository, database: widget.database, accountDid: accountDid),
               ),
               BlocProvider(
+                create: (_) => ConvoListBloc(convoRepository: convoRepository)..add(const ConvosRequested(limit: 100)),
+              ),
+              BlocProvider(
                 create: (_) => SavedPostsCubit(
                   database: widget.database,
                   accountDid: accountDid,
@@ -165,7 +170,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
               RepositoryProvider(create: (_) => PostActionCache()),
               RepositoryProvider.value(value: profileActionRepository),
               RepositoryProvider.value(value: bluesky),
-              RepositoryProvider(create: (_) => ConvoRepository(chat: blueskyChat)),
+              RepositoryProvider.value(value: convoRepository),
               RepositoryProvider.value(value: widget.database),
               RepositoryProvider.value(value: accountDid),
             ],

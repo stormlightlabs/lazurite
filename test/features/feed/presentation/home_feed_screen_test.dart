@@ -125,7 +125,7 @@ void main() {
 
       final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
       final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-      final tileWidth = screenWidth;
+      const tileWidth = screenWidth;
 
       expect(delegate.mainAxisExtent, isNotNull);
       expect(delegate.mainAxisExtent!, greaterThan(tileWidth + 100));

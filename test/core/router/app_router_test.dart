@@ -11,6 +11,7 @@ import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
+import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
@@ -30,6 +31,8 @@ class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubi
 
 class MockUnreadCountCubit extends MockCubit<UnreadCountState> implements UnreadCountCubit {}
 
+class MockConvoListBloc extends MockBloc<ConvoListEvent, ConvoListState> implements ConvoListBloc {}
+
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 
 void main() {
@@ -39,6 +42,7 @@ void main() {
   late MockFeedBloc feedBloc;
   late MockSettingsCubit settingsCubit;
   late MockUnreadCountCubit unreadCountCubit;
+  late MockConvoListBloc convoListBloc;
   late MockNotificationRepository notificationRepository;
   late StreamController<AuthState> authController;
   late AuthState currentAuthState;
@@ -68,6 +72,7 @@ void main() {
     feedBloc = MockFeedBloc();
     settingsCubit = MockSettingsCubit();
     unreadCountCubit = MockUnreadCountCubit();
+    convoListBloc = MockConvoListBloc();
     notificationRepository = MockNotificationRepository();
     authController = StreamController<AuthState>.broadcast();
     currentAuthState = const AuthState.authenticated(tokens);
@@ -86,6 +91,7 @@ void main() {
       ),
     );
     when(() => unreadCountCubit.state).thenReturn(const UnreadCountState(0));
+    when(() => convoListBloc.state).thenReturn(const ConvoListState.loaded(convos: [], cursor: null, hasMore: false));
     when(() => notificationRepository.getUnreadCount()).thenAnswer((_) async => 0);
 
     whenListen(authBloc, authController.stream, initialState: currentAuthState);
@@ -115,6 +121,11 @@ void main() {
       ),
     );
     whenListen(unreadCountCubit, const Stream<UnreadCountState>.empty(), initialState: const UnreadCountState(0));
+    whenListen(
+      convoListBloc,
+      const Stream<ConvoListState>.empty(),
+      initialState: const ConvoListState.loaded(convos: [], cursor: null, hasMore: false),
+    );
   });
 
   tearDown(() async {
@@ -129,6 +140,7 @@ void main() {
       BlocProvider<FeedBloc>.value(value: feedBloc),
       BlocProvider<SettingsCubit>.value(value: settingsCubit),
       BlocProvider<UnreadCountCubit>.value(value: unreadCountCubit),
+      BlocProvider<ConvoListBloc>.value(value: convoListBloc),
     ],
     child: RepositoryProvider<NotificationRepository>(
       create: (_) => notificationRepository,
@@ -261,7 +273,10 @@ void main() {
 
           return MultiBlocProvider(
             providers: [BlocProvider<UnreadCountCubit>.value(value: unreadCountCubit)],
-            child: RepositoryProvider<NotificationRepository>.value(value: notificationRepository, child: app),
+            child: MultiBlocProvider(
+              providers: [BlocProvider<ConvoListBloc>.value(value: convoListBloc)],
+              child: RepositoryProvider<NotificationRepository>.value(value: notificationRepository, child: app),
+            ),
           );
         },
       ),

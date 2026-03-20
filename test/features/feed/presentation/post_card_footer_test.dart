@@ -137,10 +137,10 @@ void main() {
       addTearDown(() => FlutterError.onError = previousOnError);
 
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: SizedBox(width: 185.5, child: const PostCardFooter(timestamp: 'SEP 20')),
+              child: SizedBox(width: 185.5, child: PostCardFooter(timestamp: 'SEP 20')),
             ),
           ),
         ),

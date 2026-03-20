@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
-import 'package:lazurite/features/messages/cubit/message_unread_count_cubit.dart';
+import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 
 /// Custom top app bar for the Lazurite shell screens.
 ///
@@ -60,7 +60,7 @@ class AppBarMessagesButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    Widget button = InkWell(
+    final baseButton = InkWell(
       borderRadius: BorderRadius.circular(4),
       onTap: () => GoRouter.maybeOf(context)?.push('/messages'),
       child: Container(
@@ -75,14 +75,15 @@ class AppBarMessagesButton extends StatelessWidget {
     );
 
     try {
-      final cubit = context.watch<MessageUnreadCountCubit>();
-      button = BlocBuilder<MessageUnreadCountCubit, MessageUnreadCountState>(
-        bloc: cubit,
+      final bloc = context.read<ConvoListBloc>();
+      return BlocBuilder<ConvoListBloc, ConvoListState>(
+        bloc: bloc,
         builder: (context, state) {
+          final unreadCount = state.convos.fold<int>(0, (sum, convo) => sum + convo.unreadCount);
           return Badge(
-            isLabelVisible: state.hasUnread,
-            label: Text(state.count > 99 ? '99+' : state.count.toString(), style: const TextStyle(fontSize: 10)),
-            child: button,
+            isLabelVisible: unreadCount > 0,
+            label: Text(unreadCount > 99 ? '99+' : unreadCount.toString(), style: const TextStyle(fontSize: 10)),
+            child: baseButton,
           );
         },
       );
@@ -90,7 +91,7 @@ class AppBarMessagesButton extends StatelessWidget {
       log.d('showing messages button without unread badge');
     }
 
-    return button;
+    return baseButton;
   }
 }
 

@@ -28,9 +28,7 @@ import 'package:lazurite/features/notifications/presentation/notifications_scree
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
-import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/bloc/message_bloc.dart';
-import 'package:lazurite/features/messages/cubit/message_unread_count_cubit.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/messages/presentation/convo_list_screen.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
@@ -125,10 +123,7 @@ class AppRouter {
       GoRoute(
         path: '/messages',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => BlocProvider(
-          create: (_) => ConvoListBloc(convoRepository: context.read<ConvoRepository>()),
-          child: const ConvoListScreen(),
-        ),
+        builder: (context, state) => const ConvoListScreen(),
         routes: [
           GoRoute(
             path: ':id',
@@ -169,21 +164,7 @@ class AppRouter {
             log.d('UnreadCountCubit not found, creating new one');
           }
 
-          MessageUnreadCountCubit? existingMessageCubit;
-          try {
-            existingMessageCubit = context.read<MessageUnreadCountCubit>();
-          } catch (_) {
-            log.d('MessageUnreadCountCubit not found, creating new one');
-          }
-
-          ConvoRepository? convoRepository;
-          try {
-            convoRepository = context.read<ConvoRepository>();
-          } catch (_) {
-            log.d('ConvoRepository not found, skipping MessageUnreadCountCubit');
-          }
-
-          if (existingUnreadCubit != null && (existingMessageCubit != null || convoRepository == null)) {
+          if (existingUnreadCubit != null) {
             return AppShell(navigationShell: navigationShell);
           }
 
@@ -195,8 +176,6 @@ class AppRouter {
                     notificationRepository: NotificationRepository(bluesky: context.read<Bluesky>()),
                   ),
                 ),
-              if (existingMessageCubit == null && convoRepository != null)
-                BlocProvider(create: (_) => MessageUnreadCountCubit(convoRepository: convoRepository!)),
             ],
             child: AppShell(navigationShell: navigationShell),
           );
