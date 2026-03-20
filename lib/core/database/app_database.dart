@@ -23,7 +23,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -58,6 +58,11 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 9) {
         await migrator.createTable(labelerCache);
+      }
+      if (from < 10) {
+        await customStatement(
+          "INSERT OR IGNORE INTO settings (key, value) VALUES ('ui_density', 'standard'), ('feed_architecture', 'grid')",
+        );
       }
     },
   );

@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
+import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/ui_density.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
 void main() {
@@ -64,6 +66,40 @@ void main() {
       expect(state1, isNot(equals(state2)));
     });
 
+    test('inequality when uiDensity differs', () {
+      const state1 = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        uiDensity: UiDensity.standard,
+      );
+      const state2 = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        uiDensity: UiDensity.compact,
+      );
+
+      expect(state1, isNot(equals(state2)));
+    });
+
+    test('inequality when feedArchitecture differs', () {
+      const state1 = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        feedArchitecture: FeedArchitecture.grid,
+      );
+      const state2 = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        feedArchitecture: FeedArchitecture.linear,
+      );
+
+      expect(state1, isNot(equals(state2)));
+    });
+
     test('copyWith returns new instance with updated values', () {
       const original = SettingsState(
         themePalette: AppThemePalette.oxocarbon,
@@ -75,11 +111,15 @@ void main() {
         themePalette: AppThemePalette.nord,
         themeVariant: AppThemeVariant.light,
         useSystemTheme: true,
+        uiDensity: UiDensity.compact,
+        feedArchitecture: FeedArchitecture.linear,
       );
 
       expect(updated.themePalette, AppThemePalette.nord);
       expect(updated.themeVariant, AppThemeVariant.light);
       expect(updated.useSystemTheme, true);
+      expect(updated.uiDensity, UiDensity.compact);
+      expect(updated.feedArchitecture, FeedArchitecture.linear);
       expect(original.themePalette, AppThemePalette.oxocarbon);
     });
 
@@ -88,6 +128,8 @@ void main() {
         themePalette: AppThemePalette.catppuccin,
         themeVariant: AppThemeVariant.light,
         useSystemTheme: true,
+        uiDensity: UiDensity.relaxed,
+        feedArchitecture: FeedArchitecture.linear,
       );
 
       final updated = original.copyWith();
@@ -95,6 +137,8 @@ void main() {
       expect(updated.themePalette, AppThemePalette.catppuccin);
       expect(updated.themeVariant, AppThemeVariant.light);
       expect(updated.useSystemTheme, true);
+      expect(updated.uiDensity, UiDensity.relaxed);
+      expect(updated.feedArchitecture, FeedArchitecture.linear);
     });
 
     test('props includes all fields', () {
@@ -102,11 +146,33 @@ void main() {
         themePalette: AppThemePalette.rosePine,
         themeVariant: AppThemeVariant.light,
         useSystemTheme: true,
+        uiDensity: UiDensity.compact,
+        feedArchitecture: FeedArchitecture.linear,
       );
 
       expect(state.props, contains(AppThemePalette.rosePine));
       expect(state.props, contains(AppThemeVariant.light));
       expect(state.props, contains(true));
+      expect(state.props, contains(UiDensity.compact));
+      expect(state.props, contains(FeedArchitecture.linear));
+    });
+
+    test('defaults uiDensity to standard', () {
+      const state = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+      );
+      expect(state.uiDensity, UiDensity.standard);
+    });
+
+    test('defaults feedArchitecture to grid', () {
+      const state = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+      );
+      expect(state.feedArchitecture, FeedArchitecture.grid);
     });
   });
 }

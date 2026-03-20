@@ -3,6 +3,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
+import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/ui_density.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
@@ -23,6 +25,8 @@ void main() {
       expect(cubit.state.themePalette, AppThemePalette.oxocarbon);
       expect(cubit.state.themeVariant, AppThemeVariant.dark);
       expect(cubit.state.useSystemTheme, false);
+      expect(cubit.state.uiDensity, UiDensity.standard);
+      expect(cubit.state.feedArchitecture, FeedArchitecture.grid);
     });
 
     test('accepts initial values via constructor', () {
@@ -31,10 +35,14 @@ void main() {
         initialPalette: AppThemePalette.catppuccin,
         initialVariant: AppThemeVariant.light,
         initialUseSystemTheme: true,
+        initialUiDensity: UiDensity.compact,
+        initialFeedArchitecture: FeedArchitecture.linear,
       );
       expect(cubit.state.themePalette, AppThemePalette.catppuccin);
       expect(cubit.state.themeVariant, AppThemeVariant.light);
       expect(cubit.state.useSystemTheme, true);
+      expect(cubit.state.uiDensity, UiDensity.compact);
+      expect(cubit.state.feedArchitecture, FeedArchitecture.linear);
     });
 
     blocTest<SettingsCubit, SettingsState>(
@@ -44,13 +52,17 @@ void main() {
         await database.setSetting('theme_palette', 'nord');
         await database.setSetting('theme_variant', 'light');
         await database.setSetting('use_system_theme', 'true');
+        await database.setSetting('ui_density', 'compact');
+        await database.setSetting('feed_architecture', 'linear');
       },
       act: (cubit) => cubit.loadSettings(),
       expect: () => [
         isA<SettingsState>()
             .having((s) => s.themePalette, 'themePalette', AppThemePalette.nord)
             .having((s) => s.themeVariant, 'themeVariant', AppThemeVariant.light)
-            .having((s) => s.useSystemTheme, 'useSystemTheme', true),
+            .having((s) => s.useSystemTheme, 'useSystemTheme', true)
+            .having((s) => s.uiDensity, 'uiDensity', UiDensity.compact)
+            .having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.linear),
       ],
     );
 
@@ -62,7 +74,9 @@ void main() {
         isA<SettingsState>()
             .having((s) => s.themePalette, 'themePalette', AppThemePalette.oxocarbon)
             .having((s) => s.themeVariant, 'themeVariant', AppThemeVariant.dark)
-            .having((s) => s.useSystemTheme, 'useSystemTheme', false),
+            .having((s) => s.useSystemTheme, 'useSystemTheme', false)
+            .having((s) => s.uiDensity, 'uiDensity', UiDensity.standard)
+            .having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.grid),
       ],
     );
 
@@ -112,6 +126,67 @@ void main() {
         final value = await database.getSetting('use_system_theme');
         expect(value, 'true');
       },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setUiDensity updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setUiDensity(UiDensity.compact),
+      expect: () => [isA<SettingsState>().having((s) => s.uiDensity, 'uiDensity', UiDensity.compact)],
+      verify: (cubit) async {
+        final value = await database.getSetting('ui_density');
+        expect(value, 'compact');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setUiDensity relaxed updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setUiDensity(UiDensity.relaxed),
+      expect: () => [isA<SettingsState>().having((s) => s.uiDensity, 'uiDensity', UiDensity.relaxed)],
+      verify: (cubit) async {
+        final value = await database.getSetting('ui_density');
+        expect(value, 'relaxed');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setFeedArchitecture updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setFeedArchitecture(FeedArchitecture.linear),
+      expect: () => [
+        isA<SettingsState>().having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.linear),
+      ],
+      verify: (cubit) async {
+        final value = await database.getSetting('feed_architecture');
+        expect(value, 'linear');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setFeedArchitecture grid updates state and persists to database',
+      build: () => SettingsCubit(database: database, initialFeedArchitecture: FeedArchitecture.linear),
+      act: (cubit) => cubit.setFeedArchitecture(FeedArchitecture.grid),
+      expect: () => [isA<SettingsState>().having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.grid)],
+      verify: (cubit) async {
+        final value = await database.getSetting('feed_architecture');
+        expect(value, 'grid');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'loadSettings round-trips ui_density and feed_architecture',
+      build: () => SettingsCubit(database: database),
+      setUp: () async {
+        await database.setSetting('ui_density', 'relaxed');
+        await database.setSetting('feed_architecture', 'linear');
+      },
+      act: (cubit) => cubit.loadSettings(),
+      expect: () => [
+        isA<SettingsState>()
+            .having((s) => s.uiDensity, 'uiDensity', UiDensity.relaxed)
+            .having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.linear),
+      ],
     );
   });
 }
