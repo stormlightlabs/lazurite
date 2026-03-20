@@ -147,6 +147,13 @@ void main() {
       expect(find.text('linear 1'), findsOneWidget);
       expect(find.text('linear 2'), findsOneWidget);
     });
+
+    testWidgets('uses tighter vertical spacing in linear mode', (tester) async {
+      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.linear));
+
+      final listView = tester.widget<ListView>(find.byType(ListView));
+      expect(listView.padding, const EdgeInsets.symmetric(vertical: 4));
+    });
   });
 
   group('FeedLayoutView — architecture switching', () {

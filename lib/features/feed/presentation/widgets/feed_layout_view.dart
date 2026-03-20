@@ -82,7 +82,7 @@ class FeedLayoutView extends StatelessWidget {
       onRefresh: onRefresh,
       child: ListView.builder(
         controller: scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         itemCount: itemCount + (isLoadingMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == itemCount) {
@@ -90,7 +90,7 @@ class FeedLayoutView extends StatelessWidget {
               child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
             );
           }
-          return Padding(padding: const EdgeInsets.only(bottom: 8), child: linearItemBuilder(context, index));
+          return Padding(padding: const EdgeInsets.only(bottom: 4), child: linearItemBuilder(context, index));
         },
       ),
     );

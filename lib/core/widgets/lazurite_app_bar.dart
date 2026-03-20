@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/messages/cubit/message_unread_count_cubit.dart';
 
 /// Custom top app bar for the Lazurite shell screens.
 ///
@@ -13,11 +15,12 @@ import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 /// Pass [bottom] to add an additional row below the toolbar (e.g., for the
 /// home-screen feed-switcher tabs).
 class LazuriteAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const LazuriteAppBar({super.key, required this.sectionLabel, this.bottom, this.actions});
+  const LazuriteAppBar({super.key, required this.sectionLabel, this.bottom, this.actions, this.showAvatar = true});
 
   final String sectionLabel;
   final PreferredSizeWidget? bottom;
   final List<Widget>? actions;
+  final bool showAvatar;
 
   static const double _toolbarHeight = 64;
 
@@ -40,10 +43,54 @@ class LazuriteAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       centerTitle: false,
       titleSpacing: 0,
-      actions: [...?actions, const _AppBarAvatar(), const SizedBox(width: 8)],
+      actions: [
+        ...?actions,
+        if (showAvatar) ...[const _AppBarAvatar(), const SizedBox(width: 8)],
+      ],
       bottom: bottom,
       shape: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant)),
     );
+  }
+}
+
+class AppBarMessagesButton extends StatelessWidget {
+  const AppBarMessagesButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    Widget button = InkWell(
+      borderRadius: BorderRadius.circular(4),
+      onTap: () => GoRouter.maybeOf(context)?.push('/messages'),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHigh,
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: const Icon(Icons.chat_bubble_outline, size: 18),
+      ),
+    );
+
+    try {
+      final cubit = context.watch<MessageUnreadCountCubit>();
+      button = BlocBuilder<MessageUnreadCountCubit, MessageUnreadCountState>(
+        bloc: cubit,
+        builder: (context, state) {
+          return Badge(
+            isLabelVisible: state.hasUnread,
+            label: Text(state.count > 99 ? '99+' : state.count.toString(), style: const TextStyle(fontSize: 10)),
+            child: button,
+          );
+        },
+      );
+    } catch (_) {
+      log.d('showing messages button without unread badge');
+    }
+
+    return button;
   }
 }
 

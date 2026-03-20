@@ -30,6 +30,7 @@ import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/bloc/message_bloc.dart';
+import 'package:lazurite/features/messages/cubit/message_unread_count_cubit.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/messages/presentation/convo_list_screen.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
@@ -161,23 +162,41 @@ class AppRouter {
             return AppShell(navigationShell: navigationShell);
           }
 
-          UnreadCountCubit? existingCubit;
+          UnreadCountCubit? existingUnreadCubit;
           try {
-            existingCubit = context.read<UnreadCountCubit>();
+            existingUnreadCubit = context.read<UnreadCountCubit>();
           } catch (_) {
             log.d('UnreadCountCubit not found, creating new one');
           }
 
-          if (existingCubit != null) {
+          MessageUnreadCountCubit? existingMessageCubit;
+          try {
+            existingMessageCubit = context.read<MessageUnreadCountCubit>();
+          } catch (_) {
+            log.d('MessageUnreadCountCubit not found, creating new one');
+          }
+
+          ConvoRepository? convoRepository;
+          try {
+            convoRepository = context.read<ConvoRepository>();
+          } catch (_) {
+            log.d('ConvoRepository not found, skipping MessageUnreadCountCubit');
+          }
+
+          if (existingUnreadCubit != null && (existingMessageCubit != null || convoRepository == null)) {
             return AppShell(navigationShell: navigationShell);
           }
 
           return MultiBlocProvider(
             providers: [
-              BlocProvider(
-                create: (_) =>
-                    UnreadCountCubit(notificationRepository: NotificationRepository(bluesky: context.read<Bluesky>())),
-              ),
+              if (existingUnreadCubit == null)
+                BlocProvider(
+                  create: (_) => UnreadCountCubit(
+                    notificationRepository: NotificationRepository(bluesky: context.read<Bluesky>()),
+                  ),
+                ),
+              if (existingMessageCubit == null && convoRepository != null)
+                BlocProvider(create: (_) => MessageUnreadCountCubit(convoRepository: convoRepository!)),
             ],
             child: AppShell(navigationShell: navigationShell),
           );

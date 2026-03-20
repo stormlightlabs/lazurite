@@ -27,12 +27,17 @@ void main() {
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
   });
 
-  Widget buildSubject({required String sectionLabel, PreferredSizeWidget? bottom, List<Widget>? actions}) {
+  Widget buildSubject({
+    required String sectionLabel,
+    PreferredSizeWidget? bottom,
+    List<Widget>? actions,
+    bool showAvatar = true,
+  }) {
     return BlocProvider<AuthBloc>.value(
       value: authBloc,
       child: MaterialApp(
         home: Scaffold(
-          appBar: LazuriteAppBar(sectionLabel: sectionLabel, bottom: bottom, actions: actions),
+          appBar: LazuriteAppBar(sectionLabel: sectionLabel, bottom: bottom, actions: actions, showAvatar: showAvatar),
           body: const SizedBox.shrink(),
         ),
       ),
@@ -85,6 +90,20 @@ void main() {
 
     expect(find.text('Mark All Read'), findsOneWidget);
     expect(find.text('ALERTS'), findsOneWidget);
+  });
+
+  testWidgets('can hide avatar when custom trailing actions are used', (tester) async {
+    await tester.pumpWidget(
+      buildSubject(
+        sectionLabel: 'Home',
+        showAvatar: false,
+        actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.chat_bubble_outline))],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.chat_bubble_outline), findsOneWidget);
+    expect(find.text('RT'), findsNothing);
   });
 
   testWidgets('preferred size height is 64 without bottom widget', (tester) async {

@@ -37,6 +37,7 @@ class PostCardFooter extends StatelessWidget {
     this.onLongPressSave,
     this.onCloudSave,
     this.onCloudUnsave,
+    this.showCounts = false,
   });
 
   final String timestamp;
@@ -57,6 +58,7 @@ class PostCardFooter extends StatelessWidget {
   final VoidCallback? onLongPressSave;
   final VoidCallback? onCloudSave;
   final VoidCallback? onCloudUnsave;
+  final bool showCounts;
 
   @override
   Widget build(BuildContext context) {
@@ -79,10 +81,12 @@ class PostCardFooter extends StatelessWidget {
             activeIcon: Icons.chat_bubble,
             isActive: false,
             isLoading: false,
+            count: replyCount,
             onTap: onReply,
             color: colorScheme.onSurfaceVariant,
             iconSize: iconSize,
             padding: actionPadding,
+            showCount: showCounts,
           ),
           const SizedBox(width: actionSpacing),
           _FooterAction(
@@ -90,11 +94,13 @@ class PostCardFooter extends StatelessWidget {
             activeIcon: Icons.repeat,
             isActive: isReposted,
             isLoading: isLoadingRepost,
+            count: repostCount,
             onTap: onRepost,
             color: colorScheme.onSurfaceVariant,
             activeColor: Colors.green,
             iconSize: iconSize,
             padding: actionPadding,
+            showCount: showCounts,
           ),
           const SizedBox(width: actionSpacing),
           _FooterAction(
@@ -102,11 +108,13 @@ class PostCardFooter extends StatelessWidget {
             activeIcon: Icons.favorite,
             isActive: isLiked,
             isLoading: isLoadingLike,
+            count: likeCount,
             onTap: onLike,
             color: colorScheme.onSurfaceVariant,
             activeColor: Colors.pink,
             iconSize: iconSize,
             padding: actionPadding,
+            showCount: showCounts,
           ),
           const SizedBox(width: actionSpacing),
           _FooterAction(
@@ -114,12 +122,14 @@ class PostCardFooter extends StatelessWidget {
             activeIcon: Icons.bookmark,
             isActive: isSaved,
             isLoading: false,
+            count: saveCount,
             onTap: onSave != null ? () => _showSaveOptions(context) : null,
             onLongPress: onLongPressSave,
             color: colorScheme.onSurfaceVariant,
             activeColor: saveActiveColor,
             iconSize: iconSize,
             padding: actionPadding,
+            showCount: showCounts,
           ),
           const SizedBox(width: actionSpacing),
           Expanded(
@@ -193,6 +203,8 @@ class _FooterAction extends StatelessWidget {
     required this.isLoading,
     required this.iconSize,
     required this.padding,
+    required this.count,
+    required this.showCount,
     this.onTap,
     this.onLongPress,
     this.color,
@@ -205,6 +217,8 @@ class _FooterAction extends StatelessWidget {
   final bool isLoading;
   final double iconSize;
   final double padding;
+  final int count;
+  final bool showCount;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final Color? color;
@@ -221,14 +235,34 @@ class _FooterAction extends StatelessWidget {
       borderRadius: BorderRadius.zero,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding),
-        child: isLoading
-            ? SizedBox(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isLoading)
+              SizedBox(
                 width: iconSize,
                 height: iconSize,
                 child: CircularProgressIndicator(strokeWidth: 2, color: iconColor),
               )
-            : Icon(isActive ? activeIcon : icon, size: iconSize, color: iconColor),
+            else
+              Icon(isActive ? activeIcon : icon, size: iconSize, color: iconColor),
+            if (showCount && count > 0) ...[
+              const SizedBox(width: 4),
+              Text(_formatCount(count), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: iconColor)),
+            ],
+          ],
+        ),
       ),
     );
+  }
+
+  String _formatCount(int count) {
+    if (count >= 1000000) {
+      return '${(count / 1000000).toStringAsFixed(1)}M';
+    }
+    if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}K';
+    }
+    return '$count';
   }
 }

@@ -51,6 +51,26 @@ void main() {
       expect(find.byIcon(Icons.bookmark_outline), findsOneWidget);
     });
 
+    testWidgets('shows action counts when enabled', (tester) async {
+      await tester.pumpWidget(
+        _buildSubject(
+          const PostCardFooter(
+            timestamp: '1H',
+            replyCount: 3,
+            repostCount: 7,
+            likeCount: 42,
+            saveCount: 5,
+            showCounts: true,
+          ),
+        ),
+      );
+
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('7'), findsOneWidget);
+      expect(find.text('42'), findsOneWidget);
+      expect(find.text('5'), findsOneWidget);
+    });
+
     testWidgets('shows active like icon when isLiked is true', (tester) async {
       await tester.pumpWidget(_buildSubject(const PostCardFooter(timestamp: '1H', isLiked: true)));
       expect(find.byIcon(Icons.favorite), findsOneWidget);
