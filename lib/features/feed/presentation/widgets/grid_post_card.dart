@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
 
 const _greyscale = ColorFilter.matrix(<double>[
   0.2126,
@@ -55,9 +56,10 @@ class GridPostCard extends StatelessWidget {
     final primaryImageUrl = _extractPrimaryImageUrl(post.embed);
     final bodyText = record?.text ?? '';
     final colorScheme = Theme.of(context).colorScheme;
+    final isCompactGrid = MediaQuery.of(context).size.width >= 600;
 
     final contentEmbed = primaryImageUrl == null && post.embed != null
-        ? PostEmbedView(feedViewPost: feedViewPost, embed: post.embed!)
+        ? PostEmbedView(feedViewPost: feedViewPost, embed: post.embed!, compact: isCompactGrid)
         : null;
 
     final resolvedFooter = footer ?? PostCardFooter(timestamp: formatPostTime(record?.createdAt ?? post.indexedAt));
@@ -98,20 +100,25 @@ class GridPostCard extends StatelessWidget {
                       FacetText(
                         text: bodyText,
                         facets: record?.facets,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(letterSpacing: -0.5),
+                        style: feedPostBodyTextStyle(context),
                         maxLines: 6,
                         overflow: TextOverflow.ellipsis,
                       )
+                    else if (!isCompactGrid)
+                      FacetText(text: bodyText, facets: record?.facets, style: feedPostBodyTextStyle(context))
                     else
                       FacetText(
                         text: bodyText,
                         facets: record?.facets,
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: feedPostBodyTextStyle(context, compact: true),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                   ],
-                  if (contentEmbed != null) ...[const SizedBox(height: 8), _buildEmbedPreview(contentEmbed)],
+                  if (contentEmbed != null) ...[
+                    const SizedBox(height: 8),
+                    _buildEmbedPreview(contentEmbed, compact: isCompactGrid),
+                  ],
                 ],
               ),
             ),
@@ -175,7 +182,11 @@ class GridPostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildEmbedPreview(Widget contentEmbed) {
+  Widget _buildEmbedPreview(Widget contentEmbed, {required bool compact}) {
+    if (!compact) {
+      return contentEmbed;
+    }
+
     return SizedBox(
       height: _gridEmbedPreviewMaxHeight,
       child: ClipRect(

@@ -11,6 +11,7 @@ import 'package:lazurite/features/feed/presentation/media/image_viewer_route_arg
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Renders the appropriate embed widget for a post embed.
@@ -18,10 +19,11 @@ import 'package:url_launcher/url_launcher.dart';
 /// Handles images, external links, videos, quoted records, and record-with-media.
 /// Used by both [PostCard] and [GridPostCard].
 class PostEmbedView extends StatelessWidget {
-  const PostEmbedView({super.key, required this.feedViewPost, required this.embed});
+  const PostEmbedView({super.key, required this.feedViewPost, required this.embed, this.compact = false});
 
   final FeedViewPost feedViewPost;
   final UPostViewEmbed embed;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -114,17 +116,25 @@ class PostEmbedView extends StatelessWidget {
   }
 
   Widget _buildExternalEmbed(BuildContext context, EmbedExternalViewExternal external) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return InkWell(
       onTap: () => _launchExternal(Uri.parse(external.uri)),
       child: Container(
-        decoration: BoxDecoration(border: Border.all(color: Theme.of(context).dividerColor)),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(12),
+          color: colorScheme.surfaceContainerLow,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (external.thumb != null)
               Image.network(
                 external.thumb!,
-                height: 160,
+                height: compact ? 140 : 180,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => const SizedBox(height: 0),
@@ -136,23 +146,24 @@ class PostEmbedView extends StatelessWidget {
                 children: [
                   Text(
                     external.title,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                   if (external.description.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
                       external.description,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      maxLines: compact ? 3 : null,
+                      overflow: compact ? TextOverflow.ellipsis : TextOverflow.visible,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.4),
                     ),
                   ],
                   const SizedBox(height: 8),
                   Text(
                     Uri.parse(external.uri).host,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -210,6 +221,8 @@ class PostEmbedView extends StatelessWidget {
 
   Widget _buildQuotedRecord(BuildContext context, EmbedRecordView recordView) {
     final record = recordView.record;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     if (record.isEmbedRecordViewRecord) {
       final quoted = record.embedRecordViewRecord!;
@@ -217,8 +230,13 @@ class PostEmbedView extends StatelessWidget {
       final nestedEmbed = _buildQuotedEmbeds(context, quoted.embeds);
 
       return Container(
-        decoration: BoxDecoration(border: Border.all(color: Theme.of(context).dividerColor)),
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(12),
+          color: colorScheme.surfaceContainerLow,
+        ),
         child: InkWell(
+          borderRadius: BorderRadius.circular(12),
           onTap: () {
             GoRouter.maybeOf(context)?.push('/post?uri=${Uri.encodeComponent(quoted.uri.toString())}');
           },
@@ -246,7 +264,10 @@ class PostEmbedView extends StatelessWidget {
                         '${quoted.author.displayName ?? quoted.author.handle} @${quoted.author.handle}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
                     ),
                   ],
@@ -256,9 +277,9 @@ class PostEmbedView extends StatelessWidget {
                   FacetText(
                     text: quotedRecord.text,
                     facets: quotedRecord.facets,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    maxLines: 6,
-                    overflow: TextOverflow.ellipsis,
+                    style: feedPostBodyTextStyle(context, compact: compact, nested: true),
+                    maxLines: compact ? 6 : null,
+                    overflow: compact ? TextOverflow.ellipsis : TextOverflow.visible,
                   ),
                 ],
                 if (nestedEmbed != null) ...[const SizedBox(height: 8), nestedEmbed],
@@ -286,7 +307,10 @@ class PostEmbedView extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),

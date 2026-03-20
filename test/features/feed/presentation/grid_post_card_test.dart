@@ -7,6 +7,7 @@ import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/feed/presentation/widgets/grid_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 
@@ -24,11 +25,16 @@ FeedViewPost _makePost({String text = 'Hello', UPostViewEmbed? embed}) {
   );
 }
 
-Widget _buildSubject(FeedViewPost post, {VoidCallback? onTap}) {
+Widget _buildSubject(FeedViewPost post, {VoidCallback? onTap, Size size = const Size(390, 844)}) {
+  final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
   return MaterialApp(
-    home: Scaffold(
-      body: SingleChildScrollView(
-        child: GridPostCard(feedViewPost: post, onTap: onTap),
+    theme: theme,
+    home: MediaQuery(
+      data: MediaQueryData(size: size),
+      child: Scaffold(
+        body: SingleChildScrollView(
+          child: GridPostCard(feedViewPost: post, onTap: onTap),
+        ),
       ),
     ),
   );
@@ -126,7 +132,55 @@ void main() {
     await tester.pumpWidget(_buildSubject(post));
 
     expect(find.text('Example Article'), findsOneWidget);
+    expect(find.byWidgetPredicate((widget) => widget is SizedBox && widget.height == 240), findsNothing);
+  });
+
+  testWidgets('keeps capped embed previews on wider compact grid layouts', (tester) async {
+    final post = _makePost(
+      text: 'Read this',
+      embed: const UPostViewEmbed.embedExternalView(
+        data: EmbedExternalView(
+          external: EmbedExternalViewExternal(
+            uri: 'https://example.com/article',
+            title: 'Example Article',
+            description: 'A useful external card',
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(_buildSubject(post, size: const Size(900, 1200)));
+
     expect(find.byWidgetPredicate((widget) => widget is SizedBox && widget.height == 240), findsOneWidget);
+  });
+
+  testWidgets('uses themed serif styling for embed-bearing posts on phone widths', (tester) async {
+    final post = _makePost(
+      text: 'Serif body copy with an external preview',
+      embed: const UPostViewEmbed.embedExternalView(
+        data: EmbedExternalView(
+          external: EmbedExternalViewExternal(
+            uri: 'https://example.com/article',
+            title: 'Example Article',
+            description: 'A useful external card',
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(_buildSubject(post));
+
+    final richText = tester.widget<RichText>(
+      find.byWidgetPredicate(
+        (widget) => widget is RichText && widget.text.toPlainText() == 'Serif body copy with an external preview',
+      ),
+    );
+    final style = (richText.text as TextSpan).style;
+    final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
+
+    expect(style?.fontFamily, theme.textTheme.titleMedium?.fontFamily);
+    expect(style?.color, theme.colorScheme.onSurface);
+    expect(richText.maxLines, isNull);
   });
 
   testWidgets('uses square container for avatar — no CircleAvatar', (tester) async {

@@ -149,6 +149,13 @@ void main() {
     expect(find.text('Joined March 2024'), findsOneWidget);
   });
 
+  testWidgets('app bar always shows the profile display name', (tester) async {
+    useLargeScreen(tester);
+    await tester.pumpWidget(buildSubject());
+
+    expect(find.text('River Tam'), findsOneWidget);
+  });
+
   testWidgets('shows Saved Posts button on own profile', (tester) async {
     useLargeScreen(tester);
     await tester.pumpWidget(buildSubject());
@@ -278,7 +285,7 @@ void main() {
       await tester.pumpWidget(buildSubject());
 
       expect(find.text('RIVER TAM'), findsOneWidget);
-      expect(find.text('River Tam'), findsNothing);
+      expect(find.text('River Tam'), findsOneWidget);
     });
 
     testWidgets('handle is shown with @ prefix', (tester) async {
@@ -298,6 +305,13 @@ void main() {
       useLargeScreen(tester);
       await tester.pumpWidget(buildSubject());
       expect(find.byKey(const ValueKey('profile_stats_row')), findsOneWidget);
+    });
+
+    testWidgets('does not render the profile info card in the feed', (tester) async {
+      useLargeScreen(tester);
+      await tester.pumpWidget(buildSubject());
+
+      expect(find.byKey(const ValueKey('profile_info_card')), findsNothing);
     });
 
     testWidgets('stat values are shown as formatted counts', (tester) async {
@@ -395,7 +409,7 @@ void main() {
       );
     }
 
-    testWidgets('grid mode shows centered large grid cards with the metadata info card', (tester) async {
+    testWidgets('grid mode shows centered large grid cards without the metadata info card', (tester) async {
       final cubit = MockSettingsCubit();
       when(() => cubit.state).thenReturn(settingsStateWith(FeedArchitecture.grid));
       whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedArchitecture.grid));
@@ -404,7 +418,7 @@ void main() {
       await tester.pump();
 
       expect(find.byKey(const ValueKey('profile_grid_feed')), findsOneWidget);
-      expect(find.byKey(const ValueKey('profile_info_card')), findsOneWidget);
+      expect(find.byKey(const ValueKey('profile_info_card')), findsNothing);
       expect(find.byKey(const ValueKey('profile_large_card_0')), findsOneWidget);
       expect(find.byKey(const ValueKey('profile_large_card_1')), findsOneWidget);
       expect(find.byKey(const ValueKey('profile_large_card_2')), findsOneWidget);
@@ -423,9 +437,7 @@ void main() {
       expect(find.byKey(const ValueKey('profile_large_card_0')), findsNothing);
     });
 
-    testWidgets('switching from grid to linear removes the large grid feed and metadata card without re-fetch', (
-      tester,
-    ) async {
+    testWidgets('switching from grid to linear removes the large grid feed without re-fetch', (tester) async {
       final cubit = MockSettingsCubit();
       final streamCtrl = StreamController<SettingsState>.broadcast();
 
@@ -436,7 +448,7 @@ void main() {
       await tester.pump();
 
       expect(find.byKey(const ValueKey('profile_grid_feed')), findsOneWidget);
-      expect(find.byKey(const ValueKey('profile_info_card')), findsOneWidget);
+      expect(find.byKey(const ValueKey('profile_info_card')), findsNothing);
 
       when(() => cubit.state).thenReturn(settingsStateWith(FeedArchitecture.linear));
       streamCtrl.add(settingsStateWith(FeedArchitecture.linear));

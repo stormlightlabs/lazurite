@@ -196,6 +196,80 @@ Store `ui_density` (`compact` | `standard` | `relaxed`) and
 `feed_architecture` (`grid` | `linear`) in the Drift `settings` table. Expose
 via `SettingsCubit` alongside existing theme preferences.
 
+## Post Thread — Collapsible Threaded Replies
+
+Current: `PostThreadScreen` renders the parent chain with vertical connectors,
+then a flat list of direct replies. No nesting, no collapse controls.
+
+Target: recursive threaded reply tree with indented threadlines and
+tap-to-collapse interaction.
+
+### Reply Tree Rendering
+
+Replace the flat reply list with a recursive widget tree that mirrors the
+`ThreadViewPost.replies` structure from the Bluesky API. Each reply that itself
+has replies renders its children indented one level deeper.
+
+- Use a recursive `ThreadReplyNode` widget that takes a `ThreadViewPost` and a
+  `depth` parameter
+- Each node renders its post via `PostCardWithActions`, followed by its children
+  at `depth + 1`
+
+### Threadlines & Indentation
+
+- Each nesting level draws a vertical threadline on its left edge — a `2px`-wide
+  line in `outlineVariant`, offset `37px` from the current indent origin
+  (matching the existing parent-chain connector)
+- Indentation per level: `24px` left padding, applied cumulatively
+- **Color-coded threadlines**: cycle through a palette of 6 muted colors per
+  depth level to help users visually track nesting (colors derived from the
+  theme's `outline` / `outlineVariant` / `primary` tones)
+- Cap visual indentation at **depth 6**. Beyond that, show a
+  "Continue this thread →" link that navigates to a new `PostThreadScreen`
+  rooted at that reply
+
+### Collapse / Expand Interaction
+
+Two interaction methods (both always active):
+
+| Method                | Detail                                                                 |
+| --------------------- | ---------------------------------------------------------------------- |
+| **Tap threadline**    | Tap the vertical threadline to collapse/expand the subtree beneath it  |
+| **Long-press comment**| Long-press the post body as a secondary affordance                     |
+
+Threadline tap target: `24dp` wide (centered on the `2px` line) for comfortable
+touch targets, with a subtle highlight on press.
+
+### Collapsed State
+
+When a subtree is collapsed:
+
+- The parent comment's header row (avatar, handle, timestamp) remains visible
+- Body text and children are hidden
+- A collapsed indicator appears below the header: `"N replies hidden"` in
+  `labelSmall`, `onSurfaceVariant`, uppercase, `letterSpacing: 0.1em`
+- Smooth `AnimatedCrossFade` or `AnimatedSize` transition (duration `200ms`)
+
+### Auto-Collapse (Optional Setting)
+
+Add a `thread_auto_collapse_depth` setting (`int`, default `null` = disabled).
+When set to a value (e.g., `3`), replies deeper than that level are
+auto-collapsed on initial load. The user can still expand them manually.
+
+- Persist in the Drift `settings` table alongside existing layout settings
+- Never auto-collapse replies by the thread's original poster (OP)
+- Expose in the Layout Settings screen as a stepper/dropdown below the existing
+  density and architecture options
+
+### State Management
+
+- Collapse state is local to the `PostThreadScreen` — a `Set<String>` of
+  collapsed post URIs held in the screen's `State`
+- No cubit needed; collapse is ephemeral UI state, not persisted across
+  navigations
+- When navigating into a "Continue this thread" link, the new screen manages its
+  own collapse state independently
+
 ## Shared Geometry Tokens
 
 All `0px` border-radius throughout (square corners). Ensure no Flutter widgets

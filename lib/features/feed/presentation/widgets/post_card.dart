@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
 
 class PostCard extends StatelessWidget {
   const PostCard({super.key, required this.feedViewPost, this.actionBar, this.onTap});
@@ -49,13 +50,7 @@ class PostCard extends StatelessWidget {
                   if (record?.reply != null) ...[const SizedBox(height: 8), _buildReplyLabel(context)],
                   if (record != null && record.text.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    FacetText(
-                      text: record.text,
-                      facets: record.facets,
-                      style: Theme.of(context).textTheme.bodySmall,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    FacetText(text: record.text, facets: record.facets, style: feedPostBodyTextStyle(context)),
                   ],
                   if (post.embed != null) ...[
                     const SizedBox(height: 12),

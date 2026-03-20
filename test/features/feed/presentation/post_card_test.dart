@@ -10,6 +10,7 @@ import 'package:bluesky/app_bsky_richtext_facet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 
@@ -28,7 +29,9 @@ FeedViewPost _makePost({String text = 'Hello'}) {
 
 void main() {
   Widget buildSubject(FeedViewPost post, {VoidCallback? onTap}) {
+    final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
     return MaterialApp(
+      theme: theme,
       home: Scaffold(
         body: PostCard(feedViewPost: post, onTap: onTap),
       ),
@@ -96,6 +99,22 @@ void main() {
     expect(find.text('Example Article'), findsOneWidget);
     expect(find.text('A useful external card'), findsOneWidget);
     expect(find.text('example.com'), findsOneWidget);
+  });
+
+  testWidgets('uses themed serif styling for post body text', (tester) async {
+    final post = _makePost(text: 'Styled body copy');
+
+    await tester.pumpWidget(buildSubject(post));
+
+    final richText = tester.widget<RichText>(
+      find.byWidgetPredicate((widget) => widget is RichText && widget.text.toPlainText() == 'Styled body copy'),
+    );
+    final style = (richText.text as TextSpan).style;
+    final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
+
+    expect(style?.fontFamily, theme.textTheme.titleMedium?.fontFamily);
+    expect(style?.color, theme.colorScheme.onSurface);
+    expect(richText.maxLines, isNull);
   });
 
   testWidgets('calls onTap when content area is tapped', (tester) async {
@@ -183,6 +202,50 @@ void main() {
     expect(pushedRoute, isNotNull);
     expect(Uri.parse(pushedRoute!).path, '/post');
     expect(Uri.decodeComponent(Uri.parse(pushedRoute!).queryParameters['uri']!), quotedUri.toString());
+  });
+
+  testWidgets('renders quoted post text with serif styling and without truncation', (tester) async {
+    final quotedRecord = FeedPostRecord(
+      text: 'Quoted text that should fully expand inside the embed card',
+      createdAt: DateTime.utc(2026, 3, 15),
+    );
+    final post = FeedViewPost(
+      post: PostView(
+        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
+        cid: 'cid-xyz',
+        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+        record: FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
+        indexedAt: DateTime.utc(2026, 3, 16),
+        embed: UPostViewEmbed.embedRecordView(
+          data: EmbedRecordView(
+            record: UEmbedRecordViewRecord.embedRecordViewRecord(
+              data: EmbedRecordViewRecord(
+                uri: AtUri.parse('at://did:plc:quoted/app.bsky.feed.post/quoted123'),
+                cid: 'cid-quoted',
+                author: const ProfileViewBasic(did: 'did:plc:quoted', handle: 'quoted.bsky.social'),
+                value: quotedRecord.toJson(),
+                indexedAt: DateTime.utc(2026, 3, 15),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(buildSubject(post));
+
+    final richText = tester.widget<RichText>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText &&
+            widget.text.toPlainText() == 'Quoted text that should fully expand inside the embed card',
+      ),
+    );
+    final style = (richText.text as TextSpan).style;
+    final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
+
+    expect(style?.fontFamily, theme.textTheme.titleSmall?.fontFamily);
+    expect(richText.maxLines, isNull);
   });
 
   testWidgets('tapping avatar navigates to author profile', (tester) async {

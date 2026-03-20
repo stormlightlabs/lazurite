@@ -100,6 +100,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   FeedFilter get _currentFilter => _tabs[_tabController.index].filter;
 
+  String _appBarTitle(ProfileViewDetailed? profile) {
+    final authState = context.read<AuthBloc>().state;
+    return profile?.displayName ?? profile?.handle ?? widget.actor ?? authState.tokens?.handle ?? 'Profile';
+  }
+
   Future<void> _refresh() async {
     context.read<ProfileBloc>().add(const ProfileRefreshRequested());
     context.read<FeedBloc>().add(const FeedRefreshRequested());
@@ -124,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       floating: true,
                       pinned: true,
                       snap: true,
-                      title: innerBoxIsScrolled ? Text(profile?.displayName ?? profile?.handle ?? 'Profile') : null,
+                      title: Text(_appBarTitle(profile)),
                       leading: widget.showBackButton
                           ? IconButton(
                               icon: const Icon(Icons.arrow_back),
@@ -514,16 +519,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       buildWhen: (prev, curr) => prev.feedArchitecture != curr.feedArchitecture,
       builder: (context, settingsState) {
         if (settingsState.feedArchitecture == FeedArchitecture.grid) {
-          return _buildGridFeed(context, feedState, profile);
+          return _buildGridFeed(context, feedState);
         }
         return _buildLinearFeed(context, feedState);
       },
     );
   }
 
-  Widget _buildGridFeed(BuildContext context, FeedState feedState, ProfileViewDetailed? profile) {
+  Widget _buildGridFeed(BuildContext context, FeedState feedState) {
     final accountDid = _resolvedActor ?? '';
-    final infoCardCount = profile == null ? 0 : 1;
 
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -539,23 +543,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         child: ListView.builder(
           key: const ValueKey('profile_grid_feed'),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          itemCount: infoCardCount + feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
+          itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
           itemBuilder: (context, index) {
-            if (profile != null && index == 0) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 720),
-                    child: _ProfileInfoCard(profile: profile),
-                  ),
-                ),
-              );
-            }
-
-            final postIndex = index - infoCardCount;
-
-            if (postIndex >= feedState.posts.length) {
+            if (index >= feedState.posts.length) {
               return const Padding(
                 padding: EdgeInsets.all(16),
                 child: Center(child: CircularProgressIndicator()),
@@ -563,13 +553,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             }
 
             return Padding(
-              padding: EdgeInsets.only(bottom: postIndex == feedState.posts.length - 1 ? 0 : 16),
+              padding: EdgeInsets.only(bottom: index == feedState.posts.length - 1 ? 0 : 16),
               child: Center(
                 child: ConstrainedBox(
-                  key: ValueKey('profile_large_card_$postIndex'),
+                  key: ValueKey('profile_large_card_$index'),
                   constraints: const BoxConstraints(maxWidth: 720),
                   child: PostCardWithActions(
-                    feedViewPost: feedState.posts[postIndex],
+                    feedViewPost: feedState.posts[index],
                     accountDid: accountDid,
                     variant: PostCardVariant.grid,
                   ),
@@ -639,55 +629,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final uri = Uri.tryParse(website.startsWith('http') ? website : 'https://$website');
     if (uri == null) return;
     await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
-}
-
-class _ProfileInfoCard extends StatelessWidget {
-  const _ProfileInfoCard({required this.profile});
-
-  final ProfileViewDetailed profile;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      key: const ValueKey('profile_info_card'),
-      color: colorScheme.surfaceContainerHigh,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _formatCount(profile.postsCount ?? 0),
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          Text('POSTS', style: TextStyle(fontSize: 11, letterSpacing: 1.1, color: colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 12),
-          Text(
-            _formatCount(profile.followersCount ?? 0),
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          Text('FOLLOWERS', style: TextStyle(fontSize: 11, letterSpacing: 1.1, color: colorScheme.onSurfaceVariant)),
-          if (profile.description?.isNotEmpty ?? false) ...[
-            const SizedBox(height: 12),
-            Text(
-              profile.description!,
-              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _formatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
-    return '$count';
   }
 }
 
