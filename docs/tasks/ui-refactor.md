@@ -2,22 +2,22 @@
 
 ## M0 — Foundation & Layout Settings Persistence
 
-- [ ] Add `ui_density` and `feed_architecture` keys to Drift `settings` table
-- [ ] Drift migration for new settings keys
-- [ ] Extend `SettingsCubit` / `SettingsState` with density and feed architecture fields
-- [ ] `UiDensity` enum (`compact`, `standard`, `relaxed`) with padding scale factors
-- [ ] `FeedArchitecture` enum (`grid`, `linear`)
-- [ ] Theme extension or `InheritedWidget` that provides density-scaled spacing values
+- [x] Add `ui_density` and `feed_architecture` keys to Drift `settings` table
+- [x] Drift migration for new settings keys
+- [x] Extend `SettingsCubit` / `SettingsState` with density and feed architecture fields
+- [x] `UiDensity` enum (`compact`, `standard`, `relaxed`) with padding scale factors
+- [x] `FeedArchitecture` enum (`grid`, `linear`)
+- [x] Theme extension or `InheritedWidget` that provides density-scaled spacing values
 
 ## M1 — Navigation Chrome
 
-- [ ] Custom top app bar widget replacing stock `AppBar` — hamburger, section label, avatar
-- [ ] Home-screen variant with inline feed switcher tabs
-- [ ] Navigation drawer with Messages and Settings entries
-- [ ] Refactor `AppShell` bottom nav: 6 tabs → 4 (Home, Search, Alerts, Profile)
-- [ ] Bottom nav styling: `h-80`, semi-transparent blur background, labels, filled active icon
-- [ ] Route updates — Messages and Settings accessible via drawer instead of bottom tabs
-- [ ] Tests for navigation (drawer opens, tabs switch, routes resolve)
+- [x] Custom top app bar widget replacing stock `AppBar` — hamburger, section label, avatar
+- [x] Home-screen variant with inline feed switcher tabs
+- [x] Navigation drawer with Messages and Settings entries
+- [x] Refactor `AppShell` bottom nav: 6 tabs → 4 (Home, Search, Alerts, Profile)
+- [x] Bottom nav styling: `h-80`, semi-transparent blur background, labels, filled active icon
+- [x] Route updates — Messages and Settings accessible via drawer instead of bottom tabs
+- [x] Tests for navigation (drawer opens, tabs switch, routes resolve)
 
 ## M2 — Post Card Variants
 

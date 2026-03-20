@@ -170,7 +170,83 @@ void main() {
     expect(find.text('APPEARANCE'), findsOneWidget);
   });
 
-  testWidgets('redirects to login after logout without crashing on the settings branch', (tester) async {
+  testWidgets('bottom navigation bar shows 4 tabs with uppercase labels', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(navBar.destinations.length, 4);
+
+    // Labels appear in the nav bar (HOME also appears in the AppBar section label)
+    final destinations = navBar.destinations.cast<NavigationDestination>();
+    expect(destinations.map((d) => d.label), containsAll(['HOME', 'SEARCH', 'ALERTS', 'PROFILE']));
+
+    // Messages and Settings are no longer in the bottom nav
+    expect(destinations.any((d) => d.label == 'MESSAGES'), isFalse);
+    expect(destinations.any((d) => d.label == 'SETTINGS'), isFalse);
+  });
+
+  testWidgets('bottom navigation bar height is 80', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(navBar.height, 80);
+  });
+
+  testWidgets('drawer contains Messages and Settings entries', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open menu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Messages'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+  });
+
+  testWidgets('tapping bottom nav tabs switches active branch', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    // Start on home branch (index 0)
+    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(navBar.selectedIndex, 0);
+
+    // Tap PROFILE tab (index 3)
+    await tester.tap(find.text('PROFILE'));
+    await tester.pumpAndSettle();
+
+    final navBarAfter = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(navBarAfter.selectedIndex, 3);
+    expect(find.text('River Tam'), findsOneWidget);
+  });
+
+  testWidgets('LazuriteAppBar shows section label and hamburger on home screen', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    // Home screen uses LazuriteAppBar with sectionLabel 'Home' — 'HOME' appears at least once
+    expect(find.text('HOME'), findsAtLeastNWidgets(1));
+    expect(find.byTooltip('Open menu'), findsOneWidget);
+  });
+
+  testWidgets('redirects to login after logout without crashing on the settings route', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 

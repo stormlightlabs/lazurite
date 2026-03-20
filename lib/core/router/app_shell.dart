@@ -48,45 +48,55 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return AppShellScope(
       openMenu: _openMenu,
       child: Scaffold(
         key: _scaffoldKey,
         drawer: _AppMenu(navigationShell: widget.navigationShell, rootContext: context),
         body: widget.navigationShell,
-        bottomNavigationBar: NavigationBar(
-          height: 50,
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-          selectedIndex: widget.navigationShell.currentIndex,
-          onDestinationSelected: (index) {
-            widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
-          },
-          indicatorShape: RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(10)),
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-          destinations: _destinations,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withValues(alpha: 0.92),
+            border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
+          ),
+          child: NavigationBar(
+            height: 80,
+            backgroundColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            indicatorColor: Colors.transparent,
+            selectedIndex: widget.navigationShell.currentIndex,
+            onDestinationSelected: (index) {
+              widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
+            },
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: _destinations,
+          ),
         ),
       ),
     );
   }
 
   List<Widget> get _destinations => [
-    const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-    const NavigationDestination(icon: Icon(Icons.search_outlined), selectedIcon: Icon(Icons.search), label: 'Search'),
-    const NavigationDestination(
-      icon: _NotificationDestinationIcon(selected: false),
-      selectedIcon: _NotificationDestinationIcon(selected: true),
-      label: 'Notifications',
+    NavigationDestination(
+      icon: const Icon(Icons.home_outlined),
+      selectedIcon: Transform.scale(scale: 1.15, child: const Icon(Icons.home)),
+      label: 'HOME',
     ),
-    const NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
-    const NavigationDestination(
-      icon: Icon(Icons.chat_bubble_outline),
-      selectedIcon: Icon(Icons.chat_bubble),
-      label: 'Messages',
+    NavigationDestination(
+      icon: const Icon(Icons.search_outlined),
+      selectedIcon: Transform.scale(scale: 1.15, child: const Icon(Icons.search)),
+      label: 'SEARCH',
     ),
-    const NavigationDestination(
-      icon: Icon(Icons.settings_outlined),
-      selectedIcon: Icon(Icons.settings),
-      label: 'Settings',
+    NavigationDestination(
+      icon: const _NotificationDestinationIcon(selected: false),
+      selectedIcon: Transform.scale(scale: 1.15, child: const _NotificationDestinationIcon(selected: true)),
+      label: 'ALERTS',
+    ),
+    NavigationDestination(
+      icon: const Icon(Icons.person_outline),
+      selectedIcon: Transform.scale(scale: 1.15, child: const Icon(Icons.person)),
+      label: 'PROFILE',
     ),
   ];
 }
@@ -229,8 +239,7 @@ class _AppMenu extends StatelessWidget {
                       icon: Icons.chat_bubble_outline,
                       selectedIcon: Icons.chat_bubble,
                       label: 'Messages',
-                      isSelected: navigationShell.currentIndex == 4,
-                      onTap: () => _selectBranch(context, 4),
+                      onTap: () => _pushRoute(context, '/messages'),
                     ),
                     _MenuTile(
                       icon: Icons.person_outline,
@@ -250,8 +259,7 @@ class _AppMenu extends StatelessWidget {
                       icon: Icons.settings_outlined,
                       selectedIcon: Icons.settings,
                       label: 'Settings',
-                      isSelected: navigationShell.currentIndex == 5,
-                      onTap: () => _selectBranch(context, 5),
+                      onTap: () => _pushRoute(context, '/settings'),
                     ),
                     const Divider(height: 24),
                     _MenuTile(

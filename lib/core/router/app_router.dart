@@ -46,8 +46,6 @@ class AppRouter {
   final GlobalKey<NavigatorState> _searchNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'search');
   final GlobalKey<NavigatorState> _notificationsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'notifications');
   final GlobalKey<NavigatorState> _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
-  final GlobalKey<NavigatorState> _messagesNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'messages');
-  final GlobalKey<NavigatorState> _settingsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'settings');
 
   GoRouter get router => GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -123,6 +121,40 @@ class AppRouter {
         path: '/saved',
         builder: (context, state) => SavedPostsScreen(accountDid: context.read<String>()),
       ),
+      GoRoute(
+        path: '/messages',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => BlocProvider(
+          create: (_) => ConvoListBloc(convoRepository: context.read<ConvoRepository>()),
+          child: const ConvoListScreen(),
+        ),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (context, state) {
+              final convoId = state.pathParameters['id']!;
+              final args = state.extra as MessageThreadRouteArgs?;
+              return BlocProvider(
+                create: (_) => MessageBloc(
+                  convoRepository: context.read<ConvoRepository>(),
+                  currentUserDid: context.read<String>(),
+                ),
+                child: MessageThreadScreen(convoId: convoId, title: args?.title ?? 'Conversation'),
+              );
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/settings',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SettingsScreen(),
+        routes: [
+          GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
+          GoRoute(path: 'logs', builder: (context, state) => const LogsScreen()),
+          GoRoute(path: 'devtools', builder: (context, state) => const DevToolsScreen()),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           if (!context.read<AuthBloc>().state.isAuthenticated) {
@@ -191,48 +223,6 @@ class AppRouter {
                     builder: (context, state) =>
                         ProfileScreen(actor: state.uri.queryParameters['actor'], showBackButton: true),
                   ),
-                ],
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _messagesNavigatorKey,
-            routes: [
-              GoRoute(
-                path: '/messages',
-                builder: (context, state) => BlocProvider(
-                  create: (_) => ConvoListBloc(convoRepository: context.read<ConvoRepository>()),
-                  child: const ConvoListScreen(),
-                ),
-                routes: [
-                  GoRoute(
-                    path: ':id',
-                    builder: (context, state) {
-                      final convoId = state.pathParameters['id']!;
-                      final args = state.extra as MessageThreadRouteArgs?;
-                      return BlocProvider(
-                        create: (_) => MessageBloc(
-                          convoRepository: context.read<ConvoRepository>(),
-                          currentUserDid: context.read<String>(),
-                        ),
-                        child: MessageThreadScreen(convoId: convoId, title: args?.title ?? 'Conversation'),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _settingsNavigatorKey,
-            routes: [
-              GoRoute(
-                path: '/settings',
-                builder: (context, state) => const SettingsScreen(),
-                routes: [
-                  GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
-                  GoRoute(path: 'logs', builder: (context, state) => const LogsScreen()),
-                  GoRoute(path: 'devtools', builder: (context, state) => const DevToolsScreen()),
                 ],
               ),
             ],

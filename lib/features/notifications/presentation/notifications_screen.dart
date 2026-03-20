@@ -1,7 +1,7 @@
 import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:lazurite/core/router/app_shell.dart';
+import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/presentation/widgets/notification_list_item.dart';
@@ -49,14 +49,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     context.read<UnreadCountCubit>().refresh();
   }
 
-  Widget get _title => Text('Notifications', style: Theme.of(context).textTheme.titleMedium);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: const AppShellMenuButton(),
-        title: _title,
+      appBar: LazuriteAppBar(
+        sectionLabel: 'Alerts',
         actions: [TextButton(onPressed: _markAllRead, child: const Text('Mark All Read'))],
       ),
       body: BlocBuilder<NotificationBloc, NotificationState>(

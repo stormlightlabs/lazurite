@@ -4,7 +4,7 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lazurite/core/router/app_shell.dart';
+import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
@@ -43,7 +43,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
         if (prefsState.status == FeedPreferencesStatus.error) {
           return Scaffold(
-            appBar: AppBar(leading: const AppShellMenuButton(), title: _title),
+            appBar: const LazuriteAppBar(sectionLabel: 'Home'),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -66,7 +66,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
         if (pinnedFeeds.isEmpty) {
           return Scaffold(
-            appBar: AppBar(leading: const AppShellMenuButton(), title: _title),
+            appBar: const LazuriteAppBar(sectionLabel: 'Home'),
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -93,24 +93,29 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         _syncSelectedFeed(pinnedFeeds, currentTabIndex);
 
         return Scaffold(
-          appBar: AppBar(
-            leading: const AppShellMenuButton(),
-            title: _title,
+          appBar: LazuriteAppBar(
+            sectionLabel: 'Home',
             actions: [IconButton(icon: const Icon(Icons.rss_feed), onPressed: () => context.push('/feeds'))],
+            bottom: _FeedTabBar(
+              feeds: pinnedFeeds,
+              prefsState: prefsState,
+              currentTabIndex: currentTabIndex,
+              onTabTapped: (index) {
+                _pageController.animateToPage(
+                  index,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+                setState(() => _selectedFeedId = pinnedFeeds[index].id);
+              },
+            ),
           ),
-          body: Column(
-            children: [
-              _buildTabBar(context, pinnedFeeds, prefsState, currentTabIndex),
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: (index) => setState(() => _selectedFeedId = pinnedFeeds[index].id),
-                  itemCount: pinnedFeeds.length,
-                  itemBuilder: (context, index) =>
-                      _FeedListView(feed: pinnedFeeds[index], key: ValueKey(pinnedFeeds[index].id)),
-                ),
-              ),
-            ],
+          body: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) => setState(() => _selectedFeedId = pinnedFeeds[index].id),
+            itemCount: pinnedFeeds.length,
+            itemBuilder: (context, index) =>
+                _FeedListView(feed: pinnedFeeds[index], key: ValueKey(pinnedFeeds[index].id)),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () => context.push('/compose'),
@@ -150,19 +155,29 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     final index = feeds.indexWhere((feed) => feed.id == _selectedFeedId);
     return index >= 0 ? index : 0;
   }
+}
 
-  Widget get _title => Text('Home', style: Theme.of(context).textTheme.titleLarge);
+class _FeedTabBar extends StatelessWidget implements PreferredSizeWidget {
+  const _FeedTabBar({
+    required this.feeds,
+    required this.prefsState,
+    required this.currentTabIndex,
+    required this.onTabTapped,
+  });
 
-  Widget _buildTabBar(
-    BuildContext context,
-    List<SavedFeed> feeds,
-    FeedPreferencesState prefsState,
-    int currentTabIndex,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
-      ),
+  final List<SavedFeed> feeds;
+  final FeedPreferencesState prefsState;
+  final int currentTabIndex;
+  final ValueChanged<int> onTabTapped;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(44);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      height: preferredSize.height,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -170,33 +185,21 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             final index = entry.key;
             final feed = entry.value;
             final isSelected = currentTabIndex == index;
-
             return GestureDetector(
-              onTap: () {
-                _pageController.animateToPage(
-                  index,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-                setState(() => _selectedFeedId = feed.id);
-              },
+              onTap: () => onTabTapped(index),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
                   border: Border(
-                    bottom: BorderSide(
-                      color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
-                      width: 2,
-                    ),
+                    bottom: BorderSide(color: isSelected ? theme.colorScheme.primary : Colors.transparent, width: 2),
                   ),
                 ),
                 child: Text(
-                  prefsState.displayNameFor(feed),
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.onSurface
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  prefsState.displayNameFor(feed).toUpperCase(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    letterSpacing: 1.0,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),

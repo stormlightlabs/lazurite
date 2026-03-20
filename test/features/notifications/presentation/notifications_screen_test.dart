@@ -71,7 +71,6 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
-      expect(find.text('Notifications'), findsOneWidget);
       expect(find.byType(ListView), findsOneWidget);
     });
 
