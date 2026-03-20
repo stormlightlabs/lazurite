@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 
@@ -56,7 +57,7 @@ class _AppBarAvatar extends StatelessWidget {
     try {
       authState = context.watch<AuthBloc>().state;
     } catch (_) {
-      // AuthBloc not provided — show default avatar
+      log.d('showing default avatar');
     }
     final tokens = authState?.tokens;
     final initials = _initialsFor(tokens?.displayName ?? tokens?.handle ?? 'L');

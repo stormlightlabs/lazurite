@@ -25,8 +25,8 @@ class AppShellMenuButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shellScope = AppShellScope.maybeOf(context);
-
-    return IconButton(tooltip: 'Open menu', onPressed: shellScope?.openMenu, icon: const Icon(Icons.menu));
+    final onPressed = shellScope?.openMenu ?? AppShell.openDrawer;
+    return IconButton(tooltip: 'Open menu', onPressed: onPressed, icon: const Icon(Icons.menu));
   }
 }
 
@@ -35,16 +35,19 @@ class AppShell extends StatefulWidget {
 
   final StatefulNavigationShell navigationShell;
 
+  /// Global key for the shell [Scaffold]. Accessible from anywhere — even
+  /// screens pushed onto the root navigator that are outside [AppShellScope].
+  static final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  /// Opens the navigation drawer from any context.
+  static void openDrawer() => AppShell.scaffoldKey.currentState?.openDrawer();
+
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends State<AppShell> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  void _openMenu() {
-    _scaffoldKey.currentState?.openDrawer();
-  }
+  void _openMenu() => AppShell.openDrawer();
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +55,7 @@ class _AppShellState extends State<AppShell> {
     return AppShellScope(
       openMenu: _openMenu,
       child: Scaffold(
-        key: _scaffoldKey,
+        key: AppShell.scaffoldKey,
         drawer: _AppMenu(navigationShell: widget.navigationShell, rootContext: context),
         body: widget.navigationShell,
         bottomNavigationBar: Container(

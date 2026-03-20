@@ -96,7 +96,7 @@ Outer container: `surfaceContainerLowest`, `border: outlineVariant`,
 Current: `NestedScrollView` with collapsible header, `CircleAvatar`,
 `TabBar` (Posts / Replies / Media).
 
-Refactor to an asymmetric "bento" layout:
+Refactor to a larger-card profile layout:
 
 ### Header
 
@@ -122,13 +122,15 @@ Refactor to an asymmetric "bento" layout:
 
 ### Content Area
 
-Profile posts use a `12-column` asymmetric bento grid:
+Profile posts use a simple large-card stack when the feed architecture is set
+to "Grid Matrix":
 
-- Pinned post spans `8 columns` (featured, with full image embed)
-- Metadata / info card spans `4 columns` (`surfaceContainerHigh` background)
-- Remaining posts in `6+6` two-column pairs
+- Keep the metadata/info card as a standalone block above the posts
+- Use the grid post card variant
+- Render one card per row
+- Center cards with a comfortable max width so they stay visually larger than
+  the linear feed on wide screens
 
-The bento grid applies when the feed architecture is set to "Grid Matrix".
 When set to "Linear Flow", profile posts render as a standard vertical list
 using the linear post card.
 

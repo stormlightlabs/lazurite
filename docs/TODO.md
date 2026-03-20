@@ -31,6 +31,11 @@
   It would be cool to display this and allow exporting the feed or a link to it.
 - In dev tools, show Firehose, Jetstream, and [spacedust](https://spacedust.microcosm.blue/#GET/subscribe) as tabs.
 
+---
+
+- Markdown support (toggleable)
+- Collapsible threads
+
 ## Privacy Policy
 
 - Should mention that Lazurite is an AppView that doesn't store any user data.

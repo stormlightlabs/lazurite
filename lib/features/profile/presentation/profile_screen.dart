@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,16 +7,42 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/router/app_shell.dart';
+import 'package:lazurite/core/theme/feed_architecture.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
-import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/profile/presentation/widgets/profile_action_buttons.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+const _greyscale = ColorFilter.matrix(<double>[
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0,
+  0,
+  0,
+  1,
+  0,
+]);
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.actor, this.showBackButton = false});
@@ -27,7 +55,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
-  static const double _headerExpandedHeight = 120;
   static const _tabs = [
     (label: 'Posts', filter: FeedFilter.postsNoReplies),
     (label: 'Replies', filter: FeedFilter.postsAndAuthorThreads),
@@ -60,20 +87,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   void _loadProfileAndFeed({FeedFilter? filter}) {
     final actor = _resolvedActor;
-    if (actor == null) {
-      return;
-    }
-
+    if (actor == null) return;
     context.read<ProfileBloc>().add(ProfileLoadRequested(actor: actor));
     context.read<FeedBloc>().add(FeedLoadRequested(actor: actor, filter: filter ?? _currentFilter));
   }
 
   String? get _resolvedActor {
     final authState = context.read<AuthBloc>().state;
-    if (!authState.isAuthenticated) {
-      return null;
-    }
-
+    if (!authState.isAuthenticated) return null;
     return widget.actor ?? authState.tokens?.did;
   }
 
@@ -100,13 +121,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 headerSliverBuilder: (context, innerBoxIsScrolled) {
                   return [
                     SliverAppBar(
-                      expandedHeight: _headerExpandedHeight,
                       floating: true,
                       pinned: true,
                       snap: true,
-                      stretch: true,
                       title: innerBoxIsScrolled ? Text(profile?.displayName ?? profile?.handle ?? 'Profile') : null,
-                      flexibleSpace: FlexibleSpaceBar(background: _buildBanner(context, profile)),
                       leading: widget.showBackButton
                           ? IconButton(
                               icon: const Icon(Icons.arrow_back),
@@ -117,6 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => context.go('/settings')),
                       ],
                     ),
+                    SliverToBoxAdapter(child: _buildCoverSection(context, profile)),
                     SliverToBoxAdapter(
                       child: switch (profileState.status) {
                         ProfileStatus.loading => const Padding(
@@ -132,8 +151,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       delegate: _SliverTabBarDelegate(
                         TabBar(
                           controller: _tabController,
-                          tabs: [for (final tab in _tabs) Tab(text: tab.label)],
+                          tabs: [for (final tab in _tabs) Tab(text: tab.label.toUpperCase())],
                           onTap: (index) => _loadProfileAndFeed(filter: _tabs[index].filter),
+                          labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2.2),
+                          unselectedLabelStyle: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 2.2,
+                          ),
+                          indicatorWeight: 2,
                         ),
                       ),
                     ),
@@ -141,7 +167,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 },
                 body: TabBarView(
                   controller: _tabController,
-                  children: [for (var i = 0; i < _tabs.length; i++) _buildFeedList(feedState, _tabs[i].filter)],
+                  children: [
+                    for (var i = 0; i < _tabs.length; i++) _buildFeedList(feedState, _tabs[i].filter, profile),
+                  ],
                 ),
               );
             },
@@ -152,45 +180,88 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  Widget? _buildComposeFab(BuildContext context) {
-    return BlocBuilder<ProfileBloc, ProfileState>(
-      builder: (context, state) {
-        final profile = state.profile;
-        if (profile == null) {
-          return const SizedBox.shrink();
-        }
+  Widget _buildCoverSection(BuildContext context, ProfileViewDetailed? profile) {
+    final width = MediaQuery.of(context).size.width;
+    final coverHeight = width >= 600 ? 256.0 : 192.0;
+    final avatarSize = width >= 600 ? 128.0 : 96.0;
+    final colorScheme = Theme.of(context).colorScheme;
 
-        final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
-        final isOwnProfile = profile.did == currentUserDid;
-        final initialText = isOwnProfile ? null : '@${profile.handle} ';
+    Widget coverContent;
+    if (profile?.banner != null) {
+      coverContent = ColorFiltered(
+        colorFilter: _greyscale,
+        child: Image.network(
+          profile!.banner!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: coverHeight,
+          errorBuilder: (_, _, _) =>
+              ColoredBox(color: colorScheme.surfaceContainerHigh, child: const SizedBox.expand()),
+        ),
+      );
+    } else {
+      coverContent = ColoredBox(color: colorScheme.surfaceContainerHigh, child: const SizedBox.expand());
+    }
 
-        return FloatingActionButton(
-          onPressed: () => context.push('/compose', extra: ComposeRouteArgs(initialText: initialText)),
-          child: const Icon(Icons.add),
-        );
-      },
+    return SizedBox(
+      height: coverHeight + avatarSize / 2,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: coverHeight,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+              ),
+              child: Opacity(opacity: 0.5, child: coverContent),
+            ),
+          ),
+          Positioned(
+            top: coverHeight - avatarSize / 2,
+            left: 16,
+            child: _buildSquareAvatar(context, profile, avatarSize),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildBanner(BuildContext context, ProfileViewDetailed? profile) {
-    final fallback = DecoratedBox(
+  Widget _buildSquareAvatar(BuildContext context, ProfileViewDetailed? profile, double size) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final avatarUrl = profile?.avatar;
+
+    return Container(
+      key: const ValueKey('profile_square_avatar'),
+      width: size,
+      height: size,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.surfaceContainerHighest,
-            Theme.of(context).colorScheme.surfaceContainer,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        color: colorScheme.surfaceContainerHighest,
+        border: Border.all(color: colorScheme.surfaceContainerLowest, width: 4),
+      ),
+      child: avatarUrl != null
+          ? Image.network(
+              avatarUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => _buildAvatarInitials(context, profile),
+            )
+          : _buildAvatarInitials(context, profile),
+    );
+  }
+
+  Widget _buildAvatarInitials(BuildContext context, ProfileViewDetailed? profile) {
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Text(
+          _initials(profile?.displayName ?? profile?.handle ?? '?'),
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
       ),
     );
-
-    if (profile?.banner == null) {
-      return fallback;
-    }
-
-    return Image.network(profile!.banner!, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback);
   }
 
   Widget _buildProfileError(BuildContext context, String? errorMessage) {
@@ -210,9 +281,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Widget _buildProfileSummary(BuildContext context, ProfileViewDetailed? profile, bool isOwnProfile) {
-    if (profile == null) {
-      return const SizedBox.shrink();
-    }
+    if (profile == null) return const SizedBox.shrink();
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     final metaChildren = <Widget>[
       if (profile.pronouns?.isNotEmpty ?? false)
@@ -228,72 +300,56 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     ];
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildAvatar(profile),
-          const SizedBox(height: 16),
           Text(
-            profile.displayName ?? profile.handle,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+            (profile.displayName ?? profile.handle).toUpperCase(),
+            style: textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.5),
           ),
           const SizedBox(height: 4),
-          Text(
-            '@${profile.handle}',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
+
+          Text('@${profile.handle}', style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
           if (profile.description?.isNotEmpty ?? false) ...[
             const SizedBox(height: 12),
-            Text(profile.description!, style: Theme.of(context).textTheme.bodyLarge),
+
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Text(profile.description!, style: textTheme.bodyMedium),
+            ),
           ],
           if (metaChildren.isNotEmpty) ...[
             const SizedBox(height: 16),
             Wrap(spacing: 8, runSpacing: 8, children: metaChildren),
           ],
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              _buildStat(context, profile.followsCount ?? 0, 'Following'),
-              _buildStat(context, profile.followersCount ?? 0, 'Followers'),
-              _buildStat(context, profile.postsCount ?? 0, 'Posts'),
-            ],
+          Container(
+            key: const ValueKey('profile_stats_row'),
+            decoration: BoxDecoration(
+              border: Border.symmetric(horizontal: BorderSide(color: colorScheme.outlineVariant)),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                _buildStat(context, profile.followsCount ?? 0, 'Following'),
+                const SizedBox(width: 24),
+                _buildStat(context, profile.followersCount ?? 0, 'Followers'),
+                const SizedBox(width: 24),
+                _buildStat(context, profile.postsCount ?? 0, 'Posts'),
+              ],
+            ),
           ),
-          if (isOwnProfile) ...[
-            const SizedBox(height: 16),
+          const SizedBox(height: 16),
+          if (isOwnProfile)
             OutlinedButton.icon(
               onPressed: () => context.push('/saved'),
               icon: const Icon(Icons.bookmark_outline),
               label: const Text('Saved Posts'),
             ),
-          ],
-          if (!isOwnProfile) ...[const SizedBox(height: 16), _buildProfileActions(context, profile)],
+          if (!isOwnProfile) _buildProfileActions(context, profile),
+          const SizedBox(height: 16),
         ],
-      ),
-    );
-  }
-
-  Widget _buildAvatar(ProfileViewDetailed profile) {
-    final avatarUrl = profile.avatar;
-
-    return Container(
-      width: 96,
-      height: 96,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 4),
-      ),
-      child: CircleAvatar(
-        radius: 44,
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-        child: avatarUrl == null
-            ? Text(_initials(profile.displayName ?? profile.handle), style: Theme.of(context).textTheme.headlineSmall)
-            : null,
       ),
     );
   }
@@ -322,30 +378,24 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
     );
 
-    if (onTap == null) {
-      return chip;
-    }
-
+    if (onTap == null) return chip;
     return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(999), child: chip);
   }
 
   Widget _buildStat(BuildContext context, int count, String label) {
-    return RichText(
-      text: TextSpan(
-        style: Theme.of(context).textTheme.bodyMedium,
-        children: [
-          TextSpan(
-            text: _formatCount(count),
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          TextSpan(
-            text: ' $label',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-        ],
-      ),
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _formatCount(count),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(fontSize: 11, letterSpacing: 1.1, color: colorScheme.onSurfaceVariant),
+        ),
+      ],
     );
   }
 
@@ -425,7 +475,25 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildFeedList(FeedState feedState, FeedFilter tabFilter) {
+  Widget? _buildComposeFab(BuildContext context) {
+    return BlocBuilder<ProfileBloc, ProfileState>(
+      builder: (context, state) {
+        final profile = state.profile;
+        if (profile == null) return const SizedBox.shrink();
+
+        final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
+        final isOwnProfile = profile.did == currentUserDid;
+        final initialText = isOwnProfile ? null : '@${profile.handle} ';
+
+        return FloatingActionButton(
+          onPressed: () => context.push('/compose', extra: ComposeRouteArgs(initialText: initialText)),
+          child: const Icon(Icons.add),
+        );
+      },
+    );
+  }
+
+  Widget _buildFeedList(FeedState feedState, FeedFilter tabFilter, ProfileViewDetailed? profile) {
     if (feedState.isLoading && feedState.filter == tabFilter) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -442,6 +510,21 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       return Center(child: Text(_emptyLabel(tabFilter)));
     }
 
+    return BlocBuilder<SettingsCubit, SettingsState>(
+      buildWhen: (prev, curr) => prev.feedArchitecture != curr.feedArchitecture,
+      builder: (context, settingsState) {
+        if (settingsState.feedArchitecture == FeedArchitecture.grid) {
+          return _buildGridFeed(context, feedState, profile);
+        }
+        return _buildLinearFeed(context, feedState);
+      },
+    );
+  }
+
+  Widget _buildGridFeed(BuildContext context, FeedState feedState, ProfileViewDetailed? profile) {
+    final accountDid = _resolvedActor ?? '';
+    final infoCardCount = profile == null ? 0 : 1;
+
     return RefreshIndicator(
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(
@@ -451,7 +534,64 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               !feedState.isLoadingMore) {
             context.read<FeedBloc>().add(const FeedLoadMoreRequested());
           }
+          return false;
+        },
+        child: ListView.builder(
+          key: const ValueKey('profile_grid_feed'),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          itemCount: infoCardCount + feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (profile != null && index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    child: _ProfileInfoCard(profile: profile),
+                  ),
+                ),
+              );
+            }
 
+            final postIndex = index - infoCardCount;
+
+            if (postIndex >= feedState.posts.length) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: postIndex == feedState.posts.length - 1 ? 0 : 16),
+              child: Center(
+                child: ConstrainedBox(
+                  key: ValueKey('profile_large_card_$postIndex'),
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: PostCardWithActions(
+                    feedViewPost: feedState.posts[postIndex],
+                    accountDid: accountDid,
+                    variant: PostCardVariant.grid,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLinearFeed(BuildContext context, FeedState feedState) {
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 300 &&
+              feedState.hasMore &&
+              !feedState.isLoadingMore) {
+            context.read<FeedBloc>().add(const FeedLoadMoreRequested());
+          }
           return false;
         },
         child: ListView.builder(
@@ -464,7 +604,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 child: Center(child: CircularProgressIndicator()),
               );
             }
-
             return PostCardWithActions(feedViewPost: feedState.posts[index], accountDid: _resolvedActor ?? '');
           },
         ),
@@ -484,40 +623,75 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   String _formatCount(int count) {
-    if (count >= 1000000) {
-      return '${(count / 1000000).toStringAsFixed(1)}M';
-    }
-
-    if (count >= 1000) {
-      return '${(count / 1000).toStringAsFixed(1)}K';
-    }
-
+    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
+    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
     return '$count';
   }
 
   String _initials(String value) {
     final parts = value.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) {
-      return '?';
-    }
-
-    if (parts.length == 1) {
-      return parts.first.substring(0, 1).toUpperCase();
-    }
-
+    if (parts.isEmpty || parts.first.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
   }
 
   Future<void> _launchWebsite(String website) async {
     final uri = Uri.tryParse(website.startsWith('http') ? website : 'https://$website');
-    if (uri == null) {
-      return;
-    }
-
+    if (uri == null) return;
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
 
+class _ProfileInfoCard extends StatelessWidget {
+  const _ProfileInfoCard({required this.profile});
+
+  final ProfileViewDetailed profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      key: const ValueKey('profile_info_card'),
+      color: colorScheme.surfaceContainerHigh,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _formatCount(profile.postsCount ?? 0),
+            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          Text('POSTS', style: TextStyle(fontSize: 11, letterSpacing: 1.1, color: colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 12),
+          Text(
+            _formatCount(profile.followersCount ?? 0),
+            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          Text('FOLLOWERS', style: TextStyle(fontSize: 11, letterSpacing: 1.1, color: colorScheme.onSurfaceVariant)),
+          if (profile.description?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 12),
+            Text(
+              profile.description!,
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatCount(int count) {
+    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
+    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
+    return '$count';
+  }
+}
+
+/// Sticky tab bar delegate with backdrop blur background and uppercase styled labels.
 class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   _SliverTabBarDelegate(this.tabBar);
 
@@ -531,7 +705,13 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return ColoredBox(color: Theme.of(context).scaffoldBackgroundColor, child: tabBar);
+    final colorScheme = Theme.of(context).colorScheme;
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: ColoredBox(color: colorScheme.surface.withValues(alpha: 0.85), child: tabBar),
+      ),
+    );
   }
 
   @override

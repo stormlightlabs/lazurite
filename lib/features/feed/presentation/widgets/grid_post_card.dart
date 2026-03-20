@@ -30,6 +30,7 @@ const _greyscale = ColorFilter.matrix(<double>[
   1,
   0,
 ]);
+const double _gridEmbedPreviewMaxHeight = 240;
 
 /// Grid layout post card.
 ///
@@ -55,7 +56,6 @@ class GridPostCard extends StatelessWidget {
     final bodyText = record?.text ?? '';
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Non-image embeds rendered in the content area
     final contentEmbed = primaryImageUrl == null && post.embed != null
         ? PostEmbedView(feedViewPost: feedViewPost, embed: post.embed!)
         : null;
@@ -95,7 +95,6 @@ class GridPostCard extends StatelessWidget {
                   if (bodyText.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     if (primaryImageUrl == null && contentEmbed == null)
-                      // Text-only: larger, tighter body text
                       FacetText(
                         text: bodyText,
                         facets: record?.facets,
@@ -112,7 +111,7 @@ class GridPostCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                   ],
-                  if (contentEmbed != null) ...[const SizedBox(height: 8), contentEmbed],
+                  if (contentEmbed != null) ...[const SizedBox(height: 8), _buildEmbedPreview(contentEmbed)],
                 ],
               ),
             ),
@@ -173,6 +172,15 @@ class GridPostCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildEmbedPreview(Widget contentEmbed) {
+    return SizedBox(
+      height: _gridEmbedPreviewMaxHeight,
+      child: ClipRect(
+        child: SingleChildScrollView(physics: const NeverScrollableScrollPhysics(), child: contentEmbed),
+      ),
     );
   }
 

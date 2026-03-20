@@ -8,7 +8,17 @@ import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
+import 'package:lazurite/features/feed/presentation/widgets/feed_layout_view.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+
+/// Returns the number of grid columns for [width] per the responsive
+/// breakpoints defined in the UI spec.
+int feedColumnCount(double width) {
+  if (width >= 1200) return 4;
+  if (width >= 840) return 3;
+  if (width >= 600) return 2;
+  return 1;
+}
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -343,30 +353,28 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
       return Center(child: Text('No posts yet', style: Theme.of(context).textTheme.bodyLarge));
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadFeed,
-      child: ListView.builder(
-        controller: _scrollController,
-        itemCount: _posts.length + (_isLoadingMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == _posts.length) {
-            return const Center(
-              child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
-            );
-          }
+    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
 
-          final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
-          final post = _posts[index];
-          return PostCardWithActions(
-            feedViewPost: post,
-            accountDid: accountDid,
-            onDeleted: () {
-              final uri = post.post.uri.toString();
-              setState(() => _posts.removeWhere((p) => p.post.uri.toString() == uri));
-            },
-          );
+    PostCardWithActions buildCard(int index, PostCardVariant variant) {
+      final post = _posts[index];
+      return PostCardWithActions(
+        feedViewPost: post,
+        accountDid: accountDid,
+        variant: variant,
+        onDeleted: () {
+          final uri = post.post.uri.toString();
+          setState(() => _posts.removeWhere((p) => p.post.uri.toString() == uri));
         },
-      ),
+      );
+    }
+
+    return FeedLayoutView(
+      itemCount: _posts.length,
+      scrollController: _scrollController,
+      isLoadingMore: _isLoadingMore,
+      onRefresh: _loadFeed,
+      gridItemBuilder: (context, index) => buildCard(index, PostCardVariant.grid),
+      linearItemBuilder: (context, index) => buildCard(index, PostCardVariant.linear),
     );
   }
 }

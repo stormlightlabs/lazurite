@@ -1,5 +1,6 @@
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/app_bsky_embed_external.dart';
 import 'package:bluesky/app_bsky_embed_images.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
@@ -106,6 +107,26 @@ void main() {
 
     expect(find.byType(AspectRatio), findsOneWidget);
     expect(find.byType(ColorFiltered), findsOneWidget);
+  });
+
+  testWidgets('caps non-image embed previews inside grid cards', (tester) async {
+    final post = _makePost(
+      text: 'Read this',
+      embed: const UPostViewEmbed.embedExternalView(
+        data: EmbedExternalView(
+          external: EmbedExternalViewExternal(
+            uri: 'https://example.com/article',
+            title: 'Example Article',
+            description: 'A useful external card',
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(_buildSubject(post));
+
+    expect(find.text('Example Article'), findsOneWidget);
+    expect(find.byWidgetPredicate((widget) => widget is SizedBox && widget.height == 240), findsOneWidget);
   });
 
   testWidgets('uses square container for avatar — no CircleAvatar', (tester) async {

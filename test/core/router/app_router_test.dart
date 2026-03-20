@@ -121,22 +121,20 @@ void main() {
     await authController.close();
   });
 
-  Widget buildSubject() {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthBloc>.value(value: authBloc),
-        BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
-        BlocProvider<ProfileBloc>.value(value: profileBloc),
-        BlocProvider<FeedBloc>.value(value: feedBloc),
-        BlocProvider<SettingsCubit>.value(value: settingsCubit),
-        BlocProvider<UnreadCountCubit>.value(value: unreadCountCubit),
-      ],
-      child: RepositoryProvider<NotificationRepository>(
-        create: (_) => notificationRepository,
-        child: MaterialApp.router(routerConfig: AppRouter(authBloc: authBloc).router),
-      ),
-    );
-  }
+  Widget buildSubject() => MultiBlocProvider(
+    providers: [
+      BlocProvider<AuthBloc>.value(value: authBloc),
+      BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
+      BlocProvider<ProfileBloc>.value(value: profileBloc),
+      BlocProvider<FeedBloc>.value(value: feedBloc),
+      BlocProvider<SettingsCubit>.value(value: settingsCubit),
+      BlocProvider<UnreadCountCubit>.value(value: unreadCountCubit),
+    ],
+    child: RepositoryProvider<NotificationRepository>(
+      create: (_) => notificationRepository,
+      child: MaterialApp.router(routerConfig: AppRouter(authBloc: authBloc).router),
+    ),
+  );
 
   testWidgets('opens the side menu and switches authenticated branches', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
@@ -159,7 +157,7 @@ void main() {
     await tester.tap(find.text('Profile').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('River Tam'), findsOneWidget);
+    expect(find.text('RIVER TAM'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Open menu'));
     await tester.pumpAndSettle();
@@ -180,11 +178,8 @@ void main() {
     final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBar.destinations.length, 4);
 
-    // Labels appear in the nav bar (HOME also appears in the AppBar section label)
     final destinations = navBar.destinations.cast<NavigationDestination>();
     expect(destinations.map((d) => d.label), containsAll(['HOME', 'SEARCH', 'ALERTS', 'PROFILE']));
-
-    // Messages and Settings are no longer in the bottom nav
     expect(destinations.any((d) => d.label == 'MESSAGES'), isFalse);
     expect(destinations.any((d) => d.label == 'SETTINGS'), isFalse);
   });
@@ -221,17 +216,15 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    // Start on home branch (index 0)
     final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBar.selectedIndex, 0);
 
-    // Tap PROFILE tab (index 3)
     await tester.tap(find.text('PROFILE'));
     await tester.pumpAndSettle();
 
     final navBarAfter = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBarAfter.selectedIndex, 3);
-    expect(find.text('River Tam'), findsOneWidget);
+    expect(find.text('RIVER TAM'), findsOneWidget);
   });
 
   testWidgets('LazuriteAppBar shows section label and hamburger on home screen', (tester) async {
@@ -241,7 +234,6 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    // Home screen uses LazuriteAppBar with sectionLabel 'Home' — 'HOME' appears at least once
     expect(find.text('HOME'), findsAtLeastNWidgets(1));
     expect(find.byTooltip('Open menu'), findsOneWidget);
   });

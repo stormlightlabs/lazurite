@@ -62,12 +62,16 @@ class PostCardFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final saveActiveColor = (saveType == 'cloud' || saveType == 'both') ? colorScheme.primary : Colors.amber;
+    const horizontalPadding = 12.0;
+    const actionSpacing = 8.0;
+    const iconSize = 18.0;
+    const actionPadding = 4.0;
 
     return Container(
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
       child: Row(
         children: [
           _FooterAction(
@@ -77,8 +81,10 @@ class PostCardFooter extends StatelessWidget {
             isLoading: false,
             onTap: onReply,
             color: colorScheme.onSurfaceVariant,
+            iconSize: iconSize,
+            padding: actionPadding,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: actionSpacing),
           _FooterAction(
             icon: Icons.repeat,
             activeIcon: Icons.repeat,
@@ -87,8 +93,10 @@ class PostCardFooter extends StatelessWidget {
             onTap: onRepost,
             color: colorScheme.onSurfaceVariant,
             activeColor: Colors.green,
+            iconSize: iconSize,
+            padding: actionPadding,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: actionSpacing),
           _FooterAction(
             icon: Icons.favorite_outline,
             activeIcon: Icons.favorite,
@@ -97,8 +105,10 @@ class PostCardFooter extends StatelessWidget {
             onTap: onLike,
             color: colorScheme.onSurfaceVariant,
             activeColor: Colors.pink,
+            iconSize: iconSize,
+            padding: actionPadding,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: actionSpacing),
           _FooterAction(
             icon: isSaved ? Icons.bookmark : Icons.bookmark_outline,
             activeIcon: Icons.bookmark,
@@ -108,13 +118,23 @@ class PostCardFooter extends StatelessWidget {
             onLongPress: onLongPressSave,
             color: colorScheme.onSurfaceVariant,
             activeColor: saveActiveColor,
+            iconSize: iconSize,
+            padding: actionPadding,
           ),
-          const Spacer(),
-          Text(
-            timestamp,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.0),
+          const SizedBox(width: actionSpacing),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                timestamp,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.0),
+              ),
+            ),
           ),
         ],
       ),
@@ -171,6 +191,8 @@ class _FooterAction extends StatelessWidget {
     required this.activeIcon,
     required this.isActive,
     required this.isLoading,
+    required this.iconSize,
+    required this.padding,
     this.onTap,
     this.onLongPress,
     this.color,
@@ -181,6 +203,8 @@ class _FooterAction extends StatelessWidget {
   final IconData activeIcon;
   final bool isActive;
   final bool isLoading;
+  final double iconSize;
+  final double padding;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final Color? color;
@@ -196,10 +220,14 @@ class _FooterAction extends StatelessWidget {
       onLongPress: onLongPress,
       borderRadius: BorderRadius.zero,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding),
         child: isLoading
-            ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: iconColor))
-            : Icon(isActive ? activeIcon : icon, size: 18, color: iconColor),
+            ? SizedBox(
+                width: iconSize,
+                height: iconSize,
+                child: CircularProgressIndicator(strokeWidth: 2, color: iconColor),
+              )
+            : Icon(isActive ? activeIcon : icon, size: iconSize, color: iconColor),
       ),
     );
   }

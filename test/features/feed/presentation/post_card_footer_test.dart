@@ -39,7 +39,6 @@ void main() {
   group('PostCardFooter', () {
     testWidgets('renders timestamp text', (tester) async {
       await tester.pumpWidget(_buildSubject(const PostCardFooter(timestamp: '2H')));
-
       expect(find.text('2H'), findsOneWidget);
     });
 
@@ -54,15 +53,12 @@ void main() {
 
     testWidgets('shows active like icon when isLiked is true', (tester) async {
       await tester.pumpWidget(_buildSubject(const PostCardFooter(timestamp: '1H', isLiked: true)));
-
       expect(find.byIcon(Icons.favorite), findsOneWidget);
       expect(find.byIcon(Icons.favorite_outline), findsNothing);
     });
 
     testWidgets('shows active repost icon when isReposted is true', (tester) async {
       await tester.pumpWidget(_buildSubject(const PostCardFooter(timestamp: '1H', isReposted: true)));
-
-      // repeat icon is used for both active and inactive
       expect(find.byIcon(Icons.repeat), findsOneWidget);
     });
 
@@ -112,6 +108,26 @@ void main() {
       );
       final decoration = container.decoration as BoxDecoration?;
       expect(decoration?.border, isNotNull);
+    });
+
+    testWidgets('uses compact spacing without overflow at narrow grid widths', (tester) async {
+      final errors = <FlutterErrorDetails>[];
+      final previousOnError = FlutterError.onError;
+      FlutterError.onError = errors.add;
+      addTearDown(() => FlutterError.onError = previousOnError);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(width: 185.5, child: const PostCardFooter(timestamp: 'SEP 20')),
+            ),
+          ),
+        ),
+      );
+
+      expect(errors.where((error) => error.exceptionAsString().contains('A RenderFlex overflowed')), isEmpty);
+      expect(find.text('SEP 20'), findsOneWidget);
     });
   });
 }

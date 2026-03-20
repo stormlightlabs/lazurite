@@ -65,10 +65,10 @@ class AppTypography {
       titleSmall: lora(fontSize: 14, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.1),
       bodyLarge: dmSans(fontSize: 16, fontWeight: FontWeight.w400, color: bodyColor, letterSpacing: 0.5),
       bodyMedium: dmSans(fontSize: 14, fontWeight: FontWeight.w400, color: bodyColor, letterSpacing: 0.25),
-      bodySmall: jetBrainsMono(fontSize: 12, fontWeight: FontWeight.w400, color: captionColor, letterSpacing: 0.4),
+      bodySmall: dmSans(fontSize: 12, fontWeight: FontWeight.w400, color: captionColor, letterSpacing: 0.4),
       labelLarge: dmSans(fontSize: 14, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.1),
       labelMedium: dmSans(fontSize: 12, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.5),
-      labelSmall: jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w500, color: captionColor, letterSpacing: 0.5),
+      labelSmall: dmSans(fontSize: 12, fontWeight: FontWeight.w500, color: captionColor, letterSpacing: 0.5),
     );
   }
 }

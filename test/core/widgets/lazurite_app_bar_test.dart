@@ -42,22 +42,18 @@ void main() {
   testWidgets('renders section label in uppercase', (tester) async {
     await tester.pumpWidget(buildSubject(sectionLabel: 'Home'));
     await tester.pumpAndSettle();
-
     expect(find.text('HOME'), findsOneWidget);
   });
 
   testWidgets('renders hamburger menu button', (tester) async {
     await tester.pumpWidget(buildSubject(sectionLabel: 'Search'));
     await tester.pumpAndSettle();
-
     expect(find.byType(AppShellMenuButton), findsOneWidget);
   });
 
   testWidgets('renders user initials in avatar from displayName', (tester) async {
     await tester.pumpWidget(buildSubject(sectionLabel: 'Home'));
     await tester.pumpAndSettle();
-
-    // 'River Tam' → initials 'RT'
     expect(find.text('RT'), findsOneWidget);
   });
 
@@ -75,8 +71,6 @@ void main() {
 
     await tester.pumpWidget(buildSubject(sectionLabel: 'Home'));
     await tester.pumpAndSettle();
-
-    // handle 'alice.bsky.social' → first part 'alice.bsky.social' → 'A'
     expect(find.text('A'), findsOneWidget);
   });
 

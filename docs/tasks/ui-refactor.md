@@ -30,20 +30,20 @@
 
 ## M3 — Home Feed Grid Layout
 
-- [ ] `HomeFeedScreen` reads `feed_architecture` from `SettingsCubit`
-- [ ] Grid mode: responsive `SliverGrid` with breakpoint-based column count
-- [ ] Linear mode: existing `ListView` of linear post cards (no change)
-- [ ] Feed architecture toggle triggers rebuild without re-fetch
-- [ ] Tests for grid/linear switching and column count at breakpoints
+- [x] `HomeFeedScreen` reads `feed_architecture` from `SettingsCubit`
+- [x] Grid mode: responsive `SliverGrid` with breakpoint-based column count
+- [x] Linear mode: existing `ListView` of linear post cards (with more space around cards)
+- [x] Feed architecture toggle triggers rebuild without re-fetch
+- [x] Tests for grid/linear switching and column count at breakpoints
 
 ## M4 — Profile Screen Refactor
 
-- [ ] Profile header: square avatar, cover image (grayscale, opacity), stats row with border
-- [ ] Display name uppercase + tight tracking, handle below
-- [ ] Sticky tab bar with backdrop blur and uppercase labels
-- [ ] Bento grid layout for profile posts (8+4 featured row, 6+6 pairs) in grid mode
-- [ ] Linear fallback for profile posts when feed architecture is "linear"
-- [ ] Tests for profile header rendering and layout mode switching
+- [x] Profile header: square avatar, cover image (grayscale, opacity), stats row with border
+- [x] Display name uppercase + tight tracking, handle below
+- [x] Sticky tab bar with backdrop blur and uppercase labels
+- [x] Large-card grid layout for profile posts in grid mode, with the metadata info card retained above the feed
+- [x] Linear fallback for profile posts when feed architecture is "linear"
+- [x] Tests for profile header rendering and layout mode switching
 
 ## M5 — Layout Settings Screen
 
