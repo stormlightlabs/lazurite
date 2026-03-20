@@ -120,37 +120,6 @@ class AppRouter {
         path: '/saved',
         builder: (context, state) => SavedPostsScreen(accountDid: context.read<String>()),
       ),
-      GoRoute(
-        path: '/messages',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ConvoListScreen(),
-        routes: [
-          GoRoute(
-            path: ':id',
-            builder: (context, state) {
-              final convoId = state.pathParameters['id']!;
-              final args = state.extra as MessageThreadRouteArgs?;
-              return BlocProvider(
-                create: (_) => MessageBloc(
-                  convoRepository: context.read<ConvoRepository>(),
-                  currentUserDid: context.read<String>(),
-                ),
-                child: MessageThreadScreen(convoId: convoId, title: args?.title ?? 'Conversation'),
-              );
-            },
-          ),
-        ],
-      ),
-      GoRoute(
-        path: '/settings',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SettingsScreen(),
-        routes: [
-          GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
-          GoRoute(path: 'logs', builder: (context, state) => const LogsScreen()),
-          GoRoute(path: 'devtools', builder: (context, state) => const DevToolsScreen()),
-        ],
-      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           if (!context.read<AuthBloc>().state.isAuthenticated) {
@@ -187,7 +156,38 @@ class AppRouter {
               GoRoute(
                 path: '/',
                 builder: (context, state) => const HomeFeedScreen(),
-                routes: [GoRoute(path: 'feeds', builder: (context, state) => const FeedManagementScreen())],
+                routes: [
+                  GoRoute(path: 'feeds', builder: (context, state) => const FeedManagementScreen()),
+                  GoRoute(
+                    path: 'messages',
+                    builder: (context, state) => const ConvoListScreen(),
+                    routes: [
+                      GoRoute(
+                        path: ':id',
+                        builder: (context, state) {
+                          final convoId = state.pathParameters['id']!;
+                          final args = state.extra as MessageThreadRouteArgs?;
+                          return BlocProvider(
+                            create: (_) => MessageBloc(
+                              convoRepository: context.read<ConvoRepository>(),
+                              currentUserDid: context.read<String>(),
+                            ),
+                            child: MessageThreadScreen(convoId: convoId, title: args?.title ?? 'Conversation'),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'settings',
+                    builder: (context, state) => const SettingsScreen(),
+                    routes: [
+                      GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
+                      GoRoute(path: 'logs', builder: (context, state) => const LogsScreen()),
+                      GoRoute(path: 'devtools', builder: (context, state) => const DevToolsScreen()),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),

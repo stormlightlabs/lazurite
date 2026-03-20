@@ -49,6 +49,9 @@ class FeedLayoutView extends StatelessWidget {
   Widget _buildGrid(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final columns = feedColumnCount(width);
+    if (columns == 1) {
+      return _buildSingleColumnGrid(context);
+    }
     final tileWidth = (width - ((columns - 1) * _gridSpacing)) / columns;
 
     return RefreshIndicator(
@@ -64,6 +67,31 @@ class FeedLayoutView extends StatelessWidget {
               mainAxisSpacing: _gridSpacing,
               // Grid cards have a square media region plus fixed author/body/footer chrome.
               mainAxisExtent: tileWidth + _gridCardChromeHeight,
+            ),
+          ),
+          if (isLoadingMore)
+            const SliverToBoxAdapter(
+              child: Center(
+                child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSingleColumnGrid(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            sliver: SliverList.separated(
+              itemCount: itemCount,
+              itemBuilder: gridItemBuilder,
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
             ),
           ),
           if (isLoadingMore)

@@ -146,7 +146,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
               onLongPressSave: () => unawaited(_onToggleSave(context)),
               onCloudSave: () => unawaited(_onCloudSave(context)),
               onCloudUnsave: () => unawaited(_onCloudUnsave(context)),
-              showCounts: variant == PostCardVariant.linear,
+              showCounts: true,
             );
           },
         );

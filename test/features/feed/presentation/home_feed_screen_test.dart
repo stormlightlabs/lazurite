@@ -75,7 +75,7 @@ void main() {
 
   group('FeedLayoutView — grid architecture', () {
     testWidgets('shows SliverGrid when architecture is grid', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid));
+      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: 720));
       expect(find.byType(SliverGrid), findsOneWidget);
       expect(find.byType(CustomScrollView), findsOneWidget);
     });
@@ -89,9 +89,15 @@ void main() {
     testWidgets('uses 1 column at width < 600', (tester) async {
       await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: 400));
 
-      final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
-      final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-      expect(delegate.crossAxisCount, 1);
+      expect(find.byType(SliverGrid), findsNothing);
+      expect(find.byType(SliverList), findsOneWidget);
+    });
+
+    testWidgets('uses tighter single-column padding at phone widths', (tester) async {
+      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: 400));
+
+      final padding = tester.widget<SliverPadding>(find.byType(SliverPadding));
+      expect(padding.padding, const EdgeInsets.fromLTRB(12, 8, 12, 12));
     });
 
     testWidgets('uses 2 columns at width 600–839', (tester) async {
@@ -119,13 +125,11 @@ void main() {
     });
 
     testWidgets('allocates extra height beyond the square media region', (tester) async {
-      const screenWidth = 400.0;
-
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: screenWidth));
+      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: 720));
 
       final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
       final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-      const tileWidth = screenWidth;
+      const tileWidth = (720.0 - 1.0) / 2;
 
       expect(delegate.mainAxisExtent, isNotNull);
       expect(delegate.mainAxisExtent!, greaterThan(tileWidth + 100));
@@ -168,7 +172,7 @@ void main() {
 
       await tester.pumpWidget(
         MediaQuery(
-          data: const MediaQueryData(size: Size(400, 800)),
+          data: const MediaQueryData(size: Size(720, 800)),
           child: MaterialApp(
             home: Scaffold(
               body: BlocProvider<SettingsCubit>.value(

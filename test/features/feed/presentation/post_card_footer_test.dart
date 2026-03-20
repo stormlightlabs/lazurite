@@ -149,5 +149,33 @@ void main() {
       expect(errors.where((error) => error.exceptionAsString().contains('A RenderFlex overflowed')), isEmpty);
       expect(find.text('SEP 20'), findsOneWidget);
     });
+
+    testWidgets('hides counts at very narrow widths even when enabled', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 220,
+                child: PostCardFooter(
+                  timestamp: '1H',
+                  replyCount: 3,
+                  repostCount: 7,
+                  likeCount: 42,
+                  saveCount: 5,
+                  showCounts: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('3'), findsNothing);
+      expect(find.text('7'), findsNothing);
+      expect(find.text('42'), findsNothing);
+      expect(find.text('5'), findsNothing);
+      expect(find.text('1H'), findsOneWidget);
+    });
   });
 }
