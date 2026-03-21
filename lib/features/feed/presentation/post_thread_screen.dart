@@ -21,6 +21,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actio
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/report_dialog.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 
 class PostThreadScreen extends StatelessWidget {
   const PostThreadScreen({super.key, required this.postUri});
@@ -37,23 +38,106 @@ class PostThreadScreen extends StatelessWidget {
   }
 }
 
-class _PostThreadContent extends StatelessWidget {
+const int _maxThreadDepth = 6;
+const double _threadIndentPerDepth = 24;
+const double _threadLineTouchTarget = 24;
+const Duration _threadCollapseDuration = Duration(milliseconds: 200);
+
+Set<String> computeInitialCollapsedThreadUris(ThreadViewPost thread, {required int? autoCollapseDepth}) {
+  if (autoCollapseDepth == null) {
+    return <String>{};
+  }
+
+  final opDid = _getThreadRoot(thread).post.author.did;
+  final collapsedUris = <String>{};
+
+  void visit(ThreadViewPost node, int depth) {
+    for (final reply in _threadRepliesOf(node)) {
+      final childDepth = depth + 1;
+      final childReplies = _threadRepliesOf(reply);
+      if (childDepth > autoCollapseDepth && childReplies.isNotEmpty && reply.post.author.did != opDid) {
+        collapsedUris.add(reply.post.uri.toString());
+      }
+      visit(reply, childDepth);
+    }
+  }
+
+  visit(thread, 0);
+  return collapsedUris;
+}
+
+class _PostThreadContent extends StatefulWidget {
   const _PostThreadContent({required this.postUri});
 
   final String postUri;
 
   @override
+  State<_PostThreadContent> createState() => _PostThreadContentState();
+}
+
+class _PostThreadContentState extends State<_PostThreadContent> {
+  Set<String> _collapsedUris = <String>{};
+  String? _initializedThreadUri;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final state = context.read<PostThreadCubit>().state;
+    if (state.status == PostThreadStatus.loaded && state.thread != null) {
+      _syncInitialCollapsedUris(state.thread!);
+    }
+  }
+
+  void _syncInitialCollapsedUris(ThreadViewPost thread) {
+    final threadUri = thread.post.uri.toString();
+    if (_initializedThreadUri == threadUri) {
+      return;
+    }
+
+    final collapsedUris = computeInitialCollapsedThreadUris(
+      thread,
+      autoCollapseDepth: context.read<SettingsCubit>().state.threadAutoCollapseDepth,
+    );
+
+    setState(() {
+      _initializedThreadUri = threadUri;
+      _collapsedUris = collapsedUris;
+    });
+  }
+
+  void _toggleCollapsed(String postUri) {
+    setState(() {
+      if (_collapsedUris.contains(postUri)) {
+        _collapsedUris.remove(postUri);
+      } else {
+        _collapsedUris.add(postUri);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Thread')),
-      body: BlocBuilder<PostThreadCubit, PostThreadState>(
-        builder: (context, state) {
-          return switch (state.status) {
-            PostThreadStatus.loading => const Center(child: CircularProgressIndicator()),
-            PostThreadStatus.error => _buildError(context, state.error ?? 'Failed to load thread'),
-            PostThreadStatus.loaded => _buildThread(context, state.thread!),
-          };
-        },
+    return BlocListener<PostThreadCubit, PostThreadState>(
+      listenWhen: (previous, current) {
+        if (current.status != PostThreadStatus.loaded || current.thread == null) {
+          return false;
+        }
+        return previous.thread?.post.uri.toString() != current.thread!.post.uri.toString();
+      },
+      listener: (context, state) {
+        _syncInitialCollapsedUris(state.thread!);
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Thread')),
+        body: BlocBuilder<PostThreadCubit, PostThreadState>(
+          builder: (context, state) {
+            return switch (state.status) {
+              PostThreadStatus.loading => const Center(child: CircularProgressIndicator()),
+              PostThreadStatus.error => _buildError(context, state.error ?? 'Failed to load thread'),
+              PostThreadStatus.loaded => _buildThread(context, state.thread!),
+            };
+          },
+        ),
       ),
     );
   }
@@ -67,7 +151,10 @@ class _PostThreadContent extends StatelessWidget {
           const SizedBox(height: 16),
           Text(message),
           const SizedBox(height: 16),
-          FilledButton(onPressed: () => context.read<PostThreadCubit>().load(postUri), child: const Text('Retry')),
+          FilledButton(
+            onPressed: () => context.read<PostThreadCubit>().load(widget.postUri),
+            child: const Text('Retry'),
+          ),
         ],
       ),
     );
@@ -76,7 +163,8 @@ class _PostThreadContent extends StatelessWidget {
   Widget _buildThread(BuildContext context, ThreadViewPost thread) {
     final accountDid = context.read<String>();
     final parents = _getParentChain(thread);
-    final replies = (thread.replies ?? []).where((r) => r.isThreadViewPost).map((r) => r.threadViewPost!).toList();
+    final replies = _threadRepliesOf(thread);
+    final opDid = (parents.isNotEmpty ? parents.first : thread).post.author.did;
 
     return ListView(
       children: [
@@ -102,9 +190,14 @@ class _PostThreadContent extends StatelessWidget {
           ),
           const Divider(height: 1),
           for (final reply in replies)
-            PostCardWithActions(
-              feedViewPost: FeedViewPost(post: reply.post),
+            ThreadReplyNode(
+              key: ValueKey('thread-reply-node-${reply.post.uri}'),
+              thread: reply,
+              depth: 1,
               accountDid: accountDid,
+              opDid: opDid,
+              collapsedUris: _collapsedUris,
+              onToggleCollapse: _toggleCollapsed,
             ),
         ],
       ],
@@ -133,6 +226,382 @@ class _PostThreadContent extends StatelessWidget {
     }
     return parents.reversed.toList();
   }
+}
+
+class ThreadReplyNode extends StatelessWidget {
+  const ThreadReplyNode({
+    super.key,
+    required this.thread,
+    required this.depth,
+    required this.accountDid,
+    required this.opDid,
+    required this.collapsedUris,
+    required this.onToggleCollapse,
+    this.onContinueThread,
+  });
+
+  final ThreadViewPost thread;
+  final int depth;
+  final String accountDid;
+  final String opDid;
+  final Set<String> collapsedUris;
+  final ValueChanged<String> onToggleCollapse;
+  final ValueChanged<ThreadViewPost>? onContinueThread;
+
+  @override
+  Widget build(BuildContext context) {
+    if (depth > _maxThreadDepth) {
+      return _ThreadOverflowLink(thread: thread, depth: depth, onContinueThread: onContinueThread);
+    }
+
+    final postUri = thread.post.uri.toString();
+    final replies = _threadRepliesOf(thread);
+    final isCollapsed = collapsedUris.contains(postUri);
+    final lineColor = _threadLineColors(context)[(depth - 1) % _threadLineColors(context).length];
+    final indent = (depth - 1) * _threadIndentPerDepth;
+    final canCollapse = replies.isNotEmpty;
+
+    return Padding(
+      padding: EdgeInsets.only(left: indent),
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: _threadLineTouchTarget),
+            child: AnimatedSize(
+              duration: _threadCollapseDuration,
+              curve: Curves.easeInOut,
+              child: isCollapsed
+                  ? _CollapsedThreadReply(
+                      thread: thread,
+                      hiddenReplyCount: _countDescendantReplies(thread),
+                      onLongPress: canCollapse ? () => onToggleCollapse(postUri) : null,
+                    )
+                  : _ExpandedThreadReply(
+                      thread: thread,
+                      depth: depth,
+                      accountDid: accountDid,
+                      opDid: opDid,
+                      collapsedUris: collapsedUris,
+                      onToggleCollapse: onToggleCollapse,
+                      onContinueThread: onContinueThread,
+                    ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: _threadLineTouchTarget,
+            child: canCollapse
+                ? _ThreadLineButton(
+                    color: lineColor,
+                    postUri: postUri,
+                    isCollapsed: isCollapsed,
+                    onTap: () => onToggleCollapse(postUri),
+                  )
+                : IgnorePointer(child: _ThreadLine(color: lineColor)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpandedThreadReply extends StatelessWidget {
+  const _ExpandedThreadReply({
+    required this.thread,
+    required this.depth,
+    required this.accountDid,
+    required this.opDid,
+    required this.collapsedUris,
+    required this.onToggleCollapse,
+    this.onContinueThread,
+  });
+
+  final ThreadViewPost thread;
+  final int depth;
+  final String accountDid;
+  final String opDid;
+  final Set<String> collapsedUris;
+  final ValueChanged<String> onToggleCollapse;
+  final ValueChanged<ThreadViewPost>? onContinueThread;
+
+  @override
+  Widget build(BuildContext context) {
+    final postUri = thread.post.uri.toString();
+    final replies = _threadRepliesOf(thread);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: replies.isNotEmpty ? () => onToggleCollapse(postUri) : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PostCardWithActions(
+            feedViewPost: FeedViewPost(post: thread.post),
+            accountDid: accountDid,
+          ),
+          for (final reply in replies)
+            ThreadReplyNode(
+              key: ValueKey('thread-reply-node-${reply.post.uri}'),
+              thread: reply,
+              depth: depth + 1,
+              accountDid: accountDid,
+              opDid: opDid,
+              collapsedUris: collapsedUris,
+              onToggleCollapse: onToggleCollapse,
+              onContinueThread: onContinueThread,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CollapsedThreadReply extends StatelessWidget {
+  const _CollapsedThreadReply({required this.thread, required this.hiddenReplyCount, this.onLongPress});
+
+  final ThreadViewPost thread;
+  final int hiddenReplyCount;
+  final VoidCallback? onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    final post = thread.post;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: onLongPress,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 1),
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outlineVariant),
+          color: colorScheme.surfaceContainerLowest,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _CollapsedThreadHeader(post: post),
+              const SizedBox(height: 10),
+              Text(
+                _hiddenReplyLabel(hiddenReplyCount).toUpperCase(),
+                key: ValueKey('collapsed-indicator-${post.uri}'),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant, letterSpacing: 1.1),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CollapsedThreadHeader extends StatelessWidget {
+  const _CollapsedThreadHeader({required this.post});
+
+  final PostView post;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final timestamp = _parsePostRecord(post.record)?.createdAt ?? post.indexedAt;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: post.author.avatar != null
+              ? Image.network(post.author.avatar!, fit: BoxFit.cover)
+              : Center(
+                  child: Text(
+                    _initials(post.author.displayName ?? post.author.handle),
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      post.author.displayName ?? post.author.handle,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat('MMM d').format(timestamp.toLocal()).toUpperCase(),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant, letterSpacing: 0.8),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '@${post.author.handle}'.toUpperCase(),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ThreadOverflowLink extends StatelessWidget {
+  const _ThreadOverflowLink({required this.thread, required this.depth, this.onContinueThread});
+
+  final ThreadViewPost thread;
+  final int depth;
+  final ValueChanged<ThreadViewPost>? onContinueThread;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: _maxThreadDepth * _threadIndentPerDepth),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton(
+          key: ValueKey('continue-thread-${thread.post.uri}'),
+          onPressed: () {
+            if (onContinueThread != null) {
+              onContinueThread!(thread);
+              return;
+            }
+            context.push('/post?uri=${Uri.encodeQueryComponent(thread.post.uri.toString())}');
+          },
+          child: const Text('Continue this thread →'),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThreadLineButton extends StatelessWidget {
+  const _ThreadLineButton({required this.color, required this.postUri, required this.isCollapsed, required this.onTap});
+
+  final Color color;
+  final String postUri;
+  final bool isCollapsed;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: ValueKey('threadline-$postUri'),
+        onTap: onTap,
+        splashColor: color.withValues(alpha: 0.16),
+        highlightColor: color.withValues(alpha: 0.08),
+        child: _ThreadLine(color: color, isCollapsed: isCollapsed),
+      ),
+    );
+  }
+}
+
+class _ThreadLine extends StatelessWidget {
+  const _ThreadLine({required this.color, this.isCollapsed = false});
+
+  final Color color;
+  final bool isCollapsed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: AnimatedContainer(
+        duration: _threadCollapseDuration,
+        width: 2,
+        margin: EdgeInsets.symmetric(vertical: isCollapsed ? 12 : 0),
+        color: color,
+      ),
+    );
+  }
+}
+
+List<ThreadViewPost> _threadRepliesOf(ThreadViewPost thread) {
+  return (thread.replies ?? <UThreadViewPostReplies>[])
+      .where((reply) => reply.isThreadViewPost)
+      .map((reply) => reply.threadViewPost!)
+      .toList();
+}
+
+ThreadViewPost _getThreadRoot(ThreadViewPost thread) {
+  var current = thread;
+  while (current.parent != null && current.parent!.isThreadViewPost) {
+    current = current.parent!.threadViewPost!;
+  }
+  return current;
+}
+
+int _countDescendantReplies(ThreadViewPost thread) {
+  var count = 0;
+  for (final reply in _threadRepliesOf(thread)) {
+    count += 1 + _countDescendantReplies(reply);
+  }
+  return count;
+}
+
+String _hiddenReplyLabel(int count) => count == 1 ? '1 reply hidden' : '$count replies hidden';
+
+List<Color> _threadLineColors(BuildContext context) {
+  final colorScheme = Theme.of(context).colorScheme;
+  final surface = colorScheme.surface;
+
+  Color blend(Color color, double amount) => Color.lerp(color, surface, amount)!;
+
+  return [
+    blend(colorScheme.outlineVariant, 0.08),
+    blend(colorScheme.outline, 0.18),
+    blend(colorScheme.primary, 0.78),
+    blend(colorScheme.secondary, 0.74),
+    blend(colorScheme.tertiary, 0.72),
+    blend(colorScheme.primaryContainer, 0.62),
+  ];
+}
+
+FeedPostRecord? _parsePostRecord(Map<String, dynamic> record) {
+  try {
+    return FeedPostRecord.fromJson(record);
+  } catch (_) {
+    return null;
+  }
+}
+
+String _initials(String value) {
+  final parts = value.trim().split(RegExp(r'\s+'));
+  if (parts.isEmpty || parts.first.isEmpty) {
+    return '?';
+  }
+  if (parts.length == 1) {
+    return parts.first.substring(0, 1).toUpperCase();
+  }
+  return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
 }
 
 class _FocusedPostWithActions extends StatelessWidget {
@@ -181,7 +650,7 @@ class _FocusedPostContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final post = thread.post;
-    final record = _tryParseRecord(post.record);
+    final record = _parsePostRecord(post.record);
     final timestamp = record?.createdAt ?? post.indexedAt;
 
     return PostCard(
@@ -427,14 +896,6 @@ class _FocusedPostContent extends StatelessWidget {
       return (root.post.uri.toString(), root.post.cid);
     }
     return (thread.post.uri.toString(), thread.post.cid);
-  }
-
-  FeedPostRecord? _tryParseRecord(Map<String, dynamic> record) {
-    try {
-      return FeedPostRecord.fromJson(record);
-    } catch (_) {
-      return null;
-    }
   }
 
   String _formatTimestamp(DateTime time) {

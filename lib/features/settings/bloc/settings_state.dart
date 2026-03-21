@@ -5,6 +5,8 @@ import 'package:lazurite/core/theme/density_spacing.dart';
 import 'package:lazurite/core/theme/feed_architecture.dart';
 import 'package:lazurite/core/theme/ui_density.dart';
 
+const Object _threadAutoCollapseDepthUnset = Object();
+
 class SettingsState extends Equatable {
   const SettingsState({
     required this.themePalette,
@@ -12,6 +14,7 @@ class SettingsState extends Equatable {
     required this.useSystemTheme,
     this.uiDensity = UiDensity.standard,
     this.feedArchitecture = FeedArchitecture.grid,
+    this.threadAutoCollapseDepth,
   });
 
   final AppThemePalette themePalette;
@@ -19,6 +22,7 @@ class SettingsState extends Equatable {
   final bool useSystemTheme;
   final UiDensity uiDensity;
   final FeedArchitecture feedArchitecture;
+  final int? threadAutoCollapseDepth;
 
   ThemeData get themeData {
     final base = AppTheme.getTheme(themePalette, themeVariant);
@@ -31,6 +35,7 @@ class SettingsState extends Equatable {
     bool? useSystemTheme,
     UiDensity? uiDensity,
     FeedArchitecture? feedArchitecture,
+    Object? threadAutoCollapseDepth = _threadAutoCollapseDepthUnset,
   }) {
     return SettingsState(
       themePalette: themePalette ?? this.themePalette,
@@ -38,9 +43,19 @@ class SettingsState extends Equatable {
       useSystemTheme: useSystemTheme ?? this.useSystemTheme,
       uiDensity: uiDensity ?? this.uiDensity,
       feedArchitecture: feedArchitecture ?? this.feedArchitecture,
+      threadAutoCollapseDepth: identical(threadAutoCollapseDepth, _threadAutoCollapseDepthUnset)
+          ? this.threadAutoCollapseDepth
+          : threadAutoCollapseDepth as int?,
     );
   }
 
   @override
-  List<Object?> get props => [themePalette, themeVariant, useSystemTheme, uiDensity, feedArchitecture];
+  List<Object?> get props => [
+    themePalette,
+    themeVariant,
+    useSystemTheme,
+    uiDensity,
+    feedArchitecture,
+    threadAutoCollapseDepth,
+  ];
 }

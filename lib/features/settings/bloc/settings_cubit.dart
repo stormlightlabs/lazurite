@@ -13,6 +13,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     bool? initialUseSystemTheme,
     UiDensity? initialUiDensity,
     FeedArchitecture? initialFeedArchitecture,
+    int? initialThreadAutoCollapseDepth,
   }) : super(
          SettingsState(
            themePalette: initialPalette ?? AppThemePalette.oxocarbon,
@@ -20,6 +21,7 @@ class SettingsCubit extends Cubit<SettingsState> {
            useSystemTheme: initialUseSystemTheme ?? false,
            uiDensity: initialUiDensity ?? UiDensity.standard,
            feedArchitecture: initialFeedArchitecture ?? FeedArchitecture.grid,
+           threadAutoCollapseDepth: initialThreadAutoCollapseDepth,
          ),
        );
 
@@ -30,6 +32,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _keyUseSystemTheme = 'use_system_theme';
   static const String _keyUiDensity = 'ui_density';
   static const String _keyFeedArchitecture = 'feed_architecture';
+  static const String _keyThreadAutoCollapseDepth = 'thread_auto_collapse_depth';
 
   Future<void> loadSettings() async {
     final paletteStr = await database.getSetting(_keyThemePalette);
@@ -37,6 +40,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     final useSystemStr = await database.getSetting(_keyUseSystemTheme);
     final uiDensityStr = await database.getSetting(_keyUiDensity);
     final feedArchStr = await database.getSetting(_keyFeedArchitecture);
+    final threadAutoCollapseDepthStr = await database.getSetting(_keyThreadAutoCollapseDepth);
 
     emit(
       state.copyWith(
@@ -45,6 +49,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         useSystemTheme: useSystemStr == 'true',
         uiDensity: UiDensity.fromString(uiDensityStr),
         feedArchitecture: FeedArchitecture.fromString(feedArchStr),
+        threadAutoCollapseDepth: int.tryParse(threadAutoCollapseDepthStr ?? ''),
       ),
     );
   }
@@ -78,5 +83,14 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setFeedArchitecture(FeedArchitecture architecture) async {
     await database.setSetting(_keyFeedArchitecture, architecture.name);
     emit(state.copyWith(feedArchitecture: architecture));
+  }
+
+  Future<void> setThreadAutoCollapseDepth(int? depth) async {
+    if (depth == null) {
+      await database.deleteSetting(_keyThreadAutoCollapseDepth);
+    } else {
+      await database.setSetting(_keyThreadAutoCollapseDepth, depth.toString());
+    }
+    emit(state.copyWith(threadAutoCollapseDepth: depth));
   }
 }

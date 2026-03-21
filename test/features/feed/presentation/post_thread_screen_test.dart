@@ -5,361 +5,420 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/features/feed/cubit/post_action_cubit.dart';
-import 'package:lazurite/features/feed/cubit/post_thread_cubit.dart';
+import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
-import 'package:lazurite/features/feed/data/post_thread_repository.dart';
+import 'package:lazurite/features/feed/presentation/post_thread_screen.dart';
 import 'package:mocktail/mocktail.dart';
-
-class MockPostThreadCubit extends MockCubit<PostThreadState> implements PostThreadCubit {}
-
-class MockPostThreadRepository extends Mock implements PostThreadRepository {}
 
 class MockPostActionRepository extends Mock implements PostActionRepository {}
 
 class MockSavedPostsCubit extends MockCubit<SavedPostsState> implements SavedPostsCubit {}
 
 PostView _makePost({
-  String did = 'did:plc:author',
-  String handle = 'author.bsky.social',
-  String rkey = 'abc',
-  String text = 'Hello world',
-  int? replyCount,
-  int? repostCount,
-  int? likeCount,
+  required String did,
+  required String handle,
+  required String rkey,
+  required String text,
+  DateTime? createdAt,
 }) {
+  final time = createdAt ?? DateTime.utc(2026, 3, 15, 12);
   return PostView(
     uri: AtUri('at://$did/app.bsky.feed.post/$rkey'),
     cid: 'cid-$rkey',
     author: ProfileViewBasic(did: did, handle: handle),
-    record: {r'$type': 'app.bsky.feed.post', 'text': text, 'createdAt': DateTime.utc(2026, 3, 15).toIso8601String()},
-    indexedAt: DateTime.utc(2026, 3, 15),
-    replyCount: replyCount,
-    repostCount: repostCount,
-    likeCount: likeCount,
+    record: {r'$type': 'app.bsky.feed.post', 'text': text, 'createdAt': time.toIso8601String()},
+    indexedAt: time,
   );
 }
 
-void main() {
-  late MockPostThreadCubit mockCubit;
-  late MockSavedPostsCubit mockSavedPostsCubit;
-  late MockPostActionRepository mockPostActionRepository;
+ThreadViewPost _makeThread({
+  required String did,
+  required String handle,
+  required String rkey,
+  required String text,
+  List<ThreadViewPost> replies = const [],
+  ThreadViewPost? parent,
+}) {
+  return ThreadViewPost(
+    post: _makePost(did: did, handle: handle, rkey: rkey, text: text),
+    parent: parent == null ? null : UThreadViewPostParent.threadViewPost(data: parent),
+    replies: replies.map((reply) => UThreadViewPostReplies.threadViewPost(data: reply)).toList(),
+  );
+}
 
-  setUpAll(() {
-    registerFallbackValue(AtUri.parse('at://did:plc:test/app.bsky.feed.post/fallback'));
+class _ReplyTreeHarness extends StatefulWidget {
+  const _ReplyTreeHarness({
+    required this.thread,
+    required this.savedPostsCubit,
+    required this.postActionRepository,
+    this.initialCollapsedUris = const <String>{},
+    this.onContinueThread,
   });
 
-  setUp(() {
-    mockCubit = MockPostThreadCubit();
-    mockSavedPostsCubit = MockSavedPostsCubit();
-    mockPostActionRepository = MockPostActionRepository();
-  });
+  final ThreadViewPost thread;
+  final SavedPostsCubit savedPostsCubit;
+  final PostActionRepository postActionRepository;
+  final Set<String> initialCollapsedUris;
+  final ValueChanged<ThreadViewPost>? onContinueThread;
 
-  Widget buildSubject({PostThreadState? state}) {
-    when(() => mockCubit.state).thenReturn(state ?? const PostThreadState(status: PostThreadStatus.loading));
-    when(
-      () => mockSavedPostsCubit.state,
-    ).thenReturn(const SavedPostsState(status: SavedPostsStatus.loaded, savedPosts: [], savedUris: {}));
+  @override
+  State<_ReplyTreeHarness> createState() => _ReplyTreeHarnessState();
+}
 
+class _ReplyTreeHarnessState extends State<_ReplyTreeHarness> {
+  late Set<String> collapsedUris;
+
+  @override
+  void initState() {
+    super.initState();
+    collapsedUris = {...widget.initialCollapsedUris};
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
       home: MultiRepositoryProvider(
         providers: [
-          RepositoryProvider<PostActionRepository>.value(value: mockPostActionRepository),
-          RepositoryProvider<String>.value(value: 'did:plc:currentuser'),
+          RepositoryProvider<PostActionRepository>.value(value: widget.postActionRepository),
+          RepositoryProvider<PostActionCache>(create: (_) => PostActionCache()),
         ],
-        child: MultiBlocProvider(
-          providers: [
-            BlocProvider<PostThreadCubit>.value(value: mockCubit),
-            BlocProvider<SavedPostsCubit>.value(value: mockSavedPostsCubit),
-          ],
+        child: BlocProvider<SavedPostsCubit>.value(
+          value: widget.savedPostsCubit,
           child: Scaffold(
-            body: BlocBuilder<PostThreadCubit, PostThreadState>(
-              builder: (context, cubitState) {
-                return switch (cubitState.status) {
-                  PostThreadStatus.loading => const Center(child: CircularProgressIndicator()),
-                  PostThreadStatus.error => Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline),
-                        Text(cubitState.error ?? 'Failed to load thread'),
-                        FilledButton(onPressed: () => mockCubit.load('test'), child: const Text('Retry')),
-                      ],
-                    ),
-                  ),
-                  PostThreadStatus.loaded => const Text('Thread loaded'),
-                };
-              },
+            body: SingleChildScrollView(
+              child: ThreadReplyNode(
+                thread: widget.thread,
+                depth: 1,
+                accountDid: 'did:plc:current',
+                opDid: 'did:plc:op',
+                collapsedUris: collapsedUris,
+                onToggleCollapse: (postUri) {
+                  setState(() {
+                    if (collapsedUris.contains(postUri)) {
+                      collapsedUris.remove(postUri);
+                    } else {
+                      collapsedUris.add(postUri);
+                    }
+                  });
+                },
+                onContinueThread: widget.onContinueThread,
+              ),
             ),
           ),
         ),
       ),
     );
   }
-
-  group('PostThreadScreen states', () {
-    testWidgets('shows loading indicator when status is loading', (tester) async {
-      await tester.pumpWidget(buildSubject(state: const PostThreadState(status: PostThreadStatus.loading)));
-
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    });
-
-    testWidgets('shows error message when status is error', (tester) async {
-      await tester.pumpWidget(
-        buildSubject(
-          state: const PostThreadState(status: PostThreadStatus.error, error: 'Failed to load thread'),
-        ),
-      );
-
-      expect(find.text('Failed to load thread'), findsOneWidget);
-      expect(find.byType(FilledButton), findsOneWidget);
-    });
-
-    testWidgets('shows thread loaded text when status is loaded', (tester) async {
-      final thread = ThreadViewPost(post: _makePost());
-      await tester.pumpWidget(
-        buildSubject(
-          state: PostThreadState(status: PostThreadStatus.loaded, thread: thread),
-        ),
-      );
-
-      expect(find.text('Thread loaded'), findsOneWidget);
-    });
-  });
-
-  group('PostThreadScreen full render', () {
-    Widget buildFullScreen({required PostThreadState state}) {
-      when(() => mockCubit.state).thenReturn(state);
-      when(
-        () => mockSavedPostsCubit.state,
-      ).thenReturn(const SavedPostsState(status: SavedPostsStatus.loaded, savedPosts: [], savedUris: {}));
-
-      when(
-        () => mockPostActionRepository.likePost(
-          uri: any(named: 'uri'),
-          cid: any(named: 'cid'),
-        ),
-      ).thenAnswer((_) async => 'at://did:plc:test/app.bsky.feed.like/like1');
-
-      return MaterialApp(
-        home: MultiRepositoryProvider(
-          providers: [
-            RepositoryProvider<PostActionRepository>.value(value: mockPostActionRepository),
-            RepositoryProvider<String>.value(value: 'did:plc:currentuser'),
-          ],
-          child: MultiBlocProvider(
-            providers: [
-              BlocProvider<PostThreadCubit>.value(value: mockCubit),
-              BlocProvider<SavedPostsCubit>.value(value: mockSavedPostsCubit),
-            ],
-            child: Scaffold(
-              appBar: AppBar(title: const Text('Thread')),
-              body: Builder(
-                builder: (context) {
-                  if (state.status == PostThreadStatus.loaded) {
-                    final post = state.thread!.post;
-                    return BlocProvider(
-                      create: (_) => PostActionCubit(
-                        postActionRepository: mockPostActionRepository,
-                        postUri: post.uri.toString(),
-                        postCid: post.cid,
-                      ),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(post.author.displayName ?? post.author.handle),
-                            Text((post.record['text'] as String?) ?? ''),
-                            if ((post.replyCount ?? 0) > 0) Text('${post.replyCount} replies'),
-                            if ((post.repostCount ?? 0) > 0) Text('${post.repostCount} reposts'),
-                            if ((post.likeCount ?? 0) > 0) Text('${post.likeCount} likes'),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    testWidgets('focused post shows author name', (tester) async {
-      final thread = ThreadViewPost(
-        post: _makePost(handle: 'alice.bsky.social', text: 'My focused post'),
-      );
-
-      await tester.pumpWidget(
-        buildFullScreen(
-          state: PostThreadState(status: PostThreadStatus.loaded, thread: thread),
-        ),
-      );
-
-      expect(find.text('alice.bsky.social'), findsOneWidget);
-      expect(find.text('My focused post'), findsOneWidget);
-    });
-
-    testWidgets('focused post shows stats when counts are non-zero', (tester) async {
-      final thread = ThreadViewPost(post: _makePost(replyCount: 24, repostCount: 12, likeCount: 156));
-
-      await tester.pumpWidget(
-        buildFullScreen(
-          state: PostThreadState(status: PostThreadStatus.loaded, thread: thread),
-        ),
-      );
-
-      expect(find.text('24 replies'), findsOneWidget);
-      expect(find.text('12 reposts'), findsOneWidget);
-      expect(find.text('156 likes'), findsOneWidget);
-    });
-
-    testWidgets('focused post does not show stats when counts are zero', (tester) async {
-      final thread = ThreadViewPost(post: _makePost(replyCount: 0, repostCount: 0, likeCount: 0));
-
-      await tester.pumpWidget(
-        buildFullScreen(
-          state: PostThreadState(status: PostThreadStatus.loaded, thread: thread),
-        ),
-      );
-
-      expect(find.text('0 replies'), findsNothing);
-      expect(find.text('0 reposts'), findsNothing);
-      expect(find.text('0 likes'), findsNothing);
-    });
-  });
-
-  group('PostThreadScreen thread structure', () {
-    testWidgets('renders thread app bar title', (tester) async {
-      when(() => mockCubit.state).thenReturn(const PostThreadState(status: PostThreadStatus.loading));
-      when(
-        () => mockSavedPostsCubit.state,
-      ).thenReturn(const SavedPostsState(status: SavedPostsStatus.loaded, savedPosts: [], savedUris: {}));
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: MultiRepositoryProvider(
-            providers: [
-              RepositoryProvider<PostActionRepository>.value(value: mockPostActionRepository),
-              RepositoryProvider<String>.value(value: 'did:plc:currentuser'),
-            ],
-            child: MultiBlocProvider(
-              providers: [
-                BlocProvider<PostThreadCubit>.value(value: mockCubit),
-                BlocProvider<SavedPostsCubit>.value(value: mockSavedPostsCubit),
-              ],
-              child: Scaffold(appBar: AppBar(title: const Text('Thread'))),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Thread'), findsOneWidget);
-    });
-  });
-
-  group('PostThreadState parent chain', () {
-    test('getParentChain returns empty list for root post', () {
-      final thread = ThreadViewPost(post: _makePost());
-      final parents = _extractParentChain(thread);
-
-      expect(parents, isEmpty);
-    });
-
-    test('getParentChain returns single parent in order', () {
-      final parentPost = _makePost(rkey: 'parent1', text: 'Parent post');
-      final childPost = _makePost(rkey: 'child1', text: 'Child post');
-      final parentThread = ThreadViewPost(post: parentPost);
-      final thread = ThreadViewPost(
-        post: childPost,
-        parent: UThreadViewPostParent.threadViewPost(data: parentThread),
-      );
-
-      final parents = _extractParentChain(thread);
-
-      expect(parents.length, 1);
-      expect(parents.first.post.cid, 'cid-parent1');
-    });
-
-    test('getParentChain returns chain in oldest-first order', () {
-      final grandparentPost = _makePost(rkey: 'gp', text: 'Grandparent');
-      final parentPost = _makePost(rkey: 'p', text: 'Parent');
-      final childPost = _makePost(rkey: 'c', text: 'Child');
-
-      final grandparentThread = ThreadViewPost(post: grandparentPost);
-      final parentThread = ThreadViewPost(
-        post: parentPost,
-        parent: UThreadViewPostParent.threadViewPost(data: grandparentThread),
-      );
-      final thread = ThreadViewPost(
-        post: childPost,
-        parent: UThreadViewPostParent.threadViewPost(data: parentThread),
-      );
-
-      final parents = _extractParentChain(thread);
-
-      expect(parents.length, 2);
-      expect(parents[0].post.cid, 'cid-gp');
-      expect(parents[1].post.cid, 'cid-p');
-    });
-
-    test('getParentChain stops at non-thread-view parent', () {
-      final childPost = _makePost(rkey: 'c', text: 'Child');
-      final thread = ThreadViewPost(
-        post: childPost,
-        parent: const UThreadViewPostParent.notFoundPost(data: NotFoundPost(uri: AtUri('at://x/y/z'), notFound: true)),
-      );
-
-      final parents = _extractParentChain(thread);
-
-      expect(parents, isEmpty);
-    });
-  });
-
-  group('PostThreadState replies filtering', () {
-    test('filters out non-thread-view replies', () {
-      final mainPost = _makePost(rkey: 'main');
-      final replyPost = _makePost(rkey: 'reply1', text: 'A reply');
-      final thread = ThreadViewPost(
-        post: mainPost,
-        replies: [
-          UThreadViewPostReplies.threadViewPost(data: ThreadViewPost(post: replyPost)),
-          const UThreadViewPostReplies.notFoundPost(data: NotFoundPost(uri: AtUri('at://x/y/z'), notFound: true)),
-        ],
-      );
-
-      final replies = _extractThreadReplies(thread);
-
-      expect(replies.length, 1);
-      expect(replies.first.post.cid, 'cid-reply1');
-    });
-
-    test('returns empty list when no replies', () {
-      final thread = ThreadViewPost(post: _makePost());
-
-      final replies = _extractThreadReplies(thread);
-
-      expect(replies, isEmpty);
-    });
-  });
 }
 
-/// Mirrors _PostThreadContent._getParentChain for unit testing.
-List<ThreadViewPost> _extractParentChain(ThreadViewPost thread) {
-  final parents = <ThreadViewPost>[];
-  var current = thread.parent;
-  while (current != null && current.isThreadViewPost) {
-    final parentThread = current.threadViewPost!;
-    parents.add(parentThread);
-    current = parentThread.parent;
-  }
-  return parents.reversed.toList();
-}
+void main() {
+  late MockPostActionRepository mockPostActionRepository;
+  late MockSavedPostsCubit mockSavedPostsCubit;
 
-/// Mirrors the reply extraction in _PostThreadContent._buildThread.
-List<ThreadViewPost> _extractThreadReplies(ThreadViewPost thread) {
-  return (thread.replies ?? []).where((r) => r.isThreadViewPost).map((r) => r.threadViewPost!).toList();
+  setUp(() {
+    mockPostActionRepository = MockPostActionRepository();
+    mockSavedPostsCubit = MockSavedPostsCubit();
+
+    const savedState = SavedPostsState(status: SavedPostsStatus.loaded, savedPosts: [], savedUris: {});
+    when(() => mockSavedPostsCubit.state).thenReturn(savedState);
+    whenListen(mockSavedPostsCubit, const Stream<SavedPostsState>.empty(), initialState: savedState);
+  });
+
+  testWidgets('renders nested threaded replies recursively', (tester) async {
+    final grandchild = _makeThread(
+      did: 'did:plc:grandchild',
+      handle: 'grandchild.bsky.social',
+      rkey: 'grandchild',
+      text: 'Grandchild reply',
+    );
+    final child = _makeThread(
+      did: 'did:plc:child',
+      handle: 'child.bsky.social',
+      rkey: 'child',
+      text: 'Child reply',
+      replies: [grandchild],
+    );
+    final parent = _makeThread(
+      did: 'did:plc:parent',
+      handle: 'parent.bsky.social',
+      rkey: 'parent',
+      text: 'Parent reply',
+      replies: [child],
+    );
+
+    await tester.pumpWidget(
+      _ReplyTreeHarness(
+        thread: parent,
+        savedPostsCubit: mockSavedPostsCubit,
+        postActionRepository: mockPostActionRepository,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Parent reply', findRichText: true), findsOneWidget);
+    expect(find.text('Child reply', findRichText: true), findsOneWidget);
+    expect(find.text('Grandchild reply', findRichText: true), findsOneWidget);
+    expect(find.byKey(ValueKey('threadline-${parent.post.uri}')), findsOneWidget);
+    expect(find.byKey(ValueKey('threadline-${child.post.uri}')), findsOneWidget);
+  });
+
+  testWidgets('tapping the threadline collapses and expands a subtree', (tester) async {
+    final grandchild = _makeThread(
+      did: 'did:plc:grandchild',
+      handle: 'grandchild.bsky.social',
+      rkey: 'grandchild',
+      text: 'Grandchild reply',
+    );
+    final child = _makeThread(
+      did: 'did:plc:child',
+      handle: 'child.bsky.social',
+      rkey: 'child',
+      text: 'Child reply',
+      replies: [grandchild],
+    );
+    final parent = _makeThread(
+      did: 'did:plc:parent',
+      handle: 'parent.bsky.social',
+      rkey: 'parent',
+      text: 'Parent reply',
+      replies: [child],
+    );
+
+    await tester.pumpWidget(
+      _ReplyTreeHarness(
+        thread: parent,
+        savedPostsCubit: mockSavedPostsCubit,
+        postActionRepository: mockPostActionRepository,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(ValueKey('threadline-${parent.post.uri}')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.text('Parent reply', findRichText: true), findsNothing);
+    expect(find.text('Child reply', findRichText: true), findsNothing);
+    expect(find.text('Grandchild reply', findRichText: true), findsNothing);
+    expect(find.text('2 REPLIES HIDDEN'), findsOneWidget);
+
+    await tester.tap(find.byKey(ValueKey('threadline-${parent.post.uri}')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.text('Parent reply', findRichText: true), findsOneWidget);
+    expect(find.text('Child reply', findRichText: true), findsOneWidget);
+    expect(find.text('Grandchild reply', findRichText: true), findsOneWidget);
+  });
+
+  testWidgets('long-pressing a reply body collapses the subtree', (tester) async {
+    final child = _makeThread(did: 'did:plc:child', handle: 'child.bsky.social', rkey: 'child', text: 'Child reply');
+    final parent = _makeThread(
+      did: 'did:plc:parent',
+      handle: 'parent.bsky.social',
+      rkey: 'parent',
+      text: 'Parent reply',
+      replies: [child],
+    );
+
+    await tester.pumpWidget(
+      _ReplyTreeHarness(
+        thread: parent,
+        savedPostsCubit: mockSavedPostsCubit,
+        postActionRepository: mockPostActionRepository,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('Parent reply', findRichText: true));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.text('Parent reply', findRichText: true), findsNothing);
+    expect(find.text('Child reply', findRichText: true), findsNothing);
+    expect(find.text('1 REPLY HIDDEN'), findsOneWidget);
+  });
+
+  testWidgets('shows a continue link when replies exceed depth 6', (tester) async {
+    final depth7 = _makeThread(did: 'did:plc:depth7', handle: 'depth7.bsky.social', rkey: 'depth7', text: 'Depth 7');
+    final depth6 = _makeThread(
+      did: 'did:plc:depth6',
+      handle: 'depth6.bsky.social',
+      rkey: 'depth6',
+      text: 'Depth 6',
+      replies: [depth7],
+    );
+    final depth5 = _makeThread(
+      did: 'did:plc:depth5',
+      handle: 'depth5.bsky.social',
+      rkey: 'depth5',
+      text: 'Depth 5',
+      replies: [depth6],
+    );
+    final depth4 = _makeThread(
+      did: 'did:plc:depth4',
+      handle: 'depth4.bsky.social',
+      rkey: 'depth4',
+      text: 'Depth 4',
+      replies: [depth5],
+    );
+    final depth3 = _makeThread(
+      did: 'did:plc:depth3',
+      handle: 'depth3.bsky.social',
+      rkey: 'depth3',
+      text: 'Depth 3',
+      replies: [depth4],
+    );
+    final depth2 = _makeThread(
+      did: 'did:plc:depth2',
+      handle: 'depth2.bsky.social',
+      rkey: 'depth2',
+      text: 'Depth 2',
+      replies: [depth3],
+    );
+    final depth1 = _makeThread(
+      did: 'did:plc:depth1',
+      handle: 'depth1.bsky.social',
+      rkey: 'depth1',
+      text: 'Depth 1',
+      replies: [depth2],
+    );
+
+    ThreadViewPost? continuedThread;
+
+    await tester.pumpWidget(
+      _ReplyTreeHarness(
+        thread: depth1,
+        savedPostsCubit: mockSavedPostsCubit,
+        postActionRepository: mockPostActionRepository,
+        onContinueThread: (thread) {
+          continuedThread = thread;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Depth 6', findRichText: true), findsOneWidget);
+    expect(find.text('Depth 7', findRichText: true), findsNothing);
+    expect(find.text('Continue this thread →'), findsOneWidget);
+
+    await tester.scrollUntilVisible(find.text('Continue this thread →'), 200);
+    await tester.tap(find.text('Continue this thread →'));
+    await tester.pumpAndSettle();
+
+    expect(continuedThread?.post.uri.toString(), depth7.post.uri.toString());
+  });
+
+  test('computeInitialCollapsedThreadUris skips OP replies and leaves shallow branches expanded', () {
+    final leaf = _makeThread(did: 'did:plc:leaf', handle: 'leaf.bsky.social', rkey: 'leaf', text: 'Leaf');
+    final deepBranch = _makeThread(
+      did: 'did:plc:other',
+      handle: 'other.bsky.social',
+      rkey: 'deep-branch',
+      text: 'Deep branch',
+      replies: [leaf],
+    );
+    final opBranch = _makeThread(
+      did: 'did:plc:op',
+      handle: 'op.bsky.social',
+      rkey: 'op-branch',
+      text: 'OP branch',
+      replies: [leaf],
+    );
+    final depth2 = _makeThread(
+      did: 'did:plc:user2',
+      handle: 'user2.bsky.social',
+      rkey: 'depth2',
+      text: 'Depth 2',
+      replies: [deepBranch, opBranch],
+    );
+    final depth1 = _makeThread(
+      did: 'did:plc:user1',
+      handle: 'user1.bsky.social',
+      rkey: 'depth1',
+      text: 'Depth 1',
+      replies: [depth2],
+    );
+    final root = _makeThread(
+      did: 'did:plc:op',
+      handle: 'op.bsky.social',
+      rkey: 'root',
+      text: 'Root',
+      replies: [depth1],
+    );
+
+    final collapsedUris = computeInitialCollapsedThreadUris(root, autoCollapseDepth: 2);
+
+    expect(collapsedUris, contains(deepBranch.post.uri.toString()));
+    expect(collapsedUris, isNot(contains(opBranch.post.uri.toString())));
+    expect(collapsedUris, isNot(contains(leaf.post.uri.toString())));
+    expect(collapsedUris, isNot(contains(depth2.post.uri.toString())));
+  });
+
+  testWidgets('initial collapsed URIs hide deep non-OP branches on first render', (tester) async {
+    final hiddenLeaf = _makeThread(
+      did: 'did:plc:hidden-leaf',
+      handle: 'hidden-leaf.bsky.social',
+      rkey: 'hidden-leaf',
+      text: 'Hidden leaf',
+    );
+    final visibleLeaf = _makeThread(
+      did: 'did:plc:visible-leaf',
+      handle: 'visible-leaf.bsky.social',
+      rkey: 'visible-leaf',
+      text: 'Visible leaf',
+    );
+    final hiddenBranch = _makeThread(
+      did: 'did:plc:other',
+      handle: 'other.bsky.social',
+      rkey: 'hidden-branch',
+      text: 'Hidden branch',
+      replies: [hiddenLeaf],
+    );
+    final opBranch = _makeThread(
+      did: 'did:plc:op',
+      handle: 'op.bsky.social',
+      rkey: 'op-branch',
+      text: 'OP branch',
+      replies: [visibleLeaf],
+    );
+    final depth2 = _makeThread(
+      did: 'did:plc:user2',
+      handle: 'user2.bsky.social',
+      rkey: 'depth2',
+      text: 'Depth 2',
+      replies: [hiddenBranch, opBranch],
+    );
+    final depth1 = _makeThread(
+      did: 'did:plc:user1',
+      handle: 'user1.bsky.social',
+      rkey: 'depth1',
+      text: 'Depth 1',
+      replies: [depth2],
+    );
+    final root = _makeThread(
+      did: 'did:plc:op',
+      handle: 'op.bsky.social',
+      rkey: 'root',
+      text: 'Root',
+      replies: [depth1],
+    );
+
+    await tester.pumpWidget(
+      _ReplyTreeHarness(
+        thread: depth1,
+        savedPostsCubit: mockSavedPostsCubit,
+        postActionRepository: mockPostActionRepository,
+        initialCollapsedUris: computeInitialCollapsedThreadUris(root, autoCollapseDepth: 2),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hidden branch', findRichText: true), findsNothing);
+    expect(find.text('Hidden leaf', findRichText: true), findsNothing);
+    expect(find.text('1 REPLY HIDDEN'), findsOneWidget);
+    expect(find.text('OP branch', findRichText: true), findsOneWidget);
+    expect(find.text('Visible leaf', findRichText: true), findsOneWidget);
+  });
 }

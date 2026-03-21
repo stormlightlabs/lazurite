@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
+import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/ui_density.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
@@ -47,6 +49,9 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Appearance'),
           _buildThemeSelector(context),
+          const SizedBox(height: 24),
+          _buildSectionHeader(context, 'Layout'),
+          _buildLayoutSettings(context),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Account'),
           _SettingsTile(
@@ -197,6 +202,67 @@ class SettingsScreen extends StatelessWidget {
       },
     );
   }
+
+  Widget _buildLayoutSettings(BuildContext context) {
+    final settingsCubit = context.read<SettingsCubit>();
+
+    return BlocBuilder<SettingsCubit, SettingsState>(
+      builder: (context, state) {
+        return Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: Theme.of(context).dividerColor),
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            color: Theme.of(context).cardColor,
+          ),
+          child: Column(
+            children: [
+              _SettingsDropdownTile<UiDensity>(
+                title: 'UI Density',
+                value: state.uiDensity,
+                options: UiDensity.values,
+                labelBuilder: (density) => switch (density) {
+                  UiDensity.compact => 'Compact',
+                  UiDensity.standard => 'Standard',
+                  UiDensity.relaxed => 'Relaxed',
+                },
+                onChanged: (value) {
+                  if (value != null) {
+                    settingsCubit.setUiDensity(value);
+                  }
+                },
+              ),
+              const Divider(height: 1),
+              _SettingsDropdownTile<FeedArchitecture>(
+                title: 'Feed Architecture',
+                value: state.feedArchitecture,
+                options: FeedArchitecture.values,
+                labelBuilder: (architecture) => switch (architecture) {
+                  FeedArchitecture.grid => 'Grid',
+                  FeedArchitecture.linear => 'Linear',
+                },
+                onChanged: (value) {
+                  if (value != null) {
+                    settingsCubit.setFeedArchitecture(value);
+                  }
+                },
+              ),
+              const Divider(height: 1),
+              _SettingsDropdownTile<int?>(
+                title: 'Thread Auto-Collapse',
+                subtitle: 'Collapse reply branches deeper than the selected level',
+                value: state.threadAutoCollapseDepth,
+                options: const <int?>[null, 1, 2, 3, 4, 5, 6],
+                labelBuilder: (depth) => depth == null ? 'Off' : 'Depth $depth',
+                onChanged: settingsCubit.setThreadAutoCollapseDepth,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 enum _AppearanceMode {
@@ -241,6 +307,39 @@ class _ThemePaletteRow extends StatelessWidget {
             Icon(Icons.check, color: Theme.of(context).colorScheme.primary, size: 20),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _SettingsDropdownTile<T> extends StatelessWidget {
+  const _SettingsDropdownTile({
+    required this.title,
+    required this.value,
+    required this.options,
+    required this.labelBuilder,
+    required this.onChanged,
+    this.subtitle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final T value;
+  final List<T> options;
+  final String Function(T value) labelBuilder;
+  final ValueChanged<T?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text(title),
+      subtitle: subtitle != null ? Text(subtitle!) : null,
+      trailing: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          onChanged: onChanged,
+          items: [for (final option in options) DropdownMenuItem<T>(value: option, child: Text(labelBuilder(option)))],
+        ),
       ),
     );
   }

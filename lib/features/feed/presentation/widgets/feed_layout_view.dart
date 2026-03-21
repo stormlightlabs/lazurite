@@ -65,7 +65,6 @@ class FeedLayoutView extends StatelessWidget {
               crossAxisCount: columns,
               crossAxisSpacing: _gridSpacing,
               mainAxisSpacing: _gridSpacing,
-              // Grid cards have a square media region plus fixed author/body/footer chrome.
               mainAxisExtent: tileWidth + _gridCardChromeHeight,
             ),
           ),

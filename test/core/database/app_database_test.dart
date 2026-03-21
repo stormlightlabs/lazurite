@@ -185,6 +185,13 @@ void main() {
 
         expect(value, isNull);
       });
+
+      test('should persist thread auto-collapse depth setting', () async {
+        await database.setSetting('thread_auto_collapse_depth', '3');
+        final value = await database.getSetting('thread_auto_collapse_depth');
+
+        expect(value, equals('3'));
+      });
     });
   });
 }

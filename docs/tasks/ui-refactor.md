@@ -56,16 +56,16 @@
 
 ## M6 — Collapsible Threaded Replies
 
-- [ ] Recursive `ThreadReplyNode` widget that renders nested replies from `ThreadViewPost.replies`
-- [ ] Indentation with cumulative `24px` left padding per depth level
-- [ ] Color-coded vertical threadlines (cycle palette of 6 muted theme-derived colors)
-- [ ] Tap-threadline-to-collapse interaction with `24dp` touch target
-- [ ] Long-press-to-collapse as secondary affordance
-- [ ] Collapsed state: header visible, body/children hidden, "N replies hidden" indicator
-- [ ] `AnimatedSize` / `AnimatedCrossFade` collapse transition (`200ms`)
-- [ ] Depth cap at 6 with "Continue this thread →" navigation link
-- [ ] Local collapse state via `Set<String>` of post URIs in screen `State`
-- [ ] `thread_auto_collapse_depth` setting in Drift + Drift migration
-- [ ] Expose auto-collapse depth in Layout Settings screen
-- [ ] Never auto-collapse OP replies
-- [ ] Tests for thread tree rendering, collapse/expand, depth cap, and auto-collapse behavior
+- [x] Recursive `ThreadReplyNode` widget that renders nested replies from `ThreadViewPost.replies`
+- [x] Indentation with cumulative `24px` left padding per depth level
+- [x] Color-coded vertical threadlines (cycle palette of 6 muted theme-derived colors)
+- [x] Tap-threadline-to-collapse interaction with `24dp` touch target
+- [x] Long-press-to-collapse as secondary affordance
+- [x] Collapsed state: header visible, body/children hidden, "N replies hidden" indicator
+- [x] `AnimatedSize` / `AnimatedCrossFade` collapse transition (`200ms`)
+- [x] Depth cap at 6 with "Continue this thread →" navigation link
+- [x] Local collapse state via `Set<String>` of post URIs in screen `State`
+- [x] `thread_auto_collapse_depth` setting in Drift + Drift migration
+- [x] Expose auto-collapse depth in Layout Settings screen
+- [x] Never auto-collapse OP replies
+- [x] Tests for thread tree rendering, collapse/expand, depth cap, and auto-collapse behavior

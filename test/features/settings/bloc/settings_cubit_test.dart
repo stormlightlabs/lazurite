@@ -27,6 +27,7 @@ void main() {
       expect(cubit.state.useSystemTheme, false);
       expect(cubit.state.uiDensity, UiDensity.standard);
       expect(cubit.state.feedArchitecture, FeedArchitecture.grid);
+      expect(cubit.state.threadAutoCollapseDepth, isNull);
     });
 
     test('accepts initial values via constructor', () {
@@ -37,12 +38,14 @@ void main() {
         initialUseSystemTheme: true,
         initialUiDensity: UiDensity.compact,
         initialFeedArchitecture: FeedArchitecture.linear,
+        initialThreadAutoCollapseDepth: 3,
       );
       expect(cubit.state.themePalette, AppThemePalette.catppuccin);
       expect(cubit.state.themeVariant, AppThemeVariant.light);
       expect(cubit.state.useSystemTheme, true);
       expect(cubit.state.uiDensity, UiDensity.compact);
       expect(cubit.state.feedArchitecture, FeedArchitecture.linear);
+      expect(cubit.state.threadAutoCollapseDepth, 3);
     });
 
     blocTest<SettingsCubit, SettingsState>(
@@ -54,6 +57,7 @@ void main() {
         await database.setSetting('use_system_theme', 'true');
         await database.setSetting('ui_density', 'compact');
         await database.setSetting('feed_architecture', 'linear');
+        await database.setSetting('thread_auto_collapse_depth', '4');
       },
       act: (cubit) => cubit.loadSettings(),
       expect: () => [
@@ -62,7 +66,8 @@ void main() {
             .having((s) => s.themeVariant, 'themeVariant', AppThemeVariant.light)
             .having((s) => s.useSystemTheme, 'useSystemTheme', true)
             .having((s) => s.uiDensity, 'uiDensity', UiDensity.compact)
-            .having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.linear),
+            .having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.linear)
+            .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', 4),
       ],
     );
 
@@ -76,7 +81,8 @@ void main() {
             .having((s) => s.themeVariant, 'themeVariant', AppThemeVariant.dark)
             .having((s) => s.useSystemTheme, 'useSystemTheme', false)
             .having((s) => s.uiDensity, 'uiDensity', UiDensity.standard)
-            .having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.grid),
+            .having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.grid)
+            .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', isNull),
       ],
     );
 
@@ -175,17 +181,44 @@ void main() {
     );
 
     blocTest<SettingsCubit, SettingsState>(
-      'loadSettings round-trips ui_density and feed_architecture',
+      'setThreadAutoCollapseDepth updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setThreadAutoCollapseDepth(5),
+      expect: () => [isA<SettingsState>().having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', 5)],
+      verify: (cubit) async {
+        final value = await database.getSetting('thread_auto_collapse_depth');
+        expect(value, '5');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setThreadAutoCollapseDepth null clears the persisted setting',
+      build: () => SettingsCubit(database: database, initialThreadAutoCollapseDepth: 4),
+      setUp: () async {
+        await database.setSetting('thread_auto_collapse_depth', '4');
+      },
+      act: (cubit) => cubit.setThreadAutoCollapseDepth(null),
+      expect: () => [isA<SettingsState>().having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', isNull)],
+      verify: (cubit) async {
+        final value = await database.getSetting('thread_auto_collapse_depth');
+        expect(value, isNull);
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'loadSettings round-trips ui_density, feed_architecture, and thread auto-collapse depth',
       build: () => SettingsCubit(database: database),
       setUp: () async {
         await database.setSetting('ui_density', 'relaxed');
         await database.setSetting('feed_architecture', 'linear');
+        await database.setSetting('thread_auto_collapse_depth', '6');
       },
       act: (cubit) => cubit.loadSettings(),
       expect: () => [
         isA<SettingsState>()
             .having((s) => s.uiDensity, 'uiDensity', UiDensity.relaxed)
-            .having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.linear),
+            .having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.linear)
+            .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', 6),
       ],
     );
   });

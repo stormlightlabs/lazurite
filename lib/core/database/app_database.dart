@@ -23,7 +23,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -63,6 +63,12 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           "INSERT OR IGNORE INTO settings (key, value) VALUES ('ui_density', 'standard'), ('feed_architecture', 'grid')",
         );
+      }
+      if (from < 11) {
+        /*
+          The thread auto-collapse setting is nullable and represented by
+          the presence or absence of a row in the existing settings table.
+        */
       }
     },
   );

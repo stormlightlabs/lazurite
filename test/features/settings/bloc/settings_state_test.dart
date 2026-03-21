@@ -100,6 +100,23 @@ void main() {
       expect(state1, isNot(equals(state2)));
     });
 
+    test('inequality when threadAutoCollapseDepth differs', () {
+      const state1 = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        threadAutoCollapseDepth: 2,
+      );
+      const state2 = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        threadAutoCollapseDepth: 4,
+      );
+
+      expect(state1, isNot(equals(state2)));
+    });
+
     test('copyWith returns new instance with updated values', () {
       const original = SettingsState(
         themePalette: AppThemePalette.oxocarbon,
@@ -113,6 +130,7 @@ void main() {
         useSystemTheme: true,
         uiDensity: UiDensity.compact,
         feedArchitecture: FeedArchitecture.linear,
+        threadAutoCollapseDepth: 3,
       );
 
       expect(updated.themePalette, AppThemePalette.nord);
@@ -120,6 +138,7 @@ void main() {
       expect(updated.useSystemTheme, true);
       expect(updated.uiDensity, UiDensity.compact);
       expect(updated.feedArchitecture, FeedArchitecture.linear);
+      expect(updated.threadAutoCollapseDepth, 3);
       expect(original.themePalette, AppThemePalette.oxocarbon);
     });
 
@@ -130,6 +149,7 @@ void main() {
         useSystemTheme: true,
         uiDensity: UiDensity.relaxed,
         feedArchitecture: FeedArchitecture.linear,
+        threadAutoCollapseDepth: 4,
       );
 
       final updated = original.copyWith();
@@ -139,6 +159,20 @@ void main() {
       expect(updated.useSystemTheme, true);
       expect(updated.uiDensity, UiDensity.relaxed);
       expect(updated.feedArchitecture, FeedArchitecture.linear);
+      expect(updated.threadAutoCollapseDepth, 4);
+    });
+
+    test('copyWith can clear threadAutoCollapseDepth', () {
+      const original = SettingsState(
+        themePalette: AppThemePalette.catppuccin,
+        themeVariant: AppThemeVariant.light,
+        useSystemTheme: true,
+        threadAutoCollapseDepth: 5,
+      );
+
+      final updated = original.copyWith(threadAutoCollapseDepth: null);
+
+      expect(updated.threadAutoCollapseDepth, isNull);
     });
 
     test('props includes all fields', () {
@@ -148,6 +182,7 @@ void main() {
         useSystemTheme: true,
         uiDensity: UiDensity.compact,
         feedArchitecture: FeedArchitecture.linear,
+        threadAutoCollapseDepth: 6,
       );
 
       expect(state.props, contains(AppThemePalette.rosePine));
@@ -155,6 +190,7 @@ void main() {
       expect(state.props, contains(true));
       expect(state.props, contains(UiDensity.compact));
       expect(state.props, contains(FeedArchitecture.linear));
+      expect(state.props, contains(6));
     });
 
     test('defaults uiDensity to standard', () {
@@ -173,6 +209,15 @@ void main() {
         useSystemTheme: false,
       );
       expect(state.feedArchitecture, FeedArchitecture.grid);
+    });
+
+    test('defaults threadAutoCollapseDepth to null', () {
+      const state = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+      );
+      expect(state.threadAutoCollapseDepth, isNull);
     });
   });
 }
