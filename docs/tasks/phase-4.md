@@ -2,40 +2,11 @@
 
 ## M12 — Direct Messages
 
-- [x] Conversation list screen via `chat.bsky.convo.listConvos` with pagination
-- [x] `ConvoListBloc` — events: `ConvosRequested`, `ConvosRefreshed`, `ConvoMuted`, `ConvoUnmuted`
-- [x] Primary / Requests tab filtering on conversation list
-- [x] Message thread screen via `chat.bsky.convo.getMessages` with pagination
-- [x] `MessageBloc` — events: `MessagesRequested`, `MessagesPageLoaded`, `MessageSent`, `MessageDeleted`, `ConvoMarkedRead`
-- [x] Chat bubble layout — current user right-aligned, others left-aligned
-- [x] Send messages via `chat.bsky.convo.sendMessage`
-- [x] New conversation via `chat.bsky.convo.getConvoForMembers`
-- [x] Long-press to copy individual messages, overflow menu "Copy All" for full thread
-- [x] Mute / unmute conversations
-- [x] Mark conversation as read via `chat.bsky.convo.updateRead`
+Completed [2026-03-19](../../CHANGELOG.md#2026-03-19)
 
 ## M13 — Media Playback & Download
 
-- [x] Add `photo_view`, `video_player`, `chewie`, `dio`, `gal`, `permission_handler` to `pubspec.yaml`
-
-### Images
-
-- [x] `ImageViewerScreen` — full-screen `PageView` of `PhotoView` widgets loading `fullsize` URLs with hero animation from thumbnail
-- [x] Page indicator for multi-image posts; alt text bar at the bottom of each page
-- [x] Swipe-down-to-dismiss gesture on image viewer
-- [x] Download button in image viewer toolbar — request permission, download via `dio` with progress indicator, save via `gal`, show snackbar result
-- [x] Share button in image viewer toolbar via `share_plus`
-- [x] Long-press context menu on image thumbnails in post cards — "Save image" and "Share" options
-
-### Video Player
-
-- [x] `VideoPlayerScreen` — `chewie` wrapping `VideoPlayerController.networkUrl` with HLS `playlist` URL
-- [x] Video player uses embed `aspectRatio` when available, defaults to 16:9
-- [x] Video thumbnail as placeholder until player initialises; controller disposed on screen pop
-- [x] GIF-presentation mode — auto-play, loop, muted, controls hidden when `presentation` is `"gif"`
-- [x] Download button in video player toolbar — parse `.m3u8` for highest-bandwidth variant URL, download MP4 via `dio` with progress, save via `gal`
-- [x] Declare `NSPhotoLibraryAddUsageDescription` in `Info.plist` and storage permissions in `AndroidManifest.xml`
-- [x] Replace `_launchExternal` calls for image/video embeds in `PostCard` with navigation to the new viewer screens
+Completed [2026-03-19](../../CHANGELOG.md#2026-03-19)
 
 ## M14 — Account Switching
 
@@ -59,29 +30,11 @@
 
 ## M16 — Jump to Profile
 
-- [x] Floating action button on search screen
-- [x] Handle input dialog with autocomplete via `searchActorsTypeahead`
-- [x] Navigate to profile screen on selection or enter
-- [x] Update bottom navigation to include Notifications and Messages tabs (5-tab layout)
+Completed [2026-03-19](../../CHANGELOG.md#2026-03-19)
 
 ## M17 — Labelers & Content Moderation
 
-- [x] Fetch user's labeler subscriptions from preferences via `app.bsky.actor.getPreferences` (`labelersPref`)
-- [x] Include subscribed labeler DIDs in `atproto-accept-labelers` header on all XRPC requests
-- [x] `ModerationService` — wraps the `bluesky` package's `moderatePost`, `moderateProfile`, `moderateNotification` functions
-- [x] Run moderation decisions on all displayed posts and profiles
-- [x] Apply `ModerationUI` results: filter, blur, alert, inform per display context (contentList, contentView, contentMedia, avatar, profileList, profileView)
-- [x] Blur overlay on posts/media with click-through "Show content" button
-- [x] Warning badges on profiles and posts for alert/inform labels
-- [x] Content filtering — remove posts with `filter` decisions from feed and notification lists
-- [x] Labeler management screen: list subscribed labelers via `app.bsky.labeler.getServices`
-- [x] Subscribe / unsubscribe to labelers by updating `labelersPref` via `putPreferences`
-- [x] Per-label preference configuration: ignore / warn / hide per label value per labeler
-- [x] Store label preferences as `contentLabelPref` entries via `putPreferences`
-- [x] Adult content toggle (requires `adultContentEnabled` preference)
-- [x] Self-label support — render self-labels embedded in posts and profiles
-- [x] Labeler detail screen: show labeler creator, policies, and custom label definitions with localised names
-- [x] Drift table: `labeler_cache` (labeler_did, policies_json, fetched_at) for offline label definition lookup
+Completed [2026-03-21](../../CHANGELOG.md#2026-03-21)
 
 ## M18 — Lists
 

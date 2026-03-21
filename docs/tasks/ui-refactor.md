@@ -2,48 +2,23 @@
 
 ## M0 — Foundation & Layout Settings Persistence
 
-- [x] Add `ui_density` and `feed_architecture` keys to Drift `settings` table
-- [x] Drift migration for new settings keys
-- [x] Extend `SettingsCubit` / `SettingsState` with density and feed architecture fields
-- [x] `UiDensity` enum (`compact`, `standard`, `relaxed`) with padding scale factors
-- [x] `FeedArchitecture` enum (`grid`, `linear`)
-- [x] Theme extension or `InheritedWidget` that provides density-scaled spacing values
+Completed 2026-03-20
 
 ## M1 — Navigation Chrome
 
-- [x] Custom top app bar widget replacing stock `AppBar` — hamburger, section label, avatar
-- [x] Home-screen variant with inline feed switcher tabs
-- [x] Navigation drawer with Messages and Settings entries
-- [x] Refactor `AppShell` bottom nav: 6 tabs → 4 (Home, Search, Alerts, Profile)
-- [x] Bottom nav styling: `h-80`, semi-transparent blur background, labels, filled active icon
-- [x] Route updates — Messages and Settings accessible via drawer instead of bottom tabs
-- [x] Tests for navigation (drawer opens, tabs switch, routes resolve)
+Completed 2026-03-20
 
 ## M2 — Post Card Variants
 
-- [x] Refactor `PostCard` to the linear variant: square avatars, uppercase handle, bordered footer
-- [x] New `GridPostCard` widget — image region, content region, footer
-- [x] Text-only grid card variant (no image — expanded body text)
-- [x] Shared `PostCardFooter` widget (action icons left, timestamp right, top border)
-- [x] Wire both variants to `PostCardWithActions` for action state management
-- [x] Tests for both card variants
+Completed 2026-03-20
 
 ## M3 — Home Feed Grid Layout
 
-- [x] `HomeFeedScreen` reads `feed_architecture` from `SettingsCubit`
-- [x] Grid mode: responsive `SliverGrid` with breakpoint-based column count
-- [x] Linear mode: existing `ListView` of linear post cards (with more space around cards)
-- [x] Feed architecture toggle triggers rebuild without re-fetch
-- [x] Tests for grid/linear switching and column count at breakpoints
+Completed 2026-03-20
 
 ## M4 — Profile Screen Refactor
 
-- [x] Profile header: square avatar, cover image (grayscale, opacity), stats row with border
-- [x] Display name uppercase + tight tracking, handle below
-- [x] Sticky tab bar with backdrop blur and uppercase labels
-- [x] Large-card grid layout for profile posts in grid mode, with the metadata info card retained above the feed
-- [x] Linear fallback for profile posts when feed architecture is "linear"
-- [x] Tests for profile header rendering and layout mode switching
+Completed 2026-03-20
 
 ## M5 — Layout Settings Screen
 
@@ -56,16 +31,4 @@
 
 ## M6 — Collapsible Threaded Replies
 
-- [x] Recursive `ThreadReplyNode` widget that renders nested replies from `ThreadViewPost.replies`
-- [x] Indentation with cumulative `24px` left padding per depth level
-- [x] Color-coded vertical threadlines (cycle palette of 6 muted theme-derived colors)
-- [x] Tap-threadline-to-collapse interaction with `24dp` touch target
-- [x] Long-press-to-collapse as secondary affordance
-- [x] Collapsed state: header visible, body/children hidden, "N replies hidden" indicator
-- [x] `AnimatedSize` / `AnimatedCrossFade` collapse transition (`200ms`)
-- [x] Depth cap at 6 with "Continue this thread →" navigation link
-- [x] Local collapse state via `Set<String>` of post URIs in screen `State`
-- [x] `thread_auto_collapse_depth` setting in Drift + Drift migration
-- [x] Expose auto-collapse depth in Layout Settings screen
-- [x] Never auto-collapse OP replies
-- [x] Tests for thread tree rendering, collapse/expand, depth cap, and auto-collapse behavior
+Completed [2026-03-21](../../CHANGELOG.md#2026-03-21)
