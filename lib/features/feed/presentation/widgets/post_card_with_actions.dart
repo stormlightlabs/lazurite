@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,12 +25,14 @@ class PostCardWithActions extends StatelessWidget {
     required this.accountDid,
     this.variant = PostCardVariant.linear,
     this.onDeleted,
+    this.moderationContext = bsky_moderation.ModerationBehaviorContext.contentList,
   });
 
   final FeedViewPost feedViewPost;
   final String accountDid;
   final PostCardVariant variant;
   final VoidCallback? onDeleted;
+  final bsky_moderation.ModerationBehaviorContext moderationContext;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +57,7 @@ class PostCardWithActions extends StatelessWidget {
         accountDid: accountDid,
         variant: variant,
         onDeleted: onDeleted,
+        moderationContext: moderationContext,
       ),
     );
   }
@@ -65,12 +69,14 @@ class _PostCardWithActionsContent extends StatelessWidget {
     required this.accountDid,
     required this.variant,
     this.onDeleted,
+    required this.moderationContext,
   });
 
   final FeedViewPost feedViewPost;
   final String accountDid;
   final PostCardVariant variant;
   final VoidCallback? onDeleted;
+  final bsky_moderation.ModerationBehaviorContext moderationContext;
 
   @override
   Widget build(BuildContext context) {
@@ -116,9 +122,19 @@ class _PostCardWithActionsContent extends StatelessWidget {
   Widget _buildCard(BuildContext context) {
     Future<Object?> onTap() => context.push('/post?uri=${Uri.encodeQueryComponent(feedViewPost.post.uri.toString())}');
     if (variant == PostCardVariant.grid) {
-      return GridPostCard(feedViewPost: feedViewPost, footer: _buildFooter(context), onTap: onTap);
+      return GridPostCard(
+        feedViewPost: feedViewPost,
+        footer: _buildFooter(context),
+        onTap: onTap,
+        moderationContext: moderationContext,
+      );
     }
-    return PostCard(feedViewPost: feedViewPost, actionBar: _buildFooter(context), onTap: onTap);
+    return PostCard(
+      feedViewPost: feedViewPost,
+      actionBar: _buildFooter(context),
+      onTap: onTap,
+      moderationContext: moderationContext,
+    );
   }
 
   Widget _buildFooter(BuildContext context) {

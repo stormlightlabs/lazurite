@@ -5,6 +5,7 @@ import 'package:bluesky/app_bsky_embed_recordwithmedia.dart';
 import 'package:bluesky/app_bsky_embed_video.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
+import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
@@ -12,6 +13,8 @@ import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
+import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Renders the appropriate embed widget for a post embed.
@@ -79,39 +82,47 @@ class PostEmbedView extends StatelessWidget {
     final crossAxisCount = images.length == 1 ? 1 : 2;
     final childAspectRatio = images.length == 1 ? 16 / 9 : 1.0;
     final postUri = feedViewPost.post.uri.toString();
+    final moderationService = maybeModerationService(context);
+    final mediaUi =
+        moderationService?.postUi(feedViewPost.post, bsky_moderation.ModerationBehaviorContext.contentMedia) ??
+        const bsky_moderation.ModerationUI();
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: images.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-        childAspectRatio: childAspectRatio,
-      ),
-      itemBuilder: (context, index) {
-        final image = images[index];
-        final heroTag = _imageHeroTag(postUri, index);
+    return ModeratedBlurOverlay(
+      ui: mediaUi,
+      borderRadius: BorderRadius.circular(12),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: images.length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: 2,
+          mainAxisSpacing: 2,
+          childAspectRatio: childAspectRatio,
+        ),
+        itemBuilder: (context, index) {
+          final image = images[index];
+          final heroTag = _imageHeroTag(postUri, index);
 
-        return GestureDetector(
-          onLongPressStart: (details) => _showImageContextMenu(context, details.globalPosition, image: image),
-          child: InkWell(
-            onTap: () => _openImageViewer(context, images, initialIndex: index),
-            child: Hero(
-              tag: heroTag,
-              child: Image.network(
-                image.thumb,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => ColoredBox(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: const Center(child: Icon(Icons.image_not_supported_outlined)),
+          return GestureDetector(
+            onLongPressStart: (details) => _showImageContextMenu(context, details.globalPosition, image: image),
+            child: InkWell(
+              onTap: () => _openImageViewer(context, images, initialIndex: index),
+              child: Hero(
+                tag: heroTag,
+                child: Image.network(
+                  image.thumb,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => ColoredBox(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: const Center(child: Icon(Icons.image_not_supported_outlined)),
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -175,46 +186,55 @@ class PostEmbedView extends StatelessWidget {
   }
 
   Widget _buildVideoEmbed(BuildContext context, EmbedVideoView video) {
-    return InkWell(
-      onTap: () => _openVideoViewer(context, video),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          AspectRatio(
-            aspectRatio: video.aspectRatio == null ? 16 / 9 : video.aspectRatio!.width / video.aspectRatio!.height,
-            child: video.thumbnail == null
-                ? ColoredBox(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: const SizedBox.expand(),
-                  )
-                : Image.network(
-                    video.thumbnail!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => ColoredBox(
+    final moderationService = maybeModerationService(context);
+    final mediaUi =
+        moderationService?.postUi(feedViewPost.post, bsky_moderation.ModerationBehaviorContext.contentMedia) ??
+        const bsky_moderation.ModerationUI();
+
+    return ModeratedBlurOverlay(
+      ui: mediaUi,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: () => _openVideoViewer(context, video),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            AspectRatio(
+              aspectRatio: video.aspectRatio == null ? 16 / 9 : video.aspectRatio!.width / video.aspectRatio!.height,
+              child: video.thumbnail == null
+                  ? ColoredBox(
                       color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: const SizedBox.expand(),
+                    )
+                  : Image.network(
+                      video.thumbnail!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => ColoredBox(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        child: const SizedBox.expand(),
+                      ),
                     ),
-                  ),
-          ),
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.65), shape: BoxShape.circle),
-            child: const Icon(Icons.play_arrow, color: Colors.white, size: 28),
-          ),
-          if (video.alt?.isNotEmpty ?? false)
-            Positioned(
-              left: 12,
-              right: 12,
-              bottom: 12,
-              child: Text(
-                video.alt!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
-              ),
             ),
-        ],
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.65), shape: BoxShape.circle),
+              child: const Icon(Icons.play_arrow, color: Colors.white, size: 28),
+            ),
+            if (video.alt?.isNotEmpty ?? false)
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: Text(
+                  video.alt!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

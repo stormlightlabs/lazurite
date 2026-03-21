@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,6 +13,9 @@ import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
@@ -237,34 +241,24 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Widget _buildSquareAvatar(BuildContext context, ProfileViewDetailed? profile, double size) {
     final colorScheme = Theme.of(context).colorScheme;
-    final avatarUrl = profile?.avatar;
+    final moderationService = maybeModerationService(context);
+    final avatarUi = profile == null
+        ? const bsky_moderation.ModerationUI()
+        : moderationService?.profileDetailedUi(profile, bsky_moderation.ModerationBehaviorContext.avatar) ??
+              const bsky_moderation.ModerationUI();
 
-    return Container(
+    return SizedBox(
       key: const ValueKey('profile_square_avatar'),
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
+      child: ModeratedAvatar(
+        size: size,
+        ui: avatarUi,
+        imageUrl: profile?.avatar,
+        initials: _initials(profile?.displayName ?? profile?.handle ?? '?'),
+        shape: BoxShape.rectangle,
         border: Border.all(color: colorScheme.surfaceContainerLowest, width: 4),
-      ),
-      child: avatarUrl != null
-          ? Image.network(
-              avatarUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => _buildAvatarInitials(context, profile),
-            )
-          : _buildAvatarInitials(context, profile),
-    );
-  }
-
-  Widget _buildAvatarInitials(BuildContext context, ProfileViewDetailed? profile) {
-    return ColoredBox(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Text(
-          _initials(profile?.displayName ?? profile?.handle ?? '?'),
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
+        placeholderTextStyle: Theme.of(context).textTheme.headlineSmall,
       ),
     );
   }
@@ -290,6 +284,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final moderationService = maybeModerationService(context);
+    final profileUi =
+        moderationService?.profileDetailedUi(profile, bsky_moderation.ModerationBehaviorContext.profileView) ??
+        const bsky_moderation.ModerationUI();
 
     final metaChildren = <Widget>[
       if (profile.pronouns?.isNotEmpty ?? false)
@@ -316,6 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           const SizedBox(height: 4),
 
           Text('@${profile.handle}', style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+          if (profileUi.alert || profileUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: profileUi)],
           if (profile.description?.isNotEmpty ?? false) ...[
             const SizedBox(height: 12),
 
@@ -562,6 +561,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     feedViewPost: feedState.posts[index],
                     accountDid: accountDid,
                     variant: PostCardVariant.grid,
+                    moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
                   ),
                 ),
               ),
@@ -594,7 +594,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 child: Center(child: CircularProgressIndicator()),
               );
             }
-            return PostCardWithActions(feedViewPost: feedState.posts[index], accountDid: _resolvedActor ?? '');
+            return PostCardWithActions(
+              feedViewPost: feedState.posts[index],
+              accountDid: _resolvedActor ?? '',
+              moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
+            );
           },
         ),
       ),

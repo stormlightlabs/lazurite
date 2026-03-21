@@ -6,6 +6,8 @@ import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_architecture.dart';
 import 'package:lazurite/core/theme/ui_density.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/moderation/data/moderation_service.dart';
+import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
@@ -52,6 +54,9 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Layout'),
           _buildLayoutSettings(context),
+          const SizedBox(height: 24),
+          _buildSectionHeader(context, 'Moderation'),
+          const _ModerationSettingsPreview(),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Account'),
           _SettingsTile(
@@ -259,6 +264,83 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+}
+
+class _ModerationSettingsPreview extends StatefulWidget {
+  const _ModerationSettingsPreview();
+
+  @override
+  State<_ModerationSettingsPreview> createState() => _ModerationSettingsPreviewState();
+}
+
+class _ModerationSettingsPreviewState extends State<_ModerationSettingsPreview> {
+  bool _isUpdating = false;
+
+  ModerationService? get _service => maybeModerationService(context);
+
+  Future<void> _toggleAdultContent(bool value) async {
+    final service = _service;
+    if (service == null) {
+      return;
+    }
+
+    setState(() => _isUpdating = true);
+    try {
+      await service.setAdultContentEnabled(value);
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update adult content: $error')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdating = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = _service;
+    if (service == null) {
+      return _SettingsTile(
+        icon: Icons.shield_outlined,
+        title: 'Content Moderation',
+        subtitle: 'Manage labelers and visibility rules',
+        onTap: () => context.push('/settings/moderation'),
+      );
+    }
+
+    return StreamBuilder(
+      stream: service.optsStream,
+      initialData: service.currentOpts,
+      builder: (context, snapshot) {
+        final adultEnabled = adultContentEnabledFromPreferences(service.currentPreferences);
+        final customLabelers =
+            service.currentPrefs?.labelers.where((labeler) => labeler.did != officialBlueskyLabelerDid).length ?? 0;
+
+        return Column(
+          children: [
+            _SettingsTile(
+              icon: Icons.visibility_outlined,
+              title: 'Adult Content',
+              subtitle: adultEnabled ? '18+ labels can be configured' : 'Required before 18+ labels can be configured',
+              trailing: Switch.adaptive(value: adultEnabled, onChanged: _isUpdating ? null : _toggleAdultContent),
+            ),
+            const Divider(height: 1),
+            _SettingsTile(
+              icon: Icons.policy_outlined,
+              title: 'Content Moderation',
+              subtitle: '$customLabelers custom labeler${customLabelers == 1 ? '' : 's'} subscribed',
+              onTap: () => context.push('/settings/moderation'),
+            ),
+          ],
         );
       },
     );

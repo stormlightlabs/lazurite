@@ -33,6 +33,8 @@ import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/messages/presentation/convo_list_screen.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_screen.dart';
+import 'package:lazurite/features/moderation/presentation/screens/labeler_detail_screen.dart';
+import 'package:lazurite/features/moderation/presentation/screens/moderation_settings_screen.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 
@@ -180,6 +182,17 @@ class AppRouter {
                     path: 'settings',
                     builder: (context, state) => const SettingsScreen(),
                     routes: [
+                      GoRoute(
+                        path: 'moderation',
+                        builder: (context, state) => const ModerationSettingsScreen(),
+                        routes: [
+                          GoRoute(
+                            path: 'detail',
+                            builder: (context, state) =>
+                                LabelerDetailScreen(did: state.uri.queryParameters['did'] ?? ''),
+                          ),
+                        ],
+                      ),
                       GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
                       GoRoute(path: 'logs', builder: (context, state) => const LogsScreen()),
                       GoRoute(path: 'devtools', builder: (context, state) => const DevToolsScreen()),

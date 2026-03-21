@@ -1,15 +1,26 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
+import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
+import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 
 class PostCard extends StatelessWidget {
-  const PostCard({super.key, required this.feedViewPost, this.actionBar, this.onTap});
+  const PostCard({
+    super.key,
+    required this.feedViewPost,
+    this.actionBar,
+    this.onTap,
+    this.moderationContext = bsky_moderation.ModerationBehaviorContext.contentList,
+  });
 
   final FeedViewPost feedViewPost;
 
@@ -21,12 +32,15 @@ class PostCard extends StatelessWidget {
   /// should do the same.
   final Widget? actionBar;
   final VoidCallback? onTap;
+  final bsky_moderation.ModerationBehaviorContext moderationContext;
 
   @override
   Widget build(BuildContext context) {
     final post = feedViewPost.post;
     final record = _tryParseRecord(post.record);
     final colorScheme = Theme.of(context).colorScheme;
+    final moderationService = maybeModerationService(context);
+    final postUi = moderationService?.postUi(post, moderationContext) ?? const bsky_moderation.ModerationUI();
 
     final resolvedFooter = actionBar ?? PostCardFooter(timestamp: formatPostTime(record?.createdAt ?? post.indexedAt));
 
@@ -39,25 +53,29 @@ class PostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(context, post.author),
-                  if (record?.reply != null) ...[const SizedBox(height: 8), _buildReplyLabel(context)],
-                  if (record != null && record.text.isNotEmpty) ...[
+          ModeratedBlurOverlay(
+            ui: postUi,
+            child: InkWell(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(context, post.author),
+                    if (postUi.alert || postUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: postUi)],
+                    if (record?.reply != null) ...[const SizedBox(height: 8), _buildReplyLabel(context)],
+                    if (record != null && record.text.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      FacetText(text: record.text, facets: record.facets, style: feedPostBodyTextStyle(context)),
+                    ],
+                    if (post.embed != null) ...[
+                      const SizedBox(height: 12),
+                      PostEmbedView(feedViewPost: feedViewPost, embed: post.embed!),
+                    ],
                     const SizedBox(height: 12),
-                    FacetText(text: record.text, facets: record.facets, style: feedPostBodyTextStyle(context)),
                   ],
-                  if (post.embed != null) ...[
-                    const SizedBox(height: 12),
-                    PostEmbedView(feedViewPost: feedViewPost, embed: post.embed!),
-                  ],
-                  const SizedBox(height: 12),
-                ],
+                ),
               ),
             ),
           ),
@@ -69,27 +87,23 @@ class PostCard extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context, ProfileViewBasic author) {
     final colorScheme = Theme.of(context).colorScheme;
+    final moderationService = maybeModerationService(context);
+    final avatarUi =
+        moderationService?.profileBasicUi(author, bsky_moderation.ModerationBehaviorContext.avatar) ??
+        const bsky_moderation.ModerationUI();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
           key: const ValueKey('post_card_avatar'),
           onTap: () => GoRouter.maybeOf(context)?.push('/profile/view?actor=${Uri.encodeQueryComponent(author.did)}'),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              border: Border.all(color: colorScheme.outlineVariant),
-            ),
-            child: author.avatar != null
-                ? Image.network(author.avatar!, fit: BoxFit.cover)
-                : Center(
-                    child: Text(
-                      _initials(author.displayName ?? author.handle),
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                  ),
+          child: ModeratedAvatar(
+            size: 40,
+            ui: avatarUi,
+            imageUrl: author.avatar,
+            initials: _initials(author.displayName ?? author.handle),
+            shape: BoxShape.rectangle,
+            border: Border.all(color: colorScheme.outlineVariant),
           ),
         ),
         const SizedBox(width: 12),

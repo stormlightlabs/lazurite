@@ -67,20 +67,20 @@
 ## M17 — Labelers & Content Moderation
 
 - [x] Fetch user's labeler subscriptions from preferences via `app.bsky.actor.getPreferences` (`labelersPref`)
-- [ ] Include subscribed labeler DIDs in `atproto-accept-labelers` header on all XRPC requests
+- [x] Include subscribed labeler DIDs in `atproto-accept-labelers` header on all XRPC requests
 - [x] `ModerationService` — wraps the `bluesky` package's `moderatePost`, `moderateProfile`, `moderateNotification` functions
-- [ ] Run moderation decisions on all displayed posts and profiles
-- [ ] Apply `ModerationUI` results: filter, blur, alert, inform per display context (contentList, contentView, contentMedia, avatar, profileList, profileView)
-- [ ] Blur overlay on posts/media with click-through "Show content" button
-- [ ] Warning badges on profiles and posts for alert/inform labels
-- [ ] Content filtering — remove posts with `filter` decisions from feed and notification lists
-- [ ] Labeler management screen: list subscribed labelers via `app.bsky.labeler.getServices`
-- [ ] Subscribe / unsubscribe to labelers by updating `labelersPref` via `putPreferences`
-- [ ] Per-label preference configuration: ignore / warn / hide per label value per labeler
-- [ ] Store label preferences as `contentLabelPref` entries via `putPreferences`
-- [ ] Adult content toggle (requires `adultContentEnabled` preference)
-- [ ] Self-label support — render self-labels embedded in posts and profiles
-- [ ] Labeler detail screen: show labeler creator, policies, and custom label definitions with localised names
+- [x] Run moderation decisions on all displayed posts and profiles
+- [x] Apply `ModerationUI` results: filter, blur, alert, inform per display context (contentList, contentView, contentMedia, avatar, profileList, profileView)
+- [x] Blur overlay on posts/media with click-through "Show content" button
+- [x] Warning badges on profiles and posts for alert/inform labels
+- [x] Content filtering — remove posts with `filter` decisions from feed and notification lists
+- [x] Labeler management screen: list subscribed labelers via `app.bsky.labeler.getServices`
+- [x] Subscribe / unsubscribe to labelers by updating `labelersPref` via `putPreferences`
+- [x] Per-label preference configuration: ignore / warn / hide per label value per labeler
+- [x] Store label preferences as `contentLabelPref` entries via `putPreferences`
+- [x] Adult content toggle (requires `adultContentEnabled` preference)
+- [x] Self-label support — render self-labels embedded in posts and profiles
+- [x] Labeler detail screen: show labeler creator, policies, and custom label definitions with localised names
 - [x] Drift table: `labeler_cache` (labeler_did, policies_json, fetched_at) for offline label definition lookup
 
 ## M18 — Lists

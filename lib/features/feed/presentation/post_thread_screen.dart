@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
+import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +18,8 @@ import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_action_bar.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/report_dialog.dart';
@@ -170,6 +173,7 @@ class _PostThreadContentState extends State<_PostThreadContent> {
           PostCardWithActions(
             feedViewPost: FeedViewPost(post: parents[i].post),
             accountDid: accountDid,
+            moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
           ),
           _buildThreadConnector(context),
         ],
@@ -338,6 +342,7 @@ class _ExpandedThreadReply extends StatelessWidget {
           PostCardWithActions(
             feedViewPost: FeedViewPost(post: thread.post),
             accountDid: accountDid,
+            moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
           ),
           for (final reply in replies)
             ThreadReplyNode(
@@ -408,25 +413,21 @@ class _CollapsedThreadHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final timestamp = _parsePostRecord(post.record)?.createdAt ?? post.indexedAt;
+    final moderationService = maybeModerationService(context);
+    final avatarUi =
+        moderationService?.profileBasicUi(post.author, bsky_moderation.ModerationBehaviorContext.avatar) ??
+        const bsky_moderation.ModerationUI();
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
-            border: Border.all(color: colorScheme.outlineVariant),
-          ),
-          child: post.author.avatar != null
-              ? Image.network(post.author.avatar!, fit: BoxFit.cover)
-              : Center(
-                  child: Text(
-                    _initials(post.author.displayName ?? post.author.handle),
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                ),
+        ModeratedAvatar(
+          size: 40,
+          ui: avatarUi,
+          imageUrl: post.author.avatar,
+          initials: _initials(post.author.displayName ?? post.author.handle),
+          shape: BoxShape.rectangle,
+          border: Border.all(color: colorScheme.outlineVariant),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -653,6 +654,7 @@ class _FocusedPostContent extends StatelessWidget {
 
     return PostCard(
       feedViewPost: FeedViewPost(post: post),
+      moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
       actionBar: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: Column(

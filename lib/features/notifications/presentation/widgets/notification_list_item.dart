@@ -1,7 +1,12 @@
 import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
+import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart' hide Notification;
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 
 class NotificationListItem extends StatelessWidget {
   const NotificationListItem({super.key, required this.notification});
@@ -12,6 +17,10 @@ class NotificationListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isUnread = !notification.isRead;
+    final moderationService = maybeModerationService(context);
+    final notificationUi =
+        moderationService?.notificationUi(notification, bsky_moderation.ModerationBehaviorContext.contentList) ??
+        const bsky_moderation.ModerationUI();
 
     return InkWell(
       onTap: () => _onTap(context),
@@ -31,12 +40,16 @@ class NotificationListItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildActorRow(),
+                    _buildActorRow(context),
                     const SizedBox(height: 4),
                     _buildSummary(theme),
                     const SizedBox(height: 2),
                     _buildTime(theme),
-                    if (_shouldShowPreview) ...[const SizedBox(height: 8), _buildPreview(theme)],
+                    if (notificationUi.alert || notificationUi.inform) ...[
+                      const SizedBox(height: 8),
+                      ModerationBadgeRow(ui: notificationUi),
+                    ],
+                    if (_shouldShowPreview) ...[const SizedBox(height: 8), _buildPreview(context, theme)],
                   ],
                 ),
               ),
@@ -100,43 +113,24 @@ class NotificationListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildActorRow() {
+  Widget _buildActorRow(BuildContext context) {
     final author = notification.author;
-    final avatarUrl = author.avatar;
+    final moderationService = maybeModerationService(context);
+    final avatarUi =
+        moderationService?.profileUi(author, bsky_moderation.ModerationBehaviorContext.avatar) ??
+        const bsky_moderation.ModerationUI();
 
     return Row(
       children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(color: Colors.grey.shade300, shape: BoxShape.circle),
-          child: avatarUrl != null
-              ? ClipOval(
-                  child: Image.network(
-                    avatarUrl,
-                    width: 28,
-                    height: 28,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => _buildAvatarPlaceholder(),
-                  ),
-                )
-              : _buildAvatarPlaceholder(),
+        ModeratedAvatar(
+          size: 28,
+          ui: avatarUi,
+          imageUrl: author.avatar,
+          initials: _getInitials(author.displayName ?? author.handle),
+          shape: BoxShape.circle,
+          placeholderTextStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54),
         ),
       ],
-    );
-  }
-
-  Widget _buildAvatarPlaceholder() {
-    final author = notification.author;
-    final displayName = author.displayName;
-    final handle = author.handle;
-    final initials = _getInitials(displayName ?? handle);
-
-    return Center(
-      child: Text(
-        initials,
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54),
-      ),
     );
   }
 
@@ -229,26 +223,34 @@ class NotificationListItem extends StatelessWidget {
     return false;
   }
 
-  Widget _buildPreview(ThemeData theme) {
+  Widget _buildPreview(BuildContext context, ThemeData theme) {
     final record = notification.record;
     final text = record['text'] as String?;
+    final moderationService = maybeModerationService(context);
+    final notificationUi =
+        moderationService?.notificationUi(notification, bsky_moderation.ModerationBehaviorContext.contentList) ??
+        const bsky_moderation.ModerationUI();
 
     if (text == null || text.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.dividerColor),
-      ),
-      child: Text(
-        text,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+    return ModeratedBlurOverlay(
+      ui: notificationUi,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: theme.dividerColor),
+        ),
+        child: Text(
+          text,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
       ),
     );
   }

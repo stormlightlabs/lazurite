@@ -1,12 +1,17 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
+import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
+import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -561,42 +566,53 @@ class _PostViewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final record = _tryParseRecord(post.record);
     final createdAt = record?.createdAt ?? post.indexedAt;
+    final moderationService = maybeModerationService(context);
+    final postUi =
+        moderationService?.postUi(post, bsky_moderation.ModerationBehaviorContext.contentList) ??
+        const bsky_moderation.ModerationUI();
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 1),
       elevation: 0,
       shape: const RoundedRectangleBorder(),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, post.author, createdAt),
-            if (record != null && record.text.isNotEmpty) ...[
+      child: ModeratedBlurOverlay(
+        ui: postUi,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context, post.author, createdAt),
+              if (postUi.alert || postUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: postUi)],
+              if (record != null && record.text.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                FacetText(text: record.text, facets: record.facets, style: Theme.of(context).textTheme.bodyLarge),
+              ],
               const SizedBox(height: 12),
-              FacetText(text: record.text, facets: record.facets, style: Theme.of(context).textTheme.bodyLarge),
+              _buildActions(context),
             ],
-            const SizedBox(height: 12),
-            _buildActions(context),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context, ProfileViewBasic author, DateTime createdAt) {
+    final moderationService = maybeModerationService(context);
+    final avatarUi =
+        moderationService?.profileBasicUi(author, bsky_moderation.ModerationBehaviorContext.avatar) ??
+        const bsky_moderation.ModerationUI();
     return InkWell(
       onTap: () => _navigateToProfile(context, author.did),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            backgroundImage: author.avatar != null ? NetworkImage(author.avatar!) : null,
-            child: author.avatar == null
-                ? Text(_initials(author.displayName ?? author.handle), style: Theme.of(context).textTheme.labelLarge)
-                : null,
+          ModeratedAvatar(
+            size: 44,
+            ui: avatarUi,
+            imageUrl: author.avatar,
+            initials: _initials(author.displayName ?? author.handle),
+            shape: BoxShape.circle,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -710,6 +726,14 @@ class _ActorResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final moderationService = maybeModerationService(context);
+    final profileUi =
+        moderationService?.profileUi(actor, bsky_moderation.ModerationBehaviorContext.profileList) ??
+        const bsky_moderation.ModerationUI();
+    final avatarUi =
+        moderationService?.profileUi(actor, bsky_moderation.ModerationBehaviorContext.avatar) ??
+        const bsky_moderation.ModerationUI();
+
     return InkWell(
       onTap: () => _navigateToProfile(context, actor.did),
       child: Container(
@@ -719,13 +743,12 @@ class _ActorResultTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              backgroundImage: actor.avatar != null ? NetworkImage(actor.avatar!) : null,
-              child: actor.avatar == null
-                  ? Text(_initials(actor.displayName ?? actor.handle), style: Theme.of(context).textTheme.labelLarge)
-                  : null,
+            ModeratedAvatar(
+              size: 48,
+              ui: avatarUi,
+              imageUrl: actor.avatar,
+              initials: _initials(actor.displayName ?? actor.handle),
+              shape: BoxShape.circle,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -744,6 +767,10 @@ class _ActorResultTile extends StatelessWidget {
                       context,
                     ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
+                  if (profileUi.alert || profileUi.inform) ...[
+                    const SizedBox(height: 8),
+                    ModerationBadgeRow(ui: profileUi),
+                  ],
                   if (actor.description != null && actor.description!.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
@@ -793,19 +820,27 @@ class _ActorListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final moderationService = maybeModerationService(context);
+    final profileUi =
+        moderationService?.profileBasicUi(actor, bsky_moderation.ModerationBehaviorContext.profileList) ??
+        const bsky_moderation.ModerationUI();
+    final avatarUi =
+        moderationService?.profileBasicUi(actor, bsky_moderation.ModerationBehaviorContext.avatar) ??
+        const bsky_moderation.ModerationUI();
+
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              backgroundImage: actor.avatar != null ? NetworkImage(actor.avatar!) : null,
-              child: actor.avatar == null
-                  ? Text(_initials(actor.displayName ?? actor.handle), style: Theme.of(context).textTheme.labelMedium)
-                  : null,
+            ModeratedAvatar(
+              size: 40,
+              ui: avatarUi,
+              imageUrl: actor.avatar,
+              initials: _initials(actor.displayName ?? actor.handle),
+              shape: BoxShape.circle,
+              placeholderTextStyle: Theme.of(context).textTheme.labelMedium,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -824,6 +859,10 @@ class _ActorListTile extends StatelessWidget {
                       context,
                     ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
+                  if (profileUi.alert || profileUi.inform) ...[
+                    const SizedBox(height: 8),
+                    ModerationBadgeRow(ui: profileUi),
+                  ],
                 ],
               ),
             ),
