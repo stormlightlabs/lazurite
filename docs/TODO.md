@@ -34,7 +34,11 @@
 ---
 
 - Markdown support (toggleable)
-- Collapsible threads
+- ✅ Collapsible threads
+
+---
+
+- Render feed from cache if it goes down (> 500 error)
 
 ## Privacy Policy
 

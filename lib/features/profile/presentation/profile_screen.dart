@@ -490,6 +490,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         final initialText = isOwnProfile ? null : '@${profile.handle} ';
 
         return FloatingActionButton(
+          heroTag: 'profile-compose-fab',
           onPressed: () => context.push('/compose', extra: ComposeRouteArgs(initialText: initialText)),
           child: const Icon(Icons.add),
         );

@@ -262,6 +262,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(FloatingActionButton), findsOneWidget);
+    expect(tester.widget<FloatingActionButton>(find.byType(FloatingActionButton)).heroTag, 'profile-compose-fab');
 
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();

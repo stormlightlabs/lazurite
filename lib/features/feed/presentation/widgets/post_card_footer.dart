@@ -65,97 +65,111 @@ class PostCardFooter extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final saveActiveColor = (saveType == 'cloud' || saveType == 'both') ? colorScheme.primary : Colors.amber;
     const horizontalPadding = 12.0;
-    const actionSpacing = 8.0;
     const iconSize = 18.0;
-    const actionPadding = 4.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final compactLayout = constraints.maxWidth < 220;
+        final actionSpacing = compactLayout ? 4.0 : 8.0;
+        final actionPadding = compactLayout ? 2.0 : 4.0;
         final canShowCounts = showCounts && constraints.maxWidth >= 240;
+        final actions = [
+          _FooterAction(
+            icon: Icons.chat_bubble_outline,
+            activeIcon: Icons.chat_bubble,
+            isActive: false,
+            isLoading: false,
+            count: replyCount,
+            onTap: onReply,
+            color: colorScheme.onSurfaceVariant,
+            iconSize: iconSize,
+            padding: actionPadding,
+            showCount: canShowCounts,
+          ),
+          _FooterAction(
+            icon: Icons.repeat,
+            activeIcon: Icons.repeat,
+            isActive: isReposted,
+            isLoading: isLoadingRepost,
+            count: repostCount,
+            onTap: onRepost,
+            color: colorScheme.onSurfaceVariant,
+            activeColor: Colors.green,
+            iconSize: iconSize,
+            padding: actionPadding,
+            showCount: canShowCounts,
+          ),
+          _FooterAction(
+            icon: Icons.favorite_outline,
+            activeIcon: Icons.favorite,
+            isActive: isLiked,
+            isLoading: isLoadingLike,
+            count: likeCount,
+            onTap: onLike,
+            color: colorScheme.onSurfaceVariant,
+            activeColor: Colors.pink,
+            iconSize: iconSize,
+            padding: actionPadding,
+            showCount: canShowCounts,
+          ),
+          _FooterAction(
+            icon: isSaved ? Icons.bookmark : Icons.bookmark_outline,
+            activeIcon: Icons.bookmark,
+            isActive: isSaved,
+            isLoading: false,
+            count: saveCount,
+            onTap: onSave != null ? () => _showSaveOptions(context) : null,
+            onLongPress: onLongPressSave,
+            color: colorScheme.onSurfaceVariant,
+            activeColor: saveActiveColor,
+            iconSize: iconSize,
+            padding: actionPadding,
+            showCount: canShowCounts,
+          ),
+        ];
 
         return Container(
           decoration: BoxDecoration(
             border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
           ),
           padding: const EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
-          child: Row(
-            children: [
-              _FooterAction(
-                icon: Icons.chat_bubble_outline,
-                activeIcon: Icons.chat_bubble,
-                isActive: false,
-                isLoading: false,
-                count: replyCount,
-                onTap: onReply,
-                color: colorScheme.onSurfaceVariant,
-                iconSize: iconSize,
-                padding: actionPadding,
-                showCount: canShowCounts,
-              ),
-              const SizedBox(width: actionSpacing),
-              _FooterAction(
-                icon: Icons.repeat,
-                activeIcon: Icons.repeat,
-                isActive: isReposted,
-                isLoading: isLoadingRepost,
-                count: repostCount,
-                onTap: onRepost,
-                color: colorScheme.onSurfaceVariant,
-                activeColor: Colors.green,
-                iconSize: iconSize,
-                padding: actionPadding,
-                showCount: canShowCounts,
-              ),
-              const SizedBox(width: actionSpacing),
-              _FooterAction(
-                icon: Icons.favorite_outline,
-                activeIcon: Icons.favorite,
-                isActive: isLiked,
-                isLoading: isLoadingLike,
-                count: likeCount,
-                onTap: onLike,
-                color: colorScheme.onSurfaceVariant,
-                activeColor: Colors.pink,
-                iconSize: iconSize,
-                padding: actionPadding,
-                showCount: canShowCounts,
-              ),
-              const SizedBox(width: actionSpacing),
-              _FooterAction(
-                icon: isSaved ? Icons.bookmark : Icons.bookmark_outline,
-                activeIcon: Icons.bookmark,
-                isActive: isSaved,
-                isLoading: false,
-                count: saveCount,
-                onTap: onSave != null ? () => _showSaveOptions(context) : null,
-                onLongPress: onLongPressSave,
-                color: colorScheme.onSurfaceVariant,
-                activeColor: saveActiveColor,
-                iconSize: iconSize,
-                padding: actionPadding,
-                showCount: canShowCounts,
-              ),
-              const SizedBox(width: actionSpacing),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    timestamp,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: false,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 10,
-                      letterSpacing: 1.0,
+          child: compactLayout
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: actionSpacing,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: actions,
                     ),
-                  ),
+                    const SizedBox(height: 6),
+                    Align(alignment: Alignment.centerRight, child: _buildTimestamp(context, colorScheme)),
+                  ],
+                )
+              : Row(
+                  children: [
+                    for (int i = 0; i < actions.length; i++) ...[if (i > 0) SizedBox(width: actionSpacing), actions[i]],
+                    SizedBox(width: actionSpacing),
+                    Expanded(
+                      child: Align(alignment: Alignment.centerRight, child: _buildTimestamp(context, colorScheme)),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
         );
       },
+    );
+  }
+
+  Widget _buildTimestamp(BuildContext context, ColorScheme colorScheme) {
+    return Text(
+      timestamp,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      softWrap: false,
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.0),
     );
   }
 

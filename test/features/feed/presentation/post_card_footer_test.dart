@@ -150,6 +150,36 @@ void main() {
       expect(find.text('SEP 20'), findsOneWidget);
     });
 
+    testWidgets('wraps actions above the timestamp at narrow thread widths', (tester) async {
+      final errors = <FlutterErrorDetails>[];
+      final previousOnError = FlutterError.onError;
+      FlutterError.onError = errors.add;
+      addTearDown(() => FlutterError.onError = previousOnError);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 150,
+                child: PostCardFooter(
+                  timestamp: 'SEP 20',
+                  replyCount: 3,
+                  repostCount: 7,
+                  likeCount: 42,
+                  saveCount: 5,
+                  showCounts: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(errors.where((error) => error.exceptionAsString().contains('A RenderFlex overflowed')), isEmpty);
+      expect(find.text('SEP 20'), findsOneWidget);
+    });
+
     testWidgets('hides counts at very narrow widths even when enabled', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(

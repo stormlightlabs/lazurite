@@ -17,7 +17,7 @@ class ModerationBadgeRow extends StatelessWidget {
 
     final colorScheme = Theme.of(context).colorScheme;
 
-    Widget chipFor(ModerationBadgeDescriptor descriptor) {
+    Widget chipFor(ModerationBadgeDescriptor descriptor, double maxWidth) {
       final isAlert = descriptor.tone == ModerationBadgeTone.alert;
       final background = isAlert
           ? colorScheme.errorContainer.withValues(alpha: 0.7)
@@ -26,25 +26,34 @@ class ModerationBadgeRow extends StatelessWidget {
 
       return Tooltip(
         message: descriptor.description,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: background,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: foreground.withValues(alpha: 0.15)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(isAlert ? Icons.warning_amber_rounded : Icons.info_outline, size: 14, color: foreground),
-              const SizedBox(width: 6),
-              Text(
-                descriptor.label,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: foreground, fontWeight: FontWeight.w700, letterSpacing: 0.2),
-              ),
-            ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: foreground.withValues(alpha: 0.15)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(isAlert ? Icons.warning_amber_rounded : Icons.info_outline, size: 14, color: foreground),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    descriptor.label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: foreground,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -52,7 +61,12 @@ class ModerationBadgeRow extends StatelessWidget {
 
     return Padding(
       padding: padding,
-      child: Wrap(spacing: 8, runSpacing: 8, children: [for (final badge in badges) chipFor(badge)]),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
+          return Wrap(spacing: 8, runSpacing: 8, children: [for (final badge in badges) chipFor(badge, maxWidth)]);
+        },
+      ),
     );
   }
 }

@@ -27,6 +27,29 @@ FeedViewPost _makePost({String text = 'Hello'}) {
   );
 }
 
+FeedViewPost _makeReplyPost({String handle = 'test.bsky.social'}) {
+  final record = <String, dynamic>{
+    r'$type': 'app.bsky.feed.post',
+    'text': 'Hello',
+    'reply': {
+      r'$type': 'app.bsky.feed.post#replyRef',
+      'root': {'uri': 'at://did:plc:root/app.bsky.feed.post/root', 'cid': 'cid-root'},
+      'parent': {'uri': 'at://did:plc:parent/app.bsky.feed.post/parent', 'cid': 'cid-parent'},
+    },
+    'createdAt': DateTime.utc(2026, 3, 16).toIso8601String(),
+  };
+
+  return FeedViewPost(
+    post: PostView(
+      uri: const AtUri('at://did:plc:test/app.bsky.feed.post/reply'),
+      cid: 'cid-reply',
+      author: ProfileViewBasic(did: 'did:plc:test', handle: handle),
+      record: record,
+      indexedAt: DateTime.utc(2026, 3, 16),
+    ),
+  );
+}
+
 void main() {
   Widget buildSubject(FeedViewPost post, {VoidCallback? onTap}) {
     final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
@@ -139,6 +162,34 @@ void main() {
     await tester.pumpWidget(buildSubject(post));
 
     expect(find.text('@TEST.BSKY.SOCIAL'), findsOneWidget);
+  });
+
+  testWidgets('keeps the reply label within narrow thread widths', (tester) async {
+    final errors = <FlutterErrorDetails>[];
+    final previousOnError = FlutterError.onError;
+    FlutterError.onError = errors.add;
+    addTearDown(() => FlutterError.onError = previousOnError);
+
+    final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: theme,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 160,
+              child: PostCard(
+                feedViewPost: _makeReplyPost(handle: 'replying-user-with-a-very-long-handle.bsky.social'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(errors.where((error) => error.exceptionAsString().contains('A RenderFlex overflowed')), isEmpty);
+    expect(find.text('Reply in a thread'), findsOneWidget);
   });
 
   testWidgets('renders PostCardFooter instead of CircleAvatar', (tester) async {

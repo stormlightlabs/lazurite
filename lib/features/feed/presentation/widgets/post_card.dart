@@ -140,9 +140,15 @@ class PostCard extends StatelessWidget {
       children: [
         Icon(Icons.reply, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
         const SizedBox(width: 6),
-        Text(
-          'Reply in a thread',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Flexible(
+          child: Text(
+            'Reply in a thread',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
         ),
       ],
     );

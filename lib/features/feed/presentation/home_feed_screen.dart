@@ -133,6 +133,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 _FeedListView(feed: pinnedFeeds[index], key: ValueKey(pinnedFeeds[index].id)),
           ),
           floatingActionButton: FloatingActionButton(
+            heroTag: 'home-compose-fab',
             onPressed: () => context.push('/compose'),
             shape: const CircleBorder(),
             child: const Icon(Icons.add),
@@ -270,7 +271,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   Future<void> _loadFeed() async {
     if (_isLoading) return;
 
-    setState(() {
+    _setStateIfMounted(() {
       _isLoading = true;
       _hasError = false;
       _errorMessage = null;
@@ -280,7 +281,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
       final feedRepository = context.read<FeedRepository>();
       final result = await _fetchFeed(feedRepository, cursor: null);
 
-      setState(() {
+      _setStateIfMounted(() {
         _posts.clear();
         _posts.addAll(result.posts);
         _cursor = result.cursor;
@@ -288,7 +289,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
         _hasError = false;
       });
     } catch (e) {
-      setState(() {
+      _setStateIfMounted(() {
         _isLoading = false;
         _hasError = true;
         _errorMessage = e.toString();
@@ -299,20 +300,28 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   Future<void> _loadMore() async {
     if (_isLoadingMore || _cursor == null) return;
 
-    setState(() => _isLoadingMore = true);
+    _setStateIfMounted(() => _isLoadingMore = true);
 
     try {
       final feedRepository = context.read<FeedRepository>();
       final result = await _fetchFeed(feedRepository, cursor: _cursor);
 
-      setState(() {
+      _setStateIfMounted(() {
         _posts.addAll(result.posts);
         _cursor = result.cursor;
         _isLoadingMore = false;
       });
     } catch (e) {
-      setState(() => _isLoadingMore = false);
+      _setStateIfMounted(() => _isLoadingMore = false);
     }
+  }
+
+  void _setStateIfMounted(VoidCallback fn) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(fn);
   }
 
   Future<FeedResult> _fetchFeed(FeedRepository repo, {String? cursor}) async {
@@ -368,7 +377,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
         variant: variant,
         onDeleted: () {
           final uri = post.post.uri.toString();
-          setState(() => _posts.removeWhere((p) => p.post.uri.toString() == uri));
+          _setStateIfMounted(() => _posts.removeWhere((p) => p.post.uri.toString() == uri));
         },
       );
     }

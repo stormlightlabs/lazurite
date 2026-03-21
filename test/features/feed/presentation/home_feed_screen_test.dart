@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_architecture.dart';
 import 'package:lazurite/core/theme/ui_density.dart';
+import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
+import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/feed/presentation/widgets/feed_layout_view.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
@@ -15,12 +18,27 @@ import 'package:mocktail/mocktail.dart';
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
+class MockFeedPreferencesCubit extends MockCubit<FeedPreferencesState> implements FeedPreferencesCubit {}
+
+class MockFeedRepository extends Mock implements FeedRepository {}
+
 SettingsState _settingsState(FeedArchitecture architecture) => SettingsState(
   themePalette: AppThemePalette.oxocarbon,
   themeVariant: AppThemeVariant.dark,
   useSystemTheme: false,
   uiDensity: UiDensity.standard,
   feedArchitecture: architecture,
+);
+
+const _homeFeedState = FeedPreferencesState.loaded(
+  feeds: [
+    SavedFeed(
+      id: 'timeline',
+      type: SavedFeedType.knownValue(data: KnownSavedFeedType.timeline),
+      value: 'timeline',
+      pinned: true,
+    ),
+  ],
 );
 
 Widget _buildSubject({required FeedArchitecture architecture, double screenWidth = 400, int itemCount = 3}) {
@@ -48,6 +66,18 @@ Widget _buildSubject({required FeedArchitecture architecture, double screenWidth
 }
 
 void main() {
+  Widget buildHomeSubject({
+    required FeedPreferencesCubit feedPreferencesCubit,
+    required FeedRepository feedRepository,
+  }) {
+    return MaterialApp(
+      home: RepositoryProvider<FeedRepository>.value(
+        value: feedRepository,
+        child: BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit, child: const HomeFeedScreen()),
+      ),
+    );
+  }
+
   group('feedColumnCount', () {
     test('returns 1 column for width < 600', () {
       expect(feedColumnCount(599), 1);
@@ -258,6 +288,63 @@ void main() {
       );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+  });
+
+  group('HomeFeedScreen', () {
+    testWidgets('uses a non-default compose hero tag', (tester) async {
+      final feedPreferencesCubit = MockFeedPreferencesCubit();
+      final feedRepository = MockFeedRepository();
+      final completer = Completer<FeedResult>();
+
+      when(() => feedPreferencesCubit.state).thenReturn(_homeFeedState);
+      whenListen(feedPreferencesCubit, const Stream<FeedPreferencesState>.empty(), initialState: _homeFeedState);
+      when(
+        () => feedRepository.getTimeline(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) => completer.future);
+
+      await tester.pumpWidget(
+        buildHomeSubject(feedPreferencesCubit: feedPreferencesCubit, feedRepository: feedRepository),
+      );
+      await tester.pump();
+
+      final fab = tester.widget<FloatingActionButton>(find.byType(FloatingActionButton));
+      expect(fab.heroTag, 'home-compose-fab');
+    });
+
+    testWidgets('does not call setState after dispose when feed loading completes', (tester) async {
+      final feedPreferencesCubit = MockFeedPreferencesCubit();
+      final feedRepository = MockFeedRepository();
+      final completer = Completer<FeedResult>();
+      final errors = <FlutterErrorDetails>[];
+      final previousOnError = FlutterError.onError;
+
+      FlutterError.onError = errors.add;
+      addTearDown(() => FlutterError.onError = previousOnError);
+
+      when(() => feedPreferencesCubit.state).thenReturn(_homeFeedState);
+      whenListen(feedPreferencesCubit, const Stream<FeedPreferencesState>.empty(), initialState: _homeFeedState);
+      when(
+        () => feedRepository.getTimeline(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) => completer.future);
+
+      await tester.pumpWidget(
+        buildHomeSubject(feedPreferencesCubit: feedPreferencesCubit, feedRepository: feedRepository),
+      );
+      await tester.pump();
+
+      await tester.pumpWidget(const SizedBox.shrink());
+
+      completer.complete(FeedResult(posts: const []));
+      await tester.pump();
+
+      expect(errors.where((error) => error.exceptionAsString().contains('setState() called after dispose()')), isEmpty);
     });
   });
 }

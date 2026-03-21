@@ -39,9 +39,9 @@ class PostThreadScreen extends StatelessWidget {
   }
 }
 
-const int _maxThreadDepth = 6;
-const double _threadIndentPerDepth = 24;
-const double _threadLineTouchTarget = 24;
+const int _maxThreadDepth = 3;
+const double _threadIndentPerDepth = 20;
+const double _threadLineTouchTarget = 20;
 const Duration _threadCollapseDuration = Duration(milliseconds: 200);
 
 Set<String> computeInitialCollapsedThreadUris(ThreadViewPost thread, {required int? autoCollapseDepth}) {
