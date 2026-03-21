@@ -9,6 +9,7 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
+import 'package:lazurite/features/alerts/presentation/alerts_screen.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/compose/presentation/compose_screen.dart';
@@ -24,13 +25,11 @@ import 'package:lazurite/features/logs/presentation/logs_screen.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
-import 'package:lazurite/features/notifications/presentation/notifications_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
 import 'package:lazurite/features/messages/bloc/message_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
-import 'package:lazurite/features/messages/presentation/convo_list_screen.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_screen.dart';
 import 'package:lazurite/features/moderation/presentation/screens/labeler_detail_screen.dart';
@@ -68,6 +67,8 @@ class AppRouter {
     },
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(path: '/notifications', redirect: (_, _) => '/alerts'),
+      GoRoute(path: '/messages', redirect: (_, _) => '/alerts/messages'),
       GoRoute(
         path: '/compose',
         parentNavigatorKey: _rootNavigatorKey,
@@ -159,26 +160,6 @@ class AppRouter {
                 routes: [
                   GoRoute(path: 'feeds', builder: (context, state) => const FeedManagementScreen()),
                   GoRoute(
-                    path: 'messages',
-                    builder: (context, state) => const ConvoListScreen(),
-                    routes: [
-                      GoRoute(
-                        path: ':id',
-                        builder: (context, state) {
-                          final convoId = state.pathParameters['id']!;
-                          final args = state.extra as MessageThreadRouteArgs?;
-                          return BlocProvider(
-                            create: (_) => MessageBloc(
-                              convoRepository: context.read<ConvoRepository>(),
-                              currentUserDid: context.read<String>(),
-                            ),
-                            child: MessageThreadScreen(convoId: convoId, title: args?.title ?? 'Conversation'),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  GoRoute(
                     path: 'settings',
                     builder: (context, state) => const SettingsScreen(),
                     routes: [
@@ -210,11 +191,36 @@ class AppRouter {
             navigatorKey: _notificationsNavigatorKey,
             routes: [
               GoRoute(
-                path: '/notifications',
-                builder: (context, state) => BlocProvider(
-                  create: (_) => NotificationBloc(notificationRepository: context.read<NotificationRepository>()),
-                  child: const NotificationsScreen(),
-                ),
+                path: '/alerts',
+                builder: (context, state) => _buildAlertsRoute(context, const AlertsScreen()),
+                routes: [
+                  GoRoute(
+                    path: 'messages',
+                    builder: (context, state) =>
+                        _buildAlertsRoute(context, const AlertsScreen(initialTab: AlertsTab.messages)),
+                    routes: [
+                      GoRoute(
+                        path: ':id',
+                        builder: (context, state) {
+                          final convoId = state.pathParameters['id']!;
+                          final args = state.extra as MessageThreadRouteArgs?;
+                          return BlocProvider(
+                            create: (_) => MessageBloc(
+                              convoRepository: context.read<ConvoRepository>(),
+                              currentUserDid: context.read<String>(),
+                            ),
+                            child: MessageThreadScreen(convoId: convoId, title: args?.title ?? 'Conversation'),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'requests',
+                    builder: (context, state) =>
+                        _buildAlertsRoute(context, const AlertsScreen(initialTab: AlertsTab.requests)),
+                  ),
+                ],
               ),
             ],
           ),
@@ -238,6 +244,24 @@ class AppRouter {
       ),
     ],
   );
+
+  Widget _buildAlertsRoute(BuildContext context, Widget child) {
+    NotificationBloc? existingNotificationBloc;
+    try {
+      existingNotificationBloc = context.read<NotificationBloc>();
+    } catch (_) {
+      log.d('NotificationBloc not found, creating new one for alerts route');
+    }
+
+    if (existingNotificationBloc != null) {
+      return child;
+    }
+
+    return BlocProvider(
+      create: (_) => NotificationBloc(notificationRepository: context.read<NotificationRepository>()),
+      child: child,
+    );
+  }
 }
 
 class GoRouterRefreshStream extends ChangeNotifier {

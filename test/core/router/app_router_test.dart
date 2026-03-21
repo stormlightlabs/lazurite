@@ -217,6 +217,7 @@ void main() {
     await tester.tap(find.byTooltip('Open menu'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('Messages'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
   });

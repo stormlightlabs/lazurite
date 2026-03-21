@@ -62,7 +62,7 @@ class AppBarMessagesButton extends StatelessWidget {
 
     final baseButton = InkWell(
       borderRadius: BorderRadius.circular(4),
-      onTap: () => GoRouter.maybeOf(context)?.push('/messages'),
+      onTap: () => GoRouter.maybeOf(context)?.go('/alerts/messages'),
       child: Container(
         width: 32,
         height: 32,

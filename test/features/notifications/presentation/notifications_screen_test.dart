@@ -8,6 +8,8 @@ import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/notifications/presentation/notifications_screen.dart';
+import 'package:lazurite/features/notifications/presentation/widgets/grouped_notification_list_item.dart';
+import 'package:lazurite/features/notifications/presentation/widgets/notification_list_item.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
@@ -174,6 +176,43 @@ void main() {
 
       expect(find.text('Today'), findsOneWidget);
       expect(find.text('Yesterday'), findsOneWidget);
+    });
+
+    testWidgets('groups repeated likes on the same post into one row', (tester) async {
+      final postUri = AtUri.parse('at://did:plc:owner/app.bsky.feed.post/post1');
+      final firstLike = bsky.Notification(
+        uri: AtUri.parse('at://did:plc:alice/app.bsky.feed.like/1'),
+        cid: 'cid-1',
+        author: const ProfileView(did: 'did:plc:alice', handle: 'alice.bsky.social'),
+        reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.like),
+        reasonSubject: postUri,
+        record: {'text': 'Shared post'},
+        isRead: true,
+        indexedAt: DateTime.now(),
+      );
+      final secondLike = bsky.Notification(
+        uri: AtUri.parse('at://did:plc:bob/app.bsky.feed.like/2'),
+        cid: 'cid-2',
+        author: const ProfileView(did: 'did:plc:bob', handle: 'bob.bsky.social'),
+        reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.like),
+        reasonSubject: postUri,
+        record: {'text': 'Shared post'},
+        isRead: true,
+        indexedAt: DateTime.now().subtract(const Duration(minutes: 1)),
+      );
+
+      when(
+        () => mockNotificationRepository.listNotifications(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => NotificationListResult(notifications: [firstLike, secondLike], cursor: null));
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(GroupedNotificationListItem), findsOneWidget);
+      expect(find.byType(NotificationListItem), findsNothing);
     });
 
     testWidgets('displays day header for older notifications', (tester) async {

@@ -138,6 +138,9 @@ class _AppMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final currentPath = GoRouterState.of(rootContext).uri.path;
+    final isMessagesRoute = currentPath.startsWith('/alerts/messages') || currentPath.startsWith('/alerts/requests');
+    final isNotificationsRoute = currentPath.startsWith('/alerts') && !isMessagesRoute;
     final tokens = rootContext.watch<AuthBloc>().state.tokens;
     final displayName = tokens?.displayName ?? tokens?.handle ?? 'Guest';
     final handle = tokens?.handle ?? 'Sign in required';
@@ -234,15 +237,16 @@ class _AppMenu extends StatelessWidget {
                       icon: Icons.notifications_outlined,
                       selectedIcon: Icons.notifications,
                       label: 'Notifications',
-                      isSelected: navigationShell.currentIndex == 2,
+                      isSelected: isNotificationsRoute,
                       trailing: _notificationsBadge(),
-                      onTap: () => _selectBranch(context, 2),
+                      onTap: () => _goRoute(context, '/alerts'),
                     ),
                     _MenuTile(
                       icon: Icons.chat_bubble_outline,
                       selectedIcon: Icons.chat_bubble,
                       label: 'Messages',
-                      onTap: () => _pushRoute(context, '/messages'),
+                      isSelected: isMessagesRoute,
+                      onTap: () => _goRoute(context, '/alerts/messages'),
                     ),
                     _MenuTile(
                       icon: Icons.person_outline,
@@ -312,6 +316,10 @@ class _AppMenu extends StatelessWidget {
 
   void _pushRoute(BuildContext context, String location) {
     _runAfterClose(context, () => GoRouter.of(rootContext).push(location));
+  }
+
+  void _goRoute(BuildContext context, String location) {
+    _runAfterClose(context, () => GoRouter.of(rootContext).go(location));
   }
 
   void _runAfterClose(BuildContext context, VoidCallback action) {
