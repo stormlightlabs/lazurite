@@ -82,3 +82,62 @@
 - [ ] Self-label support — render self-labels embedded in posts and profiles
 - [ ] Labeler detail screen: show labeler creator, policies, and custom label definitions with localised names
 - [x] Drift table: `labeler_cache` (labeler_did, policies_json, fetched_at) for offline label definition lookup
+
+## M18 — Lists
+
+### Core
+
+- [ ] `ListBloc` — events: `ListRequested`, `ListRefreshed`, `ListItemAdded`, `ListItemRemoved`, `ListMuted`, `ListUnmuted`, `ListBlocked`, `ListUnblocked`
+- [ ] `MyListsCubit` — load user's lists via `getLists`
+- [ ] `ListFeedBloc` — paginated feed via `getListFeed`, reuse existing feed pattern
+
+### List CRUD
+
+- [ ] Create list — name, description, avatar, purpose selector (curation/moderation) via `com.atproto.repo.createRecord`
+- [ ] Edit list — update name, description, avatar via `com.atproto.repo.putRecord`
+- [ ] Delete list via `com.atproto.repo.deleteRecord`
+- [ ] Add members — search via `searchActorsTypeahead`, create `listitem` records
+- [ ] Remove members — delete `listitem` records
+
+### Moderation Actions
+
+- [ ] Mute list via `muteActorList` / unmute via `unmuteActorList`
+- [ ] Block via list — create `listblock` record; unblock — delete `listblock` record
+
+### Screens
+
+- [ ] My Lists screen — curation and moderation tabs, FAB to create new list
+- [ ] List detail screen — header (name, avatar, description, creator, member count), Feed tab (curation lists), Members tab
+- [ ] Add/remove members screen — search field + current members with remove buttons
+- [ ] Create/edit list dialog — name, description, avatar picker, purpose selector
+
+### Profile Integration
+
+- [ ] "Lists" tab on profile screens via `getLists`
+- [ ] "Add to list" option in profile overflow menu using `getListsWithMembership`
+
+## M19 — Starter Packs
+
+### Core
+
+- [ ] `StarterPackBloc` — events: `StarterPackRequested`, `StarterPackCreated`, `StarterPackUpdated`, `StarterPackDeleted`, `MemberAdded`, `MemberRemoved`
+- [ ] `ActorStarterPacksCubit` — load starter packs for an actor via `getActorStarterPacks`
+
+### Viewing
+
+- [ ] Starter pack detail screen — name, description, creator, join stats, member sample (up to 12), recommended feeds (up to 3)
+- [ ] "See all members" — navigate to full member list via backing reference list
+- [ ] "Follow all" button — follow every member in the pack
+- [ ] Actor starter packs screen — paginated list via `getActorStarterPacks`
+
+### Creation & Editing
+
+- [ ] Create starter pack — name (max 50 graphemes), description, member search, feed picker (up to 3)
+- [ ] Creation flow: create reference list → add `listitem` records → create starter pack record
+- [ ] Edit starter pack — update name/description/feeds via `putRecord`, add/remove members via `listitem` CRUD
+- [ ] Delete starter pack and its backing reference list
+
+### Profile Integration
+
+- [ ] "Starter Packs" section on profile screens showing packs created by actor
+- [ ] Starter pack cards — name, creator, member count, join stats

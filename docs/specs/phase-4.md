@@ -402,3 +402,199 @@ The XRPC client must be modified to include the `atproto-accept-labelers`
 header on all outgoing requests. The header value is a comma-separated list of
 labeler DIDs from the user's `labelersPref`. This should be set once on login
 and updated whenever preferences change.
+
+## Lists
+
+Lists let users organise accounts into named collections. There are two
+user-facing list types: **curation lists** (curated feeds of member posts) and
+**moderation lists** (mute or block every member at once). A third type,
+**reference lists**, exists only as the backing store for starter packs.
+
+### API
+
+| Endpoint                                | Purpose                                  |
+| --------------------------------------- | ---------------------------------------- |
+| `app.bsky.graph.getList`                | Paginated list view with member profiles |
+| `app.bsky.graph.getLists`               | Lists created by an actor                |
+| `app.bsky.graph.getListsWithMembership` | User's lists with membership info        |
+| `app.bsky.graph.getListMutes`           | Mod lists the user has muted             |
+| `app.bsky.graph.getListBlocks`          | Mod lists the user is blocking           |
+| `app.bsky.feed.getListFeed`             | Feed of posts from list members          |
+| `app.bsky.graph.muteActorList`          | Mute all accounts on a list              |
+| `app.bsky.graph.unmuteActorList`        | Unmute a previously muted list           |
+
+List records, list items, and list blocks are managed through
+`com.atproto.repo.createRecord`, `putRecord`, and `deleteRecord` with the
+appropriate collection (`app.bsky.graph.list`, `app.bsky.graph.listitem`,
+`app.bsky.graph.listblock`).
+
+### List Purposes
+
+| Purpose         | Constant                            | Usage                                   |
+| --------------- | ----------------------------------- | --------------------------------------- |
+| Curation list   | `app.bsky.graph.defs#curatelist`    | User-curated, viewable as a feed        |
+| Moderation list | `app.bsky.graph.defs#modlist`       | Mute or block all members at once       |
+| Reference list  | `app.bsky.graph.defs#referencelist` | Internal backing list for starter packs |
+
+### List Record
+
+| Field               | Type      | Notes                             |
+| ------------------- | --------- | --------------------------------- |
+| `purpose`           | string    | One of the list purpose constants |
+| `name`              | string    | 1–64 graphemes                    |
+| `description`       | string?   | Max 300 graphemes / 3000 bytes    |
+| `descriptionFacets` | facets[]? | Rich text facets for description  |
+| `avatar`            | blob?     | PNG or JPEG, max 1 MB             |
+| `createdAt`         | datetime  | Required                          |
+
+### List Item Record
+
+| Field       | Type     | Notes                     |
+| ----------- | -------- | ------------------------- |
+| `subject`   | string   | DID of the account to add |
+| `list`      | string   | AT-URI of the parent list |
+| `createdAt` | datetime | Required                  |
+
+Duplicate list items for the same subject are ignored by the AppView.
+
+### List Views
+
+`listView` includes: `uri`, `cid`, `creator` (profileView), `name`,
+`purpose`, `description?`, `avatar?`, `listItemCount?`, `labels?`,
+`viewer?` (listViewerState with `muted?` and `blocked?`), `indexedAt`.
+
+`listItemView` includes: `uri` (of the listitem record), `subject`
+(profileView).
+
+### List Feed
+
+`getListFeed` returns `feedViewPost` items — posts and reposts from list
+members. Only curation lists support feeds. The existing feed rendering
+infrastructure can be reused.
+
+### Screens
+
+**My Lists screen** (accessible from profile or settings): shows lists the
+user has created, separated by curation and moderation tabs. Each row shows
+name, avatar, member count, and purpose badge. FAB to create a new list.
+
+**List detail screen**: shows the list header (name, avatar, description,
+creator, member count) and two tabs — **Feed** (for curation lists, using
+`getListFeed`) and **Members** (paginated member profiles). The overflow
+menu includes: edit list, delete list, add/remove members, and for mod
+lists — mute list / block via list.
+
+**Add/remove members**: a screen with a search field using
+`searchActorsTypeahead` to find users, plus a list of current members with
+remove buttons. Adding creates a `listitem` record; removing deletes it.
+
+**Create/edit list dialog**: name, description, avatar picker, and purpose
+selector (curation or moderation — reference lists are not user-created
+directly).
+
+### Bloc Architecture
+
+Build a `ListBloc` with events: `ListRequested`, `ListRefreshed`,
+`ListItemAdded`, `ListItemRemoved`, `ListMuted`, `ListUnmuted`,
+`ListBlocked`, `ListUnblocked`.
+
+Build a `MyListsCubit` that loads the user's lists via `getLists`.
+
+Build a `ListFeedBloc` reusing the feed pagination pattern from the home
+feed, backed by `getListFeed`.
+
+### Profile Integration
+
+On profile screens, add a "Lists" tab that shows lists created by that
+actor via `getLists`. Also add an "Add to list" option in the profile
+overflow menu that shows `getListsWithMembership` and lets the user toggle
+membership.
+
+## Starter Packs
+
+Starter packs are curated bundles of recommended accounts and feeds,
+designed to help new users bootstrap their experience. Each starter pack is
+backed by a reference list that holds the recommended accounts.
+
+### API
+
+| Endpoint                                       | Purpose                                   |
+| ---------------------------------------------- | ----------------------------------------- |
+| `app.bsky.graph.getStarterPack`                | Detailed view of a single starter pack    |
+| `app.bsky.graph.getStarterPacks`               | Batch-fetch up to 25 starter packs by URI |
+| `app.bsky.graph.getActorStarterPacks`          | Starter packs created by an actor         |
+| `app.bsky.graph.getStarterPacksWithMembership` | User's starter packs with membership info |
+| `app.bsky.graph.searchStarterPacks`            | Search starter packs by query string      |
+
+Starter pack records are managed through `com.atproto.repo.createRecord`,
+`putRecord`, and `deleteRecord` with collection
+`app.bsky.graph.starterpack`.
+
+### Starter Pack Record
+
+| Field               | Type        | Notes                            |
+| ------------------- | ----------- | -------------------------------- |
+| `name`              | string      | 1–50 graphemes                   |
+| `list`              | string      | AT-URI to a reference list       |
+| `description`       | string?     | Max 300 graphemes / 3000 bytes   |
+| `descriptionFacets` | facets[]?   | Rich text facets for description |
+| `feeds`             | feedItem[]? | Up to 3 feed generator URIs      |
+| `createdAt`         | datetime    | Required                         |
+
+`feedItem` contains a single `uri` field pointing to a feed generator
+record.
+
+### Starter Pack Views
+
+`starterPackView` (full): `uri`, `cid`, `record`, `creator`
+(profileViewBasic), `list?` (listViewBasic), `listItemsSample?` (up to 12
+listItemView), `feeds?` (up to 3 generatorView), `joinedWeekCount?`,
+`joinedAllTimeCount?`, `labels?`, `indexedAt`.
+
+`starterPackViewBasic` (compact): `uri`, `cid`, `record`, `creator`
+(profileViewBasic), `listItemCount?`, `joinedWeekCount?`,
+`joinedAllTimeCount?`, `labels?`, `indexedAt`.
+
+### Creation Flow
+
+1. Create a reference list via `com.atproto.repo.createRecord` with
+   collection `app.bsky.graph.list` and purpose `referencelist`.
+2. Add members to the reference list by creating `listitem` records.
+3. Create the starter pack record pointing to the reference list.
+
+Updating the people in a starter pack means adding/removing `listitem`
+records on its backing reference list. Updating the name, description, or
+feeds means updating the starter pack record itself.
+
+### Screens
+
+**Starter pack detail screen**: shows name, description, creator profile,
+join stats (`joinedWeekCount`, `joinedAllTimeCount`), a sample of members
+(up to 12 from `listItemsSample`), and recommended feeds. A "See all
+members" button navigates to the full member list via the backing reference
+list. A "Follow all" button follows every member in the pack.
+
+**Actor starter packs screen**: shows starter packs created by a specific
+user, accessible from their profile. Uses `getActorStarterPacks` with
+pagination.
+
+**Create/edit starter pack screen**: name (max 50 graphemes), description,
+member search (using `searchActorsTypeahead`), and feed picker (up to 3
+feeds from `getActorFeeds` or `getSuggestedFeeds`). On save, the app
+creates the reference list, adds members, then creates the starter pack
+record.
+
+### Bloc Architecture
+
+Build a `StarterPackBloc` with events: `StarterPackRequested`,
+`StarterPackCreated`, `StarterPackUpdated`, `StarterPackDeleted`,
+`MemberAdded`, `MemberRemoved`.
+
+Build a `ActorStarterPacksCubit` that loads starter packs for a given
+actor via `getActorStarterPacks`.
+
+### Profile Integration
+
+On profile screens, add a "Starter Packs" section or tab showing packs
+created by that actor. Starter pack cards show the pack name, creator,
+member count, and join stats.
