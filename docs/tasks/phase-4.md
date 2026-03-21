@@ -40,9 +40,9 @@ Completed [2026-03-21](../../CHANGELOG.md#2026-03-21)
 
 ### Core
 
-- [ ] `ListBloc` — events: `ListRequested`, `ListRefreshed`, `ListItemAdded`, `ListItemRemoved`, `ListMuted`, `ListUnmuted`, `ListBlocked`, `ListUnblocked`
-- [ ] `MyListsCubit` — load user's lists via `getLists`
-- [ ] `ListFeedBloc` — paginated feed via `getListFeed`, reuse existing feed pattern
+- [x] `ListBloc` — events: `ListRequested`, `ListRefreshed`, `ListItemAdded`, `ListItemRemoved`, `ListMuted`, `ListUnmuted`, `ListBlocked`, `ListUnblocked`
+- [x] `MyListsCubit` — load user's lists via `getLists`
+- [x] `ListFeedBloc` — paginated feed via `getListFeed`, reuse existing feed pattern
 
 ### List CRUD
 

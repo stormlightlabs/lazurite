@@ -23,6 +23,7 @@ import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
+import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
@@ -156,6 +157,10 @@ class _LazuriteAppState extends State<LazuriteApp> {
               RepositoryProvider(
                 create: (context) =>
                     SearchRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
+              ),
+              RepositoryProvider(
+                create: (context) =>
+                    ListRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
               ),
               RepositoryProvider(
                 create: (context) => ProfileRepository(
