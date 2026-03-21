@@ -102,7 +102,7 @@ void main() {
 
       await tester.pumpWidget(buildSubject());
 
-      expect(find.text('test.bsky.social'), findsOneWidget);
+      expect(find.text('test.bsky.social'), findsAtLeastNWidgets(1));
       expect(find.text('did:plc:test'), findsOneWidget);
       expect(find.text('2 collections'), findsOneWidget);
       expect(find.text('5 records'), findsOneWidget);
@@ -142,6 +142,113 @@ void main() {
       await tester.tap(find.text('123'));
 
       verify(() => mockDevToolsCubit.loadRecord(record)).called(1);
+    });
+
+    testWidgets('renders breadcrumbs for record navigation', (tester) async {
+      const state = DevToolsState(
+        status: DevToolsStatus.recordLoaded,
+        did: 'did:plc:test',
+        handle: 'test.bsky.social',
+        repoHandle: 'test.bsky.social',
+        collections: [CollectionSummary('app.bsky.feed.post', recordCount: 1)],
+        selectedCollection: 'app.bsky.feed.post',
+        selectedRecord: RecordInfo(
+          uri: 'at://did:plc:test/app.bsky.feed.post/123',
+          cid: 'cid123',
+          value: {'text': 'Summary'},
+        ),
+      );
+
+      when(() => mockDevToolsCubit.state).thenReturn(state);
+      whenListen(mockDevToolsCubit, const Stream<DevToolsState>.empty(), initialState: state);
+
+      await tester.pumpWidget(buildSubject());
+
+      expect(find.byKey(const ValueKey('dev-tools-breadcrumb-repo')), findsOneWidget);
+      expect(find.byKey(const ValueKey('dev-tools-breadcrumb-collection')), findsOneWidget);
+      expect(find.byKey(const ValueKey('dev-tools-breadcrumb-record')), findsOneWidget);
+      expect(find.text('test.bsky.social'), findsAtLeastNWidgets(1));
+      expect(find.text('app.bsky.feed.post'), findsAtLeastNWidgets(1));
+      expect(find.text('123'), findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('tapping repo breadcrumb calls cubit goBackToRepo', (tester) async {
+      const state = DevToolsState(
+        status: DevToolsStatus.collectionLoaded,
+        did: 'did:plc:test',
+        handle: 'test.bsky.social',
+        repoHandle: 'test.bsky.social',
+        collections: [CollectionSummary('app.bsky.feed.post', recordCount: 1)],
+        selectedCollection: 'app.bsky.feed.post',
+        records: [
+          RepoListRecordsRecord(
+            uri: AtUri('at://did:plc:test/app.bsky.feed.post/123'),
+            cid: 'cid123',
+            value: {'text': 'Summary'},
+          ),
+        ],
+      );
+
+      when(() => mockDevToolsCubit.state).thenReturn(state);
+      whenListen(mockDevToolsCubit, const Stream<DevToolsState>.empty(), initialState: state);
+
+      await tester.pumpWidget(buildSubject());
+      await tester.tap(find.byKey(const ValueKey('dev-tools-breadcrumb-repo')));
+
+      verify(() => mockDevToolsCubit.goBackToRepo()).called(1);
+    });
+
+    testWidgets('tapping collection breadcrumb calls cubit goBackToCollection', (tester) async {
+      const state = DevToolsState(
+        status: DevToolsStatus.recordLoaded,
+        did: 'did:plc:test',
+        handle: 'test.bsky.social',
+        repoHandle: 'test.bsky.social',
+        collections: [CollectionSummary('app.bsky.feed.post', recordCount: 1)],
+        selectedCollection: 'app.bsky.feed.post',
+        selectedRecord: RecordInfo(
+          uri: 'at://did:plc:test/app.bsky.feed.post/123',
+          cid: 'cid123',
+          value: {'text': 'Summary'},
+        ),
+      );
+
+      when(() => mockDevToolsCubit.state).thenReturn(state);
+      whenListen(mockDevToolsCubit, const Stream<DevToolsState>.empty(), initialState: state);
+
+      await tester.pumpWidget(buildSubject());
+      await tester.tap(find.byKey(const ValueKey('dev-tools-breadcrumb-collection')));
+
+      verify(() => mockDevToolsCubit.goBackToCollection()).called(1);
+    });
+
+    testWidgets('shows breadcrumb progress without full-screen spinner during record navigation', (tester) async {
+      const state = DevToolsState(
+        status: DevToolsStatus.collectionLoaded,
+        did: 'did:plc:test',
+        handle: 'test.bsky.social',
+        repoHandle: 'test.bsky.social',
+        collections: [CollectionSummary('app.bsky.feed.post', recordCount: 1)],
+        selectedCollection: 'app.bsky.feed.post',
+        records: [
+          RepoListRecordsRecord(
+            uri: AtUri('at://did:plc:test/app.bsky.feed.post/123'),
+            cid: 'cid123',
+            value: {'text': 'Summary'},
+          ),
+        ],
+        isRecordLoading: true,
+      );
+
+      when(() => mockDevToolsCubit.state).thenReturn(state);
+      whenListen(mockDevToolsCubit, const Stream<DevToolsState>.empty(), initialState: state);
+
+      await tester.pumpWidget(buildSubject());
+
+      expect(find.byKey(const ValueKey('app-breadcrumbs-loading')), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('123'), findsOneWidget);
     });
   });
 }

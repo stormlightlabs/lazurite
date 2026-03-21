@@ -52,6 +52,8 @@ class DevToolsState extends Equatable {
     this.records,
     this.recordsCursor,
     this.selectedRecord,
+    this.isCollectionLoading = false,
+    this.isRecordLoading = false,
     this.errorMessage,
   });
 
@@ -65,9 +67,12 @@ class DevToolsState extends Equatable {
   final List<RepoListRecordsRecord>? records;
   final String? recordsCursor;
   final RecordInfo? selectedRecord;
+  final bool isCollectionLoading;
+  final bool isRecordLoading;
   final String? errorMessage;
 
   bool get isLoading => status == DevToolsStatus.loading || status == DevToolsStatus.loadingMore;
+  bool get isNavigating => isCollectionLoading || isRecordLoading;
   bool get hasMoreRecords => recordsCursor != null && recordsCursor!.isNotEmpty;
   int get totalRecords => records?.length ?? 0;
   int? get totalRepoRecords {
@@ -92,6 +97,8 @@ class DevToolsState extends Equatable {
     Object? records = _devToolsStateNoChange,
     Object? recordsCursor = _devToolsStateNoChange,
     Object? selectedRecord = _devToolsStateNoChange,
+    bool? isCollectionLoading,
+    bool? isRecordLoading,
     Object? errorMessage = _devToolsStateNoChange,
   }) {
     return DevToolsState(
@@ -109,6 +116,8 @@ class DevToolsState extends Equatable {
       selectedRecord: identical(selectedRecord, _devToolsStateNoChange)
           ? this.selectedRecord
           : selectedRecord as RecordInfo?,
+      isCollectionLoading: isCollectionLoading ?? this.isCollectionLoading,
+      isRecordLoading: isRecordLoading ?? this.isRecordLoading,
       errorMessage: identical(errorMessage, _devToolsStateNoChange) ? this.errorMessage : errorMessage as String?,
     );
   }
@@ -125,6 +134,8 @@ class DevToolsState extends Equatable {
     records,
     recordsCursor,
     selectedRecord,
+    isCollectionLoading,
+    isRecordLoading,
     errorMessage,
   ];
 }

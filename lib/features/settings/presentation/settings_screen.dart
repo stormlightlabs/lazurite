@@ -153,31 +153,31 @@ class SettingsScreen extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SegmentedButton<_AppearanceMode>(
-                      segments: const [
-                        ButtonSegment(value: _AppearanceMode.system, label: Text('System')),
-                        ButtonSegment(value: _AppearanceMode.light, label: Text('Light')),
-                        ButtonSegment(value: _AppearanceMode.dark, label: Text('Dark')),
-                      ],
-                      selected: {_AppearanceMode.fromState(state)},
-                      onSelectionChanged: (selected) {
-                        final mode = selected.first;
-                        switch (mode) {
-                          case _AppearanceMode.system:
-                            settingsCubit.setUseSystemTheme(true);
-                          case _AppearanceMode.light:
-                            settingsCubit.setUseSystemTheme(false);
-                            settingsCubit.setThemeVariant(AppThemeVariant.light);
-                          case _AppearanceMode.dark:
-                            settingsCubit.setUseSystemTheme(false);
-                            settingsCubit.setThemeVariant(AppThemeVariant.dark);
-                        }
-                      },
+                child: Center(
+                  child: SegmentedButton<_AppearanceMode>(
+                    style: SegmentedButton.styleFrom(
+                      selectedBackgroundColor: Theme.of(context).colorScheme.primary,
+                      selectedForegroundColor: Theme.of(context).colorScheme.onPrimary,
                     ),
+                    segments: const [
+                      ButtonSegment(value: _AppearanceMode.system, label: Text('System')),
+                      ButtonSegment(value: _AppearanceMode.light, label: Text('Light')),
+                      ButtonSegment(value: _AppearanceMode.dark, label: Text('Dark')),
+                    ],
+                    selected: {_AppearanceMode.fromState(state)},
+                    onSelectionChanged: (selected) {
+                      final mode = selected.first;
+                      switch (mode) {
+                        case _AppearanceMode.system:
+                          settingsCubit.setUseSystemTheme(true);
+                        case _AppearanceMode.light:
+                          settingsCubit.setUseSystemTheme(false);
+                          settingsCubit.setThemeVariant(AppThemeVariant.light);
+                        case _AppearanceMode.dark:
+                          settingsCubit.setUseSystemTheme(false);
+                          settingsCubit.setThemeVariant(AppThemeVariant.dark);
+                      }
+                    },
                   ),
                 ),
               ),

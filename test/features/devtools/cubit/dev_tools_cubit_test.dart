@@ -230,11 +230,53 @@ void main() {
         ),
       ),
       expect: () => [
-        isA<DevToolsState>().having((state) => state.status, 'status', DevToolsStatus.loading),
+        isA<DevToolsState>()
+            .having((state) => state.status, 'status', DevToolsStatus.collectionLoaded)
+            .having((state) => state.isRecordLoading, 'isRecordLoading', isTrue),
         isA<DevToolsState>()
             .having((state) => state.status, 'status', DevToolsStatus.recordLoaded)
+            .having((state) => state.isRecordLoading, 'isRecordLoading', isFalse)
             .having((state) => state.selectedRecord?.cid, 'cid', 'cid123')
             .having((state) => state.selectedRecord?.value['reply'], 'expanded value', {'root': 'abc'}),
+      ],
+    );
+
+    blocTest<DevToolsCubit, DevToolsState>(
+      'loadCollection keeps repo view active while records load',
+      build: () {
+        final repository = FakeDevToolsRepository(
+          listRecordsHandler:
+              ({required String repo, required String collection, int? limit, String? cursor, bool? reverse}) async {
+                return const RepoListRecordsOutput(
+                  records: [
+                    RepoListRecordsRecord(
+                      uri: AtUri('at://did:plc:test/app.bsky.feed.post/123'),
+                      cid: 'cid123',
+                      value: {'text': 'Summary'},
+                    ),
+                  ],
+                );
+              },
+        );
+
+        return DevToolsCubit(repository: repository);
+      },
+      seed: () => const DevToolsState(
+        status: DevToolsStatus.repoLoaded,
+        did: 'did:plc:test',
+        repoHandle: 'test.bsky.social',
+        collections: [CollectionSummary('app.bsky.feed.post', recordCount: 1)],
+      ),
+      act: (cubit) => cubit.loadCollection('app.bsky.feed.post'),
+      expect: () => [
+        isA<DevToolsState>()
+            .having((state) => state.status, 'status', DevToolsStatus.repoLoaded)
+            .having((state) => state.isCollectionLoading, 'isCollectionLoading', isTrue),
+        isA<DevToolsState>()
+            .having((state) => state.status, 'status', DevToolsStatus.collectionLoaded)
+            .having((state) => state.isCollectionLoading, 'isCollectionLoading', isFalse)
+            .having((state) => state.selectedCollection, 'selectedCollection', 'app.bsky.feed.post')
+            .having((state) => state.records?.length, 'records', 1),
       ],
     );
 

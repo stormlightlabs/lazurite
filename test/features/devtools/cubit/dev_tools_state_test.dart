@@ -58,6 +58,8 @@ void main() {
       expect(state.records, isNull);
       expect(state.recordsCursor, isNull);
       expect(state.selectedRecord, isNull);
+      expect(state.isCollectionLoading, isFalse);
+      expect(state.isRecordLoading, isFalse);
       expect(state.errorMessage, isNull);
     });
 
@@ -66,6 +68,12 @@ void main() {
       expect(const DevToolsState(status: DevToolsStatus.loadingMore).isLoading, isTrue);
       expect(const DevToolsState(status: DevToolsStatus.initial).isLoading, isFalse);
       expect(const DevToolsState(status: DevToolsStatus.repoLoaded).isLoading, isFalse);
+    });
+
+    test('isNavigating returns true for collection or record transitions', () {
+      expect(const DevToolsState(isCollectionLoading: true).isNavigating, isTrue);
+      expect(const DevToolsState(isRecordLoading: true).isNavigating, isTrue);
+      expect(const DevToolsState().isNavigating, isFalse);
     });
 
     test('hasMoreRecords returns true when cursor exists', () {
@@ -145,6 +153,8 @@ void main() {
         records: records,
         recordsCursor: 'cursor',
         selectedRecord: const RecordInfo(uri: 'at://did:plc:test/app.bsky.feed.post/1', value: {'text': 'full'}),
+        isCollectionLoading: true,
+        isRecordLoading: true,
         errorMessage: 'error',
       );
 
@@ -157,6 +167,8 @@ void main() {
         records: null,
         recordsCursor: null,
         selectedRecord: null,
+        isCollectionLoading: false,
+        isRecordLoading: false,
         errorMessage: null,
       );
 
@@ -168,6 +180,8 @@ void main() {
       expect(updated.records, isNull);
       expect(updated.recordsCursor, isNull);
       expect(updated.selectedRecord, isNull);
+      expect(updated.isCollectionLoading, isFalse);
+      expect(updated.isRecordLoading, isFalse);
       expect(updated.errorMessage, isNull);
     });
 
@@ -182,10 +196,12 @@ void main() {
         selectedCollection: 'app.bsky.feed.post',
         recordsCursor: 'cursor',
         selectedRecord: RecordInfo(uri: 'at://test', value: {}),
+        isCollectionLoading: true,
+        isRecordLoading: true,
         errorMessage: 'error',
       );
 
-      expect(state.props.length, 11);
+      expect(state.props.length, 13);
       expect(state.props, contains(DevToolsStatus.repoLoaded));
       expect(state.props, contains(true));
       expect(state.props, contains('did:plc:test'));

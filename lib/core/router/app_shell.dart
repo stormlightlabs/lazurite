@@ -431,8 +431,8 @@ class _MenuTile extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       leading: Icon(isSelected ? selectedIcon : icon, color: color),
       title: Text(
-        label,
-        style: theme.textTheme.titleMedium?.copyWith(color: color, fontWeight: FontWeight.w600),
+        label.toUpperCase(),
+        style: theme.textTheme.bodyMedium?.copyWith(color: color, fontWeight: FontWeight.w700),
       ),
       trailing: trailing,
       selected: isSelected,

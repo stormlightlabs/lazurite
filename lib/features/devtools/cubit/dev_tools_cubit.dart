@@ -128,7 +128,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
     if (state.did == null) return;
 
     final collectionRequestId = _beginCollectionRequest();
-    emit(state.copyWith(status: DevToolsStatus.loading, errorMessage: null));
+    emit(state.copyWith(isCollectionLoading: true, isRecordLoading: false, errorMessage: null));
 
     try {
       final response = await _repository.listRecords(repo: state.did!, collection: collection, limit: _pageSize);
@@ -143,13 +143,15 @@ class DevToolsCubit extends Cubit<DevToolsState> {
           records: response.records,
           recordsCursor: response.cursor,
           selectedRecord: null,
+          isCollectionLoading: false,
+          isRecordLoading: false,
           errorMessage: null,
         ),
       );
     } catch (error, stackTrace) {
       log.e('DevToolsCubit: Failed to load collection', error: error, stackTrace: stackTrace);
       if (_isActiveCollectionRequest(collectionRequestId)) {
-        emit(state.copyWith(status: DevToolsStatus.error, errorMessage: _formatError(error)));
+        emit(state.copyWith(isCollectionLoading: false, errorMessage: _formatError(error)));
       }
     }
   }
@@ -182,7 +184,14 @@ class DevToolsCubit extends Cubit<DevToolsState> {
     } catch (error, stackTrace) {
       log.e('DevToolsCubit: Failed to load more records', error: error, stackTrace: stackTrace);
       if (_isActiveCollectionRequest(activeCollectionRequestId)) {
-        emit(state.copyWith(status: DevToolsStatus.error, errorMessage: _formatError(error)));
+        emit(
+          state.copyWith(
+            status: DevToolsStatus.collectionLoaded,
+            isCollectionLoading: false,
+            isRecordLoading: false,
+            errorMessage: _formatError(error),
+          ),
+        );
       }
     }
   }
@@ -191,7 +200,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
     if (state.did == null) return;
 
     final recordRequestId = _beginRecordRequest();
-    emit(state.copyWith(status: DevToolsStatus.loading, errorMessage: null));
+    emit(state.copyWith(isRecordLoading: true, errorMessage: null));
 
     try {
       final resolvedRecord = await _repository.getRecord(
@@ -211,13 +220,14 @@ class DevToolsCubit extends Cubit<DevToolsState> {
             cid: resolvedRecord.cid,
             value: resolvedRecord.value,
           ),
+          isRecordLoading: false,
           errorMessage: null,
         ),
       );
     } catch (error, stackTrace) {
       log.e('DevToolsCubit: Failed to load record', error: error, stackTrace: stackTrace);
       if (_isActiveRecordRequest(recordRequestId)) {
-        emit(state.copyWith(status: DevToolsStatus.error, errorMessage: _formatError(error)));
+        emit(state.copyWith(isRecordLoading: false, errorMessage: _formatError(error)));
       }
     }
   }
@@ -225,7 +235,14 @@ class DevToolsCubit extends Cubit<DevToolsState> {
   void goBackToCollection() {
     _recordRequestId++;
     if (state.selectedCollection != null) {
-      emit(state.copyWith(status: DevToolsStatus.collectionLoaded, selectedRecord: null));
+      emit(
+        state.copyWith(
+          status: DevToolsStatus.collectionLoaded,
+          selectedRecord: null,
+          isCollectionLoading: false,
+          isRecordLoading: false,
+        ),
+      );
     } else {
       emit(
         state.copyWith(
@@ -234,6 +251,8 @@ class DevToolsCubit extends Cubit<DevToolsState> {
           records: null,
           recordsCursor: null,
           selectedRecord: null,
+          isCollectionLoading: false,
+          isRecordLoading: false,
         ),
       );
     }
@@ -249,6 +268,8 @@ class DevToolsCubit extends Cubit<DevToolsState> {
         records: null,
         recordsCursor: null,
         selectedRecord: null,
+        isCollectionLoading: false,
+        isRecordLoading: false,
       ),
     );
   }
@@ -400,6 +421,8 @@ class DevToolsCubit extends Cubit<DevToolsState> {
       records: records,
       recordsCursor: recordsCursor,
       selectedRecord: selectedRecord,
+      isCollectionLoading: false,
+      isRecordLoading: false,
     );
   }
 

@@ -162,11 +162,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Lazurite'), findsOneWidget);
-    expect(find.text('New Post'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Log Out'), 200, scrollable: find.byType(Scrollable).last);
-    expect(find.text('Log Out'), findsOneWidget);
+    expect(find.text('NEW POST'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('LOG OUT'), 200, scrollable: find.byType(Scrollable).last);
+    expect(find.text('LOG OUT'), findsOneWidget);
 
-    await tester.tap(find.text('Profile').last);
+    await tester.tap(find.text('PROFILE').last);
     await tester.pumpAndSettle();
 
     expect(find.text('RIVER TAM'), findsOneWidget);
@@ -174,7 +174,7 @@ void main() {
     await tester.tap(find.byTooltip('Open menu'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Settings').last);
+    await tester.tap(find.text('SETTINGS').last);
     await tester.pumpAndSettle();
 
     expect(find.text('APPEARANCE'), findsOneWidget);
@@ -217,9 +217,9 @@ void main() {
     await tester.tap(find.byTooltip('Open menu'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Notifications'), findsOneWidget);
-    expect(find.text('Messages'), findsOneWidget);
-    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('NOTIFICATIONS'), findsOneWidget);
+    expect(find.text('MESSAGES'), findsOneWidget);
+    expect(find.text('SETTINGS'), findsOneWidget);
   });
 
   testWidgets('tapping bottom nav tabs switches active branch', (tester) async {

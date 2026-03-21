@@ -4,6 +4,7 @@ import 'package:atproto/com_atproto_repo_listrecords.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/widgets/app_breadcrumbs.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -23,7 +24,21 @@ class DevToolsScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: BlocBuilder<DevToolsCubit, DevToolsState>(
+      body: BlocConsumer<DevToolsCubit, DevToolsState>(
+        listenWhen: (previous, current) =>
+            previous.errorMessage != current.errorMessage &&
+            current.errorMessage != null &&
+            current.status != DevToolsStatus.error,
+        listener: (context, state) {
+          final message = state.errorMessage;
+          if (message == null) {
+            return;
+          }
+
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(message), behavior: SnackBarBehavior.floating));
+        },
         builder: (context, state) {
           return Column(
             children: [
@@ -31,7 +46,7 @@ class DevToolsScreen extends StatelessWidget {
               if (state.status == DevToolsStatus.repoLoaded ||
                   state.status == DevToolsStatus.collectionLoaded ||
                   state.status == DevToolsStatus.recordLoaded)
-                _TabBar(state: state),
+                _BreadcrumbBar(state: state),
               Expanded(child: _Content(state: state)),
             ],
           );
@@ -104,71 +119,49 @@ class _SearchInputState extends State<_SearchInput> {
   }
 }
 
-class _TabBar extends StatelessWidget {
-  const _TabBar({required this.state});
+class _BreadcrumbBar extends StatelessWidget {
+  const _BreadcrumbBar({required this.state});
 
   final DevToolsState state;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
-      ),
-      child: Row(
-        children: [
-          _Tab(
-            label: 'Repo',
-            isSelected: state.status == DevToolsStatus.repoLoaded,
-            onTap: () => context.read<DevToolsCubit>().goBackToRepo(),
-          ),
-          if (state.selectedCollection != null)
-            _Tab(
-              label: 'Records',
-              isSelected: state.status == DevToolsStatus.collectionLoaded,
-              onTap: () => context.read<DevToolsCubit>().goBackToCollection(),
-            ),
-          if (state.selectedRecord != null)
-            _Tab(label: 'JSON', isSelected: state.status == DevToolsStatus.recordLoaded, onTap: () {}),
-        ],
-      ),
-    );
+    return AppBreadcrumbs(items: _items(context), isLoading: state.isNavigating);
   }
-}
 
-class _Tab extends StatelessWidget {
-  const _Tab({required this.label, required this.isSelected, required this.onTap});
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
-                width: 2,
-              ),
-            ),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).textTheme.bodyMedium?.color,
-            ),
-          ),
-        ),
+  List<AppBreadcrumbItem> _items(BuildContext context) {
+    final cubit = context.read<DevToolsCubit>();
+    final repoLabel = state.repoHandle ?? state.handle ?? state.did ?? 'Repository';
+    final items = <AppBreadcrumbItem>[
+      AppBreadcrumbItem(
+        label: repoLabel,
+        tooltip: state.did == null ? repoLabel : '$repoLabel\n${state.did}',
+        key: const ValueKey('dev-tools-breadcrumb-repo'),
+        onTap: state.status == DevToolsStatus.repoLoaded ? null : cubit.goBackToRepo,
       ),
-    );
+    ];
+
+    if (state.selectedCollection != null) {
+      items.add(
+        AppBreadcrumbItem(
+          label: state.selectedCollection!,
+          key: const ValueKey('dev-tools-breadcrumb-collection'),
+          onTap: state.status == DevToolsStatus.collectionLoaded ? null : cubit.goBackToCollection,
+        ),
+      );
+    }
+
+    if (state.selectedRecord != null) {
+      items.add(
+        AppBreadcrumbItem(
+          label: state.selectedRecord!.rkey.isEmpty ? 'Record JSON' : state.selectedRecord!.rkey,
+          tooltip: state.selectedRecord!.uri,
+          key: const ValueKey('dev-tools-breadcrumb-record'),
+        ),
+      );
+    }
+
+    return items;
   }
 }
 
