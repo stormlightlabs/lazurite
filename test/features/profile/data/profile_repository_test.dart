@@ -79,11 +79,11 @@ class _FakeActorService {
 
   final Future<_FakeResponse<ProfileViewDetailed>> Function(String actor) onGetProfile;
 
-  Future<_FakeResponse<ProfileViewDetailed>> getProfile({required String actor}) {
+  Future<_FakeResponse<ProfileViewDetailed>> getProfile({required String actor, Map<String, String>? $headers}) {
     return onGetProfile(actor);
   }
 
-  Future<_FakeProfilesResponse> getProfiles({required List<String> actors}) async {
+  Future<_FakeProfilesResponse> getProfiles({required List<String> actors, Map<String, String>? $headers}) async {
     return _FakeProfilesResponse(const _FakeProfilesData([]));
   }
 }

@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
-import 'package:bluesky/bluesky.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,8 +30,7 @@ class PostThreadScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) =>
-          PostThreadCubit(postThreadRepository: PostThreadRepository(bluesky: context.read<Bluesky>()))..load(postUri),
+      create: (_) => PostThreadCubit(postThreadRepository: context.read<PostThreadRepository>())..load(postUri),
       child: _PostThreadContent(postUri: postUri),
     );
   }

@@ -1,9 +1,9 @@
-import 'package:bluesky/bluesky.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
+import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:provider/provider.dart';
 
 class AppShellScope extends InheritedWidget {
@@ -367,8 +367,8 @@ class _MenuProfileAvatarState extends State<_MenuProfileAvatar> {
     }
 
     try {
-      final profile = await context.read<Bluesky>().actor.getProfile(actor: did);
-      return profile.data.avatar;
+      final profile = await context.read<ProfileRepository>().getProfile(did);
+      return profile.avatar;
     } catch (_) {
       return null;
     }

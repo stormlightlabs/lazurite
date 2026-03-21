@@ -141,9 +141,7 @@ class AppRouter {
             providers: [
               if (existingUnreadCubit == null)
                 BlocProvider(
-                  create: (_) => UnreadCountCubit(
-                    notificationRepository: NotificationRepository(bluesky: context.read<Bluesky>()),
-                  ),
+                  create: (_) => UnreadCountCubit(notificationRepository: context.read<NotificationRepository>()),
                 ),
             ],
             child: AppShell(navigationShell: navigationShell),
@@ -201,9 +199,7 @@ class AppRouter {
               GoRoute(
                 path: '/notifications',
                 builder: (context, state) => BlocProvider(
-                  create: (_) => NotificationBloc(
-                    notificationRepository: NotificationRepository(bluesky: context.read<Bluesky>()),
-                  ),
+                  create: (_) => NotificationBloc(notificationRepository: context.read<NotificationRepository>()),
                   child: const NotificationsScreen(),
                 ),
               ),

@@ -1,33 +1,38 @@
+import 'dart:async';
+
 import 'package:bluesky/bluesky.dart';
+import 'package:bluesky/bluesky_chat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
-import 'package:lazurite/core/scheduler/post_scheduler.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
 import 'package:lazurite/core/logging/logging_navigator_observer.dart';
-import 'package:bluesky/bluesky_chat.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/router/app_router.dart';
-import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
-import 'package:lazurite/features/messages/data/convo_repository.dart';
+import 'package:lazurite/core/scheduler/post_scheduler.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
+import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
+import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
+import 'package:lazurite/features/feed/data/post_action_repository.dart';
+import 'package:lazurite/features/feed/data/post_thread_repository.dart';
+import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
+import 'package:lazurite/features/messages/data/convo_repository.dart';
+import 'package:lazurite/features/moderation/data/moderation_service.dart';
+import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
+import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
-import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
-import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
-import 'package:lazurite/features/feed/data/post_action_repository.dart';
-import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
 Future<void> main() async {
@@ -127,54 +132,88 @@ class _LazuriteAppState extends State<LazuriteApp> {
             return appShell;
           }
 
-          final feedRepository = FeedRepository(bluesky: bluesky);
-          final searchRepository = SearchRepository(bluesky: bluesky);
-          final postActionRepository = PostActionRepository(bluesky: bluesky);
-          final profileActionRepository = ProfileActionRepository(bluesky: bluesky);
-          final convoRepository = ConvoRepository(chat: blueskyChat);
           final accountDid = authState.tokens?.did ?? '';
 
-          return MultiBlocProvider(
+          return MultiRepositoryProvider(
             providers: [
-              BlocProvider(
-                create: (_) => ProfileBloc(
-                  profileRepository: ProfileRepository(database: widget.database, bluesky: bluesky),
+              RepositoryProvider(
+                create: (_) {
+                  final moderationService = ModerationService(
+                    bluesky: bluesky,
+                    database: widget.database,
+                    accountDid: accountDid,
+                    userDid: accountDid,
+                  );
+                  unawaited(moderationService.ensureInitialized());
+                  return moderationService;
+                },
+                dispose: (moderationService) => moderationService.dispose(),
+              ),
+              RepositoryProvider(
+                create: (context) =>
+                    FeedRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
+              ),
+              RepositoryProvider(
+                create: (context) =>
+                    SearchRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
+              ),
+              RepositoryProvider(
+                create: (context) => ProfileRepository(
+                  database: widget.database,
+                  bluesky: bluesky,
+                  moderationService: context.read<ModerationService>(),
                 ),
               ),
-              BlocProvider(create: (_) => FeedBloc(feedRepository: feedRepository)),
-              BlocProvider(
-                create: (_) => FeedPreferencesCubit(
-                  feedRepository: feedRepository,
-                  database: widget.database,
-                  accountDid: accountDid,
-                )..loadPreferences(),
+              RepositoryProvider(
+                create: (context) =>
+                    NotificationRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
               ),
-              BlocProvider(create: (_) => DevToolsCubit(atproto: bluesky.atproto)),
-              BlocProvider(
-                create: (_) =>
-                    SearchBloc(searchRepository: searchRepository, database: widget.database, accountDid: accountDid),
+              RepositoryProvider(
+                create: (context) =>
+                    PostThreadRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
               ),
-              BlocProvider(
-                create: (_) => ConvoListBloc(convoRepository: convoRepository)..add(const ConvosRequested(limit: 100)),
-              ),
-              BlocProvider(
-                create: (_) => SavedPostsCubit(
-                  database: widget.database,
-                  accountDid: accountDid,
-                  postActionRepository: postActionRepository,
-                ),
-              ),
-              RepositoryProvider.value(value: feedRepository),
-              RepositoryProvider.value(value: searchRepository),
-              RepositoryProvider.value(value: postActionRepository),
+              RepositoryProvider(create: (_) => PostActionRepository(bluesky: bluesky)),
+              RepositoryProvider(create: (_) => ProfileActionRepository(bluesky: bluesky)),
+              RepositoryProvider(create: (_) => ConvoRepository(chat: blueskyChat)),
               RepositoryProvider(create: (_) => PostActionCache()),
-              RepositoryProvider.value(value: profileActionRepository),
               RepositoryProvider.value(value: bluesky),
-              RepositoryProvider.value(value: convoRepository),
               RepositoryProvider.value(value: widget.database),
               RepositoryProvider.value(value: accountDid),
             ],
-            child: appShell,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider(create: (context) => ProfileBloc(profileRepository: context.read<ProfileRepository>())),
+                BlocProvider(create: (context) => FeedBloc(feedRepository: context.read<FeedRepository>())),
+                BlocProvider(
+                  create: (context) => FeedPreferencesCubit(
+                    feedRepository: context.read<FeedRepository>(),
+                    database: widget.database,
+                    accountDid: accountDid,
+                  )..loadPreferences(),
+                ),
+                BlocProvider(create: (_) => DevToolsCubit(atproto: bluesky.atproto)),
+                BlocProvider(
+                  create: (context) => SearchBloc(
+                    searchRepository: context.read<SearchRepository>(),
+                    database: widget.database,
+                    accountDid: accountDid,
+                  ),
+                ),
+                BlocProvider(
+                  create: (context) =>
+                      ConvoListBloc(convoRepository: context.read<ConvoRepository>())
+                        ..add(const ConvosRequested(limit: 100)),
+                ),
+                BlocProvider(
+                  create: (context) => SavedPostsCubit(
+                    database: widget.database,
+                    accountDid: accountDid,
+                    postActionRepository: context.read<PostActionRepository>(),
+                  ),
+                ),
+              ],
+              child: appShell,
+            ),
           );
         },
       ),
