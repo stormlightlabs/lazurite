@@ -90,7 +90,7 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    await tester.pump(const Duration(hours: 2)); // drain pending timers
+    await tester.pump(const Duration(hours: 2));
   });
 
   testWidgets('shows FEEDS and MODERATION tabs', (tester) async {

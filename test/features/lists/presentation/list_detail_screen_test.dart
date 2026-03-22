@@ -104,9 +104,9 @@ void main() {
     });
 
     await tester.pumpWidget(buildSubject());
-    await tester.pump(); // allow bloc event to be processed
+    await tester.pump();
     expect(find.byType(CircularProgressIndicator), findsWidgets);
-    await tester.pump(const Duration(hours: 2)); // drain pending timers
+    await tester.pump(const Duration(hours: 2));
   });
 
   testWidgets('shows list name in app bar after loading', (tester) async {

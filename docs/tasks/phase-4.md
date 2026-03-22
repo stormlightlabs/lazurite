@@ -75,8 +75,8 @@ Completed [2026-03-21](../../CHANGELOG.md#2026-03-21)
 
 ### Core
 
-- [ ] `StarterPackBloc` — events: `StarterPackRequested`, `StarterPackCreated`, `StarterPackUpdated`, `StarterPackDeleted`, `MemberAdded`, `MemberRemoved`
-- [ ] `ActorStarterPacksCubit` — load starter packs for an actor via `getActorStarterPacks`
+- [x] `StarterPackBloc` — events: `StarterPackRequested`, `StarterPackCreated`, `StarterPackUpdated`, `StarterPackDeleted`, `MemberAdded`, `MemberRemoved`
+- [x] `ActorStarterPacksCubit` — load starter packs for an actor via `getActorStarterPacks`
 
 ### Viewing
 
