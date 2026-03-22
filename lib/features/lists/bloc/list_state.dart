@@ -1,6 +1,6 @@
 part of 'list_bloc.dart';
 
-enum ListStatus { initial, loading, loaded, error }
+enum ListStatus { initial, loading, loaded, error, deleted }
 
 class ListState extends Equatable {
   const ListState._({
@@ -46,6 +46,8 @@ class ListState extends Equatable {
 
   const ListState.error({required String message, AtUri? listUri, int limit = 50})
     : this._(status: ListStatus.error, listUri: listUri, limit: limit, errorMessage: message);
+
+  const ListState.deleted() : this._(status: ListStatus.deleted);
 
   final ListStatus status;
   final AtUri? listUri;

@@ -1,4 +1,6 @@
-import 'package:atproto_core/atproto_core.dart';
+import 'dart:typed_data';
+
+import 'package:atproto_core/atproto_core.dart' show AtUri, BlobRef;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_graph_defs.dart';
@@ -116,6 +118,67 @@ class ListRepository {
 
   Future<void> unblockList({required AtUri blockUri}) async {
     await _bluesky.graph.listblock.delete(rkey: blockUri.rkey);
+  }
+
+  Future<BlobRef?> uploadListAvatar({required List<int> bytes, String mimeType = 'image/jpeg'}) async {
+    final response = await _bluesky.atproto.repo.uploadBlob(
+      bytes: Uint8List.fromList(bytes),
+      $headers: {'Content-Type': mimeType},
+    );
+    return response.data.blob.ref;
+  }
+
+  Future<AtUri> createList({
+    required String userDid,
+    required String name,
+    required String purpose,
+    String? description,
+    BlobRef? avatarBlob,
+  }) async {
+    final record = <String, dynamic>{
+      r'$type': 'app.bsky.graph.list',
+      'purpose': purpose,
+      'name': name,
+      'createdAt': DateTime.now().toUtc().toIso8601String(),
+    };
+    if (description != null) record['description'] = description;
+    if (avatarBlob != null) record['avatar'] = avatarBlob.toJson();
+
+    final response = await _bluesky.atproto.repo.createRecord(
+      repo: userDid,
+      collection: 'app.bsky.graph.list',
+      record: record,
+    );
+    return response.data.uri;
+  }
+
+  Future<void> updateList({
+    required AtUri listUri,
+    required String userDid,
+    required String name,
+    required String purpose,
+    String? description,
+    BlobRef? avatarBlob,
+  }) async {
+    final record = <String, dynamic>{
+      r'$type': 'app.bsky.graph.list',
+      'purpose': purpose,
+      'name': name,
+      'createdAt': DateTime.now().toUtc().toIso8601String(),
+    };
+    if (description != null) record['description'] = description;
+    if (avatarBlob != null) record['avatar'] = avatarBlob.toJson();
+
+    await _bluesky.atproto.repo.putRecord(
+      repo: userDid,
+      collection: 'app.bsky.graph.list',
+      rkey: listUri.rkey,
+      record: record,
+    );
+  }
+
+  Future<void> deleteList({required AtUri listUri, required String userDid}) async {
+    await _bluesky.atproto.repo.deleteRecord(repo: userDid, collection: 'app.bsky.graph.list', rkey: listUri.rkey);
   }
 
   List<ListView> _filterLists(List<ListView> lists) {

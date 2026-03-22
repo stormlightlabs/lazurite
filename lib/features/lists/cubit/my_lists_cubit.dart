@@ -1,3 +1,4 @@
+import 'package:atproto_core/atproto_core.dart' show AtUri, BlobRef;
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -51,6 +52,38 @@ class MyListsCubit extends Cubit<MyListsState> {
       );
     } catch (error) {
       emit(state.copyWith(isRefreshing: false, errorMessage: 'Failed to refresh lists: $error'));
+    }
+  }
+
+  Future<AtUri?> createList({
+    required String userDid,
+    required String name,
+    required String purpose,
+    String? description,
+    List<int>? avatarBytes,
+    String avatarMimeType = 'image/jpeg',
+  }) async {
+    try {
+      BlobRef? avatarBlob;
+      if (avatarBytes != null) {
+        avatarBlob = await _listRepository.uploadListAvatar(bytes: avatarBytes, mimeType: avatarMimeType);
+      }
+
+      final listUri = await _listRepository.createList(
+        userDid: userDid,
+        name: name,
+        purpose: purpose,
+        description: description,
+        avatarBlob: avatarBlob,
+      );
+
+      if (state.status == MyListsStatus.loaded) {
+        await refresh();
+      }
+
+      return listUri;
+    } catch (_) {
+      return null;
     }
   }
 

@@ -1,4 +1,6 @@
-import 'package:atproto_core/atproto_core.dart';
+import 'dart:typed_data';
+
+import 'package:atproto_core/atproto_core.dart' show AtUri, Blob, BlobRef;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_graph_defs.dart';
@@ -17,12 +19,15 @@ void main() {
   final listItemUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.listitem/item-1');
   final blockUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.listblock/block-1');
 
+  late _FakeAtprotoService atproto;
+
   setUp(() {
     graph = _FakeGraphService();
     feed = _FakeFeedService();
     actor = _FakeActorService();
+    atproto = _FakeAtprotoService();
     repository = ListRepository(
-      bluesky: _FakeBlueskyClient(graph: graph, feed: feed, actor: actor),
+      bluesky: _FakeBlueskyClient(graph: graph, feed: feed, actor: actor, atproto: atproto),
     );
   });
 
@@ -136,6 +141,69 @@ void main() {
       expect(graph.listblock.lastCreatedSubject, listUri);
       expect(graph.listblock.lastDeletedRkey, blockUri.rkey);
     });
+
+    test('uploadListAvatar uploads bytes and returns BlobRef', () async {
+      final bytes = [1, 2, 3, 4];
+      final ref = await repository.uploadListAvatar(bytes: bytes, mimeType: 'image/png');
+
+      expect(ref, atproto.repo.uploadedBlobRef);
+      expect(atproto.repo.lastUploadedBytes, Uint8List.fromList(bytes));
+      expect(atproto.repo.lastUploadHeaders, {'Content-Type': 'image/png'});
+    });
+
+    test('createList creates a record and returns the new URI', () async {
+      final createdUri = await repository.createList(
+        userDid: 'did:plc:creator',
+        name: 'My List',
+        purpose: 'app.bsky.graph.defs#curatelist',
+        description: 'A great list',
+      );
+
+      expect(createdUri, atproto.repo.createdListUri);
+      expect(atproto.repo.lastCreateRepo, 'did:plc:creator');
+      expect(atproto.repo.lastCreateCollection, 'app.bsky.graph.list');
+      expect(atproto.repo.lastCreateRecord?[r'$type'], 'app.bsky.graph.list');
+      expect(atproto.repo.lastCreateRecord?['name'], 'My List');
+      expect(atproto.repo.lastCreateRecord?['purpose'], 'app.bsky.graph.defs#curatelist');
+      expect(atproto.repo.lastCreateRecord?['description'], 'A great list');
+    });
+
+    test('createList embeds avatar blob when provided', () async {
+      const blobRef = BlobRef(link: 'bafkreiavatarblob');
+
+      await repository.createList(
+        userDid: 'did:plc:creator',
+        name: 'List With Avatar',
+        purpose: 'app.bsky.graph.defs#modlist',
+        avatarBlob: blobRef,
+      );
+
+      expect(atproto.repo.lastCreateRecord?['avatar'], blobRef.toJson());
+    });
+
+    test('updateList puts an updated record', () async {
+      await repository.updateList(
+        listUri: listUri,
+        userDid: 'did:plc:creator',
+        name: 'Updated Name',
+        purpose: 'app.bsky.graph.defs#curatelist',
+        description: 'Updated description',
+      );
+
+      expect(atproto.repo.lastPutRepo, 'did:plc:creator');
+      expect(atproto.repo.lastPutCollection, 'app.bsky.graph.list');
+      expect(atproto.repo.lastPutRkey, listUri.rkey);
+      expect(atproto.repo.lastPutRecord?['name'], 'Updated Name');
+      expect(atproto.repo.lastPutRecord?['description'], 'Updated description');
+    });
+
+    test('deleteList deletes the record by rkey', () async {
+      await repository.deleteList(listUri: listUri, userDid: 'did:plc:creator');
+
+      expect(atproto.repo.lastDeleteRepo, 'did:plc:creator');
+      expect(atproto.repo.lastDeleteCollection, 'app.bsky.graph.list');
+      expect(atproto.repo.lastDeleteRkey, listUri.rkey);
+    });
   });
 }
 
@@ -151,11 +219,100 @@ ListView _buildListView(AtUri uri) {
 }
 
 class _FakeBlueskyClient {
-  _FakeBlueskyClient({required this.graph, required this.feed, required this.actor});
+  _FakeBlueskyClient({required this.graph, required this.feed, required this.actor, _FakeAtprotoService? atproto})
+    : atproto = atproto ?? _FakeAtprotoService();
 
   final _FakeGraphService graph;
   final _FakeFeedService feed;
   final _FakeActorService actor;
+  final _FakeAtprotoService atproto;
+}
+
+class _FakeAtprotoService {
+  _FakeAtprotoService() : repo = _FakeRepoService();
+
+  final _FakeRepoService repo;
+}
+
+class _FakeRepoService {
+  final AtUri createdListUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/created-list');
+  final BlobRef uploadedBlobRef = const BlobRef(link: 'bafkreitestblobref');
+
+  String? lastCreateRepo;
+  String? lastCreateCollection;
+  Map<String, dynamic>? lastCreateRecord;
+
+  String? lastPutRepo;
+  String? lastPutCollection;
+  String? lastPutRkey;
+  Map<String, dynamic>? lastPutRecord;
+
+  String? lastDeleteRepo;
+  String? lastDeleteCollection;
+  String? lastDeleteRkey;
+
+  Uint8List? lastUploadedBytes;
+  Map<String, String>? lastUploadHeaders;
+
+  Future<_FakeResponse<_FakeCreateRecordData>> createRecord({
+    required String repo,
+    required String collection,
+    required Map<String, dynamic> record,
+    String? rkey,
+    Map<String, String>? $headers,
+  }) async {
+    lastCreateRepo = repo;
+    lastCreateCollection = collection;
+    lastCreateRecord = record;
+    return _FakeResponse(_FakeCreateRecordData(createdListUri));
+  }
+
+  Future<_FakeResponse<Object>> putRecord({
+    required String repo,
+    required String collection,
+    required String rkey,
+    required Map<String, dynamic> record,
+    Map<String, String>? $headers,
+  }) async {
+    lastPutRepo = repo;
+    lastPutCollection = collection;
+    lastPutRkey = rkey;
+    lastPutRecord = record;
+    return _FakeResponse(Object());
+  }
+
+  Future<_FakeResponse<Object>> deleteRecord({
+    required String repo,
+    required String collection,
+    required String rkey,
+    Map<String, String>? $headers,
+  }) async {
+    lastDeleteRepo = repo;
+    lastDeleteCollection = collection;
+    lastDeleteRkey = rkey;
+    return _FakeResponse(Object());
+  }
+
+  Future<_FakeResponse<_FakeUploadBlobData>> uploadBlob({
+    required Uint8List bytes,
+    Map<String, String>? $headers,
+  }) async {
+    lastUploadedBytes = bytes;
+    lastUploadHeaders = $headers;
+    return _FakeResponse(_FakeUploadBlobData(Blob(mimeType: 'image/jpeg', size: bytes.length, ref: uploadedBlobRef)));
+  }
+}
+
+class _FakeCreateRecordData {
+  const _FakeCreateRecordData(this.uri);
+
+  final AtUri uri;
+}
+
+class _FakeUploadBlobData {
+  const _FakeUploadBlobData(this.blob);
+
+  final Blob blob;
 }
 
 class _FakeGraphService {

@@ -54,3 +54,31 @@ final class ListBlocked extends ListEvent {
 final class ListUnblocked extends ListEvent {
   const ListUnblocked();
 }
+
+final class ListUpdated extends ListEvent {
+  const ListUpdated({
+    required this.userDid,
+    required this.name,
+    this.description,
+    this.avatarBytes,
+    this.avatarMimeType = 'image/jpeg',
+  });
+
+  final String userDid;
+  final String name;
+  final String? description;
+  final List<int>? avatarBytes;
+  final String avatarMimeType;
+
+  @override
+  List<Object?> get props => [userDid, name, description, avatarBytes, avatarMimeType];
+}
+
+final class ListDeleted extends ListEvent {
+  const ListDeleted({required this.userDid});
+
+  final String userDid;
+
+  @override
+  List<Object?> get props => [userDid];
+}

@@ -1,4 +1,4 @@
-import 'package:atproto_core/atproto_core.dart';
+import 'package:atproto_core/atproto_core.dart' show AtUri, BlobRef;
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,6 +19,8 @@ class ListBloc extends Bloc<ListEvent, ListState> {
     on<ListUnmuted>(_onListUnmuted);
     on<ListBlocked>(_onListBlocked);
     on<ListUnblocked>(_onListUnblocked);
+    on<ListUpdated>(_onListUpdated);
+    on<ListDeleted>(_onListDeleted);
   }
 
   final ListRepository _listRepository;
@@ -123,6 +125,49 @@ class ListBloc extends Bloc<ListEvent, ListState> {
       action: () => _listRepository.unblockList(blockUri: blockUri),
       errorPrefix: 'Failed to unblock list',
     );
+  }
+
+  Future<void> _onListUpdated(ListUpdated event, Emitter<ListState> emit) async {
+    if (state.status != ListStatus.loaded || state.listUri == null || state.isMutating || state.list == null) {
+      return;
+    }
+
+    emit(state.copyWith(isMutating: true, errorMessage: null));
+
+    try {
+      BlobRef? avatarBlob;
+      if (event.avatarBytes != null) {
+        avatarBlob = await _listRepository.uploadListAvatar(bytes: event.avatarBytes!, mimeType: event.avatarMimeType);
+      }
+
+      await _listRepository.updateList(
+        listUri: state.listUri!,
+        userDid: event.userDid,
+        name: event.name,
+        purpose: state.list!.purpose.toJson(),
+        description: event.description,
+        avatarBlob: avatarBlob,
+      );
+
+      await _reloadList(emit, isRefreshing: false, isMutating: true, errorPrefix: 'Failed to update list');
+    } catch (error) {
+      emit(state.copyWith(isMutating: false, errorMessage: 'Failed to update list: $error'));
+    }
+  }
+
+  Future<void> _onListDeleted(ListDeleted event, Emitter<ListState> emit) async {
+    if (state.status != ListStatus.loaded || state.listUri == null || state.isMutating) {
+      return;
+    }
+
+    emit(state.copyWith(isMutating: true, errorMessage: null));
+
+    try {
+      await _listRepository.deleteList(listUri: state.listUri!, userDid: event.userDid);
+      emit(const ListState.deleted());
+    } catch (error) {
+      emit(state.copyWith(isMutating: false, errorMessage: 'Failed to delete list: $error'));
+    }
   }
 
   Future<void> _runMutation(

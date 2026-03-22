@@ -46,16 +46,16 @@ Completed [2026-03-21](../../CHANGELOG.md#2026-03-21)
 
 ### List CRUD
 
-- [ ] Create list — name, description, avatar, purpose selector (curation/moderation) via `com.atproto.repo.createRecord`
-- [ ] Edit list — update name, description, avatar via `com.atproto.repo.putRecord`
-- [ ] Delete list via `com.atproto.repo.deleteRecord`
-- [ ] Add members — search via `searchActorsTypeahead`, create `listitem` records
-- [ ] Remove members — delete `listitem` records
+- [x] Create list — name, description, avatar, purpose selector (curation/moderation) via `com.atproto.repo.createRecord`
+- [x] Edit list — update name, description, avatar via `com.atproto.repo.putRecord`
+- [x] Delete list via `com.atproto.repo.deleteRecord`
+- [x] Add members — search via `searchActorsTypeahead`, create `listitem` records
+- [x] Remove members — delete `listitem` records
 
 ### Moderation Actions
 
-- [ ] Mute list via `muteActorList` / unmute via `unmuteActorList`
-- [ ] Block via list — create `listblock` record; unblock — delete `listblock` record
+- [x] Mute list via `muteActorList` / unmute via `unmuteActorList`
+- [x] Block via list — create `listblock` record; unblock — delete `listblock` record
 
 ### Screens
 

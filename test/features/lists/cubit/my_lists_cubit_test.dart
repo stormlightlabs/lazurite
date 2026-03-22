@@ -1,5 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
-import 'package:atproto_core/atproto_core.dart';
+import 'package:atproto_core/atproto_core.dart' show AtUri, BlobRef;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +16,8 @@ void main() {
   final curationListUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/curation');
   final moderationListUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/moderation');
   final referenceListUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/reference');
+
+  final newListUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/new-list');
 
   setUp(() {
     mockListRepository = MockListRepository();
@@ -85,6 +87,107 @@ void main() {
         predicate<MyListsState>((state) => !state.isRefreshing && state.lists.length == 2 && !state.hasMore),
       ],
     );
+
+    blocTest<MyListsCubit, MyListsState>(
+      'createList creates the list and refreshes',
+      build: () => MyListsCubit(listRepository: mockListRepository),
+      seed: () => MyListsState.loaded(actor: actor, lists: [curationList], cursor: null, hasMore: false),
+      setUp: () {
+        when(
+          () => mockListRepository.createList(
+            userDid: actor,
+            name: 'New List',
+            purpose: 'app.bsky.graph.defs#curatelist',
+            description: any(named: 'description'),
+            avatarBlob: any(named: 'avatarBlob'),
+          ),
+        ).thenAnswer((_) async => newListUri);
+        when(
+          () => mockListRepository.getLists(
+            actor: actor,
+            cursor: any(named: 'cursor'),
+            limit: 50,
+            includeReference: any(named: 'includeReference'),
+          ),
+        ).thenAnswer((_) async => ListsResult(lists: [curationList, moderationList], cursor: null));
+      },
+      act: (cubit) => cubit.createList(userDid: actor, name: 'New List', purpose: 'app.bsky.graph.defs#curatelist'),
+      expect: () => [
+        predicate<MyListsState>((state) => state.isRefreshing),
+        predicate<MyListsState>((state) => !state.isRefreshing && state.lists.length == 2),
+      ],
+    );
+
+    test('createList returns the new list URI', () async {
+      final cubit = MyListsCubit(listRepository: mockListRepository);
+
+      when(
+        () => mockListRepository.createList(
+          userDid: actor,
+          name: 'New List',
+          purpose: 'app.bsky.graph.defs#curatelist',
+          description: any(named: 'description'),
+          avatarBlob: any(named: 'avatarBlob'),
+        ),
+      ).thenAnswer((_) async => newListUri);
+
+      final result = await cubit.createList(
+        userDid: actor,
+        name: 'New List',
+        purpose: 'app.bsky.graph.defs#curatelist',
+      );
+
+      expect(result, newListUri);
+    });
+
+    test('createList uploads avatar when bytes provided', () async {
+      final cubit = MyListsCubit(listRepository: mockListRepository);
+      const avatarRef = BlobRef(link: 'bafkreiavatarblob');
+
+      when(
+        () => mockListRepository.uploadListAvatar(
+          bytes: any(named: 'bytes'),
+          mimeType: any(named: 'mimeType'),
+        ),
+      ).thenAnswer((_) async => avatarRef);
+      when(
+        () => mockListRepository.createList(
+          userDid: actor,
+          name: 'With Avatar',
+          purpose: 'app.bsky.graph.defs#modlist',
+          description: any(named: 'description'),
+          avatarBlob: avatarRef,
+        ),
+      ).thenAnswer((_) async => newListUri);
+
+      final result = await cubit.createList(
+        userDid: actor,
+        name: 'With Avatar',
+        purpose: 'app.bsky.graph.defs#modlist',
+        avatarBytes: [1, 2, 3],
+      );
+
+      expect(result, newListUri);
+      verify(() => mockListRepository.uploadListAvatar(bytes: [1, 2, 3], mimeType: 'image/jpeg')).called(1);
+    });
+
+    test('createList returns null on failure', () async {
+      final cubit = MyListsCubit(listRepository: mockListRepository);
+
+      when(
+        () => mockListRepository.createList(
+          userDid: actor,
+          name: any(named: 'name'),
+          purpose: any(named: 'purpose'),
+          description: any(named: 'description'),
+          avatarBlob: any(named: 'avatarBlob'),
+        ),
+      ).thenThrow(Exception('network error'));
+
+      final result = await cubit.createList(userDid: actor, name: 'Broken', purpose: 'app.bsky.graph.defs#curatelist');
+
+      expect(result, isNull);
+    });
 
     blocTest<MyListsCubit, MyListsState>(
       'loads more pages for the active actor',

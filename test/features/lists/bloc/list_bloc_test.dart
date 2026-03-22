@@ -1,4 +1,4 @@
-import 'package:atproto_core/atproto_core.dart';
+import 'package:atproto_core/atproto_core.dart' show AtUri, BlobRef;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_graph_defs.dart';
@@ -21,6 +21,7 @@ void main() {
     registerFallbackValue(AtUri.parse('at://did:plc:fallback/app.bsky.graph.list/fallback'));
     registerFallbackValue(AtUri.parse('at://did:plc:fallback/app.bsky.graph.listitem/fallback'));
     registerFallbackValue(AtUri.parse('at://did:plc:fallback/app.bsky.graph.listblock/fallback'));
+    registerFallbackValue(const BlobRef(link: 'bafkreifallback'));
   });
 
   setUp(() {
@@ -177,6 +178,127 @@ void main() {
     );
 
     blocTest<ListBloc, ListState>(
+      'updates the list metadata and rehydrates',
+      build: () => ListBloc(listRepository: mockListRepository),
+      seed: () =>
+          ListState.loaded(listUri: listUri, list: initialList, items: [firstItem], cursor: null, hasMore: false),
+      setUp: () {
+        when(
+          () => mockListRepository.updateList(
+            listUri: listUri,
+            userDid: 'did:plc:creator',
+            name: 'Renamed List',
+            purpose: any(named: 'purpose'),
+            description: any(named: 'description'),
+            avatarBlob: any(named: 'avatarBlob'),
+          ),
+        ).thenAnswer((_) async {});
+        when(
+          () => mockListRepository.getList(
+            listUri: listUri,
+            cursor: any(named: 'cursor'),
+            limit: 50,
+          ),
+        ).thenAnswer(
+          (_) async => ListDetailResult(
+            list: _buildListView(listUri: listUri),
+            items: [firstItem],
+            cursor: null,
+          ),
+        );
+      },
+      act: (bloc) =>
+          bloc.add(const ListUpdated(userDid: 'did:plc:creator', name: 'Renamed List', description: 'New desc')),
+      expect: () => [
+        predicate<ListState>((state) => state.isMutating && !state.isRefreshing),
+        predicate<ListState>((state) => !state.isMutating && state.status == ListStatus.loaded),
+      ],
+      verify: (_) {
+        verify(
+          () => mockListRepository.updateList(
+            listUri: listUri,
+            userDid: 'did:plc:creator',
+            name: 'Renamed List',
+            purpose: any(named: 'purpose'),
+            description: 'New desc',
+            avatarBlob: any(named: 'avatarBlob'),
+          ),
+        ).called(1);
+      },
+    );
+
+    blocTest<ListBloc, ListState>(
+      'uploads avatar and updates the list',
+      build: () => ListBloc(listRepository: mockListRepository),
+      seed: () =>
+          ListState.loaded(listUri: listUri, list: initialList, items: [firstItem], cursor: null, hasMore: false),
+      setUp: () {
+        when(
+          () => mockListRepository.uploadListAvatar(
+            bytes: any(named: 'bytes'),
+            mimeType: any(named: 'mimeType'),
+          ),
+        ).thenAnswer((_) async => const BlobRef(link: 'bafkreinewavatarblob'));
+        when(
+          () => mockListRepository.updateList(
+            listUri: any(named: 'listUri'),
+            userDid: any(named: 'userDid'),
+            name: any(named: 'name'),
+            purpose: any(named: 'purpose'),
+            description: any(named: 'description'),
+            avatarBlob: any(named: 'avatarBlob'),
+          ),
+        ).thenAnswer((_) async {});
+        when(
+          () => mockListRepository.getList(
+            listUri: listUri,
+            cursor: any(named: 'cursor'),
+            limit: 50,
+          ),
+        ).thenAnswer((_) async => ListDetailResult(list: initialList, items: [firstItem], cursor: null));
+      },
+      act: (bloc) =>
+          bloc.add(const ListUpdated(userDid: 'did:plc:creator', name: 'With Avatar', avatarBytes: [1, 2, 3])),
+      expect: () => [
+        predicate<ListState>((state) => state.isMutating),
+        predicate<ListState>((state) => !state.isMutating && state.status == ListStatus.loaded),
+      ],
+      verify: (_) {
+        verify(() => mockListRepository.uploadListAvatar(bytes: [1, 2, 3], mimeType: 'image/jpeg')).called(1);
+        verify(
+          () => mockListRepository.updateList(
+            listUri: any(named: 'listUri'),
+            userDid: any(named: 'userDid'),
+            name: any(named: 'name'),
+            purpose: any(named: 'purpose'),
+            description: any(named: 'description'),
+            avatarBlob: const BlobRef(link: 'bafkreinewavatarblob'),
+          ),
+        ).called(1);
+      },
+    );
+
+    blocTest<ListBloc, ListState>(
+      'deletes the list and emits deleted state',
+      build: () => ListBloc(listRepository: mockListRepository),
+      seed: () =>
+          ListState.loaded(listUri: listUri, list: initialList, items: [firstItem], cursor: null, hasMore: false),
+      setUp: () {
+        when(
+          () => mockListRepository.deleteList(listUri: listUri, userDid: 'did:plc:creator'),
+        ).thenAnswer((_) async {});
+      },
+      act: (bloc) => bloc.add(const ListDeleted(userDid: 'did:plc:creator')),
+      expect: () => [
+        predicate<ListState>((state) => state.isMutating),
+        predicate<ListState>((state) => state.status == ListStatus.deleted),
+      ],
+      verify: (_) {
+        verify(() => mockListRepository.deleteList(listUri: listUri, userDid: 'did:plc:creator')).called(1);
+      },
+    );
+
+    blocTest<ListBloc, ListState>(
       'blocks and unblocks the active list',
       build: () => ListBloc(listRepository: mockListRepository),
       seed: () =>
@@ -209,6 +331,105 @@ void main() {
         predicate<ListState>((state) => state.list?.viewer?.blocked == blockUri),
         predicate<ListState>((state) => state.isMutating),
         predicate<ListState>((state) => state.list?.viewer?.blocked == null),
+      ],
+    );
+
+    blocTest<ListBloc, ListState>(
+      'ListUnblocked is a no-op when the list has no block URI',
+      build: () => ListBloc(listRepository: mockListRepository),
+      seed: () =>
+          ListState.loaded(listUri: listUri, list: initialList, items: [firstItem], cursor: null, hasMore: false),
+      act: (bloc) => bloc.add(const ListUnblocked()),
+      expect: () => [],
+    );
+
+    blocTest<ListBloc, ListState>(
+      'ListMuted is a no-op when a mutation is already in progress',
+      build: () => ListBloc(listRepository: mockListRepository),
+      seed: () => ListState.loaded(
+        listUri: listUri,
+        list: initialList,
+        items: [firstItem],
+        cursor: null,
+        hasMore: false,
+        isMutating: true,
+      ),
+      act: (bloc) => bloc.add(const ListMuted()),
+      expect: () => [],
+    );
+
+    blocTest<ListBloc, ListState>(
+      'ListBlocked is a no-op when a mutation is already in progress',
+      build: () => ListBloc(listRepository: mockListRepository),
+      seed: () => ListState.loaded(
+        listUri: listUri,
+        list: initialList,
+        items: [firstItem],
+        cursor: null,
+        hasMore: false,
+        isMutating: true,
+      ),
+      act: (bloc) => bloc.add(const ListBlocked()),
+      expect: () => [],
+    );
+
+    blocTest<ListBloc, ListState>(
+      'ListMuted emits error message when muteList throws',
+      build: () => ListBloc(listRepository: mockListRepository),
+      seed: () =>
+          ListState.loaded(listUri: listUri, list: initialList, items: [firstItem], cursor: null, hasMore: false),
+      setUp: () {
+        when(() => mockListRepository.muteList(listUri: listUri)).thenThrow(Exception('network error'));
+      },
+      act: (bloc) => bloc.add(const ListMuted()),
+      expect: () => [
+        predicate<ListState>((state) => state.isMutating && state.errorMessage == null),
+        predicate<ListState>((state) => !state.isMutating && state.errorMessage != null),
+      ],
+    );
+
+    blocTest<ListBloc, ListState>(
+      'ListUnmuted emits error message when unmuteList throws',
+      build: () => ListBloc(listRepository: mockListRepository),
+      seed: () =>
+          ListState.loaded(listUri: listUri, list: initialList, items: [firstItem], cursor: null, hasMore: false),
+      setUp: () {
+        when(() => mockListRepository.unmuteList(listUri: listUri)).thenThrow(Exception('network error'));
+      },
+      act: (bloc) => bloc.add(const ListUnmuted()),
+      expect: () => [
+        predicate<ListState>((state) => state.isMutating && state.errorMessage == null),
+        predicate<ListState>((state) => !state.isMutating && state.errorMessage != null),
+      ],
+    );
+
+    blocTest<ListBloc, ListState>(
+      'ListBlocked emits error message when blockList throws',
+      build: () => ListBloc(listRepository: mockListRepository),
+      seed: () =>
+          ListState.loaded(listUri: listUri, list: initialList, items: [firstItem], cursor: null, hasMore: false),
+      setUp: () {
+        when(() => mockListRepository.blockList(listUri: listUri)).thenThrow(Exception('network error'));
+      },
+      act: (bloc) => bloc.add(const ListBlocked()),
+      expect: () => [
+        predicate<ListState>((state) => state.isMutating && state.errorMessage == null),
+        predicate<ListState>((state) => !state.isMutating && state.errorMessage != null),
+      ],
+    );
+
+    blocTest<ListBloc, ListState>(
+      'ListUnblocked emits error message when unblockList throws',
+      build: () => ListBloc(listRepository: mockListRepository),
+      seed: () =>
+          ListState.loaded(listUri: listUri, list: blockedList, items: [firstItem], cursor: null, hasMore: false),
+      setUp: () {
+        when(() => mockListRepository.unblockList(blockUri: blockUri)).thenThrow(Exception('network error'));
+      },
+      act: (bloc) => bloc.add(const ListUnblocked()),
+      expect: () => [
+        predicate<ListState>((state) => state.isMutating && state.errorMessage == null),
+        predicate<ListState>((state) => !state.isMutating && state.errorMessage != null),
       ],
     );
   });
