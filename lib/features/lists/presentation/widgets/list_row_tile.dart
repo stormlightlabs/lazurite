@@ -1,0 +1,45 @@
+import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
+import 'package:flutter/material.dart';
+
+/// A reusable tile for a single [bsky_graph.ListView] entry.
+class ListRowTile extends StatelessWidget {
+  const ListRowTile({super.key, required this.list, this.onTap, this.trailing});
+
+  final bsky_graph.ListView list;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isMod = list.purpose.knownValue == bsky_graph.KnownListPurpose.appBskyGraphDefsModlist;
+    final purposeLabel = isMod ? 'MOD' : 'FEED';
+    final purposeColor = isMod ? colorScheme.error : colorScheme.primary;
+
+    return ListTile(
+      key: key,
+      leading: CircleAvatar(
+        backgroundImage: list.avatar != null ? NetworkImage(list.avatar!) : null,
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        child: list.avatar == null ? Icon(Icons.list, color: colorScheme.onSurfaceVariant) : null,
+      ),
+      title: Text(list.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text('${list.listItemCount ?? 0} members', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+      trailing:
+          trailing ??
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: purposeColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: purposeColor.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              purposeLabel,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: purposeColor, letterSpacing: 1),
+            ),
+          ),
+      onTap: onTap,
+    );
+  }
+}

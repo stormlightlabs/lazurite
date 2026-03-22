@@ -38,6 +38,8 @@ Completed [2026-03-21](../../CHANGELOG.md#2026-03-21)
 
 ## M18 — Lists
 
+Completed [2026-03-21](../../CHANGELOG.md#2026-03-21)
+
 ### Core
 
 - [x] `ListBloc` — events: `ListRequested`, `ListRefreshed`, `ListItemAdded`, `ListItemRemoved`, `ListMuted`, `ListUnmuted`, `ListBlocked`, `ListUnblocked`
@@ -59,15 +61,15 @@ Completed [2026-03-21](../../CHANGELOG.md#2026-03-21)
 
 ### Screens
 
-- [ ] My Lists screen — curation and moderation tabs, FAB to create new list
-- [ ] List detail screen — header (name, avatar, description, creator, member count), Feed tab (curation lists), Members tab
-- [ ] Add/remove members screen — search field + current members with remove buttons
-- [ ] Create/edit list dialog — name, description, avatar picker, purpose selector
+- [x] My Lists screen — curation and moderation tabs, FAB to create new list
+- [x] List detail screen — header (name, avatar, description, creator, member count), Feed tab (curation lists), Members tab
+- [x] Add/remove members screen — search field + current members with remove buttons
+- [x] Create/edit list dialog — name, description, avatar picker, purpose selector
 
 ### Profile Integration
 
-- [ ] "Lists" tab on profile screens via `getLists`
-- [ ] "Add to list" option in profile overflow menu using `getListsWithMembership`
+- [x] "Lists" tab on profile screens via `getLists`
+- [x] "Add to list" option in profile overflow menu using `getListsWithMembership`
 
 ## M19 — Starter Packs
 

@@ -1,6 +1,5 @@
-import 'dart:ui';
-
 import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,10 +8,15 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/widgets/sliver_tab_bar_delegate.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
+import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
+import 'package:lazurite/features/lists/data/list_repository.dart';
+import 'package:lazurite/features/lists/presentation/widgets/list_row_tile.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -59,18 +63,20 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
-  static const _tabs = [
+  static const _feedTabs = [
     (label: 'Posts', filter: FeedFilter.postsNoReplies),
     (label: 'Replies', filter: FeedFilter.postsAndAuthorThreads),
     (label: 'Media', filter: FeedFilter.postsWithMedia),
   ];
+
+  static const _tabLabels = ['POSTS', 'REPLIES', 'MEDIA', 'LISTS'];
 
   late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
+    _tabController = TabController(length: _tabLabels.length, vsync: this);
     _loadProfileAndFeed();
   }
 
@@ -102,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     return widget.actor ?? authState.tokens?.did;
   }
 
-  FeedFilter get _currentFilter => _tabs[_tabController.index].filter;
+  FeedFilter get _currentFilter => _feedTabs[_tabController.index < _feedTabs.length ? _tabController.index : 0].filter;
 
   String _appBarTitle(ProfileViewDetailed? profile) {
     final authState = context.read<AuthBloc>().state;
@@ -157,11 +163,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ),
                     SliverPersistentHeader(
                       pinned: true,
-                      delegate: _SliverTabBarDelegate(
+                      delegate: SliverTabBarDelegate(
                         TabBar(
                           controller: _tabController,
-                          tabs: [for (final tab in _tabs) Tab(text: tab.label.toUpperCase())],
-                          onTap: (index) => _loadProfileAndFeed(filter: _tabs[index].filter),
+                          tabs: [for (final label in _tabLabels) Tab(text: label)],
+                          onTap: (index) {
+                            if (index < _feedTabs.length) {
+                              _loadProfileAndFeed(filter: _feedTabs[index].filter);
+                            }
+                          },
                           labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2.2),
                           unselectedLabelStyle: const TextStyle(
                             fontSize: 11,
@@ -177,7 +187,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 body: TabBarView(
                   controller: _tabController,
                   children: [
-                    for (var i = 0; i < _tabs.length; i++) _buildFeedList(feedState, _tabs[i].filter, profile),
+                    for (var i = 0; i < _feedTabs.length; i++) _buildFeedList(feedState, _feedTabs[i].filter, profile),
+                    _buildListsTab(context, profile),
                   ],
                 ),
               );
@@ -441,6 +452,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           onBlock: () => context.read<ProfileActionCubit>().toggleBlock(),
           onUnblock: () => context.read<ProfileActionCubit>().toggleBlock(),
           onMore: () => _showProfileMoreOptions(context, profile),
+          onAddToList: () => _showAddToList(context, profile),
         ),
       ),
     );
@@ -473,10 +485,97 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 Share.share(url);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.playlist_add_outlined),
+              title: const Text('Add to list'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _showAddToList(context, profile);
+              },
+            ),
           ],
         ),
       ),
     );
+  }
+
+  void _showAddToList(BuildContext context, ProfileViewDetailed profile) {
+    ListRepository? listRepository;
+    try {
+      listRepository = context.read<ListRepository>();
+    } catch (_) {
+      return;
+    }
+
+    final currentUserDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+    final cubit = AddToListCubit(listRepository: listRepository, currentUserDid: currentUserDid)
+      ..load(targetDid: profile.did);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => BlocProvider.value(
+        value: cubit,
+        child: DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          maxChildSize: 0.9,
+          minChildSize: 0.3,
+          expand: false,
+          builder: (_, scrollController) => Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'Add to list',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: BlocBuilder<AddToListCubit, AddToListState>(
+                  builder: (context, state) {
+                    if (state.status == AddToListStatus.loading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (state.status == AddToListStatus.error) {
+                      return Center(child: Text(state.errorMessage ?? 'Failed to load lists'));
+                    }
+
+                    if (state.lists.isEmpty) {
+                      return const Center(child: Text('No lists yet'));
+                    }
+
+                    return ListView.builder(
+                      controller: scrollController,
+                      itemCount: state.lists.length,
+                      itemBuilder: (context, index) {
+                        final entry = state.lists[index];
+                        final isMember = entry.listItem != null;
+                        final isToggling = state.togglingUris.contains(entry.list.uri.toString());
+
+                        return ListRowTile(
+                          list: entry.list,
+                          trailing: isToggling
+                              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                              : Icon(
+                                  isMember ? Icons.check_circle : Icons.add_circle_outline,
+                                  color: isMember
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                          onTap: isToggling ? null : () => context.read<AddToListCubit>().toggleMembership(entry),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).whenComplete(cubit.close);
   }
 
   Widget? _buildComposeFab(BuildContext context) {
@@ -606,6 +705,20 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
+  Widget _buildListsTab(BuildContext context, ProfileViewDetailed? profile) {
+    final actor = profile?.did ?? _resolvedActor;
+    if (actor == null) return const SizedBox.shrink();
+
+    ListRepository? listRepository;
+    try {
+      listRepository = context.read<ListRepository>();
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
+
+    return _ProfileListsPane(actor: actor, listRepository: listRepository);
+  }
+
   String _emptyLabel(FeedFilter filter) {
     switch (filter) {
       case FeedFilter.postsNoReplies:
@@ -637,29 +750,86 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 }
 
-/// Sticky tab bar delegate with backdrop blur background and uppercase styled labels.
-class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
-  _SliverTabBarDelegate(this.tabBar);
+/// Pane that loads and displays lists for a given [actor] within the profile screen.
+class _ProfileListsPane extends StatefulWidget {
+  const _ProfileListsPane({required this.actor, required this.listRepository});
 
-  final TabBar tabBar;
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
+  final String actor;
+  final ListRepository listRepository;
 
   @override
-  double get maxExtent => tabBar.preferredSize.height;
+  State<_ProfileListsPane> createState() => _ProfileListsPaneState();
+}
+
+class _ProfileListsPaneState extends State<_ProfileListsPane> {
+  late final MyListsCubit _cubit;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: ColoredBox(color: colorScheme.surface.withValues(alpha: 0.85), child: tabBar),
-      ),
-    );
+  void initState() {
+    super.initState();
+    _cubit = MyListsCubit(listRepository: widget.listRepository)..load(actor: widget.actor);
   }
 
   @override
-  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) => false;
+  void didUpdateWidget(_ProfileListsPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.actor != widget.actor) {
+      _cubit.load(actor: widget.actor);
+    }
+  }
+
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MyListsCubit, MyListsState>(
+      bloc: _cubit,
+      builder: (context, state) {
+        if (state.status == MyListsStatus.loading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state.status == MyListsStatus.error) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(state.errorMessage ?? 'Failed to load lists'),
+                const SizedBox(height: 12),
+                FilledButton(onPressed: () => _cubit.refresh(), child: const Text('Retry')),
+              ],
+            ),
+          );
+        }
+
+        final lists = state.lists
+            .where((l) {
+              final purpose = l.purpose.knownValue;
+              return purpose == bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist ||
+                  purpose == bsky_graph.KnownListPurpose.appBskyGraphDefsModlist;
+            })
+            .toList(growable: false);
+
+        if (lists.isEmpty) {
+          return const Center(child: Text('No lists yet'));
+        }
+
+        return RefreshIndicator(
+          onRefresh: _cubit.refresh,
+          child: ListView.builder(
+            itemCount: lists.length,
+            itemBuilder: (context, index) => ListRowTile(
+              key: ValueKey(lists[index].uri),
+              list: lists[index],
+              onTap: () => context.push('/list?uri=${Uri.encodeComponent(lists[index].uri.toString())}'),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

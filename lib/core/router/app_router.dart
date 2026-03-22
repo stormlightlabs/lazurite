@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:atproto_core/atproto_core.dart' show AtUri;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bluesky/bluesky.dart';
@@ -32,6 +33,11 @@ import 'package:lazurite/features/messages/bloc/message_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_screen.dart';
+import 'package:lazurite/features/lists/bloc/list_bloc.dart';
+import 'package:lazurite/features/lists/data/list_repository.dart';
+import 'package:lazurite/features/lists/presentation/list_detail_screen.dart';
+import 'package:lazurite/features/lists/presentation/list_members_screen.dart';
+import 'package:lazurite/features/lists/presentation/my_lists_screen.dart';
 import 'package:lazurite/features/moderation/presentation/screens/labeler_detail_screen.dart';
 import 'package:lazurite/features/moderation/presentation/screens/moderation_settings_screen.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
@@ -122,6 +128,29 @@ class AppRouter {
       GoRoute(
         path: '/saved',
         builder: (context, state) => SavedPostsScreen(accountDid: context.read<String>()),
+      ),
+      GoRoute(path: '/lists', builder: (context, state) => const MyListsScreen()),
+      GoRoute(
+        path: '/list',
+        builder: (context, state) {
+          final uriStr = Uri.decodeComponent(state.uri.queryParameters['uri'] ?? '');
+          final listUri = AtUri.parse(uriStr);
+          return ListDetailScreen(listUri: listUri);
+        },
+        routes: [
+          GoRoute(
+            path: 'members',
+            builder: (context, state) {
+              final uriStr = Uri.decodeComponent(state.uri.queryParameters['uri'] ?? '');
+              final listUri = AtUri.parse(uriStr);
+              return BlocProvider(
+                create: (_) =>
+                    ListBloc(listRepository: context.read<ListRepository>())..add(ListRequested(listUri: listUri)),
+                child: ListMembersScreen(listUri: listUri),
+              );
+            },
+          ),
+        ],
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

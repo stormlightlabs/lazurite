@@ -18,6 +18,7 @@ class ProfileActionButtons extends StatelessWidget {
     this.onBlock,
     this.onUnblock,
     this.onMore,
+    this.onAddToList,
   });
 
   final bool isFollowing;
@@ -34,6 +35,7 @@ class ProfileActionButtons extends StatelessWidget {
   final VoidCallback? onBlock;
   final VoidCallback? onUnblock;
   final VoidCallback? onMore;
+  final VoidCallback? onAddToList;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +102,15 @@ class ProfileActionButtons extends StatelessWidget {
             ],
           ),
           onTap: () => _confirmBlock(context),
+        ),
+      );
+    }
+
+    if (onAddToList != null) {
+      menuItems.add(
+        PopupMenuItem(
+          onTap: onAddToList,
+          child: const Row(children: [Icon(Icons.playlist_add_outlined), SizedBox(width: 8), Text('Add to list')]),
         ),
       );
     }

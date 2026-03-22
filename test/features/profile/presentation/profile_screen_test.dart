@@ -20,6 +20,7 @@ import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
+import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
@@ -41,6 +42,8 @@ class MockPostActionRepository extends Mock implements PostActionRepository {}
 class MockSavedPostsCubit extends MockCubit<SavedPostsState> implements SavedPostsCubit {}
 
 class MockPostActionCache extends Mock implements PostActionCache {}
+
+class MockListRepository extends Mock implements ListRepository {}
 
 void main() {
   late MockAuthBloc authBloc;
@@ -461,6 +464,93 @@ void main() {
       verifyNever(() => feedBloc.add(const FeedRefreshRequested()));
 
       await streamCtrl.close();
+    });
+  });
+
+  group('Lists tab', () {
+    late MockListRepository listRepository;
+
+    setUp(() {
+      listRepository = MockListRepository();
+      when(
+        () => listRepository.getLists(
+          actor: any(named: 'actor'),
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => const ListsResult(lists: []));
+    });
+
+    testWidgets('shows LISTS tab label', (tester) async {
+      useLargeScreen(tester);
+      await tester.pumpWidget(buildSubject());
+
+      expect(find.text('LISTS'), findsOneWidget);
+    });
+
+    testWidgets('shows empty state when navigating to LISTS tab', (tester) async {
+      useLargeScreen(tester);
+
+      await tester.pumpWidget(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthBloc>.value(value: authBloc),
+            BlocProvider<ProfileBloc>.value(value: profileBloc),
+            BlocProvider<FeedBloc>.value(value: feedBloc),
+            BlocProvider<SettingsCubit>.value(value: settingsCubit),
+          ],
+          child: MultiRepositoryProvider(
+            providers: [RepositoryProvider<ListRepository>.value(value: listRepository)],
+            child: const MaterialApp(home: ProfileScreen()),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('LISTS'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No lists yet'), findsOneWidget);
+    });
+  });
+
+  group('Add to list', () {
+    testWidgets('overflow menu shows Add to list option for other profiles', (tester) async {
+      useLargeScreen(tester);
+      const otherProfile = ProfileViewDetailed(
+        did: 'did:plc:other',
+        handle: 'other.bsky.social',
+        displayName: 'Other User',
+      );
+      when(() => profileBloc.state).thenReturn(const ProfileState.loaded(profile: otherProfile));
+      whenListen(
+        profileBloc,
+        const Stream<ProfileState>.empty(),
+        initialState: const ProfileState.loaded(profile: otherProfile),
+      );
+
+      final mockProfileActionRepository = MockProfileActionRepository();
+
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository)],
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: authBloc),
+              BlocProvider<ProfileBloc>.value(value: profileBloc),
+              BlocProvider<FeedBloc>.value(value: feedBloc),
+              BlocProvider<SettingsCubit>.value(value: settingsCubit),
+            ],
+            child: const MaterialApp(home: ProfileScreen(actor: 'did:plc:other', showBackButton: true)),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Add to list'), findsOneWidget);
     });
   });
 }
