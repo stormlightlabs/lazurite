@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
 import 'package:mocktail/mocktail.dart';
@@ -75,7 +74,7 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (_, __) => MultiRepositoryProvider(
+          builder: (_, _) => MultiRepositoryProvider(
             providers: [
               RepositoryProvider<StarterPackRepository>.value(value: mockRepository),
               if (currentUserDid != null) RepositoryProvider.value(value: currentUserDid),

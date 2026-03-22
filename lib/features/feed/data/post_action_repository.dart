@@ -1,6 +1,8 @@
 import 'package:atproto/com_atproto_repo_strongref.dart';
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
+import 'package:bluesky/app_bsky_feed_getlikes.dart';
+import 'package:bluesky/app_bsky_feed_getrepostedby.dart';
 import 'package:bluesky/bluesky.dart';
 
 class PostActionRepository {
@@ -51,6 +53,16 @@ class PostActionRepository {
 
   Future<BookmarkGetBookmarksOutput> getBookmarks({int? limit, String? cursor}) async {
     final response = await _bluesky.bookmark.getBookmarks(limit: limit, cursor: cursor);
+    return response.data;
+  }
+
+  Future<FeedGetLikesOutput> getLikes({required AtUri uri, String? cursor}) async {
+    final response = await _bluesky.feed.getLikes(uri: uri, limit: 25, cursor: cursor);
+    return response.data;
+  }
+
+  Future<FeedGetRepostedByOutput> getRepostedBy({required AtUri uri, String? cursor}) async {
+    final response = await _bluesky.feed.getRepostedBy(uri: uri, limit: 25, cursor: cursor);
     return response.data;
   }
 

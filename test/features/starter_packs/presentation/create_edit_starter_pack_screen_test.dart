@@ -1,7 +1,6 @@
 import 'package:atproto_core/atproto_core.dart' show AtUri;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,7 +22,6 @@ void main() {
 
   const userDid = 'did:plc:user';
   final packUri = AtUri.parse('at://did:plc:user/app.bsky.graph.starterpack/pack-1');
-  final refListUri = AtUri.parse('at://did:plc:user/app.bsky.graph.list/list-1');
 
   setUpAll(() {
     registerFallbackValue(AtUri.parse('at://did:plc:fallback/app.bsky.graph.starterpack/fallback'));
@@ -33,27 +31,6 @@ void main() {
     mockRepo = MockStarterPackRepository();
     mockListRepo = MockListRepository();
   });
-
-  StarterPackView buildPackView() {
-    return StarterPackView(
-      uri: packUri,
-      cid: 'cid-pack',
-      record: const {
-        r'$type': 'app.bsky.graph.starterpack',
-        'name': 'My Pack',
-        'list': 'at://did:plc:user/app.bsky.graph.list/list-1',
-        'createdAt': '2026-03-22T00:00:00.000Z',
-      },
-      creator: const ProfileViewBasic(did: userDid, handle: 'user.bsky.social'),
-      list: ListViewBasic(
-        uri: refListUri,
-        cid: 'cid-list',
-        name: 'Starter Pack Members',
-        purpose: const ListPurpose.knownValue(data: KnownListPurpose.appBskyGraphDefsReferencelist),
-      ),
-      indexedAt: DateTime.utc(2026, 3, 22),
-    );
-  }
 
   Widget buildSubject() {
     return MultiRepositoryProvider(

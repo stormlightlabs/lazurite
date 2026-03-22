@@ -1,5 +1,7 @@
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
+import 'package:bluesky/app_bsky_feed_getlikes.dart';
+import 'package:bluesky/app_bsky_feed_getrepostedby.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 
@@ -51,6 +53,16 @@ class MockPostActionRepository implements PostActionRepository {
   @override
   Future<BookmarkGetBookmarksOutput> getBookmarks({int? limit, String? cursor}) async {
     return const BookmarkGetBookmarksOutput(bookmarks: []);
+  }
+
+  @override
+  Future<FeedGetLikesOutput> getLikes({required dynamic uri, String? cursor}) async {
+    return FeedGetLikesOutput(uri: AtUri.parse(uri.toString()), likes: []);
+  }
+
+  @override
+  Future<FeedGetRepostedByOutput> getRepostedBy({required dynamic uri, String? cursor}) async {
+    return FeedGetRepostedByOutput(uri: AtUri.parse(uri.toString()), repostedBy: []);
   }
 
   bool isLiked(String postUri) => _likes.containsKey(postUri);
@@ -207,6 +219,44 @@ void main() {
         final output = await repository.getBookmarks(limit: 10, cursor: 'abc');
 
         expect(output.bookmarks, isEmpty);
+      });
+    });
+
+    group('getLikes', () {
+      test('should return empty likes list', () async {
+        final uri = _createTestUri('abc123');
+
+        final output = await repository.getLikes(uri: uri);
+
+        expect(output.likes, isEmpty);
+        expect(output.cursor, isNull);
+      });
+
+      test('should accept cursor param', () async {
+        final uri = _createTestUri('abc123');
+
+        final output = await repository.getLikes(uri: uri, cursor: 'next-page');
+
+        expect(output.likes, isEmpty);
+      });
+    });
+
+    group('getRepostedBy', () {
+      test('should return empty reposters list', () async {
+        final uri = _createTestUri('abc123');
+
+        final output = await repository.getRepostedBy(uri: uri);
+
+        expect(output.repostedBy, isEmpty);
+        expect(output.cursor, isNull);
+      });
+
+      test('should accept cursor param', () async {
+        final uri = _createTestUri('abc123');
+
+        final output = await repository.getRepostedBy(uri: uri, cursor: 'next-page');
+
+        expect(output.repostedBy, isEmpty);
       });
     });
   });

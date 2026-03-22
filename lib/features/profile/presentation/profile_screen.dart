@@ -175,6 +175,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               _loadProfileAndFeed(filter: _feedTabs[index].filter);
                             }
                           },
+                          isScrollable: true,
+                          tabAlignment: TabAlignment.start,
                           labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2.2),
                           unselectedLabelStyle: const TextStyle(
                             fontSize: 11,

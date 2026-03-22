@@ -18,6 +18,7 @@ import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_action_bar.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_interactions_sheet.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
@@ -339,6 +340,7 @@ class _ExpandedThreadReply extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 8),
           PostCardWithActions(
             feedViewPost: FeedViewPost(post: thread.post),
             accountDid: accountDid,
@@ -652,26 +654,34 @@ class _FocusedPostContent extends StatelessWidget {
     final record = _parsePostRecord(post.record);
     final timestamp = record?.createdAt ?? post.indexedAt;
 
+    final hasStats = (post.replyCount ?? 0) > 0 || (post.repostCount ?? 0) > 0 || (post.likeCount ?? 0) > 0;
+
     return PostCard(
       feedViewPost: FeedViewPost(post: post),
       moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
       actionBar: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
+            const SizedBox(height: 10),
             Text(
               _formatTimestamp(timestamp),
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
-            const Divider(),
-            _buildStats(context, post),
+            const SizedBox(height: 10),
             const Divider(height: 1),
-            const SizedBox(height: 4),
+            if (hasStats) ...[
+              const SizedBox(height: 10),
+              _buildStats(context, post),
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+            ],
+            const SizedBox(height: 6),
             _buildActionBar(context, post),
+            const SizedBox(height: 6),
           ],
         ),
       ),
@@ -685,22 +695,44 @@ class _FocusedPostContent extends StatelessWidget {
       items.addAll([_buildStat(context, post.replyCount!, 'replies'), const SizedBox(width: 20)]);
     }
     if ((post.repostCount ?? 0) > 0) {
-      items.addAll([_buildStat(context, post.repostCount!, 'reposts'), const SizedBox(width: 20)]);
+      items.addAll([
+        _buildStat(
+          context,
+          post.repostCount!,
+          'reposts',
+          onTap: () => _showInteractions(context, post, showLikes: false),
+        ),
+        const SizedBox(width: 20),
+      ]);
     }
     if ((post.likeCount ?? 0) > 0) {
-      items.add(_buildStat(context, post.likeCount!, 'likes'));
+      items.add(
+        _buildStat(context, post.likeCount!, 'likes', onTap: () => _showInteractions(context, post, showLikes: true)),
+      );
     }
 
     if (items.isEmpty) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(children: items),
+    return Row(children: items);
+  }
+
+  void _showInteractions(BuildContext context, PostView post, {required bool showLikes}) {
+    final repository = context.read<PostActionRepository>();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => PostInteractionsSheet(
+        postUri: post.uri,
+        likeCount: post.likeCount ?? 0,
+        repostCount: post.repostCount ?? 0,
+        initialTab: showLikes ? InteractionTab.likes : InteractionTab.reposts,
+        repository: repository,
+      ),
     );
   }
 
-  Widget _buildStat(BuildContext context, int count, String label) {
-    return RichText(
+  Widget _buildStat(BuildContext context, int count, String label, {VoidCallback? onTap}) {
+    final text = RichText(
       text: TextSpan(
         children: [
           TextSpan(
@@ -716,6 +748,10 @@ class _FocusedPostContent extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTap == null) return text;
+
+    return GestureDetector(onTap: onTap, child: text);
   }
 
   Widget _buildActionBar(BuildContext context, PostView post) {
