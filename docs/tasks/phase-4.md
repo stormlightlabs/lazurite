@@ -87,10 +87,10 @@ Completed [2026-03-21](../../CHANGELOG.md#2026-03-21)
 
 ### Creation & Editing
 
-- [ ] Create starter pack — name (max 50 graphemes), description, member search, feed picker (up to 3)
-- [ ] Creation flow: create reference list → add `listitem` records → create starter pack record
-- [ ] Edit starter pack — update name/description/feeds via `putRecord`, add/remove members via `listitem` CRUD
-- [ ] Delete starter pack and its backing reference list
+- [x] Create starter pack — name (max 50 graphemes), description, member search, feed picker (up to 3)
+- [x] Creation flow: create reference list → add `listitem` records → create starter pack record
+- [x] Edit starter pack — update name/description/feeds via `putRecord`, add/remove members via `listitem` CRUD
+- [x] Delete starter pack and its backing reference list
 
 ### Profile Integration
 

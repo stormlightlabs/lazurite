@@ -37,9 +37,12 @@ void main() {
     );
   }
 
-  Widget buildSubject() {
+  Widget buildSubject({String? currentUserDid}) {
     return MultiRepositoryProvider(
-      providers: [RepositoryProvider<StarterPackRepository>.value(value: mockRepository)],
+      providers: [
+        RepositoryProvider<StarterPackRepository>.value(value: mockRepository),
+        if (currentUserDid != null) RepositoryProvider.value(value: currentUserDid),
+      ],
       child: const MaterialApp(home: ActorStarterPacksScreen(actor: actor)),
     );
   }
@@ -124,5 +127,50 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Starter Packs'), findsOneWidget);
+  });
+
+  testWidgets('shows FAB when viewing own profile', (tester) async {
+    when(
+      () => mockRepository.getActorStarterPacks(
+        actor: any(named: 'actor'),
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => const ActorStarterPacksResult(starterPacks: []));
+
+    await tester.pumpWidget(buildSubject(currentUserDid: actor));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+  });
+
+  testWidgets('does not show FAB when viewing another user profile', (tester) async {
+    when(
+      () => mockRepository.getActorStarterPacks(
+        actor: any(named: 'actor'),
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => const ActorStarterPacksResult(starterPacks: []));
+
+    await tester.pumpWidget(buildSubject(currentUserDid: 'did:plc:other-user'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloatingActionButton), findsNothing);
+  });
+
+  testWidgets('does not show FAB when no current user DID is available', (tester) async {
+    when(
+      () => mockRepository.getActorStarterPacks(
+        actor: any(named: 'actor'),
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => const ActorStarterPacksResult(starterPacks: []));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloatingActionButton), findsNothing);
   });
 }

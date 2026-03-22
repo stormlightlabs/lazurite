@@ -1,4 +1,5 @@
 import 'package:atproto_core/atproto_core.dart' show AtUri;
+import 'package:bluesky/app_bsky_feed_defs.dart' show GeneratorView;
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:bluesky/app_bsky_graph_starterpack.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -30,6 +31,11 @@ class StarterPackRepository {
     );
 
     return response.data.starterPack;
+  }
+
+  Future<List<GeneratorView>> getSuggestedFeeds({int limit = 50}) async {
+    final response = await _bluesky.feed.getSuggestedFeeds(limit: limit);
+    return response.data.feeds as List<GeneratorView>;
   }
 
   /// Creates a starter pack using the 3-step flow:

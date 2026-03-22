@@ -5,6 +5,8 @@ import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
 import 'package:mocktail/mocktail.dart';
@@ -55,11 +57,35 @@ void main() {
     );
   }
 
-  Widget buildSubject() {
+  Widget buildSubject({String? currentUserDid}) {
     return MultiRepositoryProvider(
-      providers: [RepositoryProvider<StarterPackRepository>.value(value: mockRepository)],
+      providers: [
+        RepositoryProvider<StarterPackRepository>.value(value: mockRepository),
+        if (currentUserDid != null) RepositoryProvider.value(value: currentUserDid),
+      ],
       child: MaterialApp(home: StarterPackDetailScreen(packUri: packUri)),
     );
+  }
+
+  Widget buildSubjectAsCreator() => buildSubject(currentUserDid: 'did:plc:creator');
+
+  /// Builds with GoRouter so navigation calls (context.canPop, context.pop) work.
+  Widget buildSubjectWithRouter({String? currentUserDid}) {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, __) => MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<StarterPackRepository>.value(value: mockRepository),
+              if (currentUserDid != null) RepositoryProvider.value(value: currentUserDid),
+            ],
+            child: StarterPackDetailScreen(packUri: packUri),
+          ),
+        ),
+      ],
+    );
+    return MaterialApp.router(routerConfig: router);
   }
 
   testWidgets('shows loading state initially', (tester) async {
@@ -148,6 +174,190 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets('shows overflow menu when current user is the creator', (tester) async {
+    when(() => mockRepository.getStarterPack(starterPackUri: packUri)).thenAnswer((_) async => buildPack());
+
+    await tester.pumpWidget(buildSubjectAsCreator());
+    await tester.pumpAndSettle();
+
+    expect(find.byWidgetPredicate((w) => w is PopupMenuButton), findsOneWidget);
+  });
+
+  testWidgets('does not show overflow menu when user is not the creator', (tester) async {
+    when(() => mockRepository.getStarterPack(starterPackUri: packUri)).thenAnswer((_) async => buildPack());
+
+    await tester.pumpWidget(buildSubject(currentUserDid: 'did:plc:other-user'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PopupMenuButton<dynamic>), findsNothing);
+  });
+
+  testWidgets('does not show overflow menu when no user DID is available', (tester) async {
+    when(() => mockRepository.getStarterPack(starterPackUri: packUri)).thenAnswer((_) async => buildPack());
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PopupMenuButton<dynamic>), findsNothing);
+  });
+
+  testWidgets('overflow menu has Edit and Delete options', (tester) async {
+    when(() => mockRepository.getStarterPack(starterPackUri: packUri)).thenAnswer((_) async => buildPack());
+
+    await tester.pumpWidget(buildSubjectAsCreator());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byWidgetPredicate((w) => w is PopupMenuButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.text('Delete'), findsOneWidget);
+  });
+
+  testWidgets('tapping Edit shows the edit dialog', (tester) async {
+    when(() => mockRepository.getStarterPack(starterPackUri: packUri)).thenAnswer((_) async => buildPack());
+    when(() => mockRepository.getSuggestedFeeds(limit: any(named: 'limit'))).thenAnswer((_) async => []);
+
+    await tester.pumpWidget(buildSubjectAsCreator());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byWidgetPredicate((w) => w is PopupMenuButton));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit starter pack'), findsOneWidget);
+    expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+  });
+
+  testWidgets('edit dialog is pre-filled with current pack name', (tester) async {
+    when(() => mockRepository.getStarterPack(starterPackUri: packUri)).thenAnswer((_) async => buildPack());
+    when(() => mockRepository.getSuggestedFeeds(limit: any(named: 'limit'))).thenAnswer((_) async => []);
+
+    await tester.pumpWidget(buildSubjectAsCreator());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byWidgetPredicate((w) => w is PopupMenuButton));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+
+    final nameField = tester.widget<TextField>(
+      find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField)).first,
+    );
+    expect(nameField.controller?.text, 'My Starter Pack');
+  });
+
+  testWidgets('Save in edit dialog dispatches StarterPackUpdated', (tester) async {
+    when(() => mockRepository.getStarterPack(starterPackUri: packUri)).thenAnswer((_) async => buildPack());
+    when(() => mockRepository.getSuggestedFeeds(limit: any(named: 'limit'))).thenAnswer((_) async => []);
+    when(
+      () => mockRepository.updateStarterPack(
+        packUri: any(named: 'packUri'),
+        referenceListUri: any(named: 'referenceListUri'),
+        name: any(named: 'name'),
+        description: any(named: 'description'),
+        feedUris: any(named: 'feedUris'),
+      ),
+    ).thenAnswer((_) async {});
+
+    await tester.pumpWidget(buildSubjectAsCreator());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byWidgetPredicate((w) => w is PopupMenuButton));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    verify(
+      () => mockRepository.updateStarterPack(
+        packUri: any(named: 'packUri'),
+        referenceListUri: any(named: 'referenceListUri'),
+        name: any(named: 'name'),
+        description: any(named: 'description'),
+        feedUris: any(named: 'feedUris'),
+      ),
+    ).called(1);
+  });
+
+  testWidgets('tapping Delete shows confirmation dialog', (tester) async {
+    when(() => mockRepository.getStarterPack(starterPackUri: packUri)).thenAnswer((_) async => buildPack());
+
+    await tester.pumpWidget(buildSubjectAsCreator());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byWidgetPredicate((w) => w is PopupMenuButton));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete starter pack'), findsOneWidget);
+  });
+
+  testWidgets('confirming delete dispatches StarterPackDeleted', (tester) async {
+    when(() => mockRepository.getStarterPack(starterPackUri: packUri)).thenAnswer((_) async => buildPack());
+    when(
+      () => mockRepository.deleteStarterPack(
+        packUri: any(named: 'packUri'),
+        referenceListUri: any(named: 'referenceListUri'),
+        userDid: any(named: 'userDid'),
+      ),
+    ).thenAnswer((_) async {});
+
+    // Use router so context.canPop() works when state transitions to deleted.
+    await tester.pumpWidget(buildSubjectWithRouter(currentUserDid: 'did:plc:creator'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byWidgetPredicate((w) => w is PopupMenuButton));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    verify(
+      () => mockRepository.deleteStarterPack(
+        packUri: any(named: 'packUri'),
+        referenceListUri: any(named: 'referenceListUri'),
+        userDid: any(named: 'userDid'),
+      ),
+    ).called(1);
+  });
+
+  testWidgets('cancelling delete dialog does not dispatch delete', (tester) async {
+    when(() => mockRepository.getStarterPack(starterPackUri: packUri)).thenAnswer((_) async => buildPack());
+
+    await tester.pumpWidget(buildSubjectAsCreator());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byWidgetPredicate((w) => w is PopupMenuButton));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    verifyNever(
+      () => mockRepository.deleteStarterPack(
+        packUri: any(named: 'packUri'),
+        referenceListUri: any(named: 'referenceListUri'),
+        userDid: any(named: 'userDid'),
+      ),
+    );
   });
 
   testWidgets('shows Follow all loading indicator while following', (tester) async {

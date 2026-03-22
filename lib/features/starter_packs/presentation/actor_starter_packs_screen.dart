@@ -27,8 +27,21 @@ class _ActorStarterPacksView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String? currentUserDid;
+    try {
+      currentUserDid = context.read<String>();
+    } catch (_) {}
+    final isOwnProfile = currentUserDid != null && currentUserDid == actor;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Starter Packs')),
+      floatingActionButton: isOwnProfile
+          ? FloatingActionButton(
+              onPressed: () => context.push('/create-starter-pack'),
+              tooltip: 'Create starter pack',
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: BlocBuilder<ActorStarterPacksCubit, ActorStarterPacksState>(
         builder: (context, state) {
           if (state.status == ActorStarterPacksStatus.loading) {

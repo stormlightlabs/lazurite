@@ -40,7 +40,10 @@ import 'package:lazurite/features/lists/presentation/list_members_screen.dart';
 import 'package:lazurite/features/lists/presentation/my_lists_screen.dart';
 import 'package:lazurite/features/moderation/presentation/screens/labeler_detail_screen.dart';
 import 'package:lazurite/features/moderation/presentation/screens/moderation_settings_screen.dart';
+import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
+import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/starter_packs/presentation/actor_starter_packs_screen.dart';
+import 'package:lazurite/features/starter_packs/presentation/create_edit_starter_pack_screen.dart';
 import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
@@ -132,6 +135,15 @@ class AppRouter {
         builder: (context, state) => SavedPostsScreen(accountDid: context.read<String>()),
       ),
       GoRoute(path: '/lists', builder: (context, state) => const MyListsScreen()),
+      GoRoute(
+        path: '/create-starter-pack',
+        builder: (context, state) {
+          return BlocProvider(
+            create: (_) => StarterPackBloc(starterPackRepository: context.read<StarterPackRepository>()),
+            child: CreateStarterPackScreen(userDid: context.read<String>()),
+          );
+        },
+      ),
       GoRoute(
         path: '/starter-pack',
         builder: (context, state) {

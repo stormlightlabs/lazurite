@@ -1,4 +1,5 @@
 import 'package:atproto_core/atproto_core.dart' show AtUri;
+import 'package:bluesky/app_bsky_feed_defs.dart' show GeneratorView;
 import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
 import 'package:flutter/material.dart' hide ListView;
 import 'package:flutter/material.dart' as material show ListView;
@@ -58,6 +59,11 @@ class _StarterPackDetailView extends StatelessWidget {
       },
       builder: (context, state) {
         final pack = state.starterPack;
+        String? currentUserDid;
+        try {
+          currentUserDid = context.read<String>();
+        } catch (_) {}
+        final isCreator = currentUserDid != null && pack?.creator.did == currentUserDid;
 
         return Scaffold(
           body: CustomScrollView(
@@ -72,6 +78,14 @@ class _StarterPackDetailView extends StatelessWidget {
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                    )
+                  else if (isCreator && pack != null)
+                    PopupMenuButton<_PackAction>(
+                      onSelected: (action) => _handleAction(context, action, state, pack),
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(value: _PackAction.edit, child: Text('Edit')),
+                        PopupMenuItem(value: _PackAction.delete, child: Text('Delete')),
+                      ],
                     ),
                 ],
               ),
@@ -104,6 +118,280 @@ class _StarterPackDetailView extends StatelessWidget {
                 ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _handleAction(
+    BuildContext context,
+    _PackAction action,
+    StarterPackState state,
+    bsky_graph.StarterPackView pack,
+  ) {
+    switch (action) {
+      case _PackAction.edit:
+        _showEditDialog(context, pack);
+      case _PackAction.delete:
+        _showDeleteConfirmation(context);
+    }
+  }
+
+  Future<void> _showEditDialog(BuildContext context, bsky_graph.StarterPackView pack) async {
+    final bloc = context.read<StarterPackBloc>();
+    final currentFeeds = pack.feeds ?? const [];
+    await showDialog<void>(
+      context: context,
+      builder: (_) => BlocProvider.value(
+        value: bloc,
+        child: _EditStarterPackDialog(
+          initialName: (pack.record['name'] as String?) ?? '',
+          initialDescription: pack.record['description'] as String?,
+          initialFeeds: currentFeeds,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showDeleteConfirmation(BuildContext context) async {
+    final bloc = context.read<StarterPackBloc>();
+    String? currentUserDid;
+    try {
+      currentUserDid = context.read<String>();
+    } catch (_) {}
+    if (currentUserDid == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete starter pack'),
+        content: const Text(
+          'This will permanently delete this starter pack and its backing list. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      bloc.add(StarterPackDeleted(userDid: currentUserDid));
+    }
+  }
+}
+
+enum _PackAction { edit, delete }
+
+class _EditStarterPackDialog extends StatefulWidget {
+  const _EditStarterPackDialog({required this.initialName, this.initialDescription, this.initialFeeds = const []});
+
+  final String initialName;
+  final String? initialDescription;
+  final List<GeneratorView> initialFeeds;
+
+  @override
+  State<_EditStarterPackDialog> createState() => _EditStarterPackDialogState();
+}
+
+class _EditStarterPackDialogState extends State<_EditStarterPackDialog> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _descController;
+  late final List<GeneratorView> _feeds;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialName);
+    _descController = TextEditingController(text: widget.initialDescription ?? '');
+    _feeds = List.of(widget.initialFeeds);
+    _nameController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _showFeedPicker() async {
+    StarterPackRepository? repo;
+    try {
+      repo = context.read<StarterPackRepository>();
+    } catch (_) {}
+    if (repo == null) return;
+
+    final selected = await showModalBottomSheet<GeneratorView>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _FeedPickerSheet(alreadySelected: _feeds.map((f) => f.uri).toSet(), starterPackRepository: repo!),
+    );
+    if (selected != null && mounted) {
+      setState(() => _feeds.add(selected));
+    }
+  }
+
+  void _save() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) return;
+
+    context.read<StarterPackBloc>().add(
+      StarterPackUpdated(
+        name: name,
+        description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
+        feedUris: _feeds.map((f) => f.uri).toList(),
+      ),
+    );
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return AlertDialog(
+      title: const Text('Edit starter pack'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
+                maxLength: 50,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _descController,
+                decoration: const InputDecoration(labelText: 'Description (optional)', border: OutlineInputBorder()),
+                maxLength: 300,
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 12),
+              Text('Feeds', style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              for (final feed in _feeds)
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    backgroundImage: feed.avatar != null ? NetworkImage(feed.avatar!) : null,
+                    child: feed.avatar == null ? const Icon(Icons.rss_feed, size: 14) : null,
+                  ),
+                  title: Text(feed.displayName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  trailing: IconButton(
+                    icon: Icon(Icons.remove_circle_outline, color: colorScheme.error, size: 20),
+                    onPressed: () => setState(() => _feeds.remove(feed)),
+                  ),
+                ),
+              if (_feeds.length < 3)
+                TextButton.icon(onPressed: _showFeedPicker, icon: const Icon(Icons.add), label: const Text('Add feed')),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        FilledButton(onPressed: _nameController.text.trim().isEmpty ? null : _save, child: const Text('Save')),
+      ],
+    );
+  }
+}
+
+class _FeedPickerSheet extends StatefulWidget {
+  const _FeedPickerSheet({required this.alreadySelected, required this.starterPackRepository});
+
+  final Set<AtUri> alreadySelected;
+  final StarterPackRepository starterPackRepository;
+
+  @override
+  State<_FeedPickerSheet> createState() => _FeedPickerSheetState();
+}
+
+class _FeedPickerSheetState extends State<_FeedPickerSheet> {
+  List<GeneratorView>? _feeds;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFeeds();
+  }
+
+  Future<void> _loadFeeds() async {
+    try {
+      final feeds = await widget.starterPackRepository.getSuggestedFeeds(limit: 50);
+      if (mounted) setState(() => _feeds = feeds);
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Failed to load feeds');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      maxChildSize: 0.9,
+      minChildSize: 0.4,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Text('Select a feed', style: Theme.of(context).textTheme.titleMedium),
+                  const Spacer(),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: _error != null
+                  ? Center(child: Text(_error!))
+                  : _feeds == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : material.ListView.builder(
+                      controller: scrollController,
+                      itemCount: _feeds!.length,
+                      itemBuilder: (context, index) {
+                        final feed = _feeds![index];
+                        final isSelected = widget.alreadySelected.contains(feed.uri);
+
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: colorScheme.surfaceContainerHighest,
+                            backgroundImage: feed.avatar != null ? NetworkImage(feed.avatar!) : null,
+                            child: feed.avatar == null ? const Icon(Icons.rss_feed) : null,
+                          ),
+                          title: Text(feed.displayName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          subtitle: feed.description != null
+                              ? Text(feed.description!, maxLines: 1, overflow: TextOverflow.ellipsis)
+                              : null,
+                          trailing: isSelected ? Icon(Icons.check_circle, color: colorScheme.primary) : null,
+                          enabled: !isSelected,
+                          onTap: isSelected ? null : () => Navigator.pop(context, feed),
+                        );
+                      },
+                    ),
+            ),
+          ],
         );
       },
     );
