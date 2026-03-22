@@ -9,6 +9,8 @@ class StarterPackState extends Equatable {
     this.starterPack,
     this.isRefreshing = false,
     this.isMutating = false,
+    this.isFollowingAll = false,
+    this.followedCount,
     this.errorMessage,
   });
 
@@ -21,6 +23,8 @@ class StarterPackState extends Equatable {
     required StarterPackView starterPack,
     bool isRefreshing = false,
     bool isMutating = false,
+    bool isFollowingAll = false,
+    int? followedCount,
     String? errorMessage,
   }) : this._(
          status: StarterPackStatus.loaded,
@@ -28,6 +32,8 @@ class StarterPackState extends Equatable {
          starterPack: starterPack,
          isRefreshing: isRefreshing,
          isMutating: isMutating,
+         isFollowingAll: isFollowingAll,
+         followedCount: followedCount,
          errorMessage: errorMessage,
        );
 
@@ -41,6 +47,8 @@ class StarterPackState extends Equatable {
   final StarterPackView? starterPack;
   final bool isRefreshing;
   final bool isMutating;
+  final bool isFollowingAll;
+  final int? followedCount;
   final String? errorMessage;
 
   bool get isLoading => status == StarterPackStatus.loading;
@@ -52,6 +60,8 @@ class StarterPackState extends Equatable {
     Object? starterPack = _starterPackNoValue,
     bool? isRefreshing,
     bool? isMutating,
+    bool? isFollowingAll,
+    Object? followedCount = _starterPackNoValue,
     Object? errorMessage = _starterPackNoValue,
   }) {
     return StarterPackState._(
@@ -60,12 +70,23 @@ class StarterPackState extends Equatable {
       starterPack: starterPack == _starterPackNoValue ? this.starterPack : starterPack as StarterPackView?,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isMutating: isMutating ?? this.isMutating,
+      isFollowingAll: isFollowingAll ?? this.isFollowingAll,
+      followedCount: followedCount == _starterPackNoValue ? this.followedCount : followedCount as int?,
       errorMessage: errorMessage == _starterPackNoValue ? this.errorMessage : errorMessage as String?,
     );
   }
 
   @override
-  List<Object?> get props => [status, packUri, starterPack, isRefreshing, isMutating, errorMessage];
+  List<Object?> get props => [
+    status,
+    packUri,
+    starterPack,
+    isRefreshing,
+    isMutating,
+    isFollowingAll,
+    followedCount,
+    errorMessage,
+  ];
 }
 
 const _starterPackNoValue = Object();

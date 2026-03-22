@@ -24,6 +24,7 @@ import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
+import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
@@ -176,6 +177,10 @@ class _LazuriteAppState extends State<LazuriteApp> {
               RepositoryProvider(
                 create: (context) =>
                     PostThreadRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
+              ),
+              RepositoryProvider(
+                create: (context) =>
+                    StarterPackRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
               ),
               RepositoryProvider(create: (_) => PostActionRepository(bluesky: bluesky)),
               RepositoryProvider(create: (_) => ProfileActionRepository(bluesky: bluesky)),

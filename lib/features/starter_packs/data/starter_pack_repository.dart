@@ -1,6 +1,7 @@
 import 'package:atproto_core/atproto_core.dart' show AtUri;
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:bluesky/app_bsky_graph_starterpack.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class StarterPackRepository {
@@ -105,6 +106,31 @@ class StarterPackRepository {
 
   Future<void> removeMember({required AtUri listItemUri}) async {
     await _bluesky.graph.listitem.delete(rkey: listItemUri.rkey);
+  }
+
+  /// Follows every member in the starter pack's backing reference list.
+  /// Paginates through all list items and calls follow.create for each.
+  /// Returns the number of members followed.
+  Future<int> followAll({required AtUri referenceListUri}) async {
+    int count = 0;
+    String? cursor;
+
+    do {
+      final response = await _bluesky.graph.getList(list: referenceListUri, cursor: cursor, limit: 100);
+
+      for (final item in response.data.items as List) {
+        try {
+          await _bluesky.graph.follow.create(subject: item.subject.did as String, createdAt: DateTime.now());
+          count++;
+        } catch (_) {
+          log.w('Failed to follow ${item.subject.did} (already followed or blocked)');
+        }
+      }
+
+      cursor = response.data.cursor as String?;
+    } while (cursor != null);
+
+    return count;
   }
 
   Future<AtUri> _createReferenceList({required String userDid}) async {

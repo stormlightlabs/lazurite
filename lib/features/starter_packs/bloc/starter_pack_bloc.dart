@@ -17,6 +17,7 @@ class StarterPackBloc extends Bloc<StarterPackEvent, StarterPackState> {
     on<StarterPackDeleted>(_onStarterPackDeleted);
     on<MemberAdded>(_onMemberAdded);
     on<MemberRemoved>(_onMemberRemoved);
+    on<FollowAllRequested>(_onFollowAllRequested);
   }
 
   final StarterPackRepository _starterPackRepository;
@@ -130,6 +131,23 @@ class StarterPackBloc extends Bloc<StarterPackEvent, StarterPackState> {
       action: () => _starterPackRepository.removeMember(listItemUri: event.listItemUri),
       errorPrefix: 'Failed to remove member',
     );
+  }
+
+  Future<void> _onFollowAllRequested(FollowAllRequested event, Emitter<StarterPackState> emit) async {
+    final refListUri = state.starterPack?.list?.uri;
+
+    if (state.status != StarterPackStatus.loaded || refListUri == null || state.isFollowingAll) {
+      return;
+    }
+
+    emit(state.copyWith(isFollowingAll: true, errorMessage: null, followedCount: null));
+
+    try {
+      final count = await _starterPackRepository.followAll(referenceListUri: refListUri);
+      emit(state.copyWith(isFollowingAll: false, followedCount: count));
+    } catch (error) {
+      emit(state.copyWith(isFollowingAll: false, errorMessage: 'Failed to follow members: $error'));
+    }
   }
 
   Future<void> _runMutation(

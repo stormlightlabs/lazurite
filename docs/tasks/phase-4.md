@@ -80,10 +80,10 @@ Completed [2026-03-21](../../CHANGELOG.md#2026-03-21)
 
 ### Viewing
 
-- [ ] Starter pack detail screen — name, description, creator, join stats, member sample (up to 12), recommended feeds (up to 3)
-- [ ] "See all members" — navigate to full member list via backing reference list
-- [ ] "Follow all" button — follow every member in the pack
-- [ ] Actor starter packs screen — paginated list via `getActorStarterPacks`
+- [x] Starter pack detail screen — name, description, creator, join stats, member sample (up to 12), recommended feeds (up to 3)
+- [x] "See all members" — navigate to full member list via backing reference list
+- [x] "Follow all" button — follow every member in the pack
+- [x] Actor starter packs screen — paginated list via `getActorStarterPacks`
 
 ### Creation & Editing
 
@@ -94,5 +94,5 @@ Completed [2026-03-21](../../CHANGELOG.md#2026-03-21)
 
 ### Profile Integration
 
-- [ ] "Starter Packs" section on profile screens showing packs created by actor
-- [ ] Starter pack cards — name, creator, member count, join stats
+- [x] "Starter Packs" section on profile screens showing packs created by actor
+- [x] Starter pack cards — name, creator, member count, join stats

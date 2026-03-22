@@ -389,6 +389,65 @@ void main() {
       act: (bloc) => bloc.add(MemberRemoved(listItemUri: itemUri)),
       expect: () => [],
     );
+
+    blocTest<StarterPackBloc, StarterPackState>(
+      'follows all members and emits followedCount',
+      build: () => StarterPackBloc(starterPackRepository: mockRepository),
+      seed: () => StarterPackState.loaded(packUri: packUri, starterPack: starterPack),
+      setUp: () {
+        when(() => mockRepository.followAll(referenceListUri: refListUri)).thenAnswer((_) async => 5);
+      },
+      act: (bloc) => bloc.add(const FollowAllRequested()),
+      expect: () => [
+        predicate<StarterPackState>((state) => state.isFollowingAll && state.followedCount == null),
+        predicate<StarterPackState>((state) => !state.isFollowingAll && state.followedCount == 5),
+      ],
+      verify: (_) {
+        verify(() => mockRepository.followAll(referenceListUri: refListUri)).called(1);
+      },
+    );
+
+    blocTest<StarterPackBloc, StarterPackState>(
+      'FollowAllRequested emits error when followAll fails',
+      build: () => StarterPackBloc(starterPackRepository: mockRepository),
+      seed: () => StarterPackState.loaded(packUri: packUri, starterPack: starterPack),
+      setUp: () {
+        when(
+          () => mockRepository.followAll(referenceListUri: any(named: 'referenceListUri')),
+        ).thenThrow(Exception('network error'));
+      },
+      act: (bloc) => bloc.add(const FollowAllRequested()),
+      expect: () => [
+        predicate<StarterPackState>((state) => state.isFollowingAll && state.errorMessage == null),
+        predicate<StarterPackState>((state) => !state.isFollowingAll && state.errorMessage != null),
+      ],
+    );
+
+    blocTest<StarterPackBloc, StarterPackState>(
+      'FollowAllRequested is a no-op when not loaded',
+      build: () => StarterPackBloc(starterPackRepository: mockRepository),
+      act: (bloc) => bloc.add(const FollowAllRequested()),
+      expect: () => [],
+    );
+
+    blocTest<StarterPackBloc, StarterPackState>(
+      'FollowAllRequested is a no-op when ref list is missing',
+      build: () => StarterPackBloc(starterPackRepository: mockRepository),
+      seed: () => StarterPackState.loaded(
+        packUri: packUri,
+        starterPack: _buildStarterPackView(packUri: packUri, refListUri: null),
+      ),
+      act: (bloc) => bloc.add(const FollowAllRequested()),
+      expect: () => [],
+    );
+
+    blocTest<StarterPackBloc, StarterPackState>(
+      'FollowAllRequested is a no-op when already following all',
+      build: () => StarterPackBloc(starterPackRepository: mockRepository),
+      seed: () => StarterPackState.loaded(packUri: packUri, starterPack: starterPack, isFollowingAll: true),
+      act: (bloc) => bloc.add(const FollowAllRequested()),
+      expect: () => [],
+    );
   });
 }
 

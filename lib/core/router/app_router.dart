@@ -40,6 +40,8 @@ import 'package:lazurite/features/lists/presentation/list_members_screen.dart';
 import 'package:lazurite/features/lists/presentation/my_lists_screen.dart';
 import 'package:lazurite/features/moderation/presentation/screens/labeler_detail_screen.dart';
 import 'package:lazurite/features/moderation/presentation/screens/moderation_settings_screen.dart';
+import 'package:lazurite/features/starter_packs/presentation/actor_starter_packs_screen.dart';
+import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 
@@ -130,6 +132,21 @@ class AppRouter {
         builder: (context, state) => SavedPostsScreen(accountDid: context.read<String>()),
       ),
       GoRoute(path: '/lists', builder: (context, state) => const MyListsScreen()),
+      GoRoute(
+        path: '/starter-pack',
+        builder: (context, state) {
+          final uriStr = Uri.decodeComponent(state.uri.queryParameters['uri'] ?? '');
+          final packUri = AtUri.parse(uriStr);
+          return StarterPackDetailScreen(packUri: packUri);
+        },
+      ),
+      GoRoute(
+        path: '/starter-packs',
+        builder: (context, state) {
+          final actor = state.uri.queryParameters['actor'] ?? '';
+          return ActorStarterPacksScreen(actor: actor);
+        },
+      ),
       GoRoute(
         path: '/list',
         builder: (context, state) {

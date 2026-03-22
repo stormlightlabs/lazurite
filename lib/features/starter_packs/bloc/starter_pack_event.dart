@@ -72,3 +72,7 @@ final class MemberRemoved extends StarterPackEvent {
   @override
   List<Object?> get props => [listItemUri];
 }
+
+final class FollowAllRequested extends StarterPackEvent {
+  const FollowAllRequested();
+}

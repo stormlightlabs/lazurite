@@ -17,6 +17,9 @@ import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
 import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/widgets/list_row_tile.dart';
+import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
+import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
+import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -69,7 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     (label: 'Media', filter: FeedFilter.postsWithMedia),
   ];
 
-  static const _tabLabels = ['POSTS', 'REPLIES', 'MEDIA', 'LISTS'];
+  static const _tabLabels = ['POSTS', 'REPLIES', 'MEDIA', 'LISTS', 'PACKS'];
 
   late final TabController _tabController;
 
@@ -189,6 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   children: [
                     for (var i = 0; i < _feedTabs.length; i++) _buildFeedList(feedState, _feedTabs[i].filter, profile),
                     _buildListsTab(context, profile),
+                    _buildStarterPacksTab(context, profile),
                   ],
                 ),
               );
@@ -719,6 +723,20 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     return _ProfileListsPane(actor: actor, listRepository: listRepository);
   }
 
+  Widget _buildStarterPacksTab(BuildContext context, ProfileViewDetailed? profile) {
+    final actor = profile?.did ?? _resolvedActor;
+    if (actor == null) return const SizedBox.shrink();
+
+    StarterPackRepository? starterPackRepository;
+    try {
+      starterPackRepository = context.read<StarterPackRepository>();
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
+
+    return _ProfileStarterPacksPane(actor: actor, starterPackRepository: starterPackRepository);
+  }
+
   String _emptyLabel(FeedFilter filter) {
     switch (filter) {
       case FeedFilter.postsNoReplies:
@@ -747,6 +765,87 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final uri = Uri.tryParse(website.startsWith('http') ? website : 'https://$website');
     if (uri == null) return;
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}
+
+/// Pane that loads and displays starter packs for a given [actor] within the profile screen.
+class _ProfileStarterPacksPane extends StatefulWidget {
+  const _ProfileStarterPacksPane({required this.actor, required this.starterPackRepository});
+
+  final String actor;
+  final StarterPackRepository starterPackRepository;
+
+  @override
+  State<_ProfileStarterPacksPane> createState() => _ProfileStarterPacksPaneState();
+}
+
+class _ProfileStarterPacksPaneState extends State<_ProfileStarterPacksPane> {
+  late final ActorStarterPacksCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = ActorStarterPacksCubit(starterPackRepository: widget.starterPackRepository)..load(actor: widget.actor);
+  }
+
+  @override
+  void didUpdateWidget(_ProfileStarterPacksPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.actor != widget.actor) {
+      _cubit.load(actor: widget.actor);
+    }
+  }
+
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ActorStarterPacksCubit, ActorStarterPacksState>(
+      bloc: _cubit,
+      builder: (context, state) {
+        if (state.status == ActorStarterPacksStatus.loading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state.status == ActorStarterPacksStatus.error) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(state.errorMessage ?? 'Failed to load starter packs'),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () => _cubit.load(actor: widget.actor),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (state.starterPacks.isEmpty) {
+          return const Center(child: Text('No starter packs yet'));
+        }
+
+        return RefreshIndicator(
+          onRefresh: _cubit.refresh,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: state.starterPacks.length,
+            itemBuilder: (context, index) => StarterPackCard(
+              key: ValueKey(state.starterPacks[index].uri),
+              pack: state.starterPacks[index],
+              onTap: () =>
+                  context.push('/starter-pack?uri=${Uri.encodeComponent(state.starterPacks[index].uri.toString())}'),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
