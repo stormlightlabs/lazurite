@@ -34,6 +34,7 @@ import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
+import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
@@ -57,17 +58,34 @@ Future<void> main() async {
   final settingsCubit = SettingsCubit(database: database);
   await settingsCubit.loadSettings();
 
+  final accountSwitcherCubit = AccountSwitcherCubit(database: database, authRepository: authRepository);
+  await accountSwitcherCubit.loadAccounts();
+
   log.i('AppLogger: App started');
 
-  runApp(LazuriteApp(authBloc: authBloc, database: database, settingsCubit: settingsCubit));
+  runApp(
+    LazuriteApp(
+      authBloc: authBloc,
+      database: database,
+      settingsCubit: settingsCubit,
+      accountSwitcherCubit: accountSwitcherCubit,
+    ),
+  );
 }
 
 class LazuriteApp extends StatefulWidget {
-  const LazuriteApp({super.key, required this.authBloc, required this.database, required this.settingsCubit});
+  const LazuriteApp({
+    super.key,
+    required this.authBloc,
+    required this.database,
+    required this.settingsCubit,
+    required this.accountSwitcherCubit,
+  });
 
   final AuthBloc authBloc;
   final AppDatabase database;
   final SettingsCubit settingsCubit;
+  final AccountSwitcherCubit accountSwitcherCubit;
 
   @override
   State<LazuriteApp> createState() => _LazuriteAppState();
@@ -105,6 +123,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
       providers: [
         BlocProvider.value(value: widget.authBloc),
         BlocProvider.value(value: widget.settingsCubit),
+        BlocProvider.value(value: widget.accountSwitcherCubit),
       ],
       child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {

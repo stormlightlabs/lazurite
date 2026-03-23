@@ -313,7 +313,6 @@ void main() {
       ),
     ).thenAnswer((_) async {});
 
-    // Use router so context.canPop() works when state transitions to deleted.
     await tester.pumpWidget(buildSubjectWithRouter(currentUserDid: 'did:plc:creator'));
     await tester.pumpAndSettle();
 

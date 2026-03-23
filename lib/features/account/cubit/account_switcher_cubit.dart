@@ -2,16 +2,19 @@ import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 
 part 'account_switcher_state.dart';
 
 class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
-  AccountSwitcherCubit({required AppDatabase database})
+  AccountSwitcherCubit({required AppDatabase database, required AuthRepository authRepository})
     : _database = database,
+      _authRepository = authRepository,
       super(const AccountSwitcherState.initial());
 
   final AppDatabase _database;
+  final AuthRepository _authRepository;
 
   static const String _keyActiveAccountDid = 'active_account_did';
 
@@ -35,11 +38,51 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
     }
   }
 
-  Future<void> switchAccount(String did) async {
-    if (state.status != AccountSwitcherStatus.ready) return;
+  Future<AuthTokens?> switchAccount(String did) async {
+    if (state.status != AccountSwitcherStatus.ready) return null;
 
     await _database.setSetting(_keyActiveAccountDid, did);
     emit(state.copyWith(activeDid: did));
+
+    final account = await _database.getAccount(did);
+    if (account == null) return null;
+
+    final tokens = AuthTokens(
+      accessToken: account.accessToken,
+      refreshToken: account.refreshToken,
+      expiresAt: account.expiresAt,
+      did: account.did,
+      handle: account.handle,
+      displayName: account.displayName,
+      service: account.service,
+      dpopNonce: account.dpopNonce,
+      dpopPublicKey: account.dpopPublicKey,
+      dpopPrivateKey: account.dpopPrivateKey,
+      authMethod: account.dpopPrivateKey != null && account.dpopPublicKey != null
+          ? AuthMethod.oauth
+          : AuthMethod.appPassword,
+    );
+
+    if (!tokens.isExpired) return tokens;
+
+    if (tokens.refreshToken == null) return null;
+
+    try {
+      return await _authRepository.refreshSession(tokens);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<AuthTokens?> addAccountWithOAuth(String handle) async {
+    try {
+      final tokens = await _authRepository.loginWithOAuth(handle);
+      if (tokens == null) return null;
+      await addAccountCompleted(tokens);
+      return tokens;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> addAccountCompleted(AuthTokens tokens) async {

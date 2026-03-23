@@ -40,3 +40,7 @@
 
 - Moderation service integration
 - Labels added to users in posts
+
+#### 2026-03-22
+
+- Starter packs & lists

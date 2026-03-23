@@ -15,6 +15,7 @@ import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
+import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
@@ -29,6 +30,8 @@ class MockFeedBloc extends MockBloc<FeedEvent, FeedState> implements FeedBloc {}
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
+class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
+
 class MockUnreadCountCubit extends MockCubit<UnreadCountState> implements UnreadCountCubit {}
 
 class MockConvoListBloc extends MockBloc<ConvoListEvent, ConvoListState> implements ConvoListBloc {}
@@ -41,6 +44,7 @@ void main() {
   late MockProfileBloc profileBloc;
   late MockFeedBloc feedBloc;
   late MockSettingsCubit settingsCubit;
+  late MockAccountSwitcherCubit accountSwitcherCubit;
   late MockUnreadCountCubit unreadCountCubit;
   late MockConvoListBloc convoListBloc;
   late MockNotificationRepository notificationRepository;
@@ -71,6 +75,7 @@ void main() {
     profileBloc = MockProfileBloc();
     feedBloc = MockFeedBloc();
     settingsCubit = MockSettingsCubit();
+    accountSwitcherCubit = MockAccountSwitcherCubit();
     unreadCountCubit = MockUnreadCountCubit();
     convoListBloc = MockConvoListBloc();
     notificationRepository = MockNotificationRepository();
@@ -90,6 +95,7 @@ void main() {
         useSystemTheme: false,
       ),
     );
+    when(() => accountSwitcherCubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
     when(() => unreadCountCubit.state).thenReturn(const UnreadCountState(0));
     when(() => convoListBloc.state).thenReturn(const ConvoListState.loaded(convos: [], cursor: null, hasMore: false));
     when(() => notificationRepository.getUnreadCount()).thenAnswer((_) async => 0);
@@ -120,6 +126,11 @@ void main() {
         useSystemTheme: false,
       ),
     );
+    whenListen(
+      accountSwitcherCubit,
+      const Stream<AccountSwitcherState>.empty(),
+      initialState: const AccountSwitcherState.ready(accounts: []),
+    );
     whenListen(unreadCountCubit, const Stream<UnreadCountState>.empty(), initialState: const UnreadCountState(0));
     whenListen(
       convoListBloc,
@@ -139,6 +150,7 @@ void main() {
       BlocProvider<ProfileBloc>.value(value: profileBloc),
       BlocProvider<FeedBloc>.value(value: feedBloc),
       BlocProvider<SettingsCubit>.value(value: settingsCubit),
+      BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
       BlocProvider<UnreadCountCubit>.value(value: unreadCountCubit),
       BlocProvider<ConvoListBloc>.value(value: convoListBloc),
     ],
@@ -264,6 +276,7 @@ void main() {
         BlocProvider<ProfileBloc>.value(value: profileBloc),
         BlocProvider<FeedBloc>.value(value: feedBloc),
         BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
       ],
       child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {

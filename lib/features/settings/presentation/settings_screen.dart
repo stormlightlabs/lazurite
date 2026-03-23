@@ -5,6 +5,8 @@ import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_architecture.dart';
 import 'package:lazurite/core/theme/ui_density.dart';
+import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
+import 'package:lazurite/features/account/presentation/account_switcher_sheet.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
@@ -33,18 +35,28 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         children: [
           BlocBuilder<AuthBloc, AuthState>(
-            builder: (context, state) {
-              final tokens = state.tokens;
-              if (!state.isAuthenticated || tokens == null) {
+            builder: (context, authState) {
+              final tokens = authState.tokens;
+              if (!authState.isAuthenticated || tokens == null) {
                 return const SizedBox.shrink();
               }
 
-              return ListTile(
-                leading: CircleAvatar(child: Text((tokens.displayName ?? tokens.handle).substring(0, 1).toUpperCase())),
-                title: Text(tokens.displayName ?? tokens.handle),
-                subtitle: Text('@${tokens.handle}'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.go('/profile'),
+              return BlocBuilder<AccountSwitcherCubit, AccountSwitcherState>(
+                builder: (context, switcherState) {
+                  final subtitle = switcherState.accounts.length > 1
+                      ? '${switcherState.accounts.length} accounts — tap to switch'
+                      : '@${tokens.handle}';
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      child: Text((tokens.displayName ?? tokens.handle).substring(0, 1).toUpperCase()),
+                    ),
+                    title: Text(tokens.displayName ?? tokens.handle),
+                    subtitle: Text(subtitle),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => showAccountSwitcherSheet(context),
+                  );
+                },
               );
             },
           ),
