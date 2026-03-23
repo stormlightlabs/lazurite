@@ -23,6 +23,7 @@ class AuthRepository {
   final AppDatabase _database;
 
   HttpServer? _callbackServer;
+  StreamSubscription<HttpRequest>? _callbackSubscription;
   Completer<AuthTokens?>? _oauthCompleter;
   OAuthClient? _pendingOAuthClient;
   OAuthContext? _pendingOAuthContext;
@@ -66,9 +67,9 @@ class AuthRepository {
     }
 
     if (storedSession.refreshToken == null) {
-      log.w('AuthRepository: Stored session expired without refresh token, clearing session');
-      await clearSession();
-      return null;
+      log.w('AuthRepository: Stored session expired without refresh token, removing account');
+      await _invalidateSession(storedSession);
+      return restoreSession();
     }
 
     try {
@@ -76,12 +77,11 @@ class AuthRepository {
       return await refreshSession(storedSession);
     } catch (error, stackTrace) {
       log.e('AuthRepository: Failed to restore expired session', error: error, stackTrace: stackTrace);
-      await clearSession();
-      return null;
+      return restoreSession();
     }
   }
 
-  Future<void> saveSession(AuthTokens tokens) async {
+  Future<void> saveSession(AuthTokens tokens, {bool makeActive = false}) async {
     await _database.insertAccount(
       AccountsCompanion(
         did: Value(tokens.did),
@@ -97,10 +97,15 @@ class AuthRepository {
         updatedAt: Value(DateTime.now()),
       ),
     );
+
+    if (makeActive) {
+      await _database.setSetting(AppDatabase.activeAccountDidSettingKey, tokens.did);
+    }
   }
 
   Future<void> clearSession() async {
     await _database.deleteAllAccounts();
+    await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
   }
 
   Future<AuthTokens?> loginWithOAuth(String handle) async {
@@ -152,7 +157,7 @@ class AuthRepository {
         authMethod: AuthMethod.appPassword,
       );
 
-      await saveSession(tokens);
+      await saveSession(tokens, makeActive: true);
       log.i('AuthRepository: App password login succeeded for ${tokens.handle}');
       return tokens;
     } catch (error, stackTrace) {
@@ -192,12 +197,15 @@ class AuthRepository {
           oauthService: currentSession.service ?? _fallbackService,
         );
 
-        await saveSession(refreshedTokens);
+        await saveSession(
+          refreshedTokens,
+          makeActive: await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == currentSession.did,
+        );
         log.i('AuthRepository: OAuth session refresh succeeded for ${refreshedTokens.handle}');
         return refreshedTokens;
       } catch (error, stackTrace) {
         log.e('AuthRepository: OAuth session refresh failed', error: error, stackTrace: stackTrace);
-        await clearSession();
+        await _invalidateSession(currentSession);
         throw Exception('Failed to refresh OAuth session: $error');
       }
     }
@@ -220,12 +228,15 @@ class AuthRepository {
         authMethod: AuthMethod.appPassword,
       );
 
-      await saveSession(tokens);
+      await saveSession(
+        tokens,
+        makeActive: await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == currentSession.did,
+      );
       log.i('AuthRepository: App password session refresh succeeded for ${tokens.handle}');
       return tokens;
     } catch (error, stackTrace) {
       log.e('AuthRepository: App password session refresh failed', error: error, stackTrace: stackTrace);
-      await clearSession();
+      await _invalidateSession(currentSession);
       throw Exception('Failed to refresh session: $error');
     }
   }
@@ -266,44 +277,59 @@ class AuthRepository {
     );
     log.i('AuthRepository: OAuth callback server listening on ${_sanitizeUriForLog(redirectUri)}');
 
-    unawaited(
-      _callbackServer!.forEach((request) async {
-        final uri = request.requestedUri;
-        log.d(
-          'AuthRepository: OAuth callback request received at '
-          '${uri.path} with query keys: ${uri.queryParameters.keys.join(', ')}',
-        );
-
-        if (uri.path != redirectUri.path) {
-          request.response.statusCode = HttpStatus.notFound;
-          await request.response.close();
-          return;
-        }
-
-        request.response
-          ..statusCode = HttpStatus.ok
-          ..headers.contentType = ContentType.html
-          ..write(_callbackPageHtml);
-        await request.response.close();
-
-        final callbackUrl = uri.replace(scheme: redirectUri.scheme, host: redirectUri.host, port: redirectUri.port);
-
-        await _stopCallbackServer();
-
-        try {
-          log.i('AuthRepository: Processing OAuth callback');
-          final tokens = await _handleOAuthCallback(callbackUrl.toString());
-          _oauthCompleter?.complete(tokens);
-        } catch (error, stackTrace) {
-          log.e('AuthRepository: OAuth callback handling failed', error: error, stackTrace: stackTrace);
-          _oauthCompleter?.completeError(error);
-        } finally {
-          _resetPendingOAuthState();
-        }
-      }),
+    _callbackSubscription = _callbackServer!.listen(
+      (request) {
+        unawaited(_handleCallbackRequest(request, redirectUri));
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        log.e('AuthRepository: OAuth callback server stream failed', error: error, stackTrace: stackTrace);
+      },
     );
 
     return redirectUri;
+  }
+
+  Future<void> _handleCallbackRequest(HttpRequest request, Uri redirectUri) async {
+    final uri = request.requestedUri;
+    log.d(
+      'AuthRepository: OAuth callback request received at '
+      '${uri.path} with query keys: ${uri.queryParameters.keys.join(', ')}',
+    );
+
+    if (uri.path != redirectUri.path) {
+      request.response.statusCode = HttpStatus.notFound;
+      await request.response.close();
+      return;
+    }
+
+    await _callbackSubscription?.cancel();
+    _callbackSubscription = null;
+
+    final callbackBody = utf8.encode(_callbackPageHtml);
+    request.response
+      ..statusCode = HttpStatus.ok
+      ..headers.contentType = ContentType.html
+      ..headers.contentLength = callbackBody.length
+      ..write(_callbackPageHtml);
+    await request.response.close();
+
+    final callbackUrl = uri.replace(scheme: redirectUri.scheme, host: redirectUri.host, port: redirectUri.port);
+
+    try {
+      log.i('AuthRepository: Processing OAuth callback');
+      final tokens = await _handleOAuthCallback(callbackUrl.toString());
+      if (_oauthCompleter?.isCompleted == false) {
+        _oauthCompleter?.complete(tokens);
+      }
+    } catch (error, stackTrace) {
+      log.e('AuthRepository: OAuth callback handling failed', error: error, stackTrace: stackTrace);
+      if (_oauthCompleter?.isCompleted == false) {
+        _oauthCompleter?.completeError(error, stackTrace);
+      }
+    } finally {
+      await _stopCallbackServer();
+      _resetPendingOAuthState();
+    }
   }
 
   Future<AuthTokens> _handleOAuthCallback(String callbackUrl) async {
@@ -324,7 +350,7 @@ class AuthRepository {
     final oauthSession = await oauthClient.callback(callbackUrl, oauthContext);
     log.i('AuthRepository: OAuth token exchange succeeded for DID ${oauthSession.sub}');
     final tokens = await _buildOAuthTokens(oauthSession, fallbackHandle: fallbackHandle, oauthService: service);
-    await saveSession(tokens);
+    await saveSession(tokens, makeActive: true);
     log.i('AuthRepository: OAuth login completed for ${tokens.handle}');
     return tokens;
   }
@@ -379,7 +405,9 @@ class AuthRepository {
     if (_callbackServer != null) {
       log.d('AuthRepository: Stopping OAuth callback server on port ${_callbackServer!.port}');
     }
-    await _callbackServer?.close(force: true);
+    await _callbackSubscription?.cancel();
+    _callbackSubscription = null;
+    await _callbackServer?.close();
     _callbackServer = null;
   }
 
@@ -486,7 +514,15 @@ class AuthRepository {
     return uri.replace(query: null, fragment: null).toString();
   }
 
+  Future<void> _invalidateSession(AuthTokens tokens) async {
+    await _database.deleteAccount(tokens.did);
+    if (await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == tokens.did) {
+      await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
+    }
+  }
+
   void _resetPendingOAuthState() {
+    _oauthCompleter = null;
     _pendingOAuthClient = null;
     _pendingOAuthContext = null;
     _pendingHandle = null;
@@ -529,15 +565,33 @@ const String _callbackPageHtml = '''
       p {
         color: #dde1e6;
         line-height: 1.5;
-        margin: 0;
+        margin: 0 0 12px;
+      }
+
+      button {
+        appearance: none;
+        background: #0f62fe;
+        border: 0;
+        border-radius: 999px;
+        color: white;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 600;
+        padding: 12px 20px;
       }
     </style>
   </head>
   <body>
     <main>
       <h1>Authentication Complete</h1>
-      <p>You can close this window and return to Lazurite.</p>
+      <p>If this page does not close automatically, switch back to Lazurite.</p>
+      <button type="button" onclick="window.close()">Close This Tab</button>
     </main>
+    <script>
+      window.setTimeout(function () {
+        window.close();
+      }, 250);
+    </script>
   </body>
 </html>
 ''';

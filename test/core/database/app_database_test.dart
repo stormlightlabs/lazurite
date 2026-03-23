@@ -50,6 +50,41 @@ void main() {
         expect(active!.did, equals('did:plc:abc123'));
       });
 
+      test('should prefer the account selected in settings', () async {
+        await database.insertAccount(
+          AccountsCompanion.insert(did: 'did:plc:older', handle: 'older.bsky.social', accessToken: 'older-token'),
+        );
+        await database.insertAccount(
+          AccountsCompanion.insert(
+            did: 'did:plc:selected',
+            handle: 'selected.bsky.social',
+            accessToken: 'selected-token',
+          ),
+        );
+        await database.setSetting(AppDatabase.activeAccountDidSettingKey, 'did:plc:older');
+
+        final active = await database.getActiveAccount();
+
+        expect(active, isNotNull);
+        expect(active!.did, equals('did:plc:older'));
+      });
+
+      test('should fall back when the selected active account no longer exists', () async {
+        await database.insertAccount(
+          AccountsCompanion.insert(
+            did: 'did:plc:available',
+            handle: 'available.bsky.social',
+            accessToken: 'available-token',
+          ),
+        );
+        await database.setSetting(AppDatabase.activeAccountDidSettingKey, 'did:plc:missing');
+
+        final active = await database.getActiveAccount();
+
+        expect(active, isNotNull);
+        expect(active!.did, equals('did:plc:available'));
+      });
+
       test('should return null when no active account exists', () async {
         final active = await database.getActiveAccount();
         expect(active, isNull);

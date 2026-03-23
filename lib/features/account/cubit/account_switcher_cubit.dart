@@ -16,14 +16,12 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
   final AppDatabase _database;
   final AuthRepository _authRepository;
 
-  static const String _keyActiveAccountDid = 'active_account_did';
-
   Future<void> loadAccounts() async {
     emit(const AccountSwitcherState.loading());
 
     try {
       final accounts = await _database.getAllAccounts();
-      final savedDid = await _database.getSetting(_keyActiveAccountDid);
+      final savedDid = await _database.getSetting(AppDatabase.activeAccountDidSettingKey);
 
       String? activeDid;
       if (savedDid != null && accounts.any((a) => a.did == savedDid)) {
@@ -40,9 +38,6 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
 
   Future<AuthTokens?> switchAccount(String did) async {
     if (state.status != AccountSwitcherStatus.ready) return null;
-
-    await _database.setSetting(_keyActiveAccountDid, did);
-    emit(state.copyWith(activeDid: did));
 
     final account = await _database.getAccount(did);
     if (account == null) return null;
@@ -63,12 +58,20 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
           : AuthMethod.appPassword,
     );
 
-    if (!tokens.isExpired) return tokens;
-
-    if (tokens.refreshToken == null) return null;
-
     try {
-      return await _authRepository.refreshSession(tokens);
+      final nextTokens = tokens.isExpired
+          ? tokens.refreshToken == null
+                ? null
+                : await _authRepository.refreshSession(tokens)
+          : tokens;
+
+      if (nextTokens == null) {
+        return null;
+      }
+
+      await _database.setSetting(AppDatabase.activeAccountDidSettingKey, did);
+      emit(state.copyWith(activeDid: did));
+      return nextTokens;
     } catch (_) {
       return null;
     }
@@ -95,6 +98,7 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
         accessToken: Value(tokens.accessToken),
         refreshToken: tokens.refreshToken != null ? Value(tokens.refreshToken!) : const Value.absent(),
         dpopPublicKey: tokens.dpopPublicKey != null ? Value(tokens.dpopPublicKey!) : const Value.absent(),
+        dpopPrivateKey: tokens.dpopPrivateKey != null ? Value(tokens.dpopPrivateKey!) : const Value.absent(),
         dpopNonce: tokens.dpopNonce != null ? Value(tokens.dpopNonce!) : const Value.absent(),
         expiresAt: tokens.expiresAt != null ? Value(tokens.expiresAt!) : const Value.absent(),
       ),

@@ -74,14 +74,16 @@ class _AccountSwitcherSheet extends StatelessWidget {
   }
 
   Future<void> _onSwitchAccount(BuildContext context, String did) async {
+    final messenger = ScaffoldMessenger.of(context);
     final cubit = context.read<AccountSwitcherCubit>();
     Navigator.pop(context);
     final tokens = await cubit.switchAccount(did);
-    if (tokens == null) {
-      authBloc.add(const LogoutRequested());
-    } else {
+    if (tokens != null) {
       authBloc.add(SessionRestored(tokens: tokens));
+      return;
     }
+
+    messenger.showSnackBar(const SnackBar(content: Text('Unable to switch accounts. Sign in again for that account.')));
   }
 
   Future<void> _onAddAccount(BuildContext context) async {

@@ -1,8 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
-import 'package:path_provider/path_provider.dart';
-
 import 'package:lazurite/core/database/tables.dart';
+import 'package:path_provider/path_provider.dart';
 
 part 'app_database.g.dart';
 
@@ -21,6 +20,8 @@ part 'app_database.g.dart';
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
+
+  static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
   int get schemaVersion => 11;
@@ -83,6 +84,14 @@ class AppDatabase extends _$AppDatabase {
   Future<Account?> getAccount(String did) => (select(accounts)..where((a) => a.did.equals(did))).getSingleOrNull();
 
   Future<Account?> getActiveAccount() async {
+    final activeDid = await getSetting(activeAccountDidSettingKey);
+    if (activeDid != null) {
+      final activeAccount = await getAccount(activeDid);
+      if (activeAccount != null) {
+        return activeAccount;
+      }
+    }
+
     final all = await (select(accounts)..orderBy([(a) => OrderingTerm.desc(a.updatedAt)])).get();
     return all.isNotEmpty ? all.first : null;
   }

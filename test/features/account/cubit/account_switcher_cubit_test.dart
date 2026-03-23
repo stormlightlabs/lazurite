@@ -187,7 +187,6 @@ void main() {
       test('returns null when account is expired and refresh throws', () async {
         final expiredAt = DateTime.now().subtract(const Duration(hours: 1));
 
-        when(() => mockDatabase.setSetting(any(), any())).thenAnswer((_) async => 1);
         when(() => mockDatabase.getAccount('did:plc:user1')).thenAnswer(
           (_) async => makeAccount(did: 'did:plc:user1', expiresAt: expiredAt, refreshToken: 'refresh-token'),
         );
@@ -203,12 +202,12 @@ void main() {
 
         final tokens = await cubit.switchAccount('did:plc:user1');
         expect(tokens, isNull);
+        verifyNever(() => mockDatabase.setSetting(any(), any()));
       });
 
       test('returns null when account is expired and has no refresh token', () async {
         final expiredAt = DateTime.now().subtract(const Duration(hours: 1));
 
-        when(() => mockDatabase.setSetting(any(), any())).thenAnswer((_) async => 1);
         when(
           () => mockDatabase.getAccount('did:plc:user1'),
         ).thenAnswer((_) async => makeAccount(did: 'did:plc:user1', expiresAt: expiredAt));
@@ -224,6 +223,7 @@ void main() {
         final tokens = await cubit.switchAccount('did:plc:user1');
         expect(tokens, isNull);
         verifyNever(() => mockAuthRepository.refreshSession(any()));
+        verifyNever(() => mockDatabase.setSetting(any(), any()));
       });
 
       blocTest<AccountSwitcherCubit, AccountSwitcherState>(
@@ -245,7 +245,7 @@ void main() {
         act: (cubit) => cubit.switchAccount('did:plc:user2'),
         expect: () => [predicate<AccountSwitcherState>((state) => state.activeDid == 'did:plc:user2')],
         verify: (_) {
-          verify(() => mockDatabase.setSetting('active_account_did', 'did:plc:user2')).called(1);
+          verify(() => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, 'did:plc:user2')).called(1);
         },
       );
     });
@@ -279,9 +279,40 @@ void main() {
         ],
         verify: (_) {
           verify(() => mockDatabase.insertAccount(any())).called(1);
-          verify(() => mockDatabase.setSetting('active_account_did', 'did:plc:newuser')).called(1);
+          verify(() => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, 'did:plc:newuser')).called(1);
         },
       );
+
+      test('persists OAuth private keys when adding an account', () async {
+        final captured = <AccountsCompanion>[];
+        const tokens = AuthTokens(
+          accessToken: 'token',
+          did: 'did:plc:newuser',
+          handle: 'new.bsky.social',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+
+        when(() => mockDatabase.insertAccount(any())).thenAnswer((invocation) async {
+          captured.add(invocation.positionalArguments.first as AccountsCompanion);
+          return 1;
+        });
+        when(() => mockDatabase.getAllAccounts()).thenAnswer(
+          (_) async => [makeAccount(did: 'did:plc:newuser', handle: 'new.bsky.social', dpopPublicKey: 'public-key')],
+        );
+        when(() => mockDatabase.getSetting(any())).thenAnswer((_) async => null);
+        when(() => mockDatabase.setSetting(any(), any())).thenAnswer((_) async => 1);
+        when(
+          () => mockDatabase.getAccount('did:plc:newuser'),
+        ).thenAnswer((_) async => makeAccount(did: 'did:plc:newuser', handle: 'new.bsky.social'));
+
+        await buildCubit().addAccountCompleted(tokens);
+
+        expect(captured, hasLength(1));
+        expect(captured.single.dpopPublicKey.value, 'public-key');
+        expect(captured.single.dpopPrivateKey.value, 'private-key');
+      });
 
       blocTest<AccountSwitcherCubit, AccountSwitcherState>(
         'switches to newly added account even when another was active',

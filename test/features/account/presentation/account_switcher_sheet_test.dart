@@ -148,7 +148,7 @@ void main() {
       verify(() => authBloc.add(any(that: isA<SessionRestored>()))).called(1);
     });
 
-    testWidgets('dispatches LogoutRequested when switchAccount returns null', (tester) async {
+    testWidgets('shows an error when switchAccount returns null', (tester) async {
       when(() => cubit.state).thenReturn(
         AccountSwitcherState.ready(
           accounts: [
@@ -165,7 +165,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      verify(() => authBloc.add(any(that: isA<LogoutRequested>()))).called(1);
+      verifyNever(() => authBloc.add(any(that: isA<LogoutRequested>())));
+      expect(find.text('Unable to switch accounts. Sign in again for that account.'), findsOneWidget);
     });
 
     testWidgets('tapping active account does nothing', (tester) async {

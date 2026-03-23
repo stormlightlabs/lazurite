@@ -80,6 +80,20 @@ void main() {
 
         verify(() => mockDatabase.insertAccount(any())).called(1);
       });
+
+      test('should mark the saved session active when requested', () async {
+        const tokens = AuthTokens(accessToken: 'access_token', did: 'did:plc:abc123', handle: 'user.bsky.social');
+
+        when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);
+        when(
+          () => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, tokens.did),
+        ).thenAnswer((_) async => 1);
+
+        await authRepository.saveSession(tokens, makeActive: true);
+
+        verify(() => mockDatabase.insertAccount(any())).called(1);
+        verify(() => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, tokens.did)).called(1);
+      });
     });
 
     group('restoreSession', () {
@@ -112,10 +126,12 @@ void main() {
     group('clearSession', () {
       test('should delete all accounts', () async {
         when(() => mockDatabase.deleteAllAccounts()).thenAnswer((_) async => 1);
+        when(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).thenAnswer((_) async => 1);
 
         await authRepository.clearSession();
 
         verify(() => mockDatabase.deleteAllAccounts()).called(1);
+        verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
       });
     });
 
@@ -123,11 +139,13 @@ void main() {
       test('should clear session', () async {
         when(() => mockDatabase.getActiveAccount()).thenAnswer((_) async => null);
         when(() => mockDatabase.deleteAllAccounts()).thenAnswer((_) async => 1);
+        when(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).thenAnswer((_) async => 1);
 
         await authRepository.logout();
 
         verify(() => mockDatabase.getActiveAccount()).called(1);
         verify(() => mockDatabase.deleteAllAccounts()).called(1);
+        verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
       });
     });
   });
