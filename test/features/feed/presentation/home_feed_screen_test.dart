@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_architecture.dart';
 import 'package:lazurite/core/theme/ui_density.dart';
+import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
@@ -24,6 +26,8 @@ class MockFeedPreferencesCubit extends MockCubit<FeedPreferencesState> implement
 class MockFeedRepository extends Mock implements FeedRepository {}
 
 class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
+
+class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
 SettingsState _settingsState(FeedArchitecture architecture) => SettingsState(
   themePalette: AppThemePalette.oxocarbon,
@@ -72,13 +76,21 @@ void main() {
   Widget buildHomeSubject({
     required FeedPreferencesCubit feedPreferencesCubit,
     required FeedRepository feedRepository,
+    ConnectivityState connectivityState = const ConnectivityState.online(),
   }) {
     final connectivityCubit = MockConnectivityCubit();
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
+    final authBloc = MockAuthBloc();
+    when(() => connectivityCubit.state).thenReturn(connectivityState);
+    whenListen(connectivityCubit, const Stream<ConnectivityState>.empty(), initialState: connectivityState);
+    when(() => authBloc.state).thenReturn(
+      const AuthState.authenticated(AuthTokens(accessToken: 'access', did: 'did:plc:test', handle: 'test.bsky.social')),
+    );
     whenListen(
-      connectivityCubit,
-      const Stream<ConnectivityState>.empty(),
-      initialState: const ConnectivityState.online(),
+      authBloc,
+      const Stream<AuthState>.empty(),
+      initialState: const AuthState.authenticated(
+        AuthTokens(accessToken: 'access', did: 'did:plc:test', handle: 'test.bsky.social'),
+      ),
     );
 
     return MaterialApp(
@@ -86,6 +98,7 @@ void main() {
         value: feedRepository,
         child: MultiBlocProvider(
           providers: [
+            BlocProvider<AuthBloc>.value(value: authBloc),
             BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
             BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
           ],
@@ -309,6 +322,30 @@ void main() {
   });
 
   group('HomeFeedScreen', () {
+    testWidgets('shows feeds action without the messages shortcut in the app bar', (tester) async {
+      final feedPreferencesCubit = MockFeedPreferencesCubit();
+      final feedRepository = MockFeedRepository();
+      final completer = Completer<FeedResult>();
+
+      when(() => feedPreferencesCubit.state).thenReturn(_homeFeedState);
+      whenListen(feedPreferencesCubit, const Stream<FeedPreferencesState>.empty(), initialState: _homeFeedState);
+      when(() => feedRepository.getCachedFeedPage(any())).thenAnswer((_) async => null);
+      when(
+        () => feedRepository.getTimeline(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) => completer.future);
+
+      await tester.pumpWidget(
+        buildHomeSubject(feedPreferencesCubit: feedPreferencesCubit, feedRepository: feedRepository),
+      );
+      await tester.pump();
+
+      expect(find.byIcon(Icons.rss_feed), findsOneWidget);
+      expect(find.byIcon(Icons.chat_bubble_outline), findsNothing);
+    });
+
     testWidgets('uses a non-default compose hero tag', (tester) async {
       final feedPreferencesCubit = MockFeedPreferencesCubit();
       final feedRepository = MockFeedRepository();
@@ -364,6 +401,33 @@ void main() {
       await tester.pump();
 
       expect(errors.where((error) => error.exceptionAsString().contains('setState() called after dispose()')), isEmpty);
+    });
+
+    testWidgets('does not fetch the feed when offline and shows an offline message', (tester) async {
+      final feedPreferencesCubit = MockFeedPreferencesCubit();
+      final feedRepository = MockFeedRepository();
+
+      when(() => feedPreferencesCubit.state).thenReturn(_homeFeedState);
+      whenListen(feedPreferencesCubit, const Stream<FeedPreferencesState>.empty(), initialState: _homeFeedState);
+      when(() => feedRepository.getCachedFeedPage(any())).thenAnswer((_) async => null);
+
+      await tester.pumpWidget(
+        buildHomeSubject(
+          feedPreferencesCubit: feedPreferencesCubit,
+          feedRepository: feedRepository,
+          connectivityState: const ConnectivityState.online(isSimulatedOffline: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Failed to load feed'), findsOneWidget);
+      expect(find.textContaining('You\'re offline'), findsOneWidget);
+      verifyNever(
+        () => feedRepository.getTimeline(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      );
     });
   });
 }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
-import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 
 /// Custom top app bar for the Lazurite shell screens.
 ///
@@ -45,6 +45,7 @@ class LazuriteAppBar extends StatelessWidget implements PreferredSizeWidget {
       titleSpacing: 0,
       actions: [
         ...?actions,
+        const _AppBarOfflineIndicator(),
         if (showAvatar) ...[const _AppBarAvatar(), const SizedBox(width: 8)],
       ],
       bottom: bottom,
@@ -53,45 +54,49 @@ class LazuriteAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-class AppBarMessagesButton extends StatelessWidget {
-  const AppBarMessagesButton({super.key});
+class _AppBarOfflineIndicator extends StatelessWidget {
+  const _AppBarOfflineIndicator();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    final baseButton = InkWell(
-      borderRadius: BorderRadius.circular(4),
-      onTap: () => GoRouter.maybeOf(context)?.go('/alerts/messages'),
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHigh,
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-        ),
-        child: const Icon(Icons.chat_bubble_outline, size: 18),
-      ),
-    );
-
+    ConnectivityCubit? connectivityCubit;
     try {
-      final bloc = context.read<ConvoListBloc>();
-      return BlocBuilder<ConvoListBloc, ConvoListState>(
-        bloc: bloc,
-        builder: (context, state) {
-          final unreadCount = state.convos.fold<int>(0, (sum, convo) => sum + convo.unreadCount);
-          return Badge(
-            isLabelVisible: unreadCount > 0,
-            label: Text(unreadCount > 99 ? '99+' : unreadCount.toString(), style: const TextStyle(fontSize: 10)),
-            child: baseButton,
-          );
-        },
-      );
+      connectivityCubit = context.read<ConnectivityCubit>();
     } catch (_) {
-      log.d('showing messages button without unread badge');
+      log.d('showing app bar without connectivity indicator');
+    }
+    if (connectivityCubit == null) {
+      return const SizedBox.shrink();
     }
 
-    return baseButton;
+    return BlocBuilder<ConnectivityCubit, ConnectivityState>(
+      bloc: connectivityCubit,
+      builder: (context, state) {
+        if (!state.isOffline) {
+          return const SizedBox.shrink();
+        }
+
+        final theme = Theme.of(context);
+        SettingsCubit? settingsCubit;
+        try {
+          settingsCubit = context.read<SettingsCubit>();
+        } catch (_) {}
+        final canDisableSimulatedOffline = state.isSimulatedOffline && settingsCubit != null;
+        final tooltip = canDisableSimulatedOffline ? 'Disable simulated offline mode' : 'You\'re offline';
+
+        return Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: Tooltip(
+            message: tooltip,
+            child: IconButton(
+              tooltip: tooltip,
+              onPressed: canDisableSimulatedOffline ? () => settingsCubit?.setSimulateOffline(false) : null,
+              icon: Icon(Icons.cloud_off_outlined, color: theme.colorScheme.error),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

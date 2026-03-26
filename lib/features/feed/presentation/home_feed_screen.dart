@@ -108,12 +108,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         return Scaffold(
           appBar: LazuriteAppBar(
             sectionLabel: 'Home',
-            showAvatar: false,
-            actions: [
-              IconButton(icon: const Icon(Icons.rss_feed), onPressed: () => context.push('/feeds')),
-              const AppBarMessagesButton(),
-              const SizedBox(width: 8),
-            ],
+            actions: [IconButton(icon: const Icon(Icons.rss_feed), onPressed: () => context.push('/feeds'))],
             bottom: _FeedTabBar(
               feeds: pinnedFeeds,
               prefsState: prefsState,
@@ -274,7 +269,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   }
 
   Future<void> _loadFeed() async {
-    await _loadFeedInternal(showLoading: _posts.isEmpty);
+    await _loadFeedInternal(showLoading: _posts.isEmpty, showOfflineFeedback: true);
   }
 
   Future<void> _primeFeed() async {
@@ -290,11 +285,24 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
       });
     }
 
-    await _loadFeedInternal(showLoading: cachedResult == null);
+    await _loadFeedInternal(showLoading: cachedResult == null, showOfflineFeedback: false);
   }
 
-  Future<void> _loadFeedInternal({required bool showLoading}) async {
+  Future<void> _loadFeedInternal({required bool showLoading, required bool showOfflineFeedback}) async {
     if (_isLoading) return;
+    if (context.read<ConnectivityCubit>().state.isOffline) {
+      if (_posts.isEmpty) {
+        _setStateIfMounted(() {
+          _hasError = true;
+          _errorMessage = offlineActionMessage('refresh your feed');
+          _isLoading = false;
+          _showInitialLoading = false;
+        });
+      } else if (showOfflineFeedback) {
+        showOfflineSnackBar(context, action: 'refresh your feed');
+      }
+      return;
+    }
 
     _setStateIfMounted(() {
       _isLoading = true;
@@ -339,6 +347,9 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
 
   Future<void> _loadMore() async {
     if (_isLoadingMore || _cursor == null) return;
+    if (context.read<ConnectivityCubit>().state.isOffline) {
+      return;
+    }
 
     _setStateIfMounted(() => _isLoadingMore = true);
 

@@ -1,22 +1,27 @@
 import 'package:bloc_test/bloc_test.dart';
-import 'package:bluesky/chat_bsky_convo_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/router/app_shell.dart';
+import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
-import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
-class MockConvoListBloc extends MockBloc<ConvoListEvent, ConvoListState> implements ConvoListBloc {}
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
+
+class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
 void main() {
   late MockAuthBloc authBloc;
-  late MockConvoListBloc convoListBloc;
+  late MockConnectivityCubit connectivityCubit;
+  late MockSettingsCubit settingsCubit;
 
   const tokens = AuthTokens(
     accessToken: 'access',
@@ -28,15 +33,33 @@ void main() {
 
   setUp(() {
     authBloc = MockAuthBloc();
-    convoListBloc = MockConvoListBloc();
+    connectivityCubit = MockConnectivityCubit();
+    settingsCubit = MockSettingsCubit();
     when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
-    when(() => convoListBloc.state).thenReturn(const ConvoListState.loaded(convos: [], cursor: null, hasMore: false));
+    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
     whenListen(
-      convoListBloc,
-      const Stream<ConvoListState>.empty(),
-      initialState: const ConvoListState.loaded(convos: [], cursor: null, hasMore: false),
+      connectivityCubit,
+      const Stream<ConnectivityState>.empty(),
+      initialState: const ConnectivityState.online(),
     );
+    when(() => settingsCubit.state).thenReturn(
+      const SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+      ),
+    );
+    whenListen(
+      settingsCubit,
+      const Stream<SettingsState>.empty(),
+      initialState: const SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+      ),
+    );
+    when(() => settingsCubit.setSimulateOffline(any())).thenAnswer((_) async {});
   });
 
   Widget buildSubject({
@@ -48,7 +71,8 @@ void main() {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>.value(value: authBloc),
-        BlocProvider<ConvoListBloc>.value(value: convoListBloc),
+        BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+        BlocProvider<SettingsCubit>.value(value: settingsCubit),
       ],
       child: MaterialApp(
         home: Scaffold(
@@ -112,32 +136,32 @@ void main() {
       buildSubject(
         sectionLabel: 'Home',
         showAvatar: false,
-        actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.chat_bubble_outline))],
+        actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.rss_feed))],
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.chat_bubble_outline), findsOneWidget);
+    expect(find.byIcon(Icons.rss_feed), findsOneWidget);
     expect(find.text('RT'), findsNothing);
   });
 
-  testWidgets('AppBarMessagesButton shows unread badge from shared convo list state', (tester) async {
-    const unreadConvo = ConvoView(id: 'c1', rev: 'rev-1', members: [], muted: false, unreadCount: 3);
-    when(
-      () => convoListBloc.state,
-    ).thenReturn(const ConvoListState.loaded(convos: [unreadConvo], cursor: null, hasMore: false));
+  testWidgets('shows simulated offline indicator and lets the user disable it', (tester) async {
+    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online(isSimulatedOffline: true));
     whenListen(
-      convoListBloc,
-      const Stream<ConvoListState>.empty(),
-      initialState: const ConvoListState.loaded(convos: [unreadConvo], cursor: null, hasMore: false),
+      connectivityCubit,
+      const Stream<ConnectivityState>.empty(),
+      initialState: const ConnectivityState.online(isSimulatedOffline: true),
     );
 
-    await tester.pumpWidget(
-      buildSubject(sectionLabel: 'Home', showAvatar: false, actions: [const AppBarMessagesButton()]),
-    );
+    await tester.pumpWidget(buildSubject(sectionLabel: 'Home'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Disable simulated offline mode'), findsAtLeastNWidgets(1));
+
+    await tester.tap(find.byTooltip('Disable simulated offline mode').first);
     await tester.pump();
 
-    expect(find.text('3'), findsOneWidget);
+    verify(() => settingsCubit.setSimulateOffline(false)).called(1);
   });
 
   testWidgets('preferred size height is 64 without bottom widget', (tester) async {
