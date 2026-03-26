@@ -14,15 +14,13 @@ class ConnectivityBannerHost extends StatelessWidget {
         return Stack(
           children: [
             Positioned.fill(child: child),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                bottom: false,
-                child: AnimatedSlide(
-                  duration: const Duration(milliseconds: 200),
-                  offset: state.isOffline ? Offset.zero : const Offset(0, -1),
+            if (state.isOffline)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  bottom: false,
                   child: IgnorePointer(
                     ignoring: true,
                     child: Padding(
@@ -59,7 +57,6 @@ class ConnectivityBannerHost extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
           ],
         );
       },

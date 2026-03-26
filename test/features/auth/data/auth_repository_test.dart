@@ -148,5 +148,27 @@ void main() {
         verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
       });
     });
+
+    group('callback server', () {
+      test('builds a callback page that can return to the app', () {
+        final html = authRepository.buildCallbackPageHtmlForTest();
+
+        expect(html, contains('lazurite://auth-complete'));
+        expect(html, contains('Return to Lazurite'));
+      });
+
+      test('can stop the callback server twice without throwing', () async {
+        final redirectUri = await authRepository.startCallbackServerForTest(Uri.parse('http://127.0.0.1/callback'));
+
+        expect(redirectUri.host, equals('127.0.0.1'));
+        expect(authRepository.callbackPort, greaterThan(0));
+
+        await authRepository.stopCallbackServerForTest();
+        expect(authRepository.callbackPort, equals(0));
+
+        await authRepository.stopCallbackServerForTest();
+        expect(authRepository.callbackPort, equals(0));
+      });
+    });
   });
 }

@@ -6,6 +6,7 @@ import 'package:atproto/atproto.dart' as atp;
 import 'package:atproto_core/atproto_core.dart' as atcore;
 import 'package:atproto_oauth/atproto_oauth.dart';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -19,11 +20,13 @@ class AuthRepository {
   static const String kClientId = 'https://lazurite.stormlightlabs.org/client-metadata.json';
   static const String _oauthService = 'bsky.social';
   static const String _fallbackService = 'bsky.social';
+  static final Uri _appReopenUri = Uri.parse('lazurite://auth-complete');
 
   final AppDatabase _database;
 
   HttpServer? _callbackServer;
   StreamSubscription<HttpRequest>? _callbackSubscription;
+  int _callbackServerPort = 0;
   Completer<AuthTokens?>? _oauthCompleter;
   OAuthClient? _pendingOAuthClient;
   OAuthContext? _pendingOAuthContext;
@@ -263,6 +266,8 @@ class AuthRepository {
       );
     }
 
+    await _stopCallbackServer();
+
     final requestedPort = _requestedCallbackPort(redirectUriTemplate);
     log.d(
       'AuthRepository: Binding OAuth callback server to '
@@ -270,14 +275,16 @@ class AuthRepository {
       'for ${redirectUriTemplate.path}',
     );
 
-    _callbackServer = await HttpServer.bind(InternetAddress.loopbackIPv4, requestedPort);
+    final callbackServer = await HttpServer.bind(InternetAddress.loopbackIPv4, requestedPort);
+    _callbackServer = callbackServer;
+    _callbackServerPort = callbackServer.port;
     final redirectUri = redirectUriTemplate.replace(
       host: InternetAddress.loopbackIPv4.address,
-      port: _callbackServer!.port,
+      port: callbackServer.port,
     );
     log.i('AuthRepository: OAuth callback server listening on ${_sanitizeUriForLog(redirectUri)}');
 
-    _callbackSubscription = _callbackServer!.listen(
+    _callbackSubscription = callbackServer.listen(
       (request) {
         unawaited(_handleCallbackRequest(request, redirectUri));
       },
@@ -305,12 +312,13 @@ class AuthRepository {
     await _callbackSubscription?.cancel();
     _callbackSubscription = null;
 
-    final callbackBody = utf8.encode(_callbackPageHtml);
+    final callbackPageHtml = buildCallbackPageHtmlForTest();
+    final callbackBody = utf8.encode(callbackPageHtml);
     request.response
       ..statusCode = HttpStatus.ok
       ..headers.contentType = ContentType.html
       ..headers.contentLength = callbackBody.length
-      ..write(_callbackPageHtml);
+      ..write(callbackPageHtml);
     await request.response.close();
 
     final callbackUrl = uri.replace(scheme: redirectUri.scheme, host: redirectUri.host, port: redirectUri.port);
@@ -402,13 +410,27 @@ class AuthRepository {
   }
 
   Future<void> _stopCallbackServer() async {
-    if (_callbackServer != null) {
-      log.d('AuthRepository: Stopping OAuth callback server on port ${_callbackServer!.port}');
-    }
-    await _callbackSubscription?.cancel();
+    final callbackSubscription = _callbackSubscription;
+    final callbackServer = _callbackServer;
+    final callbackServerPort = _callbackServerPort;
+
     _callbackSubscription = null;
-    await _callbackServer?.close();
     _callbackServer = null;
+    _callbackServerPort = 0;
+
+    if (callbackServerPort > 0) {
+      log.d('AuthRepository: Stopping OAuth callback server on port $callbackServerPort');
+    }
+    await callbackSubscription?.cancel();
+    if (callbackServer == null) {
+      return;
+    }
+
+    try {
+      await callbackServer.close(force: true);
+    } on HttpException catch (error, stackTrace) {
+      log.w('AuthRepository: OAuth callback server was already closed', error: error, stackTrace: stackTrace);
+    }
   }
 
   Future<String> _resolveServiceForIdentifier(String identifier) async {
@@ -529,10 +551,21 @@ class AuthRepository {
     _pendingService = null;
   }
 
-  int get callbackPort => _callbackServer?.port ?? 0;
+  @visibleForTesting
+  String buildCallbackPageHtmlForTest() => _buildCallbackPageHtml(_appReopenUri);
+
+  @visibleForTesting
+  Future<Uri> startCallbackServerForTest(Uri redirectUriTemplate) => _startCallbackServer(redirectUriTemplate);
+
+  @visibleForTesting
+  Future<void> stopCallbackServerForTest() => _stopCallbackServer();
+
+  int get callbackPort => _callbackServerPort;
 }
 
-const String _callbackPageHtml = '''
+String _buildCallbackPageHtml(Uri reopenUri) {
+  final escapedReopenUrl = HtmlEscape(HtmlEscapeMode.element).convert(reopenUri.toString());
+  return '''
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -584,14 +617,19 @@ const String _callbackPageHtml = '''
   <body>
     <main>
       <h1>Authentication Complete</h1>
-      <p>If this page does not close automatically, switch back to Lazurite.</p>
-      <button type="button" onclick="window.close()">Close This Tab</button>
+      <p>Lazurite is finishing sign-in. If it does not reopen automatically, tap the button below.</p>
+      <button type="button" onclick="window.location.href = '$escapedReopenUrl'">Return to Lazurite</button>
     </main>
     <script>
       window.setTimeout(function () {
+        window.location.replace('$escapedReopenUrl');
+      }, 150);
+
+      window.setTimeout(function () {
         window.close();
-      }, 250);
+      }, 600);
     </script>
   </body>
 </html>
 ''';
+}
