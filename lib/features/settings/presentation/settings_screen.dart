@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_architecture.dart';
-import 'package:lazurite/core/theme/ui_density.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/account/presentation/account_switcher_sheet.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
@@ -84,20 +83,6 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'View your saved posts',
             onTap: () => context.push('/saved'),
           ),
-          _SettingsTile(icon: Icons.person_outline, title: 'Edit Profile', subtitle: 'Name, bio, avatar', onTap: () {}),
-          _SettingsTile(icon: Icons.lock_outline, title: 'Privacy', subtitle: 'Visibility settings', onTap: () {}),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Notifications'),
-          _SettingsTile(
-            icon: Icons.notifications_outlined,
-            title: 'Push Notifications',
-            trailing: Switch(value: true, onChanged: (_) {}),
-          ),
-          _SettingsTile(
-            icon: Icons.email_outlined,
-            title: 'Email Notifications',
-            trailing: Switch(value: false, onChanged: (_) {}),
-          ),
           const SizedBox(height: 24),
           if (!kReleaseMode) ...[
             _buildSectionHeader(context, 'Developer'),
@@ -117,7 +102,6 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'View app log files',
             onTap: () => context.push('/settings/logs'),
           ),
-          _SettingsTile(icon: Icons.help_outline, title: 'Help & Support', onTap: () {}),
           _SettingsTile(
             icon: Icons.info_outline,
             title: 'About',
@@ -241,22 +225,6 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _SettingsDropdownTile<UiDensity>(
-                title: 'UI Density',
-                value: state.uiDensity,
-                options: UiDensity.values,
-                labelBuilder: (density) => switch (density) {
-                  UiDensity.compact => 'Compact',
-                  UiDensity.standard => 'Standard',
-                  UiDensity.relaxed => 'Relaxed',
-                },
-                onChanged: (value) {
-                  if (value != null) {
-                    settingsCubit.setUiDensity(value);
-                  }
-                },
-              ),
-              const Divider(height: 1),
               _SettingsDropdownTile<FeedArchitecture>(
                 title: 'Feed Architecture',
                 value: state.feedArchitecture,

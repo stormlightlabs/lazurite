@@ -25,7 +25,7 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -62,9 +62,7 @@ class AppDatabase extends _$AppDatabase {
         await migrator.createTable(labelerCache);
       }
       if (from < 10) {
-        await customStatement(
-          "INSERT OR IGNORE INTO settings (key, value) VALUES ('ui_density', 'standard'), ('feed_architecture', 'grid')",
-        );
+        await customStatement("INSERT OR IGNORE INTO settings (key, value) VALUES ('feed_architecture', 'grid')");
       }
       if (from < 11) {
         /*
@@ -74,6 +72,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 12) {
         await migrator.createTable(cachedFeedPages);
+      }
+      if (from < 13) {
+        await customStatement("DELETE FROM settings WHERE key = 'ui_density'");
       }
     },
   );

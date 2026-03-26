@@ -11,7 +11,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_architecture.dart';
-import 'package:lazurite/core/theme/ui_density.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
@@ -79,7 +78,6 @@ void main() {
     themePalette: AppThemePalette.oxocarbon,
     themeVariant: AppThemeVariant.dark,
     useSystemTheme: false,
-    uiDensity: UiDensity.standard,
     feedArchitecture: FeedArchitecture.grid,
   );
 
@@ -87,7 +85,6 @@ void main() {
     themePalette: AppThemePalette.oxocarbon,
     themeVariant: AppThemeVariant.dark,
     useSystemTheme: false,
-    uiDensity: UiDensity.standard,
     feedArchitecture: architecture,
   );
 

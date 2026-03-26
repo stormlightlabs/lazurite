@@ -564,7 +564,7 @@ class AuthRepository {
 }
 
 String _buildCallbackPageHtml(Uri reopenUri) {
-  final escapedReopenUrl = HtmlEscape(HtmlEscapeMode.element).convert(reopenUri.toString());
+  final escapedReopenUrl = const HtmlEscape(HtmlEscapeMode.element).convert(reopenUri.toString());
   return '''
 <!DOCTYPE html>
 <html lang="en">
