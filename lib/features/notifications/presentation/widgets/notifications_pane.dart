@@ -1,6 +1,7 @@
 import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/presentation/widgets/grouped_notification_list_item.dart';
@@ -51,12 +52,19 @@ class _NotificationsPaneState extends State<NotificationsPane> {
   Widget build(BuildContext context) {
     return BlocBuilder<NotificationBloc, NotificationState>(
       builder: (context, state) {
+        final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
         if (state.status == NotificationStatus.initial ||
             (state.status == NotificationStatus.loading && state.notifications.isEmpty)) {
+          if (isOffline) {
+            return const _OfflineNotificationsState();
+          }
           return const Center(child: CircularProgressIndicator());
         }
 
         if (state.status == NotificationStatus.error && state.notifications.isEmpty) {
+          if (isOffline) {
+            return const _OfflineNotificationsState();
+          }
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -75,6 +83,9 @@ class _NotificationsPaneState extends State<NotificationsPane> {
         }
 
         if (state.notifications.isEmpty) {
+          if (isOffline) {
+            return const _OfflineNotificationsState();
+          }
           return Center(child: Text('No notifications yet', style: Theme.of(context).textTheme.bodyLarge));
         }
 
@@ -211,6 +222,33 @@ class _NotificationsPaneState extends State<NotificationsPane> {
     ];
 
     return '${months[date.month - 1]} ${date.day}';
+  }
+}
+
+class _OfflineNotificationsState extends StatelessWidget {
+  const _OfflineNotificationsState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_outlined, size: 48, color: Theme.of(context).colorScheme.outline),
+            const SizedBox(height: 12),
+            Text('No connection', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Reconnect to load notifications.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

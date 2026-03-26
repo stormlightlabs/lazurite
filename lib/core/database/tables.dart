@@ -67,6 +67,17 @@ class SavedFeeds extends Table {
   Set<Column> get primaryKey => {id, accountDid};
 }
 
+@DataClassName('CachedFeedPage')
+class CachedFeedPages extends Table {
+  TextColumn get accountDid => text()();
+  TextColumn get feedKey => text()();
+  TextColumn get payload => text()();
+  DateTimeColumn get fetchedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {accountDid, feedKey};
+}
+
 @DataClassName('SearchHistoryEntry')
 class SearchHistory extends Table {
   IntColumn get id => integer().autoIncrement()();

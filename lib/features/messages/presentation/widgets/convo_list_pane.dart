@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
 import 'package:lazurite/features/messages/presentation/widgets/convo_list_item.dart';
@@ -71,12 +72,19 @@ class _ConvoListPaneState extends State<ConvoListPane> {
   Widget build(BuildContext context) {
     return BlocBuilder<ConvoListBloc, ConvoListState>(
       builder: (context, state) {
+        final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
         if (state.status == ConvoListStatus.initial ||
             (state.status == ConvoListStatus.loading && state.convos.isEmpty)) {
+          if (isOffline) {
+            return const _OfflineConvoState();
+          }
           return const Center(child: CircularProgressIndicator());
         }
 
         if (state.status == ConvoListStatus.error && state.convos.isEmpty) {
+          if (isOffline) {
+            return const _OfflineConvoState();
+          }
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -97,6 +105,9 @@ class _ConvoListPaneState extends State<ConvoListPane> {
         final filtered = _filteredConvos(state.convos, widget.tab);
 
         if (filtered.isEmpty) {
+          if (isOffline) {
+            return const _OfflineConvoState();
+          }
           return RefreshIndicator(
             onRefresh: _onRefresh,
             child: ListView(
@@ -153,5 +164,32 @@ class _ConvoListPaneState extends State<ConvoListPane> {
     final other = convo.members.where((m) => m.did != currentUserDid).firstOrNull;
     final title = other?.displayName ?? other?.handle ?? 'Conversation';
     context.push('/alerts/messages/${convo.id}', extra: MessageThreadRouteArgs(title: title));
+  }
+}
+
+class _OfflineConvoState extends StatelessWidget {
+  const _OfflineConvoState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_outlined, size: 48, color: Theme.of(context).colorScheme.outline),
+            const SizedBox(height: 12),
+            Text('No connection', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Reconnect to load messages.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -74,5 +74,18 @@ void main() {
       expect(state.isOnline, isFalse);
       expect(state.status, ConnectivityStatus.offline);
     });
+
+    blocTest<ConnectivityCubit, ConnectivityState>(
+      'setSimulatedOffline forces offline until cleared',
+      build: () => ConnectivityCubit(connectivity: mockConnectivity),
+      act: (cubit) {
+        cubit.setSimulatedOffline(true);
+        cubit.setSimulatedOffline(false);
+      },
+      expect: () => [
+        predicate<ConnectivityState>((state) => state.isOffline && state.isSimulatedOffline),
+        predicate<ConnectivityState>((state) => state.isOnline && !state.isSimulatedOffline),
+      ],
+    );
   });
 }

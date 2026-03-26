@@ -22,11 +22,12 @@ Completed [2026-03-19](../../CHANGELOG.md#2026-03-19)
 ## M15 — Offline Reading & Network Resilience
 
 - [x] `ConnectivityCubit` via **connectivity_plus** — expose network state stream
-- [ ] Cache last-fetched feed page as serialised JSON in Drift
-- [ ] Display cached data immediately on launch, refresh in background
-- [ ] "You're offline" banner when connectivity is lost
-- [ ] Disable network-dependent actions (compose, like, repost, follow) when offline with tooltip
-- [ ] Notifications and DM screens show "No connection" empty state when offline with no cache
+- [x] Cache last-fetched feed page as serialised JSON in Drift
+- [x] Display cached data immediately on launch, refresh in background
+- [x] "You're offline" banner when connectivity is lost
+- [x] Disable network-dependent actions (compose, like, repost, follow) when offline with tooltip
+- [x] Notifications and DM screens show "No connection" empty state when offline with no cache
+- [x] In Debug/Dev mode, add "Simulate Offline" toggle in settings to test offline UI
 
 ## M16 — Jump to Profile
 

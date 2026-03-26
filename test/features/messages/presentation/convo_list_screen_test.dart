@@ -1,8 +1,10 @@
 import 'package:bluesky/chat_bsky_actor_defs.dart';
 import 'package:bluesky/chat_bsky_convo_defs.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/messages/presentation/convo_list_screen.dart';
@@ -10,13 +12,23 @@ import 'package:mocktail/mocktail.dart';
 
 class MockConvoRepository extends Mock implements ConvoRepository {}
 
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
+
 void main() {
   const currentUserDid = 'did:plc:me';
 
   late MockConvoRepository mockRepository;
+  late MockConnectivityCubit connectivityCubit;
 
   setUp(() {
     mockRepository = MockConvoRepository();
+    connectivityCubit = MockConnectivityCubit();
+    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
+    whenListen(
+      connectivityCubit,
+      const Stream<ConnectivityState>.empty(),
+      initialState: const ConnectivityState.online(),
+    );
   });
 
   ProfileViewBasic makeProfile({String did = 'did:plc:other', String handle = 'other.bsky.social'}) =>
@@ -39,7 +51,7 @@ void main() {
       child: MaterialApp(
         home: BlocProvider(
           create: (_) => ConvoListBloc(convoRepository: mockRepository),
-          child: const ConvoListScreen(),
+          child: BlocProvider<ConnectivityCubit>.value(value: connectivityCubit, child: const ConvoListScreen()),
         ),
       ),
     );
@@ -102,6 +114,27 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No conversations yet'), findsOneWidget);
+    });
+
+    testWidgets('shows offline empty state when offline with no conversations', (tester) async {
+      when(() => connectivityCubit.state).thenReturn(const ConnectivityState.offline());
+      whenListen(
+        connectivityCubit,
+        const Stream<ConnectivityState>.empty(),
+        initialState: const ConnectivityState.offline(),
+      );
+      when(
+        () => mockRepository.listConvos(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => ConvoListResult(convos: [], cursor: null));
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      expect(find.text('No connection'), findsOneWidget);
+      expect(find.text('Reconnect to load messages.'), findsOneWidget);
     });
 
     testWidgets('shows error state on failure', (tester) async {

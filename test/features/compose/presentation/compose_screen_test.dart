@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_screen.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockComposeBloc extends MockBloc<ComposeEvent, ComposeState> implements ComposeBloc {}
+
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
 
 class FakeDraftsCompanion extends Fake implements DraftsCompanion {}
 
@@ -28,17 +31,33 @@ DraftEntry _makeDraft({int id = 1, String content = 'Draft'}) => DraftEntry(
 
 void main() {
   late MockComposeBloc mockBloc;
+  late MockConnectivityCubit connectivityCubit;
 
   setUp(() {
     registerFallbackValue(FakeDraftsCompanion());
     registerFallbackValue(const TextChanged(''));
     mockBloc = MockComposeBloc();
+    connectivityCubit = MockConnectivityCubit();
+    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
+    whenListen(
+      connectivityCubit,
+      const Stream<ConnectivityState>.empty(),
+      initialState: const ConnectivityState.online(),
+    );
   });
 
-  tearDown(() => mockBloc.close());
+  tearDown(() {
+    mockBloc.close();
+  });
 
   Widget buildSubject() => MaterialApp(
-    home: BlocProvider<ComposeBloc>.value(value: mockBloc, child: const ComposeScreen()),
+    home: MultiBlocProvider(
+      providers: [
+        BlocProvider<ComposeBloc>.value(value: mockBloc),
+        BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+      ],
+      child: const ComposeScreen(),
+    ),
   );
 
   void seedState(ComposeState state) {
@@ -79,8 +98,11 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            home: BlocProvider<ComposeBloc>.value(
-              value: mockBloc,
+            home: MultiBlocProvider(
+              providers: [
+                BlocProvider<ComposeBloc>.value(value: mockBloc),
+                BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+              ],
               child: const ComposeScreen(initialText: '@river.bsky.social '),
             ),
           ),

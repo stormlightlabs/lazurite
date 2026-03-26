@@ -9,6 +9,7 @@ import 'package:lazurite/core/router/app_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
@@ -30,6 +31,8 @@ class MockFeedBloc extends MockBloc<FeedEvent, FeedState> implements FeedBloc {}
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
+
 class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
 
 class MockUnreadCountCubit extends MockCubit<UnreadCountState> implements UnreadCountCubit {}
@@ -44,6 +47,7 @@ void main() {
   late MockProfileBloc profileBloc;
   late MockFeedBloc feedBloc;
   late MockSettingsCubit settingsCubit;
+  late MockConnectivityCubit connectivityCubit;
   late MockAccountSwitcherCubit accountSwitcherCubit;
   late MockUnreadCountCubit unreadCountCubit;
   late MockConvoListBloc convoListBloc;
@@ -75,6 +79,7 @@ void main() {
     profileBloc = MockProfileBloc();
     feedBloc = MockFeedBloc();
     settingsCubit = MockSettingsCubit();
+    connectivityCubit = MockConnectivityCubit();
     accountSwitcherCubit = MockAccountSwitcherCubit();
     unreadCountCubit = MockUnreadCountCubit();
     convoListBloc = MockConvoListBloc();
@@ -95,6 +100,7 @@ void main() {
         useSystemTheme: false,
       ),
     );
+    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
     when(() => accountSwitcherCubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
     when(() => unreadCountCubit.state).thenReturn(const UnreadCountState(0));
     when(() => convoListBloc.state).thenReturn(const ConvoListState.loaded(convos: [], cursor: null, hasMore: false));
@@ -127,6 +133,11 @@ void main() {
       ),
     );
     whenListen(
+      connectivityCubit,
+      const Stream<ConnectivityState>.empty(),
+      initialState: const ConnectivityState.online(),
+    );
+    whenListen(
       accountSwitcherCubit,
       const Stream<AccountSwitcherState>.empty(),
       initialState: const AccountSwitcherState.ready(accounts: []),
@@ -150,6 +161,7 @@ void main() {
       BlocProvider<ProfileBloc>.value(value: profileBloc),
       BlocProvider<FeedBloc>.value(value: feedBloc),
       BlocProvider<SettingsCubit>.value(value: settingsCubit),
+      BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
       BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
       BlocProvider<UnreadCountCubit>.value(value: unreadCountCubit),
       BlocProvider<ConvoListBloc>.value(value: convoListBloc),
@@ -276,6 +288,7 @@ void main() {
         BlocProvider<ProfileBloc>.value(value: profileBloc),
         BlocProvider<FeedBloc>.value(value: feedBloc),
         BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
         BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
       ],
       child: BlocBuilder<AuthBloc, AuthState>(

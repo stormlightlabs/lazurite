@@ -190,6 +190,18 @@ void main() {
         final cached = await database.select(database.cachedPosts).getSingle();
         expect(cached.authorDid, equals('did:plc:abc123'));
       });
+
+      test('should cache a feed page payload', () async {
+        await database.cacheFeedPage(
+          accountDid: 'did:plc:test',
+          feedKey: 'timeline',
+          payload: '{"cursor":"next","posts":[]}',
+        );
+
+        final cached = await database.getCachedFeedPage('did:plc:test', 'timeline');
+        expect(cached, isNotNull);
+        expect(cached!.payload, equals('{"cursor":"next","posts":[]}'));
+      });
     });
 
     group('Settings operations', () {

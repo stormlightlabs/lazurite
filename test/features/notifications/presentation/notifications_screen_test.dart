@@ -1,9 +1,11 @@
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
@@ -14,12 +16,22 @@ import 'package:mocktail/mocktail.dart';
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
+
 void main() {
   group('NotificationsScreen', () {
     late MockNotificationRepository mockNotificationRepository;
+    late MockConnectivityCubit connectivityCubit;
 
     setUp(() {
       mockNotificationRepository = MockNotificationRepository();
+      connectivityCubit = MockConnectivityCubit();
+      when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
+      whenListen(
+        connectivityCubit,
+        const Stream<ConnectivityState>.empty(),
+        initialState: const ConnectivityState.online(),
+      );
       when(
         () => mockNotificationRepository.listNotifications(
           cursor: any(named: 'cursor'),
@@ -40,6 +52,7 @@ void main() {
             BlocProvider<UnreadCountCubit>(
               create: (_) => UnreadCountCubit(notificationRepository: mockNotificationRepository),
             ),
+            BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
           ],
           child: const NotificationsScreen(),
         ),
@@ -88,6 +101,21 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No notifications yet'), findsOneWidget);
+    });
+
+    testWidgets('displays offline empty state when offline with no notifications', (tester) async {
+      when(() => connectivityCubit.state).thenReturn(const ConnectivityState.offline());
+      whenListen(
+        connectivityCubit,
+        const Stream<ConnectivityState>.empty(),
+        initialState: const ConnectivityState.offline(),
+      );
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      expect(find.text('No connection'), findsOneWidget);
+      expect(find.text('Reconnect to load notifications.'), findsOneWidget);
     });
 
     testWidgets('displays error state on failure', (tester) async {

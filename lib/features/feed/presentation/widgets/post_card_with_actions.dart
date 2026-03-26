@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cubit.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
@@ -139,6 +140,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
 
   Widget _buildFooter(BuildContext context) {
     final post = feedViewPost.post;
+    final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
     return BlocBuilder<PostActionCubit, PostActionState>(
       builder: (context, postActionState) {
         return BlocBuilder<SavedPostsCubit, SavedPostsState>(
@@ -163,6 +165,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
               onCloudSave: () => unawaited(_onCloudSave(context)),
               onCloudUnsave: () => unawaited(_onCloudUnsave(context)),
               showCounts: true,
+              isOffline: isOffline,
             );
           },
         );

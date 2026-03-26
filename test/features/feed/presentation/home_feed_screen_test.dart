@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_architecture.dart';
 import 'package:lazurite/core/theme/ui_density.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
@@ -21,6 +22,8 @@ class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubi
 class MockFeedPreferencesCubit extends MockCubit<FeedPreferencesState> implements FeedPreferencesCubit {}
 
 class MockFeedRepository extends Mock implements FeedRepository {}
+
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
 
 SettingsState _settingsState(FeedArchitecture architecture) => SettingsState(
   themePalette: AppThemePalette.oxocarbon,
@@ -70,10 +73,24 @@ void main() {
     required FeedPreferencesCubit feedPreferencesCubit,
     required FeedRepository feedRepository,
   }) {
+    final connectivityCubit = MockConnectivityCubit();
+    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
+    whenListen(
+      connectivityCubit,
+      const Stream<ConnectivityState>.empty(),
+      initialState: const ConnectivityState.online(),
+    );
+
     return MaterialApp(
       home: RepositoryProvider<FeedRepository>.value(
         value: feedRepository,
-        child: BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit, child: const HomeFeedScreen()),
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
+            BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+          ],
+          child: const HomeFeedScreen(),
+        ),
       ),
     );
   }
@@ -299,6 +316,7 @@ void main() {
 
       when(() => feedPreferencesCubit.state).thenReturn(_homeFeedState);
       whenListen(feedPreferencesCubit, const Stream<FeedPreferencesState>.empty(), initialState: _homeFeedState);
+      when(() => feedRepository.getCachedFeedPage(any())).thenAnswer((_) async => null);
       when(
         () => feedRepository.getTimeline(
           cursor: any(named: 'cursor'),
@@ -327,6 +345,7 @@ void main() {
 
       when(() => feedPreferencesCubit.state).thenReturn(_homeFeedState);
       whenListen(feedPreferencesCubit, const Stream<FeedPreferencesState>.empty(), initialState: _homeFeedState);
+      when(() => feedRepository.getCachedFeedPage(any())).thenAnswer((_) async => null);
       when(
         () => feedRepository.getTimeline(
           cursor: any(named: 'cursor'),

@@ -18,6 +18,7 @@ Widget _buildBar({
   VoidCallback? onRepost,
   VoidCallback? onLike,
   VoidCallback? onReply,
+  bool isOffline = false,
 }) {
   return MaterialApp(
     home: Scaffold(
@@ -38,6 +39,7 @@ Widget _buildBar({
         onRepost: onRepost,
         onLike: onLike,
         onReply: onReply,
+        isOffline: isOffline,
       ),
     ),
   );
@@ -148,6 +150,30 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(cloudUnsaveCalled, isTrue);
+    });
+
+    testWidgets('offline mode disables reply, repost, and like actions', (tester) async {
+      var replyCalled = false;
+      var repostCalled = false;
+      var likeCalled = false;
+
+      await tester.pumpWidget(
+        _buildBar(
+          isOffline: true,
+          onReply: () => replyCalled = true,
+          onRepost: () => repostCalled = true,
+          onLike: () => likeCalled = true,
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.chat_bubble_outline));
+      await tester.tap(find.byIcon(Icons.repeat));
+      await tester.tap(find.byIcon(Icons.favorite_outline));
+      await tester.pump();
+
+      expect(replyCalled, isFalse);
+      expect(repostCalled, isFalse);
+      expect(likeCalled, isFalse);
     });
   });
 }

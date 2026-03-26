@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 
 class ProfileActionButtons extends StatelessWidget {
   const ProfileActionButtons({
@@ -11,6 +12,7 @@ class ProfileActionButtons extends StatelessWidget {
     required this.isLoadingFollow,
     required this.isLoadingMute,
     required this.isLoadingBlock,
+    this.isOffline = false,
     this.onFollow,
     this.onUnfollow,
     this.onMute,
@@ -28,6 +30,7 @@ class ProfileActionButtons extends StatelessWidget {
   final bool isLoadingFollow;
   final bool isLoadingMute;
   final bool isLoadingBlock;
+  final bool isOffline;
   final VoidCallback? onFollow;
   final VoidCallback? onUnfollow;
   final VoidCallback? onMute;
@@ -53,23 +56,30 @@ class ProfileActionButtons extends StatelessWidget {
     if (isBlocked) {
       return _ActionButton(
         label: 'Unblock',
-        onPressed: onUnblock != null ? () => _confirmUnblock(context) : null,
+        onPressed: isOffline || onUnblock == null ? null : () => _confirmUnblock(context),
         isLoading: isLoadingBlock,
         foregroundColor: Theme.of(context).colorScheme.onError,
         backgroundColor: Theme.of(context).colorScheme.error,
+        tooltip: isOffline ? offlineActionMessage('unblock this account') : null,
       );
     }
 
     if (isFollowing) {
       return _ActionButton(
         label: 'Following',
-        onPressed: onUnfollow != null ? () => _confirmUnfollow(context) : null,
+        onPressed: isOffline || onUnfollow == null ? null : () => _confirmUnfollow(context),
         isLoading: isLoadingFollow,
         isSecondary: true,
+        tooltip: isOffline ? offlineActionMessage('change your follow state') : null,
       );
     }
 
-    return _ActionButton(label: 'Follow', onPressed: onFollow, isLoading: isLoadingFollow);
+    return _ActionButton(
+      label: 'Follow',
+      onPressed: isOffline ? null : onFollow,
+      isLoading: isLoadingFollow,
+      tooltip: isOffline ? offlineActionMessage('follow this account') : null,
+    );
   }
 
   Widget _buildMoreButton(BuildContext context) {
@@ -129,7 +139,15 @@ class ProfileActionButtons extends StatelessWidget {
       ),
     ]);
 
-    return PopupMenuButton<void>(icon: const Icon(Icons.more_vert), itemBuilder: (_) => menuItems);
+    Widget button = PopupMenuButton<void>(
+      enabled: !isOffline,
+      icon: const Icon(Icons.more_vert),
+      itemBuilder: (_) => menuItems,
+    );
+    if (isOffline) {
+      button = Tooltip(message: offlineActionMessage('manage this profile'), child: button);
+    }
+    return button;
   }
 
   void _confirmUnfollow(BuildContext context) {
@@ -258,6 +276,7 @@ class _ActionButton extends StatelessWidget {
     this.isSecondary = false,
     this.foregroundColor,
     this.backgroundColor,
+    this.tooltip,
   });
 
   final String label;
@@ -266,20 +285,23 @@ class _ActionButton extends StatelessWidget {
   final bool isSecondary;
   final Color? foregroundColor;
   final Color? backgroundColor;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     if (isSecondary) {
-      return OutlinedButton(onPressed: isLoading ? null : onPressed, child: _buildChild(theme));
+      final button = OutlinedButton(onPressed: isLoading ? null : onPressed, child: _buildChild(theme));
+      return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
     }
 
-    return FilledButton(
+    final button = FilledButton(
       onPressed: isLoading ? null : onPressed,
       style: FilledButton.styleFrom(foregroundColor: foregroundColor, backgroundColor: backgroundColor),
       child: _buildChild(theme),
     );
+    return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
   }
 
   Widget _buildChild(ThemeData theme) {

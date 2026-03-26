@@ -7,6 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/router/app_shell.dart';
+import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
@@ -904,25 +906,30 @@ class _FollowButtonState extends State<_FollowButton> {
 
   @override
   Widget build(BuildContext context) {
+    final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
     if (_isFollowing) {
-      return OutlinedButton(
-        onPressed: _toggleFollow,
+      final button = OutlinedButton(
+        onPressed: isOffline ? null : _toggleFollow,
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         ),
         child: const Text('Following'),
       );
+
+      return isOffline ? Tooltip(message: offlineActionMessage('change your follow state'), child: button) : button;
     }
 
-    return FilledButton.tonal(
-      onPressed: _toggleFollow,
+    final button = FilledButton.tonal(
+      onPressed: isOffline ? null : _toggleFollow,
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),
       child: const Text('Follow'),
     );
+
+    return isOffline ? Tooltip(message: offlineActionMessage('follow this account'), child: button) : button;
   }
 
   void _toggleFollow() {

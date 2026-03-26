@@ -3,11 +3,13 @@ import 'package:bluesky/app_bsky_actor_defs.dart' as app_actor;
 import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
 import 'package:bluesky/chat_bsky_actor_defs.dart' as chat_actor;
 import 'package:bluesky/chat_bsky_convo_defs.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/alerts/presentation/alerts_screen.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
@@ -19,13 +21,23 @@ class MockNotificationRepository extends Mock implements NotificationRepository 
 
 class MockConvoRepository extends Mock implements ConvoRepository {}
 
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
+
 void main() {
   late MockNotificationRepository notificationRepository;
   late MockConvoRepository convoRepository;
+  late MockConnectivityCubit connectivityCubit;
 
   setUp(() {
     notificationRepository = MockNotificationRepository();
     convoRepository = MockConvoRepository();
+    connectivityCubit = MockConnectivityCubit();
+    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
+    whenListen(
+      connectivityCubit,
+      const Stream<ConnectivityState>.empty(),
+      initialState: const ConnectivityState.online(),
+    );
 
     when(
       () => notificationRepository.listNotifications(
@@ -121,6 +133,7 @@ void main() {
               BlocProvider(create: (_) => NotificationBloc(notificationRepository: notificationRepository)),
               BlocProvider(create: (_) => UnreadCountCubit(notificationRepository: notificationRepository)),
               BlocProvider(create: (_) => ConvoListBloc(convoRepository: convoRepository)),
+              BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
               RepositoryProvider<String>.value(value: 'did:plc:me'),
             ],
             child: const AlertsScreen(),
@@ -133,6 +146,7 @@ void main() {
                   BlocProvider(create: (_) => NotificationBloc(notificationRepository: notificationRepository)),
                   BlocProvider(create: (_) => UnreadCountCubit(notificationRepository: notificationRepository)),
                   BlocProvider(create: (_) => ConvoListBloc(convoRepository: convoRepository)),
+                  BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
                   RepositoryProvider<String>.value(value: 'did:plc:me'),
                 ],
                 child: const AlertsScreen(initialTab: AlertsTab.messages),
@@ -145,6 +159,7 @@ void main() {
                   BlocProvider(create: (_) => NotificationBloc(notificationRepository: notificationRepository)),
                   BlocProvider(create: (_) => UnreadCountCubit(notificationRepository: notificationRepository)),
                   BlocProvider(create: (_) => ConvoListBloc(convoRepository: convoRepository)),
+                  BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
                   RepositoryProvider<String>.value(value: 'did:plc:me'),
                 ],
                 child: const AlertsScreen(initialTab: AlertsTab.requests),

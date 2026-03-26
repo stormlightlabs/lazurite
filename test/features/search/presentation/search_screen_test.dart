@@ -1,11 +1,13 @@
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
@@ -15,14 +17,24 @@ class MockSearchRepository extends Mock implements SearchRepository {}
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
+
 void main() {
   group('SearchScreen', () {
     late MockSearchRepository mockSearchRepository;
     late MockAppDatabase mockDatabase;
+    late MockConnectivityCubit connectivityCubit;
 
     setUp(() {
       mockSearchRepository = MockSearchRepository();
       mockDatabase = MockAppDatabase();
+      connectivityCubit = MockConnectivityCubit();
+      when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
+      whenListen(
+        connectivityCubit,
+        const Stream<ConnectivityState>.empty(),
+        initialState: const ConnectivityState.online(),
+      );
       when(() => mockDatabase.getSearchHistory(any(), limit: any(named: 'limit'))).thenAnswer((_) async => []);
       when(
         () => mockSearchRepository.searchPosts(
@@ -49,9 +61,17 @@ void main() {
 
     Widget buildSubject() {
       return MaterialApp(
-        home: BlocProvider<SearchBloc>(
-          create: (_) =>
-              SearchBloc(searchRepository: mockSearchRepository, database: mockDatabase, accountDid: 'did:plc:test'),
+        home: MultiBlocProvider(
+          providers: [
+            BlocProvider<SearchBloc>(
+              create: (_) => SearchBloc(
+                searchRepository: mockSearchRepository,
+                database: mockDatabase,
+                accountDid: 'did:plc:test',
+              ),
+            ),
+            BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+          ],
           child: const SearchScreen(),
         ),
       );
@@ -68,7 +88,7 @@ void main() {
                 database: mockDatabase,
                 accountDid: 'did:plc:test',
               ),
-              child: const SearchScreen(),
+              child: BlocProvider<ConnectivityCubit>.value(value: connectivityCubit, child: const SearchScreen()),
             ),
           ),
           GoRoute(
@@ -159,9 +179,17 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<SearchBloc>(
-            create: (_) =>
-                SearchBloc(searchRepository: mockSearchRepository, database: mockDatabase, accountDid: 'did:plc:test'),
+          home: MultiBlocProvider(
+            providers: [
+              BlocProvider<SearchBloc>(
+                create: (_) => SearchBloc(
+                  searchRepository: mockSearchRepository,
+                  database: mockDatabase,
+                  accountDid: 'did:plc:test',
+                ),
+              ),
+              BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+            ],
             child: const SearchScreen(),
           ),
         ),
@@ -194,9 +222,17 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<SearchBloc>(
-            create: (_) =>
-                SearchBloc(searchRepository: mockSearchRepository, database: mockDatabase, accountDid: 'did:plc:test'),
+          home: MultiBlocProvider(
+            providers: [
+              BlocProvider<SearchBloc>(
+                create: (_) => SearchBloc(
+                  searchRepository: mockSearchRepository,
+                  database: mockDatabase,
+                  accountDid: 'did:plc:test',
+                ),
+              ),
+              BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+            ],
             child: const SearchScreen(),
           ),
         ),

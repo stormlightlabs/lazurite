@@ -12,6 +12,7 @@ part 'app_database.g.dart';
     CachedPosts,
     Settings,
     SavedFeeds,
+    CachedFeedPages,
     SearchHistory,
     Drafts,
     SavedPosts,
@@ -24,7 +25,7 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -70,6 +71,9 @@ class AppDatabase extends _$AppDatabase {
           The thread auto-collapse setting is nullable and represented by
           the presence or absence of a row in the existing settings table.
         */
+      }
+      if (from < 12) {
+        await migrator.createTable(cachedFeedPages);
       }
     },
   );
@@ -181,6 +185,33 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteAllSavedFeeds(String accountDid) =>
       (delete(savedFeeds)..where((f) => f.accountDid.equals(accountDid))).go();
+
+  Future<int> cacheFeedPage({
+    required String accountDid,
+    required String feedKey,
+    required String payload,
+    DateTime? fetchedAt,
+  }) => into(cachedFeedPages).insert(
+    CachedFeedPagesCompanion(
+      accountDid: Value(accountDid),
+      feedKey: Value(feedKey),
+      payload: Value(payload),
+      fetchedAt: Value(fetchedAt ?? DateTime.now()),
+    ),
+    mode: InsertMode.replace,
+  );
+
+  Future<CachedFeedPage?> getCachedFeedPage(String accountDid, String feedKey) {
+    return (select(
+      cachedFeedPages,
+    )..where((entry) => entry.accountDid.equals(accountDid) & entry.feedKey.equals(feedKey))).getSingleOrNull();
+  }
+
+  Future<int> deleteCachedFeedPage(String accountDid, String feedKey) {
+    return (delete(
+      cachedFeedPages,
+    )..where((entry) => entry.accountDid.equals(accountDid) & entry.feedKey.equals(feedKey))).go();
+  }
 
   Future<void> replaceSavedFeeds(String accountDid, List<SavedFeedsCompanion> feeds) async {
     await transaction(() async {

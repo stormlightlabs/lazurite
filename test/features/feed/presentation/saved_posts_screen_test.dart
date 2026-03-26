@@ -4,11 +4,13 @@ import 'dart:convert';
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
@@ -18,6 +20,8 @@ import 'package:mocktail/mocktail.dart';
 class MockAppDatabase extends Mock implements AppDatabase {}
 
 class MockPostActionRepository extends Mock implements PostActionRepository {}
+
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
 
 PostView _makePostView({
   String did = 'did:plc:author',
@@ -52,12 +56,20 @@ SavedPostEntry _makeEntry({
 void main() {
   late MockAppDatabase mockDatabase;
   late MockPostActionRepository mockPostActionRepository;
+  late MockConnectivityCubit connectivityCubit;
 
   const testAccountDid = 'did:plc:me';
 
   setUp(() {
     mockDatabase = MockAppDatabase();
     mockPostActionRepository = MockPostActionRepository();
+    connectivityCubit = MockConnectivityCubit();
+    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
+    whenListen(
+      connectivityCubit,
+      const Stream<ConnectivityState>.empty(),
+      initialState: const ConnectivityState.online(),
+    );
 
     when(() => mockDatabase.watchSavedPostsWithType(testAccountDid)).thenAnswer((_) => Stream.value({}));
     when(() => mockDatabase.getSavedPosts(testAccountDid)).thenAnswer((_) => Future.value([]));
@@ -77,7 +89,10 @@ void main() {
         RepositoryProvider<PostActionCache>(create: (_) => PostActionCache()),
         RepositoryProvider<String>.value(value: testAccountDid),
       ],
-      child: const MaterialApp(home: SavedPostsScreen(accountDid: testAccountDid)),
+      child: BlocProvider<ConnectivityCubit>.value(
+        value: connectivityCubit,
+        child: const MaterialApp(home: SavedPostsScreen(accountDid: testAccountDid)),
+      ),
     );
   }
 

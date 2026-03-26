@@ -15,6 +15,7 @@ import 'package:lazurite/core/theme/ui_density.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
@@ -37,6 +38,8 @@ class MockProfileActionRepository extends Mock implements ProfileActionRepositor
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
+
 class MockPostActionRepository extends Mock implements PostActionRepository {}
 
 class MockSavedPostsCubit extends MockCubit<SavedPostsState> implements SavedPostsCubit {}
@@ -50,6 +53,7 @@ void main() {
   late MockProfileBloc profileBloc;
   late MockFeedBloc feedBloc;
   late MockSettingsCubit settingsCubit;
+  late MockConnectivityCubit connectivityCubit;
 
   const tokens = AuthTokens(
     accessToken: 'access',
@@ -92,6 +96,7 @@ void main() {
     profileBloc = MockProfileBloc();
     feedBloc = MockFeedBloc();
     settingsCubit = MockSettingsCubit();
+    connectivityCubit = MockConnectivityCubit();
 
     when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
     when(() => profileBloc.state).thenReturn(ProfileState.loaded(profile: profile));
@@ -99,6 +104,7 @@ void main() {
       const FeedState.loaded(actor: 'did:plc:me', posts: [], filter: FeedFilter.postsNoReplies, hasMore: false),
     );
     when(() => settingsCubit.state).thenReturn(defaultSettingsState());
+    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
 
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
     whenListen(profileBloc, const Stream<ProfileState>.empty(), initialState: ProfileState.loaded(profile: profile));
@@ -113,6 +119,11 @@ void main() {
       ),
     );
     whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: defaultSettingsState());
+    whenListen(
+      connectivityCubit,
+      const Stream<ConnectivityState>.empty(),
+      initialState: const ConnectivityState.online(),
+    );
   });
 
   Widget buildSubject() {
@@ -122,6 +133,7 @@ void main() {
         BlocProvider<ProfileBloc>.value(value: profileBloc),
         BlocProvider<FeedBloc>.value(value: feedBloc),
         BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
       ],
       child: const MaterialApp(home: ProfileScreen()),
     );
@@ -190,6 +202,7 @@ void main() {
           BlocProvider<ProfileBloc>.value(value: profileBloc),
           BlocProvider<FeedBloc>.value(value: feedBloc),
           BlocProvider<SettingsCubit>.value(value: settingsCubit),
+          BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
         ],
         child: const MaterialApp(home: ProfileScreen(actor: 'did:plc:other', showBackButton: true)),
       ),
@@ -245,6 +258,7 @@ void main() {
                 BlocProvider<AuthBloc>.value(value: authBloc),
                 BlocProvider<ProfileBloc>.value(value: profileBloc),
                 BlocProvider<FeedBloc>.value(value: feedBloc),
+                BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
                 BlocProvider<SettingsCubit>.value(value: settingsCubit),
               ],
               child: const ProfileScreen(actor: 'did:plc:other', showBackButton: true),
@@ -405,6 +419,7 @@ void main() {
             BlocProvider<AuthBloc>.value(value: authBloc),
             BlocProvider<ProfileBloc>.value(value: profileBloc),
             BlocProvider<FeedBloc>.value(value: feedBloc),
+            BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
             BlocProvider<SettingsCubit>.value(value: settCubit),
             BlocProvider<SavedPostsCubit>.value(value: mockSavedPostsCubit),
           ],
@@ -497,6 +512,7 @@ void main() {
             BlocProvider<AuthBloc>.value(value: authBloc),
             BlocProvider<ProfileBloc>.value(value: profileBloc),
             BlocProvider<FeedBloc>.value(value: feedBloc),
+            BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
             BlocProvider<SettingsCubit>.value(value: settingsCubit),
           ],
           child: MultiRepositoryProvider(
@@ -538,6 +554,7 @@ void main() {
               BlocProvider<AuthBloc>.value(value: authBloc),
               BlocProvider<ProfileBloc>.value(value: profileBloc),
               BlocProvider<FeedBloc>.value(value: feedBloc),
+              BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
               BlocProvider<SettingsCubit>.value(value: settingsCubit),
             ],
             child: const MaterialApp(home: ProfileScreen(actor: 'did:plc:other', showBackButton: true)),

@@ -1,17 +1,39 @@
+import 'dart:convert';
+
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_getauthorfeed.dart';
 import 'package:bluesky/bluesky.dart';
+import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class FeedRepository {
-  FeedRepository({required Bluesky bluesky, ModerationService? moderationService})
-    : _bluesky = bluesky,
-      _moderationService = moderationService;
+  FeedRepository({
+    required Bluesky bluesky,
+    required AppDatabase database,
+    required String accountDid,
+    ModerationService? moderationService,
+  }) : _bluesky = bluesky,
+       _database = database,
+       _accountDid = accountDid,
+       _moderationService = moderationService;
 
   final Bluesky _bluesky;
+  final AppDatabase _database;
+  final String _accountDid;
   final ModerationService? _moderationService;
+
+  static const String timelineCacheKey = 'timeline';
+
+  static String cacheKeyForSavedFeed(SavedFeed feed) {
+    final feedType = feed.type;
+    if (feedType is SavedFeedTypeKnownValue && feedType.data == KnownSavedFeedType.timeline) {
+      return timelineCacheKey;
+    }
+
+    return 'feed:${feed.value}';
+  }
 
   Future<FeedResult> getAuthorFeed({
     required String actor,
@@ -40,7 +62,9 @@ class FeedRepository {
       $headers: await _moderationService?.headersForRequest(),
     );
 
-    return FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
+    final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
+    await _cacheFirstPageIfNeeded(feedKey: timelineCacheKey, result: result, cursor: cursor);
+    return result;
   }
 
   Future<FeedResult> getFeed({required AtUri feedUri, String? cursor, int limit = 50}) async {
@@ -51,7 +75,24 @@ class FeedRepository {
       $headers: await _moderationService?.headersForRequest(),
     );
 
-    return FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
+    final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
+    await _cacheFirstPageIfNeeded(feedKey: 'feed:${feedUri.toString()}', result: result, cursor: cursor);
+    return result;
+  }
+
+  Future<FeedResult?> getCachedFeedPage(String feedKey) async {
+    final cached = await _database.getCachedFeedPage(_accountDid, feedKey);
+    if (cached == null) {
+      return null;
+    }
+
+    final decoded = jsonDecode(cached.payload) as Map<String, dynamic>;
+    final rawPosts = decoded['posts'] as List<dynamic>? ?? const [];
+    final posts = rawPosts
+        .map((entry) => FeedViewPost.fromJson(Map<String, dynamic>.from(entry as Map)))
+        .toList(growable: false);
+
+    return FeedResult(posts: posts, cursor: decoded['cursor'] as String?);
   }
 
   Future<PreferencesResult> getPreferences() async {
@@ -97,6 +138,25 @@ class FeedRepository {
     }
 
     return posts.where((post) => !moderationService.shouldFilterFeedViewPostInList(post)).toList();
+  }
+
+  Future<void> _cacheFirstPageIfNeeded({
+    required String feedKey,
+    required FeedResult result,
+    required String? cursor,
+  }) async {
+    if (cursor != null) {
+      return;
+    }
+
+    await _database.cacheFeedPage(
+      accountDid: _accountDid,
+      feedKey: feedKey,
+      payload: jsonEncode({
+        'cursor': result.cursor,
+        'posts': result.posts.map((post) => post.toJson()).toList(growable: false),
+      }),
+    );
   }
 }
 

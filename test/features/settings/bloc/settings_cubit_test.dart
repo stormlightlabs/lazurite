@@ -27,6 +27,7 @@ void main() {
       expect(cubit.state.useSystemTheme, false);
       expect(cubit.state.uiDensity, UiDensity.standard);
       expect(cubit.state.feedArchitecture, FeedArchitecture.grid);
+      expect(cubit.state.simulateOffline, false);
       expect(cubit.state.threadAutoCollapseDepth, isNull);
     });
 
@@ -38,6 +39,7 @@ void main() {
         initialUseSystemTheme: true,
         initialUiDensity: UiDensity.compact,
         initialFeedArchitecture: FeedArchitecture.linear,
+        initialSimulateOffline: true,
         initialThreadAutoCollapseDepth: 3,
       );
       expect(cubit.state.themePalette, AppThemePalette.catppuccin);
@@ -45,6 +47,7 @@ void main() {
       expect(cubit.state.useSystemTheme, true);
       expect(cubit.state.uiDensity, UiDensity.compact);
       expect(cubit.state.feedArchitecture, FeedArchitecture.linear);
+      expect(cubit.state.simulateOffline, true);
       expect(cubit.state.threadAutoCollapseDepth, 3);
     });
 
@@ -57,6 +60,7 @@ void main() {
         await database.setSetting('use_system_theme', 'true');
         await database.setSetting('ui_density', 'compact');
         await database.setSetting('feed_architecture', 'linear');
+        await database.setSetting('simulate_offline', 'true');
         await database.setSetting('thread_auto_collapse_depth', '4');
       },
       act: (cubit) => cubit.loadSettings(),
@@ -67,6 +71,7 @@ void main() {
             .having((s) => s.useSystemTheme, 'useSystemTheme', true)
             .having((s) => s.uiDensity, 'uiDensity', UiDensity.compact)
             .having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.linear)
+            .having((s) => s.simulateOffline, 'simulateOffline', true)
             .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', 4),
       ],
     );
@@ -82,6 +87,7 @@ void main() {
             .having((s) => s.useSystemTheme, 'useSystemTheme', false)
             .having((s) => s.uiDensity, 'uiDensity', UiDensity.standard)
             .having((s) => s.feedArchitecture, 'feedArchitecture', FeedArchitecture.grid)
+            .having((s) => s.simulateOffline, 'simulateOffline', false)
             .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', isNull),
       ],
     );
@@ -177,6 +183,17 @@ void main() {
       verify: (cubit) async {
         final value = await database.getSetting('feed_architecture');
         expect(value, 'grid');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setSimulateOffline updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setSimulateOffline(true),
+      expect: () => [isA<SettingsState>().having((s) => s.simulateOffline, 'simulateOffline', true)],
+      verify: (cubit) async {
+        final value = await database.getSetting('simulate_offline');
+        expect(value, 'true');
       },
     );
 

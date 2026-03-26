@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -98,6 +99,11 @@ class SettingsScreen extends StatelessWidget {
             trailing: Switch(value: false, onChanged: (_) {}),
           ),
           const SizedBox(height: 24),
+          if (!kReleaseMode) ...[
+            _buildSectionHeader(context, 'Developer'),
+            _buildDeveloperSettings(context),
+            const SizedBox(height: 24),
+          ],
           _buildSectionHeader(context, 'About'),
           _SettingsTile(
             icon: Icons.code_outlined,
@@ -275,6 +281,30 @@ class SettingsScreen extends StatelessWidget {
                 onChanged: settingsCubit.setThreadAutoCollapseDepth,
               ),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDeveloperSettings(BuildContext context) {
+    final settingsCubit = context.read<SettingsCubit>();
+
+    return BlocBuilder<SettingsCubit, SettingsState>(
+      builder: (context, state) {
+        return Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: Theme.of(context).dividerColor),
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            color: Theme.of(context).cardColor,
+          ),
+          child: _SettingsTile(
+            icon: Icons.cloud_off_outlined,
+            title: 'Simulate Offline',
+            subtitle: 'Force offline UI for testing network resilience',
+            trailing: Switch.adaptive(value: state.simulateOffline, onChanged: settingsCubit.setSimulateOffline),
           ),
         );
       },

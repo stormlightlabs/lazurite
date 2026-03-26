@@ -16,6 +16,8 @@ import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/features/connectivity/presentation/connectivity_banner_host.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
@@ -57,6 +59,7 @@ Future<void> main() async {
 
   final settingsCubit = SettingsCubit(database: database);
   await settingsCubit.loadSettings();
+  final connectivityCubit = ConnectivityCubit(simulateOffline: settingsCubit.state.simulateOffline);
 
   final accountSwitcherCubit = AccountSwitcherCubit(database: database, authRepository: authRepository);
   await accountSwitcherCubit.loadAccounts();
@@ -68,6 +71,7 @@ Future<void> main() async {
       authBloc: authBloc,
       database: database,
       settingsCubit: settingsCubit,
+      connectivityCubit: connectivityCubit,
       accountSwitcherCubit: accountSwitcherCubit,
     ),
   );
@@ -79,12 +83,14 @@ class LazuriteApp extends StatefulWidget {
     required this.authBloc,
     required this.database,
     required this.settingsCubit,
+    required this.connectivityCubit,
     required this.accountSwitcherCubit,
   });
 
   final AuthBloc authBloc;
   final AppDatabase database;
   final SettingsCubit settingsCubit;
+  final ConnectivityCubit connectivityCubit;
   final AccountSwitcherCubit accountSwitcherCubit;
 
   @override
@@ -96,6 +102,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
   late GoRouter _router;
   late String _routerSessionKey;
   late final StreamSubscription<String> _authSubscription;
+  late final StreamSubscription<bool> _simulateOfflineSubscription;
 
   @override
   void initState() {
@@ -103,11 +110,17 @@ class _LazuriteAppState extends State<LazuriteApp> {
     _routerSessionKey = _sessionKeyFor(widget.authBloc.state);
     _router = _createRouter();
     _authSubscription = widget.authBloc.stream.map(_sessionKeyFor).distinct().listen(_handleSessionKeyChanged);
+    _simulateOfflineSubscription = widget.settingsCubit.stream
+        .map((state) => state.simulateOffline)
+        .distinct()
+        .listen(widget.connectivityCubit.setSimulatedOffline);
   }
 
   @override
   void dispose() {
     _authSubscription.cancel();
+    _simulateOfflineSubscription.cancel();
+    widget.connectivityCubit.close();
     _router.dispose();
     super.dispose();
   }
@@ -147,6 +160,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
       providers: [
         BlocProvider.value(value: widget.authBloc),
         BlocProvider.value(value: widget.settingsCubit),
+        BlocProvider.value(value: widget.connectivityCubit),
         BlocProvider.value(value: widget.accountSwitcherCubit),
       ],
       child: BlocBuilder<AuthBloc, AuthState>(
@@ -170,6 +184,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
                 darkTheme: darkTheme,
                 themeMode: themeMode,
                 routerConfig: _router,
+                builder: (context, child) => ConnectivityBannerHost(child: child ?? const SizedBox.shrink()),
               );
             },
           );
@@ -198,8 +213,12 @@ class _LazuriteAppState extends State<LazuriteApp> {
                   dispose: (moderationService) => moderationService.dispose(),
                 ),
                 RepositoryProvider(
-                  create: (context) =>
-                      FeedRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
+                  create: (context) => FeedRepository(
+                    bluesky: bluesky,
+                    database: widget.database,
+                    accountDid: accountDid,
+                    moderationService: context.read<ModerationService>(),
+                  ),
                 ),
                 RepositoryProvider(
                   create: (context) =>

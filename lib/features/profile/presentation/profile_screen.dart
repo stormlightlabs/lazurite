@@ -11,6 +11,8 @@ import 'package:lazurite/core/theme/feed_architecture.dart';
 import 'package:lazurite/core/widgets/sliver_tab_bar_delegate.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
+import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
@@ -422,6 +424,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Widget _buildProfileActions(BuildContext context, ProfileViewDetailed profile) {
     final viewer = profile.viewer;
+    final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
 
     return BlocProvider(
       create: (context) => ProfileActionCubit(
@@ -451,6 +454,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           isLoadingFollow: state.isLoadingFollow,
           isLoadingMute: state.isLoadingMute,
           isLoadingBlock: state.isLoadingBlock,
+          isOffline: isOffline,
           onFollow: () => context.read<ProfileActionCubit>().toggleFollow(),
           onUnfollow: () => context.read<ProfileActionCubit>().toggleFollow(),
           onMute: () => context.read<ProfileActionCubit>().toggleMute(),
@@ -593,10 +597,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
         final isOwnProfile = profile.did == currentUserDid;
         final initialText = isOwnProfile ? null : '@${profile.handle} ';
+        final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
 
         return FloatingActionButton(
           heroTag: 'profile-compose-fab',
-          onPressed: () => context.push('/compose', extra: ComposeRouteArgs(initialText: initialText)),
+          tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
+          onPressed: isOffline
+              ? null
+              : () => context.push('/compose', extra: ComposeRouteArgs(initialText: initialText)),
           child: const Icon(Icons.add),
         );
       },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:share_plus/share_plus.dart';
 
 class PostActionBar extends StatelessWidget {
@@ -28,6 +29,7 @@ class PostActionBar extends StatelessWidget {
     this.onMore,
     this.isLoadingLike = false,
     this.isLoadingRepost = false,
+    this.isOffline = false,
   });
 
   final int replyCount;
@@ -52,6 +54,7 @@ class PostActionBar extends StatelessWidget {
   final VoidCallback? onMore;
   final bool isLoadingLike;
   final bool isLoadingRepost;
+  final bool isOffline;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +65,8 @@ class PostActionBar extends StatelessWidget {
           icon: Icons.chat_bubble_outline,
           activeIcon: Icons.chat_bubble,
           count: replyCount,
-          onTap: onReply,
+          onTap: isOffline ? null : onReply,
+          tooltip: isOffline ? offlineActionMessage('reply to this post') : null,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         _ActionButton(
@@ -71,9 +75,10 @@ class PostActionBar extends StatelessWidget {
           count: repostCount,
           isActive: isReposted,
           isLoading: isLoadingRepost,
-          onTap: onRepost,
+          onTap: isOffline ? null : onRepost,
           activeColor: Colors.green,
-          onLongPress: onRepost != null ? () => _showRepostOptions(context) : null,
+          onLongPress: !isOffline && onRepost != null ? () => _showRepostOptions(context) : null,
+          tooltip: isOffline ? offlineActionMessage('repost this post') : null,
         ),
         _ActionButton(
           icon: Icons.favorite_outline,
@@ -81,8 +86,9 @@ class PostActionBar extends StatelessWidget {
           count: likeCount,
           isActive: isLiked,
           isLoading: isLoadingLike,
-          onTap: onLike,
+          onTap: isOffline ? null : onLike,
           activeColor: Colors.pink,
+          tooltip: isOffline ? offlineActionMessage('like this post') : null,
         ),
         _ActionButton(
           icon: isSaved ? Icons.bookmark : Icons.bookmark_outline,
@@ -222,6 +228,7 @@ class _ActionButton extends StatelessWidget {
     this.onLongPress,
     this.color,
     this.activeColor,
+    this.tooltip,
   });
 
   final IconData icon;
@@ -233,6 +240,7 @@ class _ActionButton extends StatelessWidget {
   final VoidCallback? onLongPress;
   final Color? color;
   final Color? activeColor;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +275,10 @@ class _ActionButton extends StatelessWidget {
         onLongPress: onLongPress,
         child: AnimatedScale(scale: isActive ? 1.0 : 1.0, duration: const Duration(milliseconds: 100), child: button),
       );
+    }
+
+    if (tooltip != null) {
+      button = Tooltip(message: tooltip!, child: button);
     }
 
     return button;

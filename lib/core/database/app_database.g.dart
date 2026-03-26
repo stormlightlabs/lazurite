@@ -1825,6 +1825,276 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeedEntry> {
   }
 }
 
+class $CachedFeedPagesTable extends CachedFeedPages with TableInfo<$CachedFeedPagesTable, CachedFeedPage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedFeedPagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _accountDidMeta = const VerificationMeta('accountDid');
+  @override
+  late final GeneratedColumn<String> accountDid = GeneratedColumn<String>(
+    'account_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _feedKeyMeta = const VerificationMeta('feedKey');
+  @override
+  late final GeneratedColumn<String> feedKey = GeneratedColumn<String>(
+    'feed_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta('payload');
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta('fetchedAt');
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [accountDid, feedKey, payload, fetchedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_feed_pages';
+  @override
+  VerificationContext validateIntegrity(Insertable<CachedFeedPage> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('account_did')) {
+      context.handle(_accountDidMeta, accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta));
+    } else if (isInserting) {
+      context.missing(_accountDidMeta);
+    }
+    if (data.containsKey('feed_key')) {
+      context.handle(_feedKeyMeta, feedKey.isAcceptableOrUnknown(data['feed_key']!, _feedKeyMeta));
+    } else if (isInserting) {
+      context.missing(_feedKeyMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(_payloadMeta, payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta));
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(_fetchedAtMeta, fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {accountDid, feedKey};
+  @override
+  CachedFeedPage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedFeedPage(
+      accountDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}account_did'])!,
+      feedKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}feed_key'])!,
+      payload: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}payload'])!,
+      fetchedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}fetched_at'])!,
+    );
+  }
+
+  @override
+  $CachedFeedPagesTable createAlias(String alias) {
+    return $CachedFeedPagesTable(attachedDatabase, alias);
+  }
+}
+
+class CachedFeedPage extends DataClass implements Insertable<CachedFeedPage> {
+  final String accountDid;
+  final String feedKey;
+  final String payload;
+  final DateTime fetchedAt;
+  const CachedFeedPage({
+    required this.accountDid,
+    required this.feedKey,
+    required this.payload,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['account_did'] = Variable<String>(accountDid);
+    map['feed_key'] = Variable<String>(feedKey);
+    map['payload'] = Variable<String>(payload);
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    return map;
+  }
+
+  CachedFeedPagesCompanion toCompanion(bool nullToAbsent) {
+    return CachedFeedPagesCompanion(
+      accountDid: Value(accountDid),
+      feedKey: Value(feedKey),
+      payload: Value(payload),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory CachedFeedPage.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedFeedPage(
+      accountDid: serializer.fromJson<String>(json['accountDid']),
+      feedKey: serializer.fromJson<String>(json['feedKey']),
+      payload: serializer.fromJson<String>(json['payload']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'accountDid': serializer.toJson<String>(accountDid),
+      'feedKey': serializer.toJson<String>(feedKey),
+      'payload': serializer.toJson<String>(payload),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+    };
+  }
+
+  CachedFeedPage copyWith({String? accountDid, String? feedKey, String? payload, DateTime? fetchedAt}) =>
+      CachedFeedPage(
+        accountDid: accountDid ?? this.accountDid,
+        feedKey: feedKey ?? this.feedKey,
+        payload: payload ?? this.payload,
+        fetchedAt: fetchedAt ?? this.fetchedAt,
+      );
+  CachedFeedPage copyWithCompanion(CachedFeedPagesCompanion data) {
+    return CachedFeedPage(
+      accountDid: data.accountDid.present ? data.accountDid.value : this.accountDid,
+      feedKey: data.feedKey.present ? data.feedKey.value : this.feedKey,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedFeedPage(')
+          ..write('accountDid: $accountDid, ')
+          ..write('feedKey: $feedKey, ')
+          ..write('payload: $payload, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(accountDid, feedKey, payload, fetchedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedFeedPage &&
+          other.accountDid == this.accountDid &&
+          other.feedKey == this.feedKey &&
+          other.payload == this.payload &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class CachedFeedPagesCompanion extends UpdateCompanion<CachedFeedPage> {
+  final Value<String> accountDid;
+  final Value<String> feedKey;
+  final Value<String> payload;
+  final Value<DateTime> fetchedAt;
+  final Value<int> rowid;
+  const CachedFeedPagesCompanion({
+    this.accountDid = const Value.absent(),
+    this.feedKey = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CachedFeedPagesCompanion.insert({
+    required String accountDid,
+    required String feedKey,
+    required String payload,
+    this.fetchedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : accountDid = Value(accountDid),
+       feedKey = Value(feedKey),
+       payload = Value(payload);
+  static Insertable<CachedFeedPage> custom({
+    Expression<String>? accountDid,
+    Expression<String>? feedKey,
+    Expression<String>? payload,
+    Expression<DateTime>? fetchedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (accountDid != null) 'account_did': accountDid,
+      if (feedKey != null) 'feed_key': feedKey,
+      if (payload != null) 'payload': payload,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CachedFeedPagesCompanion copyWith({
+    Value<String>? accountDid,
+    Value<String>? feedKey,
+    Value<String>? payload,
+    Value<DateTime>? fetchedAt,
+    Value<int>? rowid,
+  }) {
+    return CachedFeedPagesCompanion(
+      accountDid: accountDid ?? this.accountDid,
+      feedKey: feedKey ?? this.feedKey,
+      payload: payload ?? this.payload,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (accountDid.present) {
+      map['account_did'] = Variable<String>(accountDid.value);
+    }
+    if (feedKey.present) {
+      map['feed_key'] = Variable<String>(feedKey.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedFeedPagesCompanion(')
+          ..write('accountDid: $accountDid, ')
+          ..write('feedKey: $feedKey, ')
+          ..write('payload: $payload, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SearchHistoryTable extends SearchHistory with TableInfo<$SearchHistoryTable, SearchHistoryEntry> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -3275,6 +3545,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CachedPostsTable cachedPosts = $CachedPostsTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
   late final $SavedFeedsTable savedFeeds = $SavedFeedsTable(this);
+  late final $CachedFeedPagesTable cachedFeedPages = $CachedFeedPagesTable(this);
   late final $SearchHistoryTable searchHistory = $SearchHistoryTable(this);
   late final $DraftsTable drafts = $DraftsTable(this);
   late final $SavedPostsTable savedPosts = $SavedPostsTable(this);
@@ -3288,6 +3559,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     cachedPosts,
     settings,
     savedFeeds,
+    cachedFeedPages,
     searchHistory,
     drafts,
     savedPosts,
@@ -4181,6 +4453,153 @@ typedef $$SavedFeedsTableProcessedTableManager =
       SavedFeedEntry,
       PrefetchHooks Function()
     >;
+typedef $$CachedFeedPagesTableCreateCompanionBuilder =
+    CachedFeedPagesCompanion Function({
+      required String accountDid,
+      required String feedKey,
+      required String payload,
+      Value<DateTime> fetchedAt,
+      Value<int> rowid,
+    });
+typedef $$CachedFeedPagesTableUpdateCompanionBuilder =
+    CachedFeedPagesCompanion Function({
+      Value<String> accountDid,
+      Value<String> feedKey,
+      Value<String> payload,
+      Value<DateTime> fetchedAt,
+      Value<int> rowid,
+    });
+
+class $$CachedFeedPagesTableFilterComposer extends Composer<_$AppDatabase, $CachedFeedPagesTable> {
+  $$CachedFeedPagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get accountDid =>
+      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get feedKey =>
+      $composableBuilder(column: $table.feedKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$CachedFeedPagesTableOrderingComposer extends Composer<_$AppDatabase, $CachedFeedPagesTable> {
+  $$CachedFeedPagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get accountDid =>
+      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get feedKey =>
+      $composableBuilder(column: $table.feedKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CachedFeedPagesTableAnnotationComposer extends Composer<_$AppDatabase, $CachedFeedPagesTable> {
+  $$CachedFeedPagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get accountDid => $composableBuilder(column: $table.accountDid, builder: (column) => column);
+
+  GeneratedColumn<String> get feedKey => $composableBuilder(column: $table.feedKey, builder: (column) => column);
+
+  GeneratedColumn<String> get payload => $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fetchedAt => $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$CachedFeedPagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CachedFeedPagesTable,
+          CachedFeedPage,
+          $$CachedFeedPagesTableFilterComposer,
+          $$CachedFeedPagesTableOrderingComposer,
+          $$CachedFeedPagesTableAnnotationComposer,
+          $$CachedFeedPagesTableCreateCompanionBuilder,
+          $$CachedFeedPagesTableUpdateCompanionBuilder,
+          (CachedFeedPage, BaseReferences<_$AppDatabase, $CachedFeedPagesTable, CachedFeedPage>),
+          CachedFeedPage,
+          PrefetchHooks Function()
+        > {
+  $$CachedFeedPagesTableTableManager(_$AppDatabase db, $CachedFeedPagesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$CachedFeedPagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$CachedFeedPagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$CachedFeedPagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> accountDid = const Value.absent(),
+                Value<String> feedKey = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CachedFeedPagesCompanion(
+                accountDid: accountDid,
+                feedKey: feedKey,
+                payload: payload,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String accountDid,
+                required String feedKey,
+                required String payload,
+                Value<DateTime> fetchedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CachedFeedPagesCompanion.insert(
+                accountDid: accountDid,
+                feedKey: feedKey,
+                payload: payload,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CachedFeedPagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CachedFeedPagesTable,
+      CachedFeedPage,
+      $$CachedFeedPagesTableFilterComposer,
+      $$CachedFeedPagesTableOrderingComposer,
+      $$CachedFeedPagesTableAnnotationComposer,
+      $$CachedFeedPagesTableCreateCompanionBuilder,
+      $$CachedFeedPagesTableUpdateCompanionBuilder,
+      (CachedFeedPage, BaseReferences<_$AppDatabase, $CachedFeedPagesTable, CachedFeedPage>),
+      CachedFeedPage,
+      PrefetchHooks Function()
+    >;
 typedef $$SearchHistoryTableCreateCompanionBuilder =
     SearchHistoryCompanion Function({
       Value<int> id,
@@ -4896,6 +5315,8 @@ class $AppDatabaseManager {
   $$CachedPostsTableTableManager get cachedPosts => $$CachedPostsTableTableManager(_db, _db.cachedPosts);
   $$SettingsTableTableManager get settings => $$SettingsTableTableManager(_db, _db.settings);
   $$SavedFeedsTableTableManager get savedFeeds => $$SavedFeedsTableTableManager(_db, _db.savedFeeds);
+  $$CachedFeedPagesTableTableManager get cachedFeedPages =>
+      $$CachedFeedPagesTableTableManager(_db, _db.cachedFeedPages);
   $$SearchHistoryTableTableManager get searchHistory => $$SearchHistoryTableTableManager(_db, _db.searchHistory);
   $$DraftsTableTableManager get drafts => $$DraftsTableTableManager(_db, _db.drafts);
   $$SavedPostsTableTableManager get savedPosts => $$SavedPostsTableTableManager(_db, _db.savedPosts);

@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 
 class ComposeScreen extends StatefulWidget {
@@ -513,14 +515,19 @@ class _ComposeScreenState extends State<ComposeScreen> {
               TextButton(onPressed: _saveDraft, child: const Text('Save Draft')),
               BlocBuilder<ComposeBloc, ComposeState>(
                 builder: (context, state) {
+                  final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
+                  final button = TextButton(
+                    onPressed: !isOffline && state.canSubmit && !state.isSubmitting ? _submitPost : null,
+                    child: state.isSubmitting
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('Post'),
+                  );
+
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: TextButton(
-                      onPressed: state.canSubmit && !state.isSubmitting ? _submitPost : null,
-                      child: state.isSubmitting
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Post'),
-                    ),
+                    child: isOffline
+                        ? Tooltip(message: offlineActionMessage('publish your post'), child: button)
+                        : button,
                   );
                 },
               ),

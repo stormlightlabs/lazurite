@@ -14,6 +14,7 @@ class SettingsState extends Equatable {
     required this.useSystemTheme,
     this.uiDensity = UiDensity.standard,
     this.feedArchitecture = FeedArchitecture.grid,
+    this.simulateOffline = false,
     this.threadAutoCollapseDepth,
   });
 
@@ -22,6 +23,7 @@ class SettingsState extends Equatable {
   final bool useSystemTheme;
   final UiDensity uiDensity;
   final FeedArchitecture feedArchitecture;
+  final bool simulateOffline;
   final int? threadAutoCollapseDepth;
 
   ThemeData get themeData {
@@ -35,6 +37,7 @@ class SettingsState extends Equatable {
     bool? useSystemTheme,
     UiDensity? uiDensity,
     FeedArchitecture? feedArchitecture,
+    bool? simulateOffline,
     Object? threadAutoCollapseDepth = _threadAutoCollapseDepthUnset,
   }) {
     return SettingsState(
@@ -43,6 +46,7 @@ class SettingsState extends Equatable {
       useSystemTheme: useSystemTheme ?? this.useSystemTheme,
       uiDensity: uiDensity ?? this.uiDensity,
       feedArchitecture: feedArchitecture ?? this.feedArchitecture,
+      simulateOffline: simulateOffline ?? this.simulateOffline,
       threadAutoCollapseDepth: identical(threadAutoCollapseDepth, _threadAutoCollapseDepthUnset)
           ? this.threadAutoCollapseDepth
           : threadAutoCollapseDepth as int?,
@@ -56,6 +60,7 @@ class SettingsState extends Equatable {
     useSystemTheme,
     uiDensity,
     feedArchitecture,
+    simulateOffline,
     threadAutoCollapseDepth,
   ];
 }

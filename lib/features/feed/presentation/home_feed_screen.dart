@@ -6,6 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/feed_layout_view.dart';
@@ -73,6 +75,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         }
 
         final pinnedFeeds = prefsState.pinnedFeeds;
+        final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
 
         if (pinnedFeeds.isEmpty) {
           return Scaffold(
@@ -134,7 +137,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           ),
           floatingActionButton: FloatingActionButton(
             heroTag: 'home-compose-fab',
-            onPressed: () => context.push('/compose'),
+            tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
+            onPressed: isOffline ? null : () => context.push('/compose'),
             shape: const CircleBorder(),
             child: const Icon(Icons.add),
           ),
@@ -240,6 +244,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   final List<FeedViewPost> _posts = [];
   String? _cursor;
   bool _isLoading = false;
+  bool _showInitialLoading = false;
   bool _isLoadingMore = false;
   bool _hasError = false;
   String? _errorMessage;
@@ -252,7 +257,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    _loadFeed();
+    _primeFeed();
   }
 
   @override
@@ -269,10 +274,31 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   }
 
   Future<void> _loadFeed() async {
+    await _loadFeedInternal(showLoading: _posts.isEmpty);
+  }
+
+  Future<void> _primeFeed() async {
+    final cachedResult = await _loadCachedFeed();
+    if (cachedResult != null) {
+      _setStateIfMounted(() {
+        _posts
+          ..clear()
+          ..addAll(cachedResult.posts);
+        _cursor = cachedResult.cursor;
+        _hasError = false;
+        _errorMessage = null;
+      });
+    }
+
+    await _loadFeedInternal(showLoading: cachedResult == null);
+  }
+
+  Future<void> _loadFeedInternal({required bool showLoading}) async {
     if (_isLoading) return;
 
     _setStateIfMounted(() {
       _isLoading = true;
+      _showInitialLoading = showLoading;
       _hasError = false;
       _errorMessage = null;
     });
@@ -286,15 +312,29 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
         _posts.addAll(result.posts);
         _cursor = result.cursor;
         _isLoading = false;
+        _showInitialLoading = false;
         _hasError = false;
       });
     } catch (e) {
+      if (_posts.isNotEmpty) {
+        _setStateIfMounted(() {
+          _isLoading = false;
+          _showInitialLoading = false;
+        });
+        return;
+      }
+
       _setStateIfMounted(() {
         _isLoading = false;
+        _showInitialLoading = false;
         _hasError = true;
         _errorMessage = e.toString();
       });
     }
+  }
+
+  Future<FeedResult?> _loadCachedFeed() {
+    return context.read<FeedRepository>().getCachedFeedPage(FeedRepository.cacheKeyForSavedFeed(widget.feed));
   }
 
   Future<void> _loadMore() async {
@@ -340,7 +380,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (_isLoading) {
+    if (_showInitialLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 

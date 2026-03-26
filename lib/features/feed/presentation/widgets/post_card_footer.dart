@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 
 /// Formats a post timestamp as a short, uppercase string.
 String formatPostTime(DateTime time) {
@@ -38,6 +39,7 @@ class PostCardFooter extends StatelessWidget {
     this.onCloudSave,
     this.onCloudUnsave,
     this.showCounts = false,
+    this.isOffline = false,
   });
 
   final String timestamp;
@@ -59,6 +61,7 @@ class PostCardFooter extends StatelessWidget {
   final VoidCallback? onCloudSave;
   final VoidCallback? onCloudUnsave;
   final bool showCounts;
+  final bool isOffline;
 
   @override
   Widget build(BuildContext context) {
@@ -80,11 +83,12 @@ class PostCardFooter extends StatelessWidget {
             isActive: false,
             isLoading: false,
             count: replyCount,
-            onTap: onReply,
+            onTap: isOffline ? null : onReply,
             color: colorScheme.onSurfaceVariant,
             iconSize: iconSize,
             padding: actionPadding,
             showCount: canShowCounts,
+            tooltip: isOffline ? offlineActionMessage('reply to this post') : null,
           ),
           _FooterAction(
             icon: Icons.repeat,
@@ -92,12 +96,13 @@ class PostCardFooter extends StatelessWidget {
             isActive: isReposted,
             isLoading: isLoadingRepost,
             count: repostCount,
-            onTap: onRepost,
+            onTap: isOffline ? null : onRepost,
             color: colorScheme.onSurfaceVariant,
             activeColor: Colors.green,
             iconSize: iconSize,
             padding: actionPadding,
             showCount: canShowCounts,
+            tooltip: isOffline ? offlineActionMessage('repost this post') : null,
           ),
           _FooterAction(
             icon: Icons.favorite_outline,
@@ -105,12 +110,13 @@ class PostCardFooter extends StatelessWidget {
             isActive: isLiked,
             isLoading: isLoadingLike,
             count: likeCount,
-            onTap: onLike,
+            onTap: isOffline ? null : onLike,
             color: colorScheme.onSurfaceVariant,
             activeColor: Colors.pink,
             iconSize: iconSize,
             padding: actionPadding,
             showCount: canShowCounts,
+            tooltip: isOffline ? offlineActionMessage('like this post') : null,
           ),
           _FooterAction(
             icon: isSaved ? Icons.bookmark : Icons.bookmark_outline,
@@ -231,6 +237,7 @@ class _FooterAction extends StatelessWidget {
     this.onLongPress,
     this.color,
     this.activeColor,
+    this.tooltip,
   });
 
   final IconData icon;
@@ -245,13 +252,14 @@ class _FooterAction extends StatelessWidget {
   final VoidCallback? onLongPress;
   final Color? color;
   final Color? activeColor;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
     final defaultColor = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
     final iconColor = isActive ? (activeColor ?? defaultColor) : defaultColor;
 
-    return InkWell(
+    Widget button = InkWell(
       onTap: isLoading ? null : onTap,
       onLongPress: onLongPress,
       borderRadius: BorderRadius.zero,
@@ -276,6 +284,12 @@ class _FooterAction extends StatelessWidget {
         ),
       ),
     );
+
+    if (tooltip != null) {
+      button = Tooltip(message: tooltip!, child: button);
+    }
+
+    return button;
   }
 
   String _formatCount(int count) {

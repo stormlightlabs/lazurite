@@ -5,6 +5,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
@@ -14,6 +15,8 @@ import 'package:mocktail/mocktail.dart';
 class MockPostActionRepository extends Mock implements PostActionRepository {}
 
 class MockSavedPostsCubit extends MockCubit<SavedPostsState> implements SavedPostsCubit {}
+
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
 
 PostView _makePost({
   required String did,
@@ -52,6 +55,7 @@ class _ReplyTreeHarness extends StatefulWidget {
     required this.thread,
     required this.savedPostsCubit,
     required this.postActionRepository,
+    required this.connectivityCubit,
     this.initialCollapsedUris = const <String>{},
     this.onContinueThread,
   });
@@ -59,6 +63,7 @@ class _ReplyTreeHarness extends StatefulWidget {
   final ThreadViewPost thread;
   final SavedPostsCubit savedPostsCubit;
   final PostActionRepository postActionRepository;
+  final ConnectivityCubit connectivityCubit;
   final Set<String> initialCollapsedUris;
   final ValueChanged<ThreadViewPost>? onContinueThread;
 
@@ -85,24 +90,27 @@ class _ReplyTreeHarnessState extends State<_ReplyTreeHarness> {
         ],
         child: BlocProvider<SavedPostsCubit>.value(
           value: widget.savedPostsCubit,
-          child: Scaffold(
-            body: SingleChildScrollView(
-              child: ThreadReplyNode(
-                thread: widget.thread,
-                depth: 1,
-                accountDid: 'did:plc:current',
-                opDid: 'did:plc:op',
-                collapsedUris: collapsedUris,
-                onToggleCollapse: (postUri) {
-                  setState(() {
-                    if (collapsedUris.contains(postUri)) {
-                      collapsedUris.remove(postUri);
-                    } else {
-                      collapsedUris.add(postUri);
-                    }
-                  });
-                },
-                onContinueThread: widget.onContinueThread,
+          child: BlocProvider<ConnectivityCubit>.value(
+            value: widget.connectivityCubit,
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: ThreadReplyNode(
+                  thread: widget.thread,
+                  depth: 1,
+                  accountDid: 'did:plc:current',
+                  opDid: 'did:plc:op',
+                  collapsedUris: collapsedUris,
+                  onToggleCollapse: (postUri) {
+                    setState(() {
+                      if (collapsedUris.contains(postUri)) {
+                        collapsedUris.remove(postUri);
+                      } else {
+                        collapsedUris.add(postUri);
+                      }
+                    });
+                  },
+                  onContinueThread: widget.onContinueThread,
+                ),
               ),
             ),
           ),
@@ -115,14 +123,22 @@ class _ReplyTreeHarnessState extends State<_ReplyTreeHarness> {
 void main() {
   late MockPostActionRepository mockPostActionRepository;
   late MockSavedPostsCubit mockSavedPostsCubit;
+  late MockConnectivityCubit mockConnectivityCubit;
 
   setUp(() {
     mockPostActionRepository = MockPostActionRepository();
     mockSavedPostsCubit = MockSavedPostsCubit();
+    mockConnectivityCubit = MockConnectivityCubit();
 
     const savedState = SavedPostsState(status: SavedPostsStatus.loaded, savedPosts: [], savedUris: {});
     when(() => mockSavedPostsCubit.state).thenReturn(savedState);
     whenListen(mockSavedPostsCubit, const Stream<SavedPostsState>.empty(), initialState: savedState);
+    when(() => mockConnectivityCubit.state).thenReturn(const ConnectivityState.online());
+    whenListen(
+      mockConnectivityCubit,
+      const Stream<ConnectivityState>.empty(),
+      initialState: const ConnectivityState.online(),
+    );
   });
 
   testWidgets('renders nested threaded replies recursively', (tester) async {
@@ -152,6 +168,7 @@ void main() {
         thread: parent,
         savedPostsCubit: mockSavedPostsCubit,
         postActionRepository: mockPostActionRepository,
+        connectivityCubit: mockConnectivityCubit,
       ),
     );
     await tester.pumpAndSettle();
@@ -190,6 +207,7 @@ void main() {
         thread: parent,
         savedPostsCubit: mockSavedPostsCubit,
         postActionRepository: mockPostActionRepository,
+        connectivityCubit: mockConnectivityCubit,
       ),
     );
     await tester.pumpAndSettle();
@@ -227,6 +245,7 @@ void main() {
         thread: parent,
         savedPostsCubit: mockSavedPostsCubit,
         postActionRepository: mockPostActionRepository,
+        connectivityCubit: mockConnectivityCubit,
       ),
     );
     await tester.pumpAndSettle();
@@ -278,6 +297,7 @@ void main() {
         thread: depth1,
         savedPostsCubit: mockSavedPostsCubit,
         postActionRepository: mockPostActionRepository,
+        connectivityCubit: mockConnectivityCubit,
         onContinueThread: (thread) => continuedThread = thread,
       ),
     );
@@ -397,6 +417,7 @@ void main() {
         thread: depth1,
         savedPostsCubit: mockSavedPostsCubit,
         postActionRepository: mockPostActionRepository,
+        connectivityCubit: mockConnectivityCubit,
         initialCollapsedUris: computeInitialCollapsedThreadUris(root, autoCollapseDepth: 2),
       ),
     );

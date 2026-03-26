@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:provider/provider.dart';
@@ -141,6 +143,7 @@ class _AppMenu extends StatelessWidget {
     final currentPath = GoRouterState.of(rootContext).uri.path;
     final isMessagesRoute = currentPath.startsWith('/alerts/messages') || currentPath.startsWith('/alerts/requests');
     final isNotificationsRoute = currentPath.startsWith('/alerts') && !isMessagesRoute;
+    final isOffline = rootContext.read<ConnectivityCubit>().state.isOffline;
     final tokens = rootContext.watch<AuthBloc>().state.tokens;
     final displayName = tokens?.displayName ?? tokens?.handle ?? 'Guest';
     final handle = tokens?.handle ?? 'Sign in required';
@@ -260,7 +263,8 @@ class _AppMenu extends StatelessWidget {
                       icon: Icons.add_circle_outline,
                       selectedIcon: Icons.add_circle,
                       label: 'New Post',
-                      onTap: () => _pushRoute(context, '/compose'),
+                      tooltip: isOffline ? offlineActionMessage('compose a post') : null,
+                      onTap: isOffline ? null : () => _pushRoute(context, '/compose'),
                     ),
                     _MenuTile(
                       icon: Icons.settings_outlined,
@@ -408,15 +412,17 @@ class _MenuTile extends StatelessWidget {
     this.isSelected = false,
     this.isDestructive = false,
     this.trailing,
+    this.tooltip,
   });
 
   final IconData icon;
   final IconData selectedIcon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isSelected;
   final bool isDestructive;
   final Widget? trailing;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -427,7 +433,7 @@ class _MenuTile extends StatelessWidget {
         ? theme.colorScheme.primary
         : theme.colorScheme.onSurface;
 
-    return ListTile(
+    Widget tile = ListTile(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       leading: Icon(isSelected ? selectedIcon : icon, color: color),
       title: Text(
@@ -439,5 +445,11 @@ class _MenuTile extends StatelessWidget {
       selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.45),
       onTap: onTap,
     );
+
+    if (tooltip != null) {
+      tile = Tooltip(message: tooltip!, child: tile);
+    }
+
+    return tile;
   }
 }

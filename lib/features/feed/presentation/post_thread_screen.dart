@@ -10,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_thread_cubit.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
@@ -755,6 +756,7 @@ class _FocusedPostContent extends StatelessWidget {
   }
 
   Widget _buildActionBar(BuildContext context, PostView post) {
+    final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
     return BlocBuilder<PostActionCubit, PostActionState>(
       builder: (context, postActionState) {
         return BlocBuilder<SavedPostsCubit, SavedPostsState>(
@@ -782,6 +784,7 @@ class _FocusedPostContent extends StatelessWidget {
                 unawaited(_onToggleSave(context));
               },
               onMore: () => _showMoreOptions(context),
+              isOffline: isOffline,
             );
           },
         );
