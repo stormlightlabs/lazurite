@@ -2,28 +2,41 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 import 'package:mocktail/mocktail.dart';
+
+class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
 void main() {
+  late MockAccountSwitcherCubit accountSwitcherCubit;
   late MockAuthBloc authBloc;
   late MockSettingsCubit settingsCubit;
 
   setUp(() {
+    accountSwitcherCubit = MockAccountSwitcherCubit();
     authBloc = MockAuthBloc();
     settingsCubit = MockSettingsCubit();
 
     when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.unauthenticated());
+    when(() => accountSwitcherCubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
+    whenListen(
+      accountSwitcherCubit,
+      const Stream<AccountSwitcherState>.empty(),
+      initialState: const AccountSwitcherState.ready(accounts: []),
+    );
 
     when(() => settingsCubit.state).thenReturn(
       const SettingsState(
@@ -49,6 +62,7 @@ void main() {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>.value(value: authBloc),
+        BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
         BlocProvider<SettingsCubit>.value(value: settingsCubit),
       ],
       child: const MaterialApp(home: SettingsScreen()),
@@ -64,6 +78,54 @@ void main() {
     expect(find.text('LAYOUT'), findsOneWidget);
     expect(find.text('Feed Architecture'), findsOneWidget);
     expect(find.text('Thread Auto-Collapse'), findsOneWidget);
+  });
+
+  testWidgets('shows the AT Protocol connection card for the authenticated account', (tester) async {
+    const tokens = AuthTokens(
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      did: 'did:plc:lazurite123',
+      handle: 'owais.bsky.social',
+      service: 'https://pds.example.com',
+    );
+    final account = Account(
+      did: tokens.did,
+      handle: tokens.handle,
+      displayName: 'Owais',
+      service: tokens.service,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      dpopPublicKey: null,
+      dpopPrivateKey: null,
+      dpopNonce: null,
+      expiresAt: null,
+      createdAt: DateTime.utc(2026, 1, 1),
+      updatedAt: DateTime.utc(2026, 1, 1),
+    );
+
+    when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
+    when(
+      () => accountSwitcherCubit.state,
+    ).thenReturn(AccountSwitcherState.ready(accounts: [account], activeDid: account.did));
+    whenListen(
+      accountSwitcherCubit,
+      const Stream<AccountSwitcherState>.empty(),
+      initialState: AccountSwitcherState.ready(accounts: [account], activeDid: account.did),
+    );
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('AT Protocol Connection'), 300);
+    await tester.pumpAndSettle();
+
+    expect(find.text('AT Protocol Connection'), findsOneWidget);
+    expect(find.text('HANDLE'), findsOneWidget);
+    expect(find.text('@owais.bsky.social'), findsOneWidget);
+    expect(find.text('DID'), findsOneWidget);
+    expect(find.text('did:plc:lazurite123'), findsOneWidget);
+    expect(find.text('PDS'), findsOneWidget);
+    expect(find.text('https://pds.example.com'), findsOneWidget);
   });
 
   testWidgets('does not render removed placeholder settings', (tester) async {

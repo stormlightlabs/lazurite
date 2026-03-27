@@ -71,6 +71,8 @@ class SettingsScreen extends StatelessWidget {
           const _ModerationSettingsPreview(),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Account'),
+          const _AtProtocolConnectionCard(),
+          const SizedBox(height: 12),
           _SettingsTile(
             icon: Icons.dynamic_feed_outlined,
             title: 'Feeds',
@@ -357,6 +359,52 @@ class _ModerationSettingsPreviewState extends State<_ModerationSettingsPreview> 
   }
 }
 
+class _AtProtocolConnectionCard extends StatelessWidget {
+  const _AtProtocolConnectionCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        final tokens = authState.tokens;
+        if (!authState.isAuthenticated || tokens == null) {
+          return const SizedBox.shrink();
+        }
+
+        final pds = tokens.service?.trim().isNotEmpty == true ? tokens.service!.trim() : 'bsky.social';
+
+        return Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: Theme.of(context).dividerColor),
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            color: Theme.of(context).cardColor,
+          ),
+          child: SelectionArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                  child: Text('AT Protocol Connection', style: Theme.of(context).textTheme.titleMedium),
+                ),
+                const Divider(height: 1),
+                _ConnectionDetailRow(label: 'Handle', value: '@${tokens.handle}'),
+                const Divider(height: 1),
+                // TODO: Link the DID row to dev_tools_screen.dart
+                _ConnectionDetailRow(label: 'DID', value: tokens.did),
+                const Divider(height: 1),
+                _ConnectionDetailRow(label: 'PDS', value: pds),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 enum _AppearanceMode {
   system,
   light,
@@ -432,6 +480,33 @@ class _SettingsDropdownTile<T> extends StatelessWidget {
           onChanged: onChanged,
           items: [for (final option in options) DropdownMenuItem<T>(value: option, child: Text(labelBuilder(option)))],
         ),
+      ),
+    );
+  }
+}
+
+class _ConnectionDetailRow extends StatelessWidget {
+  const _ConnectionDetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+          ),
+          const SizedBox(height: 4),
+          Text(value, style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'JetBrains Mono')),
+        ],
       ),
     );
   }
