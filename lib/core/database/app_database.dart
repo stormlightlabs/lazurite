@@ -25,7 +25,7 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -75,6 +75,31 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 13) {
         await customStatement("DELETE FROM settings WHERE key = 'ui_density'");
+      }
+      if (from < 14) {
+        await customStatement('''
+          INSERT OR IGNORE INTO settings (key, value, updated_at)
+          SELECT
+            'feed_layout',
+            CASE value
+              WHEN 'grid' THEN 'card'
+              WHEN 'linear' THEN 'compact'
+              ELSE value
+            END,
+            updated_at
+          FROM settings
+          WHERE key = 'feed_architecture'
+        ''');
+        await customStatement('''
+          UPDATE settings
+          SET value = CASE value
+            WHEN 'grid' THEN 'card'
+            WHEN 'linear' THEN 'compact'
+            ELSE value
+          END
+          WHERE key = 'feed_layout'
+        ''');
+        await customStatement("DELETE FROM settings WHERE key = 'feed_architecture'");
       }
     },
   );

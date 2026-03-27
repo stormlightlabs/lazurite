@@ -10,7 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
-import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
@@ -19,8 +19,8 @@ import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
-import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
+import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
@@ -78,14 +78,14 @@ void main() {
     themePalette: AppThemePalette.oxocarbon,
     themeVariant: AppThemeVariant.dark,
     useSystemTheme: false,
-    feedArchitecture: FeedArchitecture.grid,
+    feedLayout: FeedLayout.card,
   );
 
-  SettingsState settingsStateWith(FeedArchitecture architecture) => SettingsState(
+  SettingsState settingsStateWith(FeedLayout architecture) => SettingsState(
     themePalette: AppThemePalette.oxocarbon,
     themeVariant: AppThemeVariant.dark,
     useSystemTheme: false,
-    feedArchitecture: architecture,
+    feedLayout: architecture,
   );
 
   setUp(() {
@@ -427,8 +427,8 @@ void main() {
 
     testWidgets('grid mode shows centered large grid cards without the metadata info card', (tester) async {
       final cubit = MockSettingsCubit();
-      when(() => cubit.state).thenReturn(settingsStateWith(FeedArchitecture.grid));
-      whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedArchitecture.grid));
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.card));
+      whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedLayout.card));
 
       await tester.pumpWidget(buildWithPosts(tester, cubit));
       await tester.pump();
@@ -442,8 +442,8 @@ void main() {
 
     testWidgets('linear mode does not show the large grid card feed or metadata info card', (tester) async {
       final cubit = MockSettingsCubit();
-      when(() => cubit.state).thenReturn(settingsStateWith(FeedArchitecture.linear));
-      whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedArchitecture.linear));
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.compact));
+      whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedLayout.compact));
 
       await tester.pumpWidget(buildWithPosts(tester, cubit));
       await tester.pump();
@@ -457,7 +457,7 @@ void main() {
       final cubit = MockSettingsCubit();
       final streamCtrl = StreamController<SettingsState>.broadcast();
 
-      when(() => cubit.state).thenReturn(settingsStateWith(FeedArchitecture.grid));
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.card));
       when(() => cubit.stream).thenAnswer((_) => streamCtrl.stream);
 
       await tester.pumpWidget(buildWithPosts(tester, cubit));
@@ -466,8 +466,8 @@ void main() {
       expect(find.byKey(const ValueKey('profile_grid_feed')), findsOneWidget);
       expect(find.byKey(const ValueKey('profile_info_card')), findsNothing);
 
-      when(() => cubit.state).thenReturn(settingsStateWith(FeedArchitecture.linear));
-      streamCtrl.add(settingsStateWith(FeedArchitecture.linear));
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.compact));
+      streamCtrl.add(settingsStateWith(FeedLayout.compact));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const ValueKey('profile_grid_feed')), findsNothing);

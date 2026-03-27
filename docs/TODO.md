@@ -40,6 +40,10 @@
 
 - Render feed from cache if it goes down (> 500 error)
 
+---
+
+- Sidebar profile link should open account switcher, not go to profile. Long press to go to profile.
+
 ## Privacy Policy
 
 - Should mention that Lazurite is an AppView that doesn't store any user data.

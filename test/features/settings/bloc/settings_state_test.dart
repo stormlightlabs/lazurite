@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
-import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
 void main() {
@@ -65,18 +65,18 @@ void main() {
       expect(state1, isNot(equals(state2)));
     });
 
-    test('inequality when feedArchitecture differs', () {
+    test('inequality when feedLayout differs', () {
       const state1 = SettingsState(
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
-        feedArchitecture: FeedArchitecture.grid,
+        feedLayout: FeedLayout.card,
       );
       const state2 = SettingsState(
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
-        feedArchitecture: FeedArchitecture.linear,
+        feedLayout: FeedLayout.compact,
       );
 
       expect(state1, isNot(equals(state2)));
@@ -127,7 +127,7 @@ void main() {
         themePalette: AppThemePalette.nord,
         themeVariant: AppThemeVariant.light,
         useSystemTheme: true,
-        feedArchitecture: FeedArchitecture.linear,
+        feedLayout: FeedLayout.compact,
         simulateOffline: true,
         threadAutoCollapseDepth: 3,
       );
@@ -135,7 +135,7 @@ void main() {
       expect(updated.themePalette, AppThemePalette.nord);
       expect(updated.themeVariant, AppThemeVariant.light);
       expect(updated.useSystemTheme, true);
-      expect(updated.feedArchitecture, FeedArchitecture.linear);
+      expect(updated.feedLayout, FeedLayout.compact);
       expect(updated.simulateOffline, true);
       expect(updated.threadAutoCollapseDepth, 3);
       expect(original.themePalette, AppThemePalette.oxocarbon);
@@ -146,7 +146,7 @@ void main() {
         themePalette: AppThemePalette.catppuccin,
         themeVariant: AppThemeVariant.light,
         useSystemTheme: true,
-        feedArchitecture: FeedArchitecture.linear,
+        feedLayout: FeedLayout.compact,
         simulateOffline: true,
         threadAutoCollapseDepth: 4,
       );
@@ -156,7 +156,7 @@ void main() {
       expect(updated.themePalette, AppThemePalette.catppuccin);
       expect(updated.themeVariant, AppThemeVariant.light);
       expect(updated.useSystemTheme, true);
-      expect(updated.feedArchitecture, FeedArchitecture.linear);
+      expect(updated.feedLayout, FeedLayout.compact);
       expect(updated.simulateOffline, true);
       expect(updated.threadAutoCollapseDepth, 4);
     });
@@ -179,7 +179,7 @@ void main() {
         themePalette: AppThemePalette.rosePine,
         themeVariant: AppThemeVariant.light,
         useSystemTheme: true,
-        feedArchitecture: FeedArchitecture.linear,
+        feedLayout: FeedLayout.compact,
         simulateOffline: true,
         threadAutoCollapseDepth: 6,
       );
@@ -187,18 +187,18 @@ void main() {
       expect(state.props, contains(AppThemePalette.rosePine));
       expect(state.props, contains(AppThemeVariant.light));
       expect(state.props, contains(true));
-      expect(state.props, contains(FeedArchitecture.linear));
+      expect(state.props, contains(FeedLayout.compact));
       expect(state.props, contains(true));
       expect(state.props, contains(6));
     });
 
-    test('defaults feedArchitecture to grid', () {
+    test('defaults feedLayout to card', () {
       const state = SettingsState(
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
       );
-      expect(state.feedArchitecture, FeedArchitecture.grid);
+      expect(state.feedLayout, FeedLayout.card);
     });
 
     test('defaults simulateOffline to false', () {

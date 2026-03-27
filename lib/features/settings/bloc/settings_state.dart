@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
-import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 
 const Object _threadAutoCollapseDepthUnset = Object();
 
@@ -9,7 +9,7 @@ class SettingsState extends Equatable {
     required this.themePalette,
     required this.themeVariant,
     required this.useSystemTheme,
-    this.feedArchitecture = FeedArchitecture.grid,
+    this.feedLayout = FeedLayout.card,
     this.simulateOffline = false,
     this.threadAutoCollapseDepth,
   });
@@ -17,7 +17,7 @@ class SettingsState extends Equatable {
   final AppThemePalette themePalette;
   final AppThemeVariant themeVariant;
   final bool useSystemTheme;
-  final FeedArchitecture feedArchitecture;
+  final FeedLayout feedLayout;
   final bool simulateOffline;
   final int? threadAutoCollapseDepth;
 
@@ -25,7 +25,7 @@ class SettingsState extends Equatable {
     AppThemePalette? themePalette,
     AppThemeVariant? themeVariant,
     bool? useSystemTheme,
-    FeedArchitecture? feedArchitecture,
+    FeedLayout? feedLayout,
     bool? simulateOffline,
     Object? threadAutoCollapseDepth = _threadAutoCollapseDepthUnset,
   }) {
@@ -33,7 +33,7 @@ class SettingsState extends Equatable {
       themePalette: themePalette ?? this.themePalette,
       themeVariant: themeVariant ?? this.themeVariant,
       useSystemTheme: useSystemTheme ?? this.useSystemTheme,
-      feedArchitecture: feedArchitecture ?? this.feedArchitecture,
+      feedLayout: feedLayout ?? this.feedLayout,
       simulateOffline: simulateOffline ?? this.simulateOffline,
       threadAutoCollapseDepth: identical(threadAutoCollapseDepth, _threadAutoCollapseDepthUnset)
           ? this.threadAutoCollapseDepth
@@ -46,7 +46,7 @@ class SettingsState extends Equatable {
     themePalette,
     themeVariant,
     useSystemTheme,
-    feedArchitecture,
+    feedLayout,
     simulateOffline,
     threadAutoCollapseDepth,
   ];

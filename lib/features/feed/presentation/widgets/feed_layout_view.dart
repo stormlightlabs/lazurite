@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
@@ -9,11 +9,11 @@ const double _gridSpacing = 1;
 const double _gridCardChromeHeight = 160;
 
 /// Renders a scrollable list of items in either a responsive [SliverGrid]
-/// (grid architecture) or a padded [ListView] (linear architecture), driven
-/// by [SettingsCubit.feedArchitecture].
+/// (card layout) or a padded [ListView] (compact layout), driven
+/// by [SettingsCubit.feedLayout].
 ///
-/// [gridItemBuilder] is used when the grid architecture is active.
-/// [linearItemBuilder] is used when the linear architecture is active.
+/// [gridItemBuilder] is used when the card layout is active.
+/// [linearItemBuilder] is used when the compact layout is active.
 /// This allows the caller to render the appropriate card variant for each mode.
 class FeedLayoutView extends StatelessWidget {
   const FeedLayoutView({
@@ -36,9 +36,9 @@ class FeedLayoutView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<SettingsCubit, SettingsState>(
-      buildWhen: (prev, curr) => prev.feedArchitecture != curr.feedArchitecture,
+      buildWhen: (prev, curr) => prev.feedLayout != curr.feedLayout,
       builder: (context, settingsState) {
-        if (settingsState.feedArchitecture == FeedArchitecture.grid) {
+        if (settingsState.feedLayout == FeedLayout.card) {
           return _buildGrid(context);
         }
         return _buildLinear(context);

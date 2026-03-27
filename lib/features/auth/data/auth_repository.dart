@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -375,6 +376,7 @@ class AuthRepository {
       'AuthRepository: OAuth session will target PDS '
       '${session.atprotoPdsEndpoint ?? 'unknown'} via auth service $oauthService',
     );
+    final pdsHost = normalizeAtprotoServiceHost(session.atprotoPdsEndpoint) ?? oauthService;
 
     try {
       final authSession = await createAtProtoForOAuthSession(session).server.getSession();
@@ -401,7 +403,7 @@ class AuthRepository {
       did: session.sub,
       handle: resolvedHandle,
       displayName: displayName,
-      service: oauthService,
+      service: pdsHost,
       dpopNonce: session.$dPoPNonce,
       dpopPublicKey: session.$publicKey,
       dpopPrivateKey: session.$privateKey,

@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
-import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -28,11 +28,11 @@ class MockConnectivityCubit extends MockCubit<ConnectivityState> implements Conn
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
-SettingsState _settingsState(FeedArchitecture architecture) => SettingsState(
+SettingsState _settingsState(FeedLayout architecture) => SettingsState(
   themePalette: AppThemePalette.oxocarbon,
   themeVariant: AppThemeVariant.dark,
   useSystemTheme: false,
-  feedArchitecture: architecture,
+  feedLayout: architecture,
 );
 
 const _homeFeedState = FeedPreferencesState.loaded(
@@ -46,7 +46,7 @@ const _homeFeedState = FeedPreferencesState.loaded(
   ],
 );
 
-Widget _buildSubject({required FeedArchitecture architecture, double screenWidth = 400, int itemCount = 3}) {
+Widget _buildSubject({required FeedLayout architecture, double screenWidth = 400, int itemCount = 3}) {
   final cubit = MockSettingsCubit();
   when(() => cubit.state).thenReturn(_settingsState(architecture));
 
@@ -133,33 +133,33 @@ void main() {
 
   group('FeedLayoutView — grid architecture', () {
     testWidgets('shows SliverGrid when architecture is grid', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: 720));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 720));
       expect(find.byType(SliverGrid), findsOneWidget);
       expect(find.byType(CustomScrollView), findsOneWidget);
     });
 
     testWidgets('uses gridItemBuilder in grid mode', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card));
       expect(find.text('grid 0'), findsOneWidget);
       expect(find.text('linear 0'), findsNothing);
     });
 
     testWidgets('uses 1 column at width < 600', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: 400));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 400));
 
       expect(find.byType(SliverGrid), findsNothing);
       expect(find.byType(SliverList), findsOneWidget);
     });
 
     testWidgets('uses tighter single-column padding at phone widths', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: 400));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 400));
 
       final padding = tester.widget<SliverPadding>(find.byType(SliverPadding));
       expect(padding.padding, const EdgeInsets.fromLTRB(12, 8, 12, 12));
     });
 
     testWidgets('uses 2 columns at width 600–839', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: 720));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 720));
 
       final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
       final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
@@ -167,7 +167,7 @@ void main() {
     });
 
     testWidgets('uses 3 columns at width 840–1199', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: 1000));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 1000));
 
       final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
       final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
@@ -175,7 +175,7 @@ void main() {
     });
 
     testWidgets('uses 4 columns at width >= 1200', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: 1400));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 1400));
 
       final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
       final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
@@ -183,7 +183,7 @@ void main() {
     });
 
     testWidgets('allocates extra height beyond the square media region', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.grid, screenWidth: 720));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 720));
 
       final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
       final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
@@ -196,14 +196,14 @@ void main() {
 
   group('FeedLayoutView — linear architecture', () {
     testWidgets('shows ListView when architecture is linear', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.linear));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.compact));
 
       expect(find.byType(ListView), findsOneWidget);
       expect(find.byType(SliverGrid), findsNothing);
     });
 
     testWidgets('uses linearItemBuilder in linear mode', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.linear));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.compact));
 
       expect(find.text('linear 0'), findsOneWidget);
       expect(find.text('linear 1'), findsOneWidget);
@@ -211,7 +211,7 @@ void main() {
     });
 
     testWidgets('uses tighter vertical spacing in linear mode', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedArchitecture.linear));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.compact));
 
       final listView = tester.widget<ListView>(find.byType(ListView));
       expect(listView.padding, const EdgeInsets.symmetric(vertical: 4));
@@ -223,7 +223,7 @@ void main() {
       final cubit = MockSettingsCubit();
       final streamController = StreamController<SettingsState>.broadcast();
 
-      when(() => cubit.state).thenReturn(_settingsState(FeedArchitecture.grid));
+      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.card));
       when(() => cubit.stream).thenAnswer((_) => streamController.stream);
 
       var buildCount = 0;
@@ -251,8 +251,8 @@ void main() {
 
       expect(find.byType(SliverGrid), findsOneWidget);
 
-      when(() => cubit.state).thenReturn(_settingsState(FeedArchitecture.linear));
-      streamController.add(_settingsState(FeedArchitecture.linear));
+      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.compact));
+      streamController.add(_settingsState(FeedLayout.compact));
       await tester.pump();
 
       expect(find.byType(SliverGrid), findsNothing);
@@ -264,7 +264,7 @@ void main() {
 
     testWidgets('loading indicator appears when isLoadingMore is true in grid mode', (tester) async {
       final cubit = MockSettingsCubit();
-      when(() => cubit.state).thenReturn(_settingsState(FeedArchitecture.grid));
+      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.card));
 
       await tester.pumpWidget(
         MediaQuery(
@@ -292,7 +292,7 @@ void main() {
 
     testWidgets('loading indicator appears when isLoadingMore is true in linear mode', (tester) async {
       final cubit = MockSettingsCubit();
-      when(() => cubit.state).thenReturn(_settingsState(FeedArchitecture.linear));
+      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.compact));
 
       await tester.pumpWidget(
         MediaQuery(

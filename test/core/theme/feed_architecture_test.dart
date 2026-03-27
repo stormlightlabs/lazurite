@@ -1,28 +1,28 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 
 void main() {
-  group('FeedArchitecture', () {
+  group('FeedLayout', () {
     group('fromString', () {
       test('parses grid', () {
-        expect(FeedArchitecture.fromString('grid'), FeedArchitecture.grid);
+        expect(FeedLayout.fromString('grid'), FeedLayout.card);
       });
 
       test('parses linear', () {
-        expect(FeedArchitecture.fromString('linear'), FeedArchitecture.linear);
+        expect(FeedLayout.fromString('linear'), FeedLayout.compact);
       });
 
       test('null returns grid', () {
-        expect(FeedArchitecture.fromString(null), FeedArchitecture.grid);
+        expect(FeedLayout.fromString(null), FeedLayout.card);
       });
 
       test('unknown value returns grid', () {
-        expect(FeedArchitecture.fromString('unknown'), FeedArchitecture.grid);
+        expect(FeedLayout.fromString('unknown'), FeedLayout.card);
       });
 
       test('round-trips all values via name', () {
-        for (final arch in FeedArchitecture.values) {
-          expect(FeedArchitecture.fromString(arch.name), arch, reason: 'arch: $arch');
+        for (final arch in FeedLayout.values) {
+          expect(FeedLayout.fromString(arch.name), arch, reason: 'arch: $arch');
         }
       });
     });

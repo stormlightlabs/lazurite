@@ -1,10 +1,12 @@
+import 'dart:convert';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
-import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
@@ -43,7 +45,7 @@ void main() {
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
-        feedArchitecture: FeedArchitecture.grid,
+        feedLayout: FeedLayout.card,
       ),
     );
     whenListen(
@@ -53,7 +55,7 @@ void main() {
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
-        feedArchitecture: FeedArchitecture.grid,
+        feedLayout: FeedLayout.card,
       ),
     );
   });
@@ -76,17 +78,25 @@ void main() {
     expect(find.text('APPEARANCE'), findsOneWidget);
     expect(find.text('System'), findsOneWidget);
     expect(find.text('LAYOUT'), findsOneWidget);
-    expect(find.text('Feed Architecture'), findsOneWidget);
+    expect(find.text('Feed Layout'), findsOneWidget);
     expect(find.text('Thread Auto-Collapse'), findsOneWidget);
   });
 
   testWidgets('shows the AT Protocol connection card for the authenticated account', (tester) async {
-    const tokens = AuthTokens(
-      accessToken: 'access-token',
+    final tokens = AuthTokens(
+      accessToken: _buildJwt(
+        aud: 'shaggymane.us-west.host.bsky.network',
+        sub: 'did:plc:lazurite123',
+        clientId: 'https://client.example/metadata.json',
+        iss: 'https://bsky.social',
+      ),
       refreshToken: 'refresh-token',
       did: 'did:plc:lazurite123',
       handle: 'owais.bsky.social',
-      service: 'https://pds.example.com',
+      service: 'bsky.social',
+      dpopPublicKey: 'public-key',
+      dpopPrivateKey: 'private-key',
+      authMethod: AuthMethod.oauth,
     );
     final account = Account(
       did: tokens.did,
@@ -103,8 +113,8 @@ void main() {
       updatedAt: DateTime.utc(2026, 1, 1),
     );
 
-    when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
-    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
+    when(() => authBloc.state).thenReturn(AuthState.authenticated(tokens));
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: AuthState.authenticated(tokens));
     when(
       () => accountSwitcherCubit.state,
     ).thenReturn(AccountSwitcherState.ready(accounts: [account], activeDid: account.did));
@@ -125,7 +135,7 @@ void main() {
     expect(find.text('DID'), findsOneWidget);
     expect(find.text('did:plc:lazurite123'), findsOneWidget);
     expect(find.text('PDS'), findsOneWidget);
-    expect(find.text('https://pds.example.com'), findsOneWidget);
+    expect(find.text('shaggymane.us-west.host.bsky.network'), findsOneWidget);
   });
 
   testWidgets('does not render removed placeholder settings', (tester) async {
@@ -139,4 +149,23 @@ void main() {
     expect(find.text('Email Notifications'), findsNothing);
     expect(find.text('Help & Support'), findsNothing);
   });
+}
+
+String _buildJwt({required String aud, required String sub, required String clientId, required String iss}) {
+  final header = _base64UrlEncode({'alg': 'none', 'typ': 'JWT'});
+  final payload = _base64UrlEncode({
+    'aud': aud,
+    'sub': sub,
+    'client_id': clientId,
+    'scope': 'atproto transition:generic',
+    'iss': iss,
+    'exp': DateTime.now().toUtc().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
+    'iat': DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000,
+  });
+
+  return '$header.$payload.signature';
+}
+
+String _base64UrlEncode(Map<String, Object> value) {
+  return base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
 }

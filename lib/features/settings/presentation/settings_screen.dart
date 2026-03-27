@@ -2,9 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
-import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/account/presentation/account_switcher_sheet.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
@@ -227,17 +228,17 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _SettingsDropdownTile<FeedArchitecture>(
-                title: 'Feed Architecture',
-                value: state.feedArchitecture,
-                options: FeedArchitecture.values,
-                labelBuilder: (architecture) => switch (architecture) {
-                  FeedArchitecture.grid => 'Grid',
-                  FeedArchitecture.linear => 'Linear',
+              _SettingsDropdownTile<FeedLayout>(
+                title: 'Feed Layout',
+                value: state.feedLayout,
+                options: FeedLayout.values,
+                labelBuilder: (layout) => switch (layout) {
+                  FeedLayout.card => 'Card',
+                  FeedLayout.compact => 'Compact',
                 },
                 onChanged: (value) {
                   if (value != null) {
-                    settingsCubit.setFeedArchitecture(value);
+                    settingsCubit.setFeedLayout(value);
                   }
                 },
               ),
@@ -371,7 +372,7 @@ class _AtProtocolConnectionCard extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        final pds = tokens.service?.trim().isNotEmpty == true ? tokens.service!.trim() : 'bsky.social';
+        final pds = resolvePdsHost(tokens);
 
         return Container(
           decoration: BoxDecoration(

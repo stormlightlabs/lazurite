@@ -7,7 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/router/app_shell.dart';
-import 'package:lazurite/core/theme/feed_architecture.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/core/widgets/sliver_tab_bar_delegate.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
@@ -19,9 +19,6 @@ import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
 import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/widgets/list_row_tile.dart';
-import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
-import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
-import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -31,6 +28,9 @@ import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/profile_action_buttons.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
+import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
+import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
+import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -629,9 +629,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
 
     return BlocBuilder<SettingsCubit, SettingsState>(
-      buildWhen: (prev, curr) => prev.feedArchitecture != curr.feedArchitecture,
+      buildWhen: (prev, curr) => prev.feedLayout != curr.feedLayout,
       builder: (context, settingsState) {
-        if (settingsState.feedArchitecture == FeedArchitecture.grid) {
+        if (settingsState.feedLayout == FeedLayout.card) {
           return _buildGridFeed(context, feedState);
         }
         return _buildLinearFeed(context, feedState);
