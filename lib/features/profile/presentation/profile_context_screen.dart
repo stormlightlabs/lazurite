@@ -1,10 +1,11 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lazurite/features/lists/presentation/widgets/list_row_tile.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
+import 'package:lazurite/features/profile/data/profile_context_repository.dart';
 
 class ProfileContextScreen extends StatefulWidget {
   const ProfileContextScreen({super.key, required this.handle});
@@ -113,102 +114,117 @@ class _BlockedByTab extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: cubit.refreshBlockedBy,
-      child: CustomScrollView(
-        slivers: [
-          // Contextualizing note at the top.
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(
-                'Blocks are a normal part of social media. '
-                'This data is public on the AT Protocol.',
-                textAlign: TextAlign.center,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) => _maybeLoadMore(
+          notification: notification,
+          status: state.blockedByStatus,
+          hasMore: state.blockedByHasMore,
+          cursor: state.blockedByCursor,
+          onLoadMore: (cursor) => cubit.loadBlockedBy(cursor: cursor),
+        ),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // Contextualizing note at the top.
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Text(
+                  'Blocks are a normal part of social media. '
+                  'This data is public on the AT Protocol.',
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
-          ),
-          // Count header + expand button.
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Text(
-                    '${state.blockedByCount} account${state.blockedByCount == 1 ? '' : 's'}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                  const Spacer(),
-                  if (state.blockedByStatus == ProfileContextTabStatus.initial)
-                    TextButton.icon(
-                      key: const Key('blocked_by_show_accounts'),
-                      onPressed: () => cubit.loadBlockedBy(),
-                      icon: const Icon(Icons.expand_more),
-                      label: const Text('Show accounts'),
+            // Count header + expand button.
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Text(
+                      '${state.blockedByCount} account${state.blockedByCount == 1 ? '' : 's'}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                ],
-              ),
-            ),
-          ),
-          // Content based on status.
-          if (state.blockedByStatus == ProfileContextTabStatus.loading && state.blockedByProfiles.isEmpty)
-            const SliverFillRemaining(hasScrollBody: false, child: Center(child: _ShimmerList()))
-          else if (state.blockedByStatus == ProfileContextTabStatus.error && state.blockedByProfiles.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
-                child: _ErrorRetry(
-                  message: state.blockedByError ?? 'Failed to load accounts',
-                  onRetry: () => cubit.loadBlockedBy(),
+                    const Spacer(),
+                    if (state.blockedByStatus == ProfileContextTabStatus.initial)
+                      TextButton.icon(
+                        key: const Key('blocked_by_show_accounts'),
+                        onPressed: () => cubit.loadBlockedBy(),
+                        icon: const Icon(Icons.expand_more),
+                        label: const Text('Show accounts'),
+                      ),
+                  ],
                 ),
               ),
-            )
-          else if (state.blockedByStatus == ProfileContextTabStatus.loaded && state.blockedByProfiles.isEmpty)
-            const SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(child: Text('No accounts have blocked this user')),
-            )
-          else ...[
-            SliverList.builder(
-              itemCount: state.blockedByProfiles.length,
-              itemBuilder: (context, index) {
-                final profile = state.blockedByProfiles[index];
-                return _ProfileTile(
-                  key: ValueKey('blocked_by_${profile.did}'),
-                  profile: profile,
-                  onTap: () => context.push('/profile/view?actor=${profile.did}'),
-                );
-              },
             ),
-            if (state.blockedByStatus == ProfileContextTabStatus.loading)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              )
-            else if (state.blockedByStatus == ProfileContextTabStatus.error)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
+            // Content based on status.
+            if (state.blockedByStatus == ProfileContextTabStatus.loading && state.blockedByEntries.isEmpty)
+              const SliverFillRemaining(hasScrollBody: false, child: Center(child: _ShimmerList()))
+            else if (state.blockedByStatus == ProfileContextTabStatus.error && state.blockedByEntries.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
                   child: _ErrorRetry(
-                    message: state.blockedByError ?? 'Failed to load more',
-                    onRetry: () => cubit.loadBlockedBy(cursor: state.blockedByCursor),
+                    message: state.blockedByError ?? 'Failed to load accounts',
+                    onRetry: () => cubit.loadBlockedBy(),
                   ),
                 ),
               )
-            else if (state.blockedByHasMore)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Center(
-                    child: TextButton(
-                      onPressed: () => cubit.loadBlockedBy(cursor: state.blockedByCursor),
-                      child: const Text('Load more'),
+            else if (state.blockedByStatus == ProfileContextTabStatus.loaded && state.blockedByEntries.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Text(
+                    state.blockedByCount > 0
+                        ? 'Found ${state.blockedByCount} blocked-by accounts, but public Bluesky profile details could not be loaded.'
+                        : 'No accounts have blocked this user',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              )
+            else ...[
+              SliverList.builder(
+                itemCount: state.blockedByEntries.length,
+                itemBuilder: (context, index) {
+                  final entry = state.blockedByEntries[index];
+                  if (entry.profile != null) {
+                    final profile = entry.profile!;
+                    return _ProfileTile(
+                      key: ValueKey('blocked_by_${profile.did}'),
+                      profile: profile,
+                      onTap: () =>
+                          context.push('/profile/view?actor=${Uri.encodeQueryComponent(_profileActor(profile))}'),
+                    );
+                  }
+
+                  return _UnavailableProfileTile(
+                    key: ValueKey('blocked_by_unavailable_${entry.did}'),
+                    did: entry.did,
+                    reason: entry.unavailableReason ?? 'Profile unavailable',
+                  );
+                },
+              ),
+              if (state.blockedByStatus == ProfileContextTabStatus.loading)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                )
+              else if (state.blockedByStatus == ProfileContextTabStatus.error)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: _ErrorRetry(
+                      message: state.blockedByError ?? 'Failed to load more',
+                      onRetry: () => cubit.loadBlockedBy(cursor: state.blockedByCursor),
                     ),
                   ),
                 ),
-              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -241,66 +257,91 @@ class _BlockingTab extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: cubit.refreshBlocking,
-      child: CustomScrollView(
-        slivers: [
-          if (state.blockingStatus == ProfileContextTabStatus.initial ||
-              (state.blockingStatus == ProfileContextTabStatus.loading && state.blockingProfiles.isEmpty))
-            const SliverFillRemaining(hasScrollBody: false, child: Center(child: _ShimmerList()))
-          else if (state.blockingStatus == ProfileContextTabStatus.error && state.blockingProfiles.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
-                child: _ErrorRetry(
-                  message: state.blockingError ?? 'Failed to load accounts',
-                  onRetry: () => cubit.loadBlocking(),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) => _maybeLoadMore(
+          notification: notification,
+          status: state.blockingStatus,
+          hasMore: state.blockingHasMore,
+          cursor: state.blockingCursor,
+          onLoadMore: (cursor) => cubit.loadBlocking(cursor: cursor),
+        ),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Text(
+                  '${state.blockingCount} account${state.blockingCount == 1 ? '' : 's'}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
-            )
-          else if (state.blockingStatus == ProfileContextTabStatus.loaded && state.blockingProfiles.isEmpty)
-            const SliverFillRemaining(hasScrollBody: false, child: Center(child: Text('Not blocking anyone')))
-          else ...[
-            SliverList.builder(
-              itemCount: state.blockingProfiles.length,
-              itemBuilder: (context, index) {
-                final profile = state.blockingProfiles[index];
-                return _ProfileTile(
-                  key: ValueKey('blocking_${profile.did}'),
-                  profile: profile,
-                  onTap: () => context.push('/profile/view?actor=${profile.did}'),
-                );
-              },
             ),
-            if (state.blockingStatus == ProfileContextTabStatus.loading)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              )
-            else if (state.blockingStatus == ProfileContextTabStatus.error)
+            if (state.blockingUnavailable.isNotEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: _UnavailableAccountsCard(entries: state.blockingUnavailable),
+                ),
+              ),
+            if (state.blockingStatus == ProfileContextTabStatus.initial ||
+                (state.blockingStatus == ProfileContextTabStatus.loading && state.blockingProfiles.isEmpty))
+              const SliverFillRemaining(hasScrollBody: false, child: Center(child: _ShimmerList()))
+            else if (state.blockingStatus == ProfileContextTabStatus.error && state.blockingProfiles.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
                   child: _ErrorRetry(
-                    message: state.blockingError ?? 'Failed to load more',
-                    onRetry: () => cubit.loadBlocking(cursor: state.blockingCursor),
+                    message: state.blockingError ?? 'Failed to load accounts',
+                    onRetry: () => cubit.loadBlocking(),
                   ),
                 ),
               )
-            else if (state.blockingHasMore)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Center(
-                    child: TextButton(
-                      onPressed: () => cubit.loadBlocking(cursor: state.blockingCursor),
-                      child: const Text('Load more'),
+            else if (state.blockingStatus == ProfileContextTabStatus.loaded && state.blockingProfiles.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Text(
+                    state.blockingUnavailable.isNotEmpty
+                        ? 'Some blocked accounts are suspended or unavailable.'
+                        : 'Not blocking anyone',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              )
+            else ...[
+              SliverList.builder(
+                itemCount: state.blockingProfiles.length,
+                itemBuilder: (context, index) {
+                  final profile = state.blockingProfiles[index];
+                  return _ProfileTile(
+                    key: ValueKey('blocking_${profile.did}'),
+                    profile: profile,
+                    onTap: () =>
+                        context.push('/profile/view?actor=${Uri.encodeQueryComponent(_profileActor(profile))}'),
+                  );
+                },
+              ),
+              if (state.blockingStatus == ProfileContextTabStatus.loading)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                )
+              else if (state.blockingStatus == ProfileContextTabStatus.error)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: _ErrorRetry(
+                      message: state.blockingError ?? 'Failed to load more',
+                      onRetry: () => cubit.loadBlocking(cursor: state.blockingCursor),
                     ),
                   ),
                 ),
-              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -321,66 +362,58 @@ class _ListsOnTab extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: cubit.refreshListsOn,
-      child: CustomScrollView(
-        slivers: [
-          if (state.listsOnStatus == ProfileContextTabStatus.initial ||
-              (state.listsOnStatus == ProfileContextTabStatus.loading && state.listsOn.isEmpty))
-            const SliverFillRemaining(hasScrollBody: false, child: Center(child: _ShimmerList()))
-          else if (state.listsOnStatus == ProfileContextTabStatus.error && state.listsOn.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
-                child: _ErrorRetry(
-                  message: state.listsOnError ?? 'Failed to load lists',
-                  onRetry: () => cubit.loadListsOn(),
-                ),
-              ),
-            )
-          else if (state.listsOnStatus == ProfileContextTabStatus.loaded && state.listsOn.isEmpty)
-            const SliverFillRemaining(hasScrollBody: false, child: Center(child: Text('Not on any lists')))
-          else ...[
-            SliverList.builder(
-              itemCount: state.listsOn.length,
-              itemBuilder: (context, index) {
-                final list = state.listsOn[index];
-                return ListRowTile(
-                  key: ValueKey('list_on_${list.uri}'),
-                  list: list,
-                  onTap: () => context.push('/list?uri=${Uri.encodeComponent(list.uri.toString())}'),
-                );
-              },
-            ),
-            if (state.listsOnStatus == ProfileContextTabStatus.loading)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              )
-            else if (state.listsOnStatus == ProfileContextTabStatus.error)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) => _maybeLoadMore(
+          notification: notification,
+          status: state.listsOnStatus,
+          hasMore: state.listsOnHasMore,
+          cursor: state.listsOnCursor,
+          onLoadMore: (cursor) => cubit.loadListsOn(cursor: cursor),
+        ),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            if (state.listsOnStatus == ProfileContextTabStatus.initial ||
+                (state.listsOnStatus == ProfileContextTabStatus.loading && state.listsOn.isEmpty))
+              const SliverFillRemaining(hasScrollBody: false, child: Center(child: _ShimmerList()))
+            else if (state.listsOnStatus == ProfileContextTabStatus.error && state.listsOn.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
                   child: _ErrorRetry(
-                    message: state.listsOnError ?? 'Failed to load more',
-                    onRetry: () => cubit.loadListsOn(cursor: state.listsOnCursor),
+                    message: state.listsOnError ?? 'Failed to load lists',
+                    onRetry: () => cubit.loadListsOn(),
                   ),
                 ),
               )
-            else if (state.listsOnHasMore)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Center(
-                    child: TextButton(
-                      onPressed: () => cubit.loadListsOn(cursor: state.listsOnCursor),
-                      child: const Text('Load more'),
+            else if (state.listsOnStatus == ProfileContextTabStatus.loaded && state.listsOn.isEmpty)
+              const SliverFillRemaining(hasScrollBody: false, child: Center(child: Text('Not on any lists')))
+            else ...[
+              ..._buildListSections(
+                context,
+                state.listsOn,
+                (list) => context.push('/list?uri=${Uri.encodeComponent(list.uri.toString())}'),
+              ),
+              if (state.listsOnStatus == ProfileContextTabStatus.loading)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                )
+              else if (state.listsOnStatus == ProfileContextTabStatus.error)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: _ErrorRetry(
+                      message: state.listsOnError ?? 'Failed to load more',
+                      onRetry: () => cubit.loadListsOn(cursor: state.listsOnCursor),
                     ),
                   ),
                 ),
-              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -415,6 +448,271 @@ class _ProfileTile extends StatelessWidget {
     if (parts.isEmpty || parts.first.isEmpty) return '?';
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
+  }
+}
+
+class _UnavailableAccountsCard extends StatelessWidget {
+  const _UnavailableAccountsCard({required this.entries});
+
+  final List<UnavailableProfileRef> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.warning_amber_rounded),
+              title: Text('Unavailable accounts (${entries.length})'),
+              subtitle: const Text('These accounts are suspended or their public profile could not be fetched.'),
+            ),
+            for (final entry in entries)
+              ListTile(
+                dense: true,
+                leading: Icon(Icons.person_off_outlined, color: colorScheme.onSurfaceVariant),
+                title: Text(entry.did, maxLines: 1, overflow: TextOverflow.ellipsis),
+                subtitle: Text(entry.reason),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UnavailableProfileTile extends StatelessWidget {
+  const _UnavailableProfileTile({super.key, required this.did, required this.reason});
+
+  final String did;
+  final String reason;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListTile(
+      leading: Icon(Icons.person_off_outlined, color: colorScheme.onSurfaceVariant),
+      title: Text(did, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(reason),
+      enabled: false,
+    );
+  }
+}
+
+String _profileActor(ProfileView profile) {
+  final handle = profile.handle.trim();
+  return handle.isNotEmpty ? handle : profile.did;
+}
+
+bool _maybeLoadMore({
+  required ScrollNotification notification,
+  required ProfileContextTabStatus status,
+  required bool hasMore,
+  required String? cursor,
+  required ValueChanged<String?> onLoadMore,
+}) {
+  if (notification.metrics.extentAfter > 300 ||
+      status == ProfileContextTabStatus.loading ||
+      !hasMore ||
+      cursor == null) {
+    return false;
+  }
+
+  onLoadMore(cursor);
+  return false;
+}
+
+List<Widget> _buildListSections(
+  BuildContext context,
+  List<bsky_graph.ListView> lists,
+  ValueChanged<bsky_graph.ListView> onTap,
+) {
+  final sections = _groupListsByPurpose(lists);
+  return [
+    for (final section in sections) ...[
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Text(
+            section.title,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ),
+      ),
+      SliverList.builder(
+        itemCount: section.lists.length,
+        itemBuilder: (context, index) {
+          final list = section.lists[index];
+          return _ListContextCard(key: ValueKey('list_on_${list.uri}'), list: list, onTap: () => onTap(list));
+        },
+      ),
+    ],
+  ];
+}
+
+List<({String title, List<bsky_graph.ListView> lists})> _groupListsByPurpose(List<bsky_graph.ListView> lists) {
+  final buckets = <_ListPurposeGroup, List<bsky_graph.ListView>>{
+    _ListPurposeGroup.curation: [],
+    _ListPurposeGroup.moderation: [],
+    _ListPurposeGroup.reference: [],
+    _ListPurposeGroup.other: [],
+  };
+
+  for (final list in lists) {
+    buckets[_purposeGroupFor(list)]!.add(list);
+  }
+
+  return [
+    (title: 'Curation Lists', lists: buckets[_ListPurposeGroup.curation]!),
+    (title: 'Moderation Lists', lists: buckets[_ListPurposeGroup.moderation]!),
+    (title: 'Reference Lists', lists: buckets[_ListPurposeGroup.reference]!),
+    (title: 'Other Lists', lists: buckets[_ListPurposeGroup.other]!),
+  ].where((section) => section.lists.isNotEmpty).toList();
+}
+
+_ListPurposeGroup _purposeGroupFor(bsky_graph.ListView list) {
+  switch (list.purpose.knownValue) {
+    case bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist:
+      return _ListPurposeGroup.curation;
+    case bsky_graph.KnownListPurpose.appBskyGraphDefsModlist:
+      return _ListPurposeGroup.moderation;
+    case bsky_graph.KnownListPurpose.appBskyGraphDefsReferencelist:
+      return _ListPurposeGroup.reference;
+    case null:
+      return _ListPurposeGroup.other;
+  }
+}
+
+enum _ListPurposeGroup { curation, moderation, reference, other }
+
+class _ListContextCard extends StatelessWidget {
+  const _ListContextCard({super.key, required this.list, this.onTap});
+
+  final bsky_graph.ListView list;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final description = list.description?.trim();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Card(
+        margin: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: list.avatar != null ? NetworkImage(list.avatar!) : null,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                      child: list.avatar == null ? Icon(Icons.list, color: colorScheme.onSurfaceVariant) : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(list.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 4),
+                          Text(
+                            '@${list.creator.handle}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    _ListPurposeBadge(purpose: list.purpose.knownValue),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _ListMetaChip(
+                  icon: Icons.group_outlined,
+                  label: '${list.listItemCount ?? 0} member${(list.listItemCount ?? 0) == 1 ? '' : 's'}',
+                ),
+                if (description != null && description.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ListPurposeBadge extends StatelessWidget {
+  const _ListPurposeBadge({required this.purpose});
+
+  final bsky_graph.KnownListPurpose? purpose;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final (label, color) = switch (purpose) {
+      bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist => ('CURATE', colorScheme.primary),
+      bsky_graph.KnownListPurpose.appBskyGraphDefsModlist => ('MOD', colorScheme.error),
+      bsky_graph.KnownListPurpose.appBskyGraphDefsReferencelist => ('REFERENCE', colorScheme.tertiary),
+      null => ('LIST', colorScheme.secondary),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, color: color, letterSpacing: 0.6),
+      ),
+    );
+  }
+}
+
+class _ListMetaChip extends StatelessWidget {
+  const _ListMetaChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(999)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -36,7 +36,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     emit(state.copyWith(isRefreshing: true));
 
     try {
-      final profile = await _profileRepository.getProfile(currentProfile.did);
+      final actor = currentProfile.handle.isNotEmpty ? currentProfile.handle : currentProfile.did;
+      final profile = await _profileRepository.getProfile(actor);
       emit(ProfileState.loaded(profile: profile));
     } catch (error) {
       emit(state.copyWith(isRefreshing: false));

@@ -46,11 +46,22 @@ class ConstellationException implements Exception {
 
 class ConstellationClient {
   ConstellationClient({String? baseUrl, http.Client? httpClient})
-    : _baseUrl = baseUrl ?? _defaultBaseUrl,
+    : _baseUrl = _normalizeBaseUrl(baseUrl),
       _httpClient = httpClient ?? http.Client();
 
   final String _baseUrl;
   final http.Client _httpClient;
+
+  String get baseUrl => _baseUrl;
+
+  static String _normalizeBaseUrl(String? baseUrl) {
+    final trimmed = baseUrl?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return _defaultBaseUrl;
+    }
+
+    return trimmed.replaceFirst(RegExp(r'/+$'), '');
+  }
 
   Uri _xrpcUri(String endpoint, Map<String, String?> params) {
     final filtered = <String, String>{};
@@ -69,6 +80,21 @@ class ConstellationClient {
     }
 
     return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  List<dynamic> _listField(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value == null) return const [];
+    return value as List<dynamic>;
+  }
+
+  List<dynamic> _listFieldAny(Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      if (data.containsKey(key) && data[key] != null) {
+        return data[key] as List<dynamic>;
+      }
+    }
+    return const [];
   }
 
   Future<int> getBacklinksCount(String subject, String source) async {
@@ -92,7 +118,7 @@ class ConstellationClient {
     final data = await _get(uri);
     return (
       total: data['total'] as int,
-      dids: (data['dids'] as List<dynamic>).cast<String>(),
+      dids: _listField(data, 'dids').cast<String>(),
       cursor: data['cursor'] as String?,
     );
   }
@@ -110,9 +136,10 @@ class ConstellationClient {
       'cursor': cursor,
     });
     final data = await _get(uri);
-    final records = (data['linking_records'] as List<dynamic>)
-        .map((r) => ConstellationLinkRecord.fromJson(r as Map<String, dynamic>))
-        .toList();
+    final records = _listFieldAny(data, [
+      'records',
+      'linking_records',
+    ]).map((r) => ConstellationLinkRecord.fromJson(r as Map<String, dynamic>)).toList();
     return (total: data['total'] as int, records: records, cursor: data['cursor'] as String?);
   }
 
@@ -131,9 +158,7 @@ class ConstellationClient {
       'cursor': cursor,
     });
     final data = await _get(uri);
-    final items = (data['items'] as List<dynamic>)
-        .map((i) => ManyToManyItem.fromJson(i as Map<String, dynamic>))
-        .toList();
+    final items = _listField(data, 'items').map((i) => ManyToManyItem.fromJson(i as Map<String, dynamic>)).toList();
     return (items: items, cursor: data['cursor'] as String?);
   }
 }

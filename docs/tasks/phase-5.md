@@ -1,6 +1,6 @@
 ---
 title: Phase 5 Task Breakdown
-updated: 2026-03-31
+updated: 2026-04-01
 ---
 
 # Phase 5 Milestones
@@ -106,19 +106,19 @@ updated: 2026-03-31
 
 ### UI
 
-- [ ] Profile screen overflow menu - add "Profile Context" entry (available for all profiles)
-- [ ] Route: `/profile-context?did={DID}` in `app_router.dart`
-- [ ] `ProfileContextScreen` - `AppBar` (title + handle subtitle), `TabBar` with 3 tabs, `BlocProvider` creating cubit
-- [ ] **Blocked By tab** - count header, "Show accounts" expand, paginated profile tiles (avatar, name, handle), tap → profile navigation, contextualizing note text
-- [ ] **Blocking tab** - same layout; hidden or explanatory text when viewing other profiles
-- [ ] **Lists tab** - list cards (name, owner, purpose badge, member count, description), grouped by purpose, tap → `/list?uri=`
-- [ ] Per-tab states: skeleton shimmer (loading), contextual empty state, inline error with retry
-- [ ] Pull-to-refresh per tab
-- [ ] Infinite scroll pagination per tab
+- [x] Profile screen overflow menu - add "Profile Context" entry (available for all profiles)
+- [x] Route: `/profile-context?did={DID}` in `app_router.dart`
+- [x] `ProfileContextScreen` - `AppBar` (title + handle subtitle), `TabBar` with 3 tabs, `BlocProvider` creating cubit
+- [x] **Blocked By tab** - count header, "Show accounts" expand, paginated profile tiles (avatar, name, handle), tap → profile navigation, contextualizing note text
+- [x] **Blocking tab** - same layout; hidden or explanatory text when viewing other profiles
+- [x] **Lists tab** - list cards (name, owner, purpose badge, member count, description), grouped by purpose, tap → `/list?uri=`
+- [x] Per-tab states: skeleton shimmer (loading), contextual empty state, inline error with retry
+- [x] Pull-to-refresh per tab
+- [x] Infinite scroll pagination per tab
 
 ### Tests
 
-- [ ] Unit tests: `ConstellationClient` - each endpoint method, error handling, timeout, URL construction
-- [ ] Unit tests: `ProfileContextRepository` - DID hydration batching, list URI derivation, cursor passthrough
-- [ ] Unit tests: `ProfileContextCubit` - state transitions for each tab, own-profile vs other-profile logic, pagination appending
-- [ ] Widget tests: screen renders 3 tabs, blocked-by count + expand, profile tiles render and navigate, list cards render and navigate, empty states, error + retry, blocking tab hidden for non-own profiles
+- [x] Unit tests: `ConstellationClient` - each endpoint method, error handling, timeout, URL construction
+- [x] Unit tests: `ProfileContextRepository` - DID hydration batching, list URI derivation, cursor passthrough
+- [x] Unit tests: `ProfileContextCubit` - state transitions for each tab, own-profile vs other-profile logic, pagination appending
+- [x] Widget tests: screen renders 3 tabs, blocked-by count + expand, profile tiles render and navigate, list cards render and navigate, empty states, error + retry, blocking tab hidden for non-own profiles

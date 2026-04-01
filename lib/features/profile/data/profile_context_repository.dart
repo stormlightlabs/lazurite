@@ -1,14 +1,50 @@
 import 'package:atproto_core/atproto_core.dart' show AtUri;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_graph_defs.dart';
+import 'package:equatable/equatable.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
 
+const profileContextPublicAppViewService = 'public.api.bsky.app';
+const _blockedByPageSize = 16;
+const _listsPageSize = 16;
+
+class UnavailableProfileRef extends Equatable {
+  const UnavailableProfileRef({required this.did, required this.reason});
+
+  final String did;
+  final String reason;
+
+  @override
+  List<Object?> get props => [did, reason];
+}
+
+class BlockedByEntry extends Equatable {
+  BlockedByEntry.profile({required ProfileView this.profile}) : did = profile.did, unavailableReason = null;
+
+  const BlockedByEntry.unavailable({required this.did, required this.unavailableReason}) : profile = null;
+
+  final String did;
+  final ProfileView? profile;
+  final String? unavailableReason;
+
+  bool get isAvailable => profile != null;
+
+  @override
+  List<Object?> get props => [did, profile, unavailableReason];
+}
+
 class ProfileContextRepository {
-  ProfileContextRepository({required dynamic bluesky, required ConstellationClient constellationClient})
-    : _bluesky = bluesky,
-      _constellation = constellationClient;
+  ProfileContextRepository({
+    required dynamic bluesky,
+    dynamic publicBluesky,
+    required ConstellationClient constellationClient,
+  }) : _bluesky = bluesky,
+       _publicBluesky = publicBluesky ?? bluesky,
+       _constellation = constellationClient;
 
   final dynamic _bluesky;
+  final dynamic _publicBluesky;
   final ConstellationClient _constellation;
 
   /// Returns the number of accounts that have blocked [did].
@@ -23,26 +59,68 @@ class ProfileContextRepository {
 
   /// Returns a page of profiles that have blocked [did], along with the total
   /// count and a cursor for the next page.
-  Future<({List<ProfileView> profiles, String? cursor, int total})> getBlockedByProfiles(
+  Future<({List<BlockedByEntry> entries, String? cursor, int total})> getBlockedByProfiles(
     String did, {
     String? cursor,
   }) async {
-    final result = await _constellation.getDistinct(
-      did,
-      'app.bsky.graph.block:subject',
-      cursor: cursor,
+    final offset = int.tryParse(cursor ?? '0') ?? 0;
+    log.i('ProfileContextRepository: blocked-by load start for $did offset=$offset via ${_constellation.baseUrl}');
+    final collected = await _collectBlockedByDids(did);
+    final hydrated = await _hydrateProfiles(collected.dids);
+    final unavailableByDid = <String, String>{for (final entry in hydrated.unavailable) entry.did: entry.reason};
+    final profileByDid = <String, ProfileView>{for (final profile in hydrated.profiles) profile.did: profile};
+
+    final pageDids = collected.dids.skip(offset).take(_blockedByPageSize).toList();
+    final entries = <BlockedByEntry>[];
+    for (final pageDid in pageDids) {
+      final profile = profileByDid[pageDid];
+      if (profile != null) {
+        entries.add(BlockedByEntry.profile(profile: profile));
+        continue;
+      }
+
+      final unavailableReason = unavailableByDid[pageDid];
+      if (unavailableReason != null) {
+        entries.add(BlockedByEntry.unavailable(did: pageDid, unavailableReason: unavailableReason));
+      }
+    }
+
+    final nextOffset = offset + _blockedByPageSize;
+    log.i(
+      'ProfileContextRepository: blocked-by load complete for $did total=${collected.total} dids=${collected.dids.length} resolved=${hydrated.profiles.length} unavailable=${hydrated.unavailable.length} returned=${entries.length}',
     );
-    final profiles = await _hydrateProfiles(result.dids);
-    return (profiles: profiles, cursor: result.cursor, total: result.total);
+    return (
+      entries: entries,
+      cursor: nextOffset < collected.dids.length ? '$nextOffset' : null,
+      total: collected.total,
+    );
+  }
+
+  /// Returns the total number of accounts that [did] is blocking.
+  Future<int> getBlockingCount(String did) async {
+    var total = 0;
+    String? cursor;
+
+    do {
+      final response = await _bluesky.atproto.repo.listRecords(
+        repo: did,
+        collection: 'app.bsky.graph.block',
+        limit: 100,
+        cursor: cursor,
+      );
+
+      total += (response.data.records as List<dynamic>).length;
+      cursor = response.data.cursor as String?;
+    } while (cursor != null);
+
+    return total;
   }
 
   /// Returns a page of profiles that [did] is blocking, along with a cursor.
   /// Uses `com.atproto.repo.listRecords` on the actor's own repo.
   /// [total] reflects the number of profiles hydrated in this page.
-  Future<({List<ProfileView> profiles, String? cursor, int total})> getBlockingProfiles(
-    String did, {
-    String? cursor,
-  }) async {
+  Future<({List<ProfileView> profiles, List<UnavailableProfileRef> unavailable, String? cursor, int total})>
+  getBlockingProfiles(String did, {String? cursor}) async {
     final response = await _bluesky.atproto.repo.listRecords(
       repo: did,
       collection: 'app.bsky.graph.block',
@@ -50,11 +128,14 @@ class ProfileContextRepository {
       cursor: cursor,
     );
 
-    final subjectDids = (response.data.records as List<dynamic>)
-        .map((r) => r.value['subject'] as String)
-        .toList();
-    final profiles = await _hydrateProfiles(subjectDids);
-    return (profiles: profiles, cursor: response.data.cursor as String?, total: profiles.length);
+    final subjectDids = (response.data.records as List<dynamic>).map((r) => r.value['subject'] as String).toList();
+    final hydrated = await _hydrateProfiles(subjectDids);
+    return (
+      profiles: hydrated.profiles,
+      unavailable: hydrated.unavailable,
+      cursor: response.data.cursor as String?,
+      total: hydrated.profiles.length,
+    );
   }
 
   /// Returns a page of lists that [did] is a member of, along with the total
@@ -65,29 +146,230 @@ class ProfileContextRepository {
       did,
       'app.bsky.graph.listitem:subject',
       'list',
+      limit: _listsPageSize,
       cursor: cursor,
     );
 
-    final lists = await Future.wait(
-      result.items.map((item) async {
-        final uri = AtUri.parse(item.otherSubject);
-        final response = await _bluesky.graph.getList(list: uri, limit: 1);
-        return response.data.list as ListView;
-      }),
-    );
+    final uniqueListUris = <String>{};
+    final listUris = <String>[];
+    for (final item in result.items) {
+      if (uniqueListUris.add(item.otherSubject)) {
+        listUris.add(item.otherSubject);
+      }
+    }
+
+    final lists = <ListView>[];
+    for (final uriString in listUris) {
+      try {
+        final uri = AtUri.parse(uriString);
+        final response = await _publicBluesky.graph.getList(list: uri, limit: 1);
+        lists.add(response.data.list as ListView);
+      } catch (error, stackTrace) {
+        log.w(
+          'skipping invalid or unavailable list in profile context: $uriString',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
 
     return (lists: lists, cursor: result.cursor, total: total);
   }
 
   /// Hydrates [dids] into [ProfileView] objects in batches of 25.
-  Future<List<ProfileView>> _hydrateProfiles(List<String> dids) async {
-    if (dids.isEmpty) return [];
-    final allProfiles = <ProfileView>[];
-    for (var i = 0; i < dids.length; i += 25) {
-      final batch = dids.sublist(i, (i + 25).clamp(0, dids.length));
-      final response = await _bluesky.actor.getProfiles(actors: batch);
-      allProfiles.addAll(response.data.profiles as List<ProfileView>);
+  Future<({List<ProfileView> profiles, List<UnavailableProfileRef> unavailable})> _hydrateProfiles(
+    List<String> dids,
+  ) async {
+    final normalizedDids = _normalizeDids(dids);
+    if (normalizedDids.isEmpty) {
+      return (profiles: <ProfileView>[], unavailable: <UnavailableProfileRef>[]);
     }
-    return allProfiles;
+
+    final allProfiles = <ProfileView>[];
+    final unavailable = <UnavailableProfileRef>[];
+    for (var i = 0; i < normalizedDids.length; i += 25) {
+      final batch = normalizedDids.sublist(i, (i + 25).clamp(0, normalizedDids.length));
+      final resolvedProfiles = <String, ProfileView>{};
+      log.d(
+        'ProfileContextRepository: blocked-by public batch ${i ~/ 25 + 1} size=${batch.length} dids=${batch.join(',')}',
+      );
+      try {
+        final response = await _publicBluesky.actor.getProfiles(actors: batch);
+        for (final profile in response.data.profiles as List<dynamic>) {
+          final converted = _asProfileView(profile);
+          if (converted != null) {
+            resolvedProfiles[converted.did] = converted;
+          }
+        }
+      } catch (error, stackTrace) {
+        log.w(
+          'ProfileContextRepository: blocked-by public batch failed, falling back to per-DID lookups for ${batch.length} actors',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+
+      for (final did in batch) {
+        final existing = resolvedProfiles[did];
+        if (existing != null) {
+          log.d('ProfileContextRepository: blocked-by public batch resolved $did');
+          allProfiles.add(existing);
+          continue;
+        }
+
+        try {
+          final response = await _publicBluesky.actor.getProfile(actor: did);
+          final converted = _asProfileView(response.data);
+          if (converted != null) {
+            log.d('ProfileContextRepository: blocked-by per-DID resolved $did');
+            allProfiles.add(converted);
+          } else {
+            const reason = 'Public profile lookup failed';
+            unavailable.add(UnavailableProfileRef(did: did, reason: reason));
+            log.w('ProfileContextRepository: blocked-by per-DID returned an unsupported profile shape for $did');
+          }
+        } catch (error, stackTrace) {
+          final reason = _publicProfileFailureReason(error);
+          unavailable.add(UnavailableProfileRef(did: did, reason: reason));
+          log.w(
+            'ProfileContextRepository: blocked-by per-DID failed for $did: $reason',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
+      }
+    }
+    return (profiles: allProfiles, unavailable: unavailable);
   }
+
+  Future<({List<String> dids, int total})> _collectBlockedByDids(String did) async {
+    try {
+      final dids = <String>[];
+      final seen = <String>{};
+      var total = 0;
+      String? cursor;
+      log.i('ProfileContextRepository: blocked-by using getDistinct for $did');
+
+      do {
+        final result = await _constellation.getDistinct(
+          did,
+          'app.bsky.graph.block:subject',
+          limit: _blockedByPageSize,
+          cursor: cursor,
+        );
+        final inputCursor = cursor;
+        if (total == 0) {
+          total = result.total;
+          log.i('ProfileContextRepository: blocked-by count for $did is $total');
+        }
+        for (final rawDid in result.dids) {
+          final normalizedDid = _normalizeDid(rawDid);
+          if (normalizedDid != null && seen.add(normalizedDid)) {
+            dids.add(normalizedDid);
+          }
+        }
+        cursor = result.cursor;
+        log.d(
+          'ProfileContextRepository: blocked-by getDistinct page cursorIn=${inputCursor ?? 'null'} records=${result.dids.length} uniqueTotal=${dids.length} cursorOut=${cursor ?? 'null'}',
+        );
+      } while (cursor != null);
+
+      log.i('ProfileContextRepository: blocked-by collected ${dids.length} unique DIDs from getDistinct for $did');
+      return (dids: dids, total: total);
+    } on ConstellationException catch (error) {
+      if (!_isNotFound(error)) rethrow;
+      log.w('ProfileContextRepository: blocked-by getDistinct returned 404 for $did, falling back to getBacklinks');
+
+      final dids = <String>[];
+      final seen = <String>{};
+      var total = 0;
+      String? cursor;
+
+      do {
+        final result = await _constellation.getBacklinks(
+          did,
+          'app.bsky.graph.block:subject',
+          limit: _blockedByPageSize,
+          cursor: cursor,
+        );
+        final inputCursor = cursor;
+        if (total == 0) {
+          total = result.total;
+          log.i('ProfileContextRepository: blocked-by count for $did is $total');
+        }
+        for (final record in result.records) {
+          final normalizedDid = _normalizeDid(record.did);
+          if (normalizedDid != null && seen.add(normalizedDid)) {
+            dids.add(normalizedDid);
+          }
+        }
+        cursor = result.cursor;
+        log.d(
+          'ProfileContextRepository: blocked-by getBacklinks page cursorIn=${inputCursor ?? 'null'} records=${result.records.length} uniqueTotal=${dids.length} cursorOut=${cursor ?? 'null'}',
+        );
+      } while (cursor != null);
+
+      log.i('ProfileContextRepository: blocked-by collected ${dids.length} unique DIDs from getBacklinks for $did');
+      return (dids: dids, total: total);
+    }
+  }
+
+  List<String> _normalizeDids(List<String> dids) {
+    final normalized = <String>[];
+    final seen = <String>{};
+    for (final did in dids) {
+      final value = _normalizeDid(did);
+      if (value != null && seen.add(value)) {
+        normalized.add(value);
+      }
+    }
+    return normalized;
+  }
+
+  String? _normalizeDid(String did) {
+    final trimmed = did.trim();
+    if (trimmed.isEmpty) return null;
+    return trimmed;
+  }
+
+  String _publicProfileFailureReason(Object error) {
+    final message = error.toString();
+    final lowerMessage = message.toLowerCase();
+    if (message.contains('AccountTakedown') || lowerMessage.contains('account has been suspended')) {
+      return 'Suspended account';
+    }
+    if (message.contains('HTTP 404') || lowerMessage.contains('not found')) {
+      return 'Profile unavailable';
+    }
+    return 'Public profile lookup failed';
+  }
+
+  ProfileView? _asProfileView(dynamic profile) {
+    if (profile is ProfileView) {
+      return profile;
+    }
+
+    if (profile is ProfileViewDetailed) {
+      return ProfileView(
+        did: profile.did,
+        handle: profile.handle,
+        displayName: profile.displayName,
+        pronouns: profile.pronouns,
+        description: profile.description,
+        avatar: profile.avatar,
+        associated: profile.associated,
+        indexedAt: profile.indexedAt,
+        createdAt: profile.createdAt,
+        viewer: profile.viewer,
+        labels: profile.labels,
+        verification: profile.verification,
+        status: profile.status,
+        debug: profile.debug,
+      );
+    }
+
+    return null;
+  }
+
+  bool _isNotFound(ConstellationException error) => error.message.startsWith('HTTP 404');
 }

@@ -195,6 +195,7 @@ class AppRouter {
           final constellationUrl = context.read<SettingsCubit>().state.constellationUrl;
           final repository = ProfileContextRepository(
             bluesky: context.read<Bluesky>(),
+            publicBluesky: Bluesky.anonymous(service: profileContextPublicAppViewService),
             constellationClient: ConstellationClient(baseUrl: constellationUrl),
           );
           return BlocProvider(

@@ -14,17 +14,22 @@ class ProfileContextCubit extends Cubit<ProfileContextState> {
 
   final ProfileContextRepository _repository;
 
-  /// Loads blocked-by and lists-on counts in parallel for tab header badges.
+  /// Loads tab counts in parallel for the header badges.
   Future<void> init() async {
-    try {
-      final results = await Future.wait([
-        _repository.getBlockedByCount(state.did),
-        _repository.getListsOnCount(state.did),
-      ]);
-      emit(state.copyWith(blockedByCount: results[0], listsOnCount: results[1]));
-    } catch (error) {
-      log.w('failed to load initial counts: $error');
-    }
+    final futures = <Future<int?>>[
+      _loadCount(() => _repository.getBlockedByCount(state.did), 'blocked-by'),
+      _loadCount(() => _repository.getListsOnCount(state.did), 'lists-on'),
+      if (state.isOwnProfile) _loadCount(() => _repository.getBlockingCount(state.did), 'blocking'),
+    ];
+    final results = await Future.wait(futures);
+
+    emit(
+      state.copyWith(
+        blockedByCount: results[0] ?? state.blockedByCount,
+        listsOnCount: results[1] ?? state.listsOnCount,
+        blockingCount: state.isOwnProfile ? (results[2] ?? state.blockingCount) : state.blockingCount,
+      ),
+    );
   }
 
   /// Fetches a page of profiles that have blocked the viewed user and appends
@@ -39,7 +44,7 @@ class ProfileContextCubit extends Cubit<ProfileContextState> {
       emit(
         state.copyWith(
           blockedByStatus: ProfileContextTabStatus.loaded,
-          blockedByProfiles: [...state.blockedByProfiles, ...result.profiles],
+          blockedByEntries: [...state.blockedByEntries, ...result.entries],
           blockedByCount: result.total,
           blockedByCursor: result.cursor,
           blockedByHasMore: result.cursor != null,
@@ -70,7 +75,8 @@ class ProfileContextCubit extends Cubit<ProfileContextState> {
         state.copyWith(
           blockingStatus: ProfileContextTabStatus.loaded,
           blockingProfiles: merged,
-          blockingCount: merged.length,
+          blockingUnavailable: _mergeUnavailable(state.blockingUnavailable, result.unavailable),
+          blockingCount: merged.length > state.blockingCount ? merged.length : state.blockingCount,
           blockingCursor: result.cursor,
           blockingHasMore: result.cursor != null,
         ),
@@ -112,7 +118,7 @@ class ProfileContextCubit extends Cubit<ProfileContextState> {
   Future<void> refreshBlockedBy() async {
     emit(
       state.copyWith(
-        blockedByProfiles: [],
+        blockedByEntries: [],
         blockedByCursor: null,
         blockedByHasMore: false,
         blockedByStatus: ProfileContextTabStatus.initial,
@@ -128,14 +134,18 @@ class ProfileContextCubit extends Cubit<ProfileContextState> {
     emit(
       state.copyWith(
         blockingProfiles: [],
+        blockingUnavailable: [],
         blockingCursor: null,
         blockingHasMore: false,
         blockingStatus: ProfileContextTabStatus.initial,
         blockingError: null,
-        blockingCount: 0,
       ),
     );
     await loadBlocking();
+    final refreshedCount = await _loadCount(() => _repository.getBlockingCount(state.did), 'blocking');
+    if (refreshedCount != null) {
+      emit(state.copyWith(blockingCount: refreshedCount));
+    }
   }
 
   /// Resets the lists-on list and reloads from the first page.
@@ -150,5 +160,25 @@ class ProfileContextCubit extends Cubit<ProfileContextState> {
       ),
     );
     await loadListsOn();
+  }
+
+  Future<int?> _loadCount(Future<int> Function() loader, String label) async {
+    try {
+      return await loader();
+    } catch (error) {
+      log.w('failed to load $label count: $error');
+      return null;
+    }
+  }
+
+  List<UnavailableProfileRef> _mergeUnavailable(
+    List<UnavailableProfileRef> existing,
+    List<UnavailableProfileRef> incoming,
+  ) {
+    final merged = <String, UnavailableProfileRef>{for (final item in existing) item.did: item};
+    for (final item in incoming) {
+      merged[item.did] = item;
+    }
+    return merged.values.toList();
   }
 }

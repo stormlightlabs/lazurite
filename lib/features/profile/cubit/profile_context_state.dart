@@ -12,12 +12,13 @@ class ProfileContextState extends Equatable {
     this.blockingCount = 0,
     this.listsOnCount = 0,
     this.blockedByStatus = ProfileContextTabStatus.initial,
-    this.blockedByProfiles = const [],
+    this.blockedByEntries = const [],
     this.blockedByCursor,
     this.blockedByHasMore = false,
     this.blockedByError,
     this.blockingStatus = ProfileContextTabStatus.initial,
     this.blockingProfiles = const [],
+    this.blockingUnavailable = const [],
     this.blockingCursor,
     this.blockingHasMore = false,
     this.blockingError,
@@ -39,13 +40,14 @@ class ProfileContextState extends Equatable {
   final int listsOnCount;
 
   final ProfileContextTabStatus blockedByStatus;
-  final List<ProfileView> blockedByProfiles;
+  final List<BlockedByEntry> blockedByEntries;
   final String? blockedByCursor;
   final bool blockedByHasMore;
   final String? blockedByError;
 
   final ProfileContextTabStatus blockingStatus;
   final List<ProfileView> blockingProfiles;
+  final List<UnavailableProfileRef> blockingUnavailable;
   final String? blockingCursor;
   final bool blockingHasMore;
   final String? blockingError;
@@ -61,12 +63,13 @@ class ProfileContextState extends Equatable {
     int? blockingCount,
     int? listsOnCount,
     ProfileContextTabStatus? blockedByStatus,
-    List<ProfileView>? blockedByProfiles,
+    List<BlockedByEntry>? blockedByEntries,
     Object? blockedByCursor = _profileContextNoValue,
     bool? blockedByHasMore,
     Object? blockedByError = _profileContextNoValue,
     ProfileContextTabStatus? blockingStatus,
     List<ProfileView>? blockingProfiles,
+    List<UnavailableProfileRef>? blockingUnavailable,
     Object? blockingCursor = _profileContextNoValue,
     bool? blockingHasMore,
     Object? blockingError = _profileContextNoValue,
@@ -83,7 +86,7 @@ class ProfileContextState extends Equatable {
       blockingCount: blockingCount ?? this.blockingCount,
       listsOnCount: listsOnCount ?? this.listsOnCount,
       blockedByStatus: blockedByStatus ?? this.blockedByStatus,
-      blockedByProfiles: blockedByProfiles ?? this.blockedByProfiles,
+      blockedByEntries: blockedByEntries ?? this.blockedByEntries,
       blockedByCursor: identical(blockedByCursor, _profileContextNoValue)
           ? this.blockedByCursor
           : blockedByCursor as String?,
@@ -93,6 +96,7 @@ class ProfileContextState extends Equatable {
           : blockedByError as String?,
       blockingStatus: blockingStatus ?? this.blockingStatus,
       blockingProfiles: blockingProfiles ?? this.blockingProfiles,
+      blockingUnavailable: blockingUnavailable ?? this.blockingUnavailable,
       blockingCursor: identical(blockingCursor, _profileContextNoValue)
           ? this.blockingCursor
           : blockingCursor as String?,
@@ -114,12 +118,13 @@ class ProfileContextState extends Equatable {
     blockingCount,
     listsOnCount,
     blockedByStatus,
-    blockedByProfiles,
+    blockedByEntries,
     blockedByCursor,
     blockedByHasMore,
     blockedByError,
     blockingStatus,
     blockingProfiles,
+    blockingUnavailable,
     blockingCursor,
     blockingHasMore,
     blockingError,

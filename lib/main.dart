@@ -66,15 +66,7 @@ Future<void> main() async {
 
   log.i('AppLogger: App started');
 
-  runApp(
-    LazuriteApp(
-      authBloc: authBloc,
-      database: database,
-      settingsCubit: settingsCubit,
-      connectivityCubit: connectivityCubit,
-      accountSwitcherCubit: accountSwitcherCubit,
-    ),
-  );
+  runApp(LazuriteApp.from(authBloc, database, settingsCubit, connectivityCubit, accountSwitcherCubit));
 }
 
 class LazuriteApp extends StatefulWidget {
@@ -92,6 +84,21 @@ class LazuriteApp extends StatefulWidget {
   final SettingsCubit settingsCubit;
   final ConnectivityCubit connectivityCubit;
   final AccountSwitcherCubit accountSwitcherCubit;
+
+  /// factory constructor with positional params
+  static LazuriteApp from(
+    AuthBloc authBloc,
+    AppDatabase database,
+    SettingsCubit settingsCubit,
+    ConnectivityCubit connectivityCubit,
+    AccountSwitcherCubit accountSwitcherCubit,
+  ) => LazuriteApp(
+    authBloc: authBloc,
+    database: database,
+    settingsCubit: settingsCubit,
+    connectivityCubit: connectivityCubit,
+    accountSwitcherCubit: accountSwitcherCubit,
+  );
 
   @override
   State<LazuriteApp> createState() => _LazuriteAppState();

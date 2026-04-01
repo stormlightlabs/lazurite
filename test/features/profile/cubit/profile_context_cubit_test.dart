@@ -63,14 +63,31 @@ void main() {
       );
 
       blocTest<ProfileContextCubit, ProfileContextState>(
-        'emits nothing when counts fail (best-effort)',
-        build: buildCubit,
+        'loads blockingCount too for own profile',
+        build: () => buildCubit(isOwnProfile: true),
         setUp: () {
-          when(() => mockRepository.getBlockedByCount(any())).thenThrow(Exception('network error'));
-          when(() => mockRepository.getListsOnCount(any())).thenThrow(Exception('network error'));
+          when(() => mockRepository.getBlockedByCount(_did)).thenAnswer((_) async => 42);
+          when(() => mockRepository.getListsOnCount(_did)).thenAnswer((_) async => 7);
+          when(() => mockRepository.getBlockingCount(_did)).thenAnswer((_) async => 3);
         },
         act: (cubit) => cubit.init(),
-        expect: () => [],
+        expect: () => [
+          predicate<ProfileContextState>((s) => s.blockedByCount == 42 && s.listsOnCount == 7 && s.blockingCount == 3),
+        ],
+      );
+
+      blocTest<ProfileContextCubit, ProfileContextState>(
+        'preserves successful counts when one loader fails',
+        build: () => buildCubit(isOwnProfile: true),
+        setUp: () {
+          when(() => mockRepository.getBlockedByCount(any())).thenThrow(Exception('network error'));
+          when(() => mockRepository.getListsOnCount(_did)).thenAnswer((_) async => 7);
+          when(() => mockRepository.getBlockingCount(_did)).thenAnswer((_) async => 3);
+        },
+        act: (cubit) => cubit.init(),
+        expect: () => [
+          predicate<ProfileContextState>((s) => s.blockedByCount == 0 && s.listsOnCount == 7 && s.blockingCount == 3),
+        ],
       );
     });
 
@@ -82,9 +99,16 @@ void main() {
         'emits loading then loaded with profiles on success',
         build: buildCubit,
         setUp: () {
-          when(
-            () => mockRepository.getBlockedByProfiles(_did, cursor: null),
-          ).thenAnswer((_) async => (profiles: [profile1, profile2], cursor: 'next', total: 10));
+          when(() => mockRepository.getBlockedByProfiles(_did, cursor: null)).thenAnswer(
+            (_) async => (
+              entries: [
+                BlockedByEntry.profile(profile: profile1),
+                BlockedByEntry.profile(profile: profile2),
+              ],
+              cursor: 'next',
+              total: 10,
+            ),
+          );
         },
         act: (cubit) => cubit.loadBlockedBy(),
         expect: () => [
@@ -92,7 +116,7 @@ void main() {
           predicate<ProfileContextState>(
             (s) =>
                 s.blockedByStatus == ProfileContextTabStatus.loaded &&
-                s.blockedByProfiles.length == 2 &&
+                s.blockedByEntries.length == 2 &&
                 s.blockedByCount == 10 &&
                 s.blockedByCursor == 'next' &&
                 s.blockedByHasMore,
@@ -105,14 +129,14 @@ void main() {
         build: buildCubit,
         seed: () => const ProfileContextState.initial(did: _did, isOwnProfile: false).copyWith(
           blockedByStatus: ProfileContextTabStatus.loaded,
-          blockedByProfiles: [_profile('did:plc:first')],
+          blockedByEntries: [BlockedByEntry.profile(profile: _profile('did:plc:first'))],
           blockedByCursor: 'cursor-1',
           blockedByHasMore: true,
         ),
         setUp: () {
           when(
             () => mockRepository.getBlockedByProfiles(_did, cursor: 'cursor-1'),
-          ).thenAnswer((_) async => (profiles: [profile1], cursor: null, total: 2));
+          ).thenAnswer((_) async => (entries: [BlockedByEntry.profile(profile: profile1)], cursor: null, total: 2));
         },
         act: (cubit) => cubit.loadBlockedBy(cursor: 'cursor-1'),
         expect: () => [
@@ -120,9 +144,39 @@ void main() {
           predicate<ProfileContextState>(
             (s) =>
                 s.blockedByStatus == ProfileContextTabStatus.loaded &&
-                s.blockedByProfiles.length == 2 &&
+                s.blockedByEntries.length == 2 &&
                 s.blockedByCursor == null &&
                 !s.blockedByHasMore,
+          ),
+        ],
+      );
+
+      blocTest<ProfileContextCubit, ProfileContextState>(
+        'tracks unavailable blocked-by accounts without breaking loaded state',
+        build: buildCubit,
+        setUp: () {
+          when(() => mockRepository.getBlockedByProfiles(_did, cursor: null)).thenAnswer(
+            (_) async => (
+              entries: [
+                BlockedByEntry.profile(
+                  profile: const ProfileView(did: 'did:plc:blocker1', handle: 'did:plc:blocker1.bsky.social'),
+                ),
+                const BlockedByEntry.unavailable(did: 'did:plc:suspended', unavailableReason: 'Suspended account'),
+              ],
+              cursor: null,
+              total: 2,
+            ),
+          );
+        },
+        act: (cubit) => cubit.loadBlockedBy(),
+        expect: () => [
+          predicate<ProfileContextState>((s) => s.blockedByStatus == ProfileContextTabStatus.loading),
+          predicate<ProfileContextState>(
+            (s) =>
+                s.blockedByStatus == ProfileContextTabStatus.loaded &&
+                s.blockedByEntries.length == 2 &&
+                s.blockedByEntries.last.did == 'did:plc:suspended' &&
+                s.blockedByEntries.last.unavailableReason == 'Suspended account',
           ),
         ],
       );
@@ -142,7 +196,7 @@ void main() {
             (s) =>
                 s.blockedByStatus == ProfileContextTabStatus.error &&
                 s.blockedByError != null &&
-                s.blockedByProfiles.isEmpty,
+                s.blockedByEntries.isEmpty,
           ),
         ],
       );
@@ -166,9 +220,9 @@ void main() {
         'emits loading then loaded with profiles on success for own profile',
         build: () => buildCubit(isOwnProfile: true),
         setUp: () {
-          when(
-            () => mockRepository.getBlockingProfiles(_did, cursor: null),
-          ).thenAnswer((_) async => (profiles: [profile1], cursor: 'next', total: 1));
+          when(() => mockRepository.getBlockingProfiles(_did, cursor: null)).thenAnswer(
+            (_) async => (profiles: [profile1], unavailable: <UnavailableProfileRef>[], cursor: 'next', total: 1),
+          );
         },
         act: (cubit) => cubit.loadBlocking(),
         expect: () => [
@@ -202,14 +256,30 @@ void main() {
           blockingCount: 1,
         ),
         setUp: () {
-          when(
-            () => mockRepository.getBlockingProfiles(_did, cursor: 'cursor-1'),
-          ).thenAnswer((_) async => (profiles: [profile1], cursor: null, total: 1));
+          when(() => mockRepository.getBlockingProfiles(_did, cursor: 'cursor-1')).thenAnswer(
+            (_) async => (profiles: [profile1], unavailable: <UnavailableProfileRef>[], cursor: null, total: 1),
+          );
         },
         act: (cubit) => cubit.loadBlocking(cursor: 'cursor-1'),
         expect: () => [
           predicate<ProfileContextState>((s) => s.blockingStatus == ProfileContextTabStatus.loading),
           predicate<ProfileContextState>((s) => s.blockingProfiles.length == 2 && s.blockingCount == 2),
+        ],
+      );
+
+      blocTest<ProfileContextCubit, ProfileContextState>(
+        'does not shrink blockingCount when a known total already exists',
+        build: () => buildCubit(isOwnProfile: true),
+        seed: () => const ProfileContextState.initial(did: _did, isOwnProfile: true).copyWith(blockingCount: 5),
+        setUp: () {
+          when(() => mockRepository.getBlockingProfiles(_did, cursor: null)).thenAnswer(
+            (_) async => (profiles: [profile1], unavailable: <UnavailableProfileRef>[], cursor: 'next', total: 1),
+          );
+        },
+        act: (cubit) => cubit.loadBlocking(),
+        expect: () => [
+          predicate<ProfileContextState>((s) => s.blockingStatus == ProfileContextTabStatus.loading),
+          predicate<ProfileContextState>((s) => s.blockingProfiles.length == 1 && s.blockingCount == 5),
         ],
       );
 

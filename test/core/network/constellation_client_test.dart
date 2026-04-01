@@ -39,6 +39,24 @@ void main() {
         expect(capturedUri?.host, 'my.instance.example');
       });
 
+      test('trims trailing slashes from custom base URL', () async {
+        Uri? capturedUri;
+        final client = ConstellationClient(
+          baseUrl: 'https://my.instance.example///',
+          httpClient: MockClient((request) async {
+            capturedUri = request.url;
+            return http.Response(jsonEncode({'total': 0}), 200);
+          }),
+        );
+
+        await client.getBacklinksCount('did:plc:test', 'app.bsky.graph.block:subject');
+
+        expect(
+          capturedUri.toString(),
+          'https://my.instance.example/xrpc/blue.microcosm.links.getBacklinksCount?subject=did%3Aplc%3Atest&source=app.bsky.graph.block%3Asubject',
+        );
+      });
+
       test('builds XRPC path correctly', () async {
         Uri? capturedUri;
         final client = ConstellationClient(
@@ -142,6 +160,15 @@ void main() {
         expect(result.cursor, isNull);
       });
 
+      test('treats null dids as empty list', () async {
+        final responseBody = jsonEncode({'total': 1, 'dids': null});
+        final client = ConstellationClient(httpClient: MockClient((_) async => http.Response(responseBody, 200)));
+
+        final result = await client.getDistinct('did:plc:abc', 'source');
+
+        expect(result.dids, isEmpty);
+      });
+
       test('passes limit and cursor as query parameters', () async {
         Uri? capturedUri;
         final client = ConstellationClient(
@@ -180,6 +207,27 @@ void main() {
     });
 
     group('getBacklinks', () {
+      test('prefers records payload when returned by Microcosm', () async {
+        final responseBody = jsonEncode({
+          'total': 2,
+          'records': [
+            {'did': 'did:plc:aaa', 'collection': 'app.bsky.graph.block', 'rkey': 'rkey1'},
+            {'did': 'did:plc:bbb', 'collection': 'app.bsky.graph.block', 'rkey': 'rkey2'},
+          ],
+          'linking_records': [
+            {'did': 'did:plc:ignored', 'collection': 'app.bsky.graph.block', 'rkey': 'ignored'},
+          ],
+          'cursor': 'cursor-xyz',
+        });
+        final client = ConstellationClient(httpClient: MockClient((_) async => http.Response(responseBody, 200)));
+
+        final result = await client.getBacklinks('did:plc:abc', 'app.bsky.graph.block:subject');
+
+        expect(result.total, 2);
+        expect(result.records.map((record) => record.did).toList(), ['did:plc:aaa', 'did:plc:bbb']);
+        expect(result.cursor, 'cursor-xyz');
+      });
+
       test('returns total, records and cursor from response', () async {
         final responseBody = jsonEncode({
           'total': 2,
@@ -209,6 +257,15 @@ void main() {
 
         expect(result.records, isEmpty);
         expect(result.cursor, isNull);
+      });
+
+      test('treats null linking_records as empty list', () async {
+        final responseBody = jsonEncode({'total': 0, 'linking_records': null});
+        final client = ConstellationClient(httpClient: MockClient((_) async => http.Response(responseBody, 200)));
+
+        final result = await client.getBacklinks('did:plc:abc', 'source');
+
+        expect(result.records, isEmpty);
       });
 
       test('passes limit and cursor as query parameters', () async {
@@ -276,6 +333,15 @@ void main() {
         final result = await client.getManyToMany('did:plc:abc', 'source', 'list');
 
         expect(result.cursor, isNull);
+      });
+
+      test('treats null items as empty list', () async {
+        final responseBody = jsonEncode({'items': null});
+        final client = ConstellationClient(httpClient: MockClient((_) async => http.Response(responseBody, 200)));
+
+        final result = await client.getManyToMany('did:plc:abc', 'source', 'list');
+
+        expect(result.items, isEmpty);
       });
 
       test('throws ConstellationException on error response', () async {

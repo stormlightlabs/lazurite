@@ -21,12 +21,20 @@ const _handle = 'alice.bsky.social';
 ProfileView _profile(String did) =>
     ProfileView(did: did, handle: '$did.bsky.social', displayName: 'User $did', indexedAt: DateTime.utc(2026));
 
-bsky_graph.ListView _list(String rkey) => bsky_graph.ListView(
+bsky_graph.ListView _list(
+  String rkey, {
+  bsky_graph.KnownListPurpose purpose = bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist,
+  String? description,
+  int? memberCount,
+  String creatorHandle = 'owner.bsky.social',
+}) => bsky_graph.ListView(
   uri: AtUri.parse('at://did:plc:owner/app.bsky.graph.list/$rkey'),
   cid: 'cid-$rkey',
-  creator: const ProfileView(did: 'did:plc:owner', handle: 'owner.bsky.social'),
+  creator: ProfileView(did: 'did:plc:owner', handle: creatorHandle),
   name: 'List $rkey',
-  purpose: const bsky_graph.ListPurpose.knownValue(data: bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist),
+  purpose: bsky_graph.ListPurpose.knownValue(data: purpose),
+  description: description,
+  listItemCount: memberCount,
   indexedAt: DateTime.utc(2026),
 );
 
@@ -51,11 +59,7 @@ void main() {
     when(() => cubit.refreshListsOn()).thenAnswer((_) async {});
   });
 
-  Widget buildSubject({
-    required ProfileContextState state,
-    List<NavigatorObserver> observers = const [],
-    String? Function(BuildContext, GoRouterState)? redirect,
-  }) {
+  Widget buildSubject({required ProfileContextState state, List<NavigatorObserver> observers = const []}) {
     when(() => cubit.state).thenReturn(state);
     whenListen(cubit, const Stream<ProfileContextState>.empty(), initialState: state);
 
@@ -71,7 +75,7 @@ void main() {
           routes: [
             GoRoute(
               path: 'profile/view',
-              builder: (context, state) => const Scaffold(body: Text('Profile View')),
+              builder: (context, state) => Scaffold(body: Text('Profile View ${state.uri.queryParameters['actor']}')),
             ),
             GoRoute(
               path: 'list',
@@ -137,7 +141,7 @@ void main() {
         final profiles = [_profile('did:plc:user1'), _profile('did:plc:user2')];
         final state = initialState().copyWith(
           blockedByStatus: ProfileContextTabStatus.loaded,
-          blockedByProfiles: profiles,
+          blockedByEntries: profiles.map((profile) => BlockedByEntry.profile(profile: profile)).toList(),
         );
         await tester.pumpWidget(buildSubject(state: state));
 
@@ -149,18 +153,30 @@ void main() {
         final profiles = [_profile('did:plc:user1')];
         final state = initialState().copyWith(
           blockedByStatus: ProfileContextTabStatus.loaded,
-          blockedByProfiles: profiles,
+          blockedByEntries: profiles.map((profile) => BlockedByEntry.profile(profile: profile)).toList(),
         );
 
-        String? pushedRoute;
-        final observer = _TestNavigatorObserver(onPush: (route, _) => pushedRoute = route.settings.name);
-
-        await tester.pumpWidget(buildSubject(state: state, observers: [observer]));
+        await tester.pumpWidget(buildSubject(state: state));
         await tester.tap(find.text('User did:plc:user1'));
         await tester.pumpAndSettle();
 
-        expect(pushedRoute, '/profile/view');
-        expect(find.text('Profile View'), findsOneWidget);
+        expect(find.text('Profile View did:plc:user1.bsky.social'), findsOneWidget);
+      });
+
+      testWidgets('loads next blocked-by page when scrolled near the end', (tester) async {
+        final profiles = List.generate(20, (index) => _profile('did:plc:user$index'));
+        final state = initialState().copyWith(
+          blockedByStatus: ProfileContextTabStatus.loaded,
+          blockedByEntries: profiles.map((profile) => BlockedByEntry.profile(profile: profile)).toList(),
+          blockedByCursor: 'next-page',
+          blockedByHasMore: true,
+        );
+        await tester.pumpWidget(buildSubject(state: state));
+
+        await tester.drag(find.byType(CustomScrollView).first, const Offset(0, -4000));
+        await tester.pump();
+
+        verify(() => cubit.loadBlockedBy(cursor: 'next-page')).called(greaterThanOrEqualTo(1));
       });
 
       testWidgets('shows contextualizing note', (tester) async {
@@ -170,10 +186,56 @@ void main() {
       });
 
       testWidgets('shows empty state when loaded with no profiles', (tester) async {
-        final state = initialState().copyWith(blockedByStatus: ProfileContextTabStatus.loaded, blockedByProfiles: []);
+        final state = initialState().copyWith(blockedByStatus: ProfileContextTabStatus.loaded, blockedByEntries: []);
         await tester.pumpWidget(buildSubject(state: state));
 
         expect(find.text('No accounts have blocked this user'), findsOneWidget);
+      });
+
+      testWidgets('shows unresolved-details message when count is non-zero but no profiles resolved', (tester) async {
+        final state = initialState().copyWith(
+          blockedByStatus: ProfileContextTabStatus.loaded,
+          blockedByCount: 23,
+          blockedByEntries: [],
+        );
+        await tester.pumpWidget(buildSubject(state: state));
+
+        expect(find.textContaining('public Bluesky profile details could not be loaded'), findsOneWidget);
+      });
+
+      testWidgets('shows unavailable blocked-by rows inline with resolved profiles', (tester) async {
+        final state = initialState().copyWith(
+          blockedByStatus: ProfileContextTabStatus.loaded,
+          blockedByCount: 23,
+          blockedByEntries: [
+            BlockedByEntry.profile(profile: _profile('did:plc:user1')),
+            const BlockedByEntry.unavailable(did: 'did:plc:suspended', unavailableReason: 'Suspended account'),
+          ],
+        );
+        await tester.pumpWidget(buildSubject(state: state));
+
+        expect(find.byKey(const ValueKey('blocked_by_did:plc:user1')), findsOneWidget);
+        expect(find.byKey(const ValueKey('blocked_by_unavailable_did:plc:suspended')), findsOneWidget);
+        expect(find.text('did:plc:suspended'), findsOneWidget);
+        expect(find.text('Suspended account'), findsOneWidget);
+        expect(find.text('User did:plc:user1'), findsOneWidget);
+        expect(find.text('23 accounts'), findsOneWidget);
+      });
+
+      testWidgets('unavailable blocked-by rows are non-navigable', (tester) async {
+        final state = initialState().copyWith(
+          blockedByStatus: ProfileContextTabStatus.loaded,
+          blockedByCount: 1,
+          blockedByEntries: const [
+            BlockedByEntry.unavailable(did: 'did:plc:suspended', unavailableReason: 'Suspended account'),
+          ],
+        );
+        await tester.pumpWidget(buildSubject(state: state));
+
+        await tester.tap(find.text('did:plc:suspended'));
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('Profile View'), findsNothing);
       });
 
       testWidgets('shows error and retry button on error state', (tester) async {
@@ -219,6 +281,35 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('User did:plc:blocked1'), findsOneWidget);
+      });
+
+      testWidgets('shows count header for own profile', (tester) async {
+        final state = const ProfileContextState.initial(
+          did: _did,
+          isOwnProfile: true,
+        ).copyWith(blockingCount: 4, blockingStatus: ProfileContextTabStatus.loaded);
+        await tester.pumpWidget(buildSubject(state: state));
+
+        await tester.tap(find.text('Blocking (4)'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('4 accounts'), findsOneWidget);
+      });
+
+      testWidgets('shows unavailable-account card on blocking tab', (tester) async {
+        final state = const ProfileContextState.initial(did: _did, isOwnProfile: true).copyWith(
+          blockingStatus: ProfileContextTabStatus.loaded,
+          blockingUnavailable: const [
+            UnavailableProfileRef(did: 'did:plc:takedown', reason: 'Suspended or taken-down account'),
+          ],
+        );
+        await tester.pumpWidget(buildSubject(state: state));
+
+        await tester.tap(find.text('Blocking'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Unavailable accounts (1)'), findsOneWidget);
+        expect(find.text('did:plc:takedown'), findsOneWidget);
       });
 
       testWidgets('shows empty state for own profile when loaded with no profiles', (tester) async {
@@ -276,7 +367,7 @@ void main() {
         await tester.tap(find.text('User did:plc:blocked1'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Profile View'), findsOneWidget);
+        expect(find.text('Profile View did:plc:blocked1.bsky.social'), findsOneWidget);
       });
     });
 
@@ -291,6 +382,45 @@ void main() {
 
         expect(find.text('List rkey1'), findsOneWidget);
         expect(find.text('List rkey2'), findsOneWidget);
+      });
+
+      testWidgets('groups lists by purpose and shows owner, purpose, and description', (tester) async {
+        final lists = [
+          _list(
+            'curate',
+            purpose: bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist,
+            description: 'Curated follows',
+            memberCount: 12,
+            creatorHandle: 'curator.bsky.social',
+          ),
+          _list(
+            'mod',
+            purpose: bsky_graph.KnownListPurpose.appBskyGraphDefsModlist,
+            description: 'Moderation context',
+            memberCount: 3,
+            creatorHandle: 'moderator.bsky.social',
+          ),
+          _list(
+            'ref',
+            purpose: bsky_graph.KnownListPurpose.appBskyGraphDefsReferencelist,
+            memberCount: 8,
+            creatorHandle: 'reference.bsky.social',
+          ),
+        ];
+        final state = initialState().copyWith(listsOnStatus: ProfileContextTabStatus.loaded, listsOn: lists);
+        await tester.pumpWidget(buildSubject(state: state));
+
+        await tester.tap(find.text('Lists'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Curation Lists'), findsOneWidget);
+        expect(find.text('Moderation Lists'), findsOneWidget);
+        expect(find.text('Reference Lists'), findsOneWidget);
+        expect(find.text('@curator.bsky.social'), findsOneWidget);
+        expect(find.text('Curated follows'), findsOneWidget);
+        expect(find.text('CURATE'), findsOneWidget);
+        expect(find.text('MOD'), findsOneWidget);
+        expect(find.text('REFERENCE'), findsOneWidget);
       });
 
       testWidgets('list card navigates to /list on tap', (tester) async {
@@ -343,15 +473,4 @@ void main() {
       });
     });
   });
-}
-
-class _TestNavigatorObserver extends NavigatorObserver {
-  _TestNavigatorObserver({this.onPush});
-
-  final void Function(Route<dynamic>, Route<dynamic>?)? onPush;
-
-  @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    onPush?.call(route, previousRoute);
-  }
 }
