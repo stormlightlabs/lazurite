@@ -87,6 +87,9 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => context.push('/saved'),
           ),
           const SizedBox(height: 24),
+          _buildSectionHeader(context, 'Advanced'),
+          _buildAdvancedSettings(context),
+          const SizedBox(height: 24),
           if (!kReleaseMode) ...[
             _buildSectionHeader(context, 'Developer'),
             _buildDeveloperSettings(context),
@@ -252,6 +255,26 @@ class SettingsScreen extends StatelessWidget {
                 onChanged: settingsCubit.setThreadAutoCollapseDepth,
               ),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAdvancedSettings(BuildContext context) {
+    return BlocBuilder<SettingsCubit, SettingsState>(
+      builder: (context, state) {
+        return Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: Theme.of(context).dividerColor),
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            color: Theme.of(context).cardColor,
+          ),
+          child: _ConstellationUrlTile(
+            currentUrl: state.constellationUrl,
+            onChanged: (url) => context.read<SettingsCubit>().setConstellationUrl(url),
           ),
         );
       },
@@ -509,6 +532,47 @@ class _ConnectionDetailRow extends StatelessWidget {
           Text(value, style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'JetBrains Mono')),
         ],
       ),
+    );
+  }
+}
+
+class _ConstellationUrlTile extends StatelessWidget {
+  const _ConstellationUrlTile({required this.currentUrl, required this.onChanged});
+
+  final String currentUrl;
+  final ValueChanged<String> onChanged;
+
+  Future<void> _showEditDialog(BuildContext context) async {
+    final controller = TextEditingController(text: currentUrl);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Constellation URL'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.url,
+          autocorrect: false,
+          decoration: const InputDecoration(hintText: 'https://constellation.microcosm.blue'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(context).pop(controller.text.trim()), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (result != null && result.isNotEmpty) {
+      onChanged(result);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.hub_outlined),
+      title: const Text('Constellation URL'),
+      subtitle: Text(currentUrl, maxLines: 1, overflow: TextOverflow.ellipsis),
+      trailing: const Icon(Icons.edit_outlined),
+      onTap: () => _showEditDialog(context),
     );
   }
 }

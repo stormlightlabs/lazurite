@@ -13,6 +13,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     FeedLayout? initialFeedLayout,
     bool? initialSimulateOffline,
     int? initialThreadAutoCollapseDepth,
+    String? initialConstellationUrl,
   }) : super(
          SettingsState(
            themePalette: initialPalette ?? AppThemePalette.oxocarbon,
@@ -21,6 +22,7 @@ class SettingsCubit extends Cubit<SettingsState> {
            feedLayout: initialFeedLayout ?? FeedLayout.card,
            simulateOffline: initialSimulateOffline ?? false,
            threadAutoCollapseDepth: initialThreadAutoCollapseDepth,
+           constellationUrl: initialConstellationUrl ?? 'https://constellation.microcosm.blue',
          ),
        );
 
@@ -33,6 +35,8 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _legacyKeyFeedArchitecture = 'feed_architecture';
   static const String _keySimulateOffline = 'simulate_offline';
   static const String _keyThreadAutoCollapseDepth = 'thread_auto_collapse_depth';
+  static const String _keyConstellationUrl = 'constellation_url';
+  static const String _defaultConstellationUrl = 'https://constellation.microcosm.blue';
 
   Future<void> loadSettings() async {
     final paletteStr = await database.getSetting(_keyThemePalette);
@@ -42,6 +46,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         await database.getSetting(_keyFeedLayout) ?? await database.getSetting(_legacyKeyFeedArchitecture);
     final simulateOfflineStr = await database.getSetting(_keySimulateOffline);
     final threadAutoCollapseDepthStr = await database.getSetting(_keyThreadAutoCollapseDepth);
+    final constellationUrlStr = await database.getSetting(_keyConstellationUrl);
 
     emit(
       state.copyWith(
@@ -51,6 +56,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         feedLayout: FeedLayout.fromString(feedLayoutStr),
         simulateOffline: simulateOfflineStr == 'true',
         threadAutoCollapseDepth: int.tryParse(threadAutoCollapseDepthStr ?? ''),
+        constellationUrl: constellationUrlStr ?? _defaultConstellationUrl,
       ),
     );
   }
@@ -94,5 +100,10 @@ class SettingsCubit extends Cubit<SettingsState> {
       await database.setSetting(_keyThreadAutoCollapseDepth, depth.toString());
     }
     emit(state.copyWith(threadAutoCollapseDepth: depth));
+  }
+
+  Future<void> setConstellationUrl(String url) async {
+    await database.setSetting(_keyConstellationUrl, url);
+    emit(state.copyWith(constellationUrl: url));
   }
 }

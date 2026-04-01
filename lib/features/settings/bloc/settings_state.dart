@@ -12,6 +12,7 @@ class SettingsState extends Equatable {
     this.feedLayout = FeedLayout.card,
     this.simulateOffline = false,
     this.threadAutoCollapseDepth,
+    this.constellationUrl = 'https://constellation.microcosm.blue',
   });
 
   final AppThemePalette themePalette;
@@ -20,6 +21,7 @@ class SettingsState extends Equatable {
   final FeedLayout feedLayout;
   final bool simulateOffline;
   final int? threadAutoCollapseDepth;
+  final String constellationUrl;
 
   SettingsState copyWith({
     AppThemePalette? themePalette,
@@ -28,6 +30,7 @@ class SettingsState extends Equatable {
     FeedLayout? feedLayout,
     bool? simulateOffline,
     Object? threadAutoCollapseDepth = _threadAutoCollapseDepthUnset,
+    String? constellationUrl,
   }) {
     return SettingsState(
       themePalette: themePalette ?? this.themePalette,
@@ -38,6 +41,7 @@ class SettingsState extends Equatable {
       threadAutoCollapseDepth: identical(threadAutoCollapseDepth, _threadAutoCollapseDepthUnset)
           ? this.threadAutoCollapseDepth
           : threadAutoCollapseDepth as int?,
+      constellationUrl: constellationUrl ?? this.constellationUrl,
     );
   }
 
@@ -49,5 +53,6 @@ class SettingsState extends Equatable {
     feedLayout,
     simulateOffline,
     threadAutoCollapseDepth,
+    constellationUrl,
   ];
 }

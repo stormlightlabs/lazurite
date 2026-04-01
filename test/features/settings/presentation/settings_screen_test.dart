@@ -149,6 +149,33 @@ void main() {
     expect(find.text('Email Notifications'), findsNothing);
     expect(find.text('Help & Support'), findsNothing);
   });
+
+  testWidgets('shows Advanced section with Constellation URL tile', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('ADVANCED'), 300);
+    await tester.pumpAndSettle();
+
+    expect(find.text('ADVANCED'), findsOneWidget);
+    expect(find.text('Constellation URL'), findsOneWidget);
+    expect(find.text('https://constellation.microcosm.blue'), findsOneWidget);
+  });
+
+  testWidgets('Constellation URL tile opens edit dialog on tap', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Constellation URL'), 300);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Constellation URL'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Constellation URL'), findsWidgets);
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(find.text('Save'), findsOneWidget);
+  });
 }
 
 String _buildJwt({required String aud, required String sub, required String clientId, required String iss}) {

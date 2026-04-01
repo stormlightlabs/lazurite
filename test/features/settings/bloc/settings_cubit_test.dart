@@ -219,5 +219,53 @@ void main() {
             .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', 6),
       ],
     );
+
+    test('initial state has default constellation URL', () {
+      final cubit = SettingsCubit(database: database);
+      expect(cubit.state.constellationUrl, 'https://constellation.microcosm.blue');
+    });
+
+    test('accepts initial constellation URL via constructor', () {
+      final cubit = SettingsCubit(database: database, initialConstellationUrl: 'https://my.instance.example');
+      expect(cubit.state.constellationUrl, 'https://my.instance.example');
+    });
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setConstellationUrl updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setConstellationUrl('https://custom.example.com'),
+      expect: () => [
+        isA<SettingsState>().having((s) => s.constellationUrl, 'constellationUrl', 'https://custom.example.com'),
+      ],
+      verify: (cubit) async {
+        final value = await database.getSetting('constellation_url');
+        expect(value, 'https://custom.example.com');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'loadSettings loads persisted constellation URL',
+      build: () => SettingsCubit(database: database),
+      setUp: () async {
+        await database.setSetting('constellation_url', 'https://self-hosted.example');
+      },
+      act: (cubit) => cubit.loadSettings(),
+      expect: () => [
+        isA<SettingsState>().having((s) => s.constellationUrl, 'constellationUrl', 'https://self-hosted.example'),
+      ],
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'loadSettings uses default constellation URL when not persisted',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.loadSettings(),
+      expect: () => [
+        isA<SettingsState>().having(
+          (s) => s.constellationUrl,
+          'constellationUrl',
+          'https://constellation.microcosm.blue',
+        ),
+      ],
+    );
   });
 }
