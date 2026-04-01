@@ -8,10 +8,6 @@ const Duration _kTimeout = Duration(seconds: 10);
 class ConstellationLinkRecord {
   const ConstellationLinkRecord({required this.did, required this.collection, required this.rkey});
 
-  final String did;
-  final String collection;
-  final String rkey;
-
   factory ConstellationLinkRecord.fromJson(Map<String, dynamic> json) {
     return ConstellationLinkRecord(
       did: json['did'] as String,
@@ -19,13 +15,14 @@ class ConstellationLinkRecord {
       rkey: json['rkey'] as String,
     );
   }
+
+  final String did;
+  final String collection;
+  final String rkey;
 }
 
 class ManyToManyItem {
   const ManyToManyItem({required this.linkRecord, required this.otherSubject});
-
-  final ConstellationLinkRecord linkRecord;
-  final String otherSubject;
 
   factory ManyToManyItem.fromJson(Map<String, dynamic> json) {
     return ManyToManyItem(
@@ -33,6 +30,9 @@ class ManyToManyItem {
       otherSubject: json['otherSubject'] as String,
     );
   }
+
+  final ConstellationLinkRecord linkRecord;
+  final String otherSubject;
 }
 
 class ConstellationException implements Exception {

@@ -89,11 +89,11 @@ updated: 2026-03-31
 
 ### Core - Profile Context Repository
 
-- [ ] `ProfileContextRepository` - depends on `ConstellationClient` + `Bluesky`
-- [ ] `getBlockedByCount(did)` - calls `getBacklinksCount(did, 'app.bsky.graph.block:subject')`
-- [ ] `getBlockedByProfiles(did, {cursor})` - calls `getDistinct`, hydrates DIDs via `bluesky.actor.getProfiles` (batched 25), returns `({List<ProfileView> profiles, String? cursor, int total})`
-- [ ] `getBlockingProfiles(did, {cursor})` - calls `com.atproto.repo.listRecords(repo: did, collection: 'app.bsky.graph.block')`, extracts subject DIDs, hydrates via `getProfiles`, returns same shape
-- [ ] `getListsOn(did, {cursor})` - calls `getManyToMany(did, 'app.bsky.graph.listitem:subject', 'list')`, derives list AT-URIs from `otherSubject`, hydrates via `bluesky.graph.getList`, returns `({List<ListView> lists, String? cursor, int total})`
+- [x] `ProfileContextRepository` - depends on `ConstellationClient` + `Bluesky`
+- [x] `getBlockedByCount(did)` - calls `getBacklinksCount(did, 'app.bsky.graph.block:subject')`
+- [x] `getBlockedByProfiles(did, {cursor})` - calls `getDistinct`, hydrates DIDs via `bluesky.actor.getProfiles` (batched 25), returns `({List<ProfileView> profiles, String? cursor, int total})`
+- [x] `getBlockingProfiles(did, {cursor})` - calls `com.atproto.repo.listRecords(repo: did, collection: 'app.bsky.graph.block')`, extracts subject DIDs, hydrates via `getProfiles`, returns same shape
+- [x] `getListsOn(did, {cursor})` - calls `getManyToMany(did, 'app.bsky.graph.listitem:subject', 'list')`, derives list AT-URIs from `otherSubject`, hydrates via `bluesky.graph.getList`, returns `({List<ListView> lists, String? cursor, int total})`
 
 ### Cubit
 
