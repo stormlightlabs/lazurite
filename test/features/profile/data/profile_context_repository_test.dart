@@ -9,10 +9,6 @@ import 'package:http/testing.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/features/profile/data/profile_context_repository.dart';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 ProfileView _buildProfileView(String did, String handle) {
   return ProfileView(did: did, handle: handle, indexedAt: DateTime.utc(2026, 1, 1));
 }

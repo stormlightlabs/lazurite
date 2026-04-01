@@ -16,6 +16,11 @@ class ProfileContextRepository {
     return _constellation.getBacklinksCount(did, 'app.bsky.graph.block:subject');
   }
 
+  /// Returns the number of lists that [did] is a member of.
+  Future<int> getListsOnCount(String did) async {
+    return _constellation.getBacklinksCount(did, 'app.bsky.graph.listitem:subject');
+  }
+
   /// Returns a page of profiles that have blocked [did], along with the total
   /// count and a cursor for the next page.
   Future<({List<ProfileView> profiles, String? cursor, int total})> getBlockedByProfiles(

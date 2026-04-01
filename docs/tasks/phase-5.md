@@ -97,12 +97,12 @@ updated: 2026-03-31
 
 ### Cubit
 
-- [ ] `ProfileContextCubit` - manages tab state, loads counts on init for all three tabs
-- [ ] `ProfileContextState` - fields: `blockedByCount`, `blockingCount`, `listsOnCount`, per-tab `status` (initial/loading/loaded/error), per-tab item list + cursor
-- [ ] `loadBlockedBy({cursor})` - fetches page of blocked-by profiles, appends to state
-- [ ] `loadBlocking({cursor})` - fetches page of blocking profiles, appends to state
-- [ ] `loadListsOn({cursor})` - fetches page of lists, appends to state
-- [ ] Handle own-profile vs other-profile: blocking tab only available for own profile
+- [x] `ProfileContextCubit` - manages tab state, loads counts on init for all three tabs
+- [x] `ProfileContextState` - fields: `blockedByCount`, `blockingCount`, `listsOnCount`, per-tab `status` (initial/loading/loaded/error), per-tab item list + cursor
+- [x] `loadBlockedBy({cursor})` - fetches page of blocked-by profiles, appends to state
+- [x] `loadBlocking({cursor})` - fetches page of blocking profiles, appends to state
+- [x] `loadListsOn({cursor})` - fetches page of lists, appends to state
+- [x] Handle own-profile vs other-profile: blocking tab only available for own profile
 
 ### UI
 

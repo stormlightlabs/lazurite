@@ -152,6 +152,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             )
                           : const AppShellMenuButton(),
                       actions: [
+                        if (profile != null && isOwnProfile)
+                          IconButton(
+                            key: const Key('profile_more_button'),
+                            icon: const Icon(Icons.more_vert),
+                            onPressed: () => _showOwnProfileMoreOptions(context, profile),
+                          ),
                         IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => context.go('/settings')),
                       ],
                     ),
@@ -468,6 +474,29 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
+  void _showOwnProfileMoreOptions(BuildContext context, ProfileViewDetailed profile) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.hub_outlined),
+              title: const Text('Profile Context'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                context.push(
+                  '/profile-context?did=${Uri.encodeComponent(profile.did)}&handle=${Uri.encodeComponent(profile.handle)}',
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showProfileMoreOptions(BuildContext context, ProfileViewDetailed profile) {
     showModalBottomSheet<void>(
       context: context,
@@ -501,6 +530,16 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               onTap: () {
                 Navigator.pop(sheetContext);
                 _showAddToList(context, profile);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.hub_outlined),
+              title: const Text('Profile Context'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                context.push(
+                  '/profile-context?did=${Uri.encodeComponent(profile.did)}&handle=${Uri.encodeComponent(profile.handle)}',
+                );
               },
             ),
           ],

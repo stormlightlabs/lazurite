@@ -45,6 +45,11 @@ import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dar
 import 'package:lazurite/features/starter_packs/presentation/actor_starter_packs_screen.dart';
 import 'package:lazurite/features/starter_packs/presentation/create_edit_starter_pack_screen.dart';
 import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
+import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
+import 'package:lazurite/features/profile/data/profile_context_repository.dart';
+import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
+import 'package:lazurite/core/network/constellation_client.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 
@@ -180,6 +185,23 @@ class AppRouter {
             },
           ),
         ],
+      ),
+      GoRoute(
+        path: '/profile-context',
+        builder: (context, state) {
+          final did = state.uri.queryParameters['did'] ?? '';
+          final handle = state.uri.queryParameters['handle'] ?? '';
+          final isOwnProfile = did == context.read<String>();
+          final constellationUrl = context.read<SettingsCubit>().state.constellationUrl;
+          final repository = ProfileContextRepository(
+            bluesky: context.read<Bluesky>(),
+            constellationClient: ConstellationClient(baseUrl: constellationUrl),
+          );
+          return BlocProvider(
+            create: (_) => ProfileContextCubit(repository: repository, did: did, isOwnProfile: isOwnProfile),
+            child: ProfileContextScreen(handle: handle),
+          );
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
