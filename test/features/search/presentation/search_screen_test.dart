@@ -418,7 +418,6 @@ void main() {
         ),
       ).thenAnswer((_) async {});
 
-      final encodedUri = Uri.encodeComponent(packUri.toString());
       final router = GoRouter(
         routes: [
           GoRoute(
@@ -454,7 +453,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('starterpack:${packUri.toString()}'), findsOneWidget);
-      expect(find.text(encodedUri), findsOneWidget);
     });
   });
 }

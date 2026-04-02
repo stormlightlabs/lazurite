@@ -28,6 +28,7 @@ import 'package:lazurite/features/profile/cubit/suggested_follows_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/profile_action_buttons.dart';
+import 'package:lazurite/features/profile/presentation/widgets/suggested_follows_list.dart';
 import 'package:lazurite/features/profile/presentation/widgets/suggested_follows_sheet.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
@@ -77,13 +78,16 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     (label: 'Media', filter: FeedFilter.postsWithMedia),
   ];
 
-  static const _tabLabels = ['POSTS', 'REPLIES', 'MEDIA', 'LISTS', 'PACKS'];
+  static const _baseTabLabels = ['POSTS', 'REPLIES', 'MEDIA', 'LISTS', 'PACKS'];
+  static const _suggestedTabLabel = 'SUGGESTED';
 
-  late final TabController _tabController;
+  late TabController _tabController;
+  late bool _showSuggestedTab;
 
   @override
   void initState() {
     super.initState();
+    _showSuggestedTab = _shouldShowSuggestedTab(context.read<ProfileBloc>().state.profile);
     _tabController = TabController(length: _tabLabels.length, vsync: this);
     _loadProfileAndFeed();
   }
@@ -93,6 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     super.didUpdateWidget(oldWidget);
     if (oldWidget.actor != widget.actor) {
       _tabController.index = 0;
+      _setSuggestedTabVisibility(false);
       _loadProfileAndFeed();
     }
   }
@@ -116,7 +121,28 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     return widget.actor ?? authState.tokens?.did;
   }
 
+  List<String> get _tabLabels =>
+      _showSuggestedTab ? [..._baseTabLabels, _suggestedTabLabel] : List<String>.of(_baseTabLabels);
+
   FeedFilter get _currentFilter => _feedTabs[_tabController.index < _feedTabs.length ? _tabController.index : 0].filter;
+
+  bool _shouldShowSuggestedTab(ProfileViewDetailed? profile) {
+    if (profile == null) return false;
+    return profile.did != context.read<AuthBloc>().state.tokens?.did;
+  }
+
+  void _setSuggestedTabVisibility(bool show) {
+    if (_showSuggestedTab == show) {
+      return;
+    }
+
+    final maxIndex = show ? _baseTabLabels.length : _baseTabLabels.length - 1;
+    final nextIndex = _tabController.index.clamp(0, maxIndex);
+    _tabController.dispose();
+    _showSuggestedTab = show;
+    _tabController = TabController(length: _tabLabels.length, vsync: this, initialIndex: nextIndex);
+    setState(() {});
+  }
 
   String _appBarTitle(ProfileViewDetailed? profile) {
     final authState = context.read<AuthBloc>().state;
@@ -131,89 +157,97 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BlocBuilder<ProfileBloc, ProfileState>(
-        builder: (context, profileState) {
-          return BlocBuilder<FeedBloc, FeedState>(
-            builder: (context, feedState) {
-              final profile = profileState.profile;
-              final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
-              final isOwnProfile = profile?.did == currentUserDid;
+    return BlocListener<ProfileBloc, ProfileState>(
+      listenWhen: (previous, current) {
+        return _shouldShowSuggestedTab(previous.profile) != _shouldShowSuggestedTab(current.profile);
+      },
+      listener: (context, state) => _setSuggestedTabVisibility(_shouldShowSuggestedTab(state.profile)),
+      child: Scaffold(
+        body: BlocBuilder<ProfileBloc, ProfileState>(
+          builder: (context, profileState) {
+            return BlocBuilder<FeedBloc, FeedState>(
+              builder: (context, feedState) {
+                final profile = profileState.profile;
+                final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
+                final isOwnProfile = profile?.did == currentUserDid;
+                final tabChildren = <Widget>[
+                  ..._feedTabs.map((t) => _buildFeedList(feedState, t.filter, profile)),
+                  _buildListsTab(context, profile),
+                  _buildStarterPacksTab(context, profile),
+                  if (_showSuggestedTab) _buildSuggestedFollowsTab(profile),
+                ];
 
-              return NestedScrollView(
-                headerSliverBuilder: (context, innerBoxIsScrolled) {
-                  return [
-                    SliverAppBar(
-                      floating: true,
-                      pinned: true,
-                      snap: true,
-                      title: Text(_appBarTitle(profile)),
-                      leading: widget.showBackButton
-                          ? IconButton(
-                              icon: const Icon(Icons.arrow_back),
-                              onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
-                            )
-                          : const AppShellMenuButton(),
-                      actions: [
-                        if (profile != null && isOwnProfile)
+                return NestedScrollView(
+                  headerSliverBuilder: (context, innerBoxIsScrolled) {
+                    return [
+                      SliverAppBar(
+                        floating: true,
+                        pinned: true,
+                        snap: true,
+                        title: Text(_appBarTitle(profile)),
+                        leading: widget.showBackButton
+                            ? IconButton(
+                                icon: const Icon(Icons.arrow_back),
+                                onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
+                              )
+                            : const AppShellMenuButton(),
+                        actions: [
+                          if (profile != null && isOwnProfile)
+                            IconButton(
+                              key: const Key('profile_more_button'),
+                              icon: const Icon(Icons.more_vert),
+                              onPressed: () => _showOwnProfileMoreOptions(context, profile),
+                            ),
                           IconButton(
-                            key: const Key('profile_more_button'),
-                            icon: const Icon(Icons.more_vert),
-                            onPressed: () => _showOwnProfileMoreOptions(context, profile),
+                            icon: const Icon(Icons.settings_outlined),
+                            onPressed: () => context.go('/settings'),
                           ),
-                        IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => context.go('/settings')),
-                      ],
-                    ),
-                    SliverToBoxAdapter(child: _buildCoverSection(context, profile)),
-                    SliverToBoxAdapter(
-                      child: switch (profileState.status) {
-                        ProfileStatus.loading => const Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                        ProfileStatus.error => _buildProfileError(context, profileState.errorMessage),
-                        _ => _buildProfileSummary(context, profile, isOwnProfile),
-                      },
-                    ),
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: SliverTabBarDelegate(
-                        TabBar(
-                          controller: _tabController,
-                          tabs: [for (final label in _tabLabels) Tab(text: label)],
-                          onTap: (index) {
-                            if (index < _feedTabs.length) {
-                              _loadProfileAndFeed(filter: _feedTabs[index].filter);
-                            }
-                          },
-                          isScrollable: true,
-                          tabAlignment: TabAlignment.start,
-                          labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2.2),
-                          unselectedLabelStyle: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 2.2,
+                        ],
+                      ),
+                      SliverToBoxAdapter(child: _buildCoverSection(context, profile)),
+                      SliverToBoxAdapter(
+                        child: switch (profileState.status) {
+                          ProfileStatus.loading => const Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Center(child: CircularProgressIndicator()),
                           ),
-                          indicatorWeight: 2,
+                          ProfileStatus.error => _buildProfileError(context, profileState.errorMessage),
+                          _ => _buildProfileSummary(context, profile, isOwnProfile),
+                        },
+                      ),
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: SliverTabBarDelegate(
+                          TabBar(
+                            controller: _tabController,
+                            tabs: [for (final label in _tabLabels) Tab(text: label)],
+                            onTap: (index) {
+                              if (index < _feedTabs.length) {
+                                _loadProfileAndFeed(filter: _feedTabs[index].filter);
+                              }
+                            },
+                            isScrollable: true,
+                            tabAlignment: TabAlignment.start,
+                            labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2.2),
+                            unselectedLabelStyle: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 2.2,
+                            ),
+                            indicatorWeight: 2,
+                          ),
                         ),
                       ),
-                    ),
-                  ];
-                },
-                body: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    for (var i = 0; i < _feedTabs.length; i++) _buildFeedList(feedState, _feedTabs[i].filter, profile),
-                    _buildListsTab(context, profile),
-                    _buildStarterPacksTab(context, profile),
-                  ],
-                ),
-              );
-            },
-          );
-        },
+                    ];
+                  },
+                  body: TabBarView(controller: _tabController, children: tabChildren),
+                );
+              },
+            );
+          },
+        ),
+        floatingActionButton: _buildComposeFab(context),
       ),
-      floatingActionButton: _buildComposeFab(context),
     );
   }
 
@@ -651,8 +685,23 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (sheetContext) => BlocProvider.value(value: cubit, child: const SuggestedFollowsSheet()),
+      builder: (sheetContext) => BlocProvider.value(
+        value: cubit,
+        child: SuggestedFollowsSheet(actor: profile.did),
+      ),
     ).whenComplete(cubit.close);
+  }
+
+  Widget _buildSuggestedFollowsTab(ProfileViewDetailed? profile) {
+    final actor = profile?.did;
+    if (actor == null) {
+      return const SizedBox.shrink();
+    }
+
+    return _SuggestedFollowsTab(
+      actor: actor,
+      onProfileTap: (target) => context.push('/profile/view?actor=${Uri.encodeComponent(target.did)}'),
+    );
   }
 
   Widget? _buildComposeFab(BuildContext context) {
@@ -731,6 +780,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 child: Center(child: CircularProgressIndicator()),
               );
             }
+            final post = feedState.posts[index];
 
             return Padding(
               padding: EdgeInsets.only(bottom: index == feedState.posts.length - 1 ? 0 : 16),
@@ -739,7 +789,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   key: ValueKey('profile_large_card_$index'),
                   constraints: const BoxConstraints(maxWidth: 720),
                   child: PostCardWithActions(
-                    feedViewPost: feedState.posts[index],
+                    feedViewPost: post,
                     accountDid: accountDid,
                     variant: PostCardVariant.grid,
                     moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
@@ -754,6 +804,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Widget _buildLinearFeed(BuildContext context, FeedState feedState) {
+    final accountDid = _resolvedActor ?? '';
     return RefreshIndicator(
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(
@@ -777,7 +828,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             }
             return PostCardWithActions(
               feedViewPost: feedState.posts[index],
-              accountDid: _resolvedActor ?? '',
+              accountDid: accountDid,
               moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
             );
           },
@@ -842,6 +893,69 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final uri = Uri.tryParse(website.startsWith('http') ? website : 'https://$website');
     if (uri == null) return;
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}
+
+class _SuggestedFollowsTab extends StatefulWidget {
+  const _SuggestedFollowsTab({required this.actor, required this.onProfileTap});
+
+  final String actor;
+  final ValueChanged<ProfileView> onProfileTap;
+
+  @override
+  State<_SuggestedFollowsTab> createState() => _SuggestedFollowsTabState();
+}
+
+class _SuggestedFollowsTabState extends State<_SuggestedFollowsTab> {
+  SuggestedFollowsCubit? _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = _createCubit(widget.actor);
+  }
+
+  @override
+  void didUpdateWidget(covariant _SuggestedFollowsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.actor == widget.actor) {
+      return;
+    }
+
+    _cubit?.close();
+    _cubit = _createCubit(widget.actor);
+  }
+
+  @override
+  void dispose() {
+    _cubit?.close();
+    super.dispose();
+  }
+
+  SuggestedFollowsCubit? _createCubit(String actor) {
+    try {
+      final repository = context.read<ProfileRepository>();
+      return SuggestedFollowsCubit(repository: repository)..load(actor);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = _cubit;
+    if (cubit == null) {
+      return const Center(child: Text('Suggested follows are unavailable right now.'));
+    }
+
+    return BlocProvider.value(
+      value: cubit,
+      child: SuggestedFollowsList(
+        actor: widget.actor,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        onProfileTap: widget.onProfileTap,
+      ),
+    );
   }
 }
 
@@ -916,8 +1030,11 @@ class _ProfileStarterPacksPaneState extends State<_ProfileStarterPacksPane> {
             itemBuilder: (context, index) => StarterPackCard(
               key: ValueKey(state.starterPacks[index].uri),
               pack: state.starterPacks[index],
-              onTap: () =>
-                  context.push('/starter-pack?uri=${Uri.encodeComponent(state.starterPacks[index].uri.toString())}'),
+              onTap: () {
+                final component = Uri.encodeComponent(state.starterPacks[index].uri.toString());
+                final uri = '/starter-pack?uri=$component';
+                context.push(uri);
+              },
             ),
           ),
         );
@@ -965,46 +1082,49 @@ class _ProfileListsPaneState extends State<_ProfileListsPane> {
     return BlocBuilder<MyListsCubit, MyListsState>(
       bloc: _cubit,
       builder: (context, state) {
-        if (state.status == MyListsStatus.loading) {
-          return const Center(child: CircularProgressIndicator());
+        switch (state.status) {
+          case MyListsStatus.loading:
+            return const Center(child: CircularProgressIndicator());
+          case MyListsStatus.error:
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(state.errorMessage ?? 'Failed to load lists'),
+                  const SizedBox(height: 12),
+                  FilledButton(onPressed: () => _cubit.refresh(), child: const Text('Retry')),
+                ],
+              ),
+            );
+          default:
+            final lists = state.lists
+                .where((l) {
+                  final purpose = l.purpose.knownValue;
+                  return purpose == bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist ||
+                      purpose == bsky_graph.KnownListPurpose.appBskyGraphDefsModlist;
+                })
+                .toList(growable: false);
+
+            if (lists.isEmpty) {
+              return const Center(child: Text('No lists yet'));
+            }
+
+            return RefreshIndicator(
+              onRefresh: _cubit.refresh,
+              child: ListView.builder(
+                itemCount: lists.length,
+                itemBuilder: (context, index) => ListRowTile(
+                  key: ValueKey(lists[index].uri),
+                  list: lists[index],
+                  onTap: () {
+                    final component = Uri.encodeComponent(lists[index].uri.toString());
+                    final uri = '/list?uri=$component';
+                    context.push(uri);
+                  },
+                ),
+              ),
+            );
         }
-
-        if (state.status == MyListsStatus.error) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(state.errorMessage ?? 'Failed to load lists'),
-                const SizedBox(height: 12),
-                FilledButton(onPressed: () => _cubit.refresh(), child: const Text('Retry')),
-              ],
-            ),
-          );
-        }
-
-        final lists = state.lists
-            .where((l) {
-              final purpose = l.purpose.knownValue;
-              return purpose == bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist ||
-                  purpose == bsky_graph.KnownListPurpose.appBskyGraphDefsModlist;
-            })
-            .toList(growable: false);
-
-        if (lists.isEmpty) {
-          return const Center(child: Text('No lists yet'));
-        }
-
-        return RefreshIndicator(
-          onRefresh: _cubit.refresh,
-          child: ListView.builder(
-            itemCount: lists.length,
-            itemBuilder: (context, index) => ListRowTile(
-              key: ValueKey(lists[index].uri),
-              list: lists[index],
-              onTap: () => context.push('/list?uri=${Uri.encodeComponent(lists[index].uri.toString())}'),
-            ),
-          ),
-        );
       },
     );
   }

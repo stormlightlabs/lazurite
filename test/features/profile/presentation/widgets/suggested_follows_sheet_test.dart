@@ -1,30 +1,55 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/profile/cubit/suggested_follows_cubit.dart';
+import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/suggested_follows_sheet.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSuggestedFollowsCubit extends MockCubit<SuggestedFollowsState> implements SuggestedFollowsCubit {}
+
+class MockProfileActionRepository extends Mock implements ProfileActionRepository {}
 
 ProfileView _profile(String did, {String? displayName}) =>
     ProfileView(did: did, handle: '$did.bsky.social', displayName: displayName, indexedAt: DateTime.utc(2026));
 
 void main() {
   late MockSuggestedFollowsCubit cubit;
+  late MockProfileActionRepository profileActionRepository;
 
   setUp(() {
     cubit = MockSuggestedFollowsCubit();
+    profileActionRepository = MockProfileActionRepository();
   });
 
   Widget buildSubject() {
-    return MaterialApp(
-      home: Scaffold(
-        body: BlocProvider<SuggestedFollowsCubit>.value(value: cubit, child: const SuggestedFollowsSheet()),
-      ),
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => RepositoryProvider<ProfileActionRepository>.value(
+            value: profileActionRepository,
+            child: Scaffold(
+              body: BlocProvider<SuggestedFollowsCubit>.value(
+                value: cubit,
+                child: const SuggestedFollowsSheet(actor: 'did:plc:target'),
+              ),
+            ),
+          ),
+          routes: [
+            GoRoute(
+              path: 'profile/view',
+              builder: (context, state) => Scaffold(body: Text('Profile View ${state.uri.queryParameters['actor']}')),
+            ),
+          ],
+        ),
+      ],
     );
+
+    return MaterialApp.router(routerConfig: router);
   }
 
   testWidgets('shows loading indicator when state is loading', (tester) async {
@@ -88,6 +113,7 @@ void main() {
 
   testWidgets('shows Follow button for unfollowed profiles', (tester) async {
     final profiles = [_profile('did:plc:bob', displayName: 'Bob Builder')];
+    when(() => profileActionRepository.followActor(did: 'did:plc:bob')).thenAnswer((_) async => 'at://follow/bob');
     when(() => cubit.state).thenReturn(SuggestedFollowsState.loaded(profiles));
     whenListen(
       cubit,
@@ -99,6 +125,44 @@ void main() {
     await tester.pump();
 
     expect(find.text('Follow'), findsOneWidget);
+  });
+
+  testWidgets('follow button toggles using profile action repository', (tester) async {
+    final profiles = [_profile('did:plc:bob', displayName: 'Bob Builder')];
+    when(() => profileActionRepository.followActor(did: 'did:plc:bob')).thenAnswer((_) async => 'at://follow/bob');
+    when(() => cubit.state).thenReturn(SuggestedFollowsState.loaded(profiles));
+    whenListen(
+      cubit,
+      const Stream<SuggestedFollowsState>.empty(),
+      initialState: SuggestedFollowsState.loaded(profiles),
+    );
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pump();
+
+    await tester.tap(find.text('Follow'));
+    await tester.pumpAndSettle();
+
+    verify(() => profileActionRepository.followActor(did: 'did:plc:bob')).called(1);
+    expect(find.text('Following'), findsOneWidget);
+  });
+
+  testWidgets('tapping a suggestion navigates to /profile/view', (tester) async {
+    final profiles = [_profile('did:plc:bob', displayName: 'Bob Builder')];
+    when(() => cubit.state).thenReturn(SuggestedFollowsState.loaded(profiles));
+    whenListen(
+      cubit,
+      const Stream<SuggestedFollowsState>.empty(),
+      initialState: SuggestedFollowsState.loaded(profiles),
+    );
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pump();
+
+    await tester.tap(find.text('Bob Builder'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Profile View did:plc:bob'), findsOneWidget);
   });
 
   testWidgets('shows sheet title', (tester) async {

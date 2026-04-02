@@ -22,6 +22,7 @@ import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
+import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
@@ -34,6 +35,8 @@ class MockProfileBloc extends MockBloc<ProfileEvent, ProfileState> implements Pr
 class MockFeedBloc extends MockBloc<FeedEvent, FeedState> implements FeedBloc {}
 
 class MockProfileActionRepository extends Mock implements ProfileActionRepository {}
+
+class MockProfileRepository extends Mock implements ProfileRepository {}
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
@@ -53,6 +56,7 @@ void main() {
   late MockFeedBloc feedBloc;
   late MockSettingsCubit settingsCubit;
   late MockConnectivityCubit connectivityCubit;
+  late MockProfileRepository profileRepository;
 
   const tokens = AuthTokens(
     accessToken: 'access',
@@ -94,6 +98,7 @@ void main() {
     feedBloc = MockFeedBloc();
     settingsCubit = MockSettingsCubit();
     connectivityCubit = MockConnectivityCubit();
+    profileRepository = MockProfileRepository();
 
     when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
     when(() => profileBloc.state).thenReturn(ProfileState.loaded(profile: profile));
@@ -227,6 +232,55 @@ void main() {
     verify(
       () => feedBloc.add(const FeedLoadRequested(actor: 'did:plc:me', filter: FeedFilter.postsWithMedia)),
     ).called(1);
+  });
+
+  testWidgets('other profiles show a suggested follows tab with loaded suggestions', (tester) async {
+    useLargeScreen(tester);
+    const otherProfile = ProfileViewDetailed(
+      did: 'did:plc:other',
+      handle: 'other.bsky.social',
+      displayName: 'Other User',
+    );
+    final suggestions = [
+      const ProfileView(did: 'did:plc:suggested', handle: 'suggested.bsky.social', displayName: 'Suggested User'),
+    ];
+    final mockProfileActionRepository = MockProfileActionRepository();
+
+    when(() => profileBloc.state).thenReturn(const ProfileState.loaded(profile: otherProfile));
+    whenListen(
+      profileBloc,
+      const Stream<ProfileState>.empty(),
+      initialState: const ProfileState.loaded(profile: otherProfile),
+    );
+    when(() => profileRepository.getSuggestedFollows('did:plc:other')).thenAnswer((_) async => suggestions);
+
+    await tester.pumpWidget(
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<ProfileRepository>.value(value: profileRepository),
+          RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository),
+        ],
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthBloc>.value(value: authBloc),
+            BlocProvider<ProfileBloc>.value(value: profileBloc),
+            BlocProvider<FeedBloc>.value(value: feedBloc),
+            BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+            BlocProvider<SettingsCubit>.value(value: settingsCubit),
+          ],
+          child: const MaterialApp(home: ProfileScreen(actor: 'did:plc:other', showBackButton: true)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('SUGGESTED'), findsOneWidget);
+
+    await tester.tap(find.text('SUGGESTED'));
+    await tester.pumpAndSettle();
+
+    verify(() => profileRepository.getSuggestedFollows('did:plc:other')).called(1);
+    expect(find.text('Suggested User'), findsOneWidget);
   });
 
   testWidgets('compose FAB on other profiles prefills the mentioned handle', (tester) async {
