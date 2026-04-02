@@ -24,8 +24,11 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_avat
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
+import 'package:lazurite/features/profile/cubit/suggested_follows_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
+import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/profile_action_buttons.dart';
+import 'package:lazurite/features/profile/presentation/widgets/suggested_follows_sheet.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
@@ -533,6 +536,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               },
             ),
             ListTile(
+              leading: const Icon(Icons.people_outline),
+              title: const Text('Suggested Follows'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _showSuggestedFollows(context, profile);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.hub_outlined),
               title: const Text('Profile Context'),
               onTap: () {
@@ -624,6 +635,23 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           ),
         ),
       ),
+    ).whenComplete(cubit.close);
+  }
+
+  void _showSuggestedFollows(BuildContext context, ProfileViewDetailed profile) {
+    ProfileRepository? profileRepository;
+    try {
+      profileRepository = context.read<ProfileRepository>();
+    } catch (_) {
+      return;
+    }
+
+    final cubit = SuggestedFollowsCubit(repository: profileRepository)..load(profile.did);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => BlocProvider.value(value: cubit, child: const SuggestedFollowsSheet()),
     ).whenComplete(cubit.close);
   }
 

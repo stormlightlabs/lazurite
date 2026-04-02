@@ -176,6 +176,17 @@ void main() {
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Save'), findsOneWidget);
   });
+
+  testWidgets('shows Video Upload Limits tile in Account section', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Video Upload Limits'), 300);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Video Upload Limits'), findsOneWidget);
+    expect(find.text('Check your daily video quota'), findsOneWidget);
+  });
 }
 
 String _buildJwt({required String aud, required String sub, required String clientId, required String iss}) {

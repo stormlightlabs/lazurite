@@ -50,8 +50,11 @@ import 'package:lazurite/features/profile/data/profile_context_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/features/settings/cubit/video_upload_limits_cubit.dart';
+import 'package:lazurite/features/settings/data/video_repository.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
+import 'package:lazurite/features/settings/presentation/video_upload_limits_screen.dart';
 
 class AppRouter {
   AppRouter({required this.authBloc, this.navigatorObserver});
@@ -258,6 +261,13 @@ class AppRouter {
                       GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
                       GoRoute(path: 'logs', builder: (context, state) => const LogsScreen()),
                       GoRoute(path: 'devtools', builder: (context, state) => const DevToolsScreen()),
+                      GoRoute(
+                        path: 'video-limits',
+                        builder: (context, state) => BlocProvider(
+                          create: (_) => VideoUploadLimitsCubit(repository: context.read<VideoRepository>()),
+                          child: const VideoUploadLimitsScreen(),
+                        ),
+                      ),
                     ],
                   ),
                 ],

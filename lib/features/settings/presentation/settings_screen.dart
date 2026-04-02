@@ -86,6 +86,12 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'View your saved posts',
             onTap: () => context.push('/saved'),
           ),
+          _SettingsTile(
+            icon: Icons.videocam_outlined,
+            title: 'Video Upload Limits',
+            subtitle: 'Check your daily video quota',
+            onTap: () => context.push('/settings/video-limits'),
+          ),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Advanced'),
           _buildAdvancedSettings(context),

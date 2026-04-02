@@ -391,8 +391,7 @@ void main() {
     FeedState feedStateWith(List<FeedViewPost> p) =>
         FeedState.loaded(actor: 'did:plc:me', posts: p, filter: FeedFilter.postsNoReplies, hasMore: false);
 
-    /// Builds the profile screen with [posts] in the feed and the given
-    /// [settCubit] controlling layout mode.
+    /// Builds the profile screen with [posts] in the feed and the given SettingsCubit controlling layout mode.
     Widget buildWithPosts(WidgetTester tester, MockSettingsCubit settCubit) {
       useLargeScreen(tester);
 
@@ -565,6 +564,63 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Add to list'), findsOneWidget);
+    });
+  });
+
+  group('Suggested Follows overflow menu', () {
+    testWidgets('other profile overflow menu shows Suggested Follows option', (tester) async {
+      useLargeScreen(tester);
+      const otherProfile = ProfileViewDetailed(
+        did: 'did:plc:other',
+        handle: 'other.bsky.social',
+        displayName: 'Other User',
+      );
+      when(() => profileBloc.state).thenReturn(const ProfileState.loaded(profile: otherProfile));
+      whenListen(
+        profileBloc,
+        const Stream<ProfileState>.empty(),
+        initialState: const ProfileState.loaded(profile: otherProfile),
+      );
+
+      final mockProfileActionRepository = MockProfileActionRepository();
+
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository)],
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: authBloc),
+              BlocProvider<ProfileBloc>.value(value: profileBloc),
+              BlocProvider<FeedBloc>.value(value: feedBloc),
+              BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+              BlocProvider<SettingsCubit>.value(value: settingsCubit),
+            ],
+            child: const MaterialApp(home: ProfileScreen(actor: 'did:plc:other', showBackButton: true)),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Report'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Suggested Follows'), findsOneWidget);
+    });
+
+    testWidgets('own profile overflow menu does NOT show Suggested Follows option', (tester) async {
+      useLargeScreen(tester);
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Suggested Follows'), findsNothing);
     });
   });
 }

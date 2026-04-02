@@ -19,15 +19,15 @@ updated: 2026-04-01
 
 ### UI
 
-- [ ] Search screen UI - add third "Starter Packs" tab pill in `_buildTab` row
-- [ ] Starter pack result tile widget - show name, creator handle, member count, joined stats; reuse pattern from profile starter packs tab
-- [ ] Tap result → navigate to existing starter pack detail screen (`/starter-pack?uri=`)
-- [ ] Infinite scroll pagination for starter packs tab
+- [x] Search screen UI - add third "Starter Packs" tab pill in `_buildTab` row
+- [x] Starter pack result tile widget - show name, creator handle, member count, joined stats; reuse pattern from profile starter packs tab
+- [x] Tap result → navigate to existing starter pack detail screen (`/starter-pack?uri=`)
+- [x] Infinite scroll pagination for starter packs tab
 
 ### Tests
 
 - [x] Unit tests: `SearchRepository.searchStarterPacks`, bloc events for new tab, pagination
-- [ ] Widget tests: third tab renders, results display, empty state, tap navigation
+- [x] Widget tests: third tab renders, results display, empty state, tap navigation
 
 ## M21 - Suggested Follows Sheet
 
@@ -41,16 +41,16 @@ updated: 2026-04-01
 
 ### UI
 
-- [ ] Suggested follows sheet widget - `DraggableScrollableSheet` listing `ProfileView` tiles with follow/unfollow toggle buttons
-- [ ] Profile screen overflow menu - add "Suggested Follows" `ListTile` entry; hide when viewing own profile
-- [ ] Tap entry → create cubit, show sheet with `BlocProvider.value`, close cubit on sheet dismiss via `.whenComplete`
-- [ ] Tap profile tile → pop sheet, navigate to profile screen
-- [ ] Empty state when no suggestions returned
+- [x] Suggested follows sheet widget - `DraggableScrollableSheet` listing `ProfileView` tiles with follow/unfollow toggle buttons
+- [x] Profile screen overflow menu - add "Suggested Follows" `ListTile` entry; hide when viewing own profile
+- [x] Tap entry → create cubit, show sheet with `BlocProvider.value`, close cubit on sheet dismiss via `.whenComplete`
+- [x] Tap profile tile → pop sheet, navigate to profile screen
+- [x] Empty state when no suggestions returned
 
 ### Tests
 
 - [x] Unit tests: repository method, cubit state transitions
-- [ ] Widget tests: sheet renders profiles, follow button toggles, own-profile menu hides entry, empty state
+- [x] Widget tests: sheet renders profiles, follow button toggles, own-profile menu hides entry, empty state
 
 ## M22 - Video Upload Limits
 
@@ -64,15 +64,15 @@ updated: 2026-04-01
 
 ### UI
 
-- [ ] Settings screen - new tile in Account section: "Video Upload Limits"
-- [ ] Tile UI - show remaining daily video count, remaining bytes formatted as MB/GB, `canUpload` status badge
-- [ ] Loading state while fetching, error state if request fails
-- [ ] Display server `message` if present; show `error` text with warning styling if `canUpload` is false
+- [x] Settings screen - new tile in Account section: "Video Upload Limits"
+- [x] Tile UI - show remaining daily video count, remaining bytes formatted as MB/GB, `canUpload` status badge
+- [x] Loading state while fetching, error state if request fails
+- [x] Display server `message` if present; show `error` text with warning styling if `canUpload` is false
 
 ### Tests
 
 - [x] Unit tests: repository method, cubit state transitions and formatting
-- [ ] Widget tests: tile renders limits, loading indicator, error state, message display
+- [x] Widget tests: tile renders limits, loading indicator, error state, message display
 
 ## M23 - Profile Context (Constellation)
 

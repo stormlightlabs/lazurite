@@ -38,6 +38,7 @@ import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
+import 'package:lazurite/features/settings/data/video_repository.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 
 Future<void> main() async {
@@ -258,6 +259,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
                 RepositoryProvider(create: (_) => ProfileActionRepository(bluesky: bluesky)),
                 RepositoryProvider(create: (_) => ConvoRepository(chat: blueskyChat)),
                 RepositoryProvider(create: (_) => PostActionCache()),
+                RepositoryProvider(create: (_) => VideoRepository(bluesky: bluesky)),
                 RepositoryProvider.value(value: bluesky),
                 RepositoryProvider.value(value: widget.database),
                 RepositoryProvider.value(value: accountDid),
