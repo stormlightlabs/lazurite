@@ -41,9 +41,12 @@ void main() {
     whenListen(mockDevToolsCubit, const Stream<DevToolsState>.empty(), initialState: const DevToolsState());
   });
 
-  Widget buildSubject() {
+  Widget buildSubject({String? initialQuery}) {
     return MaterialApp(
-      home: BlocProvider<DevToolsCubit>.value(value: mockDevToolsCubit, child: const DevToolsScreen()),
+      home: BlocProvider<DevToolsCubit>.value(
+        value: mockDevToolsCubit,
+        child: DevToolsScreen(initialQuery: initialQuery),
+      ),
     );
   }
 
@@ -117,6 +120,14 @@ void main() {
       await tester.tap(find.text('Resolve'));
 
       verify(() => mockDevToolsCubit.resolve('alice.bsky.social')).called(1);
+    });
+
+    testWidgets('initial query prefills the input and resolves automatically', (tester) async {
+      await tester.pumpWidget(buildSubject(initialQuery: 'did:plc:test'));
+      await tester.pump();
+
+      expect(find.widgetWithText(TextField, 'did:plc:test'), findsOneWidget);
+      verify(() => mockDevToolsCubit.resolve('did:plc:test')).called(1);
     });
 
     testWidgets('tapping a record calls cubit loadRecord', (tester) async {

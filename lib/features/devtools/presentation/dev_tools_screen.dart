@@ -9,7 +9,9 @@ import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DevToolsScreen extends StatelessWidget {
-  const DevToolsScreen({super.key});
+  const DevToolsScreen({super.key, this.initialQuery});
+
+  final String? initialQuery;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +44,7 @@ class DevToolsScreen extends StatelessWidget {
         builder: (context, state) {
           return Column(
             children: [
-              _SearchInput(state: state),
+              _SearchInput(state: state, initialQuery: initialQuery),
               if (state.status == DevToolsStatus.repoLoaded ||
                   state.status == DevToolsStatus.collectionLoaded ||
                   state.status == DevToolsStatus.recordLoaded)
@@ -57,9 +59,10 @@ class DevToolsScreen extends StatelessWidget {
 }
 
 class _SearchInput extends StatefulWidget {
-  const _SearchInput({required this.state});
+  const _SearchInput({required this.state, this.initialQuery});
 
   final DevToolsState state;
+  final String? initialQuery;
 
   @override
   State<_SearchInput> createState() => _SearchInputState();
@@ -67,11 +70,22 @@ class _SearchInput extends StatefulWidget {
 
 class _SearchInputState extends State<_SearchInput> {
   late final TextEditingController _controller;
+  bool _resolvedInitialQuery = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    _controller = TextEditingController(text: widget.initialQuery ?? '');
+    final initialQuery = widget.initialQuery?.trim();
+    if (initialQuery != null && initialQuery.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _resolvedInitialQuery) {
+          return;
+        }
+        _resolvedInitialQuery = true;
+        _resolve(initialQuery);
+      });
+    }
   }
 
   @override

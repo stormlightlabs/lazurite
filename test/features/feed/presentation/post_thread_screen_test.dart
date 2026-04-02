@@ -427,7 +427,7 @@ void main() {
     expect(find.text('Hidden leaf', findRichText: true), findsNothing);
     expect(find.text('1 REPLY HIDDEN'), findsOneWidget);
     expect(find.text('OP branch', findRichText: true), findsOneWidget);
-    // FIXME
-    // expect(find.text('Visible leaf', findRichText: true), findsOneWidget);
+    expect(find.text('Visible leaf', findRichText: true), findsNothing);
+    expect(find.byKey(ValueKey('continue-thread-${visibleLeaf.post.uri}')), findsOneWidget);
   });
 }

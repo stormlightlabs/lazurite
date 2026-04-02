@@ -260,7 +260,10 @@ class AppRouter {
                       ),
                       GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
                       GoRoute(path: 'logs', builder: (context, state) => const LogsScreen()),
-                      GoRoute(path: 'devtools', builder: (context, state) => const DevToolsScreen()),
+                      GoRoute(
+                        path: 'devtools',
+                        builder: (context, state) => DevToolsScreen(initialQuery: state.uri.queryParameters['query']),
+                      ),
                       GoRoute(
                         path: 'video-limits',
                         builder: (context, state) => BlocProvider(

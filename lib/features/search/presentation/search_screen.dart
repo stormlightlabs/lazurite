@@ -142,6 +142,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: BlocBuilder<SearchBloc, SearchState>(
                     builder: (context, state) {
                       final hasResults = state.typeaheadActors.isNotEmpty;
+                      final showTypingHint = controller.text.trim().length <= 3;
                       return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -163,14 +164,14 @@ class _SearchScreenState extends State<SearchScreen> {
                             onSubmitted: submitHandle,
                           ),
                           const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.topLeft,
-                            // TODO: hide this when there are > 3 chars in the text field
-                            child: Text(
-                              'Start typing to search handles.',
-                              style: Theme.of(context).textTheme.bodySmall,
+                          if (showTypingHint)
+                            Align(
+                              alignment: Alignment.topLeft,
+                              child: Text(
+                                'Start typing to search handles.',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
                             ),
-                          ),
                           AnimatedSize(
                             duration: const Duration(milliseconds: 180),
                             curve: Curves.easeOutCubic,

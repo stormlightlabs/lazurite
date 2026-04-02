@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Replace this placeholder application ID before shipping a release build.
         applicationId = "com.example.lazurite"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -32,8 +32,8 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Uses the debug keystore so local `flutter run --release` works.
+            // Configure a real release signing config before distribution.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

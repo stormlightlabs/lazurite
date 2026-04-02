@@ -603,33 +603,71 @@ String _buildCallbackPageHtml(Uri reopenUri) {
         margin: 0 0 12px;
       }
 
-      button {
+      .button-link {
         appearance: none;
         background: #0f62fe;
         border: 0;
         border-radius: 999px;
         color: white;
         cursor: pointer;
+        display: inline-block;
         font: inherit;
         font-weight: 600;
         padding: 12px 20px;
       }
+
+      a { text-decoration: none; }
     </style>
   </head>
   <body>
     <main>
       <h1>Authentication Complete</h1>
       <p>Lazurite is finishing sign-in. If it does not reopen automatically, tap the button below.</p>
-      <button type="button" onclick="window.location.href = '$escapedReopenUrl'">Return to Lazurite</button>
+      <a id="reopen-link" class="button-link" href="$escapedReopenUrl">Return to Lazurite</a>
     </main>
+    <iframe
+      id="reopen-frame"
+      title="Return to Lazurite"
+      style="display: none; width: 0; height: 0; border: 0"
+    ></iframe>
     <script>
-      window.setTimeout(function () {
-        window.location.replace('$escapedReopenUrl');
-      }, 150);
+      const reopenUrl = '$escapedReopenUrl';
+      let reopenAttempts = 0;
 
-      window.setTimeout(function () {
-        window.close();
-      }, 600);
+      function attemptReopen() {
+        reopenAttempts += 1;
+
+        const frame = document.getElementById('reopen-frame');
+        if (frame) {
+          frame.src = reopenUrl;
+        }
+
+        const link = document.getElementById('reopen-link');
+        if (link && reopenAttempts === 1) {
+          link.click();
+        }
+
+        if (reopenAttempts === 1) {
+          window.location.assign(reopenUrl);
+          return;
+        }
+
+        window.location.href = reopenUrl;
+      }
+
+      window.addEventListener('load', function () {
+        window.setTimeout(attemptReopen, 120);
+        window.setTimeout(attemptReopen, 480);
+        window.setTimeout(attemptReopen, 1000);
+      });
+
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') {
+          window.setTimeout(function () {
+            window.close();
+          }, 300);
+        }
+      });
     </script>
   </body>
 </html>

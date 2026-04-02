@@ -155,6 +155,9 @@ void main() {
 
         expect(html, contains('lazurite://auth-complete'));
         expect(html, contains('Return to Lazurite'));
+        expect(html, contains('id="reopen-link"'));
+        expect(html, contains('window.location.assign'));
+        expect(html, contains('visibilitychange'));
       });
 
       test('can stop the callback server twice without throwing', () async {

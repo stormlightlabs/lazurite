@@ -264,6 +264,21 @@ void main() {
       expect(find.text('Handle'), findsOneWidget);
     });
 
+    testWidgets('jump to profile dialog hides typing hint after more than 3 characters', (tester) async {
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Jump to profile'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Start typing to search handles.'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).last, 'rive');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Start typing to search handles.'), findsNothing);
+    });
+
     testWidgets('jump to profile dialog shows typeahead suggestions and navigates on selection', (tester) async {
       when(
         () => mockSearchRepository.searchActorsTypeahead(

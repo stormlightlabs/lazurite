@@ -422,8 +422,11 @@ class _AtProtocolConnectionCard extends StatelessWidget {
                 const Divider(height: 1),
                 _ConnectionDetailRow(label: 'Handle', value: '@${tokens.handle}'),
                 const Divider(height: 1),
-                // TODO: Link the DID row to dev_tools_screen.dart
-                _ConnectionDetailRow(label: 'DID', value: tokens.did),
+                _ConnectionDetailRow(
+                  label: 'DID',
+                  value: tokens.did,
+                  onTap: () => context.push('/settings/devtools?query=${Uri.encodeQueryComponent(tokens.did)}'),
+                ),
                 const Divider(height: 1),
                 _ConnectionDetailRow(label: 'PDS', value: pds),
               ],
@@ -516,29 +519,47 @@ class _SettingsDropdownTile<T> extends StatelessWidget {
 }
 
 class _ConnectionDetailRow extends StatelessWidget {
-  const _ConnectionDetailRow({required this.label, required this.value});
+  const _ConnectionDetailRow({required this.label, required this.value, this.onTap});
 
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
+    final content = Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label.toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                ),
+                const SizedBox(height: 4),
+                Text(value, style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'JetBrains Mono')),
+              ],
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(value, style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'JetBrains Mono')),
+          if (onTap != null) ...[
+            const SizedBox(width: 12),
+            Icon(Icons.open_in_new, size: 18, color: theme.colorScheme.onSurfaceVariant),
+          ],
         ],
       ),
     );
+
+    if (onTap == null) {
+      return content;
+    }
+
+    return InkWell(onTap: onTap, child: content);
   }
 }
 
