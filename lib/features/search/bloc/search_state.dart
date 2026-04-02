@@ -1,11 +1,12 @@
 part of 'search_bloc.dart';
 
-enum SearchTab { posts, actors }
+enum SearchTab { posts, actors, starterPacks }
 
 extension SearchTabLabel on SearchTab {
   String get label => switch (this) {
     SearchTab.posts => 'Posts',
     SearchTab.actors => 'People',
+    SearchTab.starterPacks => 'Starter Packs',
   };
 }
 
@@ -38,7 +39,9 @@ class SearchState extends Equatable {
     this.currentSort = 'top',
     this.posts = const [],
     this.actors = const [],
+    this.starterPacks = const [],
     this.cursor,
+    this.starterPacksCursor,
     this.hitsTotal,
     this.errorMessage,
     this.isLoadingMore = false,
@@ -53,6 +56,9 @@ class SearchState extends Equatable {
 
   const SearchState.loadingActors({required String query})
     : this._(status: SearchStatus.loading, query: query, currentTab: SearchTab.actors);
+
+  const SearchState.loadingStarterPacks({required String query})
+    : this._(status: SearchStatus.loading, query: query, currentTab: SearchTab.starterPacks);
 
   const SearchState.loadedPosts({
     required String query,
@@ -72,6 +78,18 @@ class SearchState extends Equatable {
   const SearchState.loadedActors({required String query, required List<ProfileView> actors, String? cursor})
     : this._(status: SearchStatus.loaded, query: query, currentTab: SearchTab.actors, actors: actors, cursor: cursor);
 
+  const SearchState.loadedStarterPacks({
+    required String query,
+    required List<StarterPackViewBasic> starterPacks,
+    String? starterPacksCursor,
+  }) : this._(
+         status: SearchStatus.loaded,
+         query: query,
+         currentTab: SearchTab.starterPacks,
+         starterPacks: starterPacks,
+         starterPacksCursor: starterPacksCursor,
+       );
+
   const SearchState.error({required String query, required String message})
     : this._(status: SearchStatus.error, query: query, errorMessage: message);
 
@@ -81,7 +99,9 @@ class SearchState extends Equatable {
   final String currentSort;
   final List<PostView> posts;
   final List<ProfileView> actors;
+  final List<StarterPackViewBasic> starterPacks;
   final String? cursor;
+  final String? starterPacksCursor;
   final int? hitsTotal;
   final String? errorMessage;
   final bool isLoadingMore;
@@ -90,8 +110,8 @@ class SearchState extends Equatable {
 
   bool get isLoading => status == SearchStatus.loading;
   bool get hasError => status == SearchStatus.error;
-  bool get hasResults => posts.isNotEmpty || actors.isNotEmpty;
-  bool get hasMore => cursor != null;
+  bool get hasResults => posts.isNotEmpty || actors.isNotEmpty || starterPacks.isNotEmpty;
+  bool get hasMore => cursor != null || starterPacksCursor != null;
 
   SearchState copyWith({
     SearchStatus? status,
@@ -100,7 +120,9 @@ class SearchState extends Equatable {
     String? currentSort,
     List<PostView>? posts,
     List<ProfileView>? actors,
+    List<StarterPackViewBasic>? starterPacks,
     String? cursor,
+    String? starterPacksCursor,
     int? hitsTotal,
     String? errorMessage,
     bool? isLoadingMore,
@@ -114,7 +136,9 @@ class SearchState extends Equatable {
       currentSort: currentSort ?? this.currentSort,
       posts: posts ?? this.posts,
       actors: actors ?? this.actors,
+      starterPacks: starterPacks ?? this.starterPacks,
       cursor: cursor ?? this.cursor,
+      starterPacksCursor: starterPacksCursor ?? this.starterPacksCursor,
       hitsTotal: hitsTotal ?? this.hitsTotal,
       errorMessage: errorMessage ?? this.errorMessage,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
@@ -131,7 +155,9 @@ class SearchState extends Equatable {
     currentSort,
     posts,
     actors,
+    starterPacks,
     cursor,
+    starterPacksCursor,
     hitsTotal,
     errorMessage,
     isLoadingMore,

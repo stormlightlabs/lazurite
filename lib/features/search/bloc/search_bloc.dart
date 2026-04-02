@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
@@ -65,7 +66,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       } catch (error) {
         emit(SearchState.error(query: query, message: 'Failed to search posts: $error'));
       }
-    } else {
+    } else if (currentTab == SearchTab.actors) {
       emit(SearchState.loadingActors(query: query));
 
       try {
@@ -82,6 +83,22 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         );
       } catch (error) {
         emit(SearchState.error(query: query, message: 'Failed to search actors: $error'));
+      }
+    } else {
+      emit(SearchState.loadingStarterPacks(query: query));
+
+      try {
+        final result = await _searchRepository.searchStarterPacks(query: query, limit: 25);
+
+        emit(
+          SearchState.loadedStarterPacks(
+            query: query,
+            starterPacks: result.starterPacks,
+            starterPacksCursor: result.cursor,
+          ),
+        );
+      } catch (error) {
+        emit(SearchState.error(query: query, message: 'Failed to search starter packs: $error'));
       }
     }
   }
@@ -107,7 +124,34 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   }
 
   Future<void> _onLoadMoreRequested(LoadMoreRequested event, Emitter<SearchState> emit) async {
-    if (state.isLoadingMore || state.cursor == null) return;
+    if (state.isLoadingMore) return;
+
+    if (state.currentTab == SearchTab.starterPacks) {
+      if (state.starterPacksCursor == null) return;
+
+      emit(state.copyWith(isLoadingMore: true));
+
+      try {
+        final result = await _searchRepository.searchStarterPacks(
+          query: state.query,
+          cursor: state.starterPacksCursor,
+          limit: 25,
+        );
+
+        emit(
+          SearchState.loadedStarterPacks(
+            query: state.query,
+            starterPacks: [...state.starterPacks, ...result.starterPacks],
+            starterPacksCursor: result.cursor,
+          ).copyWith(searchHistory: state.searchHistory, typeaheadActors: state.typeaheadActors),
+        );
+      } catch (error) {
+        emit(state.copyWith(isLoadingMore: false));
+      }
+      return;
+    }
+
+    if (state.cursor == null) return;
 
     emit(state.copyWith(isLoadingMore: true));
 

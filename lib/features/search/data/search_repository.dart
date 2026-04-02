@@ -1,6 +1,7 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_searchposts.dart';
+import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:bluesky/bluesky.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
@@ -46,6 +47,12 @@ class SearchRepository {
     );
 
     return SearchActorsResult(actors: _filterProfiles(response.data.actors), cursor: response.data.cursor);
+  }
+
+  Future<SearchStarterPacksResult> searchStarterPacks({required String query, String? cursor, int limit = 25}) async {
+    final response = await _bluesky.graph.searchStarterPacks(q: query, cursor: cursor, limit: limit);
+
+    return SearchStarterPacksResult(starterPacks: response.data.starterPacks, cursor: response.data.cursor);
   }
 
   Future<List<ProfileViewBasic>> searchActorsTypeahead({required String query, int limit = 10}) async {
@@ -98,5 +105,12 @@ class SearchActorsResult {
   SearchActorsResult({required this.actors, this.cursor});
 
   final List<ProfileView> actors;
+  final String? cursor;
+}
+
+class SearchStarterPacksResult {
+  SearchStarterPacksResult({required this.starterPacks, this.cursor});
+
+  final List<StarterPackViewBasic> starterPacks;
   final String? cursor;
 }

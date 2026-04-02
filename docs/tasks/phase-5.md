@@ -9,13 +9,13 @@ updated: 2026-04-01
 
 ### Core
 
-- [ ] `SearchRepository.searchStarterPacks()` - call `bluesky.graph.searchStarterPacks(q:, limit:, cursor:)`, return result with `List<StarterPackViewBasic>` and cursor
-- [ ] Add `starterPacks` value to `SearchTab` enum, update `SearchTabLabel` extension
+- [x] `SearchRepository.searchStarterPacks()` - call `bluesky.graph.searchStarterPacks(q:, limit:, cursor:)`, return result with `List<StarterPackViewBasic>` and cursor
+- [x] Add `starterPacks` value to `SearchTab` enum, update `SearchTabLabel` extension
 
 ### Cubit
 
-- [ ] `SearchBloc` - handle starter packs tab: dispatch search on tab switch if query present, handle `LoadMoreRequested` with cursor pagination
-- [ ] `SearchState` - add `starterPacks` list and `starterPacksCursor` fields
+- [x] `SearchBloc` - handle starter packs tab: dispatch search on tab switch if query present, handle `LoadMoreRequested` with cursor pagination
+- [x] `SearchState` - add `starterPacks` list and `starterPacksCursor` fields
 
 ### UI
 
@@ -26,7 +26,7 @@ updated: 2026-04-01
 
 ### Tests
 
-- [ ] Unit tests: `SearchRepository.searchStarterPacks`, bloc events for new tab, pagination
+- [x] Unit tests: `SearchRepository.searchStarterPacks`, bloc events for new tab, pagination
 - [ ] Widget tests: third tab renders, results display, empty state, tap navigation
 
 ## M21 - Suggested Follows Sheet
