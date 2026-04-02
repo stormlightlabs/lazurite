@@ -18,6 +18,53 @@ void main() {
   });
 
   group('ProfileRepository', () {
+    group('getSuggestedFollows', () {
+      test('returns suggestions from graph service', () async {
+        final suggestions = [
+          ProfileView(did: 'did:plc:bob', handle: 'bob.bsky.social', indexedAt: DateTime.utc(2026)),
+          ProfileView(did: 'did:plc:carol', handle: 'carol.bsky.social', indexedAt: DateTime.utc(2026)),
+        ];
+        final repository = ProfileRepository(
+          database: database,
+          bluesky: _FakeBlueskyClient(
+            actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
+            graph: _FakeGraphService(suggestions: suggestions),
+          ),
+        );
+
+        final result = await repository.getSuggestedFollows('did:plc:alice');
+
+        expect(result.length, 2);
+        expect(result.first.did, 'did:plc:bob');
+      });
+
+      test('returns empty list when no suggestions', () async {
+        final repository = ProfileRepository(
+          database: database,
+          bluesky: _FakeBlueskyClient(
+            actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
+            graph: _FakeGraphService(suggestions: []),
+          ),
+        );
+
+        final result = await repository.getSuggestedFollows('did:plc:alice');
+
+        expect(result, isEmpty);
+      });
+
+      test('propagates exceptions from graph service', () async {
+        final repository = ProfileRepository(
+          database: database,
+          bluesky: _FakeBlueskyClient(
+            actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
+            graph: _FakeGraphService(onGetSuggested: (_) async => throw Exception('network error')),
+          ),
+        );
+
+        expect(() => repository.getSuggestedFollows('did:plc:alice'), throwsException);
+      });
+    });
+
     test('loads and caches a profile after a successful xrpc response', () async {
       final profile = _buildProfile();
       final repository = ProfileRepository(
@@ -69,9 +116,10 @@ ProfileViewDetailed _buildProfile() {
 }
 
 class _FakeBlueskyClient {
-  _FakeBlueskyClient({required this.actor});
+  _FakeBlueskyClient({required this.actor, _FakeGraphService? graph}) : graph = graph ?? _FakeGraphService();
 
   final _FakeActorService actor;
+  final _FakeGraphService graph;
 }
 
 class _FakeActorService {
@@ -104,4 +152,33 @@ class _FakeProfilesData {
   const _FakeProfilesData(this.profiles);
 
   final List<ProfileView> profiles;
+}
+
+class _FakeGraphService {
+  _FakeGraphService({
+    List<ProfileView>? suggestions,
+    Future<_FakeSuggestedResponse> Function(String actor)? onGetSuggested,
+  }) : _suggestions = suggestions ?? [],
+       _onGetSuggested = onGetSuggested;
+
+  final List<ProfileView> _suggestions;
+  final Future<_FakeSuggestedResponse> Function(String actor)? _onGetSuggested;
+
+  Future<_FakeSuggestedResponse> getSuggestedFollowsByActor({required String actor}) {
+    final handler = _onGetSuggested;
+    if (handler != null) return handler(actor);
+    return Future.value(_FakeSuggestedResponse(_FakeSuggestedData(_suggestions)));
+  }
+}
+
+class _FakeSuggestedResponse {
+  _FakeSuggestedResponse(this.data);
+
+  final _FakeSuggestedData data;
+}
+
+class _FakeSuggestedData {
+  const _FakeSuggestedData(this.suggestions);
+
+  final List<ProfileView> suggestions;
 }

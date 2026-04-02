@@ -46,7 +46,6 @@ void main() {
 
   setUp(() {
     cubit = MockProfileContextCubit();
-    // Stub async methods to return completed futures by default.
     when(() => cubit.init()).thenAnswer((_) async {});
     when(() => cubit.loadBlockedBy()).thenAnswer((_) async {});
     when(() => cubit.loadBlockedBy(cursor: any(named: 'cursor'))).thenAnswer((_) async {});

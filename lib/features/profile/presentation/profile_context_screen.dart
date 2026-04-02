@@ -20,7 +20,6 @@ class ProfileContextScreen extends StatefulWidget {
 class _ProfileContextScreenState extends State<ProfileContextScreen> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
-  // Track whether each tab has had its initial load triggered.
   bool _blockingLoaded = false;
   bool _listsOnLoaded = false;
 
@@ -29,7 +28,6 @@ class _ProfileContextScreenState extends State<ProfileContextScreen> with Single
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_onTabChanged);
-    // Kick off the counts fetch immediately.
     context.read<ProfileContextCubit>().init();
   }
 
@@ -99,10 +97,6 @@ class _ProfileContextScreenState extends State<ProfileContextScreen> with Single
   }
 }
 
-// ---------------------------------------------------------------------------
-// Blocked By tab
-// ---------------------------------------------------------------------------
-
 class _BlockedByTab extends StatelessWidget {
   const _BlockedByTab({required this.state});
 
@@ -125,7 +119,6 @@ class _BlockedByTab extends StatelessWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            // Contextualizing note at the top.
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -136,7 +129,6 @@ class _BlockedByTab extends StatelessWidget {
                 ),
               ),
             ),
-            // Count header + expand button.
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -158,7 +150,6 @@ class _BlockedByTab extends StatelessWidget {
                 ),
               ),
             ),
-            // Content based on status.
             if (state.blockedByStatus == ProfileContextTabStatus.loading && state.blockedByEntries.isEmpty)
               const SliverFillRemaining(hasScrollBody: false, child: Center(child: _ShimmerList()))
             else if (state.blockedByStatus == ProfileContextTabStatus.error && state.blockedByEntries.isEmpty)
@@ -229,10 +220,6 @@ class _BlockedByTab extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Blocking tab
-// ---------------------------------------------------------------------------
 
 class _BlockingTab extends StatelessWidget {
   const _BlockingTab({required this.state});
@@ -347,10 +334,6 @@ class _BlockingTab extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Lists On tab
-// ---------------------------------------------------------------------------
-
 class _ListsOnTab extends StatelessWidget {
   const _ListsOnTab({required this.state});
 
@@ -418,10 +401,6 @@ class _ListsOnTab extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Reusable profile tile
-// ---------------------------------------------------------------------------
 
 class _ProfileTile extends StatelessWidget {
   const _ProfileTile({super.key, required this.profile, this.onTap});
@@ -716,10 +695,6 @@ class _ListMetaChip extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Shimmer skeleton
-// ---------------------------------------------------------------------------
-
 class _ShimmerList extends StatefulWidget {
   const _ShimmerList();
 
@@ -806,10 +781,6 @@ class _ShimmerListState extends State<_ShimmerList> with SingleTickerProviderSta
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Error + retry widget
-// ---------------------------------------------------------------------------
 
 class _ErrorRetry extends StatelessWidget {
   const _ErrorRetry({required this.message, required this.onRetry});

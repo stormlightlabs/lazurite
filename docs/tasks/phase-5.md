@@ -33,11 +33,11 @@ updated: 2026-04-01
 
 ### Core
 
-- [ ] `ProfileRepository.getSuggestedFollows()` - call `bluesky.graph.getSuggestedFollowsByActor(actor:)`, return `List<ProfileView>`
+- [x] `ProfileRepository.getSuggestedFollows()` - call `bluesky.graph.getSuggestedFollowsByActor(actor:)`, return `List<ProfileView>`
 
 ### Cubit
 
-- [ ] `SuggestedFollowsCubit` - `load(actor:)` fetches suggestions, exposes loaded/loading/error states
+- [x] `SuggestedFollowsCubit` - `load(actor:)` fetches suggestions, exposes loaded/loading/error states
 
 ### UI
 
@@ -49,18 +49,18 @@ updated: 2026-04-01
 
 ### Tests
 
-- [ ] Unit tests: repository method, cubit state transitions
+- [x] Unit tests: repository method, cubit state transitions
 - [ ] Widget tests: sheet renders profiles, follow button toggles, own-profile menu hides entry, empty state
 
 ## M22 - Video Upload Limits
 
 ### Core
 
-- [ ] `VideoRepository` (or extend settings repository) - `getUploadLimits()` calling `bluesky.video.getUploadLimits()`, return typed result
+- [x] `VideoRepository` (or extend settings repository) - `getUploadLimits()` calling `bluesky.video.getUploadLimits()`, return typed result
 
 ### Cubit
 
-- [ ] `VideoUploadLimitsCubit` - fetch on init, expose `canUpload`, remaining counts, message/error
+- [x] `VideoUploadLimitsCubit` - fetch on init, expose `canUpload`, remaining counts, message/error
 
 ### UI
 
@@ -71,7 +71,7 @@ updated: 2026-04-01
 
 ### Tests
 
-- [ ] Unit tests: repository method, cubit state transitions and formatting
+- [x] Unit tests: repository method, cubit state transitions and formatting
 - [ ] Widget tests: tile renders limits, loading indicator, error state, message display
 
 ## M23 - Profile Context (Constellation)

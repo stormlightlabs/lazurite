@@ -65,6 +65,14 @@ class ProfileRepository {
     return profiles;
   }
 
+  Future<List<ProfileView>> getSuggestedFollows(String actor) async {
+    final response = await _bluesky.graph.getSuggestedFollowsByActor(actor: actor);
+    final suggestions = response.data.suggestions;
+    final moderationService = _moderationService;
+    if (moderationService == null) return suggestions;
+    return suggestions.where((p) => !moderationService.shouldFilterProfileInList(p)).toList();
+  }
+
   Future<ProfileViewDetailed?> getCurrentUserProfile(AuthTokens tokens) async {
     log.d('ProfileRepository: Loading current user profile for ${tokens.did} via ${_describeClientContext()}');
 
