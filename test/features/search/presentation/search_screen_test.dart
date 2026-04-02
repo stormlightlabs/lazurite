@@ -1,7 +1,8 @@
 import 'package:atproto_core/atproto_core.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bloc_test/bloc_test.dart';
+import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -57,6 +58,13 @@ void main() {
           limit: any(named: 'limit'),
         ),
       ).thenAnswer((_) async => []);
+      when(
+        () => mockSearchRepository.searchStarterPacks(
+          query: any(named: 'query'),
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => SearchStarterPacksResult(starterPacks: []));
     });
 
     Widget buildSubject() {
@@ -298,6 +306,155 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('profile:custom.bsky.social'), findsOneWidget);
+    });
+
+    testWidgets('third Starter Packs tab renders', (tester) async {
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Starter Packs'), findsOneWidget);
+    });
+
+    testWidgets('switching to Starter Packs tab shows empty state when no results', (tester) async {
+      when(
+        () => mockDatabase.addSearchHistoryEntry(
+          query: any(named: 'query'),
+          type: any(named: 'type'),
+          accountDid: any(named: 'accountDid'),
+        ),
+      ).thenAnswer((_) async {});
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Starter Packs'));
+      await tester.pumpAndSettle();
+
+      final searchField = find.byType(TextField);
+      await tester.enterText(searchField, 'starter');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+
+      expect(find.text('No starter packs found'), findsOneWidget);
+    });
+
+    testWidgets('starter pack results display name and creator handle', (tester) async {
+      final samplePack = StarterPackViewBasic(
+        uri: AtUri.parse('at://did:plc:creator/app.bsky.graph.starterpack/pack-1'),
+        cid: 'cid-pack-1',
+        record: const {
+          r'$type': 'app.bsky.graph.starterpack',
+          'name': 'My Starter Pack',
+          'list': 'at://did:plc:creator/app.bsky.graph.list/list-1',
+          'createdAt': '2026-01-01T00:00:00.000Z',
+        },
+        creator: const ProfileViewBasic(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+        listItemCount: 10,
+        joinedWeekCount: 3,
+        joinedAllTimeCount: 42,
+        indexedAt: DateTime.utc(2026, 1, 1),
+      );
+
+      when(
+        () => mockSearchRepository.searchStarterPacks(
+          query: any(named: 'query'),
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => SearchStarterPacksResult(starterPacks: [samplePack]));
+
+      when(
+        () => mockDatabase.addSearchHistoryEntry(
+          query: any(named: 'query'),
+          type: any(named: 'type'),
+          accountDid: any(named: 'accountDid'),
+        ),
+      ).thenAnswer((_) async {});
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Starter Packs'));
+      await tester.pumpAndSettle();
+
+      final searchField = find.byType(TextField);
+      await tester.enterText(searchField, 'starter');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+
+      expect(find.text('My Starter Pack'), findsOneWidget);
+      expect(find.text('by @creator.bsky.social'), findsOneWidget);
+      expect(find.text('10'), findsOneWidget);
+    });
+
+    testWidgets('tapping starter pack result navigates to starter pack detail', (tester) async {
+      final packUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.starterpack/pack-1');
+      final samplePack = StarterPackViewBasic(
+        uri: packUri,
+        cid: 'cid-pack-1',
+        record: const {
+          r'$type': 'app.bsky.graph.starterpack',
+          'name': 'My Starter Pack',
+          'list': 'at://did:plc:creator/app.bsky.graph.list/list-1',
+          'createdAt': '2026-01-01T00:00:00.000Z',
+        },
+        creator: const ProfileViewBasic(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+        indexedAt: DateTime.utc(2026, 1, 1),
+      );
+
+      when(
+        () => mockSearchRepository.searchStarterPacks(
+          query: any(named: 'query'),
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => SearchStarterPacksResult(starterPacks: [samplePack]));
+
+      when(
+        () => mockDatabase.addSearchHistoryEntry(
+          query: any(named: 'query'),
+          type: any(named: 'type'),
+          accountDid: any(named: 'accountDid'),
+        ),
+      ).thenAnswer((_) async {});
+
+      final encodedUri = Uri.encodeComponent(packUri.toString());
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => BlocProvider<SearchBloc>(
+              create: (_) => SearchBloc(
+                searchRepository: mockSearchRepository,
+                database: mockDatabase,
+                accountDid: 'did:plc:test',
+              ),
+              child: BlocProvider<ConnectivityCubit>.value(value: connectivityCubit, child: const SearchScreen()),
+            ),
+          ),
+          GoRoute(
+            path: '/starter-pack',
+            builder: (context, state) => Scaffold(body: Text('starterpack:${state.uri.queryParameters['uri']}')),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Starter Packs'));
+      await tester.pumpAndSettle();
+
+      final searchField = find.byType(TextField);
+      await tester.enterText(searchField, 'starter');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('My Starter Pack'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('starterpack:${packUri.toString()}'), findsOneWidget);
+      expect(find.text(encodedUri), findsOneWidget);
     });
   });
 }

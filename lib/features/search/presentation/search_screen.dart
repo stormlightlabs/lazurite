@@ -15,6 +15,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_avat
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
+import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -315,7 +316,13 @@ class _SearchScreenState extends State<SearchScreen> {
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
       ),
-      child: Row(children: [_buildTab(context, SearchTab.posts, state), _buildTab(context, SearchTab.actors, state)]),
+      child: Row(
+        children: [
+          _buildTab(context, SearchTab.posts, state),
+          _buildTab(context, SearchTab.actors, state),
+          _buildTab(context, SearchTab.starterPacks, state),
+        ],
+      ),
     );
   }
 
@@ -430,6 +437,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
     if (state.currentTab == SearchTab.posts) {
       return _buildPostResults(context, state);
+    } else if (state.currentTab == SearchTab.starterPacks) {
+      return _buildStarterPackResults(context, state);
     } else {
       return _buildActorResults(context, state);
     }
@@ -535,6 +544,35 @@ class _SearchScreenState extends State<SearchScreen> {
           );
         }
         return _ActorResultTile(actor: actors[index]);
+      },
+    );
+  }
+
+  Widget _buildStarterPackResults(BuildContext context, SearchState state) {
+    final packs = state.starterPacks;
+    if (packs.isEmpty) {
+      return Center(child: Text('No starter packs found', style: Theme.of(context).textTheme.bodyLarge));
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: packs.length + (state.isLoadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == packs.length) {
+          return const Center(
+            child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
+          );
+        }
+        final pack = packs[index];
+        return StarterPackCard(
+          pack: pack,
+          onTap: () {
+            final router = GoRouter.maybeOf(context);
+            if (router != null) {
+              router.push('/starter-pack?uri=${Uri.encodeComponent(pack.uri.toString())}');
+            }
+          },
+        );
       },
     );
   }
