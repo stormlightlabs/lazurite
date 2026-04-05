@@ -5,6 +5,7 @@ import 'package:bluesky/bluesky_chat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
@@ -14,6 +15,7 @@ import 'package:lazurite/core/router/app_router.dart';
 import 'package:lazurite/core/scheduler/post_scheduler.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
+import 'package:lazurite/features/ads/data/native_ad_repository.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -40,6 +42,7 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
+import 'package:lazurite/features/tips/data/purchase_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +63,11 @@ Future<void> main() async {
 
   final settingsCubit = SettingsCubit(database: database);
   await settingsCubit.loadSettings();
+
+  if (!settingsCubit.state.adsRemoved) {
+    await MobileAds.instance.initialize();
+  }
+
   final connectivityCubit = ConnectivityCubit(simulateOffline: settingsCubit.state.simulateOffline);
 
   final accountSwitcherCubit = AccountSwitcherCubit(database: database, authRepository: authRepository);
@@ -260,6 +268,8 @@ class _LazuriteAppState extends State<LazuriteApp> {
                 RepositoryProvider(create: (_) => ConvoRepository(chat: blueskyChat)),
                 RepositoryProvider(create: (_) => PostActionCache()),
                 RepositoryProvider(create: (_) => VideoRepository(bluesky: bluesky)),
+                RepositoryProvider<NativeAdRepository>(create: (_) => GoogleMobileNativeAdRepository()),
+                RepositoryProvider<PurchaseRepository>(create: (_) => InAppPurchaseRepository()),
                 RepositoryProvider.value(value: bluesky),
                 RepositoryProvider.value(value: widget.database),
                 RepositoryProvider.value(value: accountDid),

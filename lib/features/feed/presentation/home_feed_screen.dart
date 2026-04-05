@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
+import 'package:lazurite/features/ads/cubit/ad_cubit.dart';
+import 'package:lazurite/features/ads/data/native_ad_repository.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -12,6 +14,7 @@ import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/feed_layout_view.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 
 /// Returns the number of grid columns for [width] per the responsive
 /// breakpoints defined in the UI spec.
@@ -237,6 +240,7 @@ class _FeedListView extends StatefulWidget {
 
 class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveClientMixin {
   final List<FeedViewPost> _posts = [];
+  late final AdCubit _adCubit;
   String? _cursor;
   bool _isLoading = false;
   bool _showInitialLoading = false;
@@ -251,6 +255,10 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   @override
   void initState() {
     super.initState();
+    _adCubit = AdCubit(
+      settingsCubit: context.read<SettingsCubit>(),
+      nativeAdRepository: context.read<NativeAdRepository>(),
+    );
     _scrollController.addListener(_onScroll);
     _primeFeed();
   }
@@ -259,6 +267,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _adCubit.close();
     super.dispose();
   }
 
@@ -323,6 +332,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
         _showInitialLoading = false;
         _hasError = false;
       });
+      _prefetchAds();
     } catch (e) {
       if (_posts.isNotEmpty) {
         _setStateIfMounted(() {
@@ -362,6 +372,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
         _cursor = result.cursor;
         _isLoadingMore = false;
       });
+      _prefetchAds();
     } catch (e) {
       _setStateIfMounted(() => _isLoadingMore = false);
     }
@@ -373,6 +384,19 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
     }
 
     setState(fn);
+  }
+
+  void _prefetchAds() {
+    if (_posts.isEmpty || !mounted) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _adCubit.loadAdsForPage(0, _posts.length);
+    });
   }
 
   Future<FeedResult> _fetchFeed(FeedRepository repo, {String? cursor}) async {
@@ -433,13 +457,16 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
       );
     }
 
-    return FeedLayoutView(
-      itemCount: _posts.length,
-      scrollController: _scrollController,
-      isLoadingMore: _isLoadingMore,
-      onRefresh: _loadFeed,
-      gridItemBuilder: (context, index) => buildCard(index, PostCardVariant.grid),
-      linearItemBuilder: (context, index) => buildCard(index, PostCardVariant.linear),
+    return BlocProvider<AdCubit>.value(
+      value: _adCubit,
+      child: FeedLayoutView(
+        itemCount: _posts.length,
+        scrollController: _scrollController,
+        isLoadingMore: _isLoadingMore,
+        onRefresh: _loadFeed,
+        gridItemBuilder: (context, index) => buildCard(index, PostCardVariant.grid),
+        linearItemBuilder: (context, index) => buildCard(index, PostCardVariant.linear),
+      ),
     );
   }
 }

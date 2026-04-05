@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
@@ -14,6 +15,7 @@ import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
+import 'package:lazurite/features/tips/data/purchase_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
@@ -22,15 +24,19 @@ class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
+class MockPurchaseRepository extends Mock implements PurchaseRepository {}
+
 void main() {
   late MockAccountSwitcherCubit accountSwitcherCubit;
   late MockAuthBloc authBloc;
   late MockSettingsCubit settingsCubit;
+  late MockPurchaseRepository purchaseRepository;
 
   setUp(() {
     accountSwitcherCubit = MockAccountSwitcherCubit();
     authBloc = MockAuthBloc();
     settingsCubit = MockSettingsCubit();
+    purchaseRepository = MockPurchaseRepository();
 
     when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.unauthenticated());
@@ -59,16 +65,22 @@ void main() {
         feedLayout: FeedLayout.card,
       ),
     );
+    when(() => purchaseRepository.purchaseStream).thenAnswer((_) => const Stream<List<PurchaseDetails>>.empty());
+    when(() => purchaseRepository.isAvailable()).thenAnswer((_) async => false);
+    when(() => purchaseRepository.fetchProducts()).thenAnswer((_) async => const []);
   });
 
   Widget buildSubject() {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthBloc>.value(value: authBloc),
-        BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
-        BlocProvider<SettingsCubit>.value(value: settingsCubit),
-      ],
-      child: const MaterialApp(home: SettingsScreen()),
+    return RepositoryProvider<PurchaseRepository>.value(
+      value: purchaseRepository,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        ],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
     );
   }
 
@@ -77,13 +89,16 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: authBloc),
-              BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
-              BlocProvider<SettingsCubit>.value(value: settingsCubit),
-            ],
-            child: const SettingsScreen(),
+          builder: (context, state) => RepositoryProvider<PurchaseRepository>.value(
+            value: purchaseRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: authBloc),
+                BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
+                BlocProvider<SettingsCubit>.value(value: settingsCubit),
+              ],
+              child: const SettingsScreen(),
+            ),
           ),
         ),
         GoRoute(
@@ -264,6 +279,21 @@ void main() {
 
     expect(find.text('Video Upload Limits'), findsOneWidget);
     expect(find.text('Check your daily video quota'), findsOneWidget);
+  });
+
+  testWidgets('shows Support Lazurite row and opens the tip sheet', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Support Lazurite'), 300);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Support Lazurite'), findsOneWidget);
+
+    await tester.tap(find.text('Support Lazurite'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Store unavailable'), findsOneWidget);
   });
 }
 

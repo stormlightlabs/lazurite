@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
+import 'package:lazurite/features/ads/data/native_ad_repository.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
@@ -50,6 +51,28 @@ class MockPostActionCache extends Mock implements PostActionCache {}
 
 class MockListRepository extends Mock implements ListRepository {}
 
+class _FakeNativeAdHandle implements NativeAdHandle {
+  _FakeNativeAdHandle(this.slotIndex);
+
+  final int slotIndex;
+
+  @override
+  Widget buildWidget() => ColoredBox(key: ValueKey('profile_fake_ad_$slotIndex'), color: Colors.blue);
+
+  @override
+  void dispose() {}
+}
+
+class _FakeNativeAdRepository implements NativeAdRepository {
+  final List<int> requestedSlots = <int>[];
+
+  @override
+  Future<NativeAdHandle?> loadAd({required int slotIndex}) async {
+    requestedSlots.add(slotIndex);
+    return _FakeNativeAdHandle(slotIndex);
+  }
+}
+
 void main() {
   late MockAuthBloc authBloc;
   late MockProfileBloc profileBloc;
@@ -57,6 +80,7 @@ void main() {
   late MockSettingsCubit settingsCubit;
   late MockConnectivityCubit connectivityCubit;
   late MockProfileRepository profileRepository;
+  late _FakeNativeAdRepository nativeAdRepository;
 
   const tokens = AuthTokens(
     accessToken: 'access',
@@ -99,6 +123,7 @@ void main() {
     settingsCubit = MockSettingsCubit();
     connectivityCubit = MockConnectivityCubit();
     profileRepository = MockProfileRepository();
+    nativeAdRepository = _FakeNativeAdRepository();
 
     when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
     when(() => profileBloc.state).thenReturn(ProfileState.loaded(profile: profile));
@@ -129,15 +154,18 @@ void main() {
   });
 
   Widget buildSubject() {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthBloc>.value(value: authBloc),
-        BlocProvider<ProfileBloc>.value(value: profileBloc),
-        BlocProvider<FeedBloc>.value(value: feedBloc),
-        BlocProvider<SettingsCubit>.value(value: settingsCubit),
-        BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
-      ],
-      child: const MaterialApp(home: ProfileScreen()),
+    return RepositoryProvider<NativeAdRepository>.value(
+      value: nativeAdRepository,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<ProfileBloc>.value(value: profileBloc),
+          BlocProvider<FeedBloc>.value(value: feedBloc),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+          BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+        ],
+        child: const MaterialApp(home: ProfileScreen()),
+      ),
     );
   }
 
@@ -197,7 +225,10 @@ void main() {
     final mockProfileActionRepository = MockProfileActionRepository();
 
     final widget = MultiRepositoryProvider(
-      providers: [RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository)],
+      providers: [
+        RepositoryProvider<NativeAdRepository>.value(value: nativeAdRepository),
+        RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository),
+      ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>.value(value: authBloc),
@@ -257,6 +288,7 @@ void main() {
     await tester.pumpWidget(
       MultiRepositoryProvider(
         providers: [
+          RepositoryProvider<NativeAdRepository>.value(value: nativeAdRepository),
           RepositoryProvider<ProfileRepository>.value(value: profileRepository),
           RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository),
         ],
@@ -303,7 +335,10 @@ void main() {
         GoRoute(
           path: '/',
           builder: (context, state) => MultiRepositoryProvider(
-            providers: [RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository)],
+            providers: [
+              RepositoryProvider<NativeAdRepository>.value(value: nativeAdRepository),
+              RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: authBloc),
@@ -442,12 +477,18 @@ void main() {
 
     final posts = List.generate(3, (i) => makePost('$i'));
 
-    FeedState feedStateWith(List<FeedViewPost> p) =>
-        FeedState.loaded(actor: 'did:plc:me', posts: p, filter: FeedFilter.postsNoReplies, hasMore: false);
+    FeedState feedStateWith(List<FeedViewPost> p, {FeedFilter filter = FeedFilter.postsNoReplies}) =>
+        FeedState.loaded(actor: 'did:plc:me', posts: p, filter: filter, hasMore: false);
 
     /// Builds the profile screen with [posts] in the feed and the given SettingsCubit controlling layout mode.
-    Widget buildWithPosts(WidgetTester tester, MockSettingsCubit settCubit) {
+    Widget buildWithPosts(
+      WidgetTester tester,
+      MockSettingsCubit settCubit, {
+      List<FeedViewPost>? customPosts,
+      FeedFilter filter = FeedFilter.postsNoReplies,
+    }) {
       useLargeScreen(tester);
+      final resolvedPosts = customPosts ?? posts;
 
       final mockPostActionRepo = MockPostActionRepository();
       final mockSavedPostsCubit = MockSavedPostsCubit();
@@ -456,11 +497,12 @@ void main() {
       when(() => mockSavedPostsCubit.state).thenReturn(const SavedPostsState());
       whenListen(mockSavedPostsCubit, const Stream<SavedPostsState>.empty());
 
-      when(() => feedBloc.state).thenReturn(feedStateWith(posts));
-      whenListen(feedBloc, const Stream<FeedState>.empty(), initialState: feedStateWith(posts));
+      when(() => feedBloc.state).thenReturn(feedStateWith(resolvedPosts, filter: filter));
+      whenListen(feedBloc, const Stream<FeedState>.empty(), initialState: feedStateWith(resolvedPosts, filter: filter));
 
       return MultiRepositoryProvider(
         providers: [
+          RepositoryProvider<NativeAdRepository>.value(value: nativeAdRepository),
           RepositoryProvider<PostActionRepository>.value(value: mockPostActionRepo),
           RepositoryProvider<PostActionCache>.value(value: mockPostActionCache),
         ],
@@ -491,6 +533,26 @@ void main() {
       expect(find.byKey(const ValueKey('profile_large_card_0')), findsOneWidget);
       expect(find.byKey(const ValueKey('profile_large_card_1')), findsOneWidget);
       expect(find.byKey(const ValueKey('profile_large_card_2')), findsOneWidget);
+    });
+
+    testWidgets('posts tab respects the profile ad offset', (tester) async {
+      final cubit = MockSettingsCubit();
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.compact));
+      whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedLayout.compact));
+      final manyPosts = List.generate(12, (i) => makePost('$i'));
+
+      await tester.pumpWidget(buildWithPosts(tester, cubit, customPosts: manyPosts));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('ad_slot_12')),
+        400,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('ad_slot_12')), findsOneWidget);
+      expect(find.byKey(const ValueKey('profile_fake_ad_12')), findsOneWidget);
+      expect(nativeAdRepository.requestedSlots, contains(12));
     });
 
     testWidgets('linear mode does not show the large grid card feed or metadata info card', (tester) async {
@@ -530,6 +592,22 @@ void main() {
 
       await streamCtrl.close();
     });
+
+    testWidgets('non-post tabs do not render ads', (tester) async {
+      final cubit = MockSettingsCubit();
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.compact));
+      whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedLayout.compact));
+      final manyPosts = List.generate(12, (i) => makePost('$i'));
+
+      await tester.pumpWidget(
+        buildWithPosts(tester, cubit, customPosts: manyPosts, filter: FeedFilter.postsAndAuthorThreads),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('REPLIES'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('ad_slot_12')), findsNothing);
+    });
   });
 
   group('Lists tab', () {
@@ -566,7 +644,10 @@ void main() {
             BlocProvider<SettingsCubit>.value(value: settingsCubit),
           ],
           child: MultiRepositoryProvider(
-            providers: [RepositoryProvider<ListRepository>.value(value: listRepository)],
+            providers: [
+              RepositoryProvider<NativeAdRepository>.value(value: nativeAdRepository),
+              RepositoryProvider<ListRepository>.value(value: listRepository),
+            ],
             child: const MaterialApp(home: ProfileScreen()),
           ),
         ),
@@ -598,7 +679,10 @@ void main() {
 
       await tester.pumpWidget(
         MultiRepositoryProvider(
-          providers: [RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository)],
+          providers: [
+            RepositoryProvider<NativeAdRepository>.value(value: nativeAdRepository),
+            RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository),
+          ],
           child: MultiBlocProvider(
             providers: [
               BlocProvider<AuthBloc>.value(value: authBloc),
@@ -640,7 +724,10 @@ void main() {
 
       await tester.pumpWidget(
         MultiRepositoryProvider(
-          providers: [RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository)],
+          providers: [
+            RepositoryProvider<NativeAdRepository>.value(value: nativeAdRepository),
+            RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository),
+          ],
           child: MultiBlocProvider(
             providers: [
               BlocProvider<AuthBloc>.value(value: authBloc),

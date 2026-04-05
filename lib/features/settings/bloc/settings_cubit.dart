@@ -37,6 +37,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _keyThreadAutoCollapseDepth = 'thread_auto_collapse_depth';
   static const String _keyConstellationUrl = 'constellation_url';
   static const String _defaultConstellationUrl = 'https://constellation.microcosm.blue';
+  static const String _keyAdsRemoved = 'ads_removed';
 
   Future<void> loadSettings() async {
     final paletteStr = await database.getSetting(_keyThemePalette);
@@ -47,6 +48,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     final simulateOfflineStr = await database.getSetting(_keySimulateOffline);
     final threadAutoCollapseDepthStr = await database.getSetting(_keyThreadAutoCollapseDepth);
     final constellationUrlStr = await database.getSetting(_keyConstellationUrl);
+    final adsRemovedStr = await database.getSetting(_keyAdsRemoved);
 
     emit(
       state.copyWith(
@@ -57,6 +59,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         simulateOffline: simulateOfflineStr == 'true',
         threadAutoCollapseDepth: int.tryParse(threadAutoCollapseDepthStr ?? ''),
         constellationUrl: constellationUrlStr ?? _defaultConstellationUrl,
+        adsRemoved: adsRemovedStr == 'true',
       ),
     );
   }
@@ -105,5 +108,10 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setConstellationUrl(String url) async {
     await database.setSetting(_keyConstellationUrl, url);
     emit(state.copyWith(constellationUrl: url));
+  }
+
+  Future<void> setAdsRemoved(bool value) async {
+    await database.setSetting(_keyAdsRemoved, value.toString());
+    emit(state.copyWith(adsRemoved: value));
   }
 }

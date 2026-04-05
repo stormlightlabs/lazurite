@@ -6,9 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/core/ads/ad_helper.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/core/widgets/sliver_tab_bar_delegate.dart';
+import 'package:lazurite/features/ads/cubit/ad_cubit.dart';
+import 'package:lazurite/features/ads/data/native_ad_repository.dart';
+import 'package:lazurite/features/ads/presentation/ad_slot.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
@@ -83,10 +87,17 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   late TabController _tabController;
   late bool _showSuggestedTab;
+  late final AdCubit _adCubit;
+  int? _lastAdPostCount;
+  bool _lastInjectedAds = false;
 
   @override
   void initState() {
     super.initState();
+    _adCubit = AdCubit(
+      settingsCubit: context.read<SettingsCubit>(),
+      nativeAdRepository: context.read<NativeAdRepository>(),
+    );
     _showSuggestedTab = _shouldShowSuggestedTab(context.read<ProfileBloc>().state.profile);
     _tabController = TabController(length: _tabLabels.length, vsync: this);
     _loadProfileAndFeed();
@@ -104,6 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   @override
   void dispose() {
+    _adCubit.close();
     _tabController.dispose();
     super.dispose();
   }
@@ -744,19 +756,32 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       return Center(child: Text(_emptyLabel(tabFilter)));
     }
 
+    final showAds = tabFilter == FeedFilter.postsNoReplies;
+
     return BlocBuilder<SettingsCubit, SettingsState>(
-      buildWhen: (prev, curr) => prev.feedLayout != curr.feedLayout,
+      buildWhen: (prev, curr) => prev.feedLayout != curr.feedLayout || prev.adsRemoved != curr.adsRemoved,
       builder: (context, settingsState) {
+        final injectAds = showAds && !settingsState.adsRemoved;
+        _syncAds(feedState.posts.length, injectAds: injectAds);
         if (settingsState.feedLayout == FeedLayout.card) {
-          return _buildGridFeed(context, feedState);
+          return BlocProvider<AdCubit>.value(
+            value: _adCubit,
+            child: _buildGridFeed(context, feedState, injectAds: injectAds),
+          );
         }
-        return _buildLinearFeed(context, feedState);
+        return BlocProvider<AdCubit>.value(
+          value: _adCubit,
+          child: _buildLinearFeed(context, feedState, injectAds: injectAds),
+        );
       },
     );
   }
 
-  Widget _buildGridFeed(BuildContext context, FeedState feedState) {
+  Widget _buildGridFeed(BuildContext context, FeedState feedState, {bool injectAds = false}) {
     final accountDid = _resolvedActor ?? '';
+    final visualCount = injectAds
+        ? AdHelper.visualItemCount(feedState.posts.length, offset: AdHelper.profileAdOffset)
+        : feedState.posts.length;
 
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -772,21 +797,37 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         child: ListView.builder(
           key: const ValueKey('profile_grid_feed'),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
+          itemCount: visualCount + (feedState.isLoadingMore ? 1 : 0),
           itemBuilder: (context, index) {
-            if (index >= feedState.posts.length) {
+            if (index >= visualCount) {
               return const Padding(
                 padding: EdgeInsets.all(16),
                 child: Center(child: CircularProgressIndicator()),
               );
             }
-            final post = feedState.posts[index];
+
+            final dataIndex = injectAds
+                ? AdHelper.dataIndexForVisualIndex(index, offset: AdHelper.profileAdOffset)
+                : index;
+            if (dataIndex == null) {
+              return Padding(
+                padding: EdgeInsets.only(bottom: index == visualCount - 1 ? 0 : 16),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    child: AdSlot(key: ValueKey('ad_slot_$index'), slotIndex: index),
+                  ),
+                ),
+              );
+            }
+
+            final post = feedState.posts[dataIndex];
 
             return Padding(
-              padding: EdgeInsets.only(bottom: index == feedState.posts.length - 1 ? 0 : 16),
+              padding: EdgeInsets.only(bottom: index == visualCount - 1 ? 0 : 16),
               child: Center(
                 child: ConstrainedBox(
-                  key: ValueKey('profile_large_card_$index'),
+                  key: ValueKey('profile_large_card_$dataIndex'),
                   constraints: const BoxConstraints(maxWidth: 720),
                   child: PostCardWithActions(
                     feedViewPost: post,
@@ -803,8 +844,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildLinearFeed(BuildContext context, FeedState feedState) {
+  Widget _buildLinearFeed(BuildContext context, FeedState feedState, {bool injectAds = false}) {
     final accountDid = _resolvedActor ?? '';
+    final visualCount = injectAds
+        ? AdHelper.visualItemCount(feedState.posts.length, offset: AdHelper.profileAdOffset)
+        : feedState.posts.length;
     return RefreshIndicator(
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(
@@ -818,16 +862,24 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         },
         child: ListView.builder(
           padding: EdgeInsets.zero,
-          itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
+          itemCount: visualCount + (feedState.isLoadingMore ? 1 : 0),
           itemBuilder: (context, index) {
-            if (index >= feedState.posts.length) {
+            if (index >= visualCount) {
               return const Padding(
                 padding: EdgeInsets.all(16),
                 child: Center(child: CircularProgressIndicator()),
               );
             }
+
+            final dataIndex = injectAds
+                ? AdHelper.dataIndexForVisualIndex(index, offset: AdHelper.profileAdOffset)
+                : index;
+            if (dataIndex == null) {
+              return AdSlot(key: ValueKey('ad_slot_$index'), slotIndex: index, isLinear: true);
+            }
+
             return PostCardWithActions(
-              feedViewPost: feedState.posts[index],
+              feedViewPost: feedState.posts[dataIndex],
               accountDid: accountDid,
               moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
             );
@@ -863,6 +915,30 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
 
     return _ProfileStarterPacksPane(actor: actor, starterPackRepository: starterPackRepository);
+  }
+
+  void _syncAds(int postCount, {required bool injectAds}) {
+    if (!injectAds) {
+      if (_lastInjectedAds) {
+        _adCubit.clearAds();
+      }
+      _lastInjectedAds = false;
+      _lastAdPostCount = null;
+      return;
+    }
+
+    if (_lastInjectedAds && _lastAdPostCount == postCount) {
+      return;
+    }
+
+    _lastInjectedAds = true;
+    _lastAdPostCount = postCount;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _adCubit.loadAdsForPage(0, postCount, offset: AdHelper.profileAdOffset);
+    });
   }
 
   String _emptyLabel(FeedFilter filter) {

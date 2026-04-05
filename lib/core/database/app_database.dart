@@ -25,7 +25,7 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -100,6 +100,9 @@ class AppDatabase extends _$AppDatabase {
           WHERE key = 'feed_layout'
         ''');
         await customStatement("DELETE FROM settings WHERE key = 'feed_architecture'");
+      }
+      if (from < 15) {
+        await customStatement("INSERT OR IGNORE INTO settings (key, value) VALUES ('ads_removed', 'false')");
       }
     },
   );

@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/router/app_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
+import 'package:lazurite/features/ads/data/native_ad_repository.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -41,6 +42,19 @@ class MockConvoListBloc extends MockBloc<ConvoListEvent, ConvoListState> impleme
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 
+class _FakeNativeAdHandle implements NativeAdHandle {
+  @override
+  Widget buildWidget() => const SizedBox.shrink();
+
+  @override
+  void dispose() {}
+}
+
+class _FakeNativeAdRepository implements NativeAdRepository {
+  @override
+  Future<NativeAdHandle?> loadAd({required int slotIndex}) async => _FakeNativeAdHandle();
+}
+
 void main() {
   late MockAuthBloc authBloc;
   late MockFeedPreferencesCubit feedPreferencesCubit;
@@ -52,6 +66,7 @@ void main() {
   late MockUnreadCountCubit unreadCountCubit;
   late MockConvoListBloc convoListBloc;
   late MockNotificationRepository notificationRepository;
+  late _FakeNativeAdRepository nativeAdRepository;
   late StreamController<AuthState> authController;
   late AuthState currentAuthState;
 
@@ -84,6 +99,7 @@ void main() {
     unreadCountCubit = MockUnreadCountCubit();
     convoListBloc = MockConvoListBloc();
     notificationRepository = MockNotificationRepository();
+    nativeAdRepository = _FakeNativeAdRepository();
     authController = StreamController<AuthState>.broadcast();
     currentAuthState = const AuthState.authenticated(tokens);
 
@@ -166,8 +182,11 @@ void main() {
       BlocProvider<UnreadCountCubit>.value(value: unreadCountCubit),
       BlocProvider<ConvoListBloc>.value(value: convoListBloc),
     ],
-    child: RepositoryProvider<NotificationRepository>(
-      create: (_) => notificationRepository,
+    child: MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<NotificationRepository>(create: (_) => notificationRepository),
+        RepositoryProvider<NativeAdRepository>.value(value: nativeAdRepository),
+      ],
       child: MaterialApp.router(routerConfig: AppRouter(authBloc: authBloc).router),
     ),
   );
@@ -302,7 +321,13 @@ void main() {
             providers: [BlocProvider<UnreadCountCubit>.value(value: unreadCountCubit)],
             child: MultiBlocProvider(
               providers: [BlocProvider<ConvoListBloc>.value(value: convoListBloc)],
-              child: RepositoryProvider<NotificationRepository>.value(value: notificationRepository, child: app),
+              child: MultiRepositoryProvider(
+                providers: [
+                  RepositoryProvider<NotificationRepository>.value(value: notificationRepository),
+                  RepositoryProvider<NativeAdRepository>.value(value: nativeAdRepository),
+                ],
+                child: app,
+              ),
             ),
           );
         },

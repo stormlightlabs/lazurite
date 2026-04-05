@@ -27,6 +27,7 @@ void main() {
       expect(cubit.state.feedLayout, FeedLayout.card);
       expect(cubit.state.simulateOffline, false);
       expect(cubit.state.threadAutoCollapseDepth, isNull);
+      expect(cubit.state.adsRemoved, false);
     });
 
     test('accepts initial values via constructor', () {
@@ -57,6 +58,7 @@ void main() {
         await database.setSetting('feed_architecture', 'linear');
         await database.setSetting('simulate_offline', 'true');
         await database.setSetting('thread_auto_collapse_depth', '4');
+        await database.setSetting('ads_removed', 'true');
       },
       act: (cubit) => cubit.loadSettings(),
       expect: () => [
@@ -66,7 +68,8 @@ void main() {
             .having((s) => s.useSystemTheme, 'useSystemTheme', true)
             .having((s) => s.feedLayout, 'feedLayout', FeedLayout.compact)
             .having((s) => s.simulateOffline, 'simulateOffline', true)
-            .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', 4),
+            .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', 4)
+            .having((s) => s.adsRemoved, 'adsRemoved', true),
       ],
     );
 
@@ -81,7 +84,8 @@ void main() {
             .having((s) => s.useSystemTheme, 'useSystemTheme', false)
             .having((s) => s.feedLayout, 'feedLayout', FeedLayout.card)
             .having((s) => s.simulateOffline, 'simulateOffline', false)
-            .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', isNull),
+            .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', isNull)
+            .having((s) => s.adsRemoved, 'adsRemoved', false),
       ],
     );
 
@@ -202,6 +206,17 @@ void main() {
       verify: (cubit) async {
         final value = await database.getSetting('thread_auto_collapse_depth');
         expect(value, isNull);
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setAdsRemoved updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setAdsRemoved(true),
+      expect: () => [isA<SettingsState>().having((s) => s.adsRemoved, 'adsRemoved', true)],
+      verify: (cubit) async {
+        final value = await database.getSetting('ads_removed');
+        expect(value, 'true');
       },
     );
 

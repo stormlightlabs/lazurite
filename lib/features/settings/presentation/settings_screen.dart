@@ -13,6 +13,7 @@ import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
+import 'package:lazurite/features/tips/presentation/tip_sheet.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -91,6 +92,12 @@ class SettingsScreen extends StatelessWidget {
             title: 'Video Upload Limits',
             subtitle: 'Check your daily video quota',
             onTap: () => context.push('/settings/video-limits'),
+          ),
+          _SettingsTile(
+            icon: Icons.favorite_outline,
+            title: 'Support Lazurite',
+            subtitle: 'Buy us a coffee — removes ads forever',
+            onTap: () => showTipSheet(context),
           ),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Advanced'),

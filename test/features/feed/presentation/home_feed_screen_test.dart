@@ -2,11 +2,15 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
+import 'package:lazurite/features/ads/cubit/ad_cubit.dart';
+import 'package:lazurite/features/ads/data/native_ad_repository.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -28,11 +32,34 @@ class MockConnectivityCubit extends MockCubit<ConnectivityState> implements Conn
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
-SettingsState _settingsState(FeedLayout architecture) => SettingsState(
+class _FakeNativeAdHandle implements NativeAdHandle {
+  _FakeNativeAdHandle(this.slotIndex);
+
+  final int slotIndex;
+
+  @override
+  Widget buildWidget() => ColoredBox(key: ValueKey('fake_ad_$slotIndex'), color: Colors.blue);
+
+  @override
+  void dispose() {}
+}
+
+class _FakeNativeAdRepository implements NativeAdRepository {
+  final List<int> requestedSlots = <int>[];
+
+  @override
+  Future<NativeAdHandle?> loadAd({required int slotIndex}) async {
+    requestedSlots.add(slotIndex);
+    return _FakeNativeAdHandle(slotIndex);
+  }
+}
+
+SettingsState _settingsState(FeedLayout architecture, {bool adsRemoved = true}) => SettingsState(
   themePalette: AppThemePalette.oxocarbon,
   themeVariant: AppThemeVariant.dark,
   useSystemTheme: false,
   feedLayout: architecture,
+  adsRemoved: adsRemoved,
 );
 
 const _homeFeedState = FeedPreferencesState.loaded(
@@ -70,6 +97,36 @@ Widget _buildSubject({required FeedLayout architecture, double screenWidth = 400
   );
 }
 
+Widget _buildAdSubject({
+  required FeedLayout architecture,
+  required SettingsCubit settingsCubit,
+  required AdCubit adCubit,
+  double screenWidth = 400,
+  int itemCount = 10,
+}) {
+  return MediaQuery(
+    data: MediaQueryData(size: Size(screenWidth, 800)),
+    child: MaterialApp(
+      home: Scaffold(
+        body: MultiBlocProvider(
+          providers: [
+            BlocProvider<SettingsCubit>.value(value: settingsCubit),
+            BlocProvider<AdCubit>.value(value: adCubit),
+          ],
+          child: FeedLayoutView(
+            itemCount: itemCount,
+            scrollController: ScrollController(),
+            isLoadingMore: false,
+            onRefresh: () async {},
+            gridItemBuilder: (_, i) => SizedBox(key: ValueKey('grid-$i'), child: Text('grid $i')),
+            linearItemBuilder: (_, i) => SizedBox(key: ValueKey('linear-$i'), child: Text('linear $i')),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 void main() {
   Widget buildHomeSubject({
     required FeedPreferencesCubit feedPreferencesCubit,
@@ -78,6 +135,8 @@ void main() {
   }) {
     final connectivityCubit = MockConnectivityCubit();
     final authBloc = MockAuthBloc();
+    final settingsCubit = MockSettingsCubit();
+    final nativeAdRepository = _FakeNativeAdRepository();
     when(() => connectivityCubit.state).thenReturn(connectivityState);
     whenListen(connectivityCubit, const Stream<ConnectivityState>.empty(), initialState: connectivityState);
     when(() => authBloc.state).thenReturn(
@@ -90,15 +149,21 @@ void main() {
         AuthTokens(accessToken: 'access', did: 'did:plc:test', handle: 'test.bsky.social'),
       ),
     );
+    when(() => settingsCubit.state).thenReturn(_settingsState(FeedLayout.card));
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: _settingsState(FeedLayout.card));
 
     return MaterialApp(
-      home: RepositoryProvider<FeedRepository>.value(
-        value: feedRepository,
+      home: MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<FeedRepository>.value(value: feedRepository),
+          RepositoryProvider<NativeAdRepository>.value(value: nativeAdRepository),
+        ],
         child: MultiBlocProvider(
           providers: [
             BlocProvider<AuthBloc>.value(value: authBloc),
             BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
             BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+            BlocProvider<SettingsCubit>.value(value: settingsCubit),
           ],
           child: const HomeFeedScreen(),
         ),
@@ -215,6 +280,46 @@ void main() {
 
       final listView = tester.widget<ListView>(find.byType(ListView));
       expect(listView.padding, const EdgeInsets.symmetric(vertical: 4));
+    });
+
+    testWidgets('injects ads at deterministic positions when ads are enabled', (tester) async {
+      final database = AppDatabase(executor: NativeDatabase.memory());
+      addTearDown(database.close);
+      final settingsCubit = SettingsCubit(database: database, initialFeedLayout: FeedLayout.compact);
+      addTearDown(settingsCubit.close);
+      final repository = _FakeNativeAdRepository();
+      final adCubit = AdCubit(settingsCubit: settingsCubit, nativeAdRepository: repository);
+      addTearDown(adCubit.close);
+
+      await tester.pumpWidget(
+        _buildAdSubject(architecture: FeedLayout.compact, settingsCubit: settingsCubit, adCubit: adCubit),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('ad_slot_8')), findsOneWidget);
+      expect(find.byKey(const ValueKey('fake_ad_8')), findsOneWidget);
+      expect(find.text('linear 7'), findsOneWidget);
+      expect(find.text('linear 8'), findsOneWidget);
+      expect(repository.requestedSlots, contains(8));
+    });
+
+    testWidgets('does not inject ads when ads have been removed', (tester) async {
+      final database = AppDatabase(executor: NativeDatabase.memory());
+      addTearDown(database.close);
+      final settingsCubit = SettingsCubit(database: database, initialFeedLayout: FeedLayout.compact);
+      await settingsCubit.setAdsRemoved(true);
+      addTearDown(settingsCubit.close);
+      final repository = _FakeNativeAdRepository();
+      final adCubit = AdCubit(settingsCubit: settingsCubit, nativeAdRepository: repository);
+      addTearDown(adCubit.close);
+
+      await tester.pumpWidget(
+        _buildAdSubject(architecture: FeedLayout.compact, settingsCubit: settingsCubit, adCubit: adCubit),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('ad_slot_8')), findsNothing);
+      expect(repository.requestedSlots, isEmpty);
     });
   });
 

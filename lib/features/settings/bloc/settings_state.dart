@@ -13,6 +13,7 @@ class SettingsState extends Equatable {
     this.simulateOffline = false,
     this.threadAutoCollapseDepth,
     this.constellationUrl = 'https://constellation.microcosm.blue',
+    this.adsRemoved = false,
   });
 
   final AppThemePalette themePalette;
@@ -22,6 +23,7 @@ class SettingsState extends Equatable {
   final bool simulateOffline;
   final int? threadAutoCollapseDepth;
   final String constellationUrl;
+  final bool adsRemoved;
 
   SettingsState copyWith({
     AppThemePalette? themePalette,
@@ -31,6 +33,7 @@ class SettingsState extends Equatable {
     bool? simulateOffline,
     Object? threadAutoCollapseDepth = _threadAutoCollapseDepthUnset,
     String? constellationUrl,
+    bool? adsRemoved,
   }) {
     return SettingsState(
       themePalette: themePalette ?? this.themePalette,
@@ -42,6 +45,7 @@ class SettingsState extends Equatable {
           ? this.threadAutoCollapseDepth
           : threadAutoCollapseDepth as int?,
       constellationUrl: constellationUrl ?? this.constellationUrl,
+      adsRemoved: adsRemoved ?? this.adsRemoved,
     );
   }
 
@@ -54,5 +58,6 @@ class SettingsState extends Equatable {
     simulateOffline,
     threadAutoCollapseDepth,
     constellationUrl,
+    adsRemoved,
   ];
 }

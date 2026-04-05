@@ -22,7 +22,7 @@ Ads are rendered as `NativeAd` (Google AdMob) styled to match `PostCard` dimensi
 **Ad lifecycle:**
 
 1. `MobileAds.instance.initialize()` called once during app bootstrap (after auth, before first frame).
-2. Ads are pre-fetched one page ahead — when the feed loads page N, request ads for page N+1 slots.
+2. `AdCubit` pre-fetches deterministic ad slots for the currently loaded feed/profile page and requests slots on demand as they enter the tree.
 3. Each `NativeAd` is created with `NativeTemplateStyle(templateType: TemplateType.medium)` styled to match the app's surface colors and typography.
 4. `AdWidget` is inserted into the feed's item builder at calculated indices. The builder adjusts `itemCount` and maps visual indices back to data indices.
 5. `NativeAd.dispose()` is called when the ad scrolls far off-screen (hybrid lifecycle: create on approach, dispose on distance).
@@ -30,7 +30,7 @@ Ads are rendered as `NativeAd` (Google AdMob) styled to match `PostCard` dimensi
 
 **Ad-free flag:**
 
-A boolean `adsRemoved` in the Drift `Settings` table. When `true`, the ad item builder is skipped entirely — no `MobileAds.initialize()`, no network requests, no ad widgets.
+A persisted `ads_removed` value in the Drift-backed key/value `Settings` table. When `true`, the ad item builder is skipped entirely — no `MobileAds.initialize()`, no network requests, no ad widgets.
 
 **Platform configuration:**
 
@@ -88,10 +88,10 @@ Package: `in_app_purchase: ^3.2.3`
 
 ### Database Migration
 
-Add column to `Settings` table:
+Seed a persisted `ads_removed` setting for existing installs:
 
 ```sql
-ALTER TABLE settings ADD COLUMN ads_removed INTEGER NOT NULL DEFAULT 0;
+INSERT OR IGNORE INTO settings (key, value) VALUES ('ads_removed', 'false');
 ```
 
 Migration index: next sequential migration in `AppDatabase`.
