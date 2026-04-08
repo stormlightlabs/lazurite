@@ -6,6 +6,8 @@ import 'package:atproto/com_atproto_repo_describerepo.dart';
 import 'package:atproto/com_atproto_repo_getrecord.dart';
 import 'package:atproto/com_atproto_repo_listrecords.dart';
 import 'package:atproto_core/atproto_core.dart';
+import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/app_bsky_actor_searchactorstypeahead.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -16,6 +18,8 @@ abstract interface class DevToolsRepository {
   Future<IdentityResolveHandleOutput> resolveHandle({required String handle});
 
   Future<RepoDescribeRepoOutput> describeRepo({required String repo});
+
+  Future<List<ProfileViewBasic>> searchActorsTypeahead({required String query, int limit = 8});
 
   Future<RepoListRecordsOutput> listRecords({
     required String repo,
@@ -31,6 +35,8 @@ abstract interface class DevToolsRepository {
 final class AtprotoDevToolsRepository implements DevToolsRepository {
   const AtprotoDevToolsRepository({required ATProto atproto}) : _atproto = atproto;
 
+  static const _searchActorsTypeaheadNsid = NSID('app.bsky.actor.searchActorsTypeahead');
+
   final ATProto _atproto;
 
   @override
@@ -43,6 +49,21 @@ final class AtprotoDevToolsRepository implements DevToolsRepository {
   Future<RepoDescribeRepoOutput> describeRepo({required String repo}) async {
     final response = await _atproto.repo.describeRepo(repo: repo);
     return response.data;
+  }
+
+  @override
+  Future<List<ProfileViewBasic>> searchActorsTypeahead({required String query, int limit = 8}) async {
+    final normalizedQuery = query.trim().replaceFirst(RegExp(r'^@+'), '');
+    if (normalizedQuery.isEmpty) {
+      return const [];
+    }
+
+    final response = await _atproto.get(
+      _searchActorsTypeaheadNsid,
+      parameters: {'q': normalizedQuery, 'limit': limit},
+      to: const ActorSearchActorsTypeaheadOutputConverter().fromJson,
+    );
+    return response.data.actors;
   }
 
   @override
@@ -87,9 +108,10 @@ class DevToolsCubit extends Cubit<DevToolsState> {
   int _resolveRequestId = 0;
   int _collectionRequestId = 0;
   int _recordRequestId = 0;
+  int _typeaheadRequestId = 0;
 
   Future<void> resolve(String input) async {
-    final query = input.trim();
+    final query = _normalizeInputForResolve(input);
     if (query.isEmpty) {
       clearInput();
       return;
@@ -122,6 +144,46 @@ class DevToolsCubit extends Cubit<DevToolsState> {
         emit(state.copyWith(status: DevToolsStatus.error, errorMessage: _formatError(error)));
       }
     }
+  }
+
+  Future<void> queryTypeahead(String input) async {
+    final query = input.trim();
+    if (!query.startsWith('@')) {
+      clearTypeahead();
+      return;
+    }
+
+    final normalizedQuery = query.replaceFirst(RegExp(r'^@+'), '');
+    if (normalizedQuery.isEmpty) {
+      clearTypeahead();
+      return;
+    }
+
+    final typeaheadRequestId = _beginTypeaheadRequest();
+    emit(state.copyWith(isTypeaheadLoading: true, typeaheadActors: const []));
+
+    try {
+      final actors = await _repository.searchActorsTypeahead(query: normalizedQuery);
+      if (!_isActiveTypeaheadRequest(typeaheadRequestId)) {
+        return;
+      }
+
+      emit(state.copyWith(typeaheadActors: actors, isTypeaheadLoading: false));
+    } catch (error, stackTrace) {
+      log.w('DevToolsCubit: Failed to fetch handle typeahead', error: error, stackTrace: stackTrace);
+      if (_isActiveTypeaheadRequest(typeaheadRequestId)) {
+        emit(state.copyWith(typeaheadActors: const [], isTypeaheadLoading: false));
+      }
+    }
+  }
+
+  void clearTypeahead() {
+    final hadTypeahead = state.typeaheadActors.isNotEmpty || state.isTypeaheadLoading;
+    _beginTypeaheadRequest();
+    if (!hadTypeahead) {
+      return;
+    }
+    emit(state.copyWith(typeaheadActors: const [], isTypeaheadLoading: false));
   }
 
   Future<void> loadCollection(String collection) async {
@@ -283,6 +345,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
     _resolveRequestId++;
     _collectionRequestId++;
     _recordRequestId++;
+    _typeaheadRequestId++;
     return _resolveRequestId;
   }
 
@@ -297,11 +360,18 @@ class DevToolsCubit extends Cubit<DevToolsState> {
     return _recordRequestId;
   }
 
+  int _beginTypeaheadRequest() {
+    _typeaheadRequestId++;
+    return _typeaheadRequestId;
+  }
+
   bool _isActiveResolveRequest(int requestId) => requestId == _resolveRequestId;
 
   bool _isActiveCollectionRequest(int requestId) => requestId == _collectionRequestId;
 
   bool _isActiveRecordRequest(int requestId) => requestId == _recordRequestId;
+
+  bool _isActiveTypeaheadRequest(int requestId) => requestId == _typeaheadRequestId;
 
   Future<void> _resolveAtUri(String input, int resolveRequestId) async {
     final atUri = _parseAtUri(input);
@@ -366,12 +436,13 @@ class DevToolsCubit extends Cubit<DevToolsState> {
   }
 
   Future<({String did, String? handle})> _resolveIdentity(String input) async {
-    if (input.startsWith('did:')) {
-      return (did: input, handle: null);
+    final normalizedInput = _normalizeInputForResolve(input);
+    if (normalizedInput.startsWith('did:')) {
+      return (did: normalizedInput, handle: null);
     }
 
-    final response = await _repository.resolveHandle(handle: input);
-    return (did: response.did, handle: input);
+    final response = await _repository.resolveHandle(handle: normalizedInput);
+    return (did: response.did, handle: normalizedInput);
   }
 
   AtUri _parseAtUri(String input) {
@@ -492,5 +563,13 @@ class DevToolsCubit extends Cubit<DevToolsState> {
     }
 
     return error.toString();
+  }
+
+  String _normalizeInputForResolve(String input) {
+    final query = input.trim();
+    if (query.startsWith('@') && !query.startsWith('at://')) {
+      return query.replaceFirst(RegExp(r'^@+'), '');
+    }
+    return query;
   }
 }

@@ -46,6 +46,8 @@ class DevToolsState extends Equatable {
     this.did,
     this.handle,
     this.repoHandle,
+    this.typeaheadActors = const [],
+    this.isTypeaheadLoading = false,
     this.collections = const [],
     this.isCollectionCountsLoading = false,
     this.selectedCollection,
@@ -61,6 +63,8 @@ class DevToolsState extends Equatable {
   final String? did;
   final String? handle;
   final String? repoHandle;
+  final List<ProfileViewBasic> typeaheadActors;
+  final bool isTypeaheadLoading;
   final List<CollectionSummary> collections;
   final bool isCollectionCountsLoading;
   final String? selectedCollection;
@@ -91,6 +95,8 @@ class DevToolsState extends Equatable {
     Object? did = _devToolsStateNoChange,
     Object? handle = _devToolsStateNoChange,
     Object? repoHandle = _devToolsStateNoChange,
+    List<ProfileViewBasic>? typeaheadActors,
+    bool? isTypeaheadLoading,
     List<CollectionSummary>? collections,
     bool? isCollectionCountsLoading,
     Object? selectedCollection = _devToolsStateNoChange,
@@ -106,6 +112,8 @@ class DevToolsState extends Equatable {
       did: identical(did, _devToolsStateNoChange) ? this.did : did as String?,
       handle: identical(handle, _devToolsStateNoChange) ? this.handle : handle as String?,
       repoHandle: identical(repoHandle, _devToolsStateNoChange) ? this.repoHandle : repoHandle as String?,
+      typeaheadActors: typeaheadActors ?? this.typeaheadActors,
+      isTypeaheadLoading: isTypeaheadLoading ?? this.isTypeaheadLoading,
       collections: collections ?? this.collections,
       isCollectionCountsLoading: isCollectionCountsLoading ?? this.isCollectionCountsLoading,
       selectedCollection: identical(selectedCollection, _devToolsStateNoChange)
@@ -128,6 +136,8 @@ class DevToolsState extends Equatable {
     did,
     handle,
     repoHandle,
+    typeaheadActors,
+    isTypeaheadLoading,
     collections,
     isCollectionCountsLoading,
     selectedCollection,

@@ -1,64 +1,96 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bluesky/app_bsky_video_getuploadlimits.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
-import 'package:mocktail/mocktail.dart';
 
-class MockVideoRepository extends Mock implements VideoRepository {}
-
-void main() {
-  late MockVideoRepository mockRepository;
-
-  setUp(() {
-    mockRepository = MockVideoRepository();
+class FakeVideoUploadLimitsApi implements VideoUploadLimitsApi {
+  FakeVideoUploadLimitsApi({
+    this.getUploadLimitsHandler,
+    this.getUploadLimitsAuthTokenHandler,
+    this.getUploadLimitsWithAuthTokenHandler,
   });
 
+  Future<VideoGetUploadLimitsOutput> Function()? getUploadLimitsHandler;
+  Future<String> Function()? getUploadLimitsAuthTokenHandler;
+  Future<VideoGetUploadLimitsOutput> Function(String authToken)? getUploadLimitsWithAuthTokenHandler;
+
+  @override
+  Future<VideoGetUploadLimitsOutput> getUploadLimits() {
+    final handler = getUploadLimitsHandler;
+    if (handler == null) {
+      throw UnimplementedError('getUploadLimitsHandler was not set');
+    }
+    return handler();
+  }
+
+  @override
+  Future<String> getUploadLimitsAuthToken() {
+    final handler = getUploadLimitsAuthTokenHandler;
+    if (handler == null) {
+      throw UnimplementedError('getUploadLimitsAuthTokenHandler was not set');
+    }
+    return handler();
+  }
+
+  @override
+  Future<VideoGetUploadLimitsOutput> getUploadLimitsWithAuthToken(String authToken) {
+    final handler = getUploadLimitsWithAuthTokenHandler;
+    if (handler == null) {
+      throw UnimplementedError('getUploadLimitsWithAuthTokenHandler was not set');
+    }
+    return handler(authToken);
+  }
+}
+
+void main() {
   group('VideoRepository.getUploadLimits', () {
     test('returns limits when canUpload is true', () async {
-      when(() => mockRepository.getUploadLimits()).thenAnswer(
-        (_) async =>
-            const VideoUploadLimits(canUpload: true, remainingDailyVideos: 10, remainingDailyBytes: 1024 * 1024 * 500),
+      final api = FakeVideoUploadLimitsApi(
+        getUploadLimitsHandler: () async =>
+            const VideoGetUploadLimitsOutput(canUpload: true, remainingDailyVideos: 10, remainingDailyBytes: 500000000),
       );
-
-      final result = await mockRepository.getUploadLimits();
+      final repository = VideoRepository(api: api);
+      final result = await repository.getUploadLimits();
 
       expect(result.canUpload, isTrue);
       expect(result.remainingDailyVideos, 10);
-      expect(result.remainingDailyBytes, 1024 * 1024 * 500);
+      expect(result.remainingDailyBytes, 500000000);
       expect(result.message, isNull);
       expect(result.error, isNull);
     });
 
-    test('returns limits with message and error when canUpload is false', () async {
-      when(() => mockRepository.getUploadLimits()).thenAnswer(
-        (_) async => const VideoUploadLimits(
-          canUpload: false,
-          remainingDailyVideos: 0,
-          remainingDailyBytes: 0,
-          message: 'Daily limit reached',
-          error: 'DAILY_LIMIT_EXCEEDED',
-        ),
+    test('retries with service-auth token when direct limits request fails', () async {
+      final api = FakeVideoUploadLimitsApi(
+        getUploadLimitsHandler: () async => throw Exception('invalid token'),
+        getUploadLimitsAuthTokenHandler: () async => 'service-auth-token',
+        getUploadLimitsWithAuthTokenHandler: (authToken) async {
+          expect(authToken, 'service-auth-token');
+          return const VideoGetUploadLimitsOutput(
+            canUpload: false,
+            remainingDailyVideos: 0,
+            remainingDailyBytes: 0,
+            message: 'Daily limit reached',
+            error: 'DAILY_LIMIT_EXCEEDED',
+          );
+        },
       );
-
-      final result = await mockRepository.getUploadLimits();
+      final repository = VideoRepository(api: api);
+      final result = await repository.getUploadLimits();
 
       expect(result.canUpload, isFalse);
+      expect(result.remainingDailyVideos, 0);
+      expect(result.remainingDailyBytes, 0);
       expect(result.message, 'Daily limit reached');
       expect(result.error, 'DAILY_LIMIT_EXCEEDED');
     });
 
-    test('returns limits with all optional fields null', () async {
-      when(() => mockRepository.getUploadLimits()).thenAnswer((_) async => const VideoUploadLimits(canUpload: true));
+    test('rethrows the original error when direct and fallback requests fail', () async {
+      final api = FakeVideoUploadLimitsApi(
+        getUploadLimitsHandler: () async => throw Exception('invalid token'),
+        getUploadLimitsAuthTokenHandler: () async => throw Exception('service auth unavailable'),
+      );
+      final repository = VideoRepository(api: api);
 
-      final result = await mockRepository.getUploadLimits();
-
-      expect(result.canUpload, isTrue);
-      expect(result.remainingDailyVideos, isNull);
-      expect(result.remainingDailyBytes, isNull);
-    });
-
-    test('propagates exceptions', () async {
-      when(() => mockRepository.getUploadLimits()).thenThrow(Exception('auth error'));
-
-      expect(() => mockRepository.getUploadLimits(), throwsException);
+      await expectLater(repository.getUploadLimits(), throwsA(isA<Exception>()));
     });
   });
 

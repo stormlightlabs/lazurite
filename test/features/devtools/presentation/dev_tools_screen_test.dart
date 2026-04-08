@@ -1,5 +1,6 @@
 import 'package:atproto/com_atproto_repo_listrecords.dart';
 import 'package:atproto_core/atproto_core.dart';
+import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,11 +32,13 @@ void main() {
 
     when(() => mockDevToolsCubit.state).thenReturn(const DevToolsState());
     when(() => mockDevToolsCubit.resolve(any())).thenAnswer((_) async {});
+    when(() => mockDevToolsCubit.queryTypeahead(any())).thenAnswer((_) async {});
     when(() => mockDevToolsCubit.loadCollection(any())).thenAnswer((_) async {});
     when(() => mockDevToolsCubit.loadRecord(any())).thenAnswer((_) async {});
     when(() => mockDevToolsCubit.loadMoreRecords()).thenAnswer((_) async {});
     when(() => mockDevToolsCubit.goBackToRepo()).thenReturn(null);
     when(() => mockDevToolsCubit.goBackToCollection()).thenReturn(null);
+    when(() => mockDevToolsCubit.clearTypeahead()).thenReturn(null);
     when(() => mockDevToolsCubit.clearInput()).thenReturn(null);
 
     whenListen(mockDevToolsCubit, const Stream<DevToolsState>.empty(), initialState: const DevToolsState());
@@ -120,6 +123,32 @@ void main() {
       await tester.tap(find.text('Resolve'));
 
       verify(() => mockDevToolsCubit.resolve('alice.bsky.social')).called(1);
+    });
+
+    testWidgets('typing @handle triggers typeahead query', (tester) async {
+      await tester.pumpWidget(buildSubject());
+
+      await tester.enterText(find.byType(TextField), '@ali');
+      await tester.pump();
+
+      verify(() => mockDevToolsCubit.queryTypeahead('@ali')).called(1);
+    });
+
+    testWidgets('tapping a typeahead suggestion resolves the selected handle', (tester) async {
+      const state = DevToolsState(
+        typeaheadActors: [ProfileViewBasic(did: 'did:plc:alice', handle: 'alice.bsky.social', displayName: 'Alice')],
+      );
+      when(() => mockDevToolsCubit.state).thenReturn(state);
+      whenListen(mockDevToolsCubit, const Stream<DevToolsState>.empty(), initialState: state);
+
+      await tester.pumpWidget(buildSubject());
+      await tester.enterText(find.byType(TextField), '@a');
+      await tester.pump();
+
+      await tester.tap(find.text('Alice'));
+
+      verify(() => mockDevToolsCubit.resolve('alice.bsky.social')).called(1);
+      verify(() => mockDevToolsCubit.clearTypeahead()).called(1);
     });
 
     testWidgets('initial query prefills the input and resolves automatically', (tester) async {

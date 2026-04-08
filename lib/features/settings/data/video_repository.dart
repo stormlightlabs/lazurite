@@ -1,13 +1,62 @@
 import 'package:bluesky/bluesky.dart';
+import 'package:bluesky/app_bsky_video_getuploadlimits.dart';
 
-class VideoRepository {
-  VideoRepository({required Bluesky bluesky}) : _bluesky = bluesky;
+abstract interface class VideoUploadLimitsApi {
+  Future<VideoGetUploadLimitsOutput> getUploadLimits();
+
+  Future<String> getUploadLimitsAuthToken();
+
+  Future<VideoGetUploadLimitsOutput> getUploadLimitsWithAuthToken(String authToken);
+}
+
+final class BlueskyVideoUploadLimitsApi implements VideoUploadLimitsApi {
+  const BlueskyVideoUploadLimitsApi({required Bluesky bluesky}) : _bluesky = bluesky;
 
   final Bluesky _bluesky;
 
-  Future<VideoUploadLimits> getUploadLimits() async {
+  @override
+  Future<VideoGetUploadLimitsOutput> getUploadLimits() async {
     final response = await _bluesky.video.getUploadLimits();
-    final data = response.data;
+    return response.data;
+  }
+
+  @override
+  Future<String> getUploadLimitsAuthToken() async {
+    final auth = await _bluesky.video.getUploadLimitsAuth();
+    return auth.data.token;
+  }
+
+  @override
+  Future<VideoGetUploadLimitsOutput> getUploadLimitsWithAuthToken(String authToken) async {
+    final response = await _bluesky.video.getUploadLimitsWithAuthToken(authToken);
+    return response.data;
+  }
+}
+
+class VideoRepository {
+  VideoRepository({Bluesky? bluesky, VideoUploadLimitsApi? api})
+    : assert(bluesky != null || api != null, 'Provide either bluesky or api'),
+      _api = api ?? BlueskyVideoUploadLimitsApi(bluesky: bluesky!);
+
+  final VideoUploadLimitsApi _api;
+
+  Future<VideoUploadLimits> getUploadLimits() async {
+    try {
+      final limits = await _api.getUploadLimits();
+      return _mapLimits(limits);
+    } catch (error, stackTrace) {
+      // Some auth flows require a short-lived service auth token for this endpoint.
+      try {
+        final authToken = await _api.getUploadLimitsAuthToken();
+        final limits = await _api.getUploadLimitsWithAuthToken(authToken);
+        return _mapLimits(limits);
+      } catch (_) {
+        Error.throwWithStackTrace(error, stackTrace);
+      }
+    }
+  }
+
+  VideoUploadLimits _mapLimits(VideoGetUploadLimitsOutput data) {
     return VideoUploadLimits(
       canUpload: data.canUpload,
       remainingDailyVideos: data.remainingDailyVideos,

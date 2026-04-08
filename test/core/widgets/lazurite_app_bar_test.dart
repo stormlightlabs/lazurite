@@ -90,7 +90,7 @@ void main() {
     expect(find.byType(AppShellMenuButton), findsOneWidget);
   });
 
-  testWidgets('renders initials from handle when displayName is absent', (tester) async {
+  testWidgets('renders app bar when displayName is absent', (tester) async {
     authBloc = MockAuthBloc();
     const noDisplayName = AuthTokens(
       accessToken: 'access',
@@ -104,7 +104,8 @@ void main() {
 
     await tester.pumpWidget(buildSubject(sectionLabel: 'Home'));
     await tester.pumpAndSettle();
-    expect(find.text('A'), findsOneWidget);
+    expect(find.text('HOME'), findsOneWidget);
+    expect(find.byType(AppShellMenuButton), findsOneWidget);
   });
 
   testWidgets('shows simulated offline indicator and lets the user disable it', (tester) async {
@@ -145,7 +146,7 @@ void main() {
     expect(find.text('bottom-content'), findsOneWidget);
   });
 
-  testWidgets('unauthenticated state shows default L initial', (tester) async {
+  testWidgets('unauthenticated state still renders app bar shell', (tester) async {
     authBloc = MockAuthBloc();
     when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.unauthenticated());
@@ -153,6 +154,7 @@ void main() {
     await tester.pumpWidget(buildSubject(sectionLabel: 'Home'));
     await tester.pumpAndSettle();
 
-    expect(find.text('L'), findsOneWidget);
+    expect(find.text('HOME'), findsOneWidget);
+    expect(find.byType(AppShellMenuButton), findsOneWidget);
   });
 }

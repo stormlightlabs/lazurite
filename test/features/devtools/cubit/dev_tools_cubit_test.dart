@@ -3,6 +3,7 @@ import 'package:atproto/com_atproto_repo_describerepo.dart';
 import 'package:atproto/com_atproto_repo_getrecord.dart';
 import 'package:atproto/com_atproto_repo_listrecords.dart';
 import 'package:atproto_core/atproto_core.dart';
+import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
@@ -11,12 +12,14 @@ class FakeDevToolsRepository implements DevToolsRepository {
   FakeDevToolsRepository({
     this.resolveHandleHandler,
     this.describeRepoHandler,
+    this.searchActorsTypeaheadHandler,
     this.listRecordsHandler,
     this.getRecordHandler,
   });
 
   Future<IdentityResolveHandleOutput> Function({required String handle})? resolveHandleHandler;
   Future<RepoDescribeRepoOutput> Function({required String repo})? describeRepoHandler;
+  Future<List<ProfileViewBasic>> Function({required String query, int limit})? searchActorsTypeaheadHandler;
   Future<RepoListRecordsOutput> Function({
     required String repo,
     required String collection,
@@ -31,6 +34,15 @@ class FakeDevToolsRepository implements DevToolsRepository {
   @override
   Future<RepoDescribeRepoOutput> describeRepo({required String repo}) {
     return describeRepoHandler!.call(repo: repo);
+  }
+
+  @override
+  Future<List<ProfileViewBasic>> searchActorsTypeahead({required String query, int limit = 8}) async {
+    final handler = searchActorsTypeaheadHandler;
+    if (handler == null) {
+      return const [];
+    }
+    return handler(query: query, limit: limit);
   }
 
   @override
@@ -71,11 +83,52 @@ void main() {
     );
 
     blocTest<DevToolsCubit, DevToolsState>(
+      'queryTypeahead loads suggestions for @handle input',
+      build: () {
+        final repository = FakeDevToolsRepository(
+          searchActorsTypeaheadHandler: ({required String query, int limit = 8}) async {
+            expect(query, 'alice');
+            expect(limit, 8);
+            return const [ProfileViewBasic(did: 'did:plc:alice', handle: 'alice.bsky.social')];
+          },
+        );
+        return DevToolsCubit(repository: repository);
+      },
+      act: (cubit) => cubit.queryTypeahead('@alice'),
+      expect: () => [
+        isA<DevToolsState>()
+            .having((state) => state.isTypeaheadLoading, 'isTypeaheadLoading', isTrue)
+            .having((state) => state.typeaheadActors, 'typeaheadActors', isEmpty),
+        isA<DevToolsState>()
+            .having((state) => state.isTypeaheadLoading, 'isTypeaheadLoading', isFalse)
+            .having((state) => state.typeaheadActors.length, 'typeaheadActors.length', 1)
+            .having((state) => state.typeaheadActors.first.handle, 'first actor handle', 'alice.bsky.social'),
+      ],
+    );
+
+    blocTest<DevToolsCubit, DevToolsState>(
+      'queryTypeahead clears suggestions when input is not an @handle',
+      build: () => DevToolsCubit(repository: FakeDevToolsRepository()),
+      seed: () => const DevToolsState(
+        typeaheadActors: [ProfileViewBasic(did: 'did:plc:alice', handle: 'alice.bsky.social')],
+        isTypeaheadLoading: true,
+      ),
+      act: (cubit) => cubit.queryTypeahead('alice'),
+      expect: () => [
+        isA<DevToolsState>()
+            .having((state) => state.isTypeaheadLoading, 'isTypeaheadLoading', isFalse)
+            .having((state) => state.typeaheadActors, 'typeaheadActors', isEmpty),
+      ],
+    );
+
+    blocTest<DevToolsCubit, DevToolsState>(
       'resolve handle loads repo and progressive collection counts',
       build: () {
         final repository = FakeDevToolsRepository(
-          resolveHandleHandler: ({required String handle}) async =>
-              const IdentityResolveHandleOutput(did: 'did:plc:alice'),
+          resolveHandleHandler: ({required String handle}) async {
+            expect(handle, 'alice.bsky.social');
+            return const IdentityResolveHandleOutput(did: 'did:plc:alice');
+          },
           describeRepoHandler: ({required String repo}) async => const RepoDescribeRepoOutput(
             handle: 'alice.bsky.social',
             did: 'did:plc:alice',
@@ -102,7 +155,7 @@ void main() {
 
         return DevToolsCubit(repository: repository);
       },
-      act: (cubit) => cubit.resolve('alice.bsky.social'),
+      act: (cubit) => cubit.resolve('@alice.bsky.social'),
       wait: const Duration(milliseconds: 10),
       expect: () => [
         const DevToolsState(status: DevToolsStatus.loading),

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:atproto/com_atproto_repo_listrecords.dart';
+import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -96,40 +98,134 @@ class _SearchInputState extends State<_SearchInput> {
 
   @override
   Widget build(BuildContext context) {
+    final shouldShowTypeahead =
+        _controller.text.trim().startsWith('@') &&
+        (widget.state.isTypeaheadLoading || widget.state.typeaheadActors.isNotEmpty);
+
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              decoration: const InputDecoration(
-                hintText: 'Handle, DID, or at:// URI',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                isDense: true,
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  decoration: const InputDecoration(
+                    hintText: 'Handle, DID, or at:// URI',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    isDense: true,
+                  ),
+                  style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13),
+                  onChanged: _onQueryChanged,
+                  onSubmitted: _resolve,
+                ),
               ),
-              style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13),
-              onSubmitted: _resolve,
+              const SizedBox(width: 8),
+              FilledButton(
+                onPressed: widget.state.isLoading ? null : () => _resolve(_controller.text),
+                child: const Text('Resolve'),
+              ),
+            ],
+          ),
+          if (shouldShowTypeahead) ...[
+            const SizedBox(height: 8),
+            _TypeaheadResults(
+              actors: widget.state.typeaheadActors,
+              isLoading: widget.state.isTypeaheadLoading,
+              onSelected: _resolveHandleSuggestion,
             ),
-          ),
-          const SizedBox(width: 8),
-          FilledButton(
-            onPressed: widget.state.isLoading ? null : () => _resolve(_controller.text),
-            child: const Text('Resolve'),
-          ),
+          ],
         ],
       ),
     );
   }
 
   void _resolve(String value) {
-    final query = value.trim();
+    final query = _normalizeHandleQuery(value);
     if (query.isEmpty) {
       return;
     }
 
-    context.read<DevToolsCubit>().resolve(query);
+    final cubit = context.read<DevToolsCubit>();
+    cubit.clearTypeahead();
+    cubit.resolve(query);
+  }
+
+  void _resolveHandleSuggestion(ProfileViewBasic actor) {
+    final suggestion = '@${actor.handle}';
+    _controller
+      ..text = suggestion
+      ..selection = TextSelection.collapsed(offset: suggestion.length);
+    _resolve(suggestion);
+  }
+
+  void _onQueryChanged(String value) {
+    setState(() {});
+
+    final cubit = context.read<DevToolsCubit>();
+    final query = value.trim();
+    if (!query.startsWith('@')) {
+      cubit.clearTypeahead();
+      return;
+    }
+
+    unawaited(cubit.queryTypeahead(query));
+  }
+
+  String _normalizeHandleQuery(String value) {
+    final query = value.trim();
+    if (query.startsWith('@') && !query.startsWith('at://')) {
+      return query.replaceFirst(RegExp(r'^@+'), '');
+    }
+    return query;
+  }
+}
+
+class _TypeaheadResults extends StatelessWidget {
+  const _TypeaheadResults({required this.actors, required this.isLoading, required this.onSelected});
+
+  final List<ProfileViewBasic> actors;
+  final bool isLoading;
+  final ValueChanged<ProfileViewBasic> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final listHeight = (actors.length * 56.0).clamp(56.0, 220.0);
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.dividerColor),
+        borderRadius: BorderRadius.circular(8),
+        color: theme.colorScheme.surface,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isLoading) const LinearProgressIndicator(minHeight: 2),
+          if (actors.isNotEmpty)
+            SizedBox(
+              height: listHeight,
+              child: ListView.separated(
+                itemCount: actors.length,
+                separatorBuilder: (_, _) => Divider(height: 1, color: theme.dividerColor),
+                itemBuilder: (context, index) {
+                  final actor = actors[index];
+                  return ListTile(
+                    dense: true,
+                    title: Text(actor.displayName ?? actor.handle),
+                    subtitle: Text('@${actor.handle}'),
+                    onTap: () => onSelected(actor),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 
@@ -233,31 +329,38 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.explore_outlined, size: 64, color: Theme.of(context).colorScheme.outline),
-            const SizedBox(height: 16),
-            Text('PDS Explorer', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Enter a handle, DID, or AT-URI to explore\n'
-              'a user\'s repository.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.explore_outlined, size: 64, color: Theme.of(context).colorScheme.outline),
+                  const SizedBox(height: 16),
+                  Text('PDS Explorer', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Enter a handle, DID, or AT-URI to explore\n'
+                    'a user\'s repository.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton.icon(
+                    onPressed: () => _openExternalUrl('https://pds.ls'),
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    label: const Text('Inspired by pds.ls'),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            TextButton.icon(
-              onPressed: () => _openExternalUrl('https://pds.ls'),
-              icon: const Icon(Icons.open_in_new, size: 16),
-              label: const Text('Inspired by pds.ls'),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -528,7 +631,7 @@ class _RecordInspector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final jsonString = const JsonEncoder.withIndent('  ').convert(record.value);
+    final jsonString = _formatJson(record.value);
 
     return Column(
       children: [
@@ -601,76 +704,24 @@ class _RecordInspector extends StatelessWidget {
 class _JsonViewer extends StatelessWidget {
   const _JsonViewer({required this.json});
 
-  final Map<String, dynamic> json;
+  final Object? json;
 
   @override
   Widget build(BuildContext context) {
-    return SelectableText.rich(
-      TextSpan(children: _buildSpans(context, json, 0)),
+    return SelectableText(
+      _formatJson(json),
       style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 12, height: 1.8),
     );
   }
+}
 
-  List<TextSpan> _buildSpans(BuildContext context, dynamic value, int indent) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    final surfaceVariant = theme.colorScheme.onSurfaceVariant;
-    final keyStyle = theme.textTheme.bodySmall!.copyWith(color: surfaceVariant);
-    final valueStyle = theme.textTheme.bodySmall!.copyWith(color: primaryColor);
-    final strStyle = theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.secondary);
-    final numStyle = theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.tertiary);
-    final boolStyle = theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.primary);
-    final nullStyle = theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.error);
+const JsonEncoder _jsonFormatter = JsonEncoder.withIndent('  ');
 
-    if (value is Map<String, dynamic>) {
-      final spans = <TextSpan>[TextSpan(text: '{\n', style: keyStyle)];
-      final entries = value.entries.toList();
-      for (var i = 0; i < entries.length; i++) {
-        final entry = entries[i];
-        spans.add(TextSpan(text: '  ' * (indent + 1), style: keyStyle));
-        spans.add(TextSpan(text: '"${entry.key}"', style: valueStyle));
-        spans.add(TextSpan(text: ': ', style: keyStyle));
-        spans.addAll(_buildSpans(context, entry.value, indent + 1));
-        if (i < entries.length - 1) {
-          spans.add(TextSpan(text: ',', style: keyStyle));
-        }
-        spans.add(TextSpan(text: '\n', style: keyStyle));
-      }
-      spans.add(TextSpan(text: '  ' * indent + '}', style: keyStyle));
-      return spans;
-    }
-
-    if (value is List) {
-      final spans = <TextSpan>[TextSpan(text: '[\n', style: keyStyle)];
-      for (var i = 0; i < value.length; i++) {
-        spans.add(TextSpan(text: '  ' * (indent + 1), style: keyStyle));
-        spans.addAll(_buildSpans(context, value[i], indent + 1));
-        if (i < value.length - 1) {
-          spans.add(TextSpan(text: ',', style: keyStyle));
-        }
-        spans.add(TextSpan(text: '\n', style: keyStyle));
-      }
-      spans.add(TextSpan(text: '  ' * indent + ']', style: keyStyle));
-      return spans;
-    }
-
-    if (value is String) {
-      return [TextSpan(text: '"$value"', style: strStyle)];
-    }
-
-    if (value is num) {
-      return [TextSpan(text: value.toString(), style: numStyle)];
-    }
-
-    if (value is bool) {
-      return [TextSpan(text: value.toString(), style: boolStyle)];
-    }
-
-    if (value == null) {
-      return [TextSpan(text: 'null', style: nullStyle)];
-    }
-
-    return [TextSpan(text: value.toString())];
+String _formatJson(Object? value) {
+  try {
+    return _jsonFormatter.convert(value);
+  } catch (_) {
+    return value?.toString() ?? 'null';
   }
 }
 

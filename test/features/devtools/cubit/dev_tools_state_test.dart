@@ -1,5 +1,6 @@
 import 'package:atproto/com_atproto_repo_listrecords.dart';
 import 'package:atproto_core/atproto_core.dart';
+import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 
@@ -52,6 +53,8 @@ void main() {
       expect(state.did, isNull);
       expect(state.handle, isNull);
       expect(state.repoHandle, isNull);
+      expect(state.typeaheadActors, isEmpty);
+      expect(state.isTypeaheadLoading, isFalse);
       expect(state.collections, isEmpty);
       expect(state.isCollectionCountsLoading, isFalse);
       expect(state.selectedCollection, isNull);
@@ -147,6 +150,8 @@ void main() {
         did: 'did:plc:test',
         handle: 'test.bsky.social',
         repoHandle: 'test.bsky.social',
+        typeaheadActors: [const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social')],
+        isTypeaheadLoading: true,
         collections: const [CollectionSummary('app.bsky.feed.post', recordCount: 1)],
         isCollectionCountsLoading: true,
         selectedCollection: 'app.bsky.feed.post',
@@ -162,6 +167,8 @@ void main() {
         did: null,
         handle: null,
         repoHandle: null,
+        typeaheadActors: const [],
+        isTypeaheadLoading: false,
         isCollectionCountsLoading: false,
         selectedCollection: null,
         records: null,
@@ -175,6 +182,8 @@ void main() {
       expect(updated.did, isNull);
       expect(updated.handle, isNull);
       expect(updated.repoHandle, isNull);
+      expect(updated.typeaheadActors, isEmpty);
+      expect(updated.isTypeaheadLoading, isFalse);
       expect(updated.isCollectionCountsLoading, isFalse);
       expect(updated.selectedCollection, isNull);
       expect(updated.records, isNull);
@@ -191,6 +200,8 @@ void main() {
         did: 'did:plc:test',
         handle: 'test.bsky.social',
         repoHandle: 'test.bsky.social',
+        typeaheadActors: [ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social')],
+        isTypeaheadLoading: true,
         collections: [CollectionSummary('app.bsky.feed.post', recordCount: 1)],
         isCollectionCountsLoading: true,
         selectedCollection: 'app.bsky.feed.post',
@@ -201,7 +212,7 @@ void main() {
         errorMessage: 'error',
       );
 
-      expect(state.props.length, 13);
+      expect(state.props.length, 15);
       expect(state.props, contains(DevToolsStatus.repoLoaded));
       expect(state.props, contains(true));
       expect(state.props, contains('did:plc:test'));
