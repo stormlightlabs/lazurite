@@ -69,7 +69,7 @@ class OxocarbonTheme {
         backgroundColor: darkBase00,
         foregroundColor: darkBase05,
         surfaceTintColor: darkBase09,
-        titleTextStyle: AppTypography.dmSans(fontSize: 18, fontWeight: FontWeight.w600, color: darkBase05),
+        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: darkBase05),
       ),
       cardTheme: const CardThemeData(color: darkBase01, surfaceTintColor: darkBase09),
       dividerTheme: const DividerThemeData(color: darkBase02),
@@ -77,8 +77,8 @@ class OxocarbonTheme {
       listTileTheme: ListTileThemeData(
         textColor: darkBase05,
         iconColor: darkBase04,
-        titleTextStyle: AppTypography.dmSans(fontSize: 16, fontWeight: FontWeight.w500, color: darkBase05),
-        subtitleTextStyle: AppTypography.dmSans(fontSize: 14, color: darkBase04),
+        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: darkBase05),
+        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: darkBase04),
       ),
       textTheme: AppTypography.textTheme(bodyColor: darkBase05, headlineColor: darkBase06, captionColor: darkBase03),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -89,13 +89,13 @@ class OxocarbonTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: darkBase09,
           foregroundColor: darkBase00,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: darkBase09,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -104,12 +104,12 @@ class OxocarbonTheme {
         border: const OutlineInputBorder(borderSide: BorderSide(color: darkBase02)),
         enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: darkBase02)),
         focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: darkBase09)),
-        labelStyle: AppTypography.dmSans(color: darkBase03),
-        hintStyle: AppTypography.dmSans(color: darkBase03),
+        labelStyle: AppTypography.googleSans(color: darkBase03),
+        hintStyle: AppTypography.googleSans(color: darkBase03),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: darkBase01,
-        contentTextStyle: AppTypography.dmSans(color: darkBase05),
+        contentTextStyle: AppTypography.googleSans(color: darkBase05),
       ),
     );
   }
@@ -145,7 +145,7 @@ class OxocarbonTheme {
         backgroundColor: lightBase00,
         foregroundColor: lightBase03,
         surfaceTintColor: lightBase0B,
-        titleTextStyle: AppTypography.dmSans(fontSize: 18, fontWeight: FontWeight.w600, color: lightBase03),
+        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: lightBase03),
       ),
       cardTheme: const CardThemeData(color: lightBase01, surfaceTintColor: lightBase0B),
       dividerTheme: const DividerThemeData(color: lightBase02),
@@ -153,8 +153,8 @@ class OxocarbonTheme {
       listTileTheme: ListTileThemeData(
         textColor: lightBase03,
         iconColor: lightBase04,
-        titleTextStyle: AppTypography.dmSans(fontSize: 16, fontWeight: FontWeight.w500, color: lightBase03),
-        subtitleTextStyle: AppTypography.dmSans(fontSize: 14, color: lightBase04),
+        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: lightBase03),
+        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: lightBase04),
       ),
       textTheme: AppTypography.textTheme(bodyColor: lightBase03, headlineColor: lightBase03, captionColor: lightBase05),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -165,13 +165,13 @@ class OxocarbonTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: lightBase0B,
           foregroundColor: lightBase00,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: lightBase0B,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -180,12 +180,12 @@ class OxocarbonTheme {
         border: const OutlineInputBorder(borderSide: BorderSide(color: lightBase02)),
         enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: lightBase02)),
         focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: lightBase0B)),
-        labelStyle: AppTypography.dmSans(color: lightBase05),
-        hintStyle: AppTypography.dmSans(color: lightBase05),
+        labelStyle: AppTypography.googleSans(color: lightBase05),
+        hintStyle: AppTypography.googleSans(color: lightBase05),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: lightBase01,
-        contentTextStyle: AppTypography.dmSans(color: lightBase03),
+        contentTextStyle: AppTypography.googleSans(color: lightBase03),
       ),
     );
   }

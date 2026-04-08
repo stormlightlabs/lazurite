@@ -237,11 +237,10 @@ class _LazuriteAppState extends State<LazuriteApp> {
                       ListRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
                 ),
                 RepositoryProvider(
-                  create: (context) => ProfileRepository(
-                    database: widget.database,
-                    bluesky: bluesky,
-                    moderationService: context.read<ModerationService>(),
-                  ),
+                  create: (context) {
+                    final service = context.read<ModerationService>();
+                    return ProfileRepository(database: widget.database, bluesky: bluesky, moderationService: service);
+                  },
                 ),
                 RepositoryProvider(
                   create: (context) =>

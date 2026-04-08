@@ -67,7 +67,7 @@ class CatppuccinTheme {
         backgroundColor: mochaBase,
         foregroundColor: mochaText,
         surfaceTintColor: mochaLavender,
-        titleTextStyle: AppTypography.dmSans(fontSize: 18, fontWeight: FontWeight.w600, color: mochaText),
+        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: mochaText),
       ),
       cardTheme: const CardThemeData(color: mochaMantle, surfaceTintColor: mochaLavender),
       dividerTheme: const DividerThemeData(color: mochaSurface0),
@@ -75,8 +75,8 @@ class CatppuccinTheme {
       listTileTheme: ListTileThemeData(
         textColor: mochaText,
         iconColor: mochaSubtext0,
-        titleTextStyle: AppTypography.dmSans(fontSize: 16, fontWeight: FontWeight.w500, color: mochaText),
-        subtitleTextStyle: AppTypography.dmSans(fontSize: 14, color: mochaSubtext0),
+        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: mochaText),
+        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: mochaSubtext0),
       ),
       textTheme: AppTypography.textTheme(bodyColor: mochaText, headlineColor: mochaText, captionColor: mochaSurface1),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -87,13 +87,13 @@ class CatppuccinTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: mochaLavender,
           foregroundColor: mochaBase,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: mochaLavender,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -102,12 +102,12 @@ class CatppuccinTheme {
         border: const OutlineInputBorder(borderSide: BorderSide(color: mochaSurface0)),
         enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: mochaSurface0)),
         focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: mochaLavender)),
-        labelStyle: AppTypography.dmSans(color: mochaSurface1),
-        hintStyle: AppTypography.dmSans(color: mochaSurface1),
+        labelStyle: AppTypography.googleSans(color: mochaSurface1),
+        hintStyle: AppTypography.googleSans(color: mochaSurface1),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: mochaMantle,
-        contentTextStyle: AppTypography.dmSans(color: mochaText),
+        contentTextStyle: AppTypography.googleSans(color: mochaText),
       ),
     );
   }
@@ -143,7 +143,7 @@ class CatppuccinTheme {
         backgroundColor: latteBase,
         foregroundColor: latteText,
         surfaceTintColor: latteLavender,
-        titleTextStyle: AppTypography.dmSans(fontSize: 18, fontWeight: FontWeight.w600, color: latteText),
+        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: latteText),
       ),
       cardTheme: const CardThemeData(color: latteMantle, surfaceTintColor: latteLavender),
       dividerTheme: const DividerThemeData(color: latteSurface0),
@@ -151,8 +151,8 @@ class CatppuccinTheme {
       listTileTheme: ListTileThemeData(
         textColor: latteText,
         iconColor: latteSubtext0,
-        titleTextStyle: AppTypography.dmSans(fontSize: 16, fontWeight: FontWeight.w500, color: latteText),
-        subtitleTextStyle: AppTypography.dmSans(fontSize: 14, color: latteSubtext0),
+        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: latteText),
+        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: latteSubtext0),
       ),
       textTheme: AppTypography.textTheme(bodyColor: latteText, headlineColor: latteText, captionColor: latteSurface1),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -163,13 +163,13 @@ class CatppuccinTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: latteLavender,
           foregroundColor: latteBase,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: latteLavender,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -178,12 +178,12 @@ class CatppuccinTheme {
         border: const OutlineInputBorder(borderSide: BorderSide(color: latteSurface0)),
         enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: latteSurface0)),
         focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: latteLavender)),
-        labelStyle: AppTypography.dmSans(color: latteSurface1),
-        hintStyle: AppTypography.dmSans(color: latteSurface1),
+        labelStyle: AppTypography.googleSans(color: latteSurface1),
+        hintStyle: AppTypography.googleSans(color: latteSurface1),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: latteMantle,
-        contentTextStyle: AppTypography.dmSans(color: latteText),
+        contentTextStyle: AppTypography.googleSans(color: latteText),
       ),
     );
   }

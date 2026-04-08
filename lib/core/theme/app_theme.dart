@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/theme/catppuccin_theme.dart';
+import 'package:lazurite/core/theme/lazurite_theme.dart';
 import 'package:lazurite/core/theme/nord_theme.dart';
 import 'package:lazurite/core/theme/oxocarbon_theme.dart';
 import 'package:lazurite/core/theme/rose_pine_theme.dart';
 
-enum AppThemePalette { oxocarbon, catppuccin, nord, rosePine }
+enum AppThemePalette { lazurite, oxocarbon, catppuccin, nord, rosePine }
 
 enum AppThemeVariant { light, dark }
 
@@ -13,6 +14,8 @@ class AppTheme {
 
   static ThemeData getTheme(AppThemePalette palette, AppThemeVariant variant) {
     switch (palette) {
+      case AppThemePalette.lazurite:
+        return variant == AppThemeVariant.light ? LazuriteTheme.light() : LazuriteTheme.dark();
       case AppThemePalette.oxocarbon:
         return variant == AppThemeVariant.light ? OxocarbonTheme.light() : OxocarbonTheme.dark();
       case AppThemePalette.catppuccin:
@@ -26,6 +29,8 @@ class AppTheme {
 
   static String getPaletteName(AppThemePalette palette) {
     switch (palette) {
+      case AppThemePalette.lazurite:
+        return 'Lazurite';
       case AppThemePalette.oxocarbon:
         return 'Oxocarbon';
       case AppThemePalette.catppuccin:
@@ -48,6 +53,8 @@ class AppTheme {
 
   static AppThemePalette parsePalette(String? value) {
     switch (value) {
+      case 'lazurite':
+        return AppThemePalette.lazurite;
       case 'oxocarbon':
         return AppThemePalette.oxocarbon;
       case 'catppuccin':
@@ -57,12 +64,14 @@ class AppTheme {
       case 'rosePine':
         return AppThemePalette.rosePine;
       default:
-        return AppThemePalette.oxocarbon;
+        return AppThemePalette.lazurite;
     }
   }
 
   static String paletteToString(AppThemePalette palette) {
     switch (palette) {
+      case AppThemePalette.lazurite:
+        return 'lazurite';
       case AppThemePalette.oxocarbon:
         return 'oxocarbon';
       case AppThemePalette.catppuccin:
@@ -96,6 +105,8 @@ class AppTheme {
 
   static List<Color> getSwatchColors(AppThemePalette palette) {
     switch (palette) {
+      case AppThemePalette.lazurite:
+        return const [Color(0xFF7dafff), Color(0xFF0b63d1), Color(0xFF0073de), Color(0xFFff8080)];
       case AppThemePalette.oxocarbon:
         return const [Color(0xFF78a9ff), Color(0xFFbe95ff), Color(0xFF08bdba), Color(0xFFee5396)];
       case AppThemePalette.catppuccin:

@@ -302,8 +302,8 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: _SettingsTile(
             icon: Icons.cloud_off_outlined,
-            title: 'Simulate Offline',
-            subtitle: 'Force offline UI for testing network resilience',
+            title: 'Go Offline',
+            subtitle: 'Turn off online connectivity',
             trailing: Switch.adaptive(value: state.simulateOffline, onChanged: settingsCubit.setSimulateOffline),
           ),
         );

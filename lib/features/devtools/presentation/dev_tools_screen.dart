@@ -569,7 +569,7 @@ class _RecordInspector extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     icon: const Icon(Icons.copy, size: 16),
-                    label: const Text('Copy'),
+                    label: const Text('Copy JSON'),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: jsonString));
                       ScaffoldMessenger.of(context).showSnackBar(

@@ -16,7 +16,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     String? initialConstellationUrl,
   }) : super(
          SettingsState(
-           themePalette: initialPalette ?? AppThemePalette.oxocarbon,
+           themePalette: initialPalette ?? AppThemePalette.lazurite,
            themeVariant: initialVariant ?? AppThemeVariant.dark,
            useSystemTheme: initialUseSystemTheme ?? false,
            feedLayout: initialFeedLayout ?? FeedLayout.card,

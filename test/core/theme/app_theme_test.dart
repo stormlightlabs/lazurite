@@ -4,6 +4,10 @@ import 'package:lazurite/core/theme/app_theme.dart';
 void main() {
   group('AppTheme', () {
     group('getPaletteName', () {
+      test('returns correct name for lazurite', () {
+        expect(AppTheme.getPaletteName(AppThemePalette.lazurite), 'Lazurite');
+      });
+
       test('returns correct name for oxocarbon', () {
         expect(AppTheme.getPaletteName(AppThemePalette.oxocarbon), 'Oxocarbon');
       });
@@ -32,6 +36,10 @@ void main() {
     });
 
     group('parsePalette', () {
+      test('parses lazurite', () {
+        expect(AppTheme.parsePalette('lazurite'), AppThemePalette.lazurite);
+      });
+
       test('parses oxocarbon', () {
         expect(AppTheme.parsePalette('oxocarbon'), AppThemePalette.oxocarbon);
       });
@@ -48,16 +56,20 @@ void main() {
         expect(AppTheme.parsePalette('rosePine'), AppThemePalette.rosePine);
       });
 
-      test('returns oxocarbon for null', () {
-        expect(AppTheme.parsePalette(null), AppThemePalette.oxocarbon);
+      test('returns lazurite for null', () {
+        expect(AppTheme.parsePalette(null), AppThemePalette.lazurite);
       });
 
-      test('returns oxocarbon for unknown value', () {
-        expect(AppTheme.parsePalette('unknown'), AppThemePalette.oxocarbon);
+      test('returns lazurite for unknown value', () {
+        expect(AppTheme.parsePalette('unknown'), AppThemePalette.lazurite);
       });
     });
 
     group('paletteToString', () {
+      test('converts lazurite to string', () {
+        expect(AppTheme.paletteToString(AppThemePalette.lazurite), 'lazurite');
+      });
+
       test('converts oxocarbon to string', () {
         expect(AppTheme.paletteToString(AppThemePalette.oxocarbon), 'oxocarbon');
       });

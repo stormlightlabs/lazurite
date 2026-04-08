@@ -4,14 +4,14 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTypography {
   AppTypography._();
 
-  static TextStyle dmSans({
+  static TextStyle googleSans({
     double fontSize = 14,
     FontWeight fontWeight = FontWeight.normal,
     Color? color,
     double? letterSpacing,
     double? height,
   }) {
-    return GoogleFonts.dmSans(
+    return GoogleFonts.googleSans(
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
@@ -36,14 +36,14 @@ class AppTypography {
     );
   }
 
-  static TextStyle jetBrainsMono({
+  static TextStyle googleSansCode({
     double fontSize = 14,
     FontWeight fontWeight = FontWeight.normal,
     Color? color,
     double? letterSpacing,
     double? height,
   }) {
-    return GoogleFonts.jetBrainsMono(
+    return GoogleFonts.googleSansCode(
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
@@ -63,12 +63,12 @@ class AppTypography {
       titleLarge: lora(fontSize: 22, fontWeight: FontWeight.w600, color: bodyColor),
       titleMedium: lora(fontSize: 16, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.15),
       titleSmall: lora(fontSize: 14, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.1),
-      bodyLarge: dmSans(fontSize: 16, fontWeight: FontWeight.w400, color: bodyColor, letterSpacing: 0.5),
-      bodyMedium: dmSans(fontSize: 14, fontWeight: FontWeight.w400, color: bodyColor, letterSpacing: 0.25),
-      bodySmall: dmSans(fontSize: 12, fontWeight: FontWeight.w400, color: captionColor, letterSpacing: 0.4),
-      labelLarge: dmSans(fontSize: 14, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.1),
-      labelMedium: dmSans(fontSize: 12, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.5),
-      labelSmall: dmSans(fontSize: 12, fontWeight: FontWeight.w500, color: captionColor, letterSpacing: 0.5),
+      bodyLarge: googleSans(fontSize: 16, fontWeight: FontWeight.w400, color: bodyColor, letterSpacing: 0.5),
+      bodyMedium: googleSans(fontSize: 14, fontWeight: FontWeight.w400, color: bodyColor, letterSpacing: 0.25),
+      bodySmall: googleSans(fontSize: 12, fontWeight: FontWeight.w400, color: captionColor, letterSpacing: 0.4),
+      labelLarge: googleSans(fontSize: 14, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.1),
+      labelMedium: googleSans(fontSize: 12, fontWeight: FontWeight.w500, color: bodyColor, letterSpacing: 0.5),
+      labelSmall: googleSans(fontSize: 12, fontWeight: FontWeight.w500, color: captionColor, letterSpacing: 0.5),
     );
   }
 }

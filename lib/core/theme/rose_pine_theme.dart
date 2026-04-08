@@ -61,7 +61,7 @@ class RosePineTheme {
         backgroundColor: mainBase,
         foregroundColor: mainText,
         surfaceTintColor: mainRose,
-        titleTextStyle: AppTypography.dmSans(fontSize: 18, fontWeight: FontWeight.w600, color: mainText),
+        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: mainText),
       ),
       cardTheme: const CardThemeData(color: mainSurface, surfaceTintColor: mainRose),
       dividerTheme: const DividerThemeData(color: mainOverlay),
@@ -69,8 +69,8 @@ class RosePineTheme {
       listTileTheme: ListTileThemeData(
         textColor: mainText,
         iconColor: mainSubtle,
-        titleTextStyle: AppTypography.dmSans(fontSize: 16, fontWeight: FontWeight.w500, color: mainText),
-        subtitleTextStyle: AppTypography.dmSans(fontSize: 14, color: mainSubtle),
+        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: mainText),
+        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: mainSubtle),
       ),
       textTheme: AppTypography.textTheme(bodyColor: mainText, headlineColor: mainText, captionColor: mainMuted),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -81,13 +81,13 @@ class RosePineTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: mainRose,
           foregroundColor: mainBase,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: mainRose,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -96,12 +96,12 @@ class RosePineTheme {
         border: const OutlineInputBorder(borderSide: BorderSide(color: mainOverlay)),
         enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: mainOverlay)),
         focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: mainRose)),
-        labelStyle: AppTypography.dmSans(color: mainMuted),
-        hintStyle: AppTypography.dmSans(color: mainMuted),
+        labelStyle: AppTypography.googleSans(color: mainMuted),
+        hintStyle: AppTypography.googleSans(color: mainMuted),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: mainSurface,
-        contentTextStyle: AppTypography.dmSans(color: mainText),
+        contentTextStyle: AppTypography.googleSans(color: mainText),
       ),
     );
   }
@@ -137,7 +137,7 @@ class RosePineTheme {
         backgroundColor: dawnBase,
         foregroundColor: dawnText,
         surfaceTintColor: dawnRose,
-        titleTextStyle: AppTypography.dmSans(fontSize: 18, fontWeight: FontWeight.w600, color: dawnText),
+        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: dawnText),
       ),
       cardTheme: const CardThemeData(color: dawnSurface, surfaceTintColor: dawnRose),
       dividerTheme: const DividerThemeData(color: dawnOverlay),
@@ -145,8 +145,8 @@ class RosePineTheme {
       listTileTheme: ListTileThemeData(
         textColor: dawnText,
         iconColor: dawnSubtle,
-        titleTextStyle: AppTypography.dmSans(fontSize: 16, fontWeight: FontWeight.w500, color: dawnText),
-        subtitleTextStyle: AppTypography.dmSans(fontSize: 14, color: dawnSubtle),
+        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: dawnText),
+        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: dawnSubtle),
       ),
       textTheme: AppTypography.textTheme(bodyColor: dawnText, headlineColor: dawnText, captionColor: dawnMuted),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -157,13 +157,13 @@ class RosePineTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: dawnRose,
           foregroundColor: dawnBase,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: dawnRose,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -172,12 +172,12 @@ class RosePineTheme {
         border: const OutlineInputBorder(borderSide: BorderSide(color: dawnOverlay)),
         enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: dawnOverlay)),
         focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: dawnRose)),
-        labelStyle: AppTypography.dmSans(color: dawnMuted),
-        hintStyle: AppTypography.dmSans(color: dawnMuted),
+        labelStyle: AppTypography.googleSans(color: dawnMuted),
+        hintStyle: AppTypography.googleSans(color: dawnMuted),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: dawnSurface,
-        contentTextStyle: AppTypography.dmSans(color: dawnText),
+        contentTextStyle: AppTypography.googleSans(color: dawnText),
       ),
     );
   }

@@ -21,7 +21,7 @@ void main() {
   group('SettingsCubit', () {
     test('initial state has default values', () {
       final cubit = SettingsCubit(database: database);
-      expect(cubit.state.themePalette, AppThemePalette.oxocarbon);
+      expect(cubit.state.themePalette, AppThemePalette.lazurite);
       expect(cubit.state.themeVariant, AppThemeVariant.dark);
       expect(cubit.state.useSystemTheme, false);
       expect(cubit.state.feedLayout, FeedLayout.card);
@@ -76,7 +76,7 @@ void main() {
       act: (cubit) => cubit.loadSettings(),
       expect: () => [
         isA<SettingsState>()
-            .having((s) => s.themePalette, 'themePalette', AppThemePalette.oxocarbon)
+            .having((s) => s.themePalette, 'themePalette', AppThemePalette.lazurite)
             .having((s) => s.themeVariant, 'themeVariant', AppThemeVariant.dark)
             .having((s) => s.useSystemTheme, 'useSystemTheme', false)
             .having((s) => s.feedLayout, 'feedLayout', FeedLayout.card)

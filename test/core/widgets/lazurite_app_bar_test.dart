@@ -6,8 +6,8 @@ import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
-import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
@@ -62,12 +62,7 @@ void main() {
     when(() => settingsCubit.setSimulateOffline(any())).thenAnswer((_) async {});
   });
 
-  Widget buildSubject({
-    required String sectionLabel,
-    PreferredSizeWidget? bottom,
-    List<Widget>? actions,
-    bool showAvatar = true,
-  }) {
+  Widget buildSubject({required String sectionLabel, PreferredSizeWidget? bottom, List<Widget>? actions}) {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>.value(value: authBloc),
@@ -76,7 +71,7 @@ void main() {
       ],
       child: MaterialApp(
         home: Scaffold(
-          appBar: LazuriteAppBar(sectionLabel: sectionLabel, bottom: bottom, actions: actions, showAvatar: showAvatar),
+          appBar: LazuriteAppBar(sectionLabel: sectionLabel, bottom: bottom, actions: actions),
           body: const SizedBox.shrink(),
         ),
       ),
@@ -95,12 +90,6 @@ void main() {
     expect(find.byType(AppShellMenuButton), findsOneWidget);
   });
 
-  testWidgets('renders user initials in avatar from displayName', (tester) async {
-    await tester.pumpWidget(buildSubject(sectionLabel: 'Home'));
-    await tester.pumpAndSettle();
-    expect(find.text('RT'), findsOneWidget);
-  });
-
   testWidgets('renders initials from handle when displayName is absent', (tester) async {
     authBloc = MockAuthBloc();
     const noDisplayName = AuthTokens(
@@ -116,33 +105,6 @@ void main() {
     await tester.pumpWidget(buildSubject(sectionLabel: 'Home'));
     await tester.pumpAndSettle();
     expect(find.text('A'), findsOneWidget);
-  });
-
-  testWidgets('renders additional actions alongside avatar', (tester) async {
-    await tester.pumpWidget(
-      buildSubject(
-        sectionLabel: 'Alerts',
-        actions: [TextButton(onPressed: () {}, child: const Text('Mark All Read'))],
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Mark All Read'), findsOneWidget);
-    expect(find.text('ALERTS'), findsOneWidget);
-  });
-
-  testWidgets('can hide avatar when custom trailing actions are used', (tester) async {
-    await tester.pumpWidget(
-      buildSubject(
-        sectionLabel: 'Home',
-        showAvatar: false,
-        actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.rss_feed))],
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byIcon(Icons.rss_feed), findsOneWidget);
-    expect(find.text('RT'), findsNothing);
   });
 
   testWidgets('shows simulated offline indicator and lets the user disable it', (tester) async {

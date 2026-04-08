@@ -52,7 +52,7 @@ class NordTheme {
         backgroundColor: nord0,
         foregroundColor: nord5,
         surfaceTintColor: nord8,
-        titleTextStyle: AppTypography.dmSans(fontSize: 18, fontWeight: FontWeight.w600, color: nord5),
+        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: nord5),
       ),
       cardTheme: const CardThemeData(color: nord1, surfaceTintColor: nord8),
       dividerTheme: const DividerThemeData(color: nord2),
@@ -60,8 +60,8 @@ class NordTheme {
       listTileTheme: ListTileThemeData(
         textColor: nord5,
         iconColor: nord4,
-        titleTextStyle: AppTypography.dmSans(fontSize: 16, fontWeight: FontWeight.w500, color: nord5),
-        subtitleTextStyle: AppTypography.dmSans(fontSize: 14, color: nord4),
+        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: nord5),
+        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: nord4),
       ),
       textTheme: AppTypography.textTheme(bodyColor: nord5, headlineColor: nord6, captionColor: nord3),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(backgroundColor: nord8, foregroundColor: nord0),
@@ -69,13 +69,13 @@ class NordTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: nord8,
           foregroundColor: nord0,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: nord8,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -84,12 +84,12 @@ class NordTheme {
         border: const OutlineInputBorder(borderSide: BorderSide(color: nord2)),
         enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: nord2)),
         focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: nord8)),
-        labelStyle: AppTypography.dmSans(color: nord3),
-        hintStyle: AppTypography.dmSans(color: nord3),
+        labelStyle: AppTypography.googleSans(color: nord3),
+        hintStyle: AppTypography.googleSans(color: nord3),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: nord1,
-        contentTextStyle: AppTypography.dmSans(color: nord5),
+        contentTextStyle: AppTypography.googleSans(color: nord5),
       ),
     );
   }
@@ -125,7 +125,7 @@ class NordTheme {
         backgroundColor: nord6,
         foregroundColor: nord3,
         surfaceTintColor: nord8,
-        titleTextStyle: AppTypography.dmSans(fontSize: 18, fontWeight: FontWeight.w600, color: nord3),
+        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: nord3),
       ),
       cardTheme: const CardThemeData(color: nord5, surfaceTintColor: nord8),
       dividerTheme: const DividerThemeData(color: nord2),
@@ -133,8 +133,8 @@ class NordTheme {
       listTileTheme: ListTileThemeData(
         textColor: nord3,
         iconColor: nord4,
-        titleTextStyle: AppTypography.dmSans(fontSize: 16, fontWeight: FontWeight.w500, color: nord3),
-        subtitleTextStyle: AppTypography.dmSans(fontSize: 14, color: nord4),
+        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: nord3),
+        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: nord4),
       ),
       textTheme: AppTypography.textTheme(bodyColor: nord3, headlineColor: nord0, captionColor: nord3),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(backgroundColor: nord8, foregroundColor: nord0),
@@ -142,13 +142,13 @@ class NordTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: nord8,
           foregroundColor: nord0,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: nord8,
-          textStyle: AppTypography.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -157,12 +157,12 @@ class NordTheme {
         border: const OutlineInputBorder(borderSide: BorderSide(color: nord2)),
         enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: nord2)),
         focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: nord8)),
-        labelStyle: AppTypography.dmSans(color: nord3),
-        hintStyle: AppTypography.dmSans(color: nord3),
+        labelStyle: AppTypography.googleSans(color: nord3),
+        hintStyle: AppTypography.googleSans(color: nord3),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: nord5,
-        contentTextStyle: AppTypography.dmSans(color: nord3),
+        contentTextStyle: AppTypography.googleSans(color: nord3),
       ),
     );
   }
