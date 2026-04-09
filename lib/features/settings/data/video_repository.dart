@@ -1,5 +1,5 @@
-import 'package:bluesky/bluesky.dart';
 import 'package:bluesky/app_bsky_video_getuploadlimits.dart';
+import 'package:bluesky/bluesky.dart';
 
 abstract interface class VideoUploadLimitsApi {
   Future<VideoGetUploadLimitsOutput> getUploadLimits();
@@ -45,7 +45,6 @@ class VideoRepository {
       final limits = await _api.getUploadLimits();
       return _mapLimits(limits);
     } catch (error, stackTrace) {
-      // Some auth flows require a short-lived service auth token for this endpoint.
       try {
         final authToken = await _api.getUploadLimitsAuthToken();
         final limits = await _api.getUploadLimitsWithAuthToken(authToken);

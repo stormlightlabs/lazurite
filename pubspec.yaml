@@ -47,6 +47,9 @@ dependencies:
   gal: ^2.3.2
   permission_handler: ^12.0.1
   provider: ^6.1.5+1
+  objectbox: ^5.3.1
+  objectbox_flutter_libs: ^5.3.1
+  tflite_flutter: ^0.12.1
 
 dev_dependencies:
   flutter_test:
@@ -58,9 +61,12 @@ dev_dependencies:
   json_serializable: ^6.8.0
   bloc_test: ^10.0.0
   mocktail: ^1.0.4
+  objectbox_generator: ^5.3.1
 
 flutter:
   uses-material-design: true
 
+  # Vocab Text: https://huggingface.co/google-bert/bert-base-uncased/blob/main/vocab.txt
+  # MiniLM Model: https://huggingface.co/Nihal2000/all-MiniLM-L6-v2-quant.tflite/tree/main
   assets:
     - assets/

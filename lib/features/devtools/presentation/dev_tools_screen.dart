@@ -347,7 +347,9 @@ class _EmptyState extends StatelessWidget {
                     'Enter a handle, DID, or AT-URI to explore\n'
                     'a user\'s repository.',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
                   ),
                   const SizedBox(height: 16),
                   TextButton.icon(

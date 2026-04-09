@@ -45,3 +45,11 @@ app.*.map.json
 /android/app/release
 
 .sandbox/
+
+# ObjectBox native library and install.sh staging area (not committed)
+lib/libobjectbox.dylib
+lib/libobjectbox.so
+lib/libobjectbox-arm.so
+lib/libobjectbox-arm64.so
+lib/objectbox.dll
+download/

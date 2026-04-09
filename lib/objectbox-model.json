@@ -1,0 +1,45 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:6999496775046459021",
+      "lastPropertyId": "7:8430059363224486218",
+      "name": "EmbeddedPost",
+      "properties": [
+        { "id": "1:2023883478741600837", "name": "id", "type": 6, "flags": 1 },
+        {
+          "id": "2:3549521277099340373",
+          "name": "postUri",
+          "indexId": "1:4682420966856057445",
+          "type": 9,
+          "flags": 2080
+        },
+        { "id": "3:115219216497020018", "name": "accountDid", "type": 9 },
+        { "id": "4:2084589381727568380", "name": "source", "type": 9 },
+        { "id": "5:4494373135934411874", "name": "indexedText", "type": 9 },
+        {
+          "id": "6:7790743710249736574",
+          "name": "embedding",
+          "indexId": "2:7649439792027952584",
+          "type": 28,
+          "flags": 8
+        },
+        { "id": "7:8430059363224486218", "name": "embeddedAt", "type": 12 }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "1:6999496775046459021",
+  "lastIndexId": "2:7649439792027952584",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}

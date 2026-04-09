@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/objectbox/objectbox_store.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
 import 'package:lazurite/core/logging/logging_navigator_observer.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
@@ -35,6 +36,7 @@ import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
+import 'package:lazurite/features/search/data/embedding_repository.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
@@ -49,6 +51,7 @@ Future<void> main() async {
   Bloc.observer = LoggingBlocObserver();
 
   final database = AppDatabase();
+  final objectBoxStore = await ObjectBoxStore.open();
   final authRepository = AuthRepository(database: database);
   final restoredSession = await authRepository.restoreSession();
   final authBloc = AuthBloc(
@@ -67,7 +70,7 @@ Future<void> main() async {
 
   log.i('AppLogger: App started');
 
-  runApp(LazuriteApp.from(authBloc, database, settingsCubit, connectivityCubit, accountSwitcherCubit));
+  runApp(LazuriteApp.from(authBloc, database, objectBoxStore, settingsCubit, connectivityCubit, accountSwitcherCubit));
 }
 
 class LazuriteApp extends StatefulWidget {
@@ -75,6 +78,7 @@ class LazuriteApp extends StatefulWidget {
     super.key,
     required this.authBloc,
     required this.database,
+    required this.objectBoxStore,
     required this.settingsCubit,
     required this.connectivityCubit,
     required this.accountSwitcherCubit,
@@ -82,6 +86,7 @@ class LazuriteApp extends StatefulWidget {
 
   final AuthBloc authBloc;
   final AppDatabase database;
+  final ObjectBoxStore objectBoxStore;
   final SettingsCubit settingsCubit;
   final ConnectivityCubit connectivityCubit;
   final AccountSwitcherCubit accountSwitcherCubit;
@@ -90,12 +95,14 @@ class LazuriteApp extends StatefulWidget {
   static LazuriteApp from(
     AuthBloc authBloc,
     AppDatabase database,
+    ObjectBoxStore objectBoxStore,
     SettingsCubit settingsCubit,
     ConnectivityCubit connectivityCubit,
     AccountSwitcherCubit accountSwitcherCubit,
   ) => LazuriteApp(
     authBloc: authBloc,
     database: database,
+    objectBoxStore: objectBoxStore,
     settingsCubit: settingsCubit,
     connectivityCubit: connectivityCubit,
     accountSwitcherCubit: accountSwitcherCubit,
@@ -261,6 +268,8 @@ class _LazuriteAppState extends State<LazuriteApp> {
                 RepositoryProvider(create: (_) => VideoRepository(bluesky: bluesky)),
                 RepositoryProvider.value(value: bluesky),
                 RepositoryProvider.value(value: widget.database),
+                RepositoryProvider.value(value: widget.objectBoxStore),
+                RepositoryProvider(create: (context) => EmbeddingRepository(context.read<ObjectBoxStore>())),
                 RepositoryProvider.value(value: accountDid),
               ],
               child: MultiBlocProvider(

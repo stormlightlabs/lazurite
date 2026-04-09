@@ -85,6 +85,16 @@ just gen
 flutter run
 ```
 
+### ObjectBox native library (unit tests)
+
+To run unit tests locally, download the ObjectBox native library:
+
+```sh
+bash <(curl -s https://raw.githubusercontent.com/objectbox/objectbox-dart/main/install.sh)
+```
+
+This downloads `lib/libobjectbox.dylib` (or the equivalent for your platform). The file is gitignored and only needed to run `flutter test`; it is not required to build or run the app.
+
 ## Database Schema
 
 Powered by **Drift**, the following tables are currently implemented:

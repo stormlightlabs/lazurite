@@ -11,7 +11,7 @@ updated: 2026-04-09
 
 #### ObjectBox Setup
 
-- [ ] Add `objectbox`, `objectbox_flutter_libs` to `pubspec.yaml`; add `objectbox_generator` to dev deps
+- [x] Add `objectbox`, `objectbox_flutter_libs` to `pubspec.yaml`; add `objectbox_generator` to dev deps
 - [ ] `EmbeddedPost` entity - `postUri` (unique), `accountDid`, `source` (saved/liked), `indexedText`, `embedding` (384D float vector, HNSW cosine index), `embeddedAt`
 - [ ] Run `build_runner` to generate `objectbox.g.dart` and `objectbox-model.json`
 - [ ] `ObjectBoxStore` singleton - `openStore()` at app startup (after Drift init), expose via `RepositoryProvider`
@@ -19,8 +19,8 @@ updated: 2026-04-09
 
 #### TFLite Embedding Service
 
-- [ ] Add `tflite_flutter` to `pubspec.yaml`
-- [ ] Bundle `minilm_l6_v2_int8.tflite` and `vocab.txt` as Flutter assets
+- [x] Add `tflite_flutter` to `pubspec.yaml`
+- [x] Bundle `minilm_l6_v2_int8.tflite` and `vocab.txt` as Flutter assets
 - [ ] `WordPieceTokenizer` - load vocab, tokenize text, pad/truncate to 256 tokens, return `List<int>`
 - [ ] `EmbeddingService` - long-lived background `Isolate` with `ReceivePort`/`SendPort` message passing
 - [ ] `EmbeddingService.initialize()` - spawn isolate, load TFLite model + tokenizer in isolate
