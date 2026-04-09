@@ -12,22 +12,22 @@ updated: 2026-04-09
 #### ObjectBox Setup
 
 - [x] Add `objectbox`, `objectbox_flutter_libs` to `pubspec.yaml`; add `objectbox_generator` to dev deps
-- [ ] `EmbeddedPost` entity - `postUri` (unique), `accountDid`, `source` (saved/liked), `indexedText`, `embedding` (384D float vector, HNSW cosine index), `embeddedAt`
-- [ ] Run `build_runner` to generate `objectbox.g.dart` and `objectbox-model.json`
-- [ ] `ObjectBoxStore` singleton - `openStore()` at app startup (after Drift init), expose via `RepositoryProvider`
-- [ ] `EmbeddingRepository` - CRUD operations on `EmbeddedPost`: `upsert`, `deleteByUri`, `queryByAccount`, `countByAccount`
+- [x] `EmbeddedPost` entity - `postUri` (unique), `accountDid`, `source` (saved/liked), `indexedText`, `embedding` (384D float vector, HNSW cosine index), `embeddedAt`
+- [x] Run `build_runner` to generate `objectbox.g.dart` and `objectbox-model.json`
+- [x] `ObjectBoxStore` singleton - `openStore()` at app startup (after Drift init), expose via `RepositoryProvider`
+- [x] `EmbeddingRepository` - CRUD operations on `EmbeddedPost`: `upsert`, `deleteByUri`, `queryByAccount`, `countByAccount`
 
 #### TFLite Embedding Service
 
 - [x] Add `tflite_flutter` to `pubspec.yaml`
 - [x] Bundle `minilm_l6_v2_int8.tflite` and `vocab.txt` as Flutter assets
-- [ ] `WordPieceTokenizer` - load vocab, tokenize text, pad/truncate to 256 tokens, return `List<int>`
-- [ ] `EmbeddingService` - long-lived background `Isolate` with `ReceivePort`/`SendPort` message passing
-- [ ] `EmbeddingService.initialize()` - spawn isolate, load TFLite model + tokenizer in isolate
-- [ ] `EmbeddingService.embed(String text)` - send text to isolate, receive `Float32List[384]`, L2-normalize
-- [ ] `EmbeddingService.isAvailable` - flag gating UI entry points, false if model fails to load
-- [ ] `EmbeddingService.dispose()` - close isolate and interpreter
-- [ ] `PostTextExtractor` - concatenate post text + image alt texts + link card title/description into a single searchable string
+- [x] `WordPieceTokenizer` - load vocab, tokenize text, pad/truncate to 256 tokens, return `List<int>`
+- [x] `EmbeddingService` - long-lived background `Isolate` with `ReceivePort`/`SendPort` message passing
+- [x] `EmbeddingService.initialize()` - spawn isolate, load TFLite model + tokenizer in isolate
+- [x] `EmbeddingService.embed(String text)` - send text to isolate, receive `Float32List[384]`, L2-normalize
+- [x] `EmbeddingService.isAvailable` - flag gating UI entry points, false if model fails to load
+- [x] `EmbeddingService.dispose()` - close isolate and interpreter
+- [x] `PostTextExtractor` - concatenate post text + image alt texts + link card title/description into a single searchable string
 
 #### Liked Posts Sync
 
@@ -37,6 +37,8 @@ updated: 2026-04-09
 - [ ] `LikedPostsRepository.getLikedPosts(accountDid, {limit, offset})` - paginated query
 - [ ] `LikedPostsRepository.removeLike(accountDid, postUri)` - delete entry
 - [ ] Eviction: drop oldest entries when count exceeds 1000 per account
+- [ ] Documentation update: move development information from README.md to a top-level DEVELOPMENT.md.
+  Should be updated to reflect new architecture and patterns.
 
 #### Indexing Pipeline
 
