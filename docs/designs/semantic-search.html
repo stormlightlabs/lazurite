@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Semantic Search - Lazurite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
+      rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .saved-container {
+        padding-bottom: 88px;
+      }
+
+      /* Tab bar under header */
+      .saved-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        background-color: var(--bg);
+      }
+
+      .saved-tab {
+        flex: 1;
+        padding: 14px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+      }
+
+      .saved-tab:hover {
+        background-color: var(--surface);
+        color: var(--text-primary);
+      }
+
+      .saved-tab.active {
+        color: var(--text-primary);
+        border-bottom-color: var(--accent-primary);
+      }
+
+      /* Search input area */
+      .semantic-search-bar {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .semantic-input-wrapper {
+        position: relative;
+      }
+
+      .semantic-input-wrapper svg {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+        color: var(--text-muted);
+      }
+
+      .semantic-input {
+        width: 100%;
+        padding: 10px 12px 10px 38px;
+        border: 1px solid var(--border);
+        border-radius: 9999px;
+        background-color: var(--surface);
+        color: var(--text-primary);
+        font-size: 15px;
+        font-family: inherit;
+        transition: border-color 0.2s ease;
+      }
+
+      .semantic-input:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+      }
+
+      .semantic-input::placeholder {
+        color: var(--text-muted);
+      }
+
+      /* Scope chips */
+      .scope-chips {
+        display: flex;
+        gap: 8px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .scope-chip {
+        padding: 6px 14px;
+        border-radius: 9999px;
+        font-size: 13px;
+        font-weight: 500;
+        border: 1.5px solid var(--border);
+        background: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+
+      .scope-chip:hover {
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+      }
+
+      .scope-chip.active {
+        background-color: var(--accent-primary);
+        border-color: var(--accent-primary);
+        color: white;
+      }
+
+      /* Relevance badge */
+      .relevance-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        white-space: nowrap;
+      }
+
+      .relevance-high {
+        background-color: rgba(34, 197, 94, 0.15);
+        color: var(--accent-success);
+      }
+
+      .relevance-medium {
+        background-color: rgba(245, 158, 11, 0.15);
+        color: var(--accent-warning);
+      }
+
+      .relevance-low {
+        background-color: rgba(168, 168, 168, 0.15);
+        color: var(--text-muted);
+      }
+
+      /* Source tag */
+      .source-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        background-color: var(--surface-variant);
+        color: var(--text-secondary);
+      }
+
+      .source-tag svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      /* Result meta row */
+      .result-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      /* Indexing progress bar */
+      .indexing-bar {
+        padding: 12px 16px;
+        background-color: var(--surface);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .indexing-bar-text {
+        font-size: 13px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+      }
+
+      .indexing-progress {
+        flex: 1;
+        height: 4px;
+        background-color: var(--surface-variant);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+
+      .indexing-progress-fill {
+        height: 100%;
+        background-color: var(--accent-primary);
+        border-radius: 2px;
+        transition: width 0.3s ease;
+      }
+
+      .indexing-count {
+        font-size: 12px;
+        font-family: var(--font-mono);
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
+      /* Settings-specific styles */
+      .settings-section {
+        margin-bottom: 24px;
+      }
+
+      .settings-section-title {
+        padding: 16px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .settings-group {
+        background-color: var(--surface);
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .slider-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 16px 16px;
+      }
+
+      .slider-track {
+        flex: 1;
+        height: 4px;
+        background-color: var(--surface-variant);
+        border-radius: 2px;
+        position: relative;
+      }
+
+      .slider-fill {
+        position: absolute;
+        height: 100%;
+        background-color: var(--accent-primary);
+        border-radius: 2px;
+        width: 25%;
+      }
+
+      .slider-thumb {
+        position: absolute;
+        top: -6px;
+        left: 25%;
+        transform: translateX(-50%);
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: var(--accent-primary);
+        border: 2px solid white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .slider-value {
+        font-size: 14px;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        color: var(--text-primary);
+        min-width: 24px;
+        text-align: right;
+      }
+
+      .slider-labels {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 16px 12px;
+      }
+
+      .slider-label {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      /* Unavailable banner */
+      .unavailable-banner {
+        margin: 16px;
+        padding: 16px;
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .unavailable-banner svg {
+        width: 24px;
+        height: 24px;
+        color: var(--accent-warning);
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .unavailable-banner-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+
+      .unavailable-banner-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      /* View switcher */
+      .view-switcher {
+        display: flex;
+        gap: 12px;
+        padding: 16px;
+        justify-content: center;
+      }
+
+      .view-switcher-btn {
+        padding: 8px 20px;
+        border-radius: 9999px;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1.5px solid var(--border);
+        background: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+
+      .view-switcher-btn:hover {
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+      }
+
+      .view-switcher-btn.active-view {
+        background-color: var(--accent-primary);
+        border-color: var(--accent-primary);
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mobile-container">
+      <!-- Header -->
+      <header class="header">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <button
+            style="background: none; border: none; color: var(--text-primary); cursor: pointer; padding: 4px"
+            title="Back">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <h1 class="header-title">Saved Posts</h1>
+        </div>
+      </header>
+
+      <!-- Tabs: All Saved / Search -->
+      <div class="saved-tabs">
+        <button class="saved-tab" data-view="all">All Saved</button>
+        <button class="saved-tab active" data-view="search">Search</button>
+      </div>
+
+      <!-- ==================== -->
+      <!-- VIEW: SEARCH (active) -->
+      <!-- ==================== -->
+      <div class="saved-container" id="view-search">
+        <!-- Search input -->
+        <div class="semantic-search-bar">
+          <div class="semantic-input-wrapper">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input class="semantic-input" type="text" placeholder="Search your saved posts..." value="federation decentralized protocol" />
+          </div>
+        </div>
+
+        <!-- Scope chips -->
+        <div class="scope-chips">
+          <button class="scope-chip active">Both</button>
+          <button class="scope-chip">Saved</button>
+          <button class="scope-chip">Liked</button>
+        </div>
+
+        <!-- Search results -->
+        <article class="post-card">
+          <div class="result-meta">
+            <span class="relevance-badge relevance-high">94%</span>
+            <span class="source-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+              Saved
+            </span>
+          </div>
+          <div class="post-header">
+            <div class="avatar">PF</div>
+            <div class="post-author">
+              <div class="post-author-name">Paul Frazee</div>
+              <div class="post-author-handle">@pfrazee.com · <span class="post-timestamp">Mar 12</span></div>
+            </div>
+          </div>
+          <div class="post-content">
+            We just shipped a major update to the <a href="#" class="post-facet">@atproto</a> federation code. Self-hosting your own PDS is now easier than ever. The decentralized web is happening.
+          </div>
+          <div class="post-actions">
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+              67
+            </button>
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+              34
+            </button>
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              512
+            </button>
+          </div>
+        </article>
+
+        <article class="post-card">
+          <div class="result-meta">
+            <span class="relevance-badge relevance-high">87%</span>
+            <span class="source-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              Liked
+            </span>
+          </div>
+          <div class="post-header">
+            <div class="avatar">JG</div>
+            <div class="post-author">
+              <div class="post-author-name">Jake Gold</div>
+              <div class="post-author-handle">@jake.bsky.social · <span class="post-timestamp">Mar 8</span></div>
+            </div>
+          </div>
+          <div class="post-content">
+            The <a href="#" class="post-facet">#atproto</a> ecosystem is growing fast. More and more third-party apps are being built on the open protocol. Federation changes everything about how we think about social networks.
+          </div>
+          <div class="post-actions">
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+              23
+            </button>
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+              11
+            </button>
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              178
+            </button>
+          </div>
+        </article>
+
+        <article class="post-card">
+          <div class="result-meta">
+            <span class="relevance-badge relevance-medium">72%</span>
+            <span class="source-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+              Saved
+            </span>
+          </div>
+          <div class="post-header">
+            <div class="avatar">SW</div>
+            <div class="post-author">
+              <div class="post-author-name">Sarah Wu</div>
+              <div class="post-author-handle">@sarahwu.dev · <span class="post-timestamp">Feb 21</span></div>
+            </div>
+          </div>
+          <div class="post-content">
+            Just set up my own PDS on a $5/mo VPS. The documentation has gotten so much better. If you're interested in running your own node on the AT Protocol network, now is the time.
+          </div>
+          <div class="post-actions">
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+              41
+            </button>
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+              8
+            </button>
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              95
+            </button>
+          </div>
+        </article>
+
+        <article class="post-card">
+          <div class="result-meta">
+            <span class="relevance-badge relevance-low">58%</span>
+            <span class="source-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              Liked
+            </span>
+          </div>
+          <div class="post-header">
+            <div class="avatar">MR</div>
+            <div class="post-author">
+              <div class="post-author-name">Mark Rivera</div>
+              <div class="post-author-handle">@mrivera.bsky.social · <span class="post-timestamp">Jan 30</span></div>
+            </div>
+          </div>
+          <div class="post-content">
+            Interesting thread comparing ActivityPub and AT Protocol approaches to decentralization. Both have trade-offs but I think the data portability story is stronger with atproto.
+          </div>
+          <div class="post-actions">
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+              156
+            </button>
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+              52
+            </button>
+            <button class="post-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              389
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <!-- ====================== -->
+      <!-- VIEW: EMPTY STATE       -->
+      <!-- ====================== -->
+      <div class="saved-container" id="view-empty" style="display: none">
+        <div class="semantic-search-bar">
+          <div class="semantic-input-wrapper">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input class="semantic-input" type="text" placeholder="Search your saved posts..." />
+          </div>
+        </div>
+
+        <div class="scope-chips">
+          <button class="scope-chip active">Both</button>
+          <button class="scope-chip">Saved</button>
+          <button class="scope-chip">Liked</button>
+        </div>
+
+        <div class="empty-state" style="padding-top: 80px">
+          <svg
+            class="empty-state-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <path d="M8 11h6" />
+            <path d="M11 8v6" />
+          </svg>
+          <div class="empty-state-title">Semantic Search</div>
+          <div class="empty-state-text">Search your saved and liked posts by meaning, not just keywords</div>
+        </div>
+      </div>
+
+      <!-- ======================== -->
+      <!-- VIEW: NO RESULTS          -->
+      <!-- ======================== -->
+      <div class="saved-container" id="view-noresults" style="display: none">
+        <div class="semantic-search-bar">
+          <div class="semantic-input-wrapper">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input class="semantic-input" type="text" placeholder="Search your saved posts..." value="quantum computing hardware" />
+          </div>
+        </div>
+
+        <div class="scope-chips">
+          <button class="scope-chip active">Both</button>
+          <button class="scope-chip">Saved</button>
+          <button class="scope-chip">Liked</button>
+        </div>
+
+        <div class="empty-state" style="padding-top: 80px">
+          <svg
+            class="empty-state-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <div class="empty-state-title">No similar posts found</div>
+          <div class="empty-state-text">Try a different search or broaden your scope</div>
+        </div>
+      </div>
+
+      <!-- ============================ -->
+      <!-- VIEW: INDEXING IN PROGRESS    -->
+      <!-- ============================ -->
+      <div class="saved-container" id="view-indexing" style="display: none">
+        <div class="semantic-search-bar">
+          <div class="semantic-input-wrapper">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input class="semantic-input" type="text" placeholder="Search your saved posts..." disabled />
+          </div>
+        </div>
+
+        <div class="indexing-bar">
+          <div class="indexing-bar-text">Indexing posts...</div>
+          <div class="indexing-progress">
+            <div class="indexing-progress-fill" style="width: 47%"></div>
+          </div>
+          <div class="indexing-count">142/300</div>
+        </div>
+
+        <div class="empty-state" style="padding-top: 60px">
+          <svg
+            class="empty-state-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" />
+          </svg>
+          <div class="empty-state-title">Building search index</div>
+          <div class="empty-state-text">Your saved and liked posts are being indexed for semantic search. This happens once.</div>
+        </div>
+      </div>
+
+      <!-- ========================== -->
+      <!-- VIEW: UNAVAILABLE           -->
+      <!-- ========================== -->
+      <div class="saved-container" id="view-unavailable" style="display: none">
+        <div class="unavailable-banner">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <div>
+            <div class="unavailable-banner-title">Semantic search unavailable</div>
+            <div class="unavailable-banner-text">
+              The embedding model could not be loaded on this device. Semantic search requires a device that supports on-device ML inference.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================== -->
+      <!-- VIEW: SETTINGS SECTION      -->
+      <!-- ========================== -->
+      <div class="saved-container" id="view-settings" style="display: none">
+        <div class="settings-section">
+          <div class="settings-section-title">Search</div>
+
+          <div class="settings-group">
+            <!-- Toggle -->
+            <div class="settings-item">
+              <div class="settings-item-left">
+                <svg
+                  class="settings-item-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <div class="settings-item-content">
+                  <div class="settings-item-title">Semantic Search</div>
+                  <div class="settings-item-subtitle">Search saved posts by meaning</div>
+                </div>
+              </div>
+              <div class="settings-item-right">
+                <div class="toggle active">
+                  <div class="toggle-thumb"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search scope -->
+            <div class="settings-item">
+              <div class="settings-item-left">
+                <svg
+                  class="settings-item-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                </svg>
+                <div class="settings-item-content">
+                  <div class="settings-item-title">Default Scope</div>
+                  <div class="settings-item-subtitle">Both</div>
+                </div>
+              </div>
+              <div class="settings-item-right">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Index status -->
+            <div class="settings-item">
+              <div class="settings-item-left">
+                <svg
+                  class="settings-item-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <ellipse cx="12" cy="5" rx="9" ry="3" />
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                </svg>
+                <div class="settings-item-content">
+                  <div class="settings-item-title">Index Status</div>
+                  <div class="settings-item-subtitle">847 posts indexed</div>
+                </div>
+              </div>
+              <div class="settings-item-right">
+                <button
+                  style="
+                    padding: 6px 14px;
+                    border-radius: 9999px;
+                    border: 1.5px solid var(--border);
+                    background: none;
+                    color: var(--text-secondary);
+                    font-size: 13px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    font-family: inherit;
+                  ">
+                  Re-index
+                </button>
+              </div>
+            </div>
+
+            <!-- Max results slider -->
+            <div class="settings-item" style="flex-direction: column; align-items: stretch; gap: 8px">
+              <div style="display: flex; align-items: center; justify-content: space-between">
+                <div class="settings-item-left">
+                  <svg
+                    class="settings-item-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
+                    <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
+                    <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
+                  </svg>
+                  <div class="settings-item-content">
+                    <div class="settings-item-title">Max Results</div>
+                  </div>
+                </div>
+                <div class="slider-value">20</div>
+              </div>
+              <div class="slider-row">
+                <div class="slider-track">
+                  <div class="slider-fill"></div>
+                  <div class="slider-thumb"></div>
+                </div>
+              </div>
+              <div class="slider-labels">
+                <span class="slider-label">10</span>
+                <span class="slider-label">50</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- View switcher (wireframe navigation) -->
+      <div style="
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 200;
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 8px;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        max-width: 390px;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      ">
+        <button class="view-switcher-btn active-view" data-target="view-search">Results</button>
+        <button class="view-switcher-btn" data-target="view-empty">Empty</button>
+        <button class="view-switcher-btn" data-target="view-noresults">No Results</button>
+        <button class="view-switcher-btn" data-target="view-indexing">Indexing</button>
+        <button class="view-switcher-btn" data-target="view-unavailable">Unavailable</button>
+        <button class="view-switcher-btn" data-target="view-settings">Settings</button>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <nav class="nav-bar">
+        <a href="home.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          <span>Home</span>
+        </a>
+
+        <a href="search.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <span>Search</span>
+        </a>
+
+        <a href="profile.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span>Profile</span>
+        </a>
+
+        <a href="settings.html" class="nav-item">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <script>
+      /* Theme init */
+      (function () {
+        const mode = localStorage.getItem("appearance-mode") || "dark";
+        if (mode === "dark") {
+          document.documentElement.setAttribute("data-theme", "dark");
+        } else if (mode === "system") {
+          const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (prefersDark) document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+
+      /* Tab switching */
+      document.querySelectorAll(".saved-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document.querySelectorAll(".saved-tab").forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+        });
+      });
+
+      /* Scope chip switching */
+      document.querySelectorAll(".scope-chips").forEach((row) => {
+        row.querySelectorAll(".scope-chip").forEach((chip) => {
+          chip.addEventListener("click", () => {
+            row.querySelectorAll(".scope-chip").forEach((c) => c.classList.remove("active"));
+            chip.classList.add("active");
+          });
+        });
+      });
+
+      /* View switcher for wireframe preview */
+      document.querySelectorAll(".view-switcher-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".view-switcher-btn").forEach((b) => b.classList.remove("active-view"));
+          btn.classList.add("active-view");
+
+          const target = btn.dataset.target;
+          document.querySelectorAll(".saved-container").forEach((v) => (v.style.display = "none"));
+          document.getElementById(target).style.display = "block";
+        });
+      });
+    </script>
+  </body>
+</html>
