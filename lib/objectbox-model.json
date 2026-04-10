@@ -8,7 +8,12 @@
       "lastPropertyId": "7:8430059363224486218",
       "name": "EmbeddedPost",
       "properties": [
-        { "id": "1:2023883478741600837", "name": "id", "type": 6, "flags": 1 },
+        {
+          "id": "1:2023883478741600837",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
         {
           "id": "2:3549521277099340373",
           "name": "postUri",
@@ -16,9 +21,21 @@
           "type": 9,
           "flags": 2080
         },
-        { "id": "3:115219216497020018", "name": "accountDid", "type": 9 },
-        { "id": "4:2084589381727568380", "name": "source", "type": 9 },
-        { "id": "5:4494373135934411874", "name": "indexedText", "type": 9 },
+        {
+          "id": "3:115219216497020018",
+          "name": "accountDid",
+          "type": 9
+        },
+        {
+          "id": "4:2084589381727568380",
+          "name": "source",
+          "type": 9
+        },
+        {
+          "id": "5:4494373135934411874",
+          "name": "indexedText",
+          "type": 9
+        },
         {
           "id": "6:7790743710249736574",
           "name": "embedding",
@@ -26,7 +43,11 @@
           "type": 28,
           "flags": 8
         },
-        { "id": "7:8430059363224486218", "name": "embeddedAt", "type": 12 }
+        {
+          "id": "7:8430059363224486218",
+          "name": "embeddedAt",
+          "type": 12
+        }
       ],
       "relations": []
     }

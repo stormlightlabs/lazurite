@@ -67,47 +67,7 @@ Lazurite uses `StatefulShellRoute` for persistent bottom navigation.
 | `/settings` | Global settings                |
 | `/compose`  | Root-level modal for new posts |
 
-## Local Development
-
-Use `just` for common tasks:
-
-- `just format` - Runs `dart format`
-- `just lint` - Proxies `flutter analyze`
-- `just test` - Executes the `flutter test` suite
-- `just gen` - Triggers `build_runner` for code generation
-- `just check` - Runs format, lint, and tests in sequence
-
-For a quick start:
-
-```sh
-flutter pub get
-just gen
-flutter run
-```
-
-### ObjectBox native library (unit tests)
-
-To run unit tests locally, download the ObjectBox native library:
-
-```sh
-bash <(curl -s https://raw.githubusercontent.com/objectbox/objectbox-dart/main/install.sh)
-```
-
-This downloads `lib/libobjectbox.dylib` (or the equivalent for your platform). The file is gitignored and only needed to run `flutter test`; it is not required to build or run the app.
-
-## Database Schema
-
-Powered by **Drift**, the following tables are currently implemented:
-
-| Table             | Purpose                                                          |
-| ----------------- | ---------------------------------------------------------------- |
-| `accounts`        | Local storage for session and auth tokens (DID, handle, service) |
-| `cached_profiles` | Cached profile metadata to reduce network calls                  |
-| `cached_posts`    | Cached post content for offline viewing                          |
-| `saved_feeds`     | Locally Managed feed preferences                                 |
-| `search_history`  | Persistent query history                                         |
-| `drafts`          | Offline-first post drafting with media support                   |
-| `settings`        | Key-value application configuration                              |
+For development setup, tooling, database schema, and contribution notes, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## References
 

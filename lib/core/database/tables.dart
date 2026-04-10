@@ -125,3 +125,15 @@ class LabelerCache extends Table {
   @override
   Set<Column> get primaryKey => {labelerDid};
 }
+
+@DataClassName('LikedPostEntry')
+class LikedPosts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get accountDid => text()();
+  TextColumn get postUri => text()();
+  TextColumn get postJson => text()();
+  DateTimeColumn get likedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<String> get customConstraints => ['UNIQUE (account_did, post_uri)'];
+}

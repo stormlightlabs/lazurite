@@ -16,7 +16,6 @@ void main() {
     test('scales vector to unit length', () {
       final v = Float32List.fromList([3.0, 4.0]);
       final result = l2Normalize(v);
-      // norm = 5; normalised = [0.6, 0.8]
       expect(result[0], closeTo(0.6, 1e-6));
       expect(result[1], closeTo(0.8, 1e-6));
     });
@@ -67,11 +66,11 @@ void main() {
           return Float32List(384);
         });
         await service.initialize();
-        await service.initialize(); // second call should be a no-op
+        await service.initialize();
         expect(service.isAvailable, isTrue);
-        // Idempotency check: embed once to confirm service still works.
+
         await service.embed('test');
-        expect(calls, equals(1)); // embed was called once, not initialize twice
+        expect(calls, equals(1));
       });
 
       test('dispose resets isAvailable to false', () async {

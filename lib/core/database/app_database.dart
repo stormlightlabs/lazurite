@@ -17,6 +17,7 @@ part 'app_database.g.dart';
     Drafts,
     SavedPosts,
     LabelerCache,
+    LikedPosts,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -25,7 +26,7 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -100,6 +101,9 @@ class AppDatabase extends _$AppDatabase {
           WHERE key = 'feed_layout'
         ''');
         await customStatement("DELETE FROM settings WHERE key = 'feed_architecture'");
+      }
+      if (from < 15) {
+        await migrator.createTable(likedPosts);
       }
     },
   );
@@ -397,4 +401,42 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteLabelerCache(String labelerDid) =>
       (delete(labelerCache)..where((l) => l.labelerDid.equals(labelerDid))).go();
+
+  Future<List<LikedPostEntry>> getLikedPosts(String accountDid, {int limit = 50, int offset = 0}) =>
+      (select(likedPosts)
+            ..where((l) => l.accountDid.equals(accountDid))
+            ..orderBy([(l) => OrderingTerm.desc(l.likedAt)])
+            ..limit(limit, offset: offset))
+          .get();
+
+  Future<LikedPostEntry?> getLikedPost(String accountDid, String postUri) =>
+      (select(likedPosts)..where((l) => l.accountDid.equals(accountDid) & l.postUri.equals(postUri))).getSingleOrNull();
+
+  Future<int> upsertLikedPost(LikedPostsCompanion post) =>
+      into(likedPosts).insert(post, mode: InsertMode.insertOrIgnore);
+
+  Future<int> removeLikedPost(String accountDid, String postUri) =>
+      (delete(likedPosts)..where((l) => l.accountDid.equals(accountDid) & l.postUri.equals(postUri))).go();
+
+  Future<int> countLikedPosts(String accountDid) async {
+    final count = await (select(likedPosts)..where((l) => l.accountDid.equals(accountDid))).get();
+    return count.length;
+  }
+
+  Future<void> evictOldestLikedPosts(String accountDid, int maxCount) async {
+    final all =
+        await (select(likedPosts)
+              ..where((l) => l.accountDid.equals(accountDid))
+              ..orderBy([(l) => OrderingTerm.desc(l.likedAt)]))
+            .get();
+    if (all.length > maxCount) {
+      final toDelete = all.skip(maxCount);
+      for (final entry in toDelete) {
+        await (delete(likedPosts)..where((l) => l.id.equals(entry.id))).go();
+      }
+    }
+  }
+
+  Future<int> deleteAllLikedPosts(String accountDid) =>
+      (delete(likedPosts)..where((l) => l.accountDid.equals(accountDid))).go();
 }

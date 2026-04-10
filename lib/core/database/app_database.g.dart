@@ -26,7 +26,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _displayNameMeta = const VerificationMeta('displayName');
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
   @override
   late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
     'display_name',
@@ -35,7 +37,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _serviceMeta = const VerificationMeta('service');
+  static const VerificationMeta _serviceMeta = const VerificationMeta(
+    'service',
+  );
   @override
   late final GeneratedColumn<String> service = GeneratedColumn<String>(
     'service',
@@ -44,7 +48,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _accessTokenMeta = const VerificationMeta('accessToken');
+  static const VerificationMeta _accessTokenMeta = const VerificationMeta(
+    'accessToken',
+  );
   @override
   late final GeneratedColumn<String> accessToken = GeneratedColumn<String>(
     'access_token',
@@ -53,7 +59,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _refreshTokenMeta = const VerificationMeta('refreshToken');
+  static const VerificationMeta _refreshTokenMeta = const VerificationMeta(
+    'refreshToken',
+  );
   @override
   late final GeneratedColumn<String> refreshToken = GeneratedColumn<String>(
     'refresh_token',
@@ -62,7 +70,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _dpopPublicKeyMeta = const VerificationMeta('dpopPublicKey');
+  static const VerificationMeta _dpopPublicKeyMeta = const VerificationMeta(
+    'dpopPublicKey',
+  );
   @override
   late final GeneratedColumn<String> dpopPublicKey = GeneratedColumn<String>(
     'dpop_public_key',
@@ -71,7 +81,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _dpopPrivateKeyMeta = const VerificationMeta('dpopPrivateKey');
+  static const VerificationMeta _dpopPrivateKeyMeta = const VerificationMeta(
+    'dpopPrivateKey',
+  );
   @override
   late final GeneratedColumn<String> dpopPrivateKey = GeneratedColumn<String>(
     'dpop_private_key',
@@ -80,7 +92,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _dpopNonceMeta = const VerificationMeta('dpopNonce');
+  static const VerificationMeta _dpopNonceMeta = const VerificationMeta(
+    'dpopNonce',
+  );
   @override
   late final GeneratedColumn<String> dpopNonce = GeneratedColumn<String>(
     'dpop_nonce',
@@ -89,7 +103,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _expiresAtMeta = const VerificationMeta('expiresAt');
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
   @override
   late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
     'expires_at',
@@ -98,7 +114,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
@@ -108,7 +126,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta('updatedAt');
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
     'updated_at',
@@ -139,56 +159,104 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
   String get actualTableName => $name;
   static const String $name = 'accounts';
   @override
-  VerificationContext validateIntegrity(Insertable<Account> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<Account> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('did')) {
-      context.handle(_didMeta, did.isAcceptableOrUnknown(data['did']!, _didMeta));
+      context.handle(
+        _didMeta,
+        did.isAcceptableOrUnknown(data['did']!, _didMeta),
+      );
     } else if (isInserting) {
       context.missing(_didMeta);
     }
     if (data.containsKey('handle')) {
-      context.handle(_handleMeta, handle.isAcceptableOrUnknown(data['handle']!, _handleMeta));
+      context.handle(
+        _handleMeta,
+        handle.isAcceptableOrUnknown(data['handle']!, _handleMeta),
+      );
     } else if (isInserting) {
       context.missing(_handleMeta);
     }
     if (data.containsKey('display_name')) {
-      context.handle(_displayNameMeta, displayName.isAcceptableOrUnknown(data['display_name']!, _displayNameMeta));
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
     }
     if (data.containsKey('service')) {
-      context.handle(_serviceMeta, service.isAcceptableOrUnknown(data['service']!, _serviceMeta));
+      context.handle(
+        _serviceMeta,
+        service.isAcceptableOrUnknown(data['service']!, _serviceMeta),
+      );
     }
     if (data.containsKey('access_token')) {
-      context.handle(_accessTokenMeta, accessToken.isAcceptableOrUnknown(data['access_token']!, _accessTokenMeta));
+      context.handle(
+        _accessTokenMeta,
+        accessToken.isAcceptableOrUnknown(
+          data['access_token']!,
+          _accessTokenMeta,
+        ),
+      );
     } else if (isInserting) {
       context.missing(_accessTokenMeta);
     }
     if (data.containsKey('refresh_token')) {
-      context.handle(_refreshTokenMeta, refreshToken.isAcceptableOrUnknown(data['refresh_token']!, _refreshTokenMeta));
+      context.handle(
+        _refreshTokenMeta,
+        refreshToken.isAcceptableOrUnknown(
+          data['refresh_token']!,
+          _refreshTokenMeta,
+        ),
+      );
     }
     if (data.containsKey('dpop_public_key')) {
       context.handle(
         _dpopPublicKeyMeta,
-        dpopPublicKey.isAcceptableOrUnknown(data['dpop_public_key']!, _dpopPublicKeyMeta),
+        dpopPublicKey.isAcceptableOrUnknown(
+          data['dpop_public_key']!,
+          _dpopPublicKeyMeta,
+        ),
       );
     }
     if (data.containsKey('dpop_private_key')) {
       context.handle(
         _dpopPrivateKeyMeta,
-        dpopPrivateKey.isAcceptableOrUnknown(data['dpop_private_key']!, _dpopPrivateKeyMeta),
+        dpopPrivateKey.isAcceptableOrUnknown(
+          data['dpop_private_key']!,
+          _dpopPrivateKeyMeta,
+        ),
       );
     }
     if (data.containsKey('dpop_nonce')) {
-      context.handle(_dpopNonceMeta, dpopNonce.isAcceptableOrUnknown(data['dpop_nonce']!, _dpopNonceMeta));
+      context.handle(
+        _dpopNonceMeta,
+        dpopNonce.isAcceptableOrUnknown(data['dpop_nonce']!, _dpopNonceMeta),
+      );
     }
     if (data.containsKey('expires_at')) {
-      context.handle(_expiresAtMeta, expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta));
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     }
     if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta, updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
     }
     return context;
   }
@@ -199,21 +267,54 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
   Account map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Account(
-      did: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}did'])!,
-      handle: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}handle'])!,
-      displayName: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}display_name']),
-      service: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}service']),
-      accessToken: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}access_token'])!,
-      refreshToken: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}refresh_token']),
-      dpopPublicKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}dpop_public_key']),
+      did: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}did'],
+      )!,
+      handle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}handle'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      ),
+      service: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}service'],
+      ),
+      accessToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}access_token'],
+      )!,
+      refreshToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}refresh_token'],
+      ),
+      dpopPublicKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dpop_public_key'],
+      ),
       dpopPrivateKey: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}dpop_private_key'],
       ),
-      dpopNonce: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}dpop_nonce']),
-      expiresAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}expires_at']),
-      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-      updatedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      dpopNonce: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dpop_nonce'],
+      ),
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
     );
   }
 
@@ -286,20 +387,37 @@ class Account extends DataClass implements Insertable<Account> {
     return AccountsCompanion(
       did: Value(did),
       handle: Value(handle),
-      displayName: displayName == null && nullToAbsent ? const Value.absent() : Value(displayName),
-      service: service == null && nullToAbsent ? const Value.absent() : Value(service),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
+      service: service == null && nullToAbsent
+          ? const Value.absent()
+          : Value(service),
       accessToken: Value(accessToken),
-      refreshToken: refreshToken == null && nullToAbsent ? const Value.absent() : Value(refreshToken),
-      dpopPublicKey: dpopPublicKey == null && nullToAbsent ? const Value.absent() : Value(dpopPublicKey),
-      dpopPrivateKey: dpopPrivateKey == null && nullToAbsent ? const Value.absent() : Value(dpopPrivateKey),
-      dpopNonce: dpopNonce == null && nullToAbsent ? const Value.absent() : Value(dpopNonce),
-      expiresAt: expiresAt == null && nullToAbsent ? const Value.absent() : Value(expiresAt),
+      refreshToken: refreshToken == null && nullToAbsent
+          ? const Value.absent()
+          : Value(refreshToken),
+      dpopPublicKey: dpopPublicKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dpopPublicKey),
+      dpopPrivateKey: dpopPrivateKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dpopPrivateKey),
+      dpopNonce: dpopNonce == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dpopNonce),
+      expiresAt: expiresAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiresAt),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
   }
 
-  factory Account.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory Account.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Account(
       did: serializer.fromJson<String>(json['did']),
@@ -355,8 +473,12 @@ class Account extends DataClass implements Insertable<Account> {
     service: service.present ? service.value : this.service,
     accessToken: accessToken ?? this.accessToken,
     refreshToken: refreshToken.present ? refreshToken.value : this.refreshToken,
-    dpopPublicKey: dpopPublicKey.present ? dpopPublicKey.value : this.dpopPublicKey,
-    dpopPrivateKey: dpopPrivateKey.present ? dpopPrivateKey.value : this.dpopPrivateKey,
+    dpopPublicKey: dpopPublicKey.present
+        ? dpopPublicKey.value
+        : this.dpopPublicKey,
+    dpopPrivateKey: dpopPrivateKey.present
+        ? dpopPrivateKey.value
+        : this.dpopPrivateKey,
     dpopNonce: dpopNonce.present ? dpopNonce.value : this.dpopNonce,
     expiresAt: expiresAt.present ? expiresAt.value : this.expiresAt,
     createdAt: createdAt ?? this.createdAt,
@@ -366,12 +488,22 @@ class Account extends DataClass implements Insertable<Account> {
     return Account(
       did: data.did.present ? data.did.value : this.did,
       handle: data.handle.present ? data.handle.value : this.handle,
-      displayName: data.displayName.present ? data.displayName.value : this.displayName,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
       service: data.service.present ? data.service.value : this.service,
-      accessToken: data.accessToken.present ? data.accessToken.value : this.accessToken,
-      refreshToken: data.refreshToken.present ? data.refreshToken.value : this.refreshToken,
-      dpopPublicKey: data.dpopPublicKey.present ? data.dpopPublicKey.value : this.dpopPublicKey,
-      dpopPrivateKey: data.dpopPrivateKey.present ? data.dpopPrivateKey.value : this.dpopPrivateKey,
+      accessToken: data.accessToken.present
+          ? data.accessToken.value
+          : this.accessToken,
+      refreshToken: data.refreshToken.present
+          ? data.refreshToken.value
+          : this.refreshToken,
+      dpopPublicKey: data.dpopPublicKey.present
+          ? data.dpopPublicKey.value
+          : this.dpopPublicKey,
+      dpopPrivateKey: data.dpopPrivateKey.present
+          ? data.dpopPrivateKey.value
+          : this.dpopPrivateKey,
       dpopNonce: data.dpopNonce.present ? data.dpopNonce.value : this.dpopNonce,
       expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -607,7 +739,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   }
 }
 
-class $CachedProfilesTable extends CachedProfiles with TableInfo<$CachedProfilesTable, CachedProfile> {
+class $CachedProfilesTable extends CachedProfiles
+    with TableInfo<$CachedProfilesTable, CachedProfile> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -630,7 +763,9 @@ class $CachedProfilesTable extends CachedProfiles with TableInfo<$CachedProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _payloadMeta = const VerificationMeta('payload');
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
   @override
   late final GeneratedColumn<String> payload = GeneratedColumn<String>(
     'payload',
@@ -639,7 +774,9 @@ class $CachedProfilesTable extends CachedProfiles with TableInfo<$CachedProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _fetchedAtMeta = const VerificationMeta('fetchedAt');
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
     'fetched_at',
@@ -657,26 +794,41 @@ class $CachedProfilesTable extends CachedProfiles with TableInfo<$CachedProfiles
   String get actualTableName => $name;
   static const String $name = 'cached_profiles';
   @override
-  VerificationContext validateIntegrity(Insertable<CachedProfile> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<CachedProfile> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('did')) {
-      context.handle(_didMeta, did.isAcceptableOrUnknown(data['did']!, _didMeta));
+      context.handle(
+        _didMeta,
+        did.isAcceptableOrUnknown(data['did']!, _didMeta),
+      );
     } else if (isInserting) {
       context.missing(_didMeta);
     }
     if (data.containsKey('handle')) {
-      context.handle(_handleMeta, handle.isAcceptableOrUnknown(data['handle']!, _handleMeta));
+      context.handle(
+        _handleMeta,
+        handle.isAcceptableOrUnknown(data['handle']!, _handleMeta),
+      );
     } else if (isInserting) {
       context.missing(_handleMeta);
     }
     if (data.containsKey('payload')) {
-      context.handle(_payloadMeta, payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta));
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
     } else if (isInserting) {
       context.missing(_payloadMeta);
     }
     if (data.containsKey('fetched_at')) {
-      context.handle(_fetchedAtMeta, fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta));
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
     }
     return context;
   }
@@ -687,10 +839,22 @@ class $CachedProfilesTable extends CachedProfiles with TableInfo<$CachedProfiles
   CachedProfile map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return CachedProfile(
-      did: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}did'])!,
-      handle: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}handle'])!,
-      payload: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}payload'])!,
-      fetchedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}fetched_at'])!,
+      did: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}did'],
+      )!,
+      handle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}handle'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
     );
   }
 
@@ -705,7 +869,12 @@ class CachedProfile extends DataClass implements Insertable<CachedProfile> {
   final String handle;
   final String payload;
   final DateTime fetchedAt;
-  const CachedProfile({required this.did, required this.handle, required this.payload, required this.fetchedAt});
+  const CachedProfile({
+    required this.did,
+    required this.handle,
+    required this.payload,
+    required this.fetchedAt,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -725,7 +894,10 @@ class CachedProfile extends DataClass implements Insertable<CachedProfile> {
     );
   }
 
-  factory CachedProfile.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory CachedProfile.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return CachedProfile(
       did: serializer.fromJson<String>(json['did']),
@@ -745,7 +917,12 @@ class CachedProfile extends DataClass implements Insertable<CachedProfile> {
     };
   }
 
-  CachedProfile copyWith({String? did, String? handle, String? payload, DateTime? fetchedAt}) => CachedProfile(
+  CachedProfile copyWith({
+    String? did,
+    String? handle,
+    String? payload,
+    DateTime? fetchedAt,
+  }) => CachedProfile(
     did: did ?? this.did,
     handle: handle ?? this.handle,
     payload: payload ?? this.payload,
@@ -871,7 +1048,8 @@ class CachedProfilesCompanion extends UpdateCompanion<CachedProfile> {
   }
 }
 
-class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, CachedPost> {
+class $CachedPostsTable extends CachedPosts
+    with TableInfo<$CachedPostsTable, CachedPost> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -885,7 +1063,9 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _authorDidMeta = const VerificationMeta('authorDid');
+  static const VerificationMeta _authorDidMeta = const VerificationMeta(
+    'authorDid',
+  );
   @override
   late final GeneratedColumn<String> authorDid = GeneratedColumn<String>(
     'author_did',
@@ -894,7 +1074,9 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _accountDidMeta = const VerificationMeta('accountDid');
+  static const VerificationMeta _accountDidMeta = const VerificationMeta(
+    'accountDid',
+  );
   @override
   late final GeneratedColumn<String> accountDid = GeneratedColumn<String>(
     'account_did',
@@ -903,7 +1085,9 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _payloadMeta = const VerificationMeta('payload');
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
   @override
   late final GeneratedColumn<String> payload = GeneratedColumn<String>(
     'payload',
@@ -912,7 +1096,9 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
@@ -921,7 +1107,9 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _fetchedAtMeta = const VerificationMeta('fetchedAt');
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
     'fetched_at',
@@ -932,39 +1120,67 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [uri, authorDid, accountDid, payload, createdAt, fetchedAt];
+  List<GeneratedColumn> get $columns => [
+    uri,
+    authorDid,
+    accountDid,
+    payload,
+    createdAt,
+    fetchedAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'cached_posts';
   @override
-  VerificationContext validateIntegrity(Insertable<CachedPost> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<CachedPost> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('uri')) {
-      context.handle(_uriMeta, uri.isAcceptableOrUnknown(data['uri']!, _uriMeta));
+      context.handle(
+        _uriMeta,
+        uri.isAcceptableOrUnknown(data['uri']!, _uriMeta),
+      );
     } else if (isInserting) {
       context.missing(_uriMeta);
     }
     if (data.containsKey('author_did')) {
-      context.handle(_authorDidMeta, authorDid.isAcceptableOrUnknown(data['author_did']!, _authorDidMeta));
+      context.handle(
+        _authorDidMeta,
+        authorDid.isAcceptableOrUnknown(data['author_did']!, _authorDidMeta),
+      );
     } else if (isInserting) {
       context.missing(_authorDidMeta);
     }
     if (data.containsKey('account_did')) {
-      context.handle(_accountDidMeta, accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta));
+      context.handle(
+        _accountDidMeta,
+        accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta),
+      );
     }
     if (data.containsKey('payload')) {
-      context.handle(_payloadMeta, payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta));
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
     } else if (isInserting) {
       context.missing(_payloadMeta);
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     }
     if (data.containsKey('fetched_at')) {
-      context.handle(_fetchedAtMeta, fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta));
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
     }
     return context;
   }
@@ -975,12 +1191,30 @@ class $CachedPostsTable extends CachedPosts with TableInfo<$CachedPostsTable, Ca
   CachedPost map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return CachedPost(
-      uri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}uri'])!,
-      authorDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}author_did'])!,
-      accountDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}account_did']),
-      payload: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}payload'])!,
-      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}created_at']),
-      fetchedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}fetched_at'])!,
+      uri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uri'],
+      )!,
+      authorDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}author_did'],
+      )!,
+      accountDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_did'],
+      ),
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      ),
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
     );
   }
 
@@ -1025,14 +1259,21 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
     return CachedPostsCompanion(
       uri: Value(uri),
       authorDid: Value(authorDid),
-      accountDid: accountDid == null && nullToAbsent ? const Value.absent() : Value(accountDid),
+      accountDid: accountDid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountDid),
       payload: Value(payload),
-      createdAt: createdAt == null && nullToAbsent ? const Value.absent() : Value(createdAt),
+      createdAt: createdAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdAt),
       fetchedAt: Value(fetchedAt),
     );
   }
 
-  factory CachedPost.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory CachedPost.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return CachedPost(
       uri: serializer.fromJson<String>(json['uri']),
@@ -1075,7 +1316,9 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
     return CachedPost(
       uri: data.uri.present ? data.uri.value : this.uri,
       authorDid: data.authorDid.present ? data.authorDid.value : this.authorDid,
-      accountDid: data.accountDid.present ? data.accountDid.value : this.accountDid,
+      accountDid: data.accountDid.present
+          ? data.accountDid.value
+          : this.accountDid,
       payload: data.payload.present ? data.payload.value : this.payload,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
@@ -1096,7 +1339,8 @@ class CachedPost extends DataClass implements Insertable<CachedPost> {
   }
 
   @override
-  int get hashCode => Object.hash(uri, authorDid, accountDid, payload, createdAt, fetchedAt);
+  int get hashCode =>
+      Object.hash(uri, authorDid, accountDid, payload, createdAt, fetchedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1219,7 +1463,8 @@ class CachedPostsCompanion extends UpdateCompanion<CachedPost> {
   }
 }
 
-class $SettingsTable extends Settings with TableInfo<$SettingsTable, SettingsEntry> {
+class $SettingsTable extends Settings
+    with TableInfo<$SettingsTable, SettingsEntry> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -1242,7 +1487,9 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, SettingsEnt
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta('updatedAt');
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
     'updated_at',
@@ -1260,21 +1507,33 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, SettingsEnt
   String get actualTableName => $name;
   static const String $name = 'settings';
   @override
-  VerificationContext validateIntegrity(Insertable<SettingsEntry> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<SettingsEntry> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('key')) {
-      context.handle(_keyMeta, key.isAcceptableOrUnknown(data['key']!, _keyMeta));
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
     } else if (isInserting) {
       context.missing(_keyMeta);
     }
     if (data.containsKey('value')) {
-      context.handle(_valueMeta, value.isAcceptableOrUnknown(data['value']!, _valueMeta));
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
     } else if (isInserting) {
       context.missing(_valueMeta);
     }
     if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta, updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
     }
     return context;
   }
@@ -1285,9 +1544,18 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, SettingsEnt
   SettingsEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SettingsEntry(
-      key: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}key'])!,
-      value: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}value'])!,
-      updatedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
     );
   }
 
@@ -1301,7 +1569,11 @@ class SettingsEntry extends DataClass implements Insertable<SettingsEntry> {
   final String key;
   final String value;
   final DateTime updatedAt;
-  const SettingsEntry({required this.key, required this.value, required this.updatedAt});
+  const SettingsEntry({
+    required this.key,
+    required this.value,
+    required this.updatedAt,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1312,10 +1584,17 @@ class SettingsEntry extends DataClass implements Insertable<SettingsEntry> {
   }
 
   SettingsCompanion toCompanion(bool nullToAbsent) {
-    return SettingsCompanion(key: Value(key), value: Value(value), updatedAt: Value(updatedAt));
+    return SettingsCompanion(
+      key: Value(key),
+      value: Value(value),
+      updatedAt: Value(updatedAt),
+    );
   }
 
-  factory SettingsEntry.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory SettingsEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SettingsEntry(
       key: serializer.fromJson<String>(json['key']),
@@ -1334,7 +1613,11 @@ class SettingsEntry extends DataClass implements Insertable<SettingsEntry> {
   }
 
   SettingsEntry copyWith({String? key, String? value, DateTime? updatedAt}) =>
-      SettingsEntry(key: key ?? this.key, value: value ?? this.value, updatedAt: updatedAt ?? this.updatedAt);
+      SettingsEntry(
+        key: key ?? this.key,
+        value: value ?? this.value,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
   SettingsEntry copyWithCompanion(SettingsCompanion data) {
     return SettingsEntry(
       key: data.key.present ? data.key.value : this.key,
@@ -1440,7 +1723,8 @@ class SettingsCompanion extends UpdateCompanion<SettingsEntry> {
   }
 }
 
-class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, SavedFeedEntry> {
+class $SavedFeedsTable extends SavedFeeds
+    with TableInfo<$SavedFeedsTable, SavedFeedEntry> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -1454,7 +1738,9 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _accountDidMeta = const VerificationMeta('accountDid');
+  static const VerificationMeta _accountDidMeta = const VerificationMeta(
+    'accountDid',
+  );
   @override
   late final GeneratedColumn<String> accountDid = GeneratedColumn<String>(
     'account_did',
@@ -1489,10 +1775,14 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("pinned" IN (0, 1))'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pinned" IN (0, 1))',
+    ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _sortOrderMeta = const VerificationMeta('sortOrder');
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
   @override
   late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
     'sort_order',
@@ -1502,7 +1792,9 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta('updatedAt');
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
     'updated_at',
@@ -1513,14 +1805,25 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, accountDid, type, value, pinned, sortOrder, updatedAt];
+  List<GeneratedColumn> get $columns => [
+    id,
+    accountDid,
+    type,
+    value,
+    pinned,
+    sortOrder,
+    updatedAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'saved_feeds';
   @override
-  VerificationContext validateIntegrity(Insertable<SavedFeedEntry> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<SavedFeedEntry> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -1529,28 +1832,46 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
       context.missing(_idMeta);
     }
     if (data.containsKey('account_did')) {
-      context.handle(_accountDidMeta, accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta));
+      context.handle(
+        _accountDidMeta,
+        accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta),
+      );
     } else if (isInserting) {
       context.missing(_accountDidMeta);
     }
     if (data.containsKey('type')) {
-      context.handle(_typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
     } else if (isInserting) {
       context.missing(_typeMeta);
     }
     if (data.containsKey('value')) {
-      context.handle(_valueMeta, value.isAcceptableOrUnknown(data['value']!, _valueMeta));
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
     } else if (isInserting) {
       context.missing(_valueMeta);
     }
     if (data.containsKey('pinned')) {
-      context.handle(_pinnedMeta, pinned.isAcceptableOrUnknown(data['pinned']!, _pinnedMeta));
+      context.handle(
+        _pinnedMeta,
+        pinned.isAcceptableOrUnknown(data['pinned']!, _pinnedMeta),
+      );
     }
     if (data.containsKey('sort_order')) {
-      context.handle(_sortOrderMeta, sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta));
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
     }
     if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta, updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
     }
     return context;
   }
@@ -1561,13 +1882,34 @@ class $SavedFeedsTable extends SavedFeeds with TableInfo<$SavedFeedsTable, Saved
   SavedFeedEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SavedFeedEntry(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      accountDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}account_did'])!,
-      type: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}type'])!,
-      value: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}value'])!,
-      pinned: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}pinned'])!,
-      sortOrder: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}sort_order'])!,
-      updatedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      accountDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_did'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+      pinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pinned'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
     );
   }
 
@@ -1619,7 +1961,10 @@ class SavedFeedEntry extends DataClass implements Insertable<SavedFeedEntry> {
     );
   }
 
-  factory SavedFeedEntry.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory SavedFeedEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SavedFeedEntry(
       id: serializer.fromJson<String>(json['id']),
@@ -1665,7 +2010,9 @@ class SavedFeedEntry extends DataClass implements Insertable<SavedFeedEntry> {
   SavedFeedEntry copyWithCompanion(SavedFeedsCompanion data) {
     return SavedFeedEntry(
       id: data.id.present ? data.id.value : this.id,
-      accountDid: data.accountDid.present ? data.accountDid.value : this.accountDid,
+      accountDid: data.accountDid.present
+          ? data.accountDid.value
+          : this.accountDid,
       type: data.type.present ? data.type.value : this.type,
       value: data.value.present ? data.value.value : this.value,
       pinned: data.pinned.present ? data.pinned.value : this.pinned,
@@ -1689,7 +2036,8 @@ class SavedFeedEntry extends DataClass implements Insertable<SavedFeedEntry> {
   }
 
   @override
-  int get hashCode => Object.hash(id, accountDid, type, value, pinned, sortOrder, updatedAt);
+  int get hashCode =>
+      Object.hash(id, accountDid, type, value, pinned, sortOrder, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1825,12 +2173,15 @@ class SavedFeedsCompanion extends UpdateCompanion<SavedFeedEntry> {
   }
 }
 
-class $CachedFeedPagesTable extends CachedFeedPages with TableInfo<$CachedFeedPagesTable, CachedFeedPage> {
+class $CachedFeedPagesTable extends CachedFeedPages
+    with TableInfo<$CachedFeedPagesTable, CachedFeedPage> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $CachedFeedPagesTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _accountDidMeta = const VerificationMeta('accountDid');
+  static const VerificationMeta _accountDidMeta = const VerificationMeta(
+    'accountDid',
+  );
   @override
   late final GeneratedColumn<String> accountDid = GeneratedColumn<String>(
     'account_did',
@@ -1839,7 +2190,9 @@ class $CachedFeedPagesTable extends CachedFeedPages with TableInfo<$CachedFeedPa
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _feedKeyMeta = const VerificationMeta('feedKey');
+  static const VerificationMeta _feedKeyMeta = const VerificationMeta(
+    'feedKey',
+  );
   @override
   late final GeneratedColumn<String> feedKey = GeneratedColumn<String>(
     'feed_key',
@@ -1848,7 +2201,9 @@ class $CachedFeedPagesTable extends CachedFeedPages with TableInfo<$CachedFeedPa
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _payloadMeta = const VerificationMeta('payload');
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
   @override
   late final GeneratedColumn<String> payload = GeneratedColumn<String>(
     'payload',
@@ -1857,7 +2212,9 @@ class $CachedFeedPagesTable extends CachedFeedPages with TableInfo<$CachedFeedPa
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _fetchedAtMeta = const VerificationMeta('fetchedAt');
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
     'fetched_at',
@@ -1868,33 +2225,53 @@ class $CachedFeedPagesTable extends CachedFeedPages with TableInfo<$CachedFeedPa
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [accountDid, feedKey, payload, fetchedAt];
+  List<GeneratedColumn> get $columns => [
+    accountDid,
+    feedKey,
+    payload,
+    fetchedAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'cached_feed_pages';
   @override
-  VerificationContext validateIntegrity(Insertable<CachedFeedPage> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<CachedFeedPage> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('account_did')) {
-      context.handle(_accountDidMeta, accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta));
+      context.handle(
+        _accountDidMeta,
+        accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta),
+      );
     } else if (isInserting) {
       context.missing(_accountDidMeta);
     }
     if (data.containsKey('feed_key')) {
-      context.handle(_feedKeyMeta, feedKey.isAcceptableOrUnknown(data['feed_key']!, _feedKeyMeta));
+      context.handle(
+        _feedKeyMeta,
+        feedKey.isAcceptableOrUnknown(data['feed_key']!, _feedKeyMeta),
+      );
     } else if (isInserting) {
       context.missing(_feedKeyMeta);
     }
     if (data.containsKey('payload')) {
-      context.handle(_payloadMeta, payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta));
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
     } else if (isInserting) {
       context.missing(_payloadMeta);
     }
     if (data.containsKey('fetched_at')) {
-      context.handle(_fetchedAtMeta, fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta));
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
     }
     return context;
   }
@@ -1905,10 +2282,22 @@ class $CachedFeedPagesTable extends CachedFeedPages with TableInfo<$CachedFeedPa
   CachedFeedPage map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return CachedFeedPage(
-      accountDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}account_did'])!,
-      feedKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}feed_key'])!,
-      payload: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}payload'])!,
-      fetchedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}fetched_at'])!,
+      accountDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_did'],
+      )!,
+      feedKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}feed_key'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
     );
   }
 
@@ -1948,7 +2337,10 @@ class CachedFeedPage extends DataClass implements Insertable<CachedFeedPage> {
     );
   }
 
-  factory CachedFeedPage.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory CachedFeedPage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return CachedFeedPage(
       accountDid: serializer.fromJson<String>(json['accountDid']),
@@ -1968,16 +2360,22 @@ class CachedFeedPage extends DataClass implements Insertable<CachedFeedPage> {
     };
   }
 
-  CachedFeedPage copyWith({String? accountDid, String? feedKey, String? payload, DateTime? fetchedAt}) =>
-      CachedFeedPage(
-        accountDid: accountDid ?? this.accountDid,
-        feedKey: feedKey ?? this.feedKey,
-        payload: payload ?? this.payload,
-        fetchedAt: fetchedAt ?? this.fetchedAt,
-      );
+  CachedFeedPage copyWith({
+    String? accountDid,
+    String? feedKey,
+    String? payload,
+    DateTime? fetchedAt,
+  }) => CachedFeedPage(
+    accountDid: accountDid ?? this.accountDid,
+    feedKey: feedKey ?? this.feedKey,
+    payload: payload ?? this.payload,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
   CachedFeedPage copyWithCompanion(CachedFeedPagesCompanion data) {
     return CachedFeedPage(
-      accountDid: data.accountDid.present ? data.accountDid.value : this.accountDid,
+      accountDid: data.accountDid.present
+          ? data.accountDid.value
+          : this.accountDid,
       feedKey: data.feedKey.present ? data.feedKey.value : this.feedKey,
       payload: data.payload.present ? data.payload.value : this.payload,
       fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
@@ -2095,7 +2493,8 @@ class CachedFeedPagesCompanion extends UpdateCompanion<CachedFeedPage> {
   }
 }
 
-class $SearchHistoryTable extends SearchHistory with TableInfo<$SearchHistoryTable, SearchHistoryEntry> {
+class $SearchHistoryTable extends SearchHistory
+    with TableInfo<$SearchHistoryTable, SearchHistoryEntry> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2109,7 +2508,9 @@ class $SearchHistoryTable extends SearchHistory with TableInfo<$SearchHistoryTab
     hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
   );
   static const VerificationMeta _queryMeta = const VerificationMeta('query');
   @override
@@ -2129,7 +2530,9 @@ class $SearchHistoryTable extends SearchHistory with TableInfo<$SearchHistoryTab
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _searchedAtMeta = const VerificationMeta('searchedAt');
+  static const VerificationMeta _searchedAtMeta = const VerificationMeta(
+    'searchedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> searchedAt = GeneratedColumn<DateTime>(
     'searched_at',
@@ -2139,7 +2542,9 @@ class $SearchHistoryTable extends SearchHistory with TableInfo<$SearchHistoryTab
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
-  static const VerificationMeta _accountDidMeta = const VerificationMeta('accountDid');
+  static const VerificationMeta _accountDidMeta = const VerificationMeta(
+    'accountDid',
+  );
   @override
   late final GeneratedColumn<String> accountDid = GeneratedColumn<String>(
     'account_did',
@@ -2149,34 +2554,55 @@ class $SearchHistoryTable extends SearchHistory with TableInfo<$SearchHistoryTab
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, query, type, searchedAt, accountDid];
+  List<GeneratedColumn> get $columns => [
+    id,
+    query,
+    type,
+    searchedAt,
+    accountDid,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'search_history';
   @override
-  VerificationContext validateIntegrity(Insertable<SearchHistoryEntry> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<SearchHistoryEntry> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
     if (data.containsKey('query')) {
-      context.handle(_queryMeta, query.isAcceptableOrUnknown(data['query']!, _queryMeta));
+      context.handle(
+        _queryMeta,
+        query.isAcceptableOrUnknown(data['query']!, _queryMeta),
+      );
     } else if (isInserting) {
       context.missing(_queryMeta);
     }
     if (data.containsKey('type')) {
-      context.handle(_typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
     } else if (isInserting) {
       context.missing(_typeMeta);
     }
     if (data.containsKey('searched_at')) {
-      context.handle(_searchedAtMeta, searchedAt.isAcceptableOrUnknown(data['searched_at']!, _searchedAtMeta));
+      context.handle(
+        _searchedAtMeta,
+        searchedAt.isAcceptableOrUnknown(data['searched_at']!, _searchedAtMeta),
+      );
     }
     if (data.containsKey('account_did')) {
-      context.handle(_accountDidMeta, accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta));
+      context.handle(
+        _accountDidMeta,
+        accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta),
+      );
     } else if (isInserting) {
       context.missing(_accountDidMeta);
     }
@@ -2189,11 +2615,26 @@ class $SearchHistoryTable extends SearchHistory with TableInfo<$SearchHistoryTab
   SearchHistoryEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SearchHistoryEntry(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      query: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}query'])!,
-      type: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}type'])!,
-      searchedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}searched_at'])!,
-      accountDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}account_did'])!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      query: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}query'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      searchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}searched_at'],
+      )!,
+      accountDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_did'],
+      )!,
     );
   }
 
@@ -2203,7 +2644,8 @@ class $SearchHistoryTable extends SearchHistory with TableInfo<$SearchHistoryTab
   }
 }
 
-class SearchHistoryEntry extends DataClass implements Insertable<SearchHistoryEntry> {
+class SearchHistoryEntry extends DataClass
+    implements Insertable<SearchHistoryEntry> {
   final int id;
   final String query;
   final String type;
@@ -2237,7 +2679,10 @@ class SearchHistoryEntry extends DataClass implements Insertable<SearchHistoryEn
     );
   }
 
-  factory SearchHistoryEntry.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory SearchHistoryEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SearchHistoryEntry(
       id: serializer.fromJson<int>(json['id']),
@@ -2259,21 +2704,30 @@ class SearchHistoryEntry extends DataClass implements Insertable<SearchHistoryEn
     };
   }
 
-  SearchHistoryEntry copyWith({int? id, String? query, String? type, DateTime? searchedAt, String? accountDid}) =>
-      SearchHistoryEntry(
-        id: id ?? this.id,
-        query: query ?? this.query,
-        type: type ?? this.type,
-        searchedAt: searchedAt ?? this.searchedAt,
-        accountDid: accountDid ?? this.accountDid,
-      );
+  SearchHistoryEntry copyWith({
+    int? id,
+    String? query,
+    String? type,
+    DateTime? searchedAt,
+    String? accountDid,
+  }) => SearchHistoryEntry(
+    id: id ?? this.id,
+    query: query ?? this.query,
+    type: type ?? this.type,
+    searchedAt: searchedAt ?? this.searchedAt,
+    accountDid: accountDid ?? this.accountDid,
+  );
   SearchHistoryEntry copyWithCompanion(SearchHistoryCompanion data) {
     return SearchHistoryEntry(
       id: data.id.present ? data.id.value : this.id,
       query: data.query.present ? data.query.value : this.query,
       type: data.type.present ? data.type.value : this.type,
-      searchedAt: data.searchedAt.present ? data.searchedAt.value : this.searchedAt,
-      accountDid: data.accountDid.present ? data.accountDid.value : this.accountDid,
+      searchedAt: data.searchedAt.present
+          ? data.searchedAt.value
+          : this.searchedAt,
+      accountDid: data.accountDid.present
+          ? data.accountDid.value
+          : this.accountDid,
     );
   }
 
@@ -2404,9 +2858,13 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
     hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
   );
-  static const VerificationMeta _accountDidMeta = const VerificationMeta('accountDid');
+  static const VerificationMeta _accountDidMeta = const VerificationMeta(
+    'accountDid',
+  );
   @override
   late final GeneratedColumn<String> accountDid = GeneratedColumn<String>(
     'account_did',
@@ -2415,7 +2873,9 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _contentMeta = const VerificationMeta('content');
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
   @override
   late final GeneratedColumn<String> content = GeneratedColumn<String>(
     'content',
@@ -2424,7 +2884,9 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _replyUriMeta = const VerificationMeta('replyUri');
+  static const VerificationMeta _replyUriMeta = const VerificationMeta(
+    'replyUri',
+  );
   @override
   late final GeneratedColumn<String> replyUri = GeneratedColumn<String>(
     'reply_uri',
@@ -2433,7 +2895,9 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _replyCidMeta = const VerificationMeta('replyCid');
+  static const VerificationMeta _replyCidMeta = const VerificationMeta(
+    'replyCid',
+  );
   @override
   late final GeneratedColumn<String> replyCid = GeneratedColumn<String>(
     'reply_cid',
@@ -2442,7 +2906,9 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _rootUriMeta = const VerificationMeta('rootUri');
+  static const VerificationMeta _rootUriMeta = const VerificationMeta(
+    'rootUri',
+  );
   @override
   late final GeneratedColumn<String> rootUri = GeneratedColumn<String>(
     'root_uri',
@@ -2451,7 +2917,9 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _rootCidMeta = const VerificationMeta('rootCid');
+  static const VerificationMeta _rootCidMeta = const VerificationMeta(
+    'rootCid',
+  );
   @override
   late final GeneratedColumn<String> rootCid = GeneratedColumn<String>(
     'root_cid',
@@ -2460,7 +2928,9 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _embedJsonMeta = const VerificationMeta('embedJson');
+  static const VerificationMeta _embedJsonMeta = const VerificationMeta(
+    'embedJson',
+  );
   @override
   late final GeneratedColumn<String> embedJson = GeneratedColumn<String>(
     'embed_json',
@@ -2469,7 +2939,9 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _mediaPathsMeta = const VerificationMeta('mediaPaths');
+  static const VerificationMeta _mediaPathsMeta = const VerificationMeta(
+    'mediaPaths',
+  );
   @override
   late final GeneratedColumn<String> mediaPaths = GeneratedColumn<String>(
     'media_paths',
@@ -2478,7 +2950,9 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
@@ -2488,7 +2962,9 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta('updatedAt');
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
     'updated_at',
@@ -2498,7 +2974,9 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
-  static const VerificationMeta _scheduledAtMeta = const VerificationMeta('scheduledAt');
+  static const VerificationMeta _scheduledAtMeta = const VerificationMeta(
+    'scheduledAt',
+  );
   @override
   late final GeneratedColumn<DateTime> scheduledAt = GeneratedColumn<DateTime>(
     'scheduled_at',
@@ -2528,48 +3006,87 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
   String get actualTableName => $name;
   static const String $name = 'drafts';
   @override
-  VerificationContext validateIntegrity(Insertable<DraftEntry> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<DraftEntry> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
     if (data.containsKey('account_did')) {
-      context.handle(_accountDidMeta, accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta));
+      context.handle(
+        _accountDidMeta,
+        accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta),
+      );
     } else if (isInserting) {
       context.missing(_accountDidMeta);
     }
     if (data.containsKey('content')) {
-      context.handle(_contentMeta, content.isAcceptableOrUnknown(data['content']!, _contentMeta));
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
     } else if (isInserting) {
       context.missing(_contentMeta);
     }
     if (data.containsKey('reply_uri')) {
-      context.handle(_replyUriMeta, replyUri.isAcceptableOrUnknown(data['reply_uri']!, _replyUriMeta));
+      context.handle(
+        _replyUriMeta,
+        replyUri.isAcceptableOrUnknown(data['reply_uri']!, _replyUriMeta),
+      );
     }
     if (data.containsKey('reply_cid')) {
-      context.handle(_replyCidMeta, replyCid.isAcceptableOrUnknown(data['reply_cid']!, _replyCidMeta));
+      context.handle(
+        _replyCidMeta,
+        replyCid.isAcceptableOrUnknown(data['reply_cid']!, _replyCidMeta),
+      );
     }
     if (data.containsKey('root_uri')) {
-      context.handle(_rootUriMeta, rootUri.isAcceptableOrUnknown(data['root_uri']!, _rootUriMeta));
+      context.handle(
+        _rootUriMeta,
+        rootUri.isAcceptableOrUnknown(data['root_uri']!, _rootUriMeta),
+      );
     }
     if (data.containsKey('root_cid')) {
-      context.handle(_rootCidMeta, rootCid.isAcceptableOrUnknown(data['root_cid']!, _rootCidMeta));
+      context.handle(
+        _rootCidMeta,
+        rootCid.isAcceptableOrUnknown(data['root_cid']!, _rootCidMeta),
+      );
     }
     if (data.containsKey('embed_json')) {
-      context.handle(_embedJsonMeta, embedJson.isAcceptableOrUnknown(data['embed_json']!, _embedJsonMeta));
+      context.handle(
+        _embedJsonMeta,
+        embedJson.isAcceptableOrUnknown(data['embed_json']!, _embedJsonMeta),
+      );
     }
     if (data.containsKey('media_paths')) {
-      context.handle(_mediaPathsMeta, mediaPaths.isAcceptableOrUnknown(data['media_paths']!, _mediaPathsMeta));
+      context.handle(
+        _mediaPathsMeta,
+        mediaPaths.isAcceptableOrUnknown(data['media_paths']!, _mediaPathsMeta),
+      );
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     }
     if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta, updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
     }
     if (data.containsKey('scheduled_at')) {
-      context.handle(_scheduledAtMeta, scheduledAt.isAcceptableOrUnknown(data['scheduled_at']!, _scheduledAtMeta));
+      context.handle(
+        _scheduledAtMeta,
+        scheduledAt.isAcceptableOrUnknown(
+          data['scheduled_at']!,
+          _scheduledAtMeta,
+        ),
+      );
     }
     return context;
   }
@@ -2580,18 +3097,54 @@ class $DraftsTable extends Drafts with TableInfo<$DraftsTable, DraftEntry> {
   DraftEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return DraftEntry(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      accountDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}account_did'])!,
-      content: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}content'])!,
-      replyUri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}reply_uri']),
-      replyCid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}reply_cid']),
-      rootUri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}root_uri']),
-      rootCid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}root_cid']),
-      embedJson: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}embed_json']),
-      mediaPaths: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}media_paths']),
-      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-      updatedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
-      scheduledAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}scheduled_at']),
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      accountDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_did'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      replyUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reply_uri'],
+      ),
+      replyCid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reply_cid'],
+      ),
+      rootUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}root_uri'],
+      ),
+      rootCid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}root_cid'],
+      ),
+      embedJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}embed_json'],
+      ),
+      mediaPaths: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}media_paths'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      scheduledAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}scheduled_at'],
+      ),
     );
   }
 
@@ -2665,19 +3218,36 @@ class DraftEntry extends DataClass implements Insertable<DraftEntry> {
       id: Value(id),
       accountDid: Value(accountDid),
       content: Value(content),
-      replyUri: replyUri == null && nullToAbsent ? const Value.absent() : Value(replyUri),
-      replyCid: replyCid == null && nullToAbsent ? const Value.absent() : Value(replyCid),
-      rootUri: rootUri == null && nullToAbsent ? const Value.absent() : Value(rootUri),
-      rootCid: rootCid == null && nullToAbsent ? const Value.absent() : Value(rootCid),
-      embedJson: embedJson == null && nullToAbsent ? const Value.absent() : Value(embedJson),
-      mediaPaths: mediaPaths == null && nullToAbsent ? const Value.absent() : Value(mediaPaths),
+      replyUri: replyUri == null && nullToAbsent
+          ? const Value.absent()
+          : Value(replyUri),
+      replyCid: replyCid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(replyCid),
+      rootUri: rootUri == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rootUri),
+      rootCid: rootCid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rootCid),
+      embedJson: embedJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(embedJson),
+      mediaPaths: mediaPaths == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mediaPaths),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
-      scheduledAt: scheduledAt == null && nullToAbsent ? const Value.absent() : Value(scheduledAt),
+      scheduledAt: scheduledAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scheduledAt),
     );
   }
 
-  factory DraftEntry.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory DraftEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return DraftEntry(
       id: serializer.fromJson<int>(json['id']),
@@ -2743,17 +3313,23 @@ class DraftEntry extends DataClass implements Insertable<DraftEntry> {
   DraftEntry copyWithCompanion(DraftsCompanion data) {
     return DraftEntry(
       id: data.id.present ? data.id.value : this.id,
-      accountDid: data.accountDid.present ? data.accountDid.value : this.accountDid,
+      accountDid: data.accountDid.present
+          ? data.accountDid.value
+          : this.accountDid,
       content: data.content.present ? data.content.value : this.content,
       replyUri: data.replyUri.present ? data.replyUri.value : this.replyUri,
       replyCid: data.replyCid.present ? data.replyCid.value : this.replyCid,
       rootUri: data.rootUri.present ? data.rootUri.value : this.rootUri,
       rootCid: data.rootCid.present ? data.rootCid.value : this.rootCid,
       embedJson: data.embedJson.present ? data.embedJson.value : this.embedJson,
-      mediaPaths: data.mediaPaths.present ? data.mediaPaths.value : this.mediaPaths,
+      mediaPaths: data.mediaPaths.present
+          ? data.mediaPaths.value
+          : this.mediaPaths,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      scheduledAt: data.scheduledAt.present ? data.scheduledAt.value : this.scheduledAt,
+      scheduledAt: data.scheduledAt.present
+          ? data.scheduledAt.value
+          : this.scheduledAt,
     );
   }
 
@@ -2973,7 +3549,8 @@ class DraftsCompanion extends UpdateCompanion<DraftEntry> {
   }
 }
 
-class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, SavedPostEntry> {
+class $SavedPostsTable extends SavedPosts
+    with TableInfo<$SavedPostsTable, SavedPostEntry> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2987,9 +3564,13 @@ class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, Saved
     hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
   );
-  static const VerificationMeta _accountDidMeta = const VerificationMeta('accountDid');
+  static const VerificationMeta _accountDidMeta = const VerificationMeta(
+    'accountDid',
+  );
   @override
   late final GeneratedColumn<String> accountDid = GeneratedColumn<String>(
     'account_did',
@@ -2998,7 +3579,9 @@ class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, Saved
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _postUriMeta = const VerificationMeta('postUri');
+  static const VerificationMeta _postUriMeta = const VerificationMeta(
+    'postUri',
+  );
   @override
   late final GeneratedColumn<String> postUri = GeneratedColumn<String>(
     'post_uri',
@@ -3007,7 +3590,9 @@ class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, Saved
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _postJsonMeta = const VerificationMeta('postJson');
+  static const VerificationMeta _postJsonMeta = const VerificationMeta(
+    'postJson',
+  );
   @override
   late final GeneratedColumn<String> postJson = GeneratedColumn<String>(
     'post_json',
@@ -3016,7 +3601,9 @@ class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, Saved
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _saveTypeMeta = const VerificationMeta('saveType');
+  static const VerificationMeta _saveTypeMeta = const VerificationMeta(
+    'saveType',
+  );
   @override
   late final GeneratedColumn<String> saveType = GeneratedColumn<String>(
     'save_type',
@@ -3026,7 +3613,9 @@ class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, Saved
     requiredDuringInsert: false,
     defaultValue: const Constant('local'),
   );
-  static const VerificationMeta _savedAtMeta = const VerificationMeta('savedAt');
+  static const VerificationMeta _savedAtMeta = const VerificationMeta(
+    'savedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> savedAt = GeneratedColumn<DateTime>(
     'saved_at',
@@ -3037,39 +3626,64 @@ class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, Saved
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, accountDid, postUri, postJson, saveType, savedAt];
+  List<GeneratedColumn> get $columns => [
+    id,
+    accountDid,
+    postUri,
+    postJson,
+    saveType,
+    savedAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'saved_posts';
   @override
-  VerificationContext validateIntegrity(Insertable<SavedPostEntry> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<SavedPostEntry> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
     if (data.containsKey('account_did')) {
-      context.handle(_accountDidMeta, accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta));
+      context.handle(
+        _accountDidMeta,
+        accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta),
+      );
     } else if (isInserting) {
       context.missing(_accountDidMeta);
     }
     if (data.containsKey('post_uri')) {
-      context.handle(_postUriMeta, postUri.isAcceptableOrUnknown(data['post_uri']!, _postUriMeta));
+      context.handle(
+        _postUriMeta,
+        postUri.isAcceptableOrUnknown(data['post_uri']!, _postUriMeta),
+      );
     } else if (isInserting) {
       context.missing(_postUriMeta);
     }
     if (data.containsKey('post_json')) {
-      context.handle(_postJsonMeta, postJson.isAcceptableOrUnknown(data['post_json']!, _postJsonMeta));
+      context.handle(
+        _postJsonMeta,
+        postJson.isAcceptableOrUnknown(data['post_json']!, _postJsonMeta),
+      );
     } else if (isInserting) {
       context.missing(_postJsonMeta);
     }
     if (data.containsKey('save_type')) {
-      context.handle(_saveTypeMeta, saveType.isAcceptableOrUnknown(data['save_type']!, _saveTypeMeta));
+      context.handle(
+        _saveTypeMeta,
+        saveType.isAcceptableOrUnknown(data['save_type']!, _saveTypeMeta),
+      );
     }
     if (data.containsKey('saved_at')) {
-      context.handle(_savedAtMeta, savedAt.isAcceptableOrUnknown(data['saved_at']!, _savedAtMeta));
+      context.handle(
+        _savedAtMeta,
+        savedAt.isAcceptableOrUnknown(data['saved_at']!, _savedAtMeta),
+      );
     }
     return context;
   }
@@ -3080,12 +3694,30 @@ class $SavedPostsTable extends SavedPosts with TableInfo<$SavedPostsTable, Saved
   SavedPostEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SavedPostEntry(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      accountDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}account_did'])!,
-      postUri: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}post_uri'])!,
-      postJson: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}post_json'])!,
-      saveType: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}save_type'])!,
-      savedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}saved_at'])!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      accountDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_did'],
+      )!,
+      postUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}post_uri'],
+      )!,
+      postJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}post_json'],
+      )!,
+      saveType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}save_type'],
+      )!,
+      savedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}saved_at'],
+      )!,
     );
   }
 
@@ -3133,7 +3765,10 @@ class SavedPostEntry extends DataClass implements Insertable<SavedPostEntry> {
     );
   }
 
-  factory SavedPostEntry.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory SavedPostEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SavedPostEntry(
       id: serializer.fromJson<int>(json['id']),
@@ -3175,7 +3810,9 @@ class SavedPostEntry extends DataClass implements Insertable<SavedPostEntry> {
   SavedPostEntry copyWithCompanion(SavedPostsCompanion data) {
     return SavedPostEntry(
       id: data.id.present ? data.id.value : this.id,
-      accountDid: data.accountDid.present ? data.accountDid.value : this.accountDid,
+      accountDid: data.accountDid.present
+          ? data.accountDid.value
+          : this.accountDid,
       postUri: data.postUri.present ? data.postUri.value : this.postUri,
       postJson: data.postJson.present ? data.postJson.value : this.postJson,
       saveType: data.saveType.present ? data.saveType.value : this.saveType,
@@ -3197,7 +3834,8 @@ class SavedPostEntry extends DataClass implements Insertable<SavedPostEntry> {
   }
 
   @override
-  int get hashCode => Object.hash(id, accountDid, postUri, postJson, saveType, savedAt);
+  int get hashCode =>
+      Object.hash(id, accountDid, postUri, postJson, saveType, savedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3309,12 +3947,15 @@ class SavedPostsCompanion extends UpdateCompanion<SavedPostEntry> {
   }
 }
 
-class $LabelerCacheTable extends LabelerCache with TableInfo<$LabelerCacheTable, LabelerCacheEntry> {
+class $LabelerCacheTable extends LabelerCache
+    with TableInfo<$LabelerCacheTable, LabelerCacheEntry> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $LabelerCacheTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _labelerDidMeta = const VerificationMeta('labelerDid');
+  static const VerificationMeta _labelerDidMeta = const VerificationMeta(
+    'labelerDid',
+  );
   @override
   late final GeneratedColumn<String> labelerDid = GeneratedColumn<String>(
     'labeler_did',
@@ -3323,7 +3964,9 @@ class $LabelerCacheTable extends LabelerCache with TableInfo<$LabelerCacheTable,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _policiesJsonMeta = const VerificationMeta('policiesJson');
+  static const VerificationMeta _policiesJsonMeta = const VerificationMeta(
+    'policiesJson',
+  );
   @override
   late final GeneratedColumn<String> policiesJson = GeneratedColumn<String>(
     'policies_json',
@@ -3332,7 +3975,9 @@ class $LabelerCacheTable extends LabelerCache with TableInfo<$LabelerCacheTable,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _fetchedAtMeta = const VerificationMeta('fetchedAt');
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
     'fetched_at',
@@ -3350,21 +3995,36 @@ class $LabelerCacheTable extends LabelerCache with TableInfo<$LabelerCacheTable,
   String get actualTableName => $name;
   static const String $name = 'labeler_cache';
   @override
-  VerificationContext validateIntegrity(Insertable<LabelerCacheEntry> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LabelerCacheEntry> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('labeler_did')) {
-      context.handle(_labelerDidMeta, labelerDid.isAcceptableOrUnknown(data['labeler_did']!, _labelerDidMeta));
+      context.handle(
+        _labelerDidMeta,
+        labelerDid.isAcceptableOrUnknown(data['labeler_did']!, _labelerDidMeta),
+      );
     } else if (isInserting) {
       context.missing(_labelerDidMeta);
     }
     if (data.containsKey('policies_json')) {
-      context.handle(_policiesJsonMeta, policiesJson.isAcceptableOrUnknown(data['policies_json']!, _policiesJsonMeta));
+      context.handle(
+        _policiesJsonMeta,
+        policiesJson.isAcceptableOrUnknown(
+          data['policies_json']!,
+          _policiesJsonMeta,
+        ),
+      );
     } else if (isInserting) {
       context.missing(_policiesJsonMeta);
     }
     if (data.containsKey('fetched_at')) {
-      context.handle(_fetchedAtMeta, fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta));
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
     }
     return context;
   }
@@ -3375,9 +4035,18 @@ class $LabelerCacheTable extends LabelerCache with TableInfo<$LabelerCacheTable,
   LabelerCacheEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LabelerCacheEntry(
-      labelerDid: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}labeler_did'])!,
-      policiesJson: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}policies_json'])!,
-      fetchedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}fetched_at'])!,
+      labelerDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}labeler_did'],
+      )!,
+      policiesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}policies_json'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
     );
   }
 
@@ -3387,11 +4056,16 @@ class $LabelerCacheTable extends LabelerCache with TableInfo<$LabelerCacheTable,
   }
 }
 
-class LabelerCacheEntry extends DataClass implements Insertable<LabelerCacheEntry> {
+class LabelerCacheEntry extends DataClass
+    implements Insertable<LabelerCacheEntry> {
   final String labelerDid;
   final String policiesJson;
   final DateTime fetchedAt;
-  const LabelerCacheEntry({required this.labelerDid, required this.policiesJson, required this.fetchedAt});
+  const LabelerCacheEntry({
+    required this.labelerDid,
+    required this.policiesJson,
+    required this.fetchedAt,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -3409,7 +4083,10 @@ class LabelerCacheEntry extends DataClass implements Insertable<LabelerCacheEntr
     );
   }
 
-  factory LabelerCacheEntry.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LabelerCacheEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LabelerCacheEntry(
       labelerDid: serializer.fromJson<String>(json['labelerDid']),
@@ -3427,15 +4104,23 @@ class LabelerCacheEntry extends DataClass implements Insertable<LabelerCacheEntr
     };
   }
 
-  LabelerCacheEntry copyWith({String? labelerDid, String? policiesJson, DateTime? fetchedAt}) => LabelerCacheEntry(
+  LabelerCacheEntry copyWith({
+    String? labelerDid,
+    String? policiesJson,
+    DateTime? fetchedAt,
+  }) => LabelerCacheEntry(
     labelerDid: labelerDid ?? this.labelerDid,
     policiesJson: policiesJson ?? this.policiesJson,
     fetchedAt: fetchedAt ?? this.fetchedAt,
   );
   LabelerCacheEntry copyWithCompanion(LabelerCacheCompanion data) {
     return LabelerCacheEntry(
-      labelerDid: data.labelerDid.present ? data.labelerDid.value : this.labelerDid,
-      policiesJson: data.policiesJson.present ? data.policiesJson.value : this.policiesJson,
+      labelerDid: data.labelerDid.present
+          ? data.labelerDid.value
+          : this.labelerDid,
+      policiesJson: data.policiesJson.present
+          ? data.policiesJson.value
+          : this.policiesJson,
       fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
     );
   }
@@ -3537,6 +4222,358 @@ class LabelerCacheCompanion extends UpdateCompanion<LabelerCacheEntry> {
   }
 }
 
+class $LikedPostsTable extends LikedPosts
+    with TableInfo<$LikedPostsTable, LikedPostEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LikedPostsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _accountDidMeta = const VerificationMeta(
+    'accountDid',
+  );
+  @override
+  late final GeneratedColumn<String> accountDid = GeneratedColumn<String>(
+    'account_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _postUriMeta = const VerificationMeta(
+    'postUri',
+  );
+  @override
+  late final GeneratedColumn<String> postUri = GeneratedColumn<String>(
+    'post_uri',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _postJsonMeta = const VerificationMeta(
+    'postJson',
+  );
+  @override
+  late final GeneratedColumn<String> postJson = GeneratedColumn<String>(
+    'post_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _likedAtMeta = const VerificationMeta(
+    'likedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> likedAt = GeneratedColumn<DateTime>(
+    'liked_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    accountDid,
+    postUri,
+    postJson,
+    likedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'liked_posts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LikedPostEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('account_did')) {
+      context.handle(
+        _accountDidMeta,
+        accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountDidMeta);
+    }
+    if (data.containsKey('post_uri')) {
+      context.handle(
+        _postUriMeta,
+        postUri.isAcceptableOrUnknown(data['post_uri']!, _postUriMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_postUriMeta);
+    }
+    if (data.containsKey('post_json')) {
+      context.handle(
+        _postJsonMeta,
+        postJson.isAcceptableOrUnknown(data['post_json']!, _postJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_postJsonMeta);
+    }
+    if (data.containsKey('liked_at')) {
+      context.handle(
+        _likedAtMeta,
+        likedAt.isAcceptableOrUnknown(data['liked_at']!, _likedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LikedPostEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LikedPostEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      accountDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_did'],
+      )!,
+      postUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}post_uri'],
+      )!,
+      postJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}post_json'],
+      )!,
+      likedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}liked_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LikedPostsTable createAlias(String alias) {
+    return $LikedPostsTable(attachedDatabase, alias);
+  }
+}
+
+class LikedPostEntry extends DataClass implements Insertable<LikedPostEntry> {
+  final int id;
+  final String accountDid;
+  final String postUri;
+  final String postJson;
+  final DateTime likedAt;
+  const LikedPostEntry({
+    required this.id,
+    required this.accountDid,
+    required this.postUri,
+    required this.postJson,
+    required this.likedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['account_did'] = Variable<String>(accountDid);
+    map['post_uri'] = Variable<String>(postUri);
+    map['post_json'] = Variable<String>(postJson);
+    map['liked_at'] = Variable<DateTime>(likedAt);
+    return map;
+  }
+
+  LikedPostsCompanion toCompanion(bool nullToAbsent) {
+    return LikedPostsCompanion(
+      id: Value(id),
+      accountDid: Value(accountDid),
+      postUri: Value(postUri),
+      postJson: Value(postJson),
+      likedAt: Value(likedAt),
+    );
+  }
+
+  factory LikedPostEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LikedPostEntry(
+      id: serializer.fromJson<int>(json['id']),
+      accountDid: serializer.fromJson<String>(json['accountDid']),
+      postUri: serializer.fromJson<String>(json['postUri']),
+      postJson: serializer.fromJson<String>(json['postJson']),
+      likedAt: serializer.fromJson<DateTime>(json['likedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'accountDid': serializer.toJson<String>(accountDid),
+      'postUri': serializer.toJson<String>(postUri),
+      'postJson': serializer.toJson<String>(postJson),
+      'likedAt': serializer.toJson<DateTime>(likedAt),
+    };
+  }
+
+  LikedPostEntry copyWith({
+    int? id,
+    String? accountDid,
+    String? postUri,
+    String? postJson,
+    DateTime? likedAt,
+  }) => LikedPostEntry(
+    id: id ?? this.id,
+    accountDid: accountDid ?? this.accountDid,
+    postUri: postUri ?? this.postUri,
+    postJson: postJson ?? this.postJson,
+    likedAt: likedAt ?? this.likedAt,
+  );
+  LikedPostEntry copyWithCompanion(LikedPostsCompanion data) {
+    return LikedPostEntry(
+      id: data.id.present ? data.id.value : this.id,
+      accountDid: data.accountDid.present
+          ? data.accountDid.value
+          : this.accountDid,
+      postUri: data.postUri.present ? data.postUri.value : this.postUri,
+      postJson: data.postJson.present ? data.postJson.value : this.postJson,
+      likedAt: data.likedAt.present ? data.likedAt.value : this.likedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LikedPostEntry(')
+          ..write('id: $id, ')
+          ..write('accountDid: $accountDid, ')
+          ..write('postUri: $postUri, ')
+          ..write('postJson: $postJson, ')
+          ..write('likedAt: $likedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, accountDid, postUri, postJson, likedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LikedPostEntry &&
+          other.id == this.id &&
+          other.accountDid == this.accountDid &&
+          other.postUri == this.postUri &&
+          other.postJson == this.postJson &&
+          other.likedAt == this.likedAt);
+}
+
+class LikedPostsCompanion extends UpdateCompanion<LikedPostEntry> {
+  final Value<int> id;
+  final Value<String> accountDid;
+  final Value<String> postUri;
+  final Value<String> postJson;
+  final Value<DateTime> likedAt;
+  const LikedPostsCompanion({
+    this.id = const Value.absent(),
+    this.accountDid = const Value.absent(),
+    this.postUri = const Value.absent(),
+    this.postJson = const Value.absent(),
+    this.likedAt = const Value.absent(),
+  });
+  LikedPostsCompanion.insert({
+    this.id = const Value.absent(),
+    required String accountDid,
+    required String postUri,
+    required String postJson,
+    this.likedAt = const Value.absent(),
+  }) : accountDid = Value(accountDid),
+       postUri = Value(postUri),
+       postJson = Value(postJson);
+  static Insertable<LikedPostEntry> custom({
+    Expression<int>? id,
+    Expression<String>? accountDid,
+    Expression<String>? postUri,
+    Expression<String>? postJson,
+    Expression<DateTime>? likedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (accountDid != null) 'account_did': accountDid,
+      if (postUri != null) 'post_uri': postUri,
+      if (postJson != null) 'post_json': postJson,
+      if (likedAt != null) 'liked_at': likedAt,
+    });
+  }
+
+  LikedPostsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? accountDid,
+    Value<String>? postUri,
+    Value<String>? postJson,
+    Value<DateTime>? likedAt,
+  }) {
+    return LikedPostsCompanion(
+      id: id ?? this.id,
+      accountDid: accountDid ?? this.accountDid,
+      postUri: postUri ?? this.postUri,
+      postJson: postJson ?? this.postJson,
+      likedAt: likedAt ?? this.likedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (accountDid.present) {
+      map['account_did'] = Variable<String>(accountDid.value);
+    }
+    if (postUri.present) {
+      map['post_uri'] = Variable<String>(postUri.value);
+    }
+    if (postJson.present) {
+      map['post_json'] = Variable<String>(postJson.value);
+    }
+    if (likedAt.present) {
+      map['liked_at'] = Variable<DateTime>(likedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LikedPostsCompanion(')
+          ..write('id: $id, ')
+          ..write('accountDid: $accountDid, ')
+          ..write('postUri: $postUri, ')
+          ..write('postJson: $postJson, ')
+          ..write('likedAt: $likedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3545,13 +4582,17 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CachedPostsTable cachedPosts = $CachedPostsTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
   late final $SavedFeedsTable savedFeeds = $SavedFeedsTable(this);
-  late final $CachedFeedPagesTable cachedFeedPages = $CachedFeedPagesTable(this);
+  late final $CachedFeedPagesTable cachedFeedPages = $CachedFeedPagesTable(
+    this,
+  );
   late final $SearchHistoryTable searchHistory = $SearchHistoryTable(this);
   late final $DraftsTable drafts = $DraftsTable(this);
   late final $SavedPostsTable savedPosts = $SavedPostsTable(this);
   late final $LabelerCacheTable labelerCache = $LabelerCacheTable(this);
+  late final $LikedPostsTable likedPosts = $LikedPostsTable(this);
   @override
-  Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
+  Iterable<TableInfo<Table, Object?>> get allTables =>
+      allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     accounts,
@@ -3564,6 +4605,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     drafts,
     savedPosts,
     labelerCache,
+    likedPosts,
   ];
 }
 
@@ -3600,7 +4642,8 @@ typedef $$AccountsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$AccountsTableFilterComposer extends Composer<_$AppDatabase, $AccountsTable> {
+class $$AccountsTableFilterComposer
+    extends Composer<_$AppDatabase, $AccountsTable> {
   $$AccountsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -3608,43 +4651,69 @@ class $$AccountsTableFilterComposer extends Composer<_$AppDatabase, $AccountsTab
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get did => $composableBuilder(column: $table.did, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get did => $composableBuilder(
+    column: $table.did,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get handle =>
-      $composableBuilder(column: $table.handle, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get handle => $composableBuilder(
+    column: $table.handle,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get displayName =>
-      $composableBuilder(column: $table.displayName, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get service =>
-      $composableBuilder(column: $table.service, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get service => $composableBuilder(
+    column: $table.service,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get accessToken =>
-      $composableBuilder(column: $table.accessToken, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get refreshToken =>
-      $composableBuilder(column: $table.refreshToken, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get dpopPublicKey =>
-      $composableBuilder(column: $table.dpopPublicKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get dpopPublicKey => $composableBuilder(
+    column: $table.dpopPublicKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get dpopPrivateKey =>
-      $composableBuilder(column: $table.dpopPrivateKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get dpopPrivateKey => $composableBuilder(
+    column: $table.dpopPrivateKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get dpopNonce =>
-      $composableBuilder(column: $table.dpopNonce, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get dpopNonce => $composableBuilder(
+    column: $table.dpopNonce,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get expiresAt =>
-      $composableBuilder(column: $table.expiresAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$AccountsTableOrderingComposer extends Composer<_$AppDatabase, $AccountsTable> {
+class $$AccountsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AccountsTable> {
   $$AccountsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -3652,44 +4721,69 @@ class $$AccountsTableOrderingComposer extends Composer<_$AppDatabase, $AccountsT
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get did =>
-      $composableBuilder(column: $table.did, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get did => $composableBuilder(
+    column: $table.did,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get handle =>
-      $composableBuilder(column: $table.handle, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get handle => $composableBuilder(
+    column: $table.handle,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get displayName =>
-      $composableBuilder(column: $table.displayName, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get service =>
-      $composableBuilder(column: $table.service, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get service => $composableBuilder(
+    column: $table.service,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get accessToken =>
-      $composableBuilder(column: $table.accessToken, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get refreshToken =>
-      $composableBuilder(column: $table.refreshToken, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get dpopPublicKey =>
-      $composableBuilder(column: $table.dpopPublicKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get dpopPublicKey => $composableBuilder(
+    column: $table.dpopPublicKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get dpopPrivateKey =>
-      $composableBuilder(column: $table.dpopPrivateKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get dpopPrivateKey => $composableBuilder(
+    column: $table.dpopPrivateKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get dpopNonce =>
-      $composableBuilder(column: $table.dpopNonce, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get dpopNonce => $composableBuilder(
+    column: $table.dpopNonce,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get expiresAt =>
-      $composableBuilder(column: $table.expiresAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$AccountsTableAnnotationComposer extends Composer<_$AppDatabase, $AccountsTable> {
+class $$AccountsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AccountsTable> {
   $$AccountsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -3697,34 +4791,51 @@ class $$AccountsTableAnnotationComposer extends Composer<_$AppDatabase, $Account
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get did => $composableBuilder(column: $table.did, builder: (column) => column);
+  GeneratedColumn<String> get did =>
+      $composableBuilder(column: $table.did, builder: (column) => column);
 
-  GeneratedColumn<String> get handle => $composableBuilder(column: $table.handle, builder: (column) => column);
+  GeneratedColumn<String> get handle =>
+      $composableBuilder(column: $table.handle, builder: (column) => column);
 
-  GeneratedColumn<String> get displayName =>
-      $composableBuilder(column: $table.displayName, builder: (column) => column);
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get service => $composableBuilder(column: $table.service, builder: (column) => column);
+  GeneratedColumn<String> get service =>
+      $composableBuilder(column: $table.service, builder: (column) => column);
 
-  GeneratedColumn<String> get accessToken =>
-      $composableBuilder(column: $table.accessToken, builder: (column) => column);
+  GeneratedColumn<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get refreshToken =>
-      $composableBuilder(column: $table.refreshToken, builder: (column) => column);
+  GeneratedColumn<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get dpopPublicKey =>
-      $composableBuilder(column: $table.dpopPublicKey, builder: (column) => column);
+  GeneratedColumn<String> get dpopPublicKey => $composableBuilder(
+    column: $table.dpopPublicKey,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get dpopPrivateKey =>
-      $composableBuilder(column: $table.dpopPrivateKey, builder: (column) => column);
+  GeneratedColumn<String> get dpopPrivateKey => $composableBuilder(
+    column: $table.dpopPrivateKey,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get dpopNonce => $composableBuilder(column: $table.dpopNonce, builder: (column) => column);
+  GeneratedColumn<String> get dpopNonce =>
+      $composableBuilder(column: $table.dpopNonce, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get expiresAt => $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get updatedAt => $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
 
 class $$AccountsTableTableManager
@@ -3747,9 +4858,12 @@ class $$AccountsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$AccountsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$AccountsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$AccountsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$AccountsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AccountsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AccountsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> did = const Value.absent(),
@@ -3810,7 +4924,9 @@ class $$AccountsTableTableManager
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -3847,7 +4963,8 @@ typedef $$CachedProfilesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$CachedProfilesTableFilterComposer extends Composer<_$AppDatabase, $CachedProfilesTable> {
+class $$CachedProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedProfilesTable> {
   $$CachedProfilesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -3855,19 +4972,29 @@ class $$CachedProfilesTableFilterComposer extends Composer<_$AppDatabase, $Cache
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get did => $composableBuilder(column: $table.did, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get did => $composableBuilder(
+    column: $table.did,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get handle =>
-      $composableBuilder(column: $table.handle, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get handle => $composableBuilder(
+    column: $table.handle,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get payload =>
-      $composableBuilder(column: $table.payload, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get fetchedAt =>
-      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$CachedProfilesTableOrderingComposer extends Composer<_$AppDatabase, $CachedProfilesTable> {
+class $$CachedProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedProfilesTable> {
   $$CachedProfilesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -3875,20 +5002,29 @@ class $$CachedProfilesTableOrderingComposer extends Composer<_$AppDatabase, $Cac
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get did =>
-      $composableBuilder(column: $table.did, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get did => $composableBuilder(
+    column: $table.did,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get handle =>
-      $composableBuilder(column: $table.handle, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get handle => $composableBuilder(
+    column: $table.handle,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get payload =>
-      $composableBuilder(column: $table.payload, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get fetchedAt =>
-      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$CachedProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $CachedProfilesTable> {
+class $$CachedProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedProfilesTable> {
   $$CachedProfilesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -3896,13 +5032,17 @@ class $$CachedProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $C
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get did => $composableBuilder(column: $table.did, builder: (column) => column);
+  GeneratedColumn<String> get did =>
+      $composableBuilder(column: $table.did, builder: (column) => column);
 
-  GeneratedColumn<String> get handle => $composableBuilder(column: $table.handle, builder: (column) => column);
+  GeneratedColumn<String> get handle =>
+      $composableBuilder(column: $table.handle, builder: (column) => column);
 
-  GeneratedColumn<String> get payload => $composableBuilder(column: $table.payload, builder: (column) => column);
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get fetchedAt => $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
 }
 
 class $$CachedProfilesTableTableManager
@@ -3916,18 +5056,26 @@ class $$CachedProfilesTableTableManager
           $$CachedProfilesTableAnnotationComposer,
           $$CachedProfilesTableCreateCompanionBuilder,
           $$CachedProfilesTableUpdateCompanionBuilder,
-          (CachedProfile, BaseReferences<_$AppDatabase, $CachedProfilesTable, CachedProfile>),
+          (
+            CachedProfile,
+            BaseReferences<_$AppDatabase, $CachedProfilesTable, CachedProfile>,
+          ),
           CachedProfile,
           PrefetchHooks Function()
         > {
-  $$CachedProfilesTableTableManager(_$AppDatabase db, $CachedProfilesTable table)
-    : super(
+  $$CachedProfilesTableTableManager(
+    _$AppDatabase db,
+    $CachedProfilesTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$CachedProfilesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$CachedProfilesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$CachedProfilesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$CachedProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedProfilesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> did = const Value.absent(),
@@ -3956,7 +5104,9 @@ class $$CachedProfilesTableTableManager
                 fetchedAt: fetchedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -3972,7 +5122,10 @@ typedef $$CachedProfilesTableProcessedTableManager =
       $$CachedProfilesTableAnnotationComposer,
       $$CachedProfilesTableCreateCompanionBuilder,
       $$CachedProfilesTableUpdateCompanionBuilder,
-      (CachedProfile, BaseReferences<_$AppDatabase, $CachedProfilesTable, CachedProfile>),
+      (
+        CachedProfile,
+        BaseReferences<_$AppDatabase, $CachedProfilesTable, CachedProfile>,
+      ),
       CachedProfile,
       PrefetchHooks Function()
     >;
@@ -3997,7 +5150,8 @@ typedef $$CachedPostsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$CachedPostsTableFilterComposer extends Composer<_$AppDatabase, $CachedPostsTable> {
+class $$CachedPostsTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedPostsTable> {
   $$CachedPostsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -4005,25 +5159,39 @@ class $$CachedPostsTableFilterComposer extends Composer<_$AppDatabase, $CachedPo
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get uri => $composableBuilder(column: $table.uri, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get uri => $composableBuilder(
+    column: $table.uri,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get authorDid =>
-      $composableBuilder(column: $table.authorDid, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get authorDid => $composableBuilder(
+    column: $table.authorDid,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get payload =>
-      $composableBuilder(column: $table.payload, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get fetchedAt =>
-      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$CachedPostsTableOrderingComposer extends Composer<_$AppDatabase, $CachedPostsTable> {
+class $$CachedPostsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedPostsTable> {
   $$CachedPostsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -4031,26 +5199,39 @@ class $$CachedPostsTableOrderingComposer extends Composer<_$AppDatabase, $Cached
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get uri =>
-      $composableBuilder(column: $table.uri, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get uri => $composableBuilder(
+    column: $table.uri,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get authorDid =>
-      $composableBuilder(column: $table.authorDid, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get authorDid => $composableBuilder(
+    column: $table.authorDid,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get payload =>
-      $composableBuilder(column: $table.payload, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get fetchedAt =>
-      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$CachedPostsTableAnnotationComposer extends Composer<_$AppDatabase, $CachedPostsTable> {
+class $$CachedPostsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedPostsTable> {
   $$CachedPostsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -4058,17 +5239,25 @@ class $$CachedPostsTableAnnotationComposer extends Composer<_$AppDatabase, $Cach
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get uri => $composableBuilder(column: $table.uri, builder: (column) => column);
+  GeneratedColumn<String> get uri =>
+      $composableBuilder(column: $table.uri, builder: (column) => column);
 
-  GeneratedColumn<String> get authorDid => $composableBuilder(column: $table.authorDid, builder: (column) => column);
+  GeneratedColumn<String> get authorDid =>
+      $composableBuilder(column: $table.authorDid, builder: (column) => column);
 
-  GeneratedColumn<String> get accountDid => $composableBuilder(column: $table.accountDid, builder: (column) => column);
+  GeneratedColumn<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get payload => $composableBuilder(column: $table.payload, builder: (column) => column);
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get fetchedAt => $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
 }
 
 class $$CachedPostsTableTableManager
@@ -4082,7 +5271,10 @@ class $$CachedPostsTableTableManager
           $$CachedPostsTableAnnotationComposer,
           $$CachedPostsTableCreateCompanionBuilder,
           $$CachedPostsTableUpdateCompanionBuilder,
-          (CachedPost, BaseReferences<_$AppDatabase, $CachedPostsTable, CachedPost>),
+          (
+            CachedPost,
+            BaseReferences<_$AppDatabase, $CachedPostsTable, CachedPost>,
+          ),
           CachedPost,
           PrefetchHooks Function()
         > {
@@ -4091,9 +5283,12 @@ class $$CachedPostsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$CachedPostsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$CachedPostsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$CachedPostsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$CachedPostsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedPostsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedPostsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> uri = const Value.absent(),
@@ -4130,7 +5325,9 @@ class $$CachedPostsTableTableManager
                 fetchedAt: fetchedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -4146,7 +5343,10 @@ typedef $$CachedPostsTableProcessedTableManager =
       $$CachedPostsTableAnnotationComposer,
       $$CachedPostsTableCreateCompanionBuilder,
       $$CachedPostsTableUpdateCompanionBuilder,
-      (CachedPost, BaseReferences<_$AppDatabase, $CachedPostsTable, CachedPost>),
+      (
+        CachedPost,
+        BaseReferences<_$AppDatabase, $CachedPostsTable, CachedPost>,
+      ),
       CachedPost,
       PrefetchHooks Function()
     >;
@@ -4158,9 +5358,15 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<int> rowid,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
-    SettingsCompanion Function({Value<String> key, Value<String> value, Value<DateTime> updatedAt, Value<int> rowid});
+    SettingsCompanion Function({
+      Value<String> key,
+      Value<String> value,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
 
-class $$SettingsTableFilterComposer extends Composer<_$AppDatabase, $SettingsTable> {
+class $$SettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $SettingsTable> {
   $$SettingsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -4168,16 +5374,24 @@ class $$SettingsTableFilterComposer extends Composer<_$AppDatabase, $SettingsTab
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get key => $composableBuilder(column: $table.key, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get value =>
-      $composableBuilder(column: $table.value, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$SettingsTableOrderingComposer extends Composer<_$AppDatabase, $SettingsTable> {
+class $$SettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SettingsTable> {
   $$SettingsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -4185,17 +5399,24 @@ class $$SettingsTableOrderingComposer extends Composer<_$AppDatabase, $SettingsT
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get key =>
-      $composableBuilder(column: $table.key, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get value =>
-      $composableBuilder(column: $table.value, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$SettingsTableAnnotationComposer extends Composer<_$AppDatabase, $SettingsTable> {
+class $$SettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SettingsTable> {
   $$SettingsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -4203,11 +5424,14 @@ class $$SettingsTableAnnotationComposer extends Composer<_$AppDatabase, $Setting
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get key => $composableBuilder(column: $table.key, builder: (column) => column);
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
 
-  GeneratedColumn<String> get value => $composableBuilder(column: $table.value, builder: (column) => column);
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get updatedAt => $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
 
 class $$SettingsTableTableManager
@@ -4221,7 +5445,10 @@ class $$SettingsTableTableManager
           $$SettingsTableAnnotationComposer,
           $$SettingsTableCreateCompanionBuilder,
           $$SettingsTableUpdateCompanionBuilder,
-          (SettingsEntry, BaseReferences<_$AppDatabase, $SettingsTable, SettingsEntry>),
+          (
+            SettingsEntry,
+            BaseReferences<_$AppDatabase, $SettingsTable, SettingsEntry>,
+          ),
           SettingsEntry,
           PrefetchHooks Function()
         > {
@@ -4230,24 +5457,39 @@ class $$SettingsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$SettingsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$SettingsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$SettingsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$SettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SettingsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> key = const Value.absent(),
                 Value<String> value = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => SettingsCompanion(key: key, value: value, updatedAt: updatedAt, rowid: rowid),
+              }) => SettingsCompanion(
+                key: key,
+                value: value,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
           createCompanionCallback:
               ({
                 required String key,
                 required String value,
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => SettingsCompanion.insert(key: key, value: value, updatedAt: updatedAt, rowid: rowid),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+              }) => SettingsCompanion.insert(
+                key: key,
+                value: value,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -4263,7 +5505,10 @@ typedef $$SettingsTableProcessedTableManager =
       $$SettingsTableAnnotationComposer,
       $$SettingsTableCreateCompanionBuilder,
       $$SettingsTableUpdateCompanionBuilder,
-      (SettingsEntry, BaseReferences<_$AppDatabase, $SettingsTable, SettingsEntry>),
+      (
+        SettingsEntry,
+        BaseReferences<_$AppDatabase, $SettingsTable, SettingsEntry>,
+      ),
       SettingsEntry,
       PrefetchHooks Function()
     >;
@@ -4290,7 +5535,8 @@ typedef $$SavedFeedsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$SavedFeedsTableFilterComposer extends Composer<_$AppDatabase, $SavedFeedsTable> {
+class $$SavedFeedsTableFilterComposer
+    extends Composer<_$AppDatabase, $SavedFeedsTable> {
   $$SavedFeedsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -4298,27 +5544,44 @@ class $$SavedFeedsTableFilterComposer extends Composer<_$AppDatabase, $SavedFeed
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get type => $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get value =>
-      $composableBuilder(column: $table.value, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<bool> get pinned =>
-      $composableBuilder(column: $table.pinned, builder: (column) => ColumnFilters(column));
+  ColumnFilters<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get sortOrder =>
-      $composableBuilder(column: $table.sortOrder, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$SavedFeedsTableOrderingComposer extends Composer<_$AppDatabase, $SavedFeedsTable> {
+class $$SavedFeedsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SavedFeedsTable> {
   $$SavedFeedsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -4326,28 +5589,44 @@ class $$SavedFeedsTableOrderingComposer extends Composer<_$AppDatabase, $SavedFe
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get value =>
-      $composableBuilder(column: $table.value, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<bool> get pinned =>
-      $composableBuilder(column: $table.pinned, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get sortOrder =>
-      $composableBuilder(column: $table.sortOrder, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$SavedFeedsTableAnnotationComposer extends Composer<_$AppDatabase, $SavedFeedsTable> {
+class $$SavedFeedsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SavedFeedsTable> {
   $$SavedFeedsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -4355,19 +5634,28 @@ class $$SavedFeedsTableAnnotationComposer extends Composer<_$AppDatabase, $Saved
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get accountDid => $composableBuilder(column: $table.accountDid, builder: (column) => column);
+  GeneratedColumn<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get type => $composableBuilder(column: $table.type, builder: (column) => column);
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
 
-  GeneratedColumn<String> get value => $composableBuilder(column: $table.value, builder: (column) => column);
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
 
-  GeneratedColumn<bool> get pinned => $composableBuilder(column: $table.pinned, builder: (column) => column);
+  GeneratedColumn<bool> get pinned =>
+      $composableBuilder(column: $table.pinned, builder: (column) => column);
 
-  GeneratedColumn<int> get sortOrder => $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get updatedAt => $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
 
 class $$SavedFeedsTableTableManager
@@ -4381,7 +5669,10 @@ class $$SavedFeedsTableTableManager
           $$SavedFeedsTableAnnotationComposer,
           $$SavedFeedsTableCreateCompanionBuilder,
           $$SavedFeedsTableUpdateCompanionBuilder,
-          (SavedFeedEntry, BaseReferences<_$AppDatabase, $SavedFeedsTable, SavedFeedEntry>),
+          (
+            SavedFeedEntry,
+            BaseReferences<_$AppDatabase, $SavedFeedsTable, SavedFeedEntry>,
+          ),
           SavedFeedEntry,
           PrefetchHooks Function()
         > {
@@ -4390,9 +5681,12 @@ class $$SavedFeedsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$SavedFeedsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$SavedFeedsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$SavedFeedsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$SavedFeedsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SavedFeedsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SavedFeedsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -4433,7 +5727,9 @@ class $$SavedFeedsTableTableManager
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -4449,7 +5745,10 @@ typedef $$SavedFeedsTableProcessedTableManager =
       $$SavedFeedsTableAnnotationComposer,
       $$SavedFeedsTableCreateCompanionBuilder,
       $$SavedFeedsTableUpdateCompanionBuilder,
-      (SavedFeedEntry, BaseReferences<_$AppDatabase, $SavedFeedsTable, SavedFeedEntry>),
+      (
+        SavedFeedEntry,
+        BaseReferences<_$AppDatabase, $SavedFeedsTable, SavedFeedEntry>,
+      ),
       SavedFeedEntry,
       PrefetchHooks Function()
     >;
@@ -4470,7 +5769,8 @@ typedef $$CachedFeedPagesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$CachedFeedPagesTableFilterComposer extends Composer<_$AppDatabase, $CachedFeedPagesTable> {
+class $$CachedFeedPagesTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedFeedPagesTable> {
   $$CachedFeedPagesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -4478,20 +5778,29 @@ class $$CachedFeedPagesTableFilterComposer extends Composer<_$AppDatabase, $Cach
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get feedKey =>
-      $composableBuilder(column: $table.feedKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get feedKey => $composableBuilder(
+    column: $table.feedKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get payload =>
-      $composableBuilder(column: $table.payload, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get fetchedAt =>
-      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$CachedFeedPagesTableOrderingComposer extends Composer<_$AppDatabase, $CachedFeedPagesTable> {
+class $$CachedFeedPagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedFeedPagesTable> {
   $$CachedFeedPagesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -4499,20 +5808,29 @@ class $$CachedFeedPagesTableOrderingComposer extends Composer<_$AppDatabase, $Ca
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get feedKey =>
-      $composableBuilder(column: $table.feedKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get feedKey => $composableBuilder(
+    column: $table.feedKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get payload =>
-      $composableBuilder(column: $table.payload, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get fetchedAt =>
-      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$CachedFeedPagesTableAnnotationComposer extends Composer<_$AppDatabase, $CachedFeedPagesTable> {
+class $$CachedFeedPagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedFeedPagesTable> {
   $$CachedFeedPagesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -4520,13 +5838,19 @@ class $$CachedFeedPagesTableAnnotationComposer extends Composer<_$AppDatabase, $
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get accountDid => $composableBuilder(column: $table.accountDid, builder: (column) => column);
+  GeneratedColumn<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get feedKey => $composableBuilder(column: $table.feedKey, builder: (column) => column);
+  GeneratedColumn<String> get feedKey =>
+      $composableBuilder(column: $table.feedKey, builder: (column) => column);
 
-  GeneratedColumn<String> get payload => $composableBuilder(column: $table.payload, builder: (column) => column);
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get fetchedAt => $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
 }
 
 class $$CachedFeedPagesTableTableManager
@@ -4540,18 +5864,30 @@ class $$CachedFeedPagesTableTableManager
           $$CachedFeedPagesTableAnnotationComposer,
           $$CachedFeedPagesTableCreateCompanionBuilder,
           $$CachedFeedPagesTableUpdateCompanionBuilder,
-          (CachedFeedPage, BaseReferences<_$AppDatabase, $CachedFeedPagesTable, CachedFeedPage>),
+          (
+            CachedFeedPage,
+            BaseReferences<
+              _$AppDatabase,
+              $CachedFeedPagesTable,
+              CachedFeedPage
+            >,
+          ),
           CachedFeedPage,
           PrefetchHooks Function()
         > {
-  $$CachedFeedPagesTableTableManager(_$AppDatabase db, $CachedFeedPagesTable table)
-    : super(
+  $$CachedFeedPagesTableTableManager(
+    _$AppDatabase db,
+    $CachedFeedPagesTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$CachedFeedPagesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$CachedFeedPagesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$CachedFeedPagesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$CachedFeedPagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedFeedPagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedFeedPagesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> accountDid = const Value.absent(),
@@ -4580,7 +5916,9 @@ class $$CachedFeedPagesTableTableManager
                 fetchedAt: fetchedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -4596,7 +5934,10 @@ typedef $$CachedFeedPagesTableProcessedTableManager =
       $$CachedFeedPagesTableAnnotationComposer,
       $$CachedFeedPagesTableCreateCompanionBuilder,
       $$CachedFeedPagesTableUpdateCompanionBuilder,
-      (CachedFeedPage, BaseReferences<_$AppDatabase, $CachedFeedPagesTable, CachedFeedPage>),
+      (
+        CachedFeedPage,
+        BaseReferences<_$AppDatabase, $CachedFeedPagesTable, CachedFeedPage>,
+      ),
       CachedFeedPage,
       PrefetchHooks Function()
     >;
@@ -4617,7 +5958,8 @@ typedef $$SearchHistoryTableUpdateCompanionBuilder =
       Value<String> accountDid,
     });
 
-class $$SearchHistoryTableFilterComposer extends Composer<_$AppDatabase, $SearchHistoryTable> {
+class $$SearchHistoryTableFilterComposer
+    extends Composer<_$AppDatabase, $SearchHistoryTable> {
   $$SearchHistoryTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -4625,21 +5967,34 @@ class $$SearchHistoryTableFilterComposer extends Composer<_$AppDatabase, $Search
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get query =>
-      $composableBuilder(column: $table.query, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get query => $composableBuilder(
+    column: $table.query,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get type => $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get searchedAt =>
-      $composableBuilder(column: $table.searchedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$SearchHistoryTableOrderingComposer extends Composer<_$AppDatabase, $SearchHistoryTable> {
+class $$SearchHistoryTableOrderingComposer
+    extends Composer<_$AppDatabase, $SearchHistoryTable> {
   $$SearchHistoryTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -4647,22 +6002,34 @@ class $$SearchHistoryTableOrderingComposer extends Composer<_$AppDatabase, $Sear
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get query =>
-      $composableBuilder(column: $table.query, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get query => $composableBuilder(
+    column: $table.query,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get searchedAt =>
-      $composableBuilder(column: $table.searchedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$SearchHistoryTableAnnotationComposer extends Composer<_$AppDatabase, $SearchHistoryTable> {
+class $$SearchHistoryTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SearchHistoryTable> {
   $$SearchHistoryTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -4670,16 +6037,24 @@ class $$SearchHistoryTableAnnotationComposer extends Composer<_$AppDatabase, $Se
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get query => $composableBuilder(column: $table.query, builder: (column) => column);
+  GeneratedColumn<String> get query =>
+      $composableBuilder(column: $table.query, builder: (column) => column);
 
-  GeneratedColumn<String> get type => $composableBuilder(column: $table.type, builder: (column) => column);
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get searchedAt =>
-      $composableBuilder(column: $table.searchedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get accountDid => $composableBuilder(column: $table.accountDid, builder: (column) => column);
+  GeneratedColumn<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => column,
+  );
 }
 
 class $$SearchHistoryTableTableManager
@@ -4693,7 +6068,14 @@ class $$SearchHistoryTableTableManager
           $$SearchHistoryTableAnnotationComposer,
           $$SearchHistoryTableCreateCompanionBuilder,
           $$SearchHistoryTableUpdateCompanionBuilder,
-          (SearchHistoryEntry, BaseReferences<_$AppDatabase, $SearchHistoryTable, SearchHistoryEntry>),
+          (
+            SearchHistoryEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $SearchHistoryTable,
+              SearchHistoryEntry
+            >,
+          ),
           SearchHistoryEntry,
           PrefetchHooks Function()
         > {
@@ -4702,9 +6084,12 @@ class $$SearchHistoryTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$SearchHistoryTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$SearchHistoryTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$SearchHistoryTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$SearchHistoryTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SearchHistoryTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SearchHistoryTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -4733,7 +6118,9 @@ class $$SearchHistoryTableTableManager
                 searchedAt: searchedAt,
                 accountDid: accountDid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -4749,7 +6136,10 @@ typedef $$SearchHistoryTableProcessedTableManager =
       $$SearchHistoryTableAnnotationComposer,
       $$SearchHistoryTableCreateCompanionBuilder,
       $$SearchHistoryTableUpdateCompanionBuilder,
-      (SearchHistoryEntry, BaseReferences<_$AppDatabase, $SearchHistoryTable, SearchHistoryEntry>),
+      (
+        SearchHistoryEntry,
+        BaseReferences<_$AppDatabase, $SearchHistoryTable, SearchHistoryEntry>,
+      ),
       SearchHistoryEntry,
       PrefetchHooks Function()
     >;
@@ -4784,7 +6174,8 @@ typedef $$DraftsTableUpdateCompanionBuilder =
       Value<DateTime?> scheduledAt,
     });
 
-class $$DraftsTableFilterComposer extends Composer<_$AppDatabase, $DraftsTable> {
+class $$DraftsTableFilterComposer
+    extends Composer<_$AppDatabase, $DraftsTable> {
   $$DraftsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -4792,43 +6183,69 @@ class $$DraftsTableFilterComposer extends Composer<_$AppDatabase, $DraftsTable> 
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get content =>
-      $composableBuilder(column: $table.content, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get replyUri =>
-      $composableBuilder(column: $table.replyUri, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get replyUri => $composableBuilder(
+    column: $table.replyUri,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get replyCid =>
-      $composableBuilder(column: $table.replyCid, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get replyCid => $composableBuilder(
+    column: $table.replyCid,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get rootUri =>
-      $composableBuilder(column: $table.rootUri, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get rootUri => $composableBuilder(
+    column: $table.rootUri,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get rootCid =>
-      $composableBuilder(column: $table.rootCid, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get rootCid => $composableBuilder(
+    column: $table.rootCid,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get embedJson =>
-      $composableBuilder(column: $table.embedJson, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get embedJson => $composableBuilder(
+    column: $table.embedJson,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get mediaPaths =>
-      $composableBuilder(column: $table.mediaPaths, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get mediaPaths => $composableBuilder(
+    column: $table.mediaPaths,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get scheduledAt =>
-      $composableBuilder(column: $table.scheduledAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get scheduledAt => $composableBuilder(
+    column: $table.scheduledAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$DraftsTableOrderingComposer extends Composer<_$AppDatabase, $DraftsTable> {
+class $$DraftsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DraftsTable> {
   $$DraftsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -4836,43 +6253,69 @@ class $$DraftsTableOrderingComposer extends Composer<_$AppDatabase, $DraftsTable
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get content =>
-      $composableBuilder(column: $table.content, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get replyUri =>
-      $composableBuilder(column: $table.replyUri, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get replyUri => $composableBuilder(
+    column: $table.replyUri,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get replyCid =>
-      $composableBuilder(column: $table.replyCid, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get replyCid => $composableBuilder(
+    column: $table.replyCid,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get rootUri =>
-      $composableBuilder(column: $table.rootUri, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get rootUri => $composableBuilder(
+    column: $table.rootUri,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get rootCid =>
-      $composableBuilder(column: $table.rootCid, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get rootCid => $composableBuilder(
+    column: $table.rootCid,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get embedJson =>
-      $composableBuilder(column: $table.embedJson, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get embedJson => $composableBuilder(
+    column: $table.embedJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get mediaPaths =>
-      $composableBuilder(column: $table.mediaPaths, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get mediaPaths => $composableBuilder(
+    column: $table.mediaPaths,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get scheduledAt =>
-      $composableBuilder(column: $table.scheduledAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get scheduledAt => $composableBuilder(
+    column: $table.scheduledAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$DraftsTableAnnotationComposer extends Composer<_$AppDatabase, $DraftsTable> {
+class $$DraftsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DraftsTable> {
   $$DraftsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -4880,30 +6323,47 @@ class $$DraftsTableAnnotationComposer extends Composer<_$AppDatabase, $DraftsTab
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get accountDid => $composableBuilder(column: $table.accountDid, builder: (column) => column);
+  GeneratedColumn<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get content => $composableBuilder(column: $table.content, builder: (column) => column);
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
 
-  GeneratedColumn<String> get replyUri => $composableBuilder(column: $table.replyUri, builder: (column) => column);
+  GeneratedColumn<String> get replyUri =>
+      $composableBuilder(column: $table.replyUri, builder: (column) => column);
 
-  GeneratedColumn<String> get replyCid => $composableBuilder(column: $table.replyCid, builder: (column) => column);
+  GeneratedColumn<String> get replyCid =>
+      $composableBuilder(column: $table.replyCid, builder: (column) => column);
 
-  GeneratedColumn<String> get rootUri => $composableBuilder(column: $table.rootUri, builder: (column) => column);
+  GeneratedColumn<String> get rootUri =>
+      $composableBuilder(column: $table.rootUri, builder: (column) => column);
 
-  GeneratedColumn<String> get rootCid => $composableBuilder(column: $table.rootCid, builder: (column) => column);
+  GeneratedColumn<String> get rootCid =>
+      $composableBuilder(column: $table.rootCid, builder: (column) => column);
 
-  GeneratedColumn<String> get embedJson => $composableBuilder(column: $table.embedJson, builder: (column) => column);
+  GeneratedColumn<String> get embedJson =>
+      $composableBuilder(column: $table.embedJson, builder: (column) => column);
 
-  GeneratedColumn<String> get mediaPaths => $composableBuilder(column: $table.mediaPaths, builder: (column) => column);
+  GeneratedColumn<String> get mediaPaths => $composableBuilder(
+    column: $table.mediaPaths,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<DateTime> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get updatedAt => $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get scheduledAt =>
-      $composableBuilder(column: $table.scheduledAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get scheduledAt => $composableBuilder(
+    column: $table.scheduledAt,
+    builder: (column) => column,
+  );
 }
 
 class $$DraftsTableTableManager
@@ -4926,9 +6386,12 @@ class $$DraftsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$DraftsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$DraftsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$DraftsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$DraftsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DraftsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DraftsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -4985,7 +6448,9 @@ class $$DraftsTableTableManager
                 updatedAt: updatedAt,
                 scheduledAt: scheduledAt,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -5024,7 +6489,8 @@ typedef $$SavedPostsTableUpdateCompanionBuilder =
       Value<DateTime> savedAt,
     });
 
-class $$SavedPostsTableFilterComposer extends Composer<_$AppDatabase, $SavedPostsTable> {
+class $$SavedPostsTableFilterComposer
+    extends Composer<_$AppDatabase, $SavedPostsTable> {
   $$SavedPostsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -5032,25 +6498,39 @@ class $$SavedPostsTableFilterComposer extends Composer<_$AppDatabase, $SavedPost
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get postUri =>
-      $composableBuilder(column: $table.postUri, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get postUri => $composableBuilder(
+    column: $table.postUri,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get postJson =>
-      $composableBuilder(column: $table.postJson, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get postJson => $composableBuilder(
+    column: $table.postJson,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get saveType =>
-      $composableBuilder(column: $table.saveType, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get saveType => $composableBuilder(
+    column: $table.saveType,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get savedAt =>
-      $composableBuilder(column: $table.savedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get savedAt => $composableBuilder(
+    column: $table.savedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$SavedPostsTableOrderingComposer extends Composer<_$AppDatabase, $SavedPostsTable> {
+class $$SavedPostsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SavedPostsTable> {
   $$SavedPostsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -5058,25 +6538,39 @@ class $$SavedPostsTableOrderingComposer extends Composer<_$AppDatabase, $SavedPo
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get accountDid =>
-      $composableBuilder(column: $table.accountDid, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get postUri =>
-      $composableBuilder(column: $table.postUri, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get postUri => $composableBuilder(
+    column: $table.postUri,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get postJson =>
-      $composableBuilder(column: $table.postJson, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get postJson => $composableBuilder(
+    column: $table.postJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get saveType =>
-      $composableBuilder(column: $table.saveType, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get saveType => $composableBuilder(
+    column: $table.saveType,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get savedAt =>
-      $composableBuilder(column: $table.savedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get savedAt => $composableBuilder(
+    column: $table.savedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$SavedPostsTableAnnotationComposer extends Composer<_$AppDatabase, $SavedPostsTable> {
+class $$SavedPostsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SavedPostsTable> {
   $$SavedPostsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -5084,17 +6578,25 @@ class $$SavedPostsTableAnnotationComposer extends Composer<_$AppDatabase, $Saved
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get accountDid => $composableBuilder(column: $table.accountDid, builder: (column) => column);
+  GeneratedColumn<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get postUri => $composableBuilder(column: $table.postUri, builder: (column) => column);
+  GeneratedColumn<String> get postUri =>
+      $composableBuilder(column: $table.postUri, builder: (column) => column);
 
-  GeneratedColumn<String> get postJson => $composableBuilder(column: $table.postJson, builder: (column) => column);
+  GeneratedColumn<String> get postJson =>
+      $composableBuilder(column: $table.postJson, builder: (column) => column);
 
-  GeneratedColumn<String> get saveType => $composableBuilder(column: $table.saveType, builder: (column) => column);
+  GeneratedColumn<String> get saveType =>
+      $composableBuilder(column: $table.saveType, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get savedAt => $composableBuilder(column: $table.savedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get savedAt =>
+      $composableBuilder(column: $table.savedAt, builder: (column) => column);
 }
 
 class $$SavedPostsTableTableManager
@@ -5108,7 +6610,10 @@ class $$SavedPostsTableTableManager
           $$SavedPostsTableAnnotationComposer,
           $$SavedPostsTableCreateCompanionBuilder,
           $$SavedPostsTableUpdateCompanionBuilder,
-          (SavedPostEntry, BaseReferences<_$AppDatabase, $SavedPostsTable, SavedPostEntry>),
+          (
+            SavedPostEntry,
+            BaseReferences<_$AppDatabase, $SavedPostsTable, SavedPostEntry>,
+          ),
           SavedPostEntry,
           PrefetchHooks Function()
         > {
@@ -5117,9 +6622,12 @@ class $$SavedPostsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$SavedPostsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$SavedPostsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$SavedPostsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$SavedPostsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SavedPostsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SavedPostsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -5152,7 +6660,9 @@ class $$SavedPostsTableTableManager
                 saveType: saveType,
                 savedAt: savedAt,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -5168,7 +6678,10 @@ typedef $$SavedPostsTableProcessedTableManager =
       $$SavedPostsTableAnnotationComposer,
       $$SavedPostsTableCreateCompanionBuilder,
       $$SavedPostsTableUpdateCompanionBuilder,
-      (SavedPostEntry, BaseReferences<_$AppDatabase, $SavedPostsTable, SavedPostEntry>),
+      (
+        SavedPostEntry,
+        BaseReferences<_$AppDatabase, $SavedPostsTable, SavedPostEntry>,
+      ),
       SavedPostEntry,
       PrefetchHooks Function()
     >;
@@ -5187,7 +6700,8 @@ typedef $$LabelerCacheTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$LabelerCacheTableFilterComposer extends Composer<_$AppDatabase, $LabelerCacheTable> {
+class $$LabelerCacheTableFilterComposer
+    extends Composer<_$AppDatabase, $LabelerCacheTable> {
   $$LabelerCacheTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -5195,17 +6709,24 @@ class $$LabelerCacheTableFilterComposer extends Composer<_$AppDatabase, $Labeler
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get labelerDid =>
-      $composableBuilder(column: $table.labelerDid, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get labelerDid => $composableBuilder(
+    column: $table.labelerDid,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get policiesJson =>
-      $composableBuilder(column: $table.policiesJson, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get policiesJson => $composableBuilder(
+    column: $table.policiesJson,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get fetchedAt =>
-      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$LabelerCacheTableOrderingComposer extends Composer<_$AppDatabase, $LabelerCacheTable> {
+class $$LabelerCacheTableOrderingComposer
+    extends Composer<_$AppDatabase, $LabelerCacheTable> {
   $$LabelerCacheTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -5213,17 +6734,24 @@ class $$LabelerCacheTableOrderingComposer extends Composer<_$AppDatabase, $Label
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get labelerDid =>
-      $composableBuilder(column: $table.labelerDid, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get labelerDid => $composableBuilder(
+    column: $table.labelerDid,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get policiesJson =>
-      $composableBuilder(column: $table.policiesJson, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get policiesJson => $composableBuilder(
+    column: $table.policiesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get fetchedAt =>
-      $composableBuilder(column: $table.fetchedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LabelerCacheTableAnnotationComposer extends Composer<_$AppDatabase, $LabelerCacheTable> {
+class $$LabelerCacheTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LabelerCacheTable> {
   $$LabelerCacheTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -5231,12 +6759,18 @@ class $$LabelerCacheTableAnnotationComposer extends Composer<_$AppDatabase, $Lab
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get labelerDid => $composableBuilder(column: $table.labelerDid, builder: (column) => column);
+  GeneratedColumn<String> get labelerDid => $composableBuilder(
+    column: $table.labelerDid,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get policiesJson =>
-      $composableBuilder(column: $table.policiesJson, builder: (column) => column);
+  GeneratedColumn<String> get policiesJson => $composableBuilder(
+    column: $table.policiesJson,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<DateTime> get fetchedAt => $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
 }
 
 class $$LabelerCacheTableTableManager
@@ -5250,7 +6784,14 @@ class $$LabelerCacheTableTableManager
           $$LabelerCacheTableAnnotationComposer,
           $$LabelerCacheTableCreateCompanionBuilder,
           $$LabelerCacheTableUpdateCompanionBuilder,
-          (LabelerCacheEntry, BaseReferences<_$AppDatabase, $LabelerCacheTable, LabelerCacheEntry>),
+          (
+            LabelerCacheEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $LabelerCacheTable,
+              LabelerCacheEntry
+            >,
+          ),
           LabelerCacheEntry,
           PrefetchHooks Function()
         > {
@@ -5259,9 +6800,12 @@ class $$LabelerCacheTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LabelerCacheTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LabelerCacheTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LabelerCacheTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$LabelerCacheTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LabelerCacheTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LabelerCacheTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> labelerDid = const Value.absent(),
@@ -5286,7 +6830,9 @@ class $$LabelerCacheTableTableManager
                 fetchedAt: fetchedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -5302,23 +6848,233 @@ typedef $$LabelerCacheTableProcessedTableManager =
       $$LabelerCacheTableAnnotationComposer,
       $$LabelerCacheTableCreateCompanionBuilder,
       $$LabelerCacheTableUpdateCompanionBuilder,
-      (LabelerCacheEntry, BaseReferences<_$AppDatabase, $LabelerCacheTable, LabelerCacheEntry>),
+      (
+        LabelerCacheEntry,
+        BaseReferences<_$AppDatabase, $LabelerCacheTable, LabelerCacheEntry>,
+      ),
       LabelerCacheEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$LikedPostsTableCreateCompanionBuilder =
+    LikedPostsCompanion Function({
+      Value<int> id,
+      required String accountDid,
+      required String postUri,
+      required String postJson,
+      Value<DateTime> likedAt,
+    });
+typedef $$LikedPostsTableUpdateCompanionBuilder =
+    LikedPostsCompanion Function({
+      Value<int> id,
+      Value<String> accountDid,
+      Value<String> postUri,
+      Value<String> postJson,
+      Value<DateTime> likedAt,
+    });
+
+class $$LikedPostsTableFilterComposer
+    extends Composer<_$AppDatabase, $LikedPostsTable> {
+  $$LikedPostsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get postUri => $composableBuilder(
+    column: $table.postUri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get postJson => $composableBuilder(
+    column: $table.postJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get likedAt => $composableBuilder(
+    column: $table.likedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LikedPostsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LikedPostsTable> {
+  $$LikedPostsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get postUri => $composableBuilder(
+    column: $table.postUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get postJson => $composableBuilder(
+    column: $table.postJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get likedAt => $composableBuilder(
+    column: $table.likedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LikedPostsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LikedPostsTable> {
+  $$LikedPostsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get postUri =>
+      $composableBuilder(column: $table.postUri, builder: (column) => column);
+
+  GeneratedColumn<String> get postJson =>
+      $composableBuilder(column: $table.postJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get likedAt =>
+      $composableBuilder(column: $table.likedAt, builder: (column) => column);
+}
+
+class $$LikedPostsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LikedPostsTable,
+          LikedPostEntry,
+          $$LikedPostsTableFilterComposer,
+          $$LikedPostsTableOrderingComposer,
+          $$LikedPostsTableAnnotationComposer,
+          $$LikedPostsTableCreateCompanionBuilder,
+          $$LikedPostsTableUpdateCompanionBuilder,
+          (
+            LikedPostEntry,
+            BaseReferences<_$AppDatabase, $LikedPostsTable, LikedPostEntry>,
+          ),
+          LikedPostEntry,
+          PrefetchHooks Function()
+        > {
+  $$LikedPostsTableTableManager(_$AppDatabase db, $LikedPostsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LikedPostsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LikedPostsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LikedPostsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> accountDid = const Value.absent(),
+                Value<String> postUri = const Value.absent(),
+                Value<String> postJson = const Value.absent(),
+                Value<DateTime> likedAt = const Value.absent(),
+              }) => LikedPostsCompanion(
+                id: id,
+                accountDid: accountDid,
+                postUri: postUri,
+                postJson: postJson,
+                likedAt: likedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String accountDid,
+                required String postUri,
+                required String postJson,
+                Value<DateTime> likedAt = const Value.absent(),
+              }) => LikedPostsCompanion.insert(
+                id: id,
+                accountDid: accountDid,
+                postUri: postUri,
+                postJson: postJson,
+                likedAt: likedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LikedPostsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LikedPostsTable,
+      LikedPostEntry,
+      $$LikedPostsTableFilterComposer,
+      $$LikedPostsTableOrderingComposer,
+      $$LikedPostsTableAnnotationComposer,
+      $$LikedPostsTableCreateCompanionBuilder,
+      $$LikedPostsTableUpdateCompanionBuilder,
+      (
+        LikedPostEntry,
+        BaseReferences<_$AppDatabase, $LikedPostsTable, LikedPostEntry>,
+      ),
+      LikedPostEntry,
       PrefetchHooks Function()
     >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $$AccountsTableTableManager get accounts => $$AccountsTableTableManager(_db, _db.accounts);
-  $$CachedProfilesTableTableManager get cachedProfiles => $$CachedProfilesTableTableManager(_db, _db.cachedProfiles);
-  $$CachedPostsTableTableManager get cachedPosts => $$CachedPostsTableTableManager(_db, _db.cachedPosts);
-  $$SettingsTableTableManager get settings => $$SettingsTableTableManager(_db, _db.settings);
-  $$SavedFeedsTableTableManager get savedFeeds => $$SavedFeedsTableTableManager(_db, _db.savedFeeds);
+  $$AccountsTableTableManager get accounts =>
+      $$AccountsTableTableManager(_db, _db.accounts);
+  $$CachedProfilesTableTableManager get cachedProfiles =>
+      $$CachedProfilesTableTableManager(_db, _db.cachedProfiles);
+  $$CachedPostsTableTableManager get cachedPosts =>
+      $$CachedPostsTableTableManager(_db, _db.cachedPosts);
+  $$SettingsTableTableManager get settings =>
+      $$SettingsTableTableManager(_db, _db.settings);
+  $$SavedFeedsTableTableManager get savedFeeds =>
+      $$SavedFeedsTableTableManager(_db, _db.savedFeeds);
   $$CachedFeedPagesTableTableManager get cachedFeedPages =>
       $$CachedFeedPagesTableTableManager(_db, _db.cachedFeedPages);
-  $$SearchHistoryTableTableManager get searchHistory => $$SearchHistoryTableTableManager(_db, _db.searchHistory);
-  $$DraftsTableTableManager get drafts => $$DraftsTableTableManager(_db, _db.drafts);
-  $$SavedPostsTableTableManager get savedPosts => $$SavedPostsTableTableManager(_db, _db.savedPosts);
-  $$LabelerCacheTableTableManager get labelerCache => $$LabelerCacheTableTableManager(_db, _db.labelerCache);
+  $$SearchHistoryTableTableManager get searchHistory =>
+      $$SearchHistoryTableTableManager(_db, _db.searchHistory);
+  $$DraftsTableTableManager get drafts =>
+      $$DraftsTableTableManager(_db, _db.drafts);
+  $$SavedPostsTableTableManager get savedPosts =>
+      $$SavedPostsTableTableManager(_db, _db.savedPosts);
+  $$LabelerCacheTableTableManager get labelerCache =>
+      $$LabelerCacheTableTableManager(_db, _db.labelerCache);
+  $$LikedPostsTableTableManager get likedPosts =>
+      $$LikedPostsTableTableManager(_db, _db.likedPosts);
 }

@@ -31,13 +31,13 @@ updated: 2026-04-09
 
 #### Liked Posts Sync
 
-- [ ] `LikedPosts` Drift table - `id`, `accountDid`, `postUri`, `postJson`, `likedAt`; unique constraint on `(account_did, post_uri)`
-- [ ] Drift migration v15 - add `liked_posts` table
-- [ ] `LikedPostsRepository` - `syncLikes(accountDid)`: call `bluesky.feed.getActorLikes(actor:, limit:100, cursor:)`, paginate until hitting known URI or 1000 cap, upsert new entries
-- [ ] `LikedPostsRepository.getLikedPosts(accountDid, {limit, offset})` - paginated query
-- [ ] `LikedPostsRepository.removeLike(accountDid, postUri)` - delete entry
-- [ ] Eviction: drop oldest entries when count exceeds 1000 per account
-- [ ] Documentation update: move development information from README.md to a top-level DEVELOPMENT.md.
+- [x] `LikedPosts` Drift table - `id`, `accountDid`, `postUri`, `postJson`, `likedAt`; unique constraint on `(account_did, post_uri)`
+- [x] Drift migration v15 - add `liked_posts` table
+- [x] `LikedPostsRepository` - `syncLikes(accountDid)`: call `bluesky.feed.getActorLikes(actor:, limit:100, cursor:)`, paginate until hitting known URI or 1000 cap, upsert new entries
+- [x] `LikedPostsRepository.getLikedPosts(accountDid, {limit, offset})` - paginated query
+- [x] `LikedPostsRepository.removeLike(accountDid, postUri)` - delete entry
+- [x] Eviction: drop oldest entries when count exceeds 1000 per account
+- [x] Documentation update: move development information from README.md to a top-level DEVELOPMENT.md.
   Should be updated to reflect new architecture and patterns.
 
 #### Indexing Pipeline
