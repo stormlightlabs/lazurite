@@ -53,10 +53,10 @@ updated: 2026-04-09
 
 #### Vector Search
 
-- [ ] `SemanticSearchRepository` - depends on `EmbeddingService`, `EmbeddingRepository`
-- [ ] `search(query, accountDid, {source, maxResults})` - embed query, run `nearestNeighborsF32`, filter by `accountDid` and optional `source`, return `List<SemanticSearchResult>`
-- [ ] `SemanticSearchResult` model - `postUri`, `score` (cosine similarity as percentage), `source` (saved/liked)
-- [ ] Join results back to Drift `SavedPosts`/`LikedPosts` to hydrate full post JSON for display
+- [x] `SemanticSearchRepository` - depends on `EmbeddingService`, `EmbeddingRepository`
+- [x] `search(query, accountDid, {source, maxResults})` - embed query, run `nearestNeighborsF32`, filter by `accountDid` and optional `source`, return `List<SemanticSearchResult>`
+- [x] `SemanticSearchResult` model - `postUri`, `score` (cosine similarity as percentage), `source` (saved/liked)
+- [x] Join results back to Drift `SavedPosts`/`LikedPosts` to hydrate full post JSON for display
 
 ### Cubit
 

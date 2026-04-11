@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:lazurite/core/objectbox/embedded_post.dart';
 import 'package:lazurite/core/objectbox/objectbox_store.dart';
 import 'package:lazurite/objectbox.g.dart';
@@ -37,6 +39,30 @@ class EmbeddingRepository {
     }
     final query = builder.build();
     final results = query.find();
+    query.close();
+    return results;
+  }
+
+  /// Return the nearest-neighbour [EmbeddedPost] entries for [accountDid],
+  /// ordered by ascending cosine distance to [queryVector].
+  ///
+  /// [source] optionally filters to 'saved' or 'liked'.
+  /// [maxResults] caps the number of candidates returned by HNSW.
+  List<ObjectWithScore<EmbeddedPost>> nearestNeighbors(
+    Float32List queryVector,
+    String accountDid, {
+    String? source,
+    int maxResults = 20,
+  }) {
+    final hnswCondition = EmbeddedPost_.embedding.nearestNeighborsF32(queryVector, maxResults);
+    final accountCondition = EmbeddedPost_.accountDid.equals(accountDid);
+
+    final condition = source != null
+        ? hnswCondition.and(accountCondition).and(EmbeddedPost_.source.equals(source))
+        : hnswCondition.and(accountCondition);
+
+    final query = _box.query(condition).build();
+    final results = query.findWithScores();
     query.close();
     return results;
   }

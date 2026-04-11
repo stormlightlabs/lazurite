@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/objectbox/embedded_post.dart';
 import 'package:lazurite/core/objectbox/objectbox_store.dart';
@@ -9,6 +11,15 @@ var _storeCounter = 0;
 ObjectBoxStore _makeInMemoryStore() {
   final store = Store(getObjectBoxModel(), directory: 'memory:test-${_storeCounter++}');
   return ObjectBoxStore.forTesting(store);
+}
+
+/// Fixed 384-dimensional unit vector.
+Float32List _unitVector({double value = 1.0}) {
+  final v = Float32List(384);
+  for (var i = 0; i < 384; i++) {
+    v[i] = value;
+  }
+  return v;
 }
 
 EmbeddedPost _post({
@@ -133,6 +144,90 @@ void main() {
 
         expect(repo.countByAccount('did:plc:a'), equals(2));
         expect(repo.countByAccount('did:plc:b'), equals(1));
+      });
+    });
+
+    group('nearestNeighbors', () {
+      test('returns empty list when no embeddings exist', () {
+        final results = repo.nearestNeighbors(_unitVector(), 'did:plc:a');
+        expect(results, isEmpty);
+      });
+
+      test('returns posts for the matching account only', () {
+        repo.upsert(_post(postUri: 'at://did/post/1', accountDid: 'did:plc:a', embedding: _unitVector().toList()));
+        repo.upsert(_post(postUri: 'at://did/post/2', accountDid: 'did:plc:b', embedding: _unitVector().toList()));
+
+        final results = repo.nearestNeighbors(_unitVector(), 'did:plc:a');
+
+        expect(results.length, equals(1));
+        expect(results.first.object.accountDid, equals('did:plc:a'));
+      });
+
+      test('filters by source when provided', () {
+        repo.upsert(
+          _post(
+            postUri: 'at://did/post/1',
+            accountDid: 'did:plc:a',
+            source: 'saved',
+            embedding: _unitVector().toList(),
+          ),
+        );
+        repo.upsert(
+          _post(
+            postUri: 'at://did/post/2',
+            accountDid: 'did:plc:a',
+            source: 'liked',
+            embedding: _unitVector().toList(),
+          ),
+        );
+
+        final savedOnly = repo.nearestNeighbors(_unitVector(), 'did:plc:a', source: 'saved');
+        expect(savedOnly.length, equals(1));
+        expect(savedOnly.first.object.source, equals('saved'));
+
+        final likedOnly = repo.nearestNeighbors(_unitVector(), 'did:plc:a', source: 'liked');
+        expect(likedOnly.length, equals(1));
+        expect(likedOnly.first.object.source, equals('liked'));
+      });
+
+      test('returns all sources when source is not provided', () {
+        repo.upsert(
+          _post(
+            postUri: 'at://did/post/1',
+            accountDid: 'did:plc:a',
+            source: 'saved',
+            embedding: _unitVector().toList(),
+          ),
+        );
+        repo.upsert(
+          _post(
+            postUri: 'at://did/post/2',
+            accountDid: 'did:plc:a',
+            source: 'liked',
+            embedding: _unitVector().toList(),
+          ),
+        );
+
+        final results = repo.nearestNeighbors(_unitVector(), 'did:plc:a');
+        expect(results.length, equals(2));
+      });
+
+      test('respects maxResults cap', () {
+        for (var i = 1; i <= 5; i++) {
+          repo.upsert(_post(postUri: 'at://did/post/$i', accountDid: 'did:plc:a', embedding: _unitVector().toList()));
+        }
+
+        final results = repo.nearestNeighbors(_unitVector(), 'did:plc:a', maxResults: 3);
+        expect(results.length, lessThanOrEqualTo(3));
+      });
+
+      test('scores are non-negative (cosine distance in [0, 2])', () {
+        repo.upsert(_post(postUri: 'at://did/post/1', accountDid: 'did:plc:a', embedding: _unitVector().toList()));
+
+        final results = repo.nearestNeighbors(_unitVector(), 'did:plc:a');
+        expect(results, isNotEmpty);
+        expect(results.first.score, greaterThanOrEqualTo(0.0));
+        expect(results.first.score, lessThanOrEqualTo(2.0));
       });
     });
   });
