@@ -23,8 +23,8 @@ class SemanticSearchRepository {
 
   /// Search for posts semantically similar to [query].
   ///
-  /// Returns an empty list when [EmbeddingService.isAvailable] is false or
-  /// when [query] is blank.
+  /// Returns an empty list when [EmbeddingService.isAvailable] is false
+  /// or when [query] is blank.
   ///
   /// [source] narrows results to 'saved', 'liked', or both when null.
   /// [maxResults] caps the number of results (default 20).
@@ -49,7 +49,6 @@ class SemanticSearchRepository {
     final results = <SemanticSearchResult>[];
     for (final result in rawResults) {
       final post = result.object;
-      // Cosine distance is in [0, 2]; similarity = 1 - distance, clamped to [0, 1].
       final similarity = (1.0 - result.score).clamp(0.0, 1.0);
       final scorePercent = similarity * 100.0;
 

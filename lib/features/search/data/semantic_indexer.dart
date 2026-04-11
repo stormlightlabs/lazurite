@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/embedding/embedding_service.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/objectbox/embedded_post.dart';
 import 'package:lazurite/features/search/data/embedding_repository.dart';
 import 'package:lazurite/features/search/data/post_text_extractor.dart';
@@ -121,13 +122,12 @@ class SemanticIndexer {
       for (final req in chunk) {
         try {
           await indexPost(req.postUri, req.postJson, req.accountDid, req.source);
-        } catch (_) {
-          // Skip posts that fail to embed; don't abort the entire backfill.
+        } catch (e) {
+          log.d('Failed to backfill ${req.postUri}: $e');
         }
         completed++;
         yield (completed, total);
       }
-      // Yield to the event loop between chunks.
       await Future<void>.delayed(Duration.zero);
     }
   }
@@ -139,8 +139,8 @@ class SemanticIndexer {
       final req = _queue.removeFirst();
       try {
         await indexPost(req.postUri, req.postJson, req.accountDid, req.source);
-      } catch (_) {
-        // Swallow errors so the queue keeps draining.
+      } catch (e) {
+        log.d('Failed to index ${req.postUri}: $e');
       }
     }
     _draining = false;

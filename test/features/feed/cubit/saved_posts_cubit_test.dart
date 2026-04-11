@@ -40,7 +40,6 @@ void main() {
         cursor: any(named: 'cursor'),
       ),
     ).thenAnswer((_) async => const BookmarkGetBookmarksOutput(bookmarks: []));
-    // Stub indexer methods so tests that don't verify them still pass.
     when(() => mockIndexer.queueIndexPost(any(), any(), any(), any())).thenReturn(null);
     when(() => mockIndexer.removePost(any())).thenReturn(null);
   });

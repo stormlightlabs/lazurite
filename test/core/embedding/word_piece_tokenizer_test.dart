@@ -102,8 +102,8 @@ void main() {
 
       test('sub-word fallback: ab + ##c → [6, 3]', () {
         final result = tokenizer.tokenize('abbc');
-        expect(result[1], equals(6)); // "ab"
-        expect(result[2], equals(4)); // "##bc"
+        expect(result[1], equals(6));
+        expect(result[2], equals(4));
         expect(result[3], equals(WordPieceTokenizer.sepId));
       });
 

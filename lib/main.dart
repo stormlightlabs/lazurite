@@ -35,12 +35,16 @@ import 'package:lazurite/features/notifications/data/notification_repository.dar
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
+import 'package:lazurite/features/feed/cubit/liked_posts_sync_cubit.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/core/embedding/embedding_service.dart';
 import 'package:lazurite/features/feed/data/liked_posts_repository.dart';
+import 'package:lazurite/features/search/cubit/semantic_index_cubit.dart';
+import 'package:lazurite/features/search/cubit/semantic_search_cubit.dart';
 import 'package:lazurite/features/search/data/embedding_repository.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/search/data/semantic_indexer.dart';
+import 'package:lazurite/features/search/data/semantic_search_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
@@ -304,6 +308,13 @@ class _LazuriteAppState extends State<LazuriteApp> {
                     semanticIndexer: context.read<SemanticIndexer>(),
                   ),
                 ),
+                RepositoryProvider(
+                  create: (context) => SemanticSearchRepository(
+                    embeddingService: context.read<EmbeddingService>(),
+                    embeddingRepository: context.read<EmbeddingRepository>(),
+                    database: widget.database,
+                  ),
+                ),
                 RepositoryProvider.value(value: accountDid),
               ],
               child: MultiBlocProvider(
@@ -336,6 +347,26 @@ class _LazuriteAppState extends State<LazuriteApp> {
                       accountDid: accountDid,
                       postActionRepository: context.read<PostActionRepository>(),
                       semanticIndexer: context.read<SemanticIndexer>(),
+                    ),
+                  ),
+                  BlocProvider(
+                    create: (context) => SemanticSearchCubit(
+                      repository: context.read<SemanticSearchRepository>(),
+                      embeddingService: context.read<EmbeddingService>(),
+                      accountDid: accountDid,
+                    ),
+                  ),
+                  BlocProvider(
+                    create: (context) => SemanticIndexCubit(
+                      indexer: context.read<SemanticIndexer>(),
+                      embeddingRepository: context.read<EmbeddingRepository>(),
+                      accountDid: accountDid,
+                    ),
+                  ),
+                  BlocProvider(
+                    create: (context) => LikedPostsSyncCubit(
+                      repository: context.read<LikedPostsRepository>(),
+                      accountDid: accountDid,
                     ),
                   ),
                 ],

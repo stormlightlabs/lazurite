@@ -198,7 +198,6 @@ void main() {
         expect(results, hasLength(1));
         expect(results.first.source, equals('liked'));
         final decoded = jsonDecode(results.first.postJson) as Map<String, dynamic>;
-        // liked post JSON has a nested 'post' key
         expect((decoded['post'] as Map<String, dynamic>)['uri'], equals('at://did/post/2'));
       });
 
@@ -216,14 +215,12 @@ void main() {
       test('identical-vector query produces near-100% score', () async {
         await insertSavedPost('at://did/post/1', 'did:plc:user');
 
-        // Query with the same unit vector the post was indexed with.
         final svc = EmbeddingService.forTesting((_) async => _unitVector());
         await svc.initialize();
         final repo = makeRepo(service: svc);
         final results = await repo.search('hello', 'did:plc:user');
 
         expect(results, isNotEmpty);
-        // Score should be very close to 100%.
         expect(results.first.score, greaterThan(90.0));
       });
 
@@ -275,7 +272,6 @@ void main() {
       });
 
       test('skips results whose postJson cannot be found in Drift', () async {
-        // Insert embedding in ObjectBox but NOT in Drift.
         embeddingRepo.upsert(
           EmbeddedPost(
             postUri: 'at://did/post/orphan',
@@ -290,7 +286,6 @@ void main() {
         final repo = makeRepo();
         final results = await repo.search('hello', 'did:plc:user');
 
-        // The orphaned result is silently skipped.
         expect(results, isEmpty);
       });
 

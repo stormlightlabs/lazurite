@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
@@ -8,7 +9,6 @@ import 'package:lazurite/core/embedding/embedding_service.dart';
 import 'package:lazurite/core/objectbox/embedded_post.dart';
 import 'package:lazurite/core/objectbox/objectbox_store.dart';
 import 'package:lazurite/features/search/data/embedding_repository.dart';
-import 'package:drift/drift.dart' show Value;
 import 'package:lazurite/features/search/data/post_text_extractor.dart';
 import 'package:lazurite/features/search/data/semantic_indexer.dart';
 import 'package:lazurite/objectbox.g.dart';
@@ -32,10 +32,8 @@ Float32List _unitVector() {
 
 EmbeddingService _availableService() => EmbeddingService.forTesting((_) async => _unitVector());
 
-EmbeddingService _unavailableService() {
-  // Returns an uninitialized service (isAvailable == false).
-  return EmbeddingService();
-}
+/// Returns an uninitialized service (isAvailable == false).
+EmbeddingService _unavailableService() => EmbeddingService();
 
 /// Minimal valid PostView JSON with a text record.
 String _savedPostJson(String text) => jsonEncode({
@@ -132,7 +130,6 @@ void main() {
         final indexer = makeIndexer();
         await indexer.initialize();
 
-        // JSON that cannot be parsed as PostView or FeedViewPost.
         await indexer.indexPost('at://did/post/1', '{}', 'did:plc:user', 'saved');
 
         expect(embeddingRepo.countByAccount('did:plc:user'), equals(0));
@@ -182,7 +179,6 @@ void main() {
 
         indexer.queueIndexPost('at://did/post/1', _savedPostJson('queued post'), 'did:plc:user', 'saved');
 
-        // Drain the event loop to allow the queue to process.
         await Future<void>.delayed(Duration.zero);
         await Future<void>.delayed(Duration.zero);
 
@@ -206,7 +202,6 @@ void main() {
         indexer.queueIndexPost('at://did/post/2', _savedPostJson('two'), 'did:plc:user', 'saved');
         indexer.queueIndexPost('at://did/post/3', _savedPostJson('three'), 'did:plc:user', 'saved');
 
-        // Wait for all items to process.
         await Future<void>.delayed(const Duration(milliseconds: 100));
 
         expect(embeddingRepo.countByAccount('did:plc:user'), equals(3));
@@ -286,11 +281,9 @@ void main() {
           embeddingRepository: embeddingRepo,
           database: database,
         );
+
         await countingIndexer.initialize();
-
         await countingIndexer.backfill('did:plc:user').toList();
-
-        // Already indexed, so embed should not be called.
         expect(embedCallCount, equals(0));
       });
 

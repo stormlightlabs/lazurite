@@ -60,10 +60,10 @@ updated: 2026-04-09
 
 ### Cubit
 
-- [ ] `SemanticSearchCubit` - `search(query)` with 500ms debounce, `setScope(source)`, `clearResults()`
-- [ ] `SemanticSearchState` - `status` (initial/searching/loaded/error/unavailable), `results`, `query`, `scope` (saved/liked/both)
-- [ ] `LikedPostsSyncCubit` - `sync()` triggers like sync, exposes sync progress
-- [ ] `SemanticIndexCubit` - exposes `backfillProgress`, `indexedCount`, `reindex()` action
+- [x] `SemanticSearchCubit` - `search(query)` with 500ms debounce, `setScope(source)`, `clearResults()`
+- [x] `SemanticSearchState` - `status` (initial/searching/loaded/error/unavailable), `results`, `query`, `scope` (saved/liked/both)
+- [x] `LikedPostsSyncCubit` - `sync()` triggers like sync, exposes sync progress
+- [x] `SemanticIndexCubit` - exposes `backfillProgress`, `indexedCount`, `reindex()` action
 
 ### UI
 
