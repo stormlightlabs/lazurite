@@ -42,14 +42,14 @@ updated: 2026-04-09
 
 #### Indexing Pipeline
 
-- [ ] `SemanticIndexer` - orchestrates embedding + storage for new posts
-- [ ] `indexPost(postUri, postJson, accountDid, source)` - extract text, embed, upsert `EmbeddedPost`
-- [ ] `removePost(postUri)` - delete `EmbeddedPost` entry
-- [ ] `backfill(accountDid)` - batch-embed all un-indexed saved + liked posts, chunks of 50, yield between chunks
-- [ ] `backfillProgress` stream - emits `(int completed, int total)` for UI progress display
-- [ ] Hook into `SavedPostsRepository.savePost()` - queue new save for indexing
-- [ ] Hook into `LikedPostsRepository.syncLikes()` - queue newly synced likes for indexing
-- [ ] Hook into unsave/unlike - remove from `EmbeddedPost`
+- [x] `SemanticIndexer` - orchestrates embedding + storage for new posts
+- [x] `indexPost(postUri, postJson, accountDid, source)` - extract text, embed, upsert `EmbeddedPost`
+- [x] `removePost(postUri)` - delete `EmbeddedPost` entry
+- [x] `backfill(accountDid)` - batch-embed all un-indexed saved + liked posts, chunks of 50, yield between chunks
+- [x] `backfillProgress` stream - emits `(int completed, int total)` for UI progress display
+- [x] Hook into `SavedPostsRepository.savePost()` - queue new save for indexing
+- [x] Hook into `LikedPostsRepository.syncLikes()` - queue newly synced likes for indexing
+- [x] Hook into unsave/unlike - remove from `EmbeddedPost`
 
 #### Vector Search
 

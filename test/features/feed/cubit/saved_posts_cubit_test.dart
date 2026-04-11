@@ -8,9 +8,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
+import 'package:lazurite/features/search/data/semantic_indexer.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockPostActionRepository extends Mock implements PostActionRepository {}
+
+class MockSemanticIndexer extends Mock implements SemanticIndexer {}
 
 void main() {
   setUpAll(() {
@@ -19,6 +22,7 @@ void main() {
 
   late AppDatabase database;
   late MockPostActionRepository mockRepository;
+  late MockSemanticIndexer mockIndexer;
 
   const testAccountDid = 'did:plc:testuser123';
   const testPostUri1 = 'at://did:plc:author1/app.bsky.feed.post/abc123';
@@ -29,12 +33,16 @@ void main() {
   setUp(() async {
     database = AppDatabase(executor: NativeDatabase.memory());
     mockRepository = MockPostActionRepository();
+    mockIndexer = MockSemanticIndexer();
     when(
       () => mockRepository.getBookmarks(
         limit: any(named: 'limit'),
         cursor: any(named: 'cursor'),
       ),
     ).thenAnswer((_) async => const BookmarkGetBookmarksOutput(bookmarks: []));
+    // Stub indexer methods so tests that don't verify them still pass.
+    when(() => mockIndexer.queueIndexPost(any(), any(), any(), any())).thenReturn(null);
+    when(() => mockIndexer.removePost(any())).thenReturn(null);
   });
 
   tearDown(() async {
@@ -621,6 +629,162 @@ void main() {
         );
 
         expect(() => cubit.syncCloudBookmarks(), returnsNormally);
+      });
+    });
+
+    group('SemanticIndexer hooks', () {
+      test('queues indexing after savePost', () async {
+        final cubit = SavedPostsCubit(
+          database: database,
+          accountDid: testAccountDid,
+          postActionRepository: mockRepository,
+          semanticIndexer: mockIndexer,
+        );
+
+        await cubit.savePost(postUri: testPostUri1, postJson: testPostJson1);
+
+        verify(() => mockIndexer.queueIndexPost(testPostUri1, testPostJson1, testAccountDid, 'saved')).called(1);
+      });
+
+      test('removes from index after unsavePost', () async {
+        await database.savePost(
+          SavedPostsCompanion(
+            accountDid: const Value(testAccountDid),
+            postUri: const Value(testPostUri1),
+            postJson: const Value(testPostJson1),
+            savedAt: Value(DateTime.now()),
+          ),
+        );
+        final cubit = SavedPostsCubit(
+          database: database,
+          accountDid: testAccountDid,
+          postActionRepository: mockRepository,
+          semanticIndexer: mockIndexer,
+        );
+        await cubit.loadSavedPosts();
+
+        await cubit.unsavePost(testPostUri1);
+
+        verify(() => mockIndexer.removePost(testPostUri1)).called(1);
+      });
+
+      test('removes from index after unsavePostById', () async {
+        await database.savePost(
+          SavedPostsCompanion(
+            accountDid: const Value(testAccountDid),
+            postUri: const Value(testPostUri1),
+            postJson: const Value(testPostJson1),
+            savedAt: Value(DateTime.now()),
+          ),
+        );
+        final cubit = SavedPostsCubit(
+          database: database,
+          accountDid: testAccountDid,
+          postActionRepository: mockRepository,
+          semanticIndexer: mockIndexer,
+        );
+        await cubit.loadSavedPosts();
+        final id = cubit.state.savedPosts.first.id;
+
+        await cubit.unsavePostById(id);
+
+        verify(() => mockIndexer.removePost(testPostUri1)).called(1);
+      });
+
+      test('queues indexing after cloudSave of new post', () async {
+        when(
+          () => mockRepository.createBookmark(
+            uri: any(named: 'uri'),
+            cid: any(named: 'cid'),
+          ),
+        ).thenAnswer((_) async {});
+        final cubit = SavedPostsCubit(
+          database: database,
+          accountDid: testAccountDid,
+          postActionRepository: mockRepository,
+          semanticIndexer: mockIndexer,
+        );
+
+        await cubit.cloudSave(postUri: testPostUri1, cid: 'cid1', postJson: testPostJson1);
+
+        verify(() => mockIndexer.queueIndexPost(testPostUri1, testPostJson1, testAccountDid, 'saved')).called(1);
+      });
+
+      test('removes from index after cloudUnsave of cloud-only post', () async {
+        when(() => mockRepository.deleteBookmark(uri: any(named: 'uri'))).thenAnswer((_) async {});
+        await database.savePost(
+          SavedPostsCompanion(
+            accountDid: const Value(testAccountDid),
+            postUri: const Value(testPostUri1),
+            postJson: const Value(testPostJson1),
+            saveType: const Value('cloud'),
+            savedAt: Value(DateTime.now()),
+          ),
+        );
+        final cubit = SavedPostsCubit(
+          database: database,
+          accountDid: testAccountDid,
+          postActionRepository: mockRepository,
+          semanticIndexer: mockIndexer,
+        );
+        await cubit.loadSavedPosts();
+
+        await cubit.cloudUnsave(testPostUri1);
+
+        verify(() => mockIndexer.removePost(testPostUri1)).called(1);
+      });
+
+      test('does not remove from index when cloudUnsave downgrades both to local', () async {
+        when(() => mockRepository.deleteBookmark(uri: any(named: 'uri'))).thenAnswer((_) async {});
+        await database.savePost(
+          SavedPostsCompanion(
+            accountDid: const Value(testAccountDid),
+            postUri: const Value(testPostUri1),
+            postJson: const Value(testPostJson1),
+            saveType: const Value('both'),
+            savedAt: Value(DateTime.now()),
+          ),
+        );
+        final cubit = SavedPostsCubit(
+          database: database,
+          accountDid: testAccountDid,
+          postActionRepository: mockRepository,
+          semanticIndexer: mockIndexer,
+        );
+        await cubit.loadSavedPosts();
+
+        await cubit.cloudUnsave(testPostUri1);
+
+        verifyNever(() => mockIndexer.removePost(any()));
+      });
+
+      test('queues indexing during syncCloudBookmarks for new posts', () async {
+        final testUri = AtUri.parse(testPostUri1);
+        when(
+          () => mockRepository.getBookmarks(
+            limit: any(named: 'limit'),
+            cursor: any(named: 'cursor'),
+          ),
+        ).thenAnswer(
+          (_) async => BookmarkGetBookmarksOutput(
+            bookmarks: [
+              BookmarkView(
+                subject: RepoStrongRef(uri: testUri, cid: 'cid1'),
+                item: const UBookmarkViewItem.unknown(data: {}),
+              ),
+            ],
+          ),
+        );
+        final cubit = SavedPostsCubit(
+          database: database,
+          accountDid: testAccountDid,
+          postActionRepository: mockRepository,
+          semanticIndexer: mockIndexer,
+        );
+
+        await cubit.syncCloudBookmarks();
+
+        verify(() => mockIndexer.queueIndexPost(testPostUri1, any(), testAccountDid, 'saved')).called(1);
       });
     });
   });

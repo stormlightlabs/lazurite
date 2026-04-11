@@ -9,6 +9,10 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/feed/data/liked_posts_repository.dart';
+import 'package:lazurite/features/search/data/semantic_indexer.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockSemanticIndexer extends Mock implements SemanticIndexer {}
 
 const _accountDid = 'did:plc:testuser';
 const _otherAccountDid = 'did:plc:otheruser';
@@ -361,6 +365,87 @@ void main() {
         final result = await database.getLikedPosts(_otherAccountDid);
         expect(result, hasLength(1));
       });
+    });
+  });
+
+  group('SemanticIndexer hooks', () {
+    late MockSemanticIndexer mockIndexer;
+
+    setUp(() {
+      mockIndexer = MockSemanticIndexer();
+      when(() => mockIndexer.queueIndexPost(any(), any(), any(), any())).thenReturn(null);
+      when(() => mockIndexer.removePost(any())).thenReturn(null);
+    });
+
+    test('syncLikes queues newly synced posts for indexing', () async {
+      const postUri = 'at://did:plc:author/app.bsky.feed.post/post1';
+      final post = _makeFeedViewPost(postUri);
+      final repo = LikedPostsRepository(
+        bluesky: _FakeBluesky(
+          feed: _FakeFeedService(
+            pages: [
+              FeedGetActorLikesOutput(feed: [post]),
+            ],
+          ),
+        ),
+        database: database,
+        semanticIndexer: mockIndexer,
+      );
+
+      await repo.syncLikes(_accountDid);
+
+      verify(() => mockIndexer.queueIndexPost(postUri, any(), _accountDid, 'liked')).called(1);
+    });
+
+    test('syncLikes does not queue already-known posts', () async {
+      const postUri = 'at://did:plc:author/app.bsky.feed.post/known';
+      await database.upsertLikedPost(
+        LikedPostsCompanion(
+          accountDid: const Value(_accountDid),
+          postUri: const Value(postUri),
+          postJson: const Value('{}'),
+          likedAt: Value(DateTime.now()),
+        ),
+      );
+
+      final post = _makeFeedViewPost(postUri);
+      final repo = LikedPostsRepository(
+        bluesky: _FakeBluesky(
+          feed: _FakeFeedService(
+            pages: [
+              FeedGetActorLikesOutput(feed: [post]),
+            ],
+          ),
+        ),
+        database: database,
+        semanticIndexer: mockIndexer,
+      );
+
+      await repo.syncLikes(_accountDid);
+
+      verifyNever(() => mockIndexer.queueIndexPost(any(), any(), any(), any()));
+    });
+
+    test('removeLike removes post from index', () async {
+      const postUri = 'at://did:plc:author/app.bsky.feed.post/post1';
+      await database.upsertLikedPost(
+        LikedPostsCompanion(
+          accountDid: const Value(_accountDid),
+          postUri: const Value(postUri),
+          postJson: const Value('{}'),
+          likedAt: Value(DateTime.now()),
+        ),
+      );
+
+      final repo = LikedPostsRepository(
+        bluesky: _FakeBluesky(feed: _FakeFeedService(pages: [])),
+        database: database,
+        semanticIndexer: mockIndexer,
+      );
+
+      await repo.removeLike(_accountDid, postUri);
+
+      verify(() => mockIndexer.removePost(postUri)).called(1);
     });
   });
 

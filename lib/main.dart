@@ -36,8 +36,11 @@ import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
+import 'package:lazurite/core/embedding/embedding_service.dart';
+import 'package:lazurite/features/feed/data/liked_posts_repository.dart';
 import 'package:lazurite/features/search/data/embedding_repository.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
+import 'package:lazurite/features/search/data/semantic_indexer.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
@@ -52,6 +55,8 @@ Future<void> main() async {
 
   final database = AppDatabase();
   final objectBoxStore = await ObjectBoxStore.open();
+  final embeddingService = EmbeddingService();
+  unawaited(embeddingService.initialize());
   final authRepository = AuthRepository(database: database);
   final restoredSession = await authRepository.restoreSession();
   final authBloc = AuthBloc(
@@ -70,7 +75,17 @@ Future<void> main() async {
 
   log.i('AppLogger: App started');
 
-  runApp(LazuriteApp.from(authBloc, database, objectBoxStore, settingsCubit, connectivityCubit, accountSwitcherCubit));
+  runApp(
+    LazuriteApp.from(
+      authBloc,
+      database,
+      objectBoxStore,
+      embeddingService,
+      settingsCubit,
+      connectivityCubit,
+      accountSwitcherCubit,
+    ),
+  );
 }
 
 class LazuriteApp extends StatefulWidget {
@@ -79,6 +94,7 @@ class LazuriteApp extends StatefulWidget {
     required this.authBloc,
     required this.database,
     required this.objectBoxStore,
+    required this.embeddingService,
     required this.settingsCubit,
     required this.connectivityCubit,
     required this.accountSwitcherCubit,
@@ -87,6 +103,7 @@ class LazuriteApp extends StatefulWidget {
   final AuthBloc authBloc;
   final AppDatabase database;
   final ObjectBoxStore objectBoxStore;
+  final EmbeddingService embeddingService;
   final SettingsCubit settingsCubit;
   final ConnectivityCubit connectivityCubit;
   final AccountSwitcherCubit accountSwitcherCubit;
@@ -96,6 +113,7 @@ class LazuriteApp extends StatefulWidget {
     AuthBloc authBloc,
     AppDatabase database,
     ObjectBoxStore objectBoxStore,
+    EmbeddingService embeddingService,
     SettingsCubit settingsCubit,
     ConnectivityCubit connectivityCubit,
     AccountSwitcherCubit accountSwitcherCubit,
@@ -103,6 +121,7 @@ class LazuriteApp extends StatefulWidget {
     authBloc: authBloc,
     database: database,
     objectBoxStore: objectBoxStore,
+    embeddingService: embeddingService,
     settingsCubit: settingsCubit,
     connectivityCubit: connectivityCubit,
     accountSwitcherCubit: accountSwitcherCubit,
@@ -269,7 +288,22 @@ class _LazuriteAppState extends State<LazuriteApp> {
                 RepositoryProvider.value(value: bluesky),
                 RepositoryProvider.value(value: widget.database),
                 RepositoryProvider.value(value: widget.objectBoxStore),
+                RepositoryProvider.value(value: widget.embeddingService),
                 RepositoryProvider(create: (context) => EmbeddingRepository(context.read<ObjectBoxStore>())),
+                RepositoryProvider(
+                  create: (context) => SemanticIndexer(
+                    embeddingService: context.read<EmbeddingService>(),
+                    embeddingRepository: context.read<EmbeddingRepository>(),
+                    database: widget.database,
+                  ),
+                ),
+                RepositoryProvider(
+                  create: (context) => LikedPostsRepository(
+                    bluesky: bluesky,
+                    database: widget.database,
+                    semanticIndexer: context.read<SemanticIndexer>(),
+                  ),
+                ),
                 RepositoryProvider.value(value: accountDid),
               ],
               child: MultiBlocProvider(
@@ -301,6 +335,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
                       database: widget.database,
                       accountDid: accountDid,
                       postActionRepository: context.read<PostActionRepository>(),
+                      semanticIndexer: context.read<SemanticIndexer>(),
                     ),
                   ),
                 ],

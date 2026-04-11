@@ -3,14 +3,17 @@ import 'dart:convert';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/search/data/semantic_indexer.dart';
 
 class LikedPostsRepository {
-  LikedPostsRepository({required dynamic bluesky, required AppDatabase database})
+  LikedPostsRepository({required dynamic bluesky, required AppDatabase database, SemanticIndexer? semanticIndexer})
     : _bluesky = bluesky,
-      _database = database;
+      _database = database,
+      _semanticIndexer = semanticIndexer;
 
   final dynamic _bluesky;
   final AppDatabase _database;
+  final SemanticIndexer? _semanticIndexer;
 
   static const int _maxLikes = 1000;
   static const int _pageSize = 100;
@@ -46,14 +49,16 @@ class LikedPostsRepository {
             ? DateTime.now()
             : _extractLikedAt(feedViewPost.reason!, DateTime.now());
 
+        final postJson = jsonEncode(feedViewPost.toJson());
         await _database.upsertLikedPost(
           LikedPostsCompanion(
             accountDid: Value(accountDid),
             postUri: Value(postUri),
-            postJson: Value(jsonEncode(feedViewPost.toJson())),
+            postJson: Value(postJson),
             likedAt: Value(likedAt),
           ),
         );
+        _semanticIndexer?.queueIndexPost(postUri, postJson, accountDid, 'liked');
         fetched++;
       }
 
@@ -68,8 +73,12 @@ class LikedPostsRepository {
   Future<List<LikedPostEntry>> getLikedPosts(String accountDid, {int limit = 50, int offset = 0}) =>
       _database.getLikedPosts(accountDid, limit: limit, offset: offset);
 
-  /// Removes a single liked post from local storage.
-  Future<int> removeLike(String accountDid, String postUri) => _database.removeLikedPost(accountDid, postUri);
+  /// Removes a single liked post from local storage and the embedding index.
+  Future<int> removeLike(String accountDid, String postUri) async {
+    final result = await _database.removeLikedPost(accountDid, postUri);
+    _semanticIndexer?.removePost(postUri);
+    return result;
+  }
 
   DateTime _extractLikedAt(dynamic reason, DateTime fallback) {
     try {

@@ -9,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
+import 'package:lazurite/features/search/data/semantic_indexer.dart';
 
 class SavedPostsState extends Equatable {
   const SavedPostsState({
@@ -59,9 +60,11 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
     required AppDatabase database,
     required String accountDid,
     required PostActionRepository postActionRepository,
+    SemanticIndexer? semanticIndexer,
   }) : _database = database,
        _accountDid = accountDid,
        _postActionRepository = postActionRepository,
+       _semanticIndexer = semanticIndexer,
        super(const SavedPostsState()) {
     _init();
   }
@@ -69,6 +72,7 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
   final AppDatabase _database;
   final String _accountDid;
   final PostActionRepository _postActionRepository;
+  final SemanticIndexer? _semanticIndexer;
   StreamSubscription<Map<String, String>>? _savedUrisSubscription;
 
   void _init() {
@@ -108,6 +112,7 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
     try {
       if (isCurrentlySaved) {
         await _database.unsavePost(_accountDid, postUri);
+        _semanticIndexer?.removePost(postUri);
       } else {
         await _database.savePost(
           SavedPostsCompanion(
@@ -118,6 +123,7 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
             savedAt: Value(DateTime.now()),
           ),
         );
+        _semanticIndexer?.queueIndexPost(postUri, postJson, _accountDid, 'saved');
       }
 
       await loadSavedPosts();
@@ -141,7 +147,9 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
 
   Future<void> unsavePostById(int id) async {
     try {
+      final entry = state.savedPosts.where((p) => p.id == id).firstOrNull;
       await _database.unsavePostById(id);
+      if (entry != null) _semanticIndexer?.removePost(entry.postUri);
       await loadSavedPosts();
     } catch (error) {
       log.e('Failed to unsave post', error: error);
@@ -185,6 +193,7 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
             savedAt: Value(DateTime.now()),
           ),
         );
+        _semanticIndexer?.queueIndexPost(postUri, postJson, _accountDid, 'saved');
       }
       await _postActionRepository.createBookmark(uri: AtUri.parse(postUri), cid: cid);
       return true;
@@ -210,6 +219,7 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
         await _database.updateSaveType(_accountDid, postUri, 'local');
       } else {
         await _database.unsavePost(_accountDid, postUri);
+        _semanticIndexer?.removePost(postUri);
       }
       await _postActionRepository.deleteBookmark(uri: AtUri.parse(postUri));
       return true;
@@ -252,6 +262,7 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
                 savedAt: Value(bookmark.createdAt ?? DateTime.now()),
               ),
             );
+            _semanticIndexer?.queueIndexPost(postUri, postJson, _accountDid, 'saved');
           } else if (existing.saveType == 'local') {
             await _database.updateSaveType(_accountDid, postUri, 'both');
           }
