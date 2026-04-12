@@ -15,16 +15,16 @@ import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-typedef _LaunchUrlWithMode = Future<bool> Function(Uri url, LaunchMode mode);
-typedef _CloseInAppBrowser = Future<void> Function();
-typedef _SupportsCloseForMode = Future<bool> Function(LaunchMode mode);
+typedef LaunchUrlWithMode = Future<bool> Function(Uri url, LaunchMode mode);
+typedef CloseInAppBrowser = Future<void> Function();
+typedef SupportsCloseForMode = Future<bool> Function(LaunchMode mode);
 
 class AuthRepository {
   AuthRepository({
     required AppDatabase database,
-    _LaunchUrlWithMode launchUrlWithMode = _defaultLaunchUrlWithMode,
-    _CloseInAppBrowser closeInAppBrowser = closeInAppWebView,
-    _SupportsCloseForMode supportsCloseForMode = supportsCloseForLaunchMode,
+    LaunchUrlWithMode launchUrlWithMode = _defaultLaunchUrlWithMode,
+    CloseInAppBrowser closeInAppBrowser = closeInAppWebView,
+    SupportsCloseForMode supportsCloseForMode = supportsCloseForLaunchMode,
   }) : _database = database,
        _launchUrlWithMode = launchUrlWithMode,
        _closeInAppBrowser = closeInAppBrowser,
@@ -36,9 +36,9 @@ class AuthRepository {
   static final Uri _appReopenUri = Uri.parse('lazurite://auth-complete');
 
   final AppDatabase _database;
-  final _LaunchUrlWithMode _launchUrlWithMode;
-  final _CloseInAppBrowser _closeInAppBrowser;
-  final _SupportsCloseForMode _supportsCloseForMode;
+  final LaunchUrlWithMode _launchUrlWithMode;
+  final CloseInAppBrowser _closeInAppBrowser;
+  final SupportsCloseForMode _supportsCloseForMode;
 
   HttpServer? _callbackServer;
   StreamSubscription<HttpRequest>? _callbackSubscription;

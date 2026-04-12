@@ -213,7 +213,7 @@ void main() {
         var supportChecks = 0;
         authRepository = AuthRepository(
           database: mockDatabase,
-          launchUrlWithMode: (_, __) async => true,
+          launchUrlWithMode: (_, _) async => true,
           supportsCloseForMode: (_) async {
             supportChecks += 1;
             return true;
@@ -234,7 +234,7 @@ void main() {
         var supportChecks = 0;
         authRepository = AuthRepository(
           database: mockDatabase,
-          launchUrlWithMode: (_, __) async => true,
+          launchUrlWithMode: (_, _) async => true,
           supportsCloseForMode: (_) async {
             supportChecks += 1;
             return true;
