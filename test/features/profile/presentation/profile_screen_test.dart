@@ -675,6 +675,48 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Suggested Follows'), findsNothing);
+      expect(find.text('Clean Follows'), findsOneWidget);
+    });
+  });
+
+  group('Own profile overflow menu', () {
+    testWidgets('Clean Follows option navigates to clean follows screen', (tester) async {
+      useLargeScreen(tester);
+
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: authBloc),
+                BlocProvider<ProfileBloc>.value(value: profileBloc),
+                BlocProvider<FeedBloc>.value(value: feedBloc),
+                BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+                BlocProvider<SettingsCubit>.value(value: settingsCubit),
+              ],
+              child: const ProfileScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/settings/clean-follows',
+            builder: (context, state) => const Scaffold(body: Text('clean')),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Clean Follows'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('clean'), findsOneWidget);
+
+      router.dispose();
     });
   });
 }

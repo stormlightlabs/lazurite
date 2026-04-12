@@ -90,6 +90,10 @@ void main() {
           path: '/settings/devtools',
           builder: (context, state) => Scaffold(body: Text('devtools:${state.uri.queryParameters['query'] ?? ''}')),
         ),
+        GoRoute(
+          path: '/settings/clean-follows',
+          builder: (context, state) => const Scaffold(body: Text('clean-follows')),
+        ),
       ],
     );
 
@@ -264,6 +268,31 @@ void main() {
 
     expect(find.text('Video Upload Limits'), findsOneWidget);
     expect(find.text('Check your daily video quota'), findsOneWidget);
+  });
+
+  testWidgets('shows Account Maintenance section with Clean Follows tile', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('ACCOUNT MAINTENANCE'), 300);
+    await tester.pumpAndSettle();
+
+    expect(find.text('ACCOUNT MAINTENANCE'), findsOneWidget);
+    expect(find.text('Clean Follows'), findsOneWidget);
+    expect(find.text('Audit and unfollow problematic accounts in bulk'), findsOneWidget);
+  });
+
+  testWidgets('tapping Clean Follows tile navigates to clean follows screen', (tester) async {
+    await tester.pumpWidget(buildRoutedSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Clean Follows'), 300);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Clean Follows'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('clean-follows'), findsOneWidget);
   });
 }
 

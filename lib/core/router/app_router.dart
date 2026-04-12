@@ -27,6 +27,7 @@ import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
+import 'package:lazurite/features/profile/presentation/follow_audit_screen.dart';
 import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
 import 'package:lazurite/features/messages/bloc/message_bloc.dart';
@@ -46,7 +47,9 @@ import 'package:lazurite/features/starter_packs/presentation/actor_starter_packs
 import 'package:lazurite/features/starter_packs/presentation/create_edit_starter_pack_screen.dart';
 import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
 import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
+import 'package:lazurite/features/profile/cubit/follow_audit_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_context_repository.dart';
+import 'package:lazurite/features/profile/data/follow_audit_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
@@ -260,6 +263,16 @@ class AppRouter {
                       ),
                       GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
                       GoRoute(path: 'logs', builder: (context, state) => const LogsScreen()),
+                      GoRoute(
+                        path: 'clean-follows',
+                        builder: (context, state) => BlocProvider(
+                          create: (_) => FollowAuditCubit(
+                            repository: FollowAuditRepository(bluesky: context.read<Bluesky>()),
+                            ownDid: context.read<String>(),
+                          ),
+                          child: const FollowAuditScreen(),
+                        ),
+                      ),
                       GoRoute(
                         path: 'devtools',
                         builder: (context, state) => DevToolsScreen(initialQuery: state.uri.queryParameters['query']),

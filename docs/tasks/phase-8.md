@@ -35,28 +35,28 @@ updated: 2026-04-11
 
 #### Follow Audit Screen
 
-- [ ] `FollowAuditScreen` — new file `lib/features/profile/presentation/follow_audit_screen.dart`
-- [ ] Header — "Clean Follows" title, subtitle with total follow count
-- [ ] Action bar — "Scan" button (initial) → "Unfollow Selected (N)" button (ready), disabled during loading states
-- [ ] Linear progress bar — during fetch/classify, shows "Fetching follows: X/Y" or "Classifying: X/Y"
-- [ ] Failed profiles warning — amber text below progress bar when `failedProfiles > 0`
-- [ ] Results list — checkbox, handle (tappable → navigate to profile via GoRouter), truncated DID, status badge chip. Selected rows get destructive-red background tint
-- [ ] Empty state — "No problematic follows found" when audit completes with 0 results
-- [ ] Complete state — "Unfollowed N account(s)" after successful batch delete
-- [ ] Error state — error message with "Retry" button
+- [x] `FollowAuditScreen` — new file `lib/features/profile/presentation/follow_audit_screen.dart`
+- [x] Header — "Clean Follows" title, subtitle with total follow count
+- [x] Action bar — "Scan" button (initial) → "Unfollow Selected (N)" button (ready), disabled during loading states
+- [x] Linear progress bar — during fetch/classify, shows "Fetching follows: X/Y" or "Classifying: X/Y"
+- [x] Failed profiles warning — amber text below progress bar when `failedProfiles > 0`
+- [x] Results list — checkbox, handle (tappable → navigate to profile via GoRouter), truncated DID, status badge chip. Selected rows get destructive-red background tint
+- [x] Empty state — "No problematic follows found" when audit completes with 0 results
+- [x] Complete state — "Unfollowed N account(s)" after successful batch delete
+- [x] Error state — error message with "Retry" button
 
 #### Filter Controls
 
-- [ ] Responsive layout — horizontal scrollable chip row on narrow screens (`< 600px`), sticky sidebar on wider screens
-- [ ] Per-status filter tile — visibility toggle (show/hide rows of that status in list) + "Select All" checkbox
-- [ ] Category count badges — show count of results per status category
-- [ ] Summary line — "Selected: N/M" count, always visible
+- [x] Responsive layout — horizontal scrollable chip row on narrow screens (`< 600px`), sticky sidebar on wider screens
+- [x] Per-status filter tile — visibility toggle (show/hide rows of that status in list) + "Select All" checkbox
+- [x] Category count badges — show count of results per status category
+- [x] Summary line — "Selected: N/M" count, always visible
 
 #### Navigation & Entry Points
 
-- [ ] Settings screen — new "Account Maintenance" section with "Clean Follows" tile, navigates to `FollowAuditScreen`
-- [ ] Profile screen overflow menu — add "Clean Follows" option when viewing own profile, navigates to `FollowAuditScreen`
-- [ ] GoRouter route — `/settings/clean-follows`
+- [x] Settings screen — new "Account Maintenance" section with "Clean Follows" tile, navigates to `FollowAuditScreen`
+- [x] Profile screen overflow menu — add "Clean Follows" option when viewing own profile, navigates to `FollowAuditScreen`
+- [x] GoRouter route — `/settings/clean-follows`
 
 ### Tests
 
@@ -91,19 +91,19 @@ updated: 2026-04-11
 
 #### Widget Tests (FollowAuditScreen)
 
-- [ ] initial state renders "Scan" button
-- [ ] fetching state shows progress bar with count text
-- [ ] ready state renders results list with correct status badges
-- [ ] selecting a record changes row background to red tint
-- [ ] "Unfollow Selected" button shows correct count and is disabled when nothing selected
-- [ ] filter toggles hide/show rows by status
-- [ ] "Select All" per category selects all visible records of that status
-- [ ] complete state shows "Unfollowed N account(s)"
-- [ ] error state shows message and retry button
-- [ ] empty results shows "No problematic follows found"
-- [ ] tapping handle navigates to profile screen
-- [ ] responsive layout: chips on narrow, sidebar on wide
+- [x] initial state renders "Scan" button
+- [x] fetching state shows progress bar with count text
+- [x] ready state renders results list with correct status badges
+- [x] selecting a record changes row background to red tint
+- [x] "Unfollow Selected" button shows correct count and is disabled when nothing selected
+- [x] filter toggles hide/show rows by status
+- [x] "Select All" per category selects all visible records of that status
+- [x] complete state shows "Unfollowed N account(s)"
+- [x] error state shows message and retry button
+- [x] empty results shows "No problematic follows found"
+- [x] tapping handle navigates to profile screen
+- [x] responsive layout: chips on narrow, sidebar on wide
 
 #### Integration Tests
 
-- [ ] End-to-end: scan follows → results displayed → select records → confirm unfollow → success state
+- [x] End-to-end: scan follows → results displayed → select records → confirm unfollow → success state

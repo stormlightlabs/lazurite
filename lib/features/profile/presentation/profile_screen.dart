@@ -528,6 +528,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 );
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.cleaning_services_outlined),
+              title: const Text('Clean Follows'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                context.push('/settings/clean-follows');
+              },
+            ),
           ],
         ),
       ),
