@@ -31,6 +31,9 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Install ObjectBox native library
+        run: curl -sSfL https://raw.githubusercontent.com/objectbox/objectbox-dart/main/install.sh | bash
+
       - name: Analyze code
         run: flutter analyze
 

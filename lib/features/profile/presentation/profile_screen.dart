@@ -71,7 +71,7 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
   static const _feedTabs = [
     (label: 'Posts', filter: FeedFilter.postsNoReplies),
     (label: 'Replies', filter: FeedFilter.postsAndAuthorThreads),
