@@ -364,10 +364,8 @@ class _LazuriteAppState extends State<LazuriteApp> {
                     ),
                   ),
                   BlocProvider(
-                    create: (context) => LikedPostsSyncCubit(
-                      repository: context.read<LikedPostsRepository>(),
-                      accountDid: accountDid,
-                    ),
+                    create: (context) =>
+                        LikedPostsSyncCubit(repository: context.read<LikedPostsRepository>(), accountDid: accountDid),
                   ),
                 ],
                 child: appShell,

@@ -15,8 +15,7 @@ void main() {
     mockRepo = MockLikedPostsRepository();
   });
 
-  LikedPostsSyncCubit buildCubit() =>
-      LikedPostsSyncCubit(repository: mockRepo, accountDid: _accountDid);
+  LikedPostsSyncCubit buildCubit() => LikedPostsSyncCubit(repository: mockRepo, accountDid: _accountDid);
 
   group('LikedPostsSyncCubit', () {
     group('initial state', () {
@@ -52,9 +51,7 @@ void main() {
         act: (cubit) => cubit.sync(),
         expect: () => [
           const LikedPostsSyncState(status: LikedPostsSyncStatus.syncing),
-          predicate<LikedPostsSyncState>(
-            (s) => s.status == LikedPostsSyncStatus.error && s.errorMessage != null,
-          ),
+          predicate<LikedPostsSyncState>((s) => s.status == LikedPostsSyncStatus.error && s.errorMessage != null),
         ],
       );
 

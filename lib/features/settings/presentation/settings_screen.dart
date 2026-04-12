@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +13,8 @@ import 'package:lazurite/features/account/presentation/account_switcher_sheet.da
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/features/search/cubit/semantic_index_cubit.dart';
+import 'package:lazurite/features/search/cubit/semantic_search_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
@@ -70,6 +74,9 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Moderation'),
           const _ModerationSettingsPreview(),
+          const SizedBox(height: 24),
+          _buildSectionHeader(context, 'Search'),
+          _buildSearchSettings(context),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Account'),
           const _AtProtocolConnectionCard(),
@@ -260,6 +267,71 @@ class SettingsScreen extends StatelessWidget {
                 labelBuilder: (depth) => depth == null ? 'Off' : 'Depth $depth',
                 onChanged: settingsCubit.setThreadAutoCollapseDepth,
               ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSearchSettings(BuildContext context) {
+    return BlocBuilder<SettingsCubit, SettingsState>(
+      builder: (context, settingsState) {
+        return Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: Theme.of(context).dividerColor),
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            color: Theme.of(context).cardColor,
+          ),
+          child: Column(
+            children: [
+              _SettingsTile(
+                icon: Icons.manage_search_outlined,
+                title: 'Semantic Search',
+                subtitle: settingsState.semanticSearchEnabled
+                    ? 'Search posts by meaning, not just keywords'
+                    : 'Enable to search posts by meaning',
+                trailing: Switch.adaptive(
+                  value: settingsState.semanticSearchEnabled,
+                  onChanged: (value) async {
+                    await context.read<SettingsCubit>().setSemanticSearchEnabled(value);
+                    if (value && context.mounted) {
+                      unawaited(context.read<SemanticIndexCubit>().reindex());
+                    }
+                  },
+                ),
+              ),
+              if (settingsState.semanticSearchEnabled) ...[
+                const Divider(height: 1),
+                _SettingsDropdownTile<SearchScope>(
+                  title: 'Default Scope',
+                  subtitle: 'Which posts to search by default',
+                  value: settingsState.searchScope,
+                  options: SearchScope.values,
+                  labelBuilder: (scope) => switch (scope) {
+                    SearchScope.both => 'Saved + Liked',
+                    SearchScope.saved => 'Saved only',
+                    SearchScope.liked => 'Liked only',
+                  },
+                  onChanged: (scope) {
+                    if (scope != null) context.read<SettingsCubit>().setSearchScope(scope);
+                  },
+                ),
+                const Divider(height: 1),
+                BlocBuilder<SemanticIndexCubit, SemanticIndexState>(
+                  builder: (context, indexState) => _IndexStatusTile(indexState: indexState),
+                ),
+                const Divider(height: 1),
+                _MaxResultsTile(
+                  value: settingsState.semanticSearchMaxResults,
+                  onChanged: (value) {
+                    context.read<SettingsCubit>().setSemanticSearchMaxResults(value);
+                    context.read<SemanticSearchCubit>().setMaxResults(value);
+                  },
+                ),
+              ],
             ],
           ),
         );
@@ -631,6 +703,75 @@ class _SettingsTile extends StatelessWidget {
       subtitle: subtitle != null ? Text(subtitle!) : null,
       trailing: trailing ?? (onTap != null ? const Icon(Icons.chevron_right) : null),
       onTap: onTap,
+    );
+  }
+}
+
+class _IndexStatusTile extends StatelessWidget {
+  const _IndexStatusTile({required this.indexState});
+
+  final SemanticIndexState indexState;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusText = indexState.isBackfilling
+        ? 'Indexing: ${indexState.backfillCompleted ?? 0}/${indexState.backfillTotal ?? 0} posts...'
+        : '${indexState.indexedCount} posts indexed';
+
+    return ListTile(
+      leading: indexState.isBackfilling
+          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+          : const Icon(Icons.data_object_outlined),
+      title: const Text('Index Status'),
+      subtitle: Text(statusText),
+      trailing: indexState.isBackfilling
+          ? null
+          : TextButton(onPressed: () => context.read<SemanticIndexCubit>().reindex(), child: const Text('Re-index')),
+    );
+  }
+}
+
+class _MaxResultsTile extends StatelessWidget {
+  const _MaxResultsTile({required this.value, required this.onChanged});
+
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          leading: const Icon(Icons.format_list_numbered_outlined),
+          title: const Text('Max Results'),
+          subtitle: const Text('Maximum number of search results'),
+          trailing: Text(
+            '$value',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontFamily: 'JetBrains Mono'),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Row(
+            children: [
+              const Text('10', style: TextStyle(fontSize: 12)),
+              Expanded(
+                child: Slider(
+                  value: value.toDouble(),
+                  min: 10,
+                  max: 50,
+                  divisions: 8,
+                  onChanged: (v) => onChanged(v.round()),
+                ),
+              ),
+              const Text('50', style: TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

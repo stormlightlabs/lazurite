@@ -69,35 +69,35 @@ updated: 2026-04-09
 
 #### Semantic Search Tab
 
-- [ ] Saved posts screen - add "Search" tab alongside existing "All Saved" tab
-- [ ] Search text field with hint "Search your saved posts..."
-- [ ] Scope toggle chips: "Saved" / "Liked" / "Both" (default: Both)
-- [ ] Results list - reuse `PostCard`, ordered by similarity score
-- [ ] Relevance badge on each result (percentage)
-- [ ] Empty state (no query): "Search your saved and liked posts by meaning, not just keywords"
-- [ ] No results state: "No similar posts found"
-- [ ] Unavailable state: shown when `EmbeddingService.isAvailable` is false, with explanation
+- [x] Saved posts screen - add "Search" tab alongside existing "All Saved" tab
+- [x] Search text field with hint "Search your saved posts..."
+- [x] Scope toggle chips: "Saved" / "Liked" / "Both" (default: Both)
+- [x] Results list - reuse `PostCard`, ordered by similarity score
+- [x] Relevance badge on each result (percentage)
+- [x] Empty state (no query): "Search your saved and liked posts by meaning, not just keywords"
+- [x] No results state: "No similar posts found"
+- [x] Unavailable state: shown when `EmbeddingService.isAvailable` is false, with explanation
 
 #### Settings
 
-- [ ] Settings screen - new "Search" section
-- [ ] "Semantic Search" toggle (default: off) - enables feature, triggers backfill on first enable
-- [ ] "Search scope" dropdown - Saved only / Liked only / Both
-- [ ] "Index status" tile - shows indexed post count, "Re-index" button
-- [ ] "Max results" slider - 10 to 50, default 20
-- [ ] Backfill progress indicator - "Indexing: 142/300 posts..." shown during backfill
+- [x] Settings screen - new "Search" section
+- [x] "Semantic Search" toggle (default: off) - enables feature, triggers backfill on first enable
+- [x] "Search scope" dropdown - Saved only / Liked only / Both
+- [x] "Index status" tile - shows indexed post count, "Re-index" button
+- [x] "Max results" slider - 10 to 50, default 20
+- [x] Backfill progress indicator - "Indexing: 142/300 posts..." shown during backfill
 
 ### Tests
 
-- [ ] Unit tests: `WordPieceTokenizer` - tokenization, padding, truncation, edge cases (empty string, very long text)
-- [ ] Unit tests: `EmbeddingService` - initialization, embed returns correct dimensions, L2 normalization, dispose cleanup
-- [ ] Unit tests: `PostTextExtractor` - text concatenation from various post shapes (text-only, images with alt, link cards, combinations)
-- [ ] Unit tests: `EmbeddingRepository` - upsert, delete, query by account, count
-- [ ] Unit tests: `LikedPostsRepository` - sync pagination, dedup on known URI, 1000-cap eviction
-- [ ] Unit tests: `SemanticIndexer` - index/remove/backfill, progress stream, integration with save/like hooks
-- [ ] Unit tests: `SemanticSearchRepository` - search returns scored results, scope filtering, account isolation
-- [ ] Unit tests: `SemanticSearchCubit` - debounce, state transitions, scope changes
-- [ ] Unit tests: `SemanticIndexCubit` - backfill progress, reindex trigger
-- [ ] Widget tests: search tab renders, query produces results, scope chips filter, relevance badges display, empty/no-results/unavailable states
-- [ ] Widget tests: settings section renders, toggle enables/disables, progress indicator during backfill, re-index button triggers reindex
+- [x] Unit tests: `WordPieceTokenizer` - tokenization, padding, truncation, edge cases (empty string, very long text)
+- [x] Unit tests: `EmbeddingService` - initialization, embed returns correct dimensions, L2 normalization, dispose cleanup
+- [x] Unit tests: `PostTextExtractor` - text concatenation from various post shapes (text-only, images with alt, link cards, combinations)
+- [x] Unit tests: `EmbeddingRepository` - upsert, delete, query by account, count
+- [x] Unit tests: `LikedPostsRepository` - sync pagination, dedup on known URI, 1000-cap eviction
+- [x] Unit tests: `SemanticIndexer` - index/remove/backfill, progress stream, integration with save/like hooks
+- [x] Unit tests: `SemanticSearchRepository` - search returns scored results, scope filtering, account isolation
+- [x] Unit tests: `SemanticSearchCubit` - debounce, state transitions, scope changes
+- [x] Unit tests: `SemanticIndexCubit` - backfill progress, reindex trigger
+- [x] Widget tests: search tab renders, query produces results, scope chips filter, relevance badges display, empty/no-results/unavailable states
+- [x] Widget tests: settings section renders, toggle enables/disables, progress indicator during backfill, re-index button triggers reindex
 - [ ] Integration test: save a post → verify it appears in semantic search results for a relevant query

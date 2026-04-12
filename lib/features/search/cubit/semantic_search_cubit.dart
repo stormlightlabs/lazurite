@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/embedding/embedding_service.dart';
+import 'package:lazurite/features/search/data/search_scope.dart';
 import 'package:lazurite/features/search/data/semantic_search_repository.dart';
 import 'package:lazurite/features/search/data/semantic_search_result.dart';
 
-enum SemanticSearchStatus { initial, searching, loaded, error, unavailable }
+export 'package:lazurite/features/search/data/search_scope.dart';
 
-/// Scope filter for semantic search results.
-enum SearchScope { saved, liked, both }
+enum SemanticSearchStatus { initial, searching, loaded, error, unavailable }
 
 class SemanticSearchState extends Equatable {
   const SemanticSearchState({
@@ -56,10 +56,12 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
     required SemanticSearchRepository repository,
     required EmbeddingService embeddingService,
     required String accountDid,
+    int maxResults = 20,
     Duration debounceDuration = const Duration(milliseconds: 500),
   }) : _repository = repository,
        _embeddingService = embeddingService,
        _accountDid = accountDid,
+       _maxResults = maxResults,
        _debounceDuration = debounceDuration,
        super(
          embeddingService.isAvailable
@@ -70,8 +72,12 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
   final SemanticSearchRepository _repository;
   final EmbeddingService _embeddingService;
   final String _accountDid;
+  int _maxResults;
   final Duration _debounceDuration;
   Timer? _debounce;
+
+  /// Update the maximum number of results returned per search.
+  void setMaxResults(int maxResults) => _maxResults = maxResults;
 
   /// Queue a search for [query], debounced by [_debounceDuration].
   ///
@@ -114,7 +120,7 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
         SearchScope.liked => 'liked',
         SearchScope.both => null,
       };
-      final results = await _repository.search(query, _accountDid, source: source);
+      final results = await _repository.search(query, _accountDid, source: source, maxResults: _maxResults);
       if (isClosed) return;
       emit(state.copyWith(status: SemanticSearchStatus.loaded, results: results));
     } catch (e) {

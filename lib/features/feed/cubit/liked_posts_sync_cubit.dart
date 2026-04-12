@@ -12,10 +12,8 @@ class LikedPostsSyncState extends Equatable {
 
   bool get isSyncing => status == LikedPostsSyncStatus.syncing;
 
-  LikedPostsSyncState copyWith({LikedPostsSyncStatus? status, String? errorMessage}) => LikedPostsSyncState(
-    status: status ?? this.status,
-    errorMessage: errorMessage ?? this.errorMessage,
-  );
+  LikedPostsSyncState copyWith({LikedPostsSyncStatus? status, String? errorMessage}) =>
+      LikedPostsSyncState(status: status ?? this.status, errorMessage: errorMessage ?? this.errorMessage);
 
   @override
   List<Object?> get props => [status, errorMessage];

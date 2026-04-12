@@ -9,6 +9,7 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/search/presentation/semantic_search_tab.dart';
 import 'package:share_plus/share_plus.dart';
 
 class SavedPostsScreen extends StatelessWidget {
@@ -29,8 +30,27 @@ class SavedPostsScreen extends StatelessWidget {
   }
 }
 
-class _SavedPostsContent extends StatelessWidget {
+class _SavedPostsContent extends StatefulWidget {
   const _SavedPostsContent();
+
+  @override
+  State<_SavedPostsContent> createState() => _SavedPostsContentState();
+}
+
+class _SavedPostsContentState extends State<_SavedPostsContent> with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,71 +69,15 @@ class _SavedPostsContent extends StatelessWidget {
             },
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'All Saved'),
+            Tab(text: 'Search'),
+          ],
+        ),
       ),
-      body: BlocBuilder<SavedPostsCubit, SavedPostsState>(
-        builder: (context, state) {
-          if (state.status == SavedPostsStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state.status == SavedPostsStatus.error) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(state.error ?? 'Failed to load saved posts'),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () => context.read<SavedPostsCubit>().loadSavedPosts(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (state.savedPosts.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.bookmark_outline, size: 64, color: Theme.of(context).colorScheme.outline),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No saved posts',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.headlineSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Posts you save will appear here',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => context.read<SavedPostsCubit>().loadSavedPosts(),
-            child: ListView.builder(
-              itemCount: state.savedPosts.length,
-              itemBuilder: (context, index) {
-                final savedPost = state.savedPosts[index];
-                return _SavedPostCard(
-                  savedPost: savedPost,
-                  onUnsave: () => context.read<SavedPostsCubit>().unsavePostById(savedPost.id),
-                );
-              },
-            ),
-          );
-        },
-      ),
+      body: TabBarView(controller: _tabController, children: const [_AllSavedTab(), SemanticSearchTab()]),
     );
   }
 
@@ -138,6 +102,78 @@ class _SavedPostsContent extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AllSavedTab extends StatelessWidget {
+  const _AllSavedTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<SavedPostsCubit, SavedPostsState>(
+      builder: (context, state) {
+        if (state.status == SavedPostsStatus.loading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state.status == SavedPostsStatus.error) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                const SizedBox(height: 16),
+                Text(state.error ?? 'Failed to load saved posts'),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () => context.read<SavedPostsCubit>().loadSavedPosts(),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (state.savedPosts.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.bookmark_outline, size: 64, color: Theme.of(context).colorScheme.outline),
+                const SizedBox(height: 16),
+                Text(
+                  'No saved posts',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.headlineSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Posts you save will appear here',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () => context.read<SavedPostsCubit>().loadSavedPosts(),
+          child: ListView.builder(
+            itemCount: state.savedPosts.length,
+            itemBuilder: (context, index) {
+              final savedPost = state.savedPosts[index];
+              return _SavedPostCard(
+                savedPost: savedPost,
+                onUnsave: () => context.read<SavedPostsCubit>().unsavePostById(savedPost.id),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -210,18 +246,10 @@ class _SavedPostCard extends StatelessWidget {
     final now = DateTime.now();
     final difference = now.difference(date);
 
-    if (difference.inMinutes < 1) {
-      return 'just now';
-    }
-    if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    }
-    if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
-    }
-    if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    }
+    if (difference.inMinutes < 1) return 'just now';
+    if (difference.inHours < 1) return '${difference.inMinutes}m ago';
+    if (difference.inDays < 1) return '${difference.inHours}h ago';
+    if (difference.inDays < 7) return '${difference.inDays}d ago';
     return '${date.month}/${date.day}/${date.year}';
   }
 

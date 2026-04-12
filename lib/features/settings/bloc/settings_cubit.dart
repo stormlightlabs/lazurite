@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
+import 'package:lazurite/features/search/data/search_scope.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
 class SettingsCubit extends Cubit<SettingsState> {
@@ -37,6 +38,9 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _keyThreadAutoCollapseDepth = 'thread_auto_collapse_depth';
   static const String _keyConstellationUrl = 'constellation_url';
   static const String _defaultConstellationUrl = 'https://constellation.microcosm.blue';
+  static const String _keySemanticSearchEnabled = 'semantic_search_enabled';
+  static const String _keySearchScope = 'search_scope';
+  static const String _keySemanticSearchMaxResults = 'semantic_search_max_results';
 
   Future<void> loadSettings() async {
     final paletteStr = await database.getSetting(_keyThemePalette);
@@ -47,6 +51,9 @@ class SettingsCubit extends Cubit<SettingsState> {
     final simulateOfflineStr = await database.getSetting(_keySimulateOffline);
     final threadAutoCollapseDepthStr = await database.getSetting(_keyThreadAutoCollapseDepth);
     final constellationUrlStr = await database.getSetting(_keyConstellationUrl);
+    final semanticSearchEnabledStr = await database.getSetting(_keySemanticSearchEnabled);
+    final searchScopeStr = await database.getSetting(_keySearchScope);
+    final semanticSearchMaxResultsStr = await database.getSetting(_keySemanticSearchMaxResults);
 
     emit(
       state.copyWith(
@@ -57,6 +64,9 @@ class SettingsCubit extends Cubit<SettingsState> {
         simulateOffline: simulateOfflineStr == 'true',
         threadAutoCollapseDepth: int.tryParse(threadAutoCollapseDepthStr ?? ''),
         constellationUrl: constellationUrlStr ?? _defaultConstellationUrl,
+        semanticSearchEnabled: semanticSearchEnabledStr == 'true',
+        searchScope: SearchScope.values.firstWhere((s) => s.name == searchScopeStr, orElse: () => SearchScope.both),
+        semanticSearchMaxResults: int.tryParse(semanticSearchMaxResultsStr ?? '') ?? 20,
       ),
     );
   }
@@ -105,5 +115,20 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setConstellationUrl(String url) async {
     await database.setSetting(_keyConstellationUrl, url);
     emit(state.copyWith(constellationUrl: url));
+  }
+
+  Future<void> setSemanticSearchEnabled(bool value) async {
+    await database.setSetting(_keySemanticSearchEnabled, value.toString());
+    emit(state.copyWith(semanticSearchEnabled: value));
+  }
+
+  Future<void> setSearchScope(SearchScope scope) async {
+    await database.setSetting(_keySearchScope, scope.name);
+    emit(state.copyWith(searchScope: scope));
+  }
+
+  Future<void> setSemanticSearchMaxResults(int value) async {
+    await database.setSetting(_keySemanticSearchMaxResults, value.toString());
+    emit(state.copyWith(semanticSearchMaxResults: value));
   }
 }
