@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/features/account/presentation/account_switcher_sheet.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -37,7 +38,7 @@ class AppShell extends StatefulWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  /// Global key for the shell [Scaffold]. Accessible from anywhere — even
+  /// Global key for the shell [Scaffold]. Accessible from any screen, even
   /// screens pushed onto the root navigator that are outside [AppShellScope].
   static final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -171,47 +172,7 @@ class _AppMenu extends StatelessWidget {
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => _runAfterClose(context, () => navigationShell.goBranch(3, initialLocation: false)),
-                  child: Ink(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        _MenuProfileAvatar(did: did, initials: initials),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '@$handle',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.chevron_right),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              _buildProfileTag(context, displayName, handle, initials, did),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -284,6 +245,46 @@ class _AppMenu extends StatelessWidget {
                   ],
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _profileTag(ThemeData theme, String content, bool isLabel) {
+    final style = isLabel
+        ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
+        : theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    return Text(content, maxLines: 1, overflow: TextOverflow.ellipsis, style: style);
+  }
+
+  Widget _buildProfileTag(BuildContext context, String displayName, String handle, String initials, String? did) {
+    final theme = Theme.of(context);
+    final deco = BoxDecoration(color: theme.colorScheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(20));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _runAfterClose(context, () => showAccountSwitcherSheet(rootContext)),
+        child: Ink(
+          padding: const EdgeInsets.all(12),
+          decoration: deco,
+          child: Row(
+            children: [
+              _MenuProfileAvatar(did: did, initials: initials),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _profileTag(theme, displayName, true),
+                    const SizedBox(height: 2),
+                    _profileTag(theme, '@$handle', false),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
             ],
           ),
         ),

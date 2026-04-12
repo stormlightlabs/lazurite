@@ -116,11 +116,13 @@ void main() {
       expect(find.byIcon(Icons.check), findsOneWidget);
     });
 
-    testWidgets('shows Add Account tile', (tester) async {
+    testWidgets('shows empty state and Add Account tile when there are no switchable accounts', (tester) async {
       when(() => cubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
 
       await openSheet(tester);
 
+      expect(find.text('No other signed-in accounts yet. Add an account to switch between profiles.'), findsOneWidget);
+      expect(find.byIcon(Icons.swap_horiz_outlined), findsOneWidget);
       expect(find.text('Add Account'), findsOneWidget);
       expect(find.byIcon(Icons.person_add_outlined), findsOneWidget);
     });

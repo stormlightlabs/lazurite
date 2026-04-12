@@ -23,6 +23,9 @@ class _AccountSwitcherSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -30,7 +33,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text('Accounts', style: Theme.of(context).textTheme.titleMedium),
+            child: Text('Accounts', style: textTheme.titleMedium),
           ),
           const Divider(),
           BlocBuilder<AccountSwitcherCubit, AccountSwitcherState>(
@@ -41,6 +44,8 @@ class _AccountSwitcherSheet extends StatelessWidget {
                   child: Center(child: CircularProgressIndicator()),
                 );
               }
+
+              if (state.accounts.isEmpty) return _buildEmptyState(colorScheme, textTheme);
 
               return ListView.builder(
                 shrinkWrap: true,
@@ -67,6 +72,24 @@ class _AccountSwitcherSheet extends StatelessWidget {
             leading: const Icon(Icons.person_add_outlined),
             title: const Text('Add Account'),
             onTap: () => _onAddAccount(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(ColorScheme colorScheme, TextTheme textTheme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+      child: Row(
+        children: [
+          Icon(Icons.swap_horiz_outlined, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'No other signed-in accounts yet. Add an account to switch between profiles.',
+              style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
           ),
         ],
       ),

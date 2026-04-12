@@ -246,6 +246,23 @@ void main() {
     expect(find.text('SETTINGS'), findsOneWidget);
   });
 
+  testWidgets('drawer profile tag opens account switcher sheet', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open menu'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('River Tam'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Accounts'), findsOneWidget);
+    expect(find.text('Add Account'), findsOneWidget);
+  });
+
   testWidgets('tapping bottom nav tabs switches active branch', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));
