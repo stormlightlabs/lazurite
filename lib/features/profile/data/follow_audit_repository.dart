@@ -1,0 +1,344 @@
+import 'dart:async';
+
+import 'package:atproto/com_atproto_repo_applywrites.dart';
+import 'package:atproto_core/atproto_core.dart' show AtUri;
+import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:equatable/equatable.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
+
+enum FollowStatus { deleted, deactivated, suspended, blockedBy, blocking, mutualBlock, hidden, selfFollow }
+
+class FollowRecord {
+  const FollowRecord({required this.uri, required this.rkey, required this.subjectDid});
+
+  final String uri;
+  final String rkey;
+  final String subjectDid;
+}
+
+class ClassifiedFollow extends Equatable {
+  const ClassifiedFollow({
+    required this.record,
+    required this.handle,
+    required this.status,
+    required this.statusLabel,
+    this.selected = false,
+  });
+
+  final FollowRecord record;
+  final String? handle;
+  final FollowStatus status;
+  final String statusLabel;
+  final bool selected;
+
+  @override
+  List<Object?> get props => [record.uri, handle, status, statusLabel];
+
+  @override
+  bool get stringify => false;
+
+  set selected(bool value) => selected = value;
+}
+
+const _profileBatchSize = 25;
+const _concurrentBatches = 2;
+const _interGroupDelay = Duration(milliseconds: 500);
+const _retryDelays = [Duration(seconds: 1), Duration(seconds: 2), Duration(seconds: 4)];
+const _maxRetries = 3;
+const _unfollowBatchSize = 200;
+
+class FollowAuditRepository {
+  FollowAuditRepository({required dynamic bluesky}) : _bluesky = bluesky;
+
+  final dynamic _bluesky;
+
+  /// Paginates all follow records for [did] and returns them as a flat list.
+  Future<List<FollowRecord>> fetchAllFollows(String did) async {
+    final records = <FollowRecord>[];
+    String? cursor;
+
+    do {
+      final response = await _bluesky.atproto.repo.listRecords(
+        repo: did,
+        collection: 'app.bsky.graph.follow',
+        limit: 100,
+        cursor: cursor,
+      );
+
+      final rawRecords = response.data.records as List<dynamic>;
+      for (final raw in rawRecords) {
+        final uri = raw.uri.toString();
+        final rkey = AtUri.parse(uri).rkey;
+        final subjectDid = raw.value['subject'] as String;
+        records.add(FollowRecord(uri: uri, rkey: rkey, subjectDid: subjectDid));
+      }
+      cursor = response.data.cursor as String?;
+    } while (cursor != null);
+
+    return records;
+  }
+
+  /// Classifies each follow in [records] by fetching profiles in batches.
+  ///
+  /// Uses 2 concurrent batches of 25 with a 500ms delay between groups.
+  /// Falls back to per-DID lookup for missing batch entries.
+  /// Returns the classified (problematic) follows and a count of profiles
+  /// that could not be fetched at all.
+  Future<({List<ClassifiedFollow> results, int failedCount})> classifyFollows(
+    List<FollowRecord> records,
+    String ownDid,
+  ) async {
+    final results = <ClassifiedFollow>[];
+    var failedCount = 0;
+
+    final recordByDid = <String, FollowRecord>{for (final r in records) r.subjectDid: r};
+    final dids = records.map((r) => r.subjectDid).toList();
+
+    for (var groupStart = 0; groupStart < dids.length; groupStart += _profileBatchSize * _concurrentBatches) {
+      if (groupStart > 0) {
+        await Future<void>.delayed(_interGroupDelay);
+      }
+
+      final groupDids = dids.sublist(
+        groupStart,
+        (groupStart + _profileBatchSize * _concurrentBatches).clamp(0, dids.length),
+      );
+
+      final futures = <Future<_BatchResult>>[];
+      for (var batchStart = 0; batchStart < groupDids.length; batchStart += _profileBatchSize) {
+        final batch = groupDids.sublist(batchStart, (batchStart + _profileBatchSize).clamp(0, groupDids.length));
+        futures.add(_processBatch(batch, recordByDid, ownDid));
+      }
+
+      final batchResults = await Future.wait(futures);
+      for (final br in batchResults) {
+        results.addAll(br.classified);
+        failedCount += br.failedCount;
+      }
+    }
+
+    return (results: results, failedCount: failedCount);
+  }
+
+  Future<_BatchResult> _processBatch(List<String> batch, Map<String, FollowRecord> recordByDid, String ownDid) async {
+    final profileByDid = await _fetchBatchWithRetry(batch);
+    final classified = <ClassifiedFollow>[];
+    var failedCount = 0;
+
+    for (final did in batch) {
+      final record = recordByDid[did];
+      if (record == null) continue;
+
+      final profile = profileByDid[did];
+
+      if (profile == null) {
+        final fallback = await _fetchSingleWithRetry(did);
+        if (fallback.failed) {
+          failedCount++;
+          continue;
+        }
+        if (fallback.profile != null) {
+          final status = _classifyProfile(fallback.profile!, did, ownDid);
+          if (status != null) {
+            classified.add(_buildClassifiedFollow(record, fallback.profile!.handle, status));
+          }
+        } else if (fallback.status != null) {
+          classified.add(_buildClassifiedFollow(record, null, fallback.status!));
+        }
+      } else {
+        final status = _classifyProfile(profile, did, ownDid);
+        if (status != null) {
+          classified.add(_buildClassifiedFollow(record, profile.handle, status));
+        }
+      }
+    }
+
+    return _BatchResult(classified: classified, failedCount: failedCount);
+  }
+
+  /// Fetches a batch via getProfiles with retry. Returns a map of DID → ProfileView
+  /// for successfully resolved profiles. Missing DIDs will not appear in the map.
+  Future<Map<String, ProfileView>> _fetchBatchWithRetry(List<String> batch) async {
+    for (var attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        final response = await _bluesky.actor.getProfiles(actors: batch);
+        final result = <String, ProfileView>{};
+        for (final profile in response.data.profiles as List<dynamic>) {
+          final view = _asProfileView(profile);
+          if (view != null) {
+            result[view.did] = view;
+          }
+        }
+        return result;
+      } catch (error, stackTrace) {
+        if (attempt >= _maxRetries || !_isRetryable(error)) {
+          log.w(
+            'FollowAuditRepository: batch getProfiles failed after $attempt retries',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          return {};
+        }
+        await Future<void>.delayed(_retryDelays[attempt]);
+      }
+    }
+    return {};
+  }
+
+  Future<_SingleResult> _fetchSingleWithRetry(String did) async {
+    for (var attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        final response = await _bluesky.actor.getProfile(actor: did);
+        final view = _asProfileView(response.data);
+        return _SingleResult(profile: view, status: null, failed: view == null);
+      } catch (error, stackTrace) {
+        if (attempt >= _maxRetries || !_isRetryable(error)) {
+          final status = _classifyError(error);
+          if (status != null) {
+            return _SingleResult(profile: null, status: status, failed: false);
+          }
+          log.w(
+            'FollowAuditRepository: per-DID getProfile failed for $did after $attempt retries',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          return const _SingleResult(profile: null, status: null, failed: true);
+        }
+        await Future<void>.delayed(_retryDelays[attempt]);
+      }
+    }
+    return const _SingleResult(profile: null, status: null, failed: true);
+  }
+
+  /// Batch-deletes selected follows via applyWrites in chunks of 200.
+  ///
+  /// [ownDid] is the authenticated user's DID (repo owner).
+  /// Executes batches sequentially. Returns the number of successfully deleted records.
+  Future<int> batchUnfollow(List<ClassifiedFollow> selected, String ownDid) async {
+    if (selected.isEmpty) return 0;
+
+    final rkeys = selected.map((f) => f.record.rkey).toList();
+    var deletedCount = 0;
+
+    for (var i = 0; i < rkeys.length; i += _unfollowBatchSize) {
+      final chunk = rkeys.sublist(i, (i + _unfollowBatchSize).clamp(0, rkeys.length));
+      final writes = chunk
+          .map(
+            (rkey) => URepoApplyWritesWrites.delete(
+              data: Delete(collection: 'app.bsky.graph.follow', rkey: rkey),
+            ),
+          )
+          .toList();
+
+      await _bluesky.atproto.repo.applyWrites(repo: ownDid, writes: writes);
+      deletedCount += chunk.length;
+    }
+
+    return deletedCount;
+  }
+
+  FollowStatus? _classifyProfile(ProfileView profile, String did, String ownDid) {
+    if (did == ownDid) return FollowStatus.selfFollow;
+
+    final viewer = profile.viewer;
+    final isBlockedBy = viewer?.blockedBy == true;
+    final isBlocking = viewer?.blocking != null || viewer?.blockingByList != null;
+
+    if (isBlockedBy && isBlocking) return FollowStatus.mutualBlock;
+    if (isBlockedBy) return FollowStatus.blockedBy;
+    if (isBlocking) return FollowStatus.blocking;
+
+    final labels = profile.labels ?? [];
+    if (labels.any((l) => l.val == '!hide')) return FollowStatus.hidden;
+
+    return null;
+  }
+
+  FollowStatus? _classifyError(Object error) {
+    final message = error.toString();
+    final lower = message.toLowerCase();
+
+    if (message.contains('AccountTakedown') ||
+        lower.contains('suspended') ||
+        lower.contains('account has been suspended')) {
+      return FollowStatus.suspended;
+    }
+    if (message.contains('AccountDeactivated') || lower.contains('deactivated')) {
+      return FollowStatus.deactivated;
+    }
+    if (message.contains('HTTP 404') || lower.contains('not found') || lower.contains('profile not found')) {
+      return FollowStatus.deleted;
+    }
+    return null;
+  }
+
+  bool _isRetryable(Object error) {
+    final message = error.toString();
+    return message.contains('429') ||
+        message.contains('RateLimitExceeded') ||
+        message.toLowerCase().contains('network');
+  }
+
+  ProfileView? _asProfileView(dynamic profile) {
+    if (profile is ProfileView) return profile;
+    if (profile is ProfileViewDetailed) {
+      return ProfileView(
+        did: profile.did,
+        handle: profile.handle,
+        displayName: profile.displayName,
+        pronouns: profile.pronouns,
+        description: profile.description,
+        avatar: profile.avatar,
+        associated: profile.associated,
+        indexedAt: profile.indexedAt,
+        createdAt: profile.createdAt,
+        viewer: profile.viewer,
+        labels: profile.labels,
+        verification: profile.verification,
+        status: profile.status,
+        debug: profile.debug,
+      );
+    }
+    return null;
+  }
+
+  ClassifiedFollow _buildClassifiedFollow(FollowRecord record, String? handle, FollowStatus status) {
+    return ClassifiedFollow(record: record, handle: handle, status: status, statusLabel: _statusLabel(status));
+  }
+
+  String _statusLabel(FollowStatus status) {
+    switch (status) {
+      case FollowStatus.deleted:
+        return 'Deleted';
+      case FollowStatus.deactivated:
+        return 'Deactivated';
+      case FollowStatus.suspended:
+        return 'Suspended';
+      case FollowStatus.blockedBy:
+        return 'Blocked by';
+      case FollowStatus.blocking:
+        return 'Blocking';
+      case FollowStatus.mutualBlock:
+        return 'Mutual block';
+      case FollowStatus.hidden:
+        return 'Hidden';
+      case FollowStatus.selfFollow:
+        return 'Self-follow';
+    }
+  }
+}
+
+class _BatchResult {
+  const _BatchResult({required this.classified, required this.failedCount});
+
+  final List<ClassifiedFollow> classified;
+  final int failedCount;
+}
+
+class _SingleResult {
+  const _SingleResult({required this.profile, required this.status, required this.failed});
+
+  final ProfileView? profile;
+  final FollowStatus? status;
+  final bool failed;
+}

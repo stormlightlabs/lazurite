@@ -9,17 +9,17 @@ updated: 2026-04-11
 
 #### Models
 
-- [ ] `FollowStatus` enum — `deleted`, `deactivated`, `suspended`, `blockedBy`, `blocking`, `mutualBlock`, `hidden`, `selfFollow`
-- [ ] `FollowRecord` model — `uri`, `rkey`, `subjectDid`; extracted from `com.atproto.repo.listRecords` response
-- [ ] `ClassifiedFollow` model — `record` (FollowRecord), `handle`, `status` (FollowStatus), `statusLabel`, `selected` (mutable); `Equatable` for state comparison (excluding `selected`)
+- [x] `FollowStatus` enum — `deleted`, `deactivated`, `suspended`, `blockedBy`, `blocking`, `mutualBlock`, `hidden`, `selfFollow`
+- [x] `FollowRecord` model — `uri`, `rkey`, `subjectDid`; extracted from `com.atproto.repo.listRecords` response
+- [x] `ClassifiedFollow` model — `record` (FollowRecord), `handle`, `status` (FollowStatus), `statusLabel`, `selected` (mutable); `Equatable` for state comparison (excluding `selected`)
 
 #### Repository
 
-- [ ] `FollowAuditRepository` — new file `lib/features/profile/data/follow_audit_repository.dart`, depends on authenticated `Bluesky` client
-- [ ] `fetchAllFollows(String did)` — paginate `atproto.repo.listRecords(repo: did, collection: 'app.bsky.graph.follow', limit: 100)` with cursor until exhausted, return `List<FollowRecord>`
-- [ ] `classifyFollows(List<FollowRecord>, String ownDid)` — batch `actor.getProfiles` (25/batch, 2 concurrent, 500ms inter-group delay), per-DID `getProfile` fallback for missing entries, classify each by `FollowStatus`, return `(List<ClassifiedFollow> results, int failedCount)`
-- [ ] `batchUnfollow(List<ClassifiedFollow>)` — extract rkeys, build `applyWrites#delete` operations, chunk into batches of 200, execute sequentially, return count of successfully deleted records
-- [ ] Retry logic — on 429 or network error during `getProfiles`/`getProfile`, exponential backoff (1s/2s/4s), max 3 retries per batch
+- [x] `FollowAuditRepository` — new file `lib/features/profile/data/follow_audit_repository.dart`, depends on authenticated `Bluesky` client
+- [x] `fetchAllFollows(String did)` — paginate `atproto.repo.listRecords(repo: did, collection: 'app.bsky.graph.follow', limit: 100)` with cursor until exhausted, return `List<FollowRecord>`
+- [x] `classifyFollows(List<FollowRecord>, String ownDid)` — batch `actor.getProfiles` (25/batch, 2 concurrent, 500ms inter-group delay), per-DID `getProfile` fallback for missing entries, classify each by `FollowStatus`, return `(List<ClassifiedFollow> results, int failedCount)`
+- [x] `batchUnfollow(List<ClassifiedFollow>)` — extract rkeys, build `applyWrites#delete` operations, chunk into batches of 200, execute sequentially, return count of successfully deleted records
+- [x] Retry logic — on 429 or network error during `getProfiles`/`getProfile`, exponential backoff (1s/2s/4s), max 3 retries per batch
 
 #### Cubit
 
@@ -62,20 +62,20 @@ updated: 2026-04-11
 
 #### Unit Tests — Models
 
-- [ ] `FollowRecord` — construction, rkey extraction from AT URI
-- [ ] `ClassifiedFollow` — construction, statusLabel mapping for each `FollowStatus` value
-- [ ] `FollowStatus` — verify all enum values exist and labels are correct
+- [x] `FollowRecord` — construction, rkey extraction from AT URI
+- [x] `ClassifiedFollow` — construction, statusLabel mapping for each `FollowStatus` value
+- [x] `FollowStatus` — verify all enum values exist and labels are correct
 
 #### Unit Tests — Repository
 
-- [ ] `fetchAllFollows` — single page (< 100 records), multi-page pagination (cursor handling), empty follows list
-- [ ] `classifyFollows` — deleted account (getProfile returns "not found"), deactivated account, suspended account
-- [ ] `classifyFollows` — blocked-by (viewer.blockedBy), blocking (viewer.blocking), mutual block (both), hidden (!hide label), self-follow
-- [ ] `classifyFollows` — batch hydration: profiles returned in getProfiles are classified correctly, missing profiles fall through to per-DID lookup
-- [ ] `classifyFollows` — partial failure: some batches fail, returns results for successful batches + failedCount
-- [ ] `classifyFollows` — rate limit retry: mock 429 response, verify retry with backoff
-- [ ] `batchUnfollow` — single batch (< 200 records), multi-batch chunking, empty selection (no-op)
-- [ ] `batchUnfollow` — partial failure: first batch succeeds, second fails, returns partial count
+- [x] `fetchAllFollows` — single page (< 100 records), multi-page pagination (cursor handling), empty follows list
+- [x] `classifyFollows` — deleted account (getProfile returns "not found"), deactivated account, suspended account
+- [x] `classifyFollows` — blocked-by (viewer.blockedBy), blocking (viewer.blocking), mutual block (both), hidden (!hide label), self-follow
+- [x] `classifyFollows` — batch hydration: profiles returned in getProfiles are classified correctly, missing profiles fall through to per-DID lookup
+- [x] `classifyFollows` — partial failure: some batches fail, returns results for successful batches + failedCount
+- [x] `classifyFollows` — rate limit retry: mock 429 response, verify retry with backoff
+- [x] `batchUnfollow` — single batch (< 200 records), multi-batch chunking, empty selection (no-op)
+- [x] `batchUnfollow` — partial failure: first batch succeeds, second fails, returns partial count
 
 #### Unit Tests — Cubit
 
