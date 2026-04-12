@@ -23,13 +23,13 @@ updated: 2026-04-11
 
 #### Cubit
 
-- [ ] `FollowAuditState` — `status` (initial/fetching/classifying/ready/unfollowing/complete/error), `results`, `totalFollows`, `progress`, `failedProfiles`, `unfollowedCount`, `errorMessage`, `visibleStatuses`
-- [ ] `FollowAuditCubit` — depends on `FollowAuditRepository`, authenticated DID
-- [ ] `audit()` — orchestrates fetch → classify → ready, emits progress updates during each phase
-- [ ] `toggleSelection(int index)` — toggle individual record selection
-- [ ] `selectAllByStatus(FollowStatus)` / `deselectAllByStatus(FollowStatus)` — bulk select/deselect by category
-- [ ] `toggleVisibility(FollowStatus)` — show/hide category in results list
-- [ ] `confirmUnfollow()` — call `batchUnfollow` with selected records, emit unfollowing → complete, clear unfollowed records from results
+- [x] `FollowAuditState` — `status` (initial/fetching/classifying/ready/unfollowing/complete/error), `results`, `totalFollows`, `progress`, `failedProfiles`, `unfollowedCount`, `errorMessage`, `visibleStatuses`
+- [x] `FollowAuditCubit` — depends on `FollowAuditRepository`, authenticated DID
+- [x] `audit()` — orchestrates fetch → classify → ready, emits progress updates during each phase
+- [x] `toggleSelection(int index)` — toggle individual record selection
+- [x] `selectAllByStatus(FollowStatus)` / `deselectAllByStatus(FollowStatus)` — bulk select/deselect by category
+- [x] `toggleVisibility(FollowStatus)` — show/hide category in results list
+- [x] `confirmUnfollow()` — call `batchUnfollow` with selected records, emit unfollowing → complete, clear unfollowed records from results
 
 ### UI
 
@@ -79,15 +79,15 @@ updated: 2026-04-11
 
 #### Unit Tests — Cubit
 
-- [ ] `audit()` — state transitions: initial → fetching → classifying → ready
-- [ ] `audit()` — progress updates emitted during fetch and classify phases
-- [ ] `audit()` — error during fetch: initial → fetching → error
-- [ ] `audit()` — empty results: transitions to ready with empty list
-- [ ] `toggleSelection` — toggles selected flag on correct index, emits new state
-- [ ] `selectAllByStatus` / `deselectAllByStatus` — selects/deselects all records matching status
-- [ ] `toggleVisibility` — adds/removes status from visibleStatuses set
-- [ ] `confirmUnfollow` — state transitions: ready → unfollowing → complete, unfollowed records removed from results
-- [ ] `confirmUnfollow` — error during unfollow: ready → unfollowing → error with partial count
+- [x] `audit()` — state transitions: initial → fetching → classifying → ready
+- [x] `audit()` — progress updates emitted during fetch and classify phases
+- [x] `audit()` — error during fetch: initial → fetching → error
+- [x] `audit()` — empty results: transitions to ready with empty list
+- [x] `toggleSelection` — toggles selected flag on correct index, emits new state
+- [x] `selectAllByStatus` / `deselectAllByStatus` — selects/deselects all records matching status
+- [x] `toggleVisibility` — adds/removes status from visibleStatuses set
+- [x] `confirmUnfollow` — state transitions: ready → unfollowing → complete, unfollowed records removed from results
+- [x] `confirmUnfollow` — error during unfollow: ready → unfollowing → error with partial count
 
 #### Widget Tests (FollowAuditScreen)
 

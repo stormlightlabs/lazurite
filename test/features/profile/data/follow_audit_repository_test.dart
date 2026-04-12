@@ -229,17 +229,6 @@ void main() {
       expect(cf.selected, isFalse);
     });
 
-    test('selected is mutable', () {
-      final cf = ClassifiedFollow(
-        record: _followRecord('did:plc:alice'),
-        handle: null,
-        status: FollowStatus.suspended,
-        statusLabel: 'Suspended',
-      );
-      cf.selected = true;
-      expect(cf.selected, isTrue);
-    });
-
     test('Equatable excludes selected from equality', () {
       final record = _followRecord('did:plc:alice');
       final a = ClassifiedFollow(
@@ -253,8 +242,8 @@ void main() {
         handle: 'alice.bsky.social',
         status: FollowStatus.blockedBy,
         statusLabel: 'Blocked by',
+        selected: true,
       );
-      b.selected = true;
       expect(a, equals(b));
     });
 

@@ -31,13 +31,21 @@ class ClassifiedFollow extends Equatable {
   final String statusLabel;
   final bool selected;
 
+  ClassifiedFollow copyWith({bool? selected}) {
+    return ClassifiedFollow(
+      record: record,
+      handle: handle,
+      status: status,
+      statusLabel: statusLabel,
+      selected: selected ?? this.selected,
+    );
+  }
+
   @override
   List<Object?> get props => [record.uri, handle, status, statusLabel];
 
   @override
   bool get stringify => false;
-
-  set selected(bool value) => selected = value;
 }
 
 const _profileBatchSize = 25;
@@ -52,8 +60,7 @@ class FollowAuditRepository {
 
   final dynamic _bluesky;
 
-  /// Paginates all follow records for [did] and returns them as a flat list.
-  Future<List<FollowRecord>> fetchAllFollows(String did) async {
+  Future<List<FollowRecord>> fetchAllFollows(String did, {void Function(int fetched)? onProgress}) async {
     final records = <FollowRecord>[];
     String? cursor;
 
@@ -73,23 +80,20 @@ class FollowAuditRepository {
         records.add(FollowRecord(uri: uri, rkey: rkey, subjectDid: subjectDid));
       }
       cursor = response.data.cursor as String?;
+      onProgress?.call(records.length);
     } while (cursor != null);
 
     return records;
   }
 
-  /// Classifies each follow in [records] by fetching profiles in batches.
-  ///
-  /// Uses 2 concurrent batches of 25 with a 500ms delay between groups.
-  /// Falls back to per-DID lookup for missing batch entries.
-  /// Returns the classified (problematic) follows and a count of profiles
-  /// that could not be fetched at all.
   Future<({List<ClassifiedFollow> results, int failedCount})> classifyFollows(
     List<FollowRecord> records,
-    String ownDid,
-  ) async {
+    String ownDid, {
+    void Function(int classified)? onProgress,
+  }) async {
     final results = <ClassifiedFollow>[];
     var failedCount = 0;
+    var processedCount = 0;
 
     final recordByDid = <String, FollowRecord>{for (final r in records) r.subjectDid: r};
     final dids = records.map((r) => r.subjectDid).toList();
@@ -115,6 +119,9 @@ class FollowAuditRepository {
         results.addAll(br.classified);
         failedCount += br.failedCount;
       }
+
+      processedCount += groupDids.length;
+      onProgress?.call(processedCount);
     }
 
     return (results: results, failedCount: failedCount);
@@ -156,8 +163,6 @@ class FollowAuditRepository {
     return _BatchResult(classified: classified, failedCount: failedCount);
   }
 
-  /// Fetches a batch via getProfiles with retry. Returns a map of DID → ProfileView
-  /// for successfully resolved profiles. Missing DIDs will not appear in the map.
   Future<Map<String, ProfileView>> _fetchBatchWithRetry(List<String> batch) async {
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       try {
@@ -210,10 +215,6 @@ class FollowAuditRepository {
     return const _SingleResult(profile: null, status: null, failed: true);
   }
 
-  /// Batch-deletes selected follows via applyWrites in chunks of 200.
-  ///
-  /// [ownDid] is the authenticated user's DID (repo owner).
-  /// Executes batches sequentially. Returns the number of successfully deleted records.
   Future<int> batchUnfollow(List<ClassifiedFollow> selected, String ownDid) async {
     if (selected.isEmpty) return 0;
 
