@@ -59,6 +59,45 @@ import 'package:lazurite/features/settings/presentation/about_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 import 'package:lazurite/features/settings/presentation/video_upload_limits_screen.dart';
 
+ComposeRouteArgs parseComposeRouteExtra(Object? extra) {
+  if (extra is ComposeRouteArgs) {
+    return extra;
+  }
+
+  if (extra is Map) {
+    String? readString(String key) {
+      final value = extra[key];
+      return value is String ? value : null;
+    }
+
+    int? readInt(String key) {
+      final value = extra[key];
+      if (value is int) {
+        return value;
+      }
+      if (value is String) {
+        return int.tryParse(value);
+      }
+      return null;
+    }
+
+    return ComposeRouteArgs(
+      replyParentUri: readString('replyParentUri'),
+      replyParentCid: readString('replyParentCid'),
+      replyRootUri: readString('replyRootUri'),
+      replyRootCid: readString('replyRootCid'),
+      replyAuthorHandle: readString('replyAuthorHandle'),
+      quoteUri: readString('quoteUri'),
+      quoteCid: readString('quoteCid'),
+      quoteAuthorHandle: readString('quoteAuthorHandle'),
+      draftId: readInt('draftId'),
+      initialText: readString('initialText'),
+    );
+  }
+
+  return const ComposeRouteArgs();
+}
+
 class AppRouter {
   AppRouter({required this.authBloc, this.navigatorObserver});
   final AuthBloc authBloc;
@@ -95,7 +134,7 @@ class AppRouter {
         path: '/compose',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final args = state.extra as ComposeRouteArgs?;
+          final args = parseComposeRouteExtra(state.extra);
           return BlocProvider(
             create: (_) => ComposeBloc(
               composeRepository: ComposeRepository(bluesky: context.read<Bluesky>()),
@@ -103,16 +142,16 @@ class AppRouter {
               accountDid: context.read<String>(),
             ),
             child: ComposeScreen(
-              replyParentUri: args?.replyParentUri,
-              replyParentCid: args?.replyParentCid,
-              replyRootUri: args?.replyRootUri,
-              replyRootCid: args?.replyRootCid,
-              replyAuthorHandle: args?.replyAuthorHandle,
-              quoteUri: args?.quoteUri,
-              quoteCid: args?.quoteCid,
-              quoteAuthorHandle: args?.quoteAuthorHandle,
-              draftId: args?.draftId,
-              initialText: args?.initialText,
+              replyParentUri: args.replyParentUri,
+              replyParentCid: args.replyParentCid,
+              replyRootUri: args.replyRootUri,
+              replyRootCid: args.replyRootCid,
+              replyAuthorHandle: args.replyAuthorHandle,
+              quoteUri: args.quoteUri,
+              quoteCid: args.quoteCid,
+              quoteAuthorHandle: args.quoteAuthorHandle,
+              draftId: args.draftId,
+              initialText: args.initialText,
             ),
           );
         },

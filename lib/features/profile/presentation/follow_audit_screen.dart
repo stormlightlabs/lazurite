@@ -13,7 +13,7 @@ class FollowAuditScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Clean Follows')),
+      appBar: AppBar(title: const Text('Audit Followers')),
       body: BlocBuilder<FollowAuditCubit, FollowAuditState>(
         builder: (context, state) {
           final visibleEntries = _visibleEntries(state);
@@ -145,7 +145,7 @@ class _HeaderCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'CLEAN FOLLOWS',
+            'AUDIT FOLLOWERS',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.1),
           ),
           const SizedBox(height: 6),

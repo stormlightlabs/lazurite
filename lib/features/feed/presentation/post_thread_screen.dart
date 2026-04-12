@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_thread_cubit.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
@@ -799,13 +800,13 @@ class _FocusedPostContent extends StatelessWidget {
 
     context.push(
       '/compose',
-      extra: {
-        'replyParentUri': post.uri.toString(),
-        'replyParentCid': post.cid,
-        'replyRootUri': root.$1,
-        'replyRootCid': root.$2,
-        'replyAuthorHandle': post.author.handle,
-      },
+      extra: ComposeRouteArgs(
+        replyParentUri: post.uri.toString(),
+        replyParentCid: post.cid,
+        replyRootUri: root.$1,
+        replyRootCid: root.$2,
+        replyAuthorHandle: post.author.handle,
+      ),
     );
   }
 
@@ -815,7 +816,7 @@ class _FocusedPostContent extends StatelessWidget {
 
     context.push(
       '/compose',
-      extra: {'quoteUri': post.uri.toString(), 'quoteCid': post.cid, 'quoteAuthorHandle': post.author.handle},
+      extra: ComposeRouteArgs(quoteUri: post.uri.toString(), quoteCid: post.cid, quoteAuthorHandle: post.author.handle),
     );
   }
 

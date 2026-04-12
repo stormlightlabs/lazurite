@@ -78,6 +78,7 @@ void main() {
   testWidgets('initial state renders Scan button', (tester) async {
     await tester.pumpWidget(_buildSubject(cubit));
 
+    expect(find.text('Audit Followers'), findsOneWidget);
     expect(find.byKey(const Key('follow_audit_scan_button')), findsOneWidget);
     expect(find.text('Scan'), findsOneWidget);
   });

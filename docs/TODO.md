@@ -6,13 +6,15 @@
 
 ## UX
 
+### Posts
+
+- Holding the quote/repost button should show the quote/repost menu (it does so on the thread
+  screen but not others)
+
 ### Composer
 
 - Odd behavior when saving drafts: can save draft via the button but hitting cancel
   prompts to save or discard.
-- Character count doesn't have "initial state" (completely full)
-- Composer is collosal -> We should show drafts on half the screen, with the option
-  to toggle it closed.
 
 ### Dev Tools
 

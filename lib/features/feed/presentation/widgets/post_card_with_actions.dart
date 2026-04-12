@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cubit.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
@@ -191,13 +192,13 @@ class _PostCardWithActionsContent extends StatelessWidget {
 
     context.push(
       '/compose',
-      extra: {
-        'replyParentUri': post.uri.toString(),
-        'replyParentCid': post.cid,
-        'replyRootUri': rootUri,
-        'replyRootCid': rootCid,
-        'replyAuthorHandle': post.author.handle,
-      },
+      extra: ComposeRouteArgs(
+        replyParentUri: post.uri.toString(),
+        replyParentCid: post.cid,
+        replyRootUri: rootUri,
+        replyRootCid: rootCid,
+        replyAuthorHandle: post.author.handle,
+      ),
     );
   }
 
