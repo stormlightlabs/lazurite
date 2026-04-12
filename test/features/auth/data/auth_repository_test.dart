@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
@@ -171,6 +173,81 @@ void main() {
 
         await authRepository.stopCallbackServerForTest();
         expect(authRepository.callbackPort, equals(0));
+      });
+    });
+
+    group('oauth browser launch mode', () {
+      test('uses in-app browser view on mobile', () {
+        expect(
+          AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.iOS),
+          equals(LaunchMode.inAppBrowserView),
+        );
+        expect(
+          AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.android),
+          equals(LaunchMode.inAppBrowserView),
+        );
+      });
+
+      test('uses external application on non-mobile native platforms', () {
+        expect(
+          AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.macOS),
+          equals(LaunchMode.externalApplication),
+        );
+        expect(
+          AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.windows),
+          equals(LaunchMode.externalApplication),
+        );
+      });
+
+      test('uses platform default mode on web', () {
+        expect(
+          AuthRepository.oauthLaunchModeForTest(isWeb: true, platform: TargetPlatform.iOS),
+          equals(LaunchMode.platformDefault),
+        );
+      });
+    });
+
+    group('oauth browser dismissal', () {
+      test('dismisses in-app browser when close is supported', () async {
+        var closeCalls = 0;
+        var supportChecks = 0;
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          launchUrlWithMode: (_, __) async => true,
+          supportsCloseForMode: (_) async {
+            supportChecks += 1;
+            return true;
+          },
+          closeInAppBrowser: () async {
+            closeCalls += 1;
+          },
+        );
+
+        await authRepository.dismissOAuthBrowserForTest(LaunchMode.inAppBrowserView);
+
+        expect(supportChecks, equals(1));
+        expect(closeCalls, equals(1));
+      });
+
+      test('does not attempt close for non in-app browser launch modes', () async {
+        var closeCalls = 0;
+        var supportChecks = 0;
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          launchUrlWithMode: (_, __) async => true,
+          supportsCloseForMode: (_) async {
+            supportChecks += 1;
+            return true;
+          },
+          closeInAppBrowser: () async {
+            closeCalls += 1;
+          },
+        );
+
+        await authRepository.dismissOAuthBrowserForTest(LaunchMode.externalApplication);
+
+        expect(supportChecks, equals(0));
+        expect(closeCalls, equals(0));
       });
     });
   });

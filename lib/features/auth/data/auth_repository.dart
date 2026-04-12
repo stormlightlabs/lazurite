@@ -15,8 +15,20 @@ import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+typedef _LaunchUrlWithMode = Future<bool> Function(Uri url, LaunchMode mode);
+typedef _CloseInAppBrowser = Future<void> Function();
+typedef _SupportsCloseForMode = Future<bool> Function(LaunchMode mode);
+
 class AuthRepository {
-  AuthRepository({required AppDatabase database}) : _database = database;
+  AuthRepository({
+    required AppDatabase database,
+    _LaunchUrlWithMode launchUrlWithMode = _defaultLaunchUrlWithMode,
+    _CloseInAppBrowser closeInAppBrowser = closeInAppWebView,
+    _SupportsCloseForMode supportsCloseForMode = supportsCloseForLaunchMode,
+  }) : _database = database,
+       _launchUrlWithMode = launchUrlWithMode,
+       _closeInAppBrowser = closeInAppBrowser,
+       _supportsCloseForMode = supportsCloseForMode;
 
   static const String kClientId = 'https://lazurite.stormlightlabs.org/client-metadata.json';
   static const String _oauthService = 'bsky.social';
@@ -24,6 +36,9 @@ class AuthRepository {
   static final Uri _appReopenUri = Uri.parse('lazurite://auth-complete');
 
   final AppDatabase _database;
+  final _LaunchUrlWithMode _launchUrlWithMode;
+  final _CloseInAppBrowser _closeInAppBrowser;
+  final _SupportsCloseForMode _supportsCloseForMode;
 
   HttpServer? _callbackServer;
   StreamSubscription<HttpRequest>? _callbackSubscription;
@@ -33,6 +48,7 @@ class AuthRepository {
   OAuthContext? _pendingOAuthContext;
   String? _pendingHandle;
   String? _pendingService;
+  LaunchMode? _oauthLaunchMode;
 
   Future<AuthTokens?> getStoredSession() async {
     final account = await _database.getActiveAccount();
@@ -140,6 +156,8 @@ class AuthRepository {
       await _stopCallbackServer();
       _resetPendingOAuthState();
       throw Exception('Failed to login with OAuth: $error');
+    } finally {
+      await _dismissOAuthBrowserIfNeeded();
     }
   }
 
@@ -511,11 +529,62 @@ class AuthRepository {
     return null;
   }
 
+  static Future<bool> _defaultLaunchUrlWithMode(Uri url, LaunchMode mode) {
+    return launchUrl(url, mode: mode);
+  }
+
   Future<void> _launchUrl(Uri url) async {
-    log.d('AuthRepository: Launching external URL ${_sanitizeUriForLog(url)}');
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+    final launchMode = _oauthLaunchModeForPlatform(isWeb: kIsWeb, platform: defaultTargetPlatform);
+    log.d('AuthRepository: Launching OAuth URL ${_sanitizeUriForLog(url)} with mode $launchMode');
+
+    if (!await _launchUrlWithMode(url, launchMode)) {
       throw Exception('Could not launch $url');
     }
+
+    _oauthLaunchMode = launchMode;
+  }
+
+  Future<void> _dismissOAuthBrowserIfNeeded() async {
+    final launchMode = _oauthLaunchMode;
+    _oauthLaunchMode = null;
+
+    if (launchMode == null || launchMode != LaunchMode.inAppBrowserView) {
+      return;
+    }
+
+    try {
+      final supportsClose = await _supportsCloseForMode(launchMode);
+      if (!supportsClose) {
+        return;
+      }
+
+      await _closeInAppBrowser();
+      log.d('AuthRepository: Dismissed OAuth in-app browser');
+    } catch (error, stackTrace) {
+      log.w('AuthRepository: Failed to dismiss OAuth in-app browser', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  @visibleForTesting
+  static LaunchMode oauthLaunchModeForTest({required bool isWeb, required TargetPlatform platform}) {
+    return _oauthLaunchModeForPlatform(isWeb: isWeb, platform: platform);
+  }
+
+  static LaunchMode _oauthLaunchModeForPlatform({required bool isWeb, required TargetPlatform platform}) {
+    if (isWeb) {
+      return LaunchMode.platformDefault;
+    }
+
+    return switch (platform) {
+      TargetPlatform.android || TargetPlatform.iOS => LaunchMode.inAppBrowserView,
+      _ => LaunchMode.externalApplication,
+    };
+  }
+
+  @visibleForTesting
+  Future<void> dismissOAuthBrowserForTest(LaunchMode mode) async {
+    _oauthLaunchMode = mode;
+    await _dismissOAuthBrowserIfNeeded();
   }
 
   bool _isSupportedLoopbackRedirect(Uri redirectUri) {
@@ -551,6 +620,7 @@ class AuthRepository {
     _pendingOAuthContext = null;
     _pendingHandle = null;
     _pendingService = null;
+    _oauthLaunchMode = null;
   }
 
   @visibleForTesting
