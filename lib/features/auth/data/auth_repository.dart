@@ -18,6 +18,12 @@ import 'package:url_launcher/url_launcher.dart';
 typedef LaunchUrlWithMode = Future<bool> Function(Uri url, LaunchMode mode);
 typedef CloseInAppBrowser = Future<void> Function();
 typedef SupportsCloseForMode = Future<bool> Function(LaunchMode mode);
+typedef OAuthRefreshSession =
+    Future<OAuthSession> Function({
+      required OAuthClientMetadata metadata,
+      required String service,
+      required OAuthSession session,
+    });
 
 class AuthRepository {
   AuthRepository({
@@ -25,10 +31,14 @@ class AuthRepository {
     LaunchUrlWithMode launchUrlWithMode = _defaultLaunchUrlWithMode,
     CloseInAppBrowser closeInAppBrowser = closeInAppWebView,
     SupportsCloseForMode supportsCloseForMode = supportsCloseForLaunchMode,
+    OAuthRefreshSession oauthRefreshSession = _defaultOAuthRefreshSession,
+    Future<OAuthClientMetadata> Function(String clientId) loadClientMetadata = getClientMetadata,
   }) : _database = database,
        _launchUrlWithMode = launchUrlWithMode,
        _closeInAppBrowser = closeInAppBrowser,
-       _supportsCloseForMode = supportsCloseForMode;
+       _supportsCloseForMode = supportsCloseForMode,
+       _oauthRefreshSession = oauthRefreshSession,
+       _loadClientMetadata = loadClientMetadata;
 
   static const String kClientId = 'https://lazurite.stormlightlabs.org/client-metadata.json';
   static const String _oauthService = 'bsky.social';
@@ -39,6 +49,8 @@ class AuthRepository {
   final LaunchUrlWithMode _launchUrlWithMode;
   final CloseInAppBrowser _closeInAppBrowser;
   final SupportsCloseForMode _supportsCloseForMode;
+  final OAuthRefreshSession _oauthRefreshSession;
+  final Future<OAuthClientMetadata> Function(String clientId) _loadClientMetadata;
 
   HttpServer? _callbackServer;
   StreamSubscription<HttpRequest>? _callbackSubscription;
@@ -135,7 +147,7 @@ class AuthRepository {
       _pendingService = _oauthService;
       log.i('AuthRepository: Starting OAuth login for ${_pendingHandle!}');
 
-      final metadata = await getClientMetadata(kClientId);
+      final metadata = await _loadClientMetadata(kClientId);
       log.d('AuthRepository: Loaded client metadata with redirect URIs: ${metadata.redirectUris.join(', ')}');
       final redirectUriTemplate = Uri.parse(metadata.redirectUris.first);
       final redirectUri = await _startCallbackServer(redirectUriTemplate);
@@ -202,21 +214,59 @@ class AuthRepository {
       }
 
       try {
-        final metadata = await getClientMetadata(kClientId);
-        final oauthClient = OAuthClient(metadata, service: currentSession.service ?? _fallbackService);
-        final restoredSession = atcore.restoreOAuthSession(
-          accessToken: currentSession.accessToken,
-          refreshToken: currentSession.refreshToken!,
-          dPoPNonce: currentSession.dpopNonce,
+        final metadata = await _loadClientMetadata(kClientId);
+        final restoredSession = _restoreOAuthSession(
+          currentSession: currentSession,
           publicKey: publicKey,
           privateKey: privateKey,
         );
+        final oauthServices = _oauthRefreshServiceCandidates(
+          storedService: currentSession.service,
+          issuer: restoredSession.accessTokenJwt.iss,
+        );
 
-        final refreshedSession = await oauthClient.refresh(restoredSession);
+        Object? lastAttemptError;
+        StackTrace? lastAttemptStackTrace;
+        OAuthSession? refreshedSession;
+        for (final oauthService in oauthServices) {
+          try {
+            log.d('AuthRepository: Attempting OAuth refresh using auth service $oauthService');
+            refreshedSession = await _oauthRefreshSession(
+              metadata: metadata,
+              service: oauthService,
+              session: _restoreOAuthSession(
+                currentSession: currentSession,
+                publicKey: publicKey,
+                privateKey: privateKey,
+              ),
+            );
+            break;
+          } catch (error, stackTrace) {
+            lastAttemptError = error;
+            lastAttemptStackTrace = stackTrace;
+            log.w(
+              'AuthRepository: OAuth refresh attempt failed using auth service $oauthService',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }
+        }
+
+        if (refreshedSession == null) {
+          Error.throwWithStackTrace(
+            Exception(
+              'OAuth refresh failed across ${oauthServices.length} auth service candidate(s). '
+              'Last error: $lastAttemptError',
+            ),
+            lastAttemptStackTrace ?? StackTrace.current,
+          );
+        }
+
+        final fallbackPdsHost = normalizeAtprotoServiceHost(currentSession.service) ?? _fallbackService;
         final refreshedTokens = await _buildOAuthTokens(
           refreshedSession,
           fallbackHandle: currentSession.handle,
-          oauthService: currentSession.service ?? _fallbackService,
+          oauthService: fallbackPdsHost,
         );
 
         await saveSession(
@@ -625,6 +675,51 @@ class AuthRepository {
 
   @visibleForTesting
   String buildCallbackPageHtmlForTest() => _buildCallbackPageHtml(_appReopenUri);
+
+  OAuthSession _restoreOAuthSession({
+    required AuthTokens currentSession,
+    required String publicKey,
+    required String privateKey,
+  }) {
+    return atcore.restoreOAuthSession(
+      accessToken: currentSession.accessToken,
+      refreshToken: currentSession.refreshToken!,
+      dPoPNonce: currentSession.dpopNonce,
+      publicKey: publicKey,
+      privateKey: privateKey,
+    );
+  }
+
+  static Future<OAuthSession> _defaultOAuthRefreshSession({
+    required OAuthClientMetadata metadata,
+    required String service,
+    required OAuthSession session,
+  }) {
+    final oauthClient = OAuthClient(metadata, service: service);
+    return oauthClient.refresh(session);
+  }
+
+  static List<String> _oauthRefreshServiceCandidates({required String? storedService, required String? issuer}) {
+    final candidates = <String>{};
+    final issuerHost = normalizeAtprotoServiceHost(issuer);
+    if (issuerHost != null) {
+      candidates.add(issuerHost);
+    }
+
+    final storedHost = normalizeAtprotoServiceHost(storedService);
+    if (storedHost != null) {
+      candidates.add(storedHost);
+    }
+
+    candidates.add(_oauthService);
+    candidates.add(_fallbackService);
+    return candidates.toList(growable: false);
+  }
+
+  @visibleForTesting
+  static List<String> oauthRefreshServiceCandidatesForTest({required String? storedService, required String? issuer}) {
+    return _oauthRefreshServiceCandidates(storedService: storedService, issuer: issuer);
+  }
 
   @visibleForTesting
   Future<Uri> startCallbackServerForTest(Uri redirectUriTemplate) => _startCallbackServer(redirectUriTemplate);

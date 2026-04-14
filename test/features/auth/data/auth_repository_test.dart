@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:atproto_oauth/atproto_oauth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
@@ -122,6 +125,89 @@ void main() {
 
         expect(restored, isNotNull);
         expect(restored!.handle, equals('user.bsky.social'));
+      });
+    });
+
+    group('oauth refresh', () {
+      test('orders issuer host before stored host and deduplicates candidates', () {
+        final candidates = AuthRepository.oauthRefreshServiceCandidatesForTest(
+          storedService: 'https://porcini.us-east.host.bsky.network',
+          issuer: 'https://bsky.social',
+        );
+
+        expect(candidates, equals(['bsky.social', 'porcini.us-east.host.bsky.network']));
+      });
+
+      test('retries OAuth refresh against fallback auth service hosts', () async {
+        final attemptedServices = <String>[];
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final expiredAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds - 3600,
+          iatEpochSeconds: nowEpochSeconds - 7200,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+        );
+        final refreshedAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthRefreshSession:
+              ({required OAuthClientMetadata metadata, required String service, required OAuthSession session}) async {
+                attemptedServices.add(service);
+                if (service == 'porcini.us-east.host.bsky.network') {
+                  throw const FormatException('Unexpected character (at character 1)');
+                }
+
+                expect(service, equals('bsky.social'));
+                return OAuthSession(
+                  accessToken: refreshedAccessToken,
+                  refreshToken: session.refreshToken,
+                  tokenType: 'DPoP',
+                  scope: 'atproto',
+                  expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+                  sub: session.sub,
+                  $dPoPNonce: 'new-nonce',
+                  $publicKey: session.$publicKey,
+                  $privateKey: session.$privateKey,
+                );
+              },
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'REPLACE_ME',
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          dpopNonce: 'nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+        final sessionWithJwt = currentSession.copyWith(accessToken: expiredAccessToken);
+
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);
+        when(
+          () => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, currentSession.did),
+        ).thenAnswer((_) async => 1);
+
+        final refreshed = await authRepository.refreshSession(sessionWithJwt);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.did, equals(currentSession.did));
+        expect(attemptedServices, equals(['porcini.us-east.host.bsky.network', 'bsky.social']));
+        verifyNever(() => mockDatabase.deleteAccount(any()));
+        verify(() => mockDatabase.insertAccount(any())).called(1);
       });
     });
 
@@ -251,4 +337,42 @@ void main() {
       });
     });
   });
+}
+
+OAuthClientMetadata _testClientMetadata() {
+  return const OAuthClientMetadata(
+    clientId: AuthRepository.kClientId,
+    applicationType: 'native',
+    clientName: 'Lazurite Test',
+    clientUri: 'https://lazurite.stormlightlabs.org',
+    redirectUris: ['http://127.0.0.1/callback'],
+    responseTypes: ['code'],
+    grantTypes: ['authorization_code', 'refresh_token'],
+    scope: 'atproto',
+    tokenEndpointAuthMethod: 'none',
+  );
+}
+
+String _buildJwt({
+  required String sub,
+  required int expEpochSeconds,
+  required int iatEpochSeconds,
+  String? aud,
+  String? iss,
+}) {
+  String encodePart(Map<String, Object?> value) {
+    return base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
+  }
+
+  final header = encodePart(const {'alg': 'none', 'typ': 'JWT'});
+  final payload = encodePart({
+    'sub': sub,
+    'exp': expEpochSeconds,
+    'iat': iatEpochSeconds,
+    if (aud != null) 'aud': aud,
+    if (iss != null) 'iss': iss,
+    'scope': 'atproto',
+  });
+
+  return '$header.$payload.signature';
 }
