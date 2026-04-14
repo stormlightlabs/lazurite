@@ -1,12 +1,21 @@
-# To-Do/Parking Lot
+---
+title: To-Do/Parking Lot
+updated: 2026-04-14
+---
 
 ## Tests
 
-- Integration test: save a post → verify it appears in semantic search results for a relevant query
+- Integration test: save a post → verify it appears in semantic search results for a
+  relevant query
 
 ## UI
 
 - Show feed icons in the feed management UI
+- (bug) In the side menu, navigation items scroll behind the logged in account label
+- We should create a section for "Advanced Features" in the side menu, and include a
+  link to dev tools and follow audits.
+- Constellation URL should remain configurable internally but the option to change the
+  URL should be removed from the UI.
 
 ## UX
 
