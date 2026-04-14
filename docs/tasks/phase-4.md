@@ -10,14 +10,7 @@ Completed [2026-03-19](../../CHANGELOG.md#2026-03-19)
 
 ## M14 — Account Switching
 
-- [x] `AccountSwitcherCubit` exposing account list and active DID
-- [x] Account switcher bottom sheet UI — list accounts with avatars and handles
-- [x] Store `active_account_did` in Drift `settings` table
-- [x] Drift migration: add `account_did` column to `cached_posts` if not present
-- [x] All user-scoped queries filter by active account DID
-- [x] Broadcast `AccountSwitched` event to all Blocs on switch
-- [x] "Add Account" button triggers OAuth flow, inserts new `accounts` row
-- [x] Silent token refresh on account switch; navigate to login on failure
+Completed [2026-04-12](../../CHANGELOG.md#2026-04-12)
 
 ## M15 — Offline Reading & Network Resilience
 

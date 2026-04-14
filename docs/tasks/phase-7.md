@@ -100,4 +100,3 @@ updated: 2026-04-09
 - [x] Unit tests: `SemanticIndexCubit` - backfill progress, reindex trigger
 - [x] Widget tests: search tab renders, query produces results, scope chips filter, relevance badges display, empty/no-results/unavailable states
 - [x] Widget tests: settings section renders, toggle enables/disables, progress indicator during backfill, re-index button triggers reindex
-- [ ] Integration test: save a post → verify it appears in semantic search results for a relevant query

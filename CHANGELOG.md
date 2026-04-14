@@ -43,4 +43,12 @@
 
 #### 2026-03-22
 
-- Starter packs & lists
+- Starter pack & list views
+
+#### 2026-04-11
+
+- Follow hygiene feature to identify and unfollow inactive or problematic accounts
+
+#### 2026-04-12
+
+- Multiple account support (controlled from settings and sidebar/menu)

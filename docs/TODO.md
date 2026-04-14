@@ -1,5 +1,9 @@
 # To-Do/Parking Lot
 
+## Tests
+
+- Integration test: save a post → verify it appears in semantic search results for a relevant query
+
 ## UI
 
 - Show feed icons in the feed management UI

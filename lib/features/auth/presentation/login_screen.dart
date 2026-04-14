@@ -87,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Connect with BlueSky',
+                          'Roam the ATmosphere',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       child: CircularProgressIndicator(strokeWidth: 2),
                                     )
                                   : const Icon(Icons.language),
-                              label: Text(state.isLoading ? 'Starting sign in...' : 'Continue with BlueSky OAuth'),
+                              label: Text(state.isLoading ? 'Starting sign in...' : 'Continue to BlueSky'),
                               style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 18)),
                             );
                           },
