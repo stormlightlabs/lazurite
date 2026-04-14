@@ -45,6 +45,14 @@
 
 - Starter pack & list views
 
+#### 2026-03-29
+
+- Offline/low-connectivity detection and handling with cached data display
+
+#### 2026-04-01
+
+- Profile Context (Blocking/Blocked By, Lists, etc.) section accessible from profiles
+
 #### 2026-04-11
 
 - Follow hygiene feature to identify and unfollow inactive or problematic accounts
