@@ -2,6 +2,8 @@ part of 'notification_bloc.dart';
 
 enum NotificationStatus { initial, loading, loaded, error }
 
+const _notificationStateNoValue = Object();
+
 class NotificationState extends Equatable {
   const NotificationState._({
     required this.status,
@@ -33,22 +35,20 @@ class NotificationState extends Equatable {
   NotificationState copyWith({
     NotificationStatus? status,
     List<Notification>? notifications,
-    String? cursor,
+    Object? cursor = _notificationStateNoValue,
     bool? hasMore,
     bool? isLoadingMore,
     bool? isRefreshing,
-    String? errorMessage,
-  }) {
-    return NotificationState._(
-      status: status ?? this.status,
-      notifications: notifications ?? this.notifications,
-      cursor: cursor ?? this.cursor,
-      hasMore: hasMore ?? this.hasMore,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      isRefreshing: isRefreshing ?? this.isRefreshing,
-      errorMessage: errorMessage ?? this.errorMessage,
-    );
-  }
+    Object? errorMessage = _notificationStateNoValue,
+  }) => NotificationState._(
+    status: status ?? this.status,
+    notifications: notifications ?? this.notifications,
+    cursor: identical(cursor, _notificationStateNoValue) ? this.cursor : cursor as String?,
+    hasMore: hasMore ?? this.hasMore,
+    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    isRefreshing: isRefreshing ?? this.isRefreshing,
+    errorMessage: identical(errorMessage, _notificationStateNoValue) ? this.errorMessage : errorMessage as String?,
+  );
 
   @override
   List<Object?> get props => [status, notifications, cursor, hasMore, isLoadingMore, isRefreshing, errorMessage];

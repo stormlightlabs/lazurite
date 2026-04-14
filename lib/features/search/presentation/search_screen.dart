@@ -322,13 +322,16 @@ class _SearchScreenState extends State<SearchScreen> {
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
       ),
-      child: Row(
-        children: [
-          _buildTab(context, SearchTab.posts, state),
-          _buildTab(context, SearchTab.actors, state),
-          _buildTab(context, SearchTab.feeds, state),
-          _buildTab(context, SearchTab.starterPacks, state),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildTab(context, SearchTab.posts, state),
+            _buildTab(context, SearchTab.actors, state),
+            _buildTab(context, SearchTab.feeds, state),
+            _buildTab(context, SearchTab.starterPacks, state),
+          ],
+        ),
       ),
     );
   }
@@ -340,17 +343,23 @@ class _SearchScreenState extends State<SearchScreen> {
       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       color: isSelected ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant,
     );
-    return Expanded(
-      child: InkWell(
-        onTap: () => _onTabChanged(tab),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: isSelected ? theme.colorScheme.primary : Colors.transparent, width: 2),
-            ),
+    return InkWell(
+      onTap: () => _onTabChanged(tab),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 96),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: isSelected ? theme.colorScheme.primary : Colors.transparent, width: 2),
           ),
-          child: Text(tab.label, textAlign: TextAlign.center, style: textStyle),
+        ),
+        child: Text(
+          tab.label,
+          textAlign: TextAlign.center,
+          style: textStyle,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.fade,
         ),
       ),
     );
@@ -960,8 +969,10 @@ class _FeedResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayName = _feedDisplayName(feed);
+    final avatarUrl = feed.avatar ?? feed.creator.avatar;
     final isAdded = context.select<FeedPreferencesCubit, bool>(
-      (cubit) => cubit.state.feeds.any((savedFeed) => savedFeed.value == feed.uri.toString()),
+      (cubit) => cubit.state.containsFeedValue(feed.uri.toString()),
     );
 
     return Container(
@@ -979,11 +990,11 @@ class _FeedResultTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               gradient: const LinearGradient(colors: [Color(0xFF08BDBA), Color(0xFF3DDBD9)]),
             ),
-            child: feed.avatar != null
+            child: avatarUrl != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: Image.network(
-                      feed.avatar!,
+                      avatarUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) => const Icon(Icons.rss_feed, color: Colors.white),
                     ),
@@ -996,7 +1007,7 @@ class _FeedResultTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  feed.displayName,
+                  displayName,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1030,13 +1041,21 @@ class _FeedResultTile extends StatelessWidget {
                       pinned: false,
                     );
                     if (!context.mounted) return;
-                    onAdded(feed.displayName);
+                    onAdded(displayName);
                   },
             child: Text(isAdded ? 'Added' : '+ Add'),
           ),
         ],
       ),
     );
+  }
+
+  String _feedDisplayName(GeneratorView value) {
+    final displayName = value.displayName.trim();
+    if (displayName.isNotEmpty) {
+      return displayName;
+    }
+    return value.uri.rkey;
   }
 }
 

@@ -2,6 +2,8 @@ part of 'profile_bloc.dart';
 
 enum ProfileStatus { initial, loading, loaded, error }
 
+const _profileStateNoValue = Object();
+
 class ProfileState extends Equatable {
   const ProfileState._({required this.status, this.profile, this.errorMessage, this.isRefreshing = false});
 
@@ -25,17 +27,15 @@ class ProfileState extends Equatable {
 
   ProfileState copyWith({
     ProfileStatus? status,
-    ProfileViewDetailed? profile,
-    String? errorMessage,
+    Object? profile = _profileStateNoValue,
+    Object? errorMessage = _profileStateNoValue,
     bool? isRefreshing,
-  }) {
-    return ProfileState._(
-      status: status ?? this.status,
-      profile: profile ?? this.profile,
-      errorMessage: errorMessage ?? this.errorMessage,
-      isRefreshing: isRefreshing ?? this.isRefreshing,
-    );
-  }
+  }) => ProfileState._(
+    status: status ?? this.status,
+    profile: identical(profile, _profileStateNoValue) ? this.profile : profile as ProfileViewDetailed?,
+    errorMessage: identical(errorMessage, _profileStateNoValue) ? this.errorMessage : errorMessage as String?,
+    isRefreshing: isRefreshing ?? this.isRefreshing,
+  );
 
   @override
   List<Object?> get props => [status, profile, errorMessage, isRefreshing];

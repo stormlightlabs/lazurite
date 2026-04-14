@@ -116,10 +116,13 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
       itemBuilder: (context, index) {
         final feed = pinnedFeeds[index];
         final isTimeline = state.isTimeline(feed);
+        final generator = state.generatorFor(feed);
 
         return ListTile(
           key: ValueKey(feed.id),
-          leading: isTimeline ? _buildTimelineIcon(context) : _buildFeedIcon(context, feed.value),
+          leading: isTimeline
+              ? _buildTimelineIcon(context)
+              : (generator != null ? _buildGeneratorIcon(context, generator) : _buildFeedIcon(context, feed.value)),
           title: Text(state.displayNameFor(feed)),
           subtitle: Text(state.subtitleFor(feed)),
           trailing: ReorderableDragStartListener(index: index, child: const Icon(Icons.drag_handle)),
@@ -154,9 +157,12 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
 
   Widget _buildPinnedFeedItem(BuildContext context, SavedFeed feed, FeedPreferencesState state) {
     final isTimeline = state.isTimeline(feed);
+    final generator = state.generatorFor(feed);
 
     return ListTile(
-      leading: isTimeline ? _buildTimelineIcon(context) : _buildFeedIcon(context, feed.value),
+      leading: isTimeline
+          ? _buildTimelineIcon(context)
+          : (generator != null ? _buildGeneratorIcon(context, generator) : _buildFeedIcon(context, feed.value)),
       title: Text(state.displayNameFor(feed)),
       subtitle: Text(state.subtitleFor(feed)),
       trailing: IconButton(
@@ -170,9 +176,10 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
   Widget _buildSavedFeedItem(BuildContext context, SavedFeed feed) {
     final state = context.watch<FeedPreferencesCubit>().state;
     final description = state.descriptionFor(feed);
+    final generator = state.generatorFor(feed);
 
     return ListTile(
-      leading: _buildFeedIcon(context, feed.value),
+      leading: generator != null ? _buildGeneratorIcon(context, generator) : _buildFeedIcon(context, feed.value),
       title: Text(state.displayNameFor(feed)),
       subtitle: Text(description ?? state.subtitleFor(feed)),
       trailing: Row(
@@ -216,7 +223,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
 
   Widget _buildDiscoverCard(BuildContext context, GeneratorView feed) {
     final prefsState = context.watch<FeedPreferencesCubit>().state;
-    final isAdded = prefsState.feeds.any((f) => f.value == feed.uri.toString());
+    final isAdded = prefsState.containsFeedValue(feed.uri.toString());
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -231,7 +238,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    feed.displayName,
+                    _feedDisplayName(feed),
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                   ),
                   Text(
@@ -311,6 +318,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
   }
 
   Widget _buildGeneratorIcon(BuildContext context, GeneratorView feed) {
+    final avatarUrl = feed.avatar ?? feed.creator.avatar;
     return Container(
       width: 40,
       height: 40,
@@ -318,17 +326,25 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
         gradient: const LinearGradient(colors: [Color(0xFF08BDBA), Color(0xFF3DDBD9)]),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: feed.avatar != null
+      child: avatarUrl != null
           ? ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: Image.network(
-                feed.avatar!,
+                avatarUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => const Icon(Icons.rss_feed, color: Colors.white),
               ),
             )
           : const Icon(Icons.rss_feed, color: Colors.white),
     );
+  }
+
+  String _feedDisplayName(GeneratorView feed) {
+    final displayName = feed.displayName.trim();
+    if (displayName.isNotEmpty) {
+      return displayName;
+    }
+    return feed.uri.rkey;
   }
 
   void _confirmRemoveFeed(BuildContext context, String feedId) {

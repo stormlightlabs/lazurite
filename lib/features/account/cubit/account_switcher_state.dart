@@ -2,6 +2,8 @@ part of 'account_switcher_cubit.dart';
 
 enum AccountSwitcherStatus { initial, loading, ready }
 
+const _accountSwitcherNoValue = Object();
+
 class AccountSwitcherState extends Equatable {
   const AccountSwitcherState._({required this.status, this.accounts = const [], this.activeDid});
 
@@ -18,13 +20,15 @@ class AccountSwitcherState extends Equatable {
 
   Account? get activeAccount => accounts.where((a) => a.did == activeDid).firstOrNull;
 
-  AccountSwitcherState copyWith({AccountSwitcherStatus? status, List<Account>? accounts, String? activeDid}) {
-    return AccountSwitcherState._(
-      status: status ?? this.status,
-      accounts: accounts ?? this.accounts,
-      activeDid: activeDid ?? this.activeDid,
-    );
-  }
+  AccountSwitcherState copyWith({
+    AccountSwitcherStatus? status,
+    List<Account>? accounts,
+    Object? activeDid = _accountSwitcherNoValue,
+  }) => AccountSwitcherState._(
+    status: status ?? this.status,
+    accounts: accounts ?? this.accounts,
+    activeDid: identical(activeDid, _accountSwitcherNoValue) ? this.activeDid : activeDid as String?,
+  );
 
   @override
   List<Object?> get props => [status, accounts, activeDid];

@@ -141,4 +141,24 @@ void main() {
       ],
     );
   });
+
+  group('AddToListState', () {
+    test('copyWith can clear nullable fields', () {
+      const state = AddToListState.error(message: 'boom', targetDid: 'did:plc:target');
+
+      final cleared = state.copyWith(targetDid: null, errorMessage: null);
+
+      expect(cleared.targetDid, isNull);
+      expect(cleared.errorMessage, isNull);
+    });
+
+    test('copyWith preserves nullable fields when omitted', () {
+      const state = AddToListState.error(message: 'boom', targetDid: 'did:plc:target');
+
+      final copied = state.copyWith(status: AddToListStatus.loading);
+
+      expect(copied.targetDid, 'did:plc:target');
+      expect(copied.errorMessage, 'boom');
+    });
+  });
 }

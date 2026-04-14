@@ -33,6 +33,26 @@ State copyWith({
 - `SearchState.copyWith` (cursor and nullable metadata fields)
 - `FeedState.copyWith` (cursor and error fields)
 - `PostActionState.copyWith` (`likeUri`, `repostUri`, `error`)
+- `MessageState.copyWith` (`cursor`, `convoId`, `errorMessage`)
+- `ConvoListState.copyWith` (`cursor`, `errorMessage`)
+- `NotificationState.copyWith` (`cursor`, `errorMessage`)
+- `AuthState.copyWith` (`tokens`, `errorMessage`)
+- `AccountSwitcherState.copyWith` (`activeDid`)
+- `ProfileState.copyWith` (`profile`, `errorMessage`)
+- `AddToListState.copyWith` (`targetDid`, `errorMessage`)
+
+## Already Using Sentinel Pattern
+
+- `ComposeState` / `VideoAttachment` / `MediaAttachment`
+- `ListState`
+- `ListFeedState`
+- `MyListsState`
+- `ActorStarterPacksState`
+- `StarterPackState`
+- `DevToolsState`
+- `LogViewerState`
+- `ProfileContextState`
+- `SettingsState` (for `threadAutoCollapseDepth`)
 
 ## Review Checklist
 

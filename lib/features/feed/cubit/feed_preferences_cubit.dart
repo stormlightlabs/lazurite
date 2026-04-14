@@ -128,7 +128,7 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
   }
 
   Future<void> addFeed({required SavedFeedType type, required String value, bool pinned = false}) async {
-    if (state.feeds.any((feed) => feed.value == value)) {
+    if (state.containsFeedValue(value)) {
       log.d('FeedPreferencesCubit: Ignoring duplicate feed $value for $_accountDid');
       return;
     }
@@ -195,14 +195,12 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
     await _database.replaceSavedFeeds(_accountDid, companions);
   }
 
-  SavedFeed _mapFromCached(SavedFeedEntry entry) {
-    return SavedFeed(
-      id: entry.id,
-      type: SavedFeedType.valueOf(entry.type) ?? const SavedFeedType.knownValue(data: KnownSavedFeedType.feed),
-      value: entry.value,
-      pinned: entry.pinned,
-    );
-  }
+  SavedFeed _mapFromCached(SavedFeedEntry entry) => SavedFeed(
+    id: entry.id,
+    type: SavedFeedType.valueOf(entry.type) ?? const SavedFeedType.knownValue(data: KnownSavedFeedType.feed),
+    value: entry.value,
+    pinned: entry.pinned,
+  );
 
   String _generateId() => const Uuid().v4();
 
@@ -218,10 +216,9 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
     return [_createDefaultTimelineFeed()];
   }
 
-  List<GeneratorView> _retainGeneratorViews(List<SavedFeed> feeds) {
-    final values = feeds.map((feed) => feed.value).toSet();
-    return state.generatorViews.where((view) => values.contains(view.uri.toString())).toList(growable: false);
-  }
+  List<GeneratorView> _retainGeneratorViews(List<SavedFeed> feeds) => state.generatorViews
+      .where((view) => feeds.any((feed) => _isSameFeedValue(feed.value, view.uri.toString())))
+      .toList(growable: false);
 
   Future<void> _hydrateGeneratorViews(List<SavedFeed> feeds) async {
     final feedUris = <AtUri>[];
@@ -232,12 +229,13 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
         continue;
       }
 
-      if (!seenUris.add(feed.value)) {
-        continue;
-      }
-
       try {
-        feedUris.add(AtUri.parse(feed.value));
+        final parsed = AtUri.parse(feed.value);
+        final key = '${parsed.hostname}/${parsed.collection}/${parsed.rkey}';
+        if (!seenUris.add(key)) {
+          continue;
+        }
+        feedUris.add(parsed);
       } catch (_) {
         continue;
       }
@@ -260,12 +258,44 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
         error: e,
         stackTrace: stackTrace,
       );
+
+      // Fall back to per-feed hydration so one bad feed URI does not suppress
+      // metadata (display names / avatars) for all remaining feeds.
+      final fallbackViews = <GeneratorView>[];
+      for (final feedUri in feedUris) {
+        try {
+          fallbackViews.add(await _feedRepository.getFeedGenerator(feedUri));
+        } catch (_) {
+          continue;
+        }
+      }
+
+      if (fallbackViews.isNotEmpty) {
+        log.d(
+          'FeedPreferencesCubit: Fallback hydrated ${fallbackViews.length}/${feedUris.length} generator views for $_accountDid',
+        );
+        emit(state.copyWith(generatorViews: fallbackViews, status: FeedPreferencesStatus.loaded, feeds: feeds));
+      }
     }
   }
 
   bool _isGeneratorFeed(SavedFeed feed) {
     final feedType = feed.type;
     return feedType is SavedFeedTypeKnownValue && feedType.data == KnownSavedFeedType.feed;
+  }
+
+  bool _isSameFeedValue(String lhs, String rhs) {
+    if (lhs == rhs) {
+      return true;
+    }
+
+    try {
+      final left = AtUri.parse(lhs);
+      final right = AtUri.parse(rhs);
+      return left.hostname == right.hostname && left.collection == right.collection && left.rkey == right.rkey;
+    } catch (_) {
+      return false;
+    }
   }
 
   SavedFeed _createDefaultTimelineFeed() {
@@ -325,9 +355,13 @@ class FeedPreferencesState extends Equatable {
     return feedType is SavedFeedTypeKnownValue && feedType.data == KnownSavedFeedType.timeline;
   }
 
+  bool containsFeedValue(String value) {
+    return feeds.any((feed) => _isSameFeedValue(feed.value, value));
+  }
+
   GeneratorView? generatorFor(SavedFeed feed) {
     for (final view in generatorViews) {
-      if (view.uri.toString() == feed.value) {
+      if (_isSameFeedValue(view.uri.toString(), feed.value)) {
         return view;
       }
     }
@@ -341,7 +375,7 @@ class FeedPreferencesState extends Equatable {
     }
 
     final generator = generatorFor(feed);
-    if (generator != null) {
+    if (generator != null && generator.displayName.trim().isNotEmpty) {
       return generator.displayName;
     }
 
@@ -363,6 +397,20 @@ class FeedPreferencesState extends Equatable {
   }
 
   String? descriptionFor(SavedFeed feed) => generatorFor(feed)?.description;
+
+  bool _isSameFeedValue(String lhs, String rhs) {
+    if (lhs == rhs) {
+      return true;
+    }
+
+    try {
+      final left = AtUri.parse(lhs);
+      final right = AtUri.parse(rhs);
+      return left.hostname == right.hostname && left.collection == right.collection && left.rkey == right.rkey;
+    } catch (_) {
+      return false;
+    }
+  }
 
   FeedPreferencesState copyWith({
     FeedPreferencesStatus? status,

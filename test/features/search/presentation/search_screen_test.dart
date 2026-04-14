@@ -161,6 +161,20 @@ void main() {
       expect(find.text('Latest'), findsNothing);
     });
 
+    testWidgets('tabs are horizontally scrollable and starter packs label stays single-line', (tester) async {
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate((w) => w is SingleChildScrollView && w.scrollDirection == Axis.horizontal),
+        findsOneWidget,
+      );
+
+      final starterPackLabel = tester.widget<Text>(find.text('Starter Packs'));
+      expect(starterPackLabel.maxLines, 1);
+      expect(starterPackLabel.softWrap, isFalse);
+    });
+
     testWidgets('shows empty state when no search history', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
@@ -476,6 +490,50 @@ void main() {
       await tester.tap(find.text('Manage'));
       await tester.pumpAndSettle();
       expect(find.text('feeds-page'), findsOneWidget);
+    });
+
+    testWidgets('feed result falls back to URI rkey when displayName is empty', (tester) async {
+      final sampleFeed = GeneratorView(
+        uri: AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/fallback-name'),
+        cid: 'cid-feed',
+        did: 'did:web:feed.example.com',
+        creator: ProfileView(
+          did: 'did:plc:creator',
+          handle: 'creator.bsky.social',
+          avatar: 'https://example.com/creator-avatar.jpg',
+          indexedAt: DateTime.utc(2026, 1, 1),
+        ),
+        displayName: ' ',
+        indexedAt: DateTime.utc(2026, 1, 1),
+      );
+
+      when(
+        () => mockSearchRepository.searchFeedGenerators(
+          query: any(named: 'query'),
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => SearchFeedsResult(feeds: [sampleFeed]));
+
+      when(
+        () => mockDatabase.addSearchHistoryEntry(
+          query: any(named: 'query'),
+          type: any(named: 'type'),
+          accountDid: any(named: 'accountDid'),
+        ),
+      ).thenAnswer((_) async {});
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Feeds'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'fallback');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+
+      expect(find.text('fallback-name'), findsOneWidget);
     });
 
     testWidgets('starter pack results display name and creator handle', (tester) async {

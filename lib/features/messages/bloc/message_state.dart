@@ -2,6 +2,8 @@ part of 'message_bloc.dart';
 
 enum MessageStatus { initial, loading, loaded, sending, error }
 
+const _messageStateNoValue = Object();
+
 class MessageState extends Equatable {
   const MessageState._({
     required this.status,
@@ -39,24 +41,22 @@ class MessageState extends Equatable {
   MessageState copyWith({
     MessageStatus? status,
     List<UConvoGetMessagesMessages>? messages,
-    String? cursor,
+    Object? cursor = _messageStateNoValue,
     bool? hasMore,
-    String? convoId,
+    Object? convoId = _messageStateNoValue,
     bool? isSending,
     bool? isLoadingMore,
-    String? errorMessage,
-  }) {
-    return MessageState._(
-      status: status ?? this.status,
-      messages: messages ?? this.messages,
-      cursor: cursor ?? this.cursor,
-      hasMore: hasMore ?? this.hasMore,
-      convoId: convoId ?? this.convoId,
-      isSending: isSending ?? this.isSending,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      errorMessage: errorMessage ?? this.errorMessage,
-    );
-  }
+    Object? errorMessage = _messageStateNoValue,
+  }) => MessageState._(
+    status: status ?? this.status,
+    messages: messages ?? this.messages,
+    cursor: identical(cursor, _messageStateNoValue) ? this.cursor : cursor as String?,
+    hasMore: hasMore ?? this.hasMore,
+    convoId: identical(convoId, _messageStateNoValue) ? this.convoId : convoId as String?,
+    isSending: isSending ?? this.isSending,
+    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    errorMessage: identical(errorMessage, _messageStateNoValue) ? this.errorMessage : errorMessage as String?,
+  );
 
   @override
   List<Object?> get props => [status, messages, cursor, hasMore, convoId, isSending, isLoadingMore, errorMessage];

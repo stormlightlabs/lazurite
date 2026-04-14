@@ -4,6 +4,8 @@ enum ConvoListStatus { initial, loading, loaded, error }
 
 enum ConvoTab { primary, requests }
 
+const _convoListStateNoValue = Object();
+
 class ConvoListState extends Equatable {
   const ConvoListState._({
     required this.status,
@@ -41,24 +43,22 @@ class ConvoListState extends Equatable {
   ConvoListState copyWith({
     ConvoListStatus? status,
     List<ConvoView>? convos,
-    String? cursor,
+    Object? cursor = _convoListStateNoValue,
     bool? hasMore,
     bool? isLoadingMore,
     bool? isRefreshing,
     ConvoTab? activeTab,
-    String? errorMessage,
-  }) {
-    return ConvoListState._(
-      status: status ?? this.status,
-      convos: convos ?? this.convos,
-      cursor: cursor ?? this.cursor,
-      hasMore: hasMore ?? this.hasMore,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      isRefreshing: isRefreshing ?? this.isRefreshing,
-      activeTab: activeTab ?? this.activeTab,
-      errorMessage: errorMessage ?? this.errorMessage,
-    );
-  }
+    Object? errorMessage = _convoListStateNoValue,
+  }) => ConvoListState._(
+    status: status ?? this.status,
+    convos: convos ?? this.convos,
+    cursor: identical(cursor, _convoListStateNoValue) ? this.cursor : cursor as String?,
+    hasMore: hasMore ?? this.hasMore,
+    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    isRefreshing: isRefreshing ?? this.isRefreshing,
+    activeTab: activeTab ?? this.activeTab,
+    errorMessage: identical(errorMessage, _convoListStateNoValue) ? this.errorMessage : errorMessage as String?,
+  );
 
   @override
   List<Object?> get props => [status, convos, cursor, hasMore, isLoadingMore, isRefreshing, activeTab, errorMessage];

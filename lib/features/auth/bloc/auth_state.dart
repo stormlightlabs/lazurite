@@ -2,6 +2,8 @@ part of 'auth_bloc.dart';
 
 enum AuthStatus { unauthenticated, authenticating, authenticated, authError }
 
+const _authStateNoValue = Object();
+
 class AuthState extends Equatable {
   const AuthState._({required this.status, this.tokens, this.errorMessage});
 
@@ -20,13 +22,15 @@ class AuthState extends Equatable {
   bool get isLoading => status == AuthStatus.authenticating;
   bool get hasError => status == AuthStatus.authError;
 
-  AuthState copyWith({AuthStatus? status, AuthTokens? tokens, String? errorMessage}) {
-    return AuthState._(
-      status: status ?? this.status,
-      tokens: tokens ?? this.tokens,
-      errorMessage: errorMessage ?? this.errorMessage,
-    );
-  }
+  AuthState copyWith({
+    AuthStatus? status,
+    Object? tokens = _authStateNoValue,
+    Object? errorMessage = _authStateNoValue,
+  }) => AuthState._(
+    status: status ?? this.status,
+    tokens: identical(tokens, _authStateNoValue) ? this.tokens : tokens as AuthTokens?,
+    errorMessage: identical(errorMessage, _authStateNoValue) ? this.errorMessage : errorMessage as String?,
+  );
 
   @override
   List<Object?> get props => [status, tokens, errorMessage];

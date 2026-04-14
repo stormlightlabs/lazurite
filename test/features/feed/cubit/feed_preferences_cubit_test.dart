@@ -16,6 +16,10 @@ void main() {
   late AppDatabase database;
   late MockFeedRepository mockFeedRepository;
 
+  setUpAll(() {
+    registerFallbackValue(AtUri.parse('at://did:plc:fallback/app.bsky.feed.generator/fallback'));
+  });
+
   setUp(() async {
     database = AppDatabase(executor: NativeDatabase.memory());
     mockFeedRepository = MockFeedRepository();
@@ -126,6 +130,41 @@ void main() {
         isA<FeedPreferencesState>()
             .having((s) => s.status, 'status', FeedPreferencesStatus.loaded)
             .having((s) => s.feeds.length, 'feeds.length', 1),
+      ],
+    );
+
+    blocTest<FeedPreferencesCubit, FeedPreferencesState>(
+      'loadPreferences falls back to per-feed hydration when batch getFeedGenerators fails',
+      build: () =>
+          FeedPreferencesCubit(feedRepository: mockFeedRepository, database: database, accountDid: 'did:plc:test'),
+      setUp: () {
+        final feed = createTestFeed(id: 'feed-1', pinned: true);
+        final generatorView = GeneratorView(
+          uri: AtUri.parse(feed.value),
+          cid: 'cid-1',
+          creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+          did: 'did:plc:test',
+          displayName: 'Recovered Feed',
+          indexedAt: DateTime.utc(2026, 3, 16),
+        );
+        when(() => mockFeedRepository.getPreferences()).thenAnswer(
+          (_) async => PreferencesResult(
+            preferences: [
+              UPreferences.savedFeedsPrefV2(data: SavedFeedsPrefV2(items: [feed])),
+            ],
+          ),
+        );
+        when(() => mockFeedRepository.getFeedGenerators(any())).thenThrow(Exception('batch failed'));
+        when(() => mockFeedRepository.getFeedGenerator(any())).thenAnswer((_) async => generatorView);
+      },
+      act: (cubit) => cubit.loadPreferences(),
+      expect: () => [
+        isA<FeedPreferencesState>().having((s) => s.status, 'status', FeedPreferencesStatus.loading),
+        isA<FeedPreferencesState>().having((s) => s.status, 'status', FeedPreferencesStatus.loaded),
+        isA<FeedPreferencesState>()
+            .having((s) => s.status, 'status', FeedPreferencesStatus.loaded)
+            .having((s) => s.generatorViews.length, 'generatorViews.length', 1)
+            .having((s) => s.displayNameFor(s.feeds.single), 'displayNameFor', 'Recovered Feed'),
       ],
     );
 
@@ -371,6 +410,32 @@ void main() {
       );
 
       expect(state.displayNameFor(state.feeds.single), 'What\'s Hot');
+    });
+
+    test('displayNameFor falls back to URI rkey when hydrated displayName is empty', () {
+      final feed = createTestFeed(id: '1');
+      final state = FeedPreferencesState.loaded(
+        feeds: [feed],
+        generatorViews: [
+          GeneratorView(
+            uri: AtUri.parse(feed.value),
+            cid: 'cid-1',
+            creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+            did: 'did:plc:test',
+            displayName: '   ',
+            indexedAt: DateTime.utc(2026, 3, 16),
+          ),
+        ],
+      );
+
+      expect(state.displayNameFor(feed), 'test');
+    });
+
+    test('containsFeedValue matches exact saved feed value', () {
+      final state = FeedPreferencesState.loaded(feeds: [createTestFeed(id: '1')]);
+
+      expect(state.containsFeedValue('at://did:plc:test/app.bsky.feed.generator/test'), isTrue);
+      expect(state.containsFeedValue('at://did:plc:test/app.bsky.feed.generator/other'), isFalse);
     });
   });
 }

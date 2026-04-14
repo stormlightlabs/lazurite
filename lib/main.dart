@@ -182,15 +182,10 @@ class _LazuriteAppState extends State<LazuriteApp> {
     previousRouter.dispose();
   }
 
-  Bluesky? _createBluesky(AuthState state) {
-    if (!state.isAuthenticated) return null;
-    return createBlueskyClient(state.tokens);
-  }
+  Bluesky? _createBluesky(AuthState state) => state.isAuthenticated ? createBlueskyClient(state.tokens) : null;
 
-  BlueskyChat? _createBlueskyChat(AuthState state) {
-    if (!state.isAuthenticated) return null;
-    return createBlueSkyChatClient(state.tokens);
-  }
+  BlueskyChat? _createBlueskyChat(AuthState state) =>
+      state.isAuthenticated ? createBlueSkyChatClient(state.tokens) : null;
 
   @override
   Widget build(BuildContext context) {
