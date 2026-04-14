@@ -244,6 +244,10 @@ void main() {
     expect(find.text('NOTIFICATIONS'), findsOneWidget);
     expect(find.text('MESSAGES'), findsOneWidget);
     expect(find.text('SETTINGS'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('AUDIT FOLLOWS'), 200, scrollable: find.byType(Scrollable).last);
+    expect(find.text('ADVANCED'), findsOneWidget);
+    expect(find.text('AT EXPLORER'), findsOneWidget);
+    expect(find.text('AUDIT FOLLOWS'), findsOneWidget);
   });
 
   testWidgets('drawer profile tag opens account switcher sheet', (tester) async {

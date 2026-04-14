@@ -60,3 +60,7 @@
 #### 2026-04-12
 
 - Multiple account support (controlled from settings and sidebar/menu)
+
+#### 2026-04-14
+
+- Post editing via delete-recreate

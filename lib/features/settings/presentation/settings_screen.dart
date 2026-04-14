@@ -119,8 +119,8 @@ class SettingsScreen extends StatelessWidget {
           _buildSectionHeader(context, 'About'),
           _SettingsTile(
             icon: Icons.code_outlined,
-            title: 'Dev Tools',
-            subtitle: 'PDS Explorer',
+            title: 'AT Explorer',
+            subtitle: 'View PDS Records',
             onTap: () => context.push('/settings/devtools'),
           ),
           _SettingsTile(
@@ -347,26 +347,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAdvancedSettings(BuildContext context) {
-    return BlocBuilder<SettingsCubit, SettingsState>(
-      builder: (context, state) {
-        return Container(
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: Theme.of(context).dividerColor),
-              bottom: BorderSide(color: Theme.of(context).dividerColor),
-            ),
-            color: Theme.of(context).cardColor,
-          ),
-          child: _ConstellationUrlTile(
-            currentUrl: state.constellationUrl,
-            onChanged: (url) => context.read<SettingsCubit>().setConstellationUrl(url),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildDeveloperSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
 
@@ -386,6 +366,23 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Turn off online connectivity',
             trailing: Switch.adaptive(value: state.simulateOffline, onChanged: settingsCubit.setSimulateOffline),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAdvancedSettings(BuildContext context) {
+    return BlocBuilder<SettingsCubit, SettingsState>(
+      builder: (context, state) {
+        return Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: Theme.of(context).dividerColor),
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            color: Theme.of(context).cardColor,
+          ),
+          child: _ConstellationUrlTile(currentUrl: state.constellationUrl),
         );
       },
     );
@@ -644,33 +641,9 @@ class _ConnectionDetailRow extends StatelessWidget {
 }
 
 class _ConstellationUrlTile extends StatelessWidget {
-  const _ConstellationUrlTile({required this.currentUrl, required this.onChanged});
+  const _ConstellationUrlTile({required this.currentUrl});
 
   final String currentUrl;
-  final ValueChanged<String> onChanged;
-
-  Future<void> _showEditDialog(BuildContext context) async {
-    final controller = TextEditingController(text: currentUrl);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Constellation URL'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.url,
-          autocorrect: false,
-          decoration: const InputDecoration(hintText: 'https://constellation.microcosm.blue'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(context).pop(controller.text.trim()), child: const Text('Save')),
-        ],
-      ),
-    );
-    if (result != null && result.isNotEmpty) {
-      onChanged(result);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -678,8 +651,6 @@ class _ConstellationUrlTile extends StatelessWidget {
       leading: const Icon(Icons.hub_outlined),
       title: const Text('Constellation URL'),
       subtitle: Text(currentUrl, maxLines: 1, overflow: TextOverflow.ellipsis),
-      trailing: const Icon(Icons.edit_outlined),
-      onTap: () => _showEditDialog(context),
     );
   }
 }

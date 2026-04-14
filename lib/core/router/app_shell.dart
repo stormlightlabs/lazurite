@@ -155,98 +155,127 @@ class _AppMenu extends StatelessWidget {
     return SizedBox(
       width: drawerWidth,
       child: Drawer(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-                child: Row(
-                  children: [
-                    Text('Lazurite', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                    const Spacer(),
-                    IconButton(
-                      tooltip: 'Close menu',
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close),
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                border: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant)),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                    child: Row(
+                      children: [
+                        Text('Lazurite', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                        const Spacer(),
+                        IconButton(
+                          tooltip: 'Close menu',
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                  _buildProfileTag(context, displayName, handle, initials, did),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SafeArea(
+                top: false,
+                child: ClipRect(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    children: [
+                      _MenuTile(
+                        icon: Icons.add_circle_outline,
+                        selectedIcon: Icons.add_circle,
+                        label: 'New Post',
+                        tooltip: isOffline ? offlineActionMessage('compose a post') : null,
+                        onTap: isOffline ? null : () => _pushRoute(context, '/compose'),
+                      ),
+                      const Divider(height: 24),
+                      const _MenuSectionLabel(label: 'Navigation'),
+                      _MenuTile(
+                        icon: Icons.home_outlined,
+                        selectedIcon: Icons.home,
+                        label: 'Home',
+                        isSelected: navigationShell.currentIndex == 0,
+                        onTap: () => _selectBranch(context, 0),
+                      ),
+                      _MenuTile(
+                        icon: Icons.search_outlined,
+                        selectedIcon: Icons.search,
+                        label: 'Search',
+                        isSelected: navigationShell.currentIndex == 1,
+                        onTap: () => _selectBranch(context, 1),
+                      ),
+                      _MenuTile(
+                        icon: Icons.rss_feed_outlined,
+                        selectedIcon: Icons.rss_feed,
+                        label: 'Feeds',
+                        onTap: () => _pushRoute(context, '/feeds'),
+                      ),
+                      _MenuTile(
+                        icon: Icons.notifications_outlined,
+                        selectedIcon: Icons.notifications,
+                        label: 'Notifications',
+                        isSelected: isNotificationsRoute,
+                        trailing: _notificationsBadge(),
+                        onTap: () => _goRoute(context, '/alerts'),
+                      ),
+                      _MenuTile(
+                        icon: Icons.chat_bubble_outline,
+                        selectedIcon: Icons.chat_bubble,
+                        label: 'Messages',
+                        isSelected: isMessagesRoute,
+                        onTap: () => _goRoute(context, '/alerts/messages'),
+                      ),
+                      _MenuTile(
+                        icon: Icons.person_outline,
+                        selectedIcon: Icons.person,
+                        label: 'Profile',
+                        isSelected: navigationShell.currentIndex == 3,
+                        onTap: () => _selectBranch(context, 3),
+                      ),
+                      const Divider(height: 24),
+                      const _MenuSectionLabel(label: 'Advanced'),
+                      _MenuTile(
+                        icon: Icons.code_outlined,
+                        selectedIcon: Icons.code,
+                        label: 'AT Explorer',
+                        onTap: () => _pushRoute(context, '/settings/devtools'),
+                      ),
+                      _MenuTile(
+                        icon: Icons.cleaning_services_outlined,
+                        selectedIcon: Icons.cleaning_services,
+                        label: 'Audit Follows',
+                        onTap: () => _pushRoute(context, '/settings/clean-follows'),
+                      ),
+                      const Divider(height: 24),
+                      _MenuTile(
+                        icon: Icons.settings_outlined,
+                        selectedIcon: Icons.settings,
+                        label: 'Settings',
+                        onTap: () => _pushRoute(context, '/settings'),
+                      ),
+                      _MenuTile(
+                        icon: Icons.logout,
+                        selectedIcon: Icons.logout,
+                        label: 'Log Out',
+                        isDestructive: true,
+                        onTap: () =>
+                            _runAfterClose(context, () => rootContext.read<AuthBloc>().add(const LogoutRequested())),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              _buildProfileTag(context, displayName, handle, initials, did),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  children: [
-                    _MenuTile(
-                      icon: Icons.home_outlined,
-                      selectedIcon: Icons.home,
-                      label: 'Home',
-                      isSelected: navigationShell.currentIndex == 0,
-                      onTap: () => _selectBranch(context, 0),
-                    ),
-                    _MenuTile(
-                      icon: Icons.search_outlined,
-                      selectedIcon: Icons.search,
-                      label: 'Search',
-                      isSelected: navigationShell.currentIndex == 1,
-                      onTap: () => _selectBranch(context, 1),
-                    ),
-                    _MenuTile(
-                      icon: Icons.rss_feed_outlined,
-                      selectedIcon: Icons.rss_feed,
-                      label: 'Feeds',
-                      onTap: () => _pushRoute(context, '/feeds'),
-                    ),
-                    _MenuTile(
-                      icon: Icons.notifications_outlined,
-                      selectedIcon: Icons.notifications,
-                      label: 'Notifications',
-                      isSelected: isNotificationsRoute,
-                      trailing: _notificationsBadge(),
-                      onTap: () => _goRoute(context, '/alerts'),
-                    ),
-                    _MenuTile(
-                      icon: Icons.chat_bubble_outline,
-                      selectedIcon: Icons.chat_bubble,
-                      label: 'Messages',
-                      isSelected: isMessagesRoute,
-                      onTap: () => _goRoute(context, '/alerts/messages'),
-                    ),
-                    _MenuTile(
-                      icon: Icons.person_outline,
-                      selectedIcon: Icons.person,
-                      label: 'Profile',
-                      isSelected: navigationShell.currentIndex == 3,
-                      onTap: () => _selectBranch(context, 3),
-                    ),
-                    const Divider(height: 24),
-                    _MenuTile(
-                      icon: Icons.add_circle_outline,
-                      selectedIcon: Icons.add_circle,
-                      label: 'New Post',
-                      tooltip: isOffline ? offlineActionMessage('compose a post') : null,
-                      onTap: isOffline ? null : () => _pushRoute(context, '/compose'),
-                    ),
-                    _MenuTile(
-                      icon: Icons.settings_outlined,
-                      selectedIcon: Icons.settings,
-                      label: 'Settings',
-                      onTap: () => _pushRoute(context, '/settings'),
-                    ),
-                    const Divider(height: 24),
-                    _MenuTile(
-                      icon: Icons.logout,
-                      selectedIcon: Icons.logout,
-                      label: 'Log Out',
-                      isDestructive: true,
-                      onTap: () =>
-                          _runAfterClose(context, () => rootContext.read<AuthBloc>().add(const LogoutRequested())),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -343,6 +372,28 @@ class _AppMenu extends StatelessWidget {
     }
 
     return parts.map((part) => part.characters.first.toUpperCase()).join();
+  }
+}
+
+class _MenuSectionLabel extends StatelessWidget {
+  const _MenuSectionLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: Text(
+        label.toUpperCase(),
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
   }
 }
 
