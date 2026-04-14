@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 
@@ -164,6 +165,23 @@ void main() {
         expect(retrieved!.accessToken, equals('new_token'));
         expect(retrieved.refreshToken, equals('new_refresh'));
         expect(retrieved.dpopNonce, equals('nonce-1'));
+      });
+
+      test('should persist oauth service separately from pds service', () async {
+        final account = AccountsCompanion.insert(
+          did: 'did:plc:oauth123',
+          handle: 'oauth-user.bsky.social',
+          accessToken: 'access-token',
+          service: const Value('porcini.us-east.host.bsky.network'),
+          oauthService: const Value('bsky.social'),
+        );
+
+        await database.insertAccount(account);
+        final retrieved = await database.getAccount('did:plc:oauth123');
+
+        expect(retrieved, isNotNull);
+        expect(retrieved!.service, equals('porcini.us-east.host.bsky.network'));
+        expect(retrieved.oauthService, equals('bsky.social'));
       });
     });
 

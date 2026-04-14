@@ -11,6 +11,7 @@ void main() {
         handle: 'user.bsky.social',
         displayName: 'User Name',
         service: 'bsky.social',
+        oauthService: 'bsky.social',
       );
 
       expect(tokens.accessToken, equals('access_token'));
@@ -19,6 +20,7 @@ void main() {
       expect(tokens.handle, equals('user.bsky.social'));
       expect(tokens.displayName, equals('User Name'));
       expect(tokens.service, equals('bsky.social'));
+      expect(tokens.oauthService, equals('bsky.social'));
     });
 
     test('should create AuthTokens without optional fields', () {
@@ -34,11 +36,12 @@ void main() {
     test('should copy with new values', () {
       const tokens = AuthTokens(accessToken: 'old_token', did: 'did:plc:abc123', handle: 'user.bsky.social');
 
-      final newTokens = tokens.copyWith(accessToken: 'new_token', displayName: 'New Name');
+      final newTokens = tokens.copyWith(accessToken: 'new_token', displayName: 'New Name', oauthService: 'bsky.social');
 
       expect(newTokens.accessToken, equals('new_token'));
       expect(newTokens.did, equals('did:plc:abc123'));
       expect(newTokens.displayName, equals('New Name'));
+      expect(newTokens.oauthService, equals('bsky.social'));
     });
 
     test('should identify oauth-backed sessions', () {

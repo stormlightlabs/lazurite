@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       child: CircularProgressIndicator(strokeWidth: 2),
                                     )
                                   : const Icon(Icons.language),
-                              label: Text(state.isLoading ? 'Starting sign in...' : 'Continue to BlueSky'),
+                              label: Text(state.isLoading ? 'Starting sign in...' : 'Continue'),
                               style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 18)),
                             );
                           },

@@ -26,7 +26,7 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -104,6 +104,16 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 15) {
         await migrator.createTable(likedPosts);
+      }
+      if (from < 16) {
+        await migrator.addColumn(accounts, accounts.oauthService);
+        await customStatement('''
+          UPDATE accounts
+          SET oauth_service = 'bsky.social'
+          WHERE oauth_service IS NULL
+            AND dpop_public_key IS NOT NULL
+            AND dpop_private_key IS NOT NULL
+        ''');
       }
     },
   );

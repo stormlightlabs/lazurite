@@ -345,7 +345,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Continue to BlueSky'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     router.dispose();

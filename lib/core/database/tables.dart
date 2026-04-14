@@ -6,6 +6,7 @@ class Accounts extends Table {
   TextColumn get handle => text()();
   TextColumn get displayName => text().nullable()();
   TextColumn get service => text().nullable()();
+  TextColumn get oauthService => text().nullable()();
   TextColumn get accessToken => text()();
   TextColumn get refreshToken => text().nullable()();
   TextColumn get dpopPublicKey => text().nullable()();

@@ -68,6 +68,10 @@ class AuthRepository {
       return null;
     }
 
+    final authMethod = account.dpopPrivateKey != null && account.dpopPublicKey != null
+        ? AuthMethod.oauth
+        : AuthMethod.appPassword;
+
     return AuthTokens(
       accessToken: account.accessToken,
       refreshToken: account.refreshToken,
@@ -76,12 +80,11 @@ class AuthRepository {
       handle: account.handle,
       displayName: account.displayName,
       service: account.service,
+      oauthService: authMethod == AuthMethod.oauth ? normalizeAtprotoServiceHost(account.oauthService) : null,
       dpopNonce: account.dpopNonce,
       dpopPublicKey: account.dpopPublicKey,
       dpopPrivateKey: account.dpopPrivateKey,
-      authMethod: account.dpopPrivateKey != null && account.dpopPublicKey != null
-          ? AuthMethod.oauth
-          : AuthMethod.appPassword,
+      authMethod: authMethod,
     );
   }
 
@@ -120,6 +123,7 @@ class AuthRepository {
         handle: Value(tokens.handle),
         displayName: tokens.displayName != null ? Value(tokens.displayName) : const Value.absent(),
         service: tokens.service != null ? Value(tokens.service) : const Value.absent(),
+        oauthService: tokens.oauthService != null ? Value(tokens.oauthService) : const Value.absent(),
         accessToken: Value(tokens.accessToken),
         refreshToken: tokens.refreshToken != null ? Value(tokens.refreshToken) : const Value.absent(),
         dpopPublicKey: tokens.dpopPublicKey != null ? Value(tokens.dpopPublicKey) : const Value.absent(),
@@ -221,12 +225,14 @@ class AuthRepository {
           privateKey: privateKey,
         );
         final oauthServices = _oauthRefreshServiceCandidates(
-          storedService: currentSession.service,
+          storedAuthService: currentSession.oauthService,
           issuer: restoredSession.accessTokenJwt.iss,
         );
 
         Object? lastAttemptError;
         StackTrace? lastAttemptStackTrace;
+        String? successfulOauthService;
+        final failedAttemptSummaries = <String>[];
         OAuthSession? refreshedSession;
         for (final oauthService in oauthServices) {
           try {
@@ -240,12 +246,15 @@ class AuthRepository {
                 privateKey: privateKey,
               ),
             );
+            successfulOauthService = oauthService;
             break;
           } catch (error, stackTrace) {
             lastAttemptError = error;
             lastAttemptStackTrace = stackTrace;
+            final summary = _summarizeOAuthRefreshError(error);
+            failedAttemptSummaries.add('$oauthService=$summary');
             log.w(
-              'AuthRepository: OAuth refresh attempt failed using auth service $oauthService',
+              'AuthRepository: OAuth refresh attempt failed using auth service $oauthService ($summary)',
               error: error,
               stackTrace: stackTrace,
             );
@@ -256,7 +265,7 @@ class AuthRepository {
           Error.throwWithStackTrace(
             Exception(
               'OAuth refresh failed across ${oauthServices.length} auth service candidate(s). '
-              'Last error: $lastAttemptError',
+              'Attempts: ${failedAttemptSummaries.join(' | ')}. Last error: $lastAttemptError',
             ),
             lastAttemptStackTrace ?? StackTrace.current,
           );
@@ -266,14 +275,18 @@ class AuthRepository {
         final refreshedTokens = await _buildOAuthTokens(
           refreshedSession,
           fallbackHandle: currentSession.handle,
-          oauthService: fallbackPdsHost,
+          fallbackPdsHost: fallbackPdsHost,
+          oauthService: successfulOauthService ?? currentSession.oauthService ?? _oauthService,
         );
 
         await saveSession(
           refreshedTokens,
           makeActive: await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == currentSession.did,
         );
-        log.i('AuthRepository: OAuth session refresh succeeded for ${refreshedTokens.handle}');
+        log.i(
+          'AuthRepository: OAuth session refresh succeeded for ${refreshedTokens.handle} '
+          'using auth service ${refreshedTokens.oauthService ?? successfulOauthService ?? 'unknown'}',
+        );
         return refreshedTokens;
       } catch (error, stackTrace) {
         log.e('AuthRepository: OAuth session refresh failed', error: error, stackTrace: stackTrace);
@@ -426,7 +439,12 @@ class AuthRepository {
     );
     final oauthSession = await oauthClient.callback(callbackUrl, oauthContext);
     log.i('AuthRepository: OAuth token exchange succeeded for DID ${oauthSession.sub}');
-    final tokens = await _buildOAuthTokens(oauthSession, fallbackHandle: fallbackHandle, oauthService: service);
+    final tokens = await _buildOAuthTokens(
+      oauthSession,
+      fallbackHandle: fallbackHandle,
+      fallbackPdsHost: _fallbackService,
+      oauthService: service,
+    );
     await saveSession(tokens, makeActive: true);
     log.i('AuthRepository: OAuth login completed for ${tokens.handle}');
     return tokens;
@@ -435,6 +453,7 @@ class AuthRepository {
   Future<AuthTokens> _buildOAuthTokens(
     OAuthSession session, {
     required String fallbackHandle,
+    required String fallbackPdsHost,
     required String oauthService,
   }) async {
     var resolvedHandle = fallbackHandle;
@@ -444,7 +463,11 @@ class AuthRepository {
       'AuthRepository: OAuth session will target PDS '
       '${session.atprotoPdsEndpoint ?? 'unknown'} via auth service $oauthService',
     );
-    final pdsHost = normalizeAtprotoServiceHost(session.atprotoPdsEndpoint) ?? oauthService;
+    final pdsHost = normalizeAtprotoServiceHost(session.atprotoPdsEndpoint) ?? fallbackPdsHost;
+    final normalizedOauthService =
+        normalizeAtprotoServiceHost(session.accessTokenJwt.iss) ??
+        normalizeAtprotoServiceHost(oauthService) ??
+        _oauthService;
 
     try {
       final authSession = await createAtProtoForOAuthSession(session).server.getSession();
@@ -472,6 +495,7 @@ class AuthRepository {
       handle: resolvedHandle,
       displayName: displayName,
       service: pdsHost,
+      oauthService: normalizedOauthService,
       dpopNonce: session.$dPoPNonce,
       dpopPublicKey: session.$publicKey,
       dpopPrivateKey: session.$privateKey,
@@ -699,16 +723,32 @@ class AuthRepository {
     return oauthClient.refresh(session);
   }
 
-  static List<String> _oauthRefreshServiceCandidates({required String? storedService, required String? issuer}) {
+  String _summarizeOAuthRefreshError(Object error) {
+    final message = error.toString().replaceAll('\n', ' ').trim();
+
+    if (message.contains('<!DOCTYPE html>')) {
+      return 'non_json_html_response';
+    }
+    if (error is FormatException) {
+      return 'json_parse_error';
+    }
+    if (message.isEmpty) {
+      return error.runtimeType.toString();
+    }
+
+    return message.length <= 240 ? message : '${message.substring(0, 237)}...';
+  }
+
+  static List<String> _oauthRefreshServiceCandidates({required String? storedAuthService, required String? issuer}) {
     final candidates = <String>{};
     final issuerHost = normalizeAtprotoServiceHost(issuer);
     if (issuerHost != null) {
       candidates.add(issuerHost);
     }
 
-    final storedHost = normalizeAtprotoServiceHost(storedService);
-    if (storedHost != null) {
-      candidates.add(storedHost);
+    final storedAuthHost = normalizeAtprotoServiceHost(storedAuthService);
+    if (storedAuthHost != null) {
+      candidates.add(storedAuthHost);
     }
 
     candidates.add(_oauthService);
@@ -717,8 +757,11 @@ class AuthRepository {
   }
 
   @visibleForTesting
-  static List<String> oauthRefreshServiceCandidatesForTest({required String? storedService, required String? issuer}) {
-    return _oauthRefreshServiceCandidates(storedService: storedService, issuer: issuer);
+  static List<String> oauthRefreshServiceCandidatesForTest({
+    required String? storedAuthService,
+    required String? issuer,
+  }) {
+    return _oauthRefreshServiceCandidates(storedAuthService: storedAuthService, issuer: issuer);
   }
 
   @visibleForTesting

@@ -289,6 +289,7 @@ void main() {
           accessToken: 'token',
           did: 'did:plc:newuser',
           handle: 'new.bsky.social',
+          oauthService: 'bsky.social',
           dpopPublicKey: 'public-key',
           dpopPrivateKey: 'private-key',
           authMethod: AuthMethod.oauth,
@@ -312,6 +313,7 @@ void main() {
         expect(captured, hasLength(1));
         expect(captured.single.dpopPublicKey.value, 'public-key');
         expect(captured.single.dpopPrivateKey.value, 'private-key');
+        expect(captured.single.oauthService.value, 'bsky.social');
       });
 
       blocTest<AccountSwitcherCubit, AccountSwitcherState>(

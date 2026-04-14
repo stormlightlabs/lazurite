@@ -44,6 +44,15 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _oauthServiceMeta = const VerificationMeta('oauthService');
+  @override
+  late final GeneratedColumn<String> oauthService = GeneratedColumn<String>(
+    'oauth_service',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _accessTokenMeta = const VerificationMeta('accessToken');
   @override
   late final GeneratedColumn<String> accessToken = GeneratedColumn<String>(
@@ -124,6 +133,7 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     handle,
     displayName,
     service,
+    oauthService,
     accessToken,
     refreshToken,
     dpopPublicKey,
@@ -157,6 +167,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     }
     if (data.containsKey('service')) {
       context.handle(_serviceMeta, service.isAcceptableOrUnknown(data['service']!, _serviceMeta));
+    }
+    if (data.containsKey('oauth_service')) {
+      context.handle(_oauthServiceMeta, oauthService.isAcceptableOrUnknown(data['oauth_service']!, _oauthServiceMeta));
     }
     if (data.containsKey('access_token')) {
       context.handle(_accessTokenMeta, accessToken.isAcceptableOrUnknown(data['access_token']!, _accessTokenMeta));
@@ -203,6 +216,7 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
       handle: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}handle'])!,
       displayName: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}display_name']),
       service: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}service']),
+      oauthService: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}oauth_service']),
       accessToken: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}access_token'])!,
       refreshToken: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}refresh_token']),
       dpopPublicKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}dpop_public_key']),
@@ -228,6 +242,7 @@ class Account extends DataClass implements Insertable<Account> {
   final String handle;
   final String? displayName;
   final String? service;
+  final String? oauthService;
   final String accessToken;
   final String? refreshToken;
   final String? dpopPublicKey;
@@ -241,6 +256,7 @@ class Account extends DataClass implements Insertable<Account> {
     required this.handle,
     this.displayName,
     this.service,
+    this.oauthService,
     required this.accessToken,
     this.refreshToken,
     this.dpopPublicKey,
@@ -260,6 +276,9 @@ class Account extends DataClass implements Insertable<Account> {
     }
     if (!nullToAbsent || service != null) {
       map['service'] = Variable<String>(service);
+    }
+    if (!nullToAbsent || oauthService != null) {
+      map['oauth_service'] = Variable<String>(oauthService);
     }
     map['access_token'] = Variable<String>(accessToken);
     if (!nullToAbsent || refreshToken != null) {
@@ -288,6 +307,7 @@ class Account extends DataClass implements Insertable<Account> {
       handle: Value(handle),
       displayName: displayName == null && nullToAbsent ? const Value.absent() : Value(displayName),
       service: service == null && nullToAbsent ? const Value.absent() : Value(service),
+      oauthService: oauthService == null && nullToAbsent ? const Value.absent() : Value(oauthService),
       accessToken: Value(accessToken),
       refreshToken: refreshToken == null && nullToAbsent ? const Value.absent() : Value(refreshToken),
       dpopPublicKey: dpopPublicKey == null && nullToAbsent ? const Value.absent() : Value(dpopPublicKey),
@@ -306,6 +326,7 @@ class Account extends DataClass implements Insertable<Account> {
       handle: serializer.fromJson<String>(json['handle']),
       displayName: serializer.fromJson<String?>(json['displayName']),
       service: serializer.fromJson<String?>(json['service']),
+      oauthService: serializer.fromJson<String?>(json['oauthService']),
       accessToken: serializer.fromJson<String>(json['accessToken']),
       refreshToken: serializer.fromJson<String?>(json['refreshToken']),
       dpopPublicKey: serializer.fromJson<String?>(json['dpopPublicKey']),
@@ -324,6 +345,7 @@ class Account extends DataClass implements Insertable<Account> {
       'handle': serializer.toJson<String>(handle),
       'displayName': serializer.toJson<String?>(displayName),
       'service': serializer.toJson<String?>(service),
+      'oauthService': serializer.toJson<String?>(oauthService),
       'accessToken': serializer.toJson<String>(accessToken),
       'refreshToken': serializer.toJson<String?>(refreshToken),
       'dpopPublicKey': serializer.toJson<String?>(dpopPublicKey),
@@ -340,6 +362,7 @@ class Account extends DataClass implements Insertable<Account> {
     String? handle,
     Value<String?> displayName = const Value.absent(),
     Value<String?> service = const Value.absent(),
+    Value<String?> oauthService = const Value.absent(),
     String? accessToken,
     Value<String?> refreshToken = const Value.absent(),
     Value<String?> dpopPublicKey = const Value.absent(),
@@ -353,6 +376,7 @@ class Account extends DataClass implements Insertable<Account> {
     handle: handle ?? this.handle,
     displayName: displayName.present ? displayName.value : this.displayName,
     service: service.present ? service.value : this.service,
+    oauthService: oauthService.present ? oauthService.value : this.oauthService,
     accessToken: accessToken ?? this.accessToken,
     refreshToken: refreshToken.present ? refreshToken.value : this.refreshToken,
     dpopPublicKey: dpopPublicKey.present ? dpopPublicKey.value : this.dpopPublicKey,
@@ -368,6 +392,7 @@ class Account extends DataClass implements Insertable<Account> {
       handle: data.handle.present ? data.handle.value : this.handle,
       displayName: data.displayName.present ? data.displayName.value : this.displayName,
       service: data.service.present ? data.service.value : this.service,
+      oauthService: data.oauthService.present ? data.oauthService.value : this.oauthService,
       accessToken: data.accessToken.present ? data.accessToken.value : this.accessToken,
       refreshToken: data.refreshToken.present ? data.refreshToken.value : this.refreshToken,
       dpopPublicKey: data.dpopPublicKey.present ? data.dpopPublicKey.value : this.dpopPublicKey,
@@ -386,6 +411,7 @@ class Account extends DataClass implements Insertable<Account> {
           ..write('handle: $handle, ')
           ..write('displayName: $displayName, ')
           ..write('service: $service, ')
+          ..write('oauthService: $oauthService, ')
           ..write('accessToken: $accessToken, ')
           ..write('refreshToken: $refreshToken, ')
           ..write('dpopPublicKey: $dpopPublicKey, ')
@@ -404,6 +430,7 @@ class Account extends DataClass implements Insertable<Account> {
     handle,
     displayName,
     service,
+    oauthService,
     accessToken,
     refreshToken,
     dpopPublicKey,
@@ -421,6 +448,7 @@ class Account extends DataClass implements Insertable<Account> {
           other.handle == this.handle &&
           other.displayName == this.displayName &&
           other.service == this.service &&
+          other.oauthService == this.oauthService &&
           other.accessToken == this.accessToken &&
           other.refreshToken == this.refreshToken &&
           other.dpopPublicKey == this.dpopPublicKey &&
@@ -436,6 +464,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<String> handle;
   final Value<String?> displayName;
   final Value<String?> service;
+  final Value<String?> oauthService;
   final Value<String> accessToken;
   final Value<String?> refreshToken;
   final Value<String?> dpopPublicKey;
@@ -450,6 +479,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     this.handle = const Value.absent(),
     this.displayName = const Value.absent(),
     this.service = const Value.absent(),
+    this.oauthService = const Value.absent(),
     this.accessToken = const Value.absent(),
     this.refreshToken = const Value.absent(),
     this.dpopPublicKey = const Value.absent(),
@@ -465,6 +495,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     required String handle,
     this.displayName = const Value.absent(),
     this.service = const Value.absent(),
+    this.oauthService = const Value.absent(),
     required String accessToken,
     this.refreshToken = const Value.absent(),
     this.dpopPublicKey = const Value.absent(),
@@ -482,6 +513,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Expression<String>? handle,
     Expression<String>? displayName,
     Expression<String>? service,
+    Expression<String>? oauthService,
     Expression<String>? accessToken,
     Expression<String>? refreshToken,
     Expression<String>? dpopPublicKey,
@@ -497,6 +529,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       if (handle != null) 'handle': handle,
       if (displayName != null) 'display_name': displayName,
       if (service != null) 'service': service,
+      if (oauthService != null) 'oauth_service': oauthService,
       if (accessToken != null) 'access_token': accessToken,
       if (refreshToken != null) 'refresh_token': refreshToken,
       if (dpopPublicKey != null) 'dpop_public_key': dpopPublicKey,
@@ -514,6 +547,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Value<String>? handle,
     Value<String?>? displayName,
     Value<String?>? service,
+    Value<String?>? oauthService,
     Value<String>? accessToken,
     Value<String?>? refreshToken,
     Value<String?>? dpopPublicKey,
@@ -529,6 +563,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       handle: handle ?? this.handle,
       displayName: displayName ?? this.displayName,
       service: service ?? this.service,
+      oauthService: oauthService ?? this.oauthService,
       accessToken: accessToken ?? this.accessToken,
       refreshToken: refreshToken ?? this.refreshToken,
       dpopPublicKey: dpopPublicKey ?? this.dpopPublicKey,
@@ -555,6 +590,9 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     }
     if (service.present) {
       map['service'] = Variable<String>(service.value);
+    }
+    if (oauthService.present) {
+      map['oauth_service'] = Variable<String>(oauthService.value);
     }
     if (accessToken.present) {
       map['access_token'] = Variable<String>(accessToken.value);
@@ -593,6 +631,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
           ..write('handle: $handle, ')
           ..write('displayName: $displayName, ')
           ..write('service: $service, ')
+          ..write('oauthService: $oauthService, ')
           ..write('accessToken: $accessToken, ')
           ..write('refreshToken: $refreshToken, ')
           ..write('dpopPublicKey: $dpopPublicKey, ')
@@ -3870,6 +3909,7 @@ typedef $$AccountsTableCreateCompanionBuilder =
       required String handle,
       Value<String?> displayName,
       Value<String?> service,
+      Value<String?> oauthService,
       required String accessToken,
       Value<String?> refreshToken,
       Value<String?> dpopPublicKey,
@@ -3886,6 +3926,7 @@ typedef $$AccountsTableUpdateCompanionBuilder =
       Value<String> handle,
       Value<String?> displayName,
       Value<String?> service,
+      Value<String?> oauthService,
       Value<String> accessToken,
       Value<String?> refreshToken,
       Value<String?> dpopPublicKey,
@@ -3915,6 +3956,9 @@ class $$AccountsTableFilterComposer extends Composer<_$AppDatabase, $AccountsTab
 
   ColumnFilters<String> get service =>
       $composableBuilder(column: $table.service, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get oauthService =>
+      $composableBuilder(column: $table.oauthService, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get accessToken =>
       $composableBuilder(column: $table.accessToken, builder: (column) => ColumnFilters(column));
@@ -3961,6 +4005,9 @@ class $$AccountsTableOrderingComposer extends Composer<_$AppDatabase, $AccountsT
   ColumnOrderings<String> get service =>
       $composableBuilder(column: $table.service, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get oauthService =>
+      $composableBuilder(column: $table.oauthService, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get accessToken =>
       $composableBuilder(column: $table.accessToken, builder: (column) => ColumnOrderings(column));
 
@@ -4002,6 +4049,9 @@ class $$AccountsTableAnnotationComposer extends Composer<_$AppDatabase, $Account
       $composableBuilder(column: $table.displayName, builder: (column) => column);
 
   GeneratedColumn<String> get service => $composableBuilder(column: $table.service, builder: (column) => column);
+
+  GeneratedColumn<String> get oauthService =>
+      $composableBuilder(column: $table.oauthService, builder: (column) => column);
 
   GeneratedColumn<String> get accessToken =>
       $composableBuilder(column: $table.accessToken, builder: (column) => column);
@@ -4053,6 +4103,7 @@ class $$AccountsTableTableManager
                 Value<String> handle = const Value.absent(),
                 Value<String?> displayName = const Value.absent(),
                 Value<String?> service = const Value.absent(),
+                Value<String?> oauthService = const Value.absent(),
                 Value<String> accessToken = const Value.absent(),
                 Value<String?> refreshToken = const Value.absent(),
                 Value<String?> dpopPublicKey = const Value.absent(),
@@ -4067,6 +4118,7 @@ class $$AccountsTableTableManager
                 handle: handle,
                 displayName: displayName,
                 service: service,
+                oauthService: oauthService,
                 accessToken: accessToken,
                 refreshToken: refreshToken,
                 dpopPublicKey: dpopPublicKey,
@@ -4083,6 +4135,7 @@ class $$AccountsTableTableManager
                 required String handle,
                 Value<String?> displayName = const Value.absent(),
                 Value<String?> service = const Value.absent(),
+                Value<String?> oauthService = const Value.absent(),
                 required String accessToken,
                 Value<String?> refreshToken = const Value.absent(),
                 Value<String?> dpopPublicKey = const Value.absent(),
@@ -4097,6 +4150,7 @@ class $$AccountsTableTableManager
                 handle: handle,
                 displayName: displayName,
                 service: service,
+                oauthService: oauthService,
                 accessToken: accessToken,
                 refreshToken: refreshToken,
                 dpopPublicKey: dpopPublicKey,

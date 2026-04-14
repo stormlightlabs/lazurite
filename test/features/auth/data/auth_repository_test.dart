@@ -42,6 +42,7 @@ void main() {
           did: 'did:plc:abc123',
           handle: 'user.bsky.social',
           service: 'bsky.social',
+          oauthService: null,
           accessToken: 'access_token',
           refreshToken: 'refresh_token',
           dpopPublicKey: null,
@@ -65,6 +66,32 @@ void main() {
         expect(result.displayName, equals('User Name'));
         expect(result.service, equals('bsky.social'));
         expect(result.authMethod, AuthMethod.appPassword);
+      });
+
+      test('should read oauthService for oauth-backed account', () async {
+        final account = Account(
+          did: 'did:plc:oauth123',
+          handle: 'oauth-user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'bsky.social',
+          accessToken: 'access_token',
+          refreshToken: 'refresh_token',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          dpopNonce: 'nonce',
+          displayName: 'OAuth User',
+          expiresAt: null,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        when(() => mockDatabase.getActiveAccount()).thenAnswer((_) async => account);
+
+        final result = await authRepository.getStoredSession();
+
+        expect(result, isNotNull);
+        expect(result!.usesOAuth, isTrue);
+        expect(result.oauthService, equals('bsky.social'));
       });
     });
 
@@ -129,13 +156,22 @@ void main() {
     });
 
     group('oauth refresh', () {
-      test('orders issuer host before stored host and deduplicates candidates', () {
+      test('orders issuer host before stored auth host and deduplicates candidates', () {
         final candidates = AuthRepository.oauthRefreshServiceCandidatesForTest(
-          storedService: 'https://porcini.us-east.host.bsky.network',
+          storedAuthService: 'https://bsky.social',
           issuer: 'https://bsky.social',
         );
 
-        expect(candidates, equals(['bsky.social', 'porcini.us-east.host.bsky.network']));
+        expect(candidates, equals(['bsky.social']));
+      });
+
+      test('uses stored oauth auth host when issuer is unavailable', () {
+        final candidates = AuthRepository.oauthRefreshServiceCandidatesForTest(
+          storedAuthService: 'https://oauth.custom.example',
+          issuer: null,
+        );
+
+        expect(candidates, equals(['oauth.custom.example', 'bsky.social']));
       });
 
       test('retries OAuth refresh against fallback auth service hosts', () async {
@@ -186,6 +222,7 @@ void main() {
           did: 'did:plc:abc123',
           handle: 'user.bsky.social',
           service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'porcini.us-east.host.bsky.network',
           dpopNonce: 'nonce',
           dpopPublicKey: 'public-key',
           dpopPrivateKey: 'private-key',
@@ -206,6 +243,7 @@ void main() {
         expect(refreshed, isNotNull);
         expect(refreshed!.did, equals(currentSession.did));
         expect(attemptedServices, equals(['porcini.us-east.host.bsky.network', 'bsky.social']));
+        expect(refreshed.oauthService, equals('bsky.social'));
         verifyNever(() => mockDatabase.deleteAccount(any()));
         verify(() => mockDatabase.insertAccount(any())).called(1);
       });
@@ -369,8 +407,8 @@ String _buildJwt({
     'sub': sub,
     'exp': expEpochSeconds,
     'iat': iatEpochSeconds,
-    if (aud != null) 'aud': aud,
-    if (iss != null) 'iss': iss,
+    'aud': ?aud,
+    'iss': ?iss,
     'scope': 'atproto',
   });
 
