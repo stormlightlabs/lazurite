@@ -145,3 +145,15 @@ class QuoteContextSet extends ComposeEvent {
 class QuoteContextCleared extends ComposeEvent {
   const QuoteContextCleared();
 }
+
+class EditContextSet extends ComposeEvent {
+  const EditContextSet({required this.postUri, required this.postCid, required this.record, this.initialText});
+
+  final String postUri;
+  final String postCid;
+  final Map<String, dynamic> record;
+  final String? initialText;
+
+  @override
+  List<Object?> get props => [postUri, postCid, record, initialText];
+}

@@ -36,6 +36,13 @@ void main() {
   setUp(() {
     registerFallbackValue(FakeDraftsCompanion());
     registerFallbackValue(const TextChanged(''));
+    registerFallbackValue(
+      const EditContextSet(
+        postUri: 'at://did:plc:test/app.bsky.feed.post/fallback',
+        postCid: 'cid-fallback',
+        record: {r'$type': 'app.bsky.feed.post', 'text': 'fallback', 'createdAt': '2026-04-14T10:00:00.000Z'},
+      ),
+    );
     mockBloc = MockComposeBloc();
     connectivityCubit = MockConnectivityCubit();
     when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
@@ -50,13 +57,13 @@ void main() {
     mockBloc.close();
   });
 
-  Widget buildSubject() => MaterialApp(
+  Widget buildSubject({ComposeScreen screen = const ComposeScreen()}) => MaterialApp(
     home: MultiBlocProvider(
       providers: [
         BlocProvider<ComposeBloc>.value(value: mockBloc),
         BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
       ],
-      child: const ComposeScreen(),
+      child: screen,
     ),
   );
 
@@ -96,21 +103,117 @@ void main() {
       testWidgets('prefills initial text and dispatches TextChanged when provided', (tester) async {
         seedState(const ComposeState.ready(text: '@river.bsky.social ', graphemeCount: 19, isEmpty: false));
 
+        await tester.pumpWidget(buildSubject(screen: const ComposeScreen(initialText: '@river.bsky.social ')));
+        await tester.pump();
+
+        expect(find.text('@river.bsky.social '), findsOneWidget);
+        verify(() => mockBloc.add(const TextChanged('@river.bsky.social '))).called(1);
+      });
+    });
+
+    group('edit mode', () {
+      testWidgets('shows edit title, save action, and algorithm notice banner', (tester) async {
+        seedState(
+          const ComposeState.ready(
+            text: 'Updated text',
+            graphemeCount: 12,
+            isEmpty: false,
+            editPostUri: 'at://did:plc:test/app.bsky.feed.post/abc123',
+            editPostCid: 'cid-current',
+            editRecord: {
+              r'$type': 'app.bsky.feed.post',
+              'text': 'Original text',
+              'createdAt': '2026-04-14T10:00:00.000Z',
+            },
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        expect(find.text('Edit Post'), findsOneWidget);
+        expect(find.text('Save Changes'), findsOneWidget);
+        expect(
+          find.text(
+            'Edits are saved by replacing the record while keeping this post URI. Ranking, counts, and visibility may '
+            'shift while networks re-index.',
+          ),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('hides unsupported controls while editing', (tester) async {
+        seedState(
+          const ComposeState.ready(
+            text: 'Updated text',
+            graphemeCount: 12,
+            isEmpty: false,
+            editPostUri: 'at://did:plc:test/app.bsky.feed.post/abc123',
+            editPostCid: 'cid-current',
+            editRecord: {
+              r'$type': 'app.bsky.feed.post',
+              'text': 'Original text',
+              'createdAt': '2026-04-14T10:00:00.000Z',
+            },
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        expect(find.text('Save Draft'), findsNothing);
+        expect(find.byIcon(Icons.image_outlined), findsNothing);
+        expect(find.byIcon(Icons.videocam_outlined), findsNothing);
+        expect(find.byIcon(Icons.drive_file_rename_outline), findsNothing);
+        expect(find.byIcon(Icons.schedule), findsNothing);
+      });
+
+      testWidgets('dispatches EditContextSet on init when edit args are provided', (tester) async {
+        seedState(
+          const ComposeState.ready(
+            text: 'Original text',
+            graphemeCount: 13,
+            isEmpty: false,
+            editPostUri: 'at://did:plc:test/app.bsky.feed.post/abc123',
+            editPostCid: 'cid-current',
+            editRecord: {
+              r'$type': 'app.bsky.feed.post',
+              'text': 'Original text',
+              'createdAt': '2026-04-14T10:00:00.000Z',
+            },
+          ),
+        );
+
         await tester.pumpWidget(
-          MaterialApp(
-            home: MultiBlocProvider(
-              providers: [
-                BlocProvider<ComposeBloc>.value(value: mockBloc),
-                BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
-              ],
-              child: const ComposeScreen(initialText: '@river.bsky.social '),
+          buildSubject(
+            screen: const ComposeScreen(
+              initialText: 'Original text',
+              editPostUri: 'at://did:plc:test/app.bsky.feed.post/abc123',
+              editPostCid: 'cid-current',
+              editRecord: {
+                r'$type': 'app.bsky.feed.post',
+                'text': 'Original text',
+                'createdAt': '2026-04-14T10:00:00.000Z',
+              },
             ),
           ),
         );
         await tester.pump();
 
-        expect(find.text('@river.bsky.social '), findsOneWidget);
-        verify(() => mockBloc.add(const TextChanged('@river.bsky.social '))).called(1);
+        verify(
+          () => mockBloc.add(
+            const EditContextSet(
+              postUri: 'at://did:plc:test/app.bsky.feed.post/abc123',
+              postCid: 'cid-current',
+              record: {
+                r'$type': 'app.bsky.feed.post',
+                'text': 'Original text',
+                'createdAt': '2026-04-14T10:00:00.000Z',
+              },
+              initialText: 'Original text',
+            ),
+          ),
+        ).called(1);
       });
     });
 

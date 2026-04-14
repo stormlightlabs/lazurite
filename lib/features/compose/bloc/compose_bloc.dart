@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:atproto_core/atproto_core.dart' show Blob, BlobRef;
+import 'package:atproto_core/atproto_core.dart' show AtUri, Blob, BlobRef, XRPCException;
 import 'package:bluesky/bluesky.dart';
 import 'package:bluesky/app_bsky_video_defs.dart' show KnownJobStatusState;
 import 'package:bluesky_text/bluesky_text.dart';
@@ -53,6 +53,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     on<ReplyContextCleared>(_onReplyContextCleared);
     on<QuoteContextSet>(_onQuoteContextSet);
     on<QuoteContextCleared>(_onQuoteContextCleared);
+    on<EditContextSet>(_onEditContextSet);
   }
 
   final ComposeRepository _composeRepository;
@@ -342,10 +343,12 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
   }
 
   Future<void> _onPostScheduled(PostScheduled event, Emitter<ComposeState> emit) async {
+    if (state.isEditing) return;
     emit(state.copyWith(scheduledAt: event.scheduledAt));
   }
 
   Future<void> _onScheduleCleared(ScheduleCleared event, Emitter<ComposeState> emit) async {
+    if (state.isEditing) return;
     emit(state.copyWith(scheduledAt: null));
   }
 
@@ -372,12 +375,63 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     emit(state.copyWith(quoteUri: null, quoteCid: null));
   }
 
+  Future<void> _onEditContextSet(EditContextSet event, Emitter<ComposeState> emit) async {
+    final text = event.initialText ?? state.text;
+    final graphemeCount = text.characters.length;
+    final isOverLimit = graphemeCount > kMaxGraphemes;
+    final isEmpty = text.trim().isEmpty;
+
+    emit(
+      state.copyWith(
+        text: text,
+        graphemeCount: graphemeCount,
+        isOverLimit: isOverLimit,
+        isEmpty: isEmpty,
+        canSubmit: !isOverLimit && !isEmpty,
+        editPostUri: event.postUri,
+        editPostCid: event.postCid,
+        editRecord: Map<String, dynamic>.from(event.record),
+        scheduledAt: null,
+        isDraftDirty: false,
+      ),
+    );
+  }
+
   Future<void> _onPostSubmitted(PostSubmitted event, Emitter<ComposeState> emit) async {
     if (!state.canSubmit || state.isOverLimit) return;
 
     emit(state.copyWith(status: ComposeStatus.submitting, canSubmit: false));
 
     try {
+      final facets = await _collectFacets();
+
+      if (state.isEditing) {
+        final editPostUri = state.editPostUri;
+        final editPostCid = state.editPostCid;
+        final editRecord = state.editRecord;
+
+        if (editPostUri == null || editPostCid == null || editRecord == null) {
+          _emitError(emit, 'Edit context is missing. Please reopen the editor and try again.');
+          return;
+        }
+
+        final result = await _composeRepository.editPost(
+          postUri: editPostUri,
+          currentCid: editPostCid,
+          originalRecord: editRecord,
+          text: state.text,
+          facets: facets,
+          repo: _accountDid,
+        );
+
+        if (result.isSuccess) {
+          emit(state.copyWith(status: ComposeStatus.success, canSubmit: false, isDraftDirty: false));
+        } else {
+          _emitError(emit, result.errorMessage ?? 'Failed to save changes. Please try again.');
+        }
+        return;
+      }
+
       if (state.scheduledAt != null && state.scheduledAt!.isAfter(DateTime.now())) {
         final embedJson = _buildEmbedJson();
         final draft = DraftsCompanion(
@@ -398,23 +452,6 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         await PostScheduler.schedulePost(draftId: draftId, scheduledAt: state.scheduledAt!);
         emit(state.copyWith(status: ComposeStatus.success, canSubmit: false));
         return;
-      }
-
-      final blueskyText = BlueskyText(state.text);
-      final facets = <Map<String, dynamic>>[];
-      for (final entity in blueskyText.entities) {
-        try {
-          final facet = await entity.toFacet().timeout(
-            const Duration(seconds: 5),
-            onTimeout: () {
-              log.w('Timeout resolving @${entity.value}; facet dropped.');
-              return {};
-            },
-          );
-          if (facet.isNotEmpty) facets.add(facet);
-        } catch (e) {
-          log.w('Could not resolve facet for "${entity.value}": $e');
-        }
       }
 
       Map<String, dynamic>? embed;
@@ -504,27 +541,58 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     } catch (e, stackTrace) {
       log.e('Failed to submit post', error: e, stackTrace: stackTrace);
 
-      try {
-        final embedJson = _buildEmbedJson();
-        final draft = DraftsCompanion(
-          accountDid: Value(_accountDid),
-          content: Value(state.text),
-          replyUri: state.replyParentUri != null ? Value(state.replyParentUri!) : const Value.absent(),
-          replyCid: state.replyParentCid != null ? Value(state.replyParentCid!) : const Value.absent(),
-          rootUri: state.replyRootUri != null ? Value(state.replyRootUri!) : const Value.absent(),
-          rootCid: state.replyRootCid != null ? Value(state.replyRootCid!) : const Value.absent(),
-          embedJson: embedJson != null ? Value(jsonEncode(embedJson)) : const Value.absent(),
-          mediaPaths: state.mediaAttachments.isNotEmpty
-              ? Value(jsonEncode(state.mediaAttachments.map((m) => m.localPath).toList()))
-              : const Value.absent(),
-          scheduledAt: state.scheduledAt != null ? Value(state.scheduledAt!) : const Value.absent(),
-          updatedAt: Value(DateTime.now()),
-        );
-        await _database.saveDraft(draft);
-        _emitError(emit, 'Network error — post saved as draft.');
-      } catch (_) {
-        _emitError(emit, 'Failed to submit post: $e');
+      if (state.isEditing) {
+        _emitError(emit, 'Failed to save changes: $e');
+        return;
       }
+
+      await _saveFailedSubmissionAsDraft(emit, e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _collectFacets() async {
+    final blueskyText = BlueskyText(state.text);
+    final facets = <Map<String, dynamic>>[];
+
+    for (final entity in blueskyText.entities) {
+      try {
+        final facet = await entity.toFacet().timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            log.w('Timeout resolving @${entity.value}; facet dropped.');
+            return {};
+          },
+        );
+        if (facet.isNotEmpty) facets.add(facet);
+      } catch (e) {
+        log.w('Could not resolve facet for "${entity.value}": $e');
+      }
+    }
+
+    return facets;
+  }
+
+  Future<void> _saveFailedSubmissionAsDraft(Emitter<ComposeState> emit, Object error) async {
+    try {
+      final embedJson = _buildEmbedJson();
+      final draft = DraftsCompanion(
+        accountDid: Value(_accountDid),
+        content: Value(state.text),
+        replyUri: state.replyParentUri != null ? Value(state.replyParentUri!) : const Value.absent(),
+        replyCid: state.replyParentCid != null ? Value(state.replyParentCid!) : const Value.absent(),
+        rootUri: state.replyRootUri != null ? Value(state.replyRootUri!) : const Value.absent(),
+        rootCid: state.replyRootCid != null ? Value(state.replyRootCid!) : const Value.absent(),
+        embedJson: embedJson != null ? Value(jsonEncode(embedJson)) : const Value.absent(),
+        mediaPaths: state.mediaAttachments.isNotEmpty
+            ? Value(jsonEncode(state.mediaAttachments.map((m) => m.localPath).toList()))
+            : const Value.absent(),
+        scheduledAt: state.scheduledAt != null ? Value(state.scheduledAt!) : const Value.absent(),
+        updatedAt: Value(DateTime.now()),
+      );
+      await _database.saveDraft(draft);
+      _emitError(emit, 'Network error — post saved as draft.');
+    } catch (_) {
+      _emitError(emit, 'Failed to submit post: $error');
     }
   }
 
@@ -581,6 +649,18 @@ class _UploadedImage {
   final String altText;
   final int? width;
   final int? height;
+}
+
+class EditPostResult {
+  const EditPostResult._({required this.isSuccess, this.errorMessage, this.cid});
+
+  const EditPostResult.success({required String cid}) : this._(isSuccess: true, cid: cid);
+
+  const EditPostResult.failure(String message) : this._(isSuccess: false, errorMessage: message);
+
+  final bool isSuccess;
+  final String? errorMessage;
+  final String? cid;
 }
 
 class ComposeRepository {
@@ -655,6 +735,157 @@ class ComposeRepository {
       return true;
     } catch (e, stackTrace) {
       log.e('Failed to create post', error: e, stackTrace: stackTrace);
+      return false;
+    }
+  }
+
+  Future<EditPostResult> editPost({
+    required String postUri,
+    required String currentCid,
+    required Map<String, dynamic> originalRecord,
+    required String text,
+    required List<Map<String, dynamic>> facets,
+    required String repo,
+  }) async {
+    try {
+      final atUri = AtUri.parse(postUri);
+      final targetRepo = atUri.hostname.isNotEmpty ? atUri.hostname : repo;
+      final collection = atUri.collection.toString();
+      final rkey = atUri.rkey;
+      final latest = await _bluesky.atproto.repo.getRecord(repo: targetRepo, collection: collection, rkey: rkey);
+
+      final baseRecord = latest.data.value.isNotEmpty ? latest.data.value : originalRecord;
+      final swapCid = latest.data.cid ?? currentCid;
+      final updatedRecord = Map<String, dynamic>.from(baseRecord);
+      updatedRecord['text'] = text;
+      if (facets.isNotEmpty) {
+        updatedRecord['facets'] = facets;
+      } else {
+        updatedRecord.remove('facets');
+      }
+
+      final existingCreatedAt = baseRecord['createdAt'];
+      if (existingCreatedAt is String && existingCreatedAt.trim().isNotEmpty) {
+        updatedRecord['createdAt'] = existingCreatedAt;
+      } else {
+        updatedRecord['createdAt'] = DateTime.now().toUtc().toIso8601String();
+      }
+      updatedRecord[r'$type'] = 'app.bsky.feed.post';
+
+      await _bluesky.atproto.repo.deleteRecord(
+        repo: targetRepo,
+        collection: collection,
+        rkey: rkey,
+        swapRecord: swapCid,
+      );
+
+      late final String newCid;
+      try {
+        final created = await _bluesky.atproto.repo.createRecord(
+          repo: targetRepo,
+          collection: collection,
+          rkey: rkey,
+          record: updatedRecord,
+        );
+        newCid = created.data.cid;
+      } on XRPCException catch (e, stackTrace) {
+        log.e('Failed to recreate post during edit; checking current state', error: e, stackTrace: stackTrace);
+
+        final snapshot = await _tryGetRecordSnapshot(repo: targetRepo, collection: collection, rkey: rkey);
+        if (snapshot != null) {
+          final persistedText = snapshot.value['text'];
+          if (persistedText is String && persistedText == text) {
+            return EditPostResult.success(cid: snapshot.cid ?? currentCid);
+          }
+          return const EditPostResult.failure('This post was changed elsewhere. Reopen it and try editing again.');
+        }
+
+        final restored = await _restoreOriginalRecord(
+          repo: targetRepo,
+          collection: collection,
+          rkey: rkey,
+          originalRecord: baseRecord,
+        );
+        if (restored) {
+          return const EditPostResult.failure('Could not save changes. Your original post was restored.');
+        }
+
+        return const EditPostResult.failure(
+          'Could not save changes and we could not confirm recovery. Reopen the thread and verify the post.',
+        );
+      }
+
+      final verified = await _bluesky.atproto.repo.getRecord(repo: targetRepo, collection: collection, rkey: rkey);
+
+      final persistedText = verified.data.value['text'];
+      if (persistedText is! String || persistedText != text) {
+        return const EditPostResult.failure(
+          'Edit was submitted but could not be confirmed yet. Please reopen the post and verify.',
+        );
+      }
+
+      return EditPostResult.success(cid: newCid);
+    } on XRPCException catch (e, stackTrace) {
+      final errorCode = e.response.data.error;
+      final errorMessage = e.response.data.message ?? '';
+      log.e('Failed to edit post', error: e, stackTrace: stackTrace);
+
+      if (errorCode == 'InvalidSwap' || errorMessage.contains('Record was at')) {
+        return const EditPostResult.failure('This post was changed elsewhere. Reopen it and try editing again.');
+      }
+
+      if (errorCode == 'RecordNotFound' || errorCode == 'NotFound') {
+        return const EditPostResult.failure('This post is no longer available. Reopen the thread and try again.');
+      }
+
+      return EditPostResult.failure(
+        errorMessage.isNotEmpty ? errorMessage : 'Failed to save changes. Please try again.',
+      );
+    } catch (e, stackTrace) {
+      log.e('Failed to edit post', error: e, stackTrace: stackTrace);
+      return const EditPostResult.failure('Failed to save changes. Please try again.');
+    }
+  }
+
+  Future<({Map<String, dynamic> value, String? cid})?> _tryGetRecordSnapshot({
+    required String repo,
+    required String collection,
+    required String rkey,
+  }) async {
+    try {
+      final response = await _bluesky.atproto.repo.getRecord(repo: repo, collection: collection, rkey: rkey);
+      return (value: response.data.value, cid: response.data.cid);
+    } on XRPCException catch (e, stackTrace) {
+      final errorCode = e.response.data.error;
+      if (errorCode == 'RecordNotFound' || errorCode == 'NotFound') {
+        return null;
+      }
+      log.w('Failed to read post snapshot during edit recovery', error: e, stackTrace: stackTrace);
+      return null;
+    } catch (e, stackTrace) {
+      log.w('Failed to read post snapshot during edit recovery', error: e, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  Future<bool> _restoreOriginalRecord({
+    required String repo,
+    required String collection,
+    required String rkey,
+    required Map<String, dynamic> originalRecord,
+  }) async {
+    final restoredRecord = Map<String, dynamic>.from(originalRecord);
+    restoredRecord[r'$type'] = 'app.bsky.feed.post';
+    final existingCreatedAt = restoredRecord['createdAt'];
+    if (existingCreatedAt is! String || existingCreatedAt.trim().isEmpty) {
+      restoredRecord['createdAt'] = DateTime.now().toUtc().toIso8601String();
+    }
+
+    try {
+      await _bluesky.atproto.repo.createRecord(repo: repo, collection: collection, rkey: rkey, record: restoredRecord);
+      return true;
+    } catch (e, stackTrace) {
+      log.e('Failed to restore original record after edit failure', error: e, stackTrace: stackTrace);
       return false;
     }
   }

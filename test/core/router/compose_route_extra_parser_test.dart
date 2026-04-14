@@ -29,6 +29,21 @@ void main() {
       expect(parsed.replyAuthorHandle, 'alice.bsky.social');
     });
 
+    test('parses edit context fields from map payload', () {
+      final parsed = parseComposeRouteExtra({
+        'initialText': 'updated post',
+        'editPostUri': 'at://did:plc:test/app.bsky.feed.post/abc123',
+        'editPostCid': 'cid-123',
+        'editRecord': {r'$type': 'app.bsky.feed.post', 'text': 'old post', 'createdAt': '2026-04-14T10:00:00.000Z'},
+      });
+
+      expect(parsed.initialText, 'updated post');
+      expect(parsed.editPostUri, 'at://did:plc:test/app.bsky.feed.post/abc123');
+      expect(parsed.editPostCid, 'cid-123');
+      expect(parsed.editRecord, isNotNull);
+      expect(parsed.editRecord!['text'], 'old post');
+    });
+
     test('returns empty args for unsupported payload types', () {
       final parsed = parseComposeRouteExtra(42);
 

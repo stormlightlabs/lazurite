@@ -1,0 +1,252 @@
+import 'package:atproto_core/atproto_core.dart';
+import 'package:bloc_test/bloc_test.dart';
+import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
+import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:bluesky/app_bsky_feed_getlikes.dart';
+import 'package:bluesky/app_bsky_feed_getrepostedby.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/theme/app_theme.dart';
+import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
+import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
+import 'package:lazurite/features/feed/data/post_action_repository.dart';
+import 'package:lazurite/features/feed/data/post_thread_repository.dart';
+import 'package:lazurite/features/feed/presentation/post_thread_screen.dart';
+import 'package:lazurite/features/search/data/search_scope.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/features/settings/bloc/settings_state.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockPostThreadRepository extends Mock implements PostThreadRepository {}
+
+class MockSavedPostsCubit extends MockCubit<SavedPostsState> implements SavedPostsCubit {}
+
+class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
+
+class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
+
+class _FakePostActionRepository implements PostActionRepository {
+  @override
+  Future<void> createBookmark({required AtUri uri, required String cid}) async {}
+
+  @override
+  Future<void> deleteBookmark({required AtUri uri}) async {}
+
+  @override
+  Future<void> deletePost({required String postUri}) async {}
+
+  @override
+  Future<BookmarkGetBookmarksOutput> getBookmarks({int? limit, String? cursor}) async {
+    return const BookmarkGetBookmarksOutput(bookmarks: []);
+  }
+
+  @override
+  Future<FeedGetLikesOutput> getLikes({required AtUri uri, String? cursor}) async {
+    return FeedGetLikesOutput(uri: uri, likes: []);
+  }
+
+  @override
+  Future<FeedGetRepostedByOutput> getRepostedBy({required AtUri uri, String? cursor}) async {
+    return FeedGetRepostedByOutput(uri: uri, repostedBy: []);
+  }
+
+  @override
+  Future<String> likePost({required AtUri uri, required String cid}) async => 'at://did:plc:test/app.bsky.feed.like/1';
+
+  @override
+  Future<String> repostPost({required AtUri uri, required String cid}) async {
+    return 'at://did:plc:test/app.bsky.feed.repost/1';
+  }
+
+  @override
+  Future<void> unlikePost({required String likeUri}) async {}
+
+  @override
+  Future<void> unrepostPost({required String repostUri}) async {}
+}
+
+PostView _makePost({
+  required String did,
+  required String handle,
+  required String rkey,
+  required String text,
+  DateTime? createdAt,
+}) {
+  final time = createdAt ?? DateTime.utc(2026, 4, 14, 12);
+  return PostView(
+    uri: AtUri('at://$did/app.bsky.feed.post/$rkey'),
+    cid: 'cid-$rkey',
+    author: ProfileViewBasic(did: did, handle: handle),
+    record: {r'$type': 'app.bsky.feed.post', 'text': text, 'createdAt': time.toIso8601String()},
+    indexedAt: time,
+  );
+}
+
+ThreadViewPost _makeThread({required String did, required String handle, required String rkey, required String text}) {
+  return ThreadViewPost(
+    post: _makePost(did: did, handle: handle, rkey: rkey, text: text),
+  );
+}
+
+void main() {
+  late MockPostThreadRepository postThreadRepository;
+  late MockSavedPostsCubit savedPostsCubit;
+  late MockConnectivityCubit connectivityCubit;
+  late MockSettingsCubit settingsCubit;
+  final postActionRepository = _FakePostActionRepository();
+
+  const postUri = 'at://did:plc:owner/app.bsky.feed.post/root';
+
+  setUp(() {
+    postThreadRepository = MockPostThreadRepository();
+    savedPostsCubit = MockSavedPostsCubit();
+    connectivityCubit = MockConnectivityCubit();
+    settingsCubit = MockSettingsCubit();
+
+    const savedState = SavedPostsState(status: SavedPostsStatus.loaded, savedPosts: [], savedUris: {});
+    when(() => savedPostsCubit.state).thenReturn(savedState);
+    whenListen(savedPostsCubit, const Stream<SavedPostsState>.empty(), initialState: savedState);
+
+    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
+    whenListen(
+      connectivityCubit,
+      const Stream<ConnectivityState>.empty(),
+      initialState: const ConnectivityState.online(),
+    );
+
+    const settingsState = SettingsState(
+      themePalette: AppThemePalette.lazurite,
+      themeVariant: AppThemeVariant.dark,
+      useSystemTheme: false,
+      searchScope: SearchScope.both,
+    );
+    when(() => settingsCubit.state).thenReturn(settingsState);
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: settingsState);
+  });
+
+  Widget createSubjectWidget({
+    required String accountDid,
+    required ThreadViewPost thread,
+    required ValueSetter<ComposeRouteArgs> onComposeArgs,
+  }) {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const PostThreadScreen(postUri: postUri),
+        ),
+        GoRoute(
+          path: '/compose',
+          builder: (context, state) {
+            final args = state.extra as ComposeRouteArgs;
+            onComposeArgs(args);
+            return Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  key: const ValueKey('complete-edit'),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Complete Edit'),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+
+    when(() => postThreadRepository.getPostThread(postUri)).thenAnswer((_) async => thread);
+
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<PostThreadRepository>.value(value: postThreadRepository),
+        RepositoryProvider<PostActionRepository>.value(value: postActionRepository),
+        RepositoryProvider<PostActionCache>(create: (_) => PostActionCache()),
+        RepositoryProvider<String>.value(value: accountDid),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<SavedPostsCubit>.value(value: savedPostsCubit),
+          BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+  }
+
+  testWidgets('shows Edit Post only for the author and sends edit payload to compose', (tester) async {
+    ComposeRouteArgs? capturedArgs;
+    final thread = _makeThread(
+      did: 'did:plc:owner',
+      handle: 'owner.bsky.social',
+      rkey: 'root',
+      text: 'Original post body',
+    );
+
+    await tester.pumpWidget(
+      createSubjectWidget(accountDid: 'did:plc:owner', thread: thread, onComposeArgs: (args) => capturedArgs = args),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit Post'), findsOneWidget);
+
+    await tester.tap(find.text('Edit Post'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('complete-edit')), findsOneWidget);
+    expect(capturedArgs, isNotNull);
+    expect(capturedArgs!.editPostUri, postUri);
+    expect(capturedArgs!.editPostCid, 'cid-root');
+    expect(capturedArgs!.initialText, 'Original post body');
+    expect(capturedArgs!.editRecord?['text'], 'Original post body');
+  });
+
+  testWidgets('does not show Edit Post when viewing someone else\'s post', (tester) async {
+    final thread = _makeThread(
+      did: 'did:plc:other',
+      handle: 'other.bsky.social',
+      rkey: 'root',
+      text: 'Other user post',
+    );
+
+    await tester.pumpWidget(createSubjectWidget(accountDid: 'did:plc:owner', thread: thread, onComposeArgs: (_) {}));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit Post'), findsNothing);
+  });
+
+  testWidgets('reloads thread after edit flow returns success', (tester) async {
+    final thread = _makeThread(
+      did: 'did:plc:owner',
+      handle: 'owner.bsky.social',
+      rkey: 'root',
+      text: 'Original post body',
+    );
+
+    await tester.pumpWidget(createSubjectWidget(accountDid: 'did:plc:owner', thread: thread, onComposeArgs: (_) {}));
+    await tester.pumpAndSettle();
+
+    verify(() => postThreadRepository.getPostThread(postUri)).called(1);
+
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit Post'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('complete-edit')));
+    await tester.pumpAndSettle();
+
+    verify(() => postThreadRepository.getPostThread(postUri)).called(1);
+  });
+}

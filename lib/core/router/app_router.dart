@@ -81,6 +81,17 @@ ComposeRouteArgs parseComposeRouteExtra(Object? extra) {
       return null;
     }
 
+    Map<String, dynamic>? readMap(String key) {
+      final value = extra[key];
+      if (value is Map<String, dynamic>) {
+        return value;
+      }
+      if (value is Map) {
+        return Map<String, dynamic>.from(value);
+      }
+      return null;
+    }
+
     return ComposeRouteArgs(
       replyParentUri: readString('replyParentUri'),
       replyParentCid: readString('replyParentCid'),
@@ -92,6 +103,9 @@ ComposeRouteArgs parseComposeRouteExtra(Object? extra) {
       quoteAuthorHandle: readString('quoteAuthorHandle'),
       draftId: readInt('draftId'),
       initialText: readString('initialText'),
+      editPostUri: readString('editPostUri'),
+      editPostCid: readString('editPostCid'),
+      editRecord: readMap('editRecord'),
     );
   }
 
@@ -152,6 +166,9 @@ class AppRouter {
               quoteAuthorHandle: args.quoteAuthorHandle,
               draftId: args.draftId,
               initialText: args.initialText,
+              editPostUri: args.editPostUri,
+              editPostCid: args.editPostCid,
+              editRecord: args.editRecord,
             ),
           );
         },

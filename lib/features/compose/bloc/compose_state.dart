@@ -75,6 +75,9 @@ class ComposeState extends Equatable {
     this.replyRootCid,
     this.quoteUri,
     this.quoteCid,
+    this.editPostUri,
+    this.editPostCid,
+    this.editRecord,
     this.errorMessage,
     this.drafts = const [],
     this.isSavingDraft = false,
@@ -100,6 +103,9 @@ class ComposeState extends Equatable {
     String? replyRootCid,
     String? quoteUri,
     String? quoteCid,
+    String? editPostUri,
+    String? editPostCid,
+    Map<String, dynamic>? editRecord,
     VideoAttachment? videoAttachment,
     bool isDraftDirty = true,
   }) : this._(
@@ -117,6 +123,9 @@ class ComposeState extends Equatable {
          replyRootCid: replyRootCid,
          quoteUri: quoteUri,
          quoteCid: quoteCid,
+         editPostUri: editPostUri,
+         editPostCid: editPostCid,
+         editRecord: editRecord,
          videoAttachment: videoAttachment,
          canSubmit: !isOverLimit && !isEmpty,
          isDraftDirty: isDraftDirty,
@@ -136,6 +145,9 @@ class ComposeState extends Equatable {
   final String? replyRootCid;
   final String? quoteUri;
   final String? quoteCid;
+  final String? editPostUri;
+  final String? editPostCid;
+  final Map<String, dynamic>? editRecord;
   final String? errorMessage;
   final List<DraftEntry> drafts;
   final bool isSavingDraft;
@@ -150,11 +162,12 @@ class ComposeState extends Equatable {
   bool get isReady => status == ComposeStatus.ready;
   bool get hasMedia => mediaAttachments.isNotEmpty;
   bool get hasVideo => videoAttachment != null;
-  bool get canAddMoreMedia => mediaAttachments.length < 4 && videoAttachment == null;
-  bool get canAddVideo => mediaAttachments.isEmpty && videoAttachment == null;
+  bool get canAddMoreMedia => !isEditing && mediaAttachments.length < 4 && videoAttachment == null;
+  bool get canAddVideo => !isEditing && mediaAttachments.isEmpty && videoAttachment == null;
   bool get hasScheduledTime => scheduledAt != null;
   bool get isReply => replyParentUri != null;
   bool get isQuote => quoteUri != null;
+  bool get isEditing => editPostUri != null && editPostCid != null && editRecord != null;
 
   ComposeState copyWith({
     ComposeStatus? status,
@@ -171,6 +184,9 @@ class ComposeState extends Equatable {
     Object? replyRootCid = const _Undefined(),
     Object? quoteUri = const _Undefined(),
     Object? quoteCid = const _Undefined(),
+    Object? editPostUri = const _Undefined(),
+    Object? editPostCid = const _Undefined(),
+    Object? editRecord = const _Undefined(),
     Object? errorMessage = const _Undefined(),
     List<DraftEntry>? drafts,
     bool? isSavingDraft,
@@ -194,6 +210,9 @@ class ComposeState extends Equatable {
       replyRootCid: replyRootCid is _Undefined ? this.replyRootCid : replyRootCid as String?,
       quoteUri: quoteUri is _Undefined ? this.quoteUri : quoteUri as String?,
       quoteCid: quoteCid is _Undefined ? this.quoteCid : quoteCid as String?,
+      editPostUri: editPostUri is _Undefined ? this.editPostUri : editPostUri as String?,
+      editPostCid: editPostCid is _Undefined ? this.editPostCid : editPostCid as String?,
+      editRecord: editRecord is _Undefined ? this.editRecord : editRecord as Map<String, dynamic>?,
       errorMessage: errorMessage is _Undefined ? this.errorMessage : errorMessage as String?,
       drafts: drafts ?? this.drafts,
       isSavingDraft: isSavingDraft ?? this.isSavingDraft,
@@ -220,6 +239,9 @@ class ComposeState extends Equatable {
     replyRootCid,
     quoteUri,
     quoteCid,
+    editPostUri,
+    editPostCid,
+    editRecord,
     errorMessage,
     drafts,
     isSavingDraft,

@@ -739,6 +739,197 @@ void main() {
           verify(() => mockDatabase.deleteDraft(7)).called(1);
         },
       );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'edits post via repository when edit context is set',
+        build: () {
+          when(
+            () => mockRepository.editPost(
+              postUri: any(named: 'postUri'),
+              currentCid: any(named: 'currentCid'),
+              originalRecord: any(named: 'originalRecord'),
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              repo: any(named: 'repo'),
+            ),
+          ).thenAnswer((_) async => const EditPostResult.success(cid: 'cid-new'));
+          return composeBloc;
+        },
+        seed: () => const ComposeState.ready(
+          text: 'Updated text',
+          graphemeCount: 12,
+          isEmpty: false,
+          editPostUri: 'at://did:plc:test/app.bsky.feed.post/abc123',
+          editPostCid: 'cid-current',
+          editRecord: {r'$type': 'app.bsky.feed.post', 'text': 'Original', 'createdAt': '2026-04-14T10:00:00.000Z'},
+          isDraftDirty: true,
+        ),
+        act: (bloc) => bloc.add(const PostSubmitted()),
+        expect: () => [
+          isA<ComposeState>().having((s) => s.isSubmitting, 'isSubmitting', true),
+          isA<ComposeState>()
+              .having((s) => s.isSuccess, 'isSuccess', true)
+              .having((s) => s.isDraftDirty, 'isDraftDirty', false),
+        ],
+        verify: (_) {
+          verifyNever(
+            () => mockRepository.createPost(
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              embed: any(named: 'embed'),
+              reply: any(named: 'reply'),
+              repo: any(named: 'repo'),
+            ),
+          );
+          verify(
+            () => mockRepository.editPost(
+              postUri: 'at://did:plc:test/app.bsky.feed.post/abc123',
+              currentCid: 'cid-current',
+              originalRecord: any(named: 'originalRecord'),
+              text: 'Updated text',
+              facets: any(named: 'facets'),
+              repo: 'did:plc:test',
+            ),
+          ).called(1);
+        },
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'passes original non-text fields and keeps createdAt when editing',
+        build: () {
+          when(
+            () => mockRepository.editPost(
+              postUri: any(named: 'postUri'),
+              currentCid: any(named: 'currentCid'),
+              originalRecord: any(named: 'originalRecord'),
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              repo: any(named: 'repo'),
+            ),
+          ).thenAnswer((_) async => const EditPostResult.success(cid: 'cid-new'));
+          return composeBloc;
+        },
+        seed: () => const ComposeState.ready(
+          text: 'Revised post body',
+          graphemeCount: 16,
+          isEmpty: false,
+          editPostUri: 'at://did:plc:test/app.bsky.feed.post/abc123',
+          editPostCid: 'cid-current',
+          editRecord: {
+            r'$type': 'app.bsky.feed.post',
+            'text': 'Original post body',
+            'createdAt': '2025-01-01T00:00:00.000Z',
+            'reply': {
+              'parent': {'uri': 'at://did:plc:test/app.bsky.feed.post/parent', 'cid': 'cid-parent'},
+              'root': {'uri': 'at://did:plc:test/app.bsky.feed.post/root', 'cid': 'cid-root'},
+            },
+            'embed': {
+              r'$type': 'app.bsky.embed.record',
+              'record': {'uri': 'at://did:plc:test/app.bsky.feed.post/quote', 'cid': 'cid-quote'},
+            },
+          },
+        ),
+        act: (bloc) => bloc.add(const PostSubmitted()),
+        verify: (_) {
+          final invocation =
+              verify(
+                    () => mockRepository.editPost(
+                      postUri: any(named: 'postUri'),
+                      currentCid: any(named: 'currentCid'),
+                      originalRecord: captureAny(named: 'originalRecord'),
+                      text: any(named: 'text'),
+                      facets: any(named: 'facets'),
+                      repo: any(named: 'repo'),
+                    ),
+                  ).captured.single
+                  as Map<String, dynamic>;
+
+          expect(invocation['createdAt'], '2025-01-01T00:00:00.000Z');
+          expect(invocation['reply'], isNotNull);
+          expect(invocation['embed'], isNotNull);
+        },
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'passes empty facets list for plain text edits',
+        build: () {
+          when(
+            () => mockRepository.editPost(
+              postUri: any(named: 'postUri'),
+              currentCid: any(named: 'currentCid'),
+              originalRecord: any(named: 'originalRecord'),
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              repo: any(named: 'repo'),
+            ),
+          ).thenAnswer((_) async => const EditPostResult.success(cid: 'cid-new'));
+          return composeBloc;
+        },
+        seed: () => const ComposeState.ready(
+          text: 'No facets here',
+          graphemeCount: 13,
+          isEmpty: false,
+          editPostUri: 'at://did:plc:test/app.bsky.feed.post/abc123',
+          editPostCid: 'cid-current',
+          editRecord: {r'$type': 'app.bsky.feed.post', 'text': 'Original', 'createdAt': '2026-04-14T10:00:00.000Z'},
+        ),
+        act: (bloc) => bloc.add(const PostSubmitted()),
+        verify: (_) {
+          final facets =
+              verify(
+                    () => mockRepository.editPost(
+                      postUri: any(named: 'postUri'),
+                      currentCid: any(named: 'currentCid'),
+                      originalRecord: any(named: 'originalRecord'),
+                      text: any(named: 'text'),
+                      facets: captureAny(named: 'facets'),
+                      repo: any(named: 'repo'),
+                    ),
+                  ).captured.single
+                  as List<Map<String, dynamic>>;
+          expect(facets, isEmpty);
+        },
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'surfaces InvalidSwap edit failures as user-visible errors',
+        build: () {
+          when(
+            () => mockRepository.editPost(
+              postUri: any(named: 'postUri'),
+              currentCid: any(named: 'currentCid'),
+              originalRecord: any(named: 'originalRecord'),
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              repo: any(named: 'repo'),
+            ),
+          ).thenAnswer(
+            (_) async =>
+                const EditPostResult.failure('This post was changed elsewhere. Reopen it and try editing again.'),
+          );
+          return composeBloc;
+        },
+        seed: () => const ComposeState.ready(
+          text: 'Updated text',
+          graphemeCount: 12,
+          isEmpty: false,
+          editPostUri: 'at://did:plc:test/app.bsky.feed.post/abc123',
+          editPostCid: 'cid-current',
+          editRecord: {r'$type': 'app.bsky.feed.post', 'text': 'Original', 'createdAt': '2026-04-14T10:00:00.000Z'},
+        ),
+        act: (bloc) => bloc.add(const PostSubmitted()),
+        expect: () => [
+          isA<ComposeState>().having((s) => s.isSubmitting, 'isSubmitting', true),
+          isA<ComposeState>()
+              .having((s) => s.hasError, 'hasError', true)
+              .having(
+                (s) => s.errorMessage,
+                'errorMessage',
+                'This post was changed elsewhere. Reopen it and try editing again.',
+              ),
+          isA<ComposeState>().having((s) => s.isReady, 'isReady', true),
+        ],
+      );
     });
   });
 }

@@ -7,9 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
-import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 
 class ComposeScreen extends StatefulWidget {
   const ComposeScreen({
@@ -24,6 +24,9 @@ class ComposeScreen extends StatefulWidget {
     this.quoteAuthorHandle,
     this.draftId,
     this.initialText,
+    this.editPostUri,
+    this.editPostCid,
+    this.editRecord,
   });
 
   final String? replyParentUri;
@@ -36,6 +39,9 @@ class ComposeScreen extends StatefulWidget {
   final String? quoteAuthorHandle;
   final int? draftId;
   final String? initialText;
+  final String? editPostUri;
+  final String? editPostCid;
+  final Map<String, dynamic>? editRecord;
 
   @override
   State<ComposeScreen> createState() => _ComposeScreenState();
@@ -49,16 +55,28 @@ class _ComposeScreenState extends State<ComposeScreen> {
   @override
   void initState() {
     super.initState();
+    final isEditing = widget.editPostUri != null && widget.editPostCid != null && widget.editRecord != null;
     _textController = _FacetHighlightController();
     if (widget.initialText?.isNotEmpty ?? false) {
       _textController.text = widget.initialText!;
     }
 
-    if (widget.draftId != null) {
+    if (isEditing) {
+      context.read<ComposeBloc>().add(
+        EditContextSet(
+          postUri: widget.editPostUri!,
+          postCid: widget.editPostCid!,
+          record: Map<String, dynamic>.from(widget.editRecord!),
+          initialText: widget.initialText,
+        ),
+      );
+    }
+
+    if (!isEditing && widget.draftId != null) {
       context.read<ComposeBloc>().add(DraftLoaded(widget.draftId!));
     }
 
-    if (widget.replyParentUri != null && widget.replyParentCid != null) {
+    if (!isEditing && widget.replyParentUri != null && widget.replyParentCid != null) {
       context.read<ComposeBloc>().add(
         ReplyContextSet(
           parentUri: widget.replyParentUri!,
@@ -69,12 +87,12 @@ class _ComposeScreenState extends State<ComposeScreen> {
       );
     }
 
-    if (widget.quoteUri != null && widget.quoteCid != null) {
+    if (!isEditing && widget.quoteUri != null && widget.quoteCid != null) {
       context.read<ComposeBloc>().add(QuoteContextSet(quoteUri: widget.quoteUri!, quoteCid: widget.quoteCid!));
     }
 
     _textController.addListener(_onTextChanged);
-    if (widget.initialText?.isNotEmpty ?? false) {
+    if (!isEditing && widget.initialText?.isNotEmpty == true) {
       context.read<ComposeBloc>().add(TextChanged(widget.initialText!));
     }
   }
@@ -261,6 +279,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
   }
 
   void _toggleDrafts() {
+    if (context.read<ComposeBloc>().state.isEditing) return;
     final willShow = !_showDrafts;
     setState(() => _showDrafts = willShow);
     if (willShow) {
@@ -425,6 +444,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
   }
 
   void _saveDraft() {
+    if (context.read<ComposeBloc>().state.isEditing) return;
     context.read<ComposeBloc>().add(const DraftSaved());
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -436,11 +456,48 @@ class _ComposeScreenState extends State<ComposeScreen> {
     }
   }
 
+  void _showEditAlgorithmInfo() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('How Post Editing Works'),
+        content: const Text(
+          'Lazurite saves edits by deleting and recreating the post record with the same URI. During re-indexing, '
+          'ranking, counters, and search visibility can shift, and updates may take time to appear everywhere.',
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('OK'))],
+      ),
+    );
+  }
+
   void _handleBackNavigation(BuildContext context) {
     final state = context.read<ComposeBloc>().state;
     final navigator = Navigator.of(context);
 
     final hasContent = state.text.trim().isNotEmpty || state.mediaAttachments.isNotEmpty;
+
+    if (state.isEditing) {
+      if (state.isDraftDirty) {
+        showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Discard Changes?'),
+            content: const Text('You have unsaved edits. Discard them and leave?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Discard')),
+            ],
+          ),
+        ).then((shouldDiscard) {
+          if (shouldDiscard == true && mounted) {
+            navigator.pop(false);
+          }
+        });
+      } else {
+        navigator.pop(false);
+      }
+      return;
+    }
 
     if (hasContent && state.isDraftDirty) {
       showDialog<bool>(
@@ -480,23 +537,24 @@ class _ComposeScreenState extends State<ComposeScreen> {
   Widget build(BuildContext context) {
     return BlocListener<ComposeBloc, ComposeState>(
       listener: (context, state) {
-        final theme = Theme.of(context);
-
         if (state.text != _textController.text) {
           _textController.text = state.text;
           _textController.selection = TextSelection.collapsed(offset: state.text.length);
         }
 
         if (state.isSuccess) {
-          Navigator.of(context).pop();
+          if (state.isEditing) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Changes saved.'), behavior: SnackBarBehavior.floating));
+          }
+          Navigator.of(context).pop(state.isEditing ? {'editedText': state.text} : null);
         }
 
         if (state.hasError && state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!, style: TextStyle(color: theme.colorScheme.error)),
-            ),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage!), behavior: SnackBarBehavior.floating));
         }
       },
       child: PopScope(
@@ -509,10 +567,16 @@ class _ComposeScreenState extends State<ComposeScreen> {
           appBar: AppBar(
             leading: TextButton(onPressed: () => _handleBackNavigation(context), child: const Text('Cancel')),
             leadingWidth: 80,
-            title: const Text('New Post'),
+            title: BlocBuilder<ComposeBloc, ComposeState>(
+              builder: (context, state) => Text(state.isEditing ? 'Edit Post' : 'New Post'),
+            ),
             centerTitle: true,
             actions: [
-              TextButton(onPressed: _saveDraft, child: const Text('Save Draft')),
+              BlocBuilder<ComposeBloc, ComposeState>(
+                builder: (context, state) => state.isEditing
+                    ? const SizedBox.shrink()
+                    : TextButton(onPressed: _saveDraft, child: const Text('Save Draft')),
+              ),
               BlocBuilder<ComposeBloc, ComposeState>(
                 builder: (context, state) {
                   final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
@@ -520,7 +584,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     onPressed: !isOffline && state.canSubmit && !state.isSubmitting ? _submitPost : null,
                     child: state.isSubmitting
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Post'),
+                        : Text(state.isEditing ? 'Save Changes' : 'Post'),
                   );
 
                   return Padding(
@@ -538,6 +602,36 @@ class _ComposeScreenState extends State<ComposeScreen> {
               children: [
                 BlocBuilder<ComposeBloc, ComposeState>(
                   builder: (context, state) {
+                    if (state.isEditing) {
+                      return Container(
+                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _theme.colorScheme.surfaceContainerHighest,
+                          border: Border.all(color: _theme.colorScheme.outlineVariant),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.info_outline, color: _theme.colorScheme.onSurfaceVariant, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Edits are saved by replacing the record while keeping this post URI. Ranking, '
+                                'counts, and visibility may shift while networks re-index.',
+                                style: _theme.textTheme.bodySmall?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: _showEditAlgorithmInfo,
+                              icon: const Icon(Icons.help_outline),
+                              tooltip: 'More info',
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
                     if (!state.isReply || widget.replyAuthorHandle == null) {
                       return const SizedBox.shrink();
                     }
@@ -623,6 +717,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
                 BlocBuilder<ComposeBloc, ComposeState>(
                   builder: (context, state) {
+                    if (state.isEditing) {
+                      return const SizedBox.shrink();
+                    }
                     if (state.mediaAttachments.isEmpty) return const SizedBox.shrink();
 
                     return Container(
@@ -695,6 +792,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
                 ),
                 BlocBuilder<ComposeBloc, ComposeState>(
                   builder: (context, state) {
+                    if (state.isEditing) {
+                      return const SizedBox.shrink();
+                    }
                     final video = state.videoAttachment;
                     if (video == null) return const SizedBox.shrink();
 
@@ -785,7 +885,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
                 AnimatedSize(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeInOut,
-                  child: _showDrafts ? _buildDraftsPanel() : const SizedBox.shrink(),
+                  child: context.select<ComposeBloc, bool>((bloc) => bloc.state.isEditing)
+                      ? const SizedBox.shrink()
+                      : (_showDrafts ? _buildDraftsPanel() : const SizedBox.shrink()),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -798,6 +900,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       children: [
                         BlocBuilder<ComposeBloc, ComposeState>(
                           builder: (context, state) {
+                            if (state.isEditing) return const SizedBox.shrink();
                             return IconButton(
                               onPressed: state.canAddMoreMedia ? _pickImage : null,
                               icon: Icon(
@@ -812,6 +915,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                         ),
                         BlocBuilder<ComposeBloc, ComposeState>(
                           builder: (context, state) {
+                            if (state.isEditing) return const SizedBox.shrink();
                             return IconButton(
                               onPressed: state.canAddVideo ? _pickVideo : null,
                               icon: Icon(
@@ -824,15 +928,25 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             );
                           },
                         ),
-                        IconButton(
-                          onPressed: _toggleDrafts,
-                          icon: Icon(Icons.drive_file_rename_outline, color: _theme.colorScheme.primary),
-                          tooltip: 'Drafts',
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) {
+                            if (state.isEditing) return const SizedBox.shrink();
+                            return IconButton(
+                              onPressed: _toggleDrafts,
+                              icon: Icon(Icons.drive_file_rename_outline, color: _theme.colorScheme.primary),
+                              tooltip: 'Drafts',
+                            );
+                          },
                         ),
-                        IconButton(
-                          onPressed: _showSchedulePicker,
-                          icon: Icon(Icons.schedule, color: _theme.colorScheme.primary),
-                          tooltip: 'Schedule',
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) {
+                            if (state.isEditing) return const SizedBox.shrink();
+                            return IconButton(
+                              onPressed: _showSchedulePicker,
+                              icon: Icon(Icons.schedule, color: _theme.colorScheme.primary),
+                              tooltip: 'Schedule',
+                            );
+                          },
                         ),
                         const Spacer(),
                         BlocBuilder<ComposeBloc, ComposeState>(

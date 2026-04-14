@@ -868,6 +868,15 @@ class _FocusedPostContent extends StatelessWidget {
             ),
             if (post.author.did == accountDid)
               ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit Post'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_onEdit(context));
+                },
+              ),
+            if (post.author.did == accountDid)
+              ListTile(
                 leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                 title: Text('Delete Post', style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 onTap: () {
@@ -879,6 +888,81 @@ class _FocusedPostContent extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _onEdit(BuildContext context) async {
+    final post = thread.post;
+    final record = Map<String, dynamic>.from(post.record);
+
+    // TODO surface this action from timeline/search/saved cards once those entry points expose onMore.
+    // TODO add edit affordance to additional owner-post contexts
+    final result = await context.push(
+      '/compose',
+      extra: ComposeRouteArgs(
+        initialText: _editableTextFromRecord(record),
+        editPostUri: post.uri.toString(),
+        editPostCid: post.cid,
+        editRecord: record,
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    final didSave = result == true || result is Map;
+    if (!didSave) return;
+
+    String? expectedText;
+    if (result is Map) {
+      final editedText = result['editedText'];
+      if (editedText is String) {
+        expectedText = editedText;
+      }
+    }
+
+    await _reloadThreadAfterEdit(context, postUri: post.uri.toString(), expectedText: expectedText);
+  }
+
+  Future<void> _reloadThreadAfterEdit(BuildContext context, {required String postUri, String? expectedText}) async {
+    final cubit = context.read<PostThreadCubit>();
+    final retryDelays = <Duration>[
+      Duration.zero,
+      const Duration(seconds: 1),
+      const Duration(seconds: 2),
+      const Duration(seconds: 4),
+    ];
+
+    for (var i = 0; i < retryDelays.length; i++) {
+      final delay = retryDelays[i];
+      if (delay > Duration.zero) {
+        await Future<void>.delayed(delay);
+      }
+      if (!context.mounted) return;
+
+      await cubit.load(postUri);
+
+      if (expectedText == null) {
+        return;
+      }
+
+      final loadedThread = cubit.state.thread;
+      if (loadedThread == null) {
+        continue;
+      }
+
+      final loadedText = _editableTextFromRecord(loadedThread.post.record);
+      if (loadedText == expectedText) {
+        return;
+      }
+    }
+
+    if (context.mounted && expectedText != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Edit saved. Your updates may take a moment to appear across feeds.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _showReportDialog(BuildContext context) {
@@ -942,6 +1026,15 @@ class _FocusedPostContent extends StatelessWidget {
 
   String _formatTimestamp(DateTime time) {
     return DateFormat('h:mm a · MMM d, yyyy').format(time.toLocal());
+  }
+
+  String _editableTextFromRecord(Map<String, dynamic> record) {
+    final parsed = _parsePostRecord(record);
+    if (parsed != null) {
+      return parsed.text;
+    }
+    final text = record['text'];
+    return text is String ? text : '';
   }
 
   String _convertAtUriToBskyUrl(String atUri) {

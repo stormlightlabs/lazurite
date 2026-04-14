@@ -10,6 +10,9 @@ class ComposeRouteArgs {
     this.quoteAuthorHandle,
     this.draftId,
     this.initialText,
+    this.editPostUri,
+    this.editPostCid,
+    this.editRecord,
   });
 
   final String? replyParentUri;
@@ -22,4 +25,7 @@ class ComposeRouteArgs {
   final String? quoteAuthorHandle;
   final int? draftId;
   final String? initialText;
+  final String? editPostUri;
+  final String? editPostCid;
+  final Map<String, dynamic>? editRecord;
 }
