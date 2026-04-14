@@ -112,6 +112,7 @@ void main() {
           isA<PostActionState>()
               .having((s) => s.isLiked, 'isLiked', isFalse)
               .having((s) => s.likeCount, 'likeCount', 4)
+              .having((s) => s.likeUri, 'likeUri', isNull)
               .having((s) => s.isLoadingLike, 'isLoadingLike', isFalse),
         ],
       );
@@ -208,6 +209,7 @@ void main() {
           isA<PostActionState>()
               .having((s) => s.isReposted, 'isReposted', isFalse)
               .having((s) => s.repostCount, 'repostCount', 2)
+              .having((s) => s.repostUri, 'repostUri', isNull)
               .having((s) => s.isLoadingRepost, 'isLoadingRepost', isFalse),
         ],
       );
@@ -466,6 +468,21 @@ void main() {
       expect(copied.isLiked, isTrue);
       expect(copied.likeCount, 1);
       expect(copied.postUri, testPostUri);
+    });
+
+    test('copyWith can explicitly clear nullable fields', () {
+      const state = PostActionState(
+        postUri: testPostUri,
+        likeUri: testLikeUri,
+        repostUri: testRepostUri,
+        error: 'oops',
+      );
+
+      final copied = state.copyWith(likeUri: null, repostUri: null, error: null);
+
+      expect(copied.likeUri, isNull);
+      expect(copied.repostUri, isNull);
+      expect(copied.error, isNull);
     });
   });
 }

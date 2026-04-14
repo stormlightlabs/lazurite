@@ -19,6 +19,9 @@ class PostActionState extends Equatable {
     this.isDeleted = false,
     this.error,
   });
+  // Sentinel used by copyWith to distinguish "keep existing value"
+  // from an explicit null assignment for nullable fields.
+  static const Object _unset = Object();
 
   final String postUri;
   final bool isLiked;
@@ -37,27 +40,25 @@ class PostActionState extends Equatable {
     bool? isReposted,
     int? likeCount,
     int? repostCount,
-    String? likeUri,
-    String? repostUri,
+    Object? likeUri = _unset,
+    Object? repostUri = _unset,
     bool? isLoadingLike,
     bool? isLoadingRepost,
     bool? isDeleted,
-    String? error,
-  }) {
-    return PostActionState(
-      postUri: postUri,
-      isLiked: isLiked ?? this.isLiked,
-      isReposted: isReposted ?? this.isReposted,
-      likeCount: likeCount ?? this.likeCount,
-      repostCount: repostCount ?? this.repostCount,
-      likeUri: likeUri ?? this.likeUri,
-      repostUri: repostUri ?? this.repostUri,
-      isLoadingLike: isLoadingLike ?? this.isLoadingLike,
-      isLoadingRepost: isLoadingRepost ?? this.isLoadingRepost,
-      isDeleted: isDeleted ?? this.isDeleted,
-      error: error ?? this.error,
-    );
-  }
+    Object? error = _unset,
+  }) => PostActionState(
+    postUri: postUri,
+    isLiked: isLiked ?? this.isLiked,
+    isReposted: isReposted ?? this.isReposted,
+    likeCount: likeCount ?? this.likeCount,
+    repostCount: repostCount ?? this.repostCount,
+    likeUri: identical(likeUri, _unset) ? this.likeUri : likeUri as String?,
+    repostUri: identical(repostUri, _unset) ? this.repostUri : repostUri as String?,
+    isLoadingLike: isLoadingLike ?? this.isLoadingLike,
+    isLoadingRepost: isLoadingRepost ?? this.isLoadingRepost,
+    isDeleted: isDeleted ?? this.isDeleted,
+    error: identical(error, _unset) ? this.error : error as String?,
+  );
 
   @override
   List<Object?> get props => [

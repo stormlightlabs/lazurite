@@ -10,8 +10,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
-import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_thread_cubit.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
@@ -629,6 +630,7 @@ class _FocusedPostWithActions extends StatelessWidget {
         repostCount: post.repostCount ?? 0,
         likeUri: viewer?.like?.toString(),
         repostUri: viewer?.repost?.toString(),
+        cache: context.read<PostActionCache>(),
       ),
       child: BlocListener<PostActionCubit, PostActionState>(
         listenWhen: (previous, current) => previous.error != current.error && current.error != null,

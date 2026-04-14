@@ -30,6 +30,8 @@ class FeedState extends Equatable {
 
   const FeedState.error(String message) : this._(status: FeedStatus.error, errorMessage: message);
 
+  static const Object _unset = Object();
+
   final FeedStatus status;
   final String? actor;
   final List<FeedViewPost> posts;
@@ -48,25 +50,23 @@ class FeedState extends Equatable {
     FeedStatus? status,
     String? actor,
     List<FeedViewPost>? posts,
-    String? cursor,
-    String? errorMessage,
+    Object? cursor = _unset,
+    Object? errorMessage = _unset,
     FeedFilter? filter,
     bool? hasMore,
     bool? isLoadingMore,
     bool? isRefreshing,
-  }) {
-    return FeedState._(
-      status: status ?? this.status,
-      actor: actor ?? this.actor,
-      posts: posts ?? this.posts,
-      cursor: cursor ?? this.cursor,
-      errorMessage: errorMessage ?? this.errorMessage,
-      filter: filter ?? this.filter,
-      hasMore: hasMore ?? this.hasMore,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      isRefreshing: isRefreshing ?? this.isRefreshing,
-    );
-  }
+  }) => FeedState._(
+    status: status ?? this.status,
+    actor: actor ?? this.actor,
+    posts: posts ?? this.posts,
+    cursor: identical(cursor, _unset) ? this.cursor : cursor as String?,
+    errorMessage: identical(errorMessage, _unset) ? this.errorMessage : errorMessage as String?,
+    filter: filter ?? this.filter,
+    hasMore: hasMore ?? this.hasMore,
+    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    isRefreshing: isRefreshing ?? this.isRefreshing,
+  );
 
   @override
   List<Object?> get props => [status, actor, posts, cursor, errorMessage, filter, hasMore, isLoadingMore, isRefreshing];

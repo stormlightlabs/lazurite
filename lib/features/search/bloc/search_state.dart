@@ -15,12 +15,10 @@ enum SearchSort {
   top,
   latest;
 
-  factory SearchSort.fromString(String value) {
-    return switch (value) {
-      'top' => SearchSort.top,
-      _ => SearchSort.latest,
-    };
-  }
+  factory SearchSort.fromString(String value) => switch (value) {
+    'top' => SearchSort.top,
+    _ => SearchSort.latest,
+  };
 }
 
 extension SearchSortLabel on SearchSort {
@@ -101,6 +99,8 @@ class SearchState extends Equatable {
   const SearchState.error({required String query, required String message})
     : this._(status: SearchStatus.error, query: query, errorMessage: message);
 
+  static const Object _unset = Object();
+
   final SearchStatus status;
   final String query;
   final SearchTab currentTab;
@@ -131,32 +131,30 @@ class SearchState extends Equatable {
     List<ProfileView>? actors,
     List<GeneratorView>? feeds,
     List<StarterPackViewBasic>? starterPacks,
-    String? cursor,
-    String? starterPacksCursor,
-    int? hitsTotal,
-    String? errorMessage,
+    Object? cursor = _unset,
+    Object? starterPacksCursor = _unset,
+    Object? hitsTotal = _unset,
+    Object? errorMessage = _unset,
     bool? isLoadingMore,
     List<ProfileViewBasic>? typeaheadActors,
     List<SearchHistoryEntry>? searchHistory,
-  }) {
-    return SearchState._(
-      status: status ?? this.status,
-      query: query ?? this.query,
-      currentTab: currentTab ?? this.currentTab,
-      currentSort: currentSort ?? this.currentSort,
-      posts: posts ?? this.posts,
-      actors: actors ?? this.actors,
-      feeds: feeds ?? this.feeds,
-      starterPacks: starterPacks ?? this.starterPacks,
-      cursor: cursor ?? this.cursor,
-      starterPacksCursor: starterPacksCursor ?? this.starterPacksCursor,
-      hitsTotal: hitsTotal ?? this.hitsTotal,
-      errorMessage: errorMessage ?? this.errorMessage,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      typeaheadActors: typeaheadActors ?? this.typeaheadActors,
-      searchHistory: searchHistory ?? this.searchHistory,
-    );
-  }
+  }) => SearchState._(
+    status: status ?? this.status,
+    query: query ?? this.query,
+    currentTab: currentTab ?? this.currentTab,
+    currentSort: currentSort ?? this.currentSort,
+    posts: posts ?? this.posts,
+    actors: actors ?? this.actors,
+    feeds: feeds ?? this.feeds,
+    starterPacks: starterPacks ?? this.starterPacks,
+    cursor: identical(cursor, _unset) ? this.cursor : cursor as String?,
+    starterPacksCursor: identical(starterPacksCursor, _unset) ? this.starterPacksCursor : starterPacksCursor as String?,
+    hitsTotal: identical(hitsTotal, _unset) ? this.hitsTotal : hitsTotal as int?,
+    errorMessage: identical(errorMessage, _unset) ? this.errorMessage : errorMessage as String?,
+    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    typeaheadActors: typeaheadActors ?? this.typeaheadActors,
+    searchHistory: searchHistory ?? this.searchHistory,
+  );
 
   @override
   List<Object?> get props => [
