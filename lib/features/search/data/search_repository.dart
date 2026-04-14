@@ -55,6 +55,17 @@ class SearchRepository {
     return SearchStarterPacksResult(starterPacks: response.data.starterPacks, cursor: response.data.cursor);
   }
 
+  Future<SearchFeedsResult> searchFeedGenerators({required String query, String? cursor, int limit = 25}) async {
+    final response = await _bluesky.unspecced.getPopularFeedGenerators(
+      query: query,
+      cursor: cursor,
+      limit: limit,
+      $headers: await _moderationService?.headersForRequest(),
+    );
+
+    return SearchFeedsResult(feeds: response.data.feeds, cursor: response.data.cursor);
+  }
+
   Future<List<ProfileViewBasic>> searchActorsTypeahead({required String query, int limit = 10}) async {
     final response = await _bluesky.actor.searchActorsTypeahead(
       q: query,
@@ -112,5 +123,12 @@ class SearchStarterPacksResult {
   SearchStarterPacksResult({required this.starterPacks, this.cursor});
 
   final List<StarterPackViewBasic> starterPacks;
+  final String? cursor;
+}
+
+class SearchFeedsResult {
+  SearchFeedsResult({required this.feeds, this.cursor});
+
+  final List<GeneratorView> feeds;
   final String? cursor;
 }

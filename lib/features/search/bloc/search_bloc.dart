@@ -84,6 +84,24 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       } catch (error) {
         emit(SearchState.error(query: query, message: 'Failed to search actors: $error'));
       }
+    } else if (currentTab == SearchTab.feeds) {
+      emit(SearchState.loadingFeeds(query: query));
+
+      try {
+        final result = await _searchRepository.searchFeedGenerators(query: query, limit: 25);
+        await _database.addSearchHistoryEntry(query: query, type: 'feeds', accountDid: _accountDid);
+        final history = await _database.getSearchHistory(_accountDid, limit: 50);
+
+        emit(
+          SearchState.loadedFeeds(
+            query: query,
+            feeds: result.feeds,
+            cursor: result.cursor,
+          ).copyWith(searchHistory: history),
+        );
+      } catch (error) {
+        emit(SearchState.error(query: query, message: 'Failed to search feeds: $error'));
+      }
     } else {
       emit(SearchState.loadingStarterPacks(query: query));
 
@@ -143,6 +161,30 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
             query: state.query,
             starterPacks: [...state.starterPacks, ...result.starterPacks],
             starterPacksCursor: result.cursor,
+          ).copyWith(searchHistory: state.searchHistory, typeaheadActors: state.typeaheadActors),
+        );
+      } catch (error) {
+        emit(state.copyWith(isLoadingMore: false));
+      }
+      return;
+    }
+
+    if (state.currentTab == SearchTab.feeds) {
+      if (state.cursor == null) return;
+
+      emit(state.copyWith(isLoadingMore: true));
+
+      try {
+        final result = await _searchRepository.searchFeedGenerators(
+          query: state.query,
+          cursor: state.cursor,
+          limit: 25,
+        );
+        emit(
+          SearchState.loadedFeeds(
+            query: state.query,
+            feeds: [...state.feeds, ...result.feeds],
+            cursor: result.cursor,
           ).copyWith(searchHistory: state.searchHistory, typeaheadActors: state.typeaheadActors),
         );
       } catch (error) {

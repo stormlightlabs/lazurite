@@ -31,6 +31,19 @@ void main() {
     indexedAt: DateTime.utc(2026, 1, 1),
   );
 
+  final sampleFeed = GeneratorView(
+    uri: AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/whats-hot'),
+    cid: 'cid-feed',
+    did: 'did:web:feed.example.com',
+    creator: ProfileView(
+      did: 'did:plc:feedcreator',
+      handle: 'feedcreator.bsky.social',
+      indexedAt: DateTime.utc(2026, 1, 1),
+    ),
+    displayName: 'What\'s Hot',
+    indexedAt: DateTime.utc(2026, 1, 1),
+  );
+
   final sampleStarterPack = StarterPackViewBasic(
     uri: AtUri.parse('at://did:plc:creator/app.bsky.graph.starterpack/pack-1'),
     cid: 'cid-pack-1',
@@ -78,19 +91,30 @@ void main() {
         limit: any(named: 'limit'),
       ),
     ).thenAnswer((_) async => SearchStarterPacksResult(starterPacks: []));
+    when(
+      () => mockRepository.searchFeedGenerators(
+        query: any(named: 'query'),
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => SearchFeedsResult(feeds: []));
   });
 
   SearchBloc buildBloc() =>
       SearchBloc(searchRepository: mockRepository, database: mockDatabase, accountDid: 'did:plc:test');
 
   group('SearchTab enum', () {
-    test('has posts, actors, and starterPacks values', () {
-      expect(SearchTab.values, containsAll([SearchTab.posts, SearchTab.actors, SearchTab.starterPacks]));
+    test('has posts, actors, feeds, and starterPacks values', () {
+      expect(
+        SearchTab.values,
+        containsAll([SearchTab.posts, SearchTab.actors, SearchTab.feeds, SearchTab.starterPacks]),
+      );
     });
 
     test('SearchTabLabel returns correct labels', () {
       expect(SearchTab.posts.label, 'Posts');
       expect(SearchTab.actors.label, 'People');
+      expect(SearchTab.feeds.label, 'Feeds');
       expect(SearchTab.starterPacks.label, 'Starter Packs');
     });
   });
@@ -120,6 +144,11 @@ void main() {
 
     test('hasResults is true when starterPacks non-empty', () {
       final state = SearchState.loadedStarterPacks(query: 'test', starterPacks: [sampleStarterPack]);
+      expect(state.hasResults, isTrue);
+    });
+
+    test('hasResults is true when feeds non-empty', () {
+      final state = SearchState.loadedFeeds(query: 'test', feeds: [sampleFeed]);
       expect(state.hasResults, isTrue);
     });
 
@@ -203,6 +232,59 @@ void main() {
           ),
         );
       },
+    );
+  });
+
+  group('QuerySubmitted - feeds tab', () {
+    blocTest<SearchBloc, SearchState>(
+      'searches feeds when feeds tab is active',
+      build: buildBloc,
+      seed: () => const SearchState.initial().copyWith(currentTab: SearchTab.feeds),
+      setUp: () {
+        when(
+          () => mockRepository.searchFeedGenerators(
+            query: 'custom feeds',
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+          ),
+        ).thenAnswer((_) async => SearchFeedsResult(feeds: [sampleFeed], cursor: 'feed-c1'));
+      },
+      act: (bloc) => bloc.add(const QuerySubmitted(query: 'custom feeds')),
+      expect: () => [
+        predicate<SearchState>((s) => s.status == SearchStatus.loading && s.currentTab == SearchTab.feeds),
+        predicate<SearchState>(
+          (s) =>
+              s.status == SearchStatus.loaded &&
+              s.currentTab == SearchTab.feeds &&
+              s.feeds.length == 1 &&
+              s.cursor == 'feed-c1',
+        ),
+      ],
+      verify: (_) {
+        verify(
+          () => mockDatabase.addSearchHistoryEntry(query: 'custom feeds', type: 'feeds', accountDid: 'did:plc:test'),
+        ).called(1);
+      },
+    );
+
+    blocTest<SearchBloc, SearchState>(
+      'emits error when feed search fails',
+      build: buildBloc,
+      seed: () => const SearchState.initial().copyWith(currentTab: SearchTab.feeds),
+      setUp: () {
+        when(
+          () => mockRepository.searchFeedGenerators(
+            query: any(named: 'query'),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+          ),
+        ).thenThrow(Exception('feed error'));
+      },
+      act: (bloc) => bloc.add(const QuerySubmitted(query: 'fail feed')),
+      expect: () => [
+        predicate<SearchState>((s) => s.status == SearchStatus.loading && s.currentTab == SearchTab.feeds),
+        predicate<SearchState>((s) => s.status == SearchStatus.error && s.errorMessage != null),
+      ],
     );
   });
 
@@ -318,6 +400,64 @@ void main() {
       expect: () => [
         predicate<SearchState>((s) => s.isLoadingMore),
         predicate<SearchState>((s) => !s.isLoadingMore && s.starterPacks.length == 1),
+      ],
+    );
+  });
+
+  group('LoadMoreRequested - feeds tab', () {
+    blocTest<SearchBloc, SearchState>(
+      'loads more feeds using cursor',
+      build: buildBloc,
+      seed: () => SearchState.loadedFeeds(query: 'custom', feeds: [sampleFeed], cursor: 'feed-c1'),
+      setUp: () {
+        final secondFeed = GeneratorView(
+          uri: AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/news'),
+          cid: 'cid-feed-2',
+          did: 'did:web:news.example.com',
+          creator: ProfileView(did: 'did:plc:news', handle: 'news.bsky.social', indexedAt: DateTime.utc(2026, 1, 1)),
+          displayName: 'News',
+          indexedAt: DateTime.utc(2026, 1, 1),
+        );
+        when(
+          () => mockRepository.searchFeedGenerators(
+            query: 'custom',
+            cursor: 'feed-c1',
+            limit: any(named: 'limit'),
+          ),
+        ).thenAnswer((_) async => SearchFeedsResult(feeds: [secondFeed], cursor: null));
+      },
+      act: (bloc) => bloc.add(const LoadMoreRequested()),
+      expect: () => [
+        predicate<SearchState>((s) => s.isLoadingMore),
+        predicate<SearchState>((s) => !s.isLoadingMore && s.feeds.length == 2 && s.cursor == null),
+      ],
+    );
+
+    blocTest<SearchBloc, SearchState>(
+      'does not load more feeds when cursor is null',
+      build: buildBloc,
+      seed: () => SearchState.loadedFeeds(query: 'custom', feeds: [sampleFeed], cursor: null),
+      act: (bloc) => bloc.add(const LoadMoreRequested()),
+      expect: () => [],
+    );
+
+    blocTest<SearchBloc, SearchState>(
+      'handles feed load more error gracefully',
+      build: buildBloc,
+      seed: () => SearchState.loadedFeeds(query: 'custom', feeds: [sampleFeed], cursor: 'feed-c1'),
+      setUp: () {
+        when(
+          () => mockRepository.searchFeedGenerators(
+            query: any(named: 'query'),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+          ),
+        ).thenThrow(Exception('load more failed'));
+      },
+      act: (bloc) => bloc.add(const LoadMoreRequested()),
+      expect: () => [
+        predicate<SearchState>((s) => s.isLoadingMore),
+        predicate<SearchState>((s) => !s.isLoadingMore && s.feeds.length == 1),
       ],
     );
   });

@@ -1,11 +1,12 @@
 part of 'search_bloc.dart';
 
-enum SearchTab { posts, actors, starterPacks }
+enum SearchTab { posts, actors, feeds, starterPacks }
 
 extension SearchTabLabel on SearchTab {
   String get label => switch (this) {
     SearchTab.posts => 'Posts',
     SearchTab.actors => 'People',
+    SearchTab.feeds => 'Feeds',
     SearchTab.starterPacks => 'Starter Packs',
   };
 }
@@ -39,6 +40,7 @@ class SearchState extends Equatable {
     this.currentSort = 'top',
     this.posts = const [],
     this.actors = const [],
+    this.feeds = const [],
     this.starterPacks = const [],
     this.cursor,
     this.starterPacksCursor,
@@ -56,6 +58,9 @@ class SearchState extends Equatable {
 
   const SearchState.loadingActors({required String query})
     : this._(status: SearchStatus.loading, query: query, currentTab: SearchTab.actors);
+
+  const SearchState.loadingFeeds({required String query})
+    : this._(status: SearchStatus.loading, query: query, currentTab: SearchTab.feeds);
 
   const SearchState.loadingStarterPacks({required String query})
     : this._(status: SearchStatus.loading, query: query, currentTab: SearchTab.starterPacks);
@@ -78,6 +83,9 @@ class SearchState extends Equatable {
   const SearchState.loadedActors({required String query, required List<ProfileView> actors, String? cursor})
     : this._(status: SearchStatus.loaded, query: query, currentTab: SearchTab.actors, actors: actors, cursor: cursor);
 
+  const SearchState.loadedFeeds({required String query, required List<GeneratorView> feeds, String? cursor})
+    : this._(status: SearchStatus.loaded, query: query, currentTab: SearchTab.feeds, feeds: feeds, cursor: cursor);
+
   const SearchState.loadedStarterPacks({
     required String query,
     required List<StarterPackViewBasic> starterPacks,
@@ -99,6 +107,7 @@ class SearchState extends Equatable {
   final String currentSort;
   final List<PostView> posts;
   final List<ProfileView> actors;
+  final List<GeneratorView> feeds;
   final List<StarterPackViewBasic> starterPacks;
   final String? cursor;
   final String? starterPacksCursor;
@@ -110,7 +119,7 @@ class SearchState extends Equatable {
 
   bool get isLoading => status == SearchStatus.loading;
   bool get hasError => status == SearchStatus.error;
-  bool get hasResults => posts.isNotEmpty || actors.isNotEmpty || starterPacks.isNotEmpty;
+  bool get hasResults => posts.isNotEmpty || actors.isNotEmpty || feeds.isNotEmpty || starterPacks.isNotEmpty;
   bool get hasMore => cursor != null || starterPacksCursor != null;
 
   SearchState copyWith({
@@ -120,6 +129,7 @@ class SearchState extends Equatable {
     String? currentSort,
     List<PostView>? posts,
     List<ProfileView>? actors,
+    List<GeneratorView>? feeds,
     List<StarterPackViewBasic>? starterPacks,
     String? cursor,
     String? starterPacksCursor,
@@ -136,6 +146,7 @@ class SearchState extends Equatable {
       currentSort: currentSort ?? this.currentSort,
       posts: posts ?? this.posts,
       actors: actors ?? this.actors,
+      feeds: feeds ?? this.feeds,
       starterPacks: starterPacks ?? this.starterPacks,
       cursor: cursor ?? this.cursor,
       starterPacksCursor: starterPacksCursor ?? this.starterPacksCursor,
@@ -155,6 +166,7 @@ class SearchState extends Equatable {
     currentSort,
     posts,
     actors,
+    feeds,
     starterPacks,
     cursor,
     starterPacksCursor,

@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
@@ -47,7 +48,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onSearchChanged() {
     setState(() {});
-    context.read<SearchBloc>().add(TypeaheadRequested(query: _searchController.text));
   }
 
   void _onScroll() {
@@ -78,7 +78,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onHistoryTap(String query, String type) {
     _searchController.text = query;
-    final tab = type == 'posts' ? SearchTab.posts : SearchTab.actors;
+    final tab = switch (type) {
+      'posts' => SearchTab.posts,
+      'feeds' => SearchTab.feeds,
+      'starter_packs' => SearchTab.starterPacks,
+      _ => SearchTab.actors,
+    };
     context.read<SearchBloc>().add(SearchTabChanged(tab: tab));
     context.read<SearchBloc>().add(QuerySubmitted(query: query));
     _focusNode.unfocus();
@@ -321,6 +326,7 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           _buildTab(context, SearchTab.posts, state),
           _buildTab(context, SearchTab.actors, state),
+          _buildTab(context, SearchTab.feeds, state),
           _buildTab(context, SearchTab.starterPacks, state),
         ],
       ),
@@ -402,10 +408,6 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildBody(BuildContext context, SearchState state) {
-    if (state.typeaheadActors.isNotEmpty && _searchController.text.startsWith('@')) {
-      return _buildTypeaheadResults(context, state);
-    }
-
     if (state.query.isEmpty) {
       return _buildSearchHistory(context, state);
     }
@@ -438,6 +440,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
     if (state.currentTab == SearchTab.posts) {
       return _buildPostResults(context, state);
+    } else if (state.currentTab == SearchTab.feeds) {
+      return _buildFeedResults(context, state);
     } else if (state.currentTab == SearchTab.starterPacks) {
       return _buildStarterPackResults(context, state);
     } else {
@@ -468,7 +472,12 @@ class _SearchScreenState extends State<SearchScreen> {
             itemCount: history.length,
             itemBuilder: (context, index) {
               final entry = history[index];
-              final label = entry.type == 'posts' ? 'Posts' : 'People';
+              final label = switch (entry.type) {
+                'posts' => 'Posts',
+                'feeds' => 'Feeds',
+                'starter_packs' => 'Starter Packs',
+                _ => 'People',
+              };
               return Dismissible(
                 key: Key('history_${entry.id}'),
                 direction: DismissDirection.endToStart,
@@ -490,22 +499,6 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildTypeaheadResults(BuildContext context, SearchState state) {
-    return ListView.builder(
-      itemCount: state.typeaheadActors.length,
-      itemBuilder: (context, index) {
-        final actor = state.typeaheadActors[index];
-        return _ActorListTile(
-          actor: actor,
-          onTap: () {
-            _searchController.text = '@${actor.handle}';
-            _onSubmit('@${actor.handle}');
-          },
-        );
-      },
     );
   }
 
@@ -545,6 +538,40 @@ class _SearchScreenState extends State<SearchScreen> {
           );
         }
         return _ActorResultTile(actor: actors[index]);
+      },
+    );
+  }
+
+  Widget _buildFeedResults(BuildContext context, SearchState state) {
+    final feeds = state.feeds;
+    if (feeds.isEmpty) {
+      return Center(child: Text('No feeds found', style: Theme.of(context).textTheme.bodyLarge));
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: feeds.length + (state.isLoadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == feeds.length) {
+          return const Center(
+            child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
+          );
+        }
+
+        final feed = feeds[index];
+        return _FeedResultTile(
+          feed: feed,
+          onAdded: (displayName) {
+            final messenger = ScaffoldMessenger.of(context);
+            messenger.hideCurrentSnackBar();
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text('Added $displayName to your saved feeds'),
+                action: SnackBarAction(label: 'Manage', onPressed: () => GoRouter.maybeOf(context)?.push('/feeds')),
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -925,6 +952,94 @@ class _ActorListTile extends StatelessWidget {
   }
 }
 
+class _FeedResultTile extends StatelessWidget {
+  const _FeedResultTile({required this.feed, required this.onAdded});
+
+  final GeneratorView feed;
+  final ValueChanged<String> onAdded;
+
+  @override
+  Widget build(BuildContext context) {
+    final isAdded = context.select<FeedPreferencesCubit, bool>(
+      (cubit) => cubit.state.feeds.any((savedFeed) => savedFeed.value == feed.uri.toString()),
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              gradient: const LinearGradient(colors: [Color(0xFF08BDBA), Color(0xFF3DDBD9)]),
+            ),
+            child: feed.avatar != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      feed.avatar!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Icon(Icons.rss_feed, color: Colors.white),
+                    ),
+                  )
+                : const Icon(Icons.rss_feed, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  feed.displayName,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  'by @${feed.creator.handle}',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+                if (feed.description != null && feed.description!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    feed.description!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: isAdded
+                ? null
+                : () async {
+                    await context.read<FeedPreferencesCubit>().addFeed(
+                      type: const SavedFeedType.knownValue(data: KnownSavedFeedType.feed),
+                      value: feed.uri.toString(),
+                      pinned: false,
+                    );
+                    if (!context.mounted) return;
+                    onAdded(feed.displayName);
+                  },
+            child: Text(isAdded ? 'Added' : '+ Add'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FollowButton extends StatefulWidget {
   const _FollowButton({required this.actor});
 
@@ -993,7 +1108,7 @@ class _SearchEmptyState extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Find posts and people on the network.\n'
-              'Type @ to search for users.',
+              'Use Jump to profile to quickly open a user.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
             ),
