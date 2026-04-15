@@ -5,6 +5,8 @@ import 'package:bluesky_text/bluesky_text.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/router/in_app_link_resolver.dart';
+import 'package:lazurite/features/search/data/hashtag_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FacetText extends StatelessWidget {
@@ -159,7 +161,7 @@ final class _LinkSegment extends _TextSegment {
     return TextSpan(
       text: text,
       style: _linkStyle(context),
-      recognizer: TapGestureRecognizer()..onTap = () => _launchExternal(Uri.parse(uri)),
+      recognizer: TapGestureRecognizer()..onTap = () => _openLink(context, uri),
     );
   }
 }
@@ -189,7 +191,7 @@ final class _TagSegment extends _TextSegment {
     return TextSpan(
       text: text,
       style: _linkStyle(context),
-      recognizer: TapGestureRecognizer()..onTap = () => _launchExternal(_searchUri(tag)),
+      recognizer: TapGestureRecognizer()..onTap = () => _openHashtag(context, tag),
     );
   }
 }
@@ -203,7 +205,35 @@ void _openProfile(BuildContext context, String actor) {
   router.push('/profile/view?actor=${Uri.encodeQueryComponent(actor)}');
 }
 
-Uri _searchUri(String tag) => Uri.https('bsky.app', '/search', {'q': '#$tag'});
+void _openLink(BuildContext context, String rawLink) {
+  final router = GoRouter.maybeOf(context);
+  final inAppRoute = InAppLinkResolver.resolveRoute(rawLink);
+  if (inAppRoute != null && router != null) {
+    router.push(inAppRoute);
+    return;
+  }
+
+  final uri = Uri.tryParse(rawLink);
+  if (uri == null) {
+    return;
+  }
+
+  _launchExternal(uri);
+}
+
+void _openHashtag(BuildContext context, String tag) {
+  final normalizedTag = normalizeHashtag(tag);
+  if (normalizedTag.isEmpty) {
+    return;
+  }
+
+  final router = GoRouter.maybeOf(context);
+  if (router == null) {
+    return;
+  }
+
+  router.push('/hashtag?tag=${Uri.encodeQueryComponent(normalizedTag)}');
+}
 
 Future<void> _launchExternal(Uri url) async {
   await launchUrl(url, mode: LaunchMode.externalApplication);

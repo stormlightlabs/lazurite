@@ -13,6 +13,28 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:url_launcher_platform_interface/link.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
+
+class _FakeUrlLauncher extends Fake with MockPlatformInterfaceMixin implements UrlLauncherPlatform {
+  final List<String> launchedUrls = [];
+
+  @override
+  LinkDelegate? get linkDelegate => null;
+
+  @override
+  Future<bool> launchUrl(String url, LaunchOptions options) async {
+    launchedUrls.add(url);
+    return true;
+  }
+
+  @override
+  Future<bool> supportsMode(PreferredLaunchMode mode) async => true;
+
+  @override
+  Future<bool> canLaunch(String url) async => true;
+}
 
 FeedViewPost _makePost({String text = 'Hello'}) {
   final record = FeedPostRecord(text: text, createdAt: DateTime.utc(2026, 3, 16));
@@ -51,6 +73,13 @@ FeedViewPost _makeReplyPost({String handle = 'test.bsky.social'}) {
 }
 
 void main() {
+  late _FakeUrlLauncher fakeUrlLauncher;
+
+  setUp(() {
+    fakeUrlLauncher = _FakeUrlLauncher();
+    UrlLauncherPlatform.instance = fakeUrlLauncher;
+  });
+
   Widget buildSubject(FeedViewPost post, {VoidCallback? onTap}) {
     final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
     return MaterialApp(
@@ -122,6 +151,85 @@ void main() {
     expect(find.text('Example Article'), findsOneWidget);
     expect(find.text('A useful external card'), findsOneWidget);
     expect(find.text('example.com'), findsOneWidget);
+  });
+
+  testWidgets('tapping bsky external embed routes to profile in app', (tester) async {
+    String? pushedRoute;
+    final record = FeedPostRecord(text: 'Read this', createdAt: DateTime.utc(2026, 3, 16));
+    final post = FeedViewPost(
+      post: PostView(
+        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
+        cid: 'cid-xyz',
+        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+        record: record.toJson(),
+        indexedAt: DateTime.utc(2026, 3, 16),
+        embed: const UPostViewEmbed.embedExternalView(
+          data: EmbedExternalView(
+            external: EmbedExternalViewExternal(
+              uri: 'https://bsky.app/profile/alice.bsky.social',
+              title: 'Alice',
+              description: 'Profile link',
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(body: PostCard(feedViewPost: post)),
+        ),
+        GoRoute(
+          path: '/profile/view',
+          builder: (context, state) {
+            pushedRoute = state.uri.toString();
+            return const Scaffold(body: Text('profile'));
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Alice'));
+    await tester.pumpAndSettle();
+
+    expect(pushedRoute, isNotNull);
+    expect(Uri.parse(pushedRoute!).path, '/profile/view');
+    expect(fakeUrlLauncher.launchedUrls, isEmpty);
+  });
+
+  testWidgets('tapping non-matching external embed launches browser', (tester) async {
+    final record = FeedPostRecord(text: 'Read this', createdAt: DateTime.utc(2026, 3, 16));
+    final post = FeedViewPost(
+      post: PostView(
+        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
+        cid: 'cid-xyz',
+        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+        record: record.toJson(),
+        indexedAt: DateTime.utc(2026, 3, 16),
+        embed: const UPostViewEmbed.embedExternalView(
+          data: EmbedExternalView(
+            external: EmbedExternalViewExternal(
+              uri: 'https://example.com/article',
+              title: 'External Article',
+              description: 'External card',
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(buildSubject(post));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('External Article'));
+    await tester.pumpAndSettle();
+
+    expect(fakeUrlLauncher.launchedUrls, contains('https://example.com/article'));
   });
 
   testWidgets('uses themed serif styling for post body text', (tester) async {

@@ -30,6 +30,10 @@ import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/profile/presentation/follow_audit_screen.dart';
 import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
+import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
+import 'package:lazurite/features/search/data/hashtag_utils.dart';
+import 'package:lazurite/features/search/data/search_repository.dart';
+import 'package:lazurite/features/search/presentation/hashtag_screen.dart';
 import 'package:lazurite/features/messages/bloc/message_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
@@ -179,6 +183,18 @@ class AppRouter {
         builder: (context, state) {
           final uri = state.uri.queryParameters['uri'] ?? '';
           return PostThreadScreen(postUri: Uri.decodeComponent(uri));
+        },
+      ),
+      GoRoute(
+        path: '/hashtag',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final normalizedTag = normalizeHashtag(state.uri.queryParameters['tag'] ?? '');
+          return BlocProvider(
+            key: ValueKey('hashtag-$normalizedTag'),
+            create: (_) => HashtagCubit(searchRepository: context.read<SearchRepository>(), tag: normalizedTag),
+            child: HashtagScreen(tag: normalizedTag),
+          );
         },
       ),
       GoRoute(

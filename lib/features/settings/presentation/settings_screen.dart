@@ -118,7 +118,7 @@ class SettingsScreen extends StatelessWidget {
           ],
           _buildSectionHeader(context, 'About'),
           _SettingsTile(
-            icon: Icons.code_outlined,
+            icon: Icons.explore_outlined,
             title: 'AT Explorer',
             subtitle: 'View PDS Records',
             onTap: () => context.push('/settings/devtools'),

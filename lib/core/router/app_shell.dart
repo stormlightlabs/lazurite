@@ -244,8 +244,8 @@ class _AppMenu extends StatelessWidget {
                       const Divider(height: 24),
                       const _MenuSectionLabel(label: 'Advanced'),
                       _MenuTile(
-                        icon: Icons.code_outlined,
-                        selectedIcon: Icons.code,
+                        icon: Icons.explore_outlined,
+                        selectedIcon: Icons.explore,
                         label: 'AT Explorer',
                         onTap: () => _pushRoute(context, '/settings/devtools'),
                       ),

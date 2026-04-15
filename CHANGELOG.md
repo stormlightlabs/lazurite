@@ -64,3 +64,6 @@
 #### 2026-04-14
 
 - Post editing via delete-recreate
+- Added url resolution for in-app links (profiles, posts, hashtags) with dedicated hashtag
+  screen (matches bsky.app implementation with Top/Latest sorting)
+- Jump to hashtag action from the hashtag screen with related hashtags & search

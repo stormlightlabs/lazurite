@@ -8,6 +8,7 @@ import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/router/in_app_link_resolver.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
@@ -131,7 +132,7 @@ class PostEmbedView extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return InkWell(
-      onTap: () => _launchExternal(Uri.parse(external.uri)),
+      onTap: () => _openExternalUri(context, external.uri),
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
@@ -173,7 +174,7 @@ class PostEmbedView extends StatelessWidget {
                   ],
                   const SizedBox(height: 8),
                   Text(
-                    Uri.parse(external.uri).host,
+                    _displayHost(external.uri),
                     style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                 ],
@@ -430,6 +431,31 @@ class PostEmbedView extends StatelessWidget {
     final uri = Uri.tryParse(url);
     final segment = uri?.pathSegments.isNotEmpty == true ? uri!.pathSegments.last : 'image.jpg';
     return segment.isEmpty ? 'image.jpg' : segment;
+  }
+
+  String _displayHost(String rawUri) {
+    final uri = Uri.tryParse(rawUri);
+    final host = uri?.host.trim();
+    if (host == null || host.isEmpty) {
+      return rawUri;
+    }
+    return host;
+  }
+
+  void _openExternalUri(BuildContext context, String rawUri) {
+    final inAppRoute = InAppLinkResolver.resolveRoute(rawUri);
+    final router = GoRouter.maybeOf(context);
+    if (inAppRoute != null && router != null) {
+      router.push(inAppRoute);
+      return;
+    }
+
+    final uri = Uri.tryParse(rawUri);
+    if (uri == null) {
+      return;
+    }
+
+    _launchExternal(uri);
   }
 
   FeedPostRecord? _tryParseRecord(Map<String, dynamic> record) {
