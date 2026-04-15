@@ -354,4 +354,30 @@ void main() {
 
     router.dispose();
   });
+
+  testWidgets('allows unauthenticated access to privacy and terms routes', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(
+      BlocProvider<AuthBloc>.value(
+        value: authBloc,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    router.go('/privacy');
+    await tester.pumpAndSettle();
+    expect(find.text('Privacy Policy'), findsWidgets);
+
+    router.go('/terms');
+    await tester.pumpAndSettle();
+    expect(find.text('Terms of Service'), findsWidgets);
+
+    router.dispose();
+  });
 }

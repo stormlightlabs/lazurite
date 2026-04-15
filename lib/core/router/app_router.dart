@@ -60,7 +60,9 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/cubit/video_upload_limits_cubit.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
+import 'package:lazurite/features/settings/presentation/privacy_policy_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
+import 'package:lazurite/features/settings/presentation/terms_of_service_screen.dart';
 import 'package:lazurite/features/settings/presentation/video_upload_limits_screen.dart';
 
 ComposeRouteArgs parseComposeRouteExtra(Object? extra) {
@@ -132,9 +134,12 @@ class AppRouter {
     observers: navigatorObserver != null ? [navigatorObserver!] : null,
     redirect: (context, state) {
       final isAuthenticated = authBloc.state.isAuthenticated;
-      final isLoggingIn = state.uri.path == '/login';
+      final path = state.uri.path;
+      final publicPaths = {'/login', '/terms', '/privacy'};
+      final isLoggingIn = path == '/login';
+      final isPublicPath = publicPaths.contains(path);
 
-      if (!isAuthenticated && !isLoggingIn) {
+      if (!isAuthenticated && !isPublicPath) {
         return '/login';
       }
 
@@ -146,6 +151,8 @@ class AppRouter {
     },
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(path: '/terms', builder: (context, state) => const TermsOfServiceScreen()),
+      GoRoute(path: '/privacy', builder: (context, state) => const PrivacyPolicyScreen()),
       GoRoute(path: '/notifications', redirect: (_, _) => '/alerts'),
       GoRoute(path: '/messages', redirect: (_, _) => '/alerts/messages'),
       GoRoute(

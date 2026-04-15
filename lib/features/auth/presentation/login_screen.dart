@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -191,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Generate app passwords from BlueSky Settings -> App Passwords.',
+                                      'Can be generated via BlueSky\'s App Passwords section at bsky.app.',
                                       style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                                       textAlign: TextAlign.center,
                                     ),
@@ -201,6 +202,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ],
+                        const SizedBox(height: 28),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
+                          children: [
+                            TextButton(onPressed: () => context.push('/terms'), child: const Text('Terms of Service')),
+                            Text('•', style: theme.textTheme.bodySmall),
+                            TextButton(onPressed: () => context.push('/privacy'), child: const Text('Privacy Policy')),
+                          ],
+                        ),
                       ],
                     ),
                   ),

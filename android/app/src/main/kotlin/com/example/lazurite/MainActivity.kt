@@ -1,4 +1,4 @@
-package com.example.lazurite
+package org.stormlightlabs.lazurite
 
 import io.flutter.embedding.android.FlutterActivity
 

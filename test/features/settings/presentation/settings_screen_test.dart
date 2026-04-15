@@ -94,6 +94,14 @@ void main() {
           path: '/settings/clean-follows',
           builder: (context, state) => const Scaffold(body: Text('clean-follows')),
         ),
+        GoRoute(
+          path: '/terms',
+          builder: (context, state) => const Scaffold(body: Text('terms-screen')),
+        ),
+        GoRoute(
+          path: '/privacy',
+          builder: (context, state) => const Scaffold(body: Text('privacy-screen')),
+        ),
       ],
     );
 
@@ -268,6 +276,17 @@ void main() {
     expect(find.text('Audit and unfollow problematic accounts in bulk'), findsOneWidget);
   });
 
+  testWidgets('shows legal rows in About section', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Terms of Service'), 300);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Terms of Service'), findsOneWidget);
+    expect(find.text('Privacy Policy'), findsOneWidget);
+  });
+
   testWidgets('tapping Clean Follows tile navigates to clean follows screen', (tester) async {
     await tester.pumpWidget(buildRoutedSubject());
     await tester.pumpAndSettle();
@@ -279,6 +298,32 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('clean-follows'), findsOneWidget);
+  });
+
+  testWidgets('tapping Terms of Service row navigates to terms screen', (tester) async {
+    await tester.pumpWidget(buildRoutedSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Terms of Service'), 300);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Terms of Service'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('terms-screen'), findsOneWidget);
+  });
+
+  testWidgets('tapping Privacy Policy row navigates to privacy screen', (tester) async {
+    await tester.pumpWidget(buildRoutedSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Privacy Policy'), 300);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Privacy Policy'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('privacy-screen'), findsOneWidget);
   });
 }
 

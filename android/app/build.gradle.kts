@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.lazurite"
+    namespace = "org.stormlightlabs.lazurite"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,8 +20,7 @@ android {
     }
 
     defaultConfig {
-        // Replace this placeholder application ID before shipping a release build.
-        applicationId = "com.example.lazurite"
+        applicationId = "org.stormlightlabs.lazurite"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

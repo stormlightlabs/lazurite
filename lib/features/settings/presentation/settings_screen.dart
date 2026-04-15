@@ -135,6 +135,18 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Stormlight Labs',
             onTap: () => context.push('/settings/about'),
           ),
+          _SettingsTile(
+            icon: Icons.gavel_outlined,
+            title: 'Terms of Service',
+            subtitle: 'Usage rules and responsibilities',
+            onTap: () => context.push('/terms'),
+          ),
+          _SettingsTile(
+            icon: Icons.privacy_tip_outlined,
+            title: 'Privacy Policy',
+            subtitle: 'How Lazurite handles data',
+            onTap: () => context.push('/privacy'),
+          ),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Danger Zone'),
           _SettingsTile(

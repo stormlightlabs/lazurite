@@ -1,0 +1,157 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lazurite/features/settings/presentation/widgets/contact_section.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+class TermsOfServiceScreen extends StatelessWidget {
+  const TermsOfServiceScreen({super.key});
+
+  static const _effectiveDate = 'April 15, 2026';
+  static const _websiteUrl = 'https://stormlightlabs.org';
+  static const _emailUrl = 'mailto:info@stormlightlabs.org';
+
+  Future<void> _launch(String url) async {
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Lazurite\'s Terms of Service')),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Center(
+            child: SvgPicture.asset(
+              'assets/logo.svg',
+              width: 64,
+              height: 64,
+              colorFilter: ColorFilter.mode(colorScheme.primary, BlendMode.srcIn),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Terms of Service',
+            textAlign: TextAlign.center,
+            style: textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Effective $_effectiveDate',
+            textAlign: TextAlign.center,
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'These Terms govern your use of Lazurite, a Bluesky client built by Stormlight Labs. '
+            'By installing or using Lazurite, you agree to these Terms.',
+            style: textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 20),
+          const _TermsSection(
+            title: 'What Lazurite is',
+            paragraphs: [
+              'Lazurite is client software that helps you access Bluesky from your device.',
+              'Lazurite does not provide the Bluesky network itself.',
+            ],
+          ),
+          const _TermsSection(
+            title: 'Eligibility',
+            paragraphs: [
+              'You must be legally able to agree to these Terms and meet the minimum age requirement in your jurisdiction.',
+            ],
+          ),
+          const _TermsSection(
+            title: 'License',
+            paragraphs: [
+              'We grant you a limited, non-exclusive, non-transferable, revocable license to use Lazurite on devices you control.',
+              'You may not misuse the app, break applicable law, or attempt unauthorized access to systems or accounts.',
+            ],
+          ),
+          // TODO: do we link to BlueSky's legalese here?
+          const _TermsSection(
+            title: 'Your account and activity',
+            paragraphs: [
+              'You are responsible for your Bluesky account, credentials, and activity taken through Lazurite.',
+              'You retain rights to your content, subject to Bluesky policies and any third-party rights.',
+            ],
+          ),
+          const _TermsSection(
+            title: 'Acceptable use',
+            paragraphs: [
+              'Do not use Lazurite to harass others, violate rights, distribute unlawful content, or abuse platform infrastructure.',
+              'You are responsible for complying with Bluesky rules and applicable law.',
+            ],
+          ),
+          const _TermsSection(
+            title: 'Third-party dependencies',
+            paragraphs: [
+              'Lazurite depends on Bluesky and related third-party services.',
+              'If those services change, restrict, or discontinue access, features may degrade or stop working.',
+            ],
+          ),
+          const _TermsSection(
+            title: 'No warranty',
+            paragraphs: [
+              'Lazurite is provided "as is" and "as available." We do not guarantee uninterrupted, secure, or error-free operation.',
+            ],
+          ),
+          const _TermsSection(
+            title: 'Liability',
+            paragraphs: [
+              'To the maximum extent permitted by law, Stormlight Labs is not liable for indirect, incidental, or consequential damages arising from your use of Lazurite.',
+            ],
+          ),
+          const _TermsSection(
+            title: 'Changes and termination',
+            paragraphs: [
+              'We may update, suspend, or discontinue parts of Lazurite.',
+              'We may update these Terms. Continued use after updates means you accept the revised Terms.',
+            ],
+          ),
+          ContactSection(onStormlightLabsTap: () => _launch(_websiteUrl), onEmailTap: () => _launch(_emailUrl)),
+          const SizedBox(height: 12),
+          Center(child: Text('Lazurite v1.0.0', style: textTheme.bodySmall)),
+        ],
+      ),
+    );
+  }
+}
+
+class _TermsSection extends StatelessWidget {
+  const _TermsSection({required this.title, required this.paragraphs});
+
+  final String title;
+  final List<String> paragraphs;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: colorScheme.primary),
+          ),
+          const SizedBox(height: 6),
+          ...paragraphs.map(
+            (paragraph) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(paragraph, style: textTheme.bodyMedium),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
