@@ -18,13 +18,13 @@ bun run index.ts [options]
 
 #### Options
 
-| Option      | Short | Description                                               | Default     |
-| ----------- | ----- | --------------------------------------------------------- | ----------- |
-| `--theme`   | `-t`  | Theme name: `oxocarbon`, `catppuccin`, `nord`, `rosePine` | Interactive |
-| `--variant` | `-v`  | Theme variant: `light` or `dark`                          | Interactive |
-| `--output`  | `-o`  | Output directory for generated images                     | `./output`  |
-| `--all`     | `-a`  | Generate splash screens for all themes                    | `false`     |
-| `--help`    | `-h`  | Show help message                                         | -           |
+| Option      | Short | Description                                                           | Default     |
+| ----------- | ----- | --------------------------------------------------------------------- | ----------- |
+| `--theme`   | `-t`  | Theme name: `lazurite`, `oxocarbon`, `catppuccin`, `nord`, `rosePine` | Interactive |
+| `--variant` | `-v`  | Theme variant: `light` or `dark`                                      | Interactive |
+| `--output`  | `-o`  | Output directory for generated images                                 | `./output`  |
+| `--all`     | `-a`  | Generate splash screens for all themes                                | `false`     |
+| `--help`    | `-h`  | Show help message                                                     | -           |
 
 ### Examples
 
@@ -69,12 +69,23 @@ bun run index.ts -t nord -v light -o ./assets/splash
 
 ## Available Themes
 
-| Theme      | Dark Background | Light Background | Primary Color |
-| ---------- | --------------- | ---------------- | ------------- |
-| Oxocarbon  | `#161616`       | `#ffffff`        | `#78a9ff`     |
-| Catppuccin | `#1e1e2e`       | `#eff1f5`        | `#b4befe`     |
-| Nord       | `#2e3440`       | `#eceff4`        | `#88c0d0`     |
-| Rosé Pine  | `#191724`       | `#faf4ed`        | `#ebbcba`     |
+| Theme      | Dark Background | Light Background | Primary Color       |
+| ---------- | --------------- | ---------------- | ------------------- |
+| Lazurite   | `#0e0e0e`       | `#ffffff`        | `#7dafff`/`#0b63d1` |
+| Oxocarbon  | `#161616`       | `#ffffff`        | `#78a9ff`           |
+| Catppuccin | `#1e1e2e`       | `#eff1f5`        | `#b4befe`           |
+| Nord       | `#2e3440`       | `#eceff4`        | `#88c0d0`           |
+| Rosé Pine  | `#191724`       | `#faf4ed`        | `#ebbcba`           |
+
+## Native Splash Assets for Flutter
+
+Generate PNG assets consumed by `flutter_native_splash` (including Android 12+ logo images):
+
+```bash
+bun run generate-native-splash-assets
+```
+
+Generated files are written to `../assets/splash/`.
 
 ## Technical Details
 

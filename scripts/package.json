@@ -9,6 +9,7 @@
     "start": "bun run index.ts",
     "build": "bun build index.ts --outfile=dist/splash-gen --target=bun",
     "generate": "bun run index.ts",
+    "generate-native-splash-assets": "bun run generate-native-splash-assets.ts",
     "profile-context": "bun run profile-context.ts"
   },
   "devDependencies": {

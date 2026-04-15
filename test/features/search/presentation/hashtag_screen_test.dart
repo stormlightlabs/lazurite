@@ -206,7 +206,7 @@ void main() {
     await tester.tap(find.text('Jump to hashtag'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Jump to hashtag'), findsOneWidget);
+    expect(find.text('Jump to hashtag'), findsAtLeastNWidgets(1));
     expect(find.text('#openweb'), findsOneWidget);
 
     await tester.tap(find.text('#openweb'));

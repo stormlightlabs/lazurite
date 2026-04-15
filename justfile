@@ -22,6 +22,17 @@ test *paths='':
 generate:
     flutter pub run build_runner build --delete-conflicting-outputs
 
+# Generate splash PNG source assets from SVG using Bun
+generate-splash-assets:
+    cd scripts && bun run generate-native-splash-assets
+
+# Apply flutter_native_splash config to platform projects
+generate-native-splash:
+    dart run flutter_native_splash:create --path=flutter_native_splash.yaml
+
+# End-to-end native splash generation
+splash: generate-splash-assets generate-native-splash
+
 # Run code gen
 gen: generate format
 

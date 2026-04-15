@@ -1,0 +1,15 @@
+flutter_native_splash:
+  color: "#ffffff"
+  color_dark: "#0e0e0e"
+  image: assets/splash/lazurite_splash_logo_light.png
+  image_dark: assets/splash/lazurite_splash_logo_dark.png
+  android: true
+  ios: true
+  web: false
+  fullscreen: true
+
+  android_12:
+    color: "#ffffff"
+    color_dark: "#0e0e0e"
+    image: assets/splash/lazurite_android12_logo_light.png
+    image_dark: assets/splash/lazurite_android12_logo_dark.png

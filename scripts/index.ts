@@ -71,7 +71,7 @@ async function main() {
       theme: {
         type: "string",
         short: "t",
-        help: "Theme name (oxocarbon, catppuccin, nord, rosePine) or with -light suffix",
+        help: "Theme name (lazurite, oxocarbon, catppuccin, nord, rosePine) or with -light suffix",
       },
       variant: { type: "string", short: "v", help: "Theme variant (light or dark)" },
       output: { type: "string", short: "o", default: "./dist", help: "Output directory for generated images" },
@@ -86,7 +86,7 @@ async function main() {
     console.log(chalk.bold("Usage:"));
     console.log("  bun run index.ts [options]\n");
     console.log(chalk.bold("Options:"));
-    console.log("  -t, --theme <name>     Theme name (oxocarbon, catppuccin, nord, rosePine)");
+    console.log("  -t, --theme <name>     Theme name (lazurite, oxocarbon, catppuccin, nord, rosePine)");
     console.log("  -v, --variant <type>   Theme variant (light or dark)");
     console.log("  -o, --output <dir>     Output directory (default: ./dist)");
     console.log("  -a, --all              Generate for all themes");
@@ -114,6 +114,7 @@ async function main() {
         message: "Select theme palette:",
         choices: [
           { name: "Oxocarbon", value: "oxocarbon" },
+          { name: "Lazurite", value: "lazurite" },
           { name: "Catppuccin", value: "catppuccin" },
           { name: "Nord", value: "nord" },
           { name: "Rosé Pine", value: "rosePine" },

@@ -34,6 +34,14 @@ export const IOS_SIZES: { name: string; size: number; scale: number; height?: nu
 ];
 
 export const THEMES: Record<ThemeKey, ThemeColors> = {
+  lazurite: { name: "Lazurite", variant: "dark", background: "#0e0e0e", text: "#f4f6fb", primary: "#7dafff" },
+  "lazurite-light": {
+    name: "Lazurite Light",
+    variant: "light",
+    background: "#ffffff",
+    text: "#101418",
+    primary: "#0b63d1",
+  },
   oxocarbon: { name: "Oxocarbon", variant: "dark", background: "#161616", text: "#f2f4f8", primary: "#78a9ff" },
   "oxocarbon-light": {
     name: "Oxocarbon Light",
@@ -64,6 +72,10 @@ export const THEMES: Record<ThemeKey, ThemeColors> = {
 
 export function getThemeFromKey(k: ThemeKey | string): ThemeColors {
   switch (k) {
+    case "lazurite":
+      return THEMES.lazurite;
+    case "lazurite-light":
+      return THEMES["lazurite-light"];
     case "oxocarbon":
       return THEMES.oxocarbon;
     case "oxocarbon-light":
