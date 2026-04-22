@@ -51,25 +51,13 @@ scope: Repository audit for likely store submission blockers or high-risk policy
   - No explicit compose-time objectionable-content filter is visible in compose flow.
 - Impact: Could pass if platform-side moderation is accepted by review, but still a non-trivial risk without clear reviewer notes.
 
-### Release Engineering Blocker
-
-- Android release is configured to use debug signing:
-  - `android/app/build.gradle.kts` lines 33-38.
-- Android application ID is still placeholder:
-  - `android/app/build.gradle.kts` lines 23-25 (`com.example.lazurite`).
-- iOS bundle identifiers are still placeholder:
-  - `ios/Runner.xcodeproj/project.pbxproj` lines 498, 681, 704 (`com.example.lazurite`).
-- iOS release config currently shows developer signing identity:
-  - `ios/Runner.xcodeproj/project.pbxproj` line 642 (`iPhone Developer`).
-- Clarification:
-  - `org.stormlightlabs.lazurite.auth` appears in `Info.plist` URL type name (`CFBundleURLName`) and is not itself a placeholder bundle ID.
-- Impact: Submission can fail operationally or be blocked in release pipeline.
-
 ### Reviewer-access risk for App Store
 
 - Apple "Before You Submit" requires full reviewer access (demo account or demo mode for account-based features).
 - App is account-based and login-gated; no repo evidence of dedicated reviewer/demo path.
 - Impact: Common review delay/rejection if review notes do not include working credentials.
+  - Create a real Bluesky account for reviewers, populate it with sample content, and
+    provide the credentials in App Store Connect / Play Console.
 
 ## OK
 
@@ -84,10 +72,10 @@ scope: Repository audit for likely store submission blockers or high-risk policy
 
 ## Fixes (In Priority Order)
 
-- [ ] Add a dedicated Legal screen and surface:
-  - [ ] Privacy Policy (in-app link + readable text summary)
-  - [ ] Terms of Use / User Policy
-  - [ ] Reachable from login and settings/about
+- [x] Add a dedicated Legal screen and surface:
+  - [x] Privacy Policy (in-app link + readable text summary)
+  - [x] Terms of Use / User Policy
+  - [x] Reachable from login and settings/about
 - [ ] Add UGC policy acceptance flow before first create/upload action (compose, media upload, messages if applicable).
 - [ ] Document moderation operations in policy/reviewer notes:
   - [ ] How reports are handled and SLA
