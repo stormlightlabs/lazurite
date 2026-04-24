@@ -55,13 +55,10 @@ void main() {
 
       await tester.tap(find.text('Stormlight Labs'));
       await tester.pump();
-      await tester.tap(find.text('GitHub: stormlightlabs'));
-      await tester.pump();
       await tester.tap(find.text('info@stormlightlabs.org'));
       await tester.pump();
 
       expect(fakeUrlLauncher.launchedUrls, contains('https://stormlightlabs.org'));
-      expect(fakeUrlLauncher.launchedUrls, contains('https://github.com/stormlightlabs'));
       expect(fakeUrlLauncher.launchedUrls, contains('mailto:info@stormlightlabs.org'));
     });
   });
@@ -90,13 +87,10 @@ void main() {
 
       await tester.tap(find.text('Stormlight Labs'));
       await tester.pump();
-      await tester.tap(find.text('GitHub: stormlightlabs'));
-      await tester.pump();
       await tester.tap(find.text('info@stormlightlabs.org'));
       await tester.pump();
 
       expect(fakeUrlLauncher.launchedUrls, contains('https://stormlightlabs.org'));
-      expect(fakeUrlLauncher.launchedUrls, contains('https://github.com/stormlightlabs'));
       expect(fakeUrlLauncher.launchedUrls, contains('mailto:info@stormlightlabs.org'));
     });
   });

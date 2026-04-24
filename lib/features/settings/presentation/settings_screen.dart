@@ -311,8 +311,8 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.manage_search_outlined,
                 title: 'Semantic Search',
                 subtitle: settingsState.semanticSearchEnabled
-                    ? 'Search posts by meaning, not just keywords'
-                    : 'Enable to search posts by meaning',
+                    ? 'Search your liked & saved posts by meaning, not just keywords'
+                    : 'Enable this to search your liked & saved posts by meaning',
                 trailing: Switch.adaptive(
                   value: settingsState.semanticSearchEnabled,
                   onChanged: (value) async {
