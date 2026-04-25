@@ -15,40 +15,40 @@ duplication across 40+ files. The findings group into ten categories.
 | ----------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `_initials(String)`     | Generates initials from display name | 10 files (post_card, grid_post_card, post_embed_view, notification items, suggested_follows, labeler_detail, moderation_settings, search, hashtag) |
 | `_formatCount(int)`     | Formats numbers with K/M suffixes    | 5 files (post_action_bar, post_card_footer, starter_pack_card, starter_pack_detail, profile_screen)                                                |
-| `_formatTime(DateTime)` | Relative time strings ("2h ago")     | 4 files (notification items, search, hashtag) — overlaps with `formatPostTime()` in post_card_footer                                               |
+| `_formatTime(DateTime)` | Relative time strings ("2h ago")     | 4 files (notification items, search, hashtag) - overlaps with `formatPostTime()` in post_card_footer                                               |
 
 **Target**: Extract to `lib/shared/utils/format_utils.dart`.
 
 ### 2. Duplicated Widgets
 
-**Avatar display** — 14 files repeat `CircleAvatar` / `ModeratedAvatar` with
+**Avatar display** - 14 files repeat `CircleAvatar` / `ModeratedAvatar` with
 identical styling. Extract to a configurable `ProfileAvatar` widget.
 
-**Author name + handle** — Repeated two-line text widget (displayName / @handle)
+**Author name + handle** - Repeated two-line text widget (displayName / @handle)
 in post_card, grid_post_card, post_embed_view, convo_list_item. Extract to
 `ActorNameWidget`.
 
-**Greyscale color filter** — Identical 4x5 color matrix defined in
+**Greyscale color filter** - Identical 4x5 color matrix defined in
 grid_post_card and profile_screen. Extract to `lib/core/theme/color_filters.dart`.
 
-**Notification reason icon** — Large switch statement mapping notification
+**Notification reason icon** - Large switch statement mapping notification
 reasons to icons/colors duplicated identically in notification_list_item and
 grouped_notification_list_item. Extract to `NotificationIconMapper`.
 
 ### 3. Bottom Sheets & Dialogs
 
-**Modal bottom sheets** — 9 files repeat `showModalBottomSheet` with ListTile
+**Modal bottom sheets** - 9 files repeat `showModalBottomSheet` with ListTile
 option lists. Create `OptionsSheet` builder.
 
-**Confirmation dialogs** — 26 occurrences of AlertDialog with
+**Confirmation dialogs** - 26 occurrences of AlertDialog with
 title/content/cancel/confirm. Create `ConfirmationDialog(title, content,
 confirmLabel, onConfirm)`.
 
 ### 4. State Handling Patterns
 
-**Loading** — `Center(child: CircularProgressIndicator())` in 8+ screens.
-**Error with retry** — Center + error message + retry button in 8+ screens.
-**Empty state** — Center + message + optional action in multiple screens.
+**Loading** - `Center(child: CircularProgressIndicator())` in 8+ screens.
+**Error with retry** - Center + error message + retry button in 8+ screens.
+**Empty state** - Center + message + optional action in multiple screens.
 
 Create `LoadingState`, `ErrorState(message, onRetry)`, `EmptyState(message,
 icon, action)` widgets in `lib/shared/presentation/widgets/`.
@@ -120,7 +120,7 @@ v4.0.0-beta.3).
 Reasons:
 
 - Requires building/maintaining a separate Widgetbook app with use-case
-  definitions for every widget — high overhead for a small team
+  definitions for every widget - high overhead for a small team
 - The project's gap is golden tests and integration tests, not a design catalog
 - No dedicated designer reviewing components, so collaborative review value is
   unrealized
@@ -131,7 +131,7 @@ PR visual review becomes a bottleneck.
 
 ### Recommended Approach
 
-**Golden Toolkit** (`golden_toolkit` package) — add visual regression to
+**Golden Toolkit** (`golden_toolkit` package) - add visual regression to
 existing widget tests with minimal overhead:
 
 - One or two lines per existing test to capture golden snapshots
@@ -139,10 +139,10 @@ existing widget tests with minimal overhead:
 - Works with existing `pumpWidget` patterns
 - `multiScreenGolden` for multi-device-size snapshots
 
-**Patrol** — consider later if native feature testing (permissions, deep links)
+**Patrol** - consider later if native feature testing (permissions, deep links)
 becomes important.
 
-**Built-in integration tests** — add end-to-end flow tests using
+**Built-in integration tests** - add end-to-end flow tests using
 `integration_test` package for critical paths (compose, auth, navigation).
 
 ### Platform Rendering Note

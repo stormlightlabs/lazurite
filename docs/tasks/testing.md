@@ -1,6 +1,6 @@
 # Testing Milestones
 
-## M0 — Shared Utilities Extraction
+## M0 - Shared Utilities Extraction
 
 - [ ] Create `lib/shared/utils/format_utils.dart` with `formatInitials`, `formatCount`, `formatRelativeTime`
 - [ ] Replace `_initials` in:
@@ -27,11 +27,11 @@
   - `lib/features/search/presentation/hashtag_screen.dart`
 - [ ] Unit tests for all format functions (edge cases: empty string, zero, negative, boundary values)
 
-## M1 — Shared State Widgets
+## M1 - Shared State Widgets
 
 - [ ] Create `lib/shared/presentation/widgets/loading_state.dart`
-- [ ] Create `lib/shared/presentation/widgets/error_state.dart` — `ErrorState(message, onRetry)`
-- [ ] Create `lib/shared/presentation/widgets/empty_state.dart` — `EmptyState(message, icon, action)`
+- [ ] Create `lib/shared/presentation/widgets/error_state.dart` - `ErrorState(message, onRetry)`
+- [ ] Create `lib/shared/presentation/widgets/empty_state.dart` - `EmptyState(message, icon, action)`
 - [ ] Replace loading/error/empty states in:
   - `lib/features/feed/presentation/home_feed_screen.dart`
   - `lib/features/feed/presentation/feed_management_screen.dart`
@@ -43,11 +43,11 @@
   - `lib/features/notifications/presentation/notifications_screen.dart`
 - [ ] Widget tests for each state widget
 
-## M2 — Dialog & Sheet Consolidation
+## M2 - Dialog & Sheet Consolidation
 
 - [ ] Create `lib/shared/presentation/widgets/confirmation_dialog.dart`
 - [ ] Create `lib/shared/presentation/widgets/options_sheet.dart`
-- [ ] Create `lib/shared/presentation/helpers/snackbar_helper.dart` — `showAppSnackBar`
+- [ ] Create `lib/shared/presentation/helpers/snackbar_helper.dart` - `showAppSnackBar`
 - [ ] Replace confirmation dialogs in:
   - `lib/features/profile/presentation/widgets/profile_action_buttons.dart` (5 dialogs)
   - `lib/features/compose/presentation/compose_screen.dart` (6 dialogs)
@@ -74,17 +74,17 @@
   - `lib/features/settings/presentation/settings_screen.dart`
 - [ ] Tests for dialog/sheet/snackbar helpers
 
-## M3 — Theme & Spacing Constants
+## M3 - Theme & Spacing Constants
 
-- [ ] Create `lib/core/theme/theme_extensions.dart` — `BuildContext` extension for `colorScheme` access
+- [ ] Create `lib/core/theme/theme_extensions.dart` - `BuildContext` extension for `colorScheme` access
 - [ ] Create `lib/core/theme/spacing.dart` with padding/margin constants
-- [ ] Create `lib/core/theme/color_filters.dart` — extract greyscale matrix from:
+- [ ] Create `lib/core/theme/color_filters.dart` - extract greyscale matrix from:
   - `lib/features/feed/presentation/widgets/grid_post_card.dart`
   - `lib/features/profile/presentation/profile_screen.dart`
 - [ ] Refactor files to use new constants/extensions (27 files use `Theme.of(context).colorScheme`)
 - [ ] Tests for theme extension
 
-## M4 — Widget Extraction
+## M4 - Widget Extraction
 
 - [ ] Create `lib/shared/presentation/widgets/profile_avatar.dart` (configurable size, shape, fallback)
 - [ ] Create `lib/shared/presentation/widgets/actor_name_widget.dart` (displayName + handle)
@@ -114,7 +114,7 @@
   - `lib/features/notifications/presentation/widgets/grouped_notification_list_item.dart`
 - [ ] Widget tests for extracted widgets
 
-## M5 — Navigation & Haptics Helpers
+## M5 - Navigation & Haptics Helpers
 
 - [ ] Create `lib/shared/presentation/helpers/navigation_helpers.dart` (`navigateToProfile`, `navigateToPost`)
 - [ ] Create `lib/shared/presentation/helpers/haptic_helper.dart`
@@ -125,7 +125,7 @@
 - [ ] Replace haptic feedback call sites (17 occurrences across 6 files)
 - [ ] Tests for navigation helpers
 
-## M6 — Golden Testing Setup
+## M6 - Golden Testing Setup
 
 - [ ] Add `golden_toolkit` to dev_dependencies
 - [ ] Configure golden test threshold for CI tolerance
@@ -136,7 +136,7 @@
 - [ ] CI pipeline step for golden test comparison
 - [ ] Document golden update workflow (`flutter test --update-goldens`)
 
-## M7 — Integration Tests
+## M7 - Integration Tests
 
 - [ ] Add `integration_test` to dev_dependencies
 - [ ] Auth flow end-to-end test
