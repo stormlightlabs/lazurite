@@ -7,6 +7,9 @@ import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/widgets/create_edit_list_dialog.dart';
 import 'package:lazurite/features/lists/presentation/widgets/list_row_tile.dart';
+import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
+import 'package:lazurite/shared/presentation/widgets/error_state.dart';
+import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 
 class MyListsScreen extends StatelessWidget {
   const MyListsScreen({super.key});
@@ -88,19 +91,14 @@ class _MyListsViewState extends State<_MyListsView> with SingleTickerProviderSta
       body: BlocBuilder<MyListsCubit, MyListsState>(
         builder: (context, state) {
           if (state.status == MyListsStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingState();
           }
 
           if (state.status == MyListsStatus.error) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(state.errorMessage ?? 'Failed to load lists'),
-                  const SizedBox(height: 12),
-                  FilledButton(onPressed: () => context.read<MyListsCubit>().refresh(), child: const Text('Retry')),
-                ],
-              ),
+            return ErrorState(
+              title: 'Failed to load lists',
+              message: state.errorMessage ?? 'Unknown error',
+              onRetry: () => context.read<MyListsCubit>().refresh(),
             );
           }
 
@@ -120,7 +118,7 @@ class _MyListsViewState extends State<_MyListsView> with SingleTickerProviderSta
 
   Widget _buildListTab(BuildContext context, List<bsky_graph.ListView> lists) {
     if (lists.isEmpty) {
-      return const Center(child: Text('No lists yet'));
+      return const EmptyState(message: 'No lists yet', icon: Icons.list_alt_outlined);
     }
 
     return RefreshIndicator(

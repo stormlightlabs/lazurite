@@ -7,6 +7,9 @@ import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
 import 'package:lazurite/features/messages/presentation/widgets/convo_list_item.dart';
+import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
+import 'package:lazurite/shared/presentation/widgets/error_state.dart';
+import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 
 class ConvoListPane extends StatefulWidget {
   const ConvoListPane({super.key, required this.tab});
@@ -78,27 +81,17 @@ class _ConvoListPaneState extends State<ConvoListPane> {
           if (isOffline) {
             return const _OfflineConvoState();
           }
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingState();
         }
 
         if (state.status == ConvoListStatus.error && state.convos.isEmpty) {
           if (isOffline) {
             return const _OfflineConvoState();
           }
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Failed to load messages', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Text(state.errorMessage ?? 'Unknown error', textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () => context.read<ConvoListBloc>().add(const ConvosRequested()),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
+          return ErrorState(
+            title: 'Failed to load messages',
+            message: state.errorMessage ?? 'Unknown error',
+            onRetry: () => context.read<ConvoListBloc>().add(const ConvosRequested()),
           );
         }
 
@@ -115,11 +108,9 @@ class _ConvoListPaneState extends State<ConvoListPane> {
               children: [
                 SizedBox(
                   height: MediaQuery.of(context).size.height * 0.5,
-                  child: Center(
-                    child: Text(
-                      widget.tab == ConvoTab.primary ? 'No conversations yet' : 'No message requests',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
+                  child: EmptyState(
+                    message: widget.tab == ConvoTab.primary ? 'No conversations yet' : 'No message requests',
+                    icon: Icons.forum_outlined,
                   ),
                 ),
               ],

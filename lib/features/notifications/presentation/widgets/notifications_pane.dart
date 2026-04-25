@@ -6,6 +6,9 @@ import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/presentation/widgets/grouped_notification_list_item.dart';
 import 'package:lazurite/features/notifications/presentation/widgets/notification_list_item.dart';
+import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
+import 'package:lazurite/shared/presentation/widgets/error_state.dart';
+import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 
 class NotificationsPane extends StatefulWidget {
   const NotificationsPane({super.key});
@@ -58,27 +61,17 @@ class _NotificationsPaneState extends State<NotificationsPane> {
           if (isOffline) {
             return const _OfflineNotificationsState();
           }
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingState();
         }
 
         if (state.status == NotificationStatus.error && state.notifications.isEmpty) {
           if (isOffline) {
             return const _OfflineNotificationsState();
           }
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Failed to load notifications', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Text(state.errorMessage ?? 'Unknown error', textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () => context.read<NotificationBloc>().add(const NotificationsRequested()),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
+          return ErrorState(
+            title: 'Failed to load notifications',
+            message: state.errorMessage ?? 'Unknown error',
+            onRetry: () => context.read<NotificationBloc>().add(const NotificationsRequested()),
           );
         }
 
@@ -86,7 +79,7 @@ class _NotificationsPaneState extends State<NotificationsPane> {
           if (isOffline) {
             return const _OfflineNotificationsState();
           }
-          return Center(child: Text('No notifications yet', style: Theme.of(context).textTheme.bodyLarge));
+          return const EmptyState(message: 'No notifications yet', icon: Icons.notifications_none_outlined);
         }
 
         final groupedNotifications = _groupNotificationsByDay(state.notifications);

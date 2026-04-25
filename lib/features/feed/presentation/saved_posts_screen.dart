@@ -10,6 +10,9 @@ import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/search/presentation/semantic_search_tab.dart';
+import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
+import 'package:lazurite/shared/presentation/widgets/error_state.dart';
+import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 import 'package:share_plus/share_plus.dart';
 
 class SavedPostsScreen extends StatelessWidget {
@@ -114,49 +117,22 @@ class _AllSavedTab extends StatelessWidget {
     return BlocBuilder<SavedPostsCubit, SavedPostsState>(
       builder: (context, state) {
         if (state.status == SavedPostsStatus.loading) {
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingState();
         }
 
         if (state.status == SavedPostsStatus.error) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.grey),
-                const SizedBox(height: 16),
-                Text(state.error ?? 'Failed to load saved posts'),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () => context.read<SavedPostsCubit>().loadSavedPosts(),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
+          return ErrorState(
+            title: 'Failed to load saved posts',
+            message: state.error ?? 'Unknown error',
+            onRetry: () => context.read<SavedPostsCubit>().loadSavedPosts(),
           );
         }
 
         if (state.savedPosts.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.bookmark_outline, size: 64, color: Theme.of(context).colorScheme.outline),
-                const SizedBox(height: 16),
-                Text(
-                  'No saved posts',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Posts you save will appear here',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
+          return const EmptyState(
+            message: 'No saved posts',
+            subtitle: 'Posts you save will appear here',
+            icon: Icons.bookmark_outline,
           );
         }
 

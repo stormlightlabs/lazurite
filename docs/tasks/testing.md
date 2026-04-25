@@ -10,19 +10,11 @@
 
 ## M1 - Shared State Widgets
 
-- [ ] Create `lib/shared/presentation/widgets/loading_state.dart`
-- [ ] Create `lib/shared/presentation/widgets/error_state.dart` - `ErrorState(message, onRetry)`
-- [ ] Create `lib/shared/presentation/widgets/empty_state.dart` - `EmptyState(message, icon, action)`
-- [ ] Replace loading/error/empty states in:
-  - `lib/features/feed/presentation/home_feed_screen.dart`
-  - `lib/features/feed/presentation/feed_management_screen.dart`
-  - `lib/features/feed/presentation/saved_posts_screen.dart`
-  - `lib/features/lists/presentation/my_lists_screen.dart`
-  - `lib/features/profile/presentation/widgets/suggested_follows_list.dart`
-  - `lib/features/logs/presentation/logs_screen.dart`
-  - `lib/features/messages/presentation/messages_screen.dart`
-  - `lib/features/notifications/presentation/notifications_screen.dart`
-- [ ] Widget tests for each state widget
+- [x] Create `lib/shared/presentation/widgets/loading_state.dart`
+- [x] Create `lib/shared/presentation/widgets/error_state.dart` - `ErrorState(message, onRetry)`
+- [x] Create `lib/shared/presentation/widgets/empty_state.dart` - `EmptyState(message, icon, action)`
+- [x] Replace loading/error/empty states across the app with new widgets
+- [x] Widget tests for each state widget
 
 ## M2 - Dialog & Sheet Consolidation
 

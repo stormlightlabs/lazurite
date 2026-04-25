@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
+import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
+import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 
 class FeedManagementScreen extends StatefulWidget {
   const FeedManagementScreen({super.key});
@@ -61,7 +63,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
         },
         builder: (context, state) {
           if (state.status == FeedPreferencesStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingState();
           }
 
           return ListView(
@@ -80,15 +82,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
               const SizedBox(height: 16),
               _buildSectionHeader(context, 'Saved Feeds'),
               if (state.unpinnedFeeds.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'No saved feeds',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  ),
-                )
+                const EmptyState(message: 'No saved feeds', icon: Icons.bookmark_border, padding: EdgeInsets.all(16))
               else
                 ...state.unpinnedFeeds.map((feed) => _buildSavedFeedItem(context, feed)),
               const SizedBox(height: 16),
@@ -200,21 +194,14 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
 
   Widget _buildDiscoverSection(BuildContext context) {
     if (_isLoadingSuggestions) {
-      return const Padding(
-        padding: EdgeInsets.all(32),
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return const LoadingState(padding: EdgeInsets.all(32));
     }
 
     if (_suggestedFeeds == null || _suggestedFeeds!.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          'No suggested feeds available',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
+      return const EmptyState(
+        message: 'No suggested feeds available',
+        icon: Icons.travel_explore_outlined,
+        padding: EdgeInsets.all(16),
       );
     }
 

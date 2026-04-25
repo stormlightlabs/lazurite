@@ -4,6 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/cubit/suggested_follows_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
+import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
+import 'package:lazurite/shared/presentation/widgets/error_state.dart';
+import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
 class SuggestedFollowsList extends StatelessWidget {
@@ -27,30 +30,19 @@ class SuggestedFollowsList extends StatelessWidget {
     return BlocBuilder<SuggestedFollowsCubit, SuggestedFollowsState>(
       builder: (context, state) {
         if (state.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingState();
         }
 
         if (state.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(state.errorMessage ?? 'Failed to load suggestions', textAlign: TextAlign.center),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: () => context.read<SuggestedFollowsCubit>().load(actor),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
+          return ErrorState(
+            title: 'Failed to load suggestions',
+            message: state.errorMessage ?? 'Unknown error',
+            onRetry: () => context.read<SuggestedFollowsCubit>().load(actor),
           );
         }
 
         if (state.isEmpty) {
-          return Center(child: Text(emptyMessage));
+          return EmptyState(message: emptyMessage, icon: Icons.person_search_outlined);
         }
 
         return ListView.builder(

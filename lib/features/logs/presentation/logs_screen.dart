@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 import 'package:lazurite/features/logs/cubit/log_viewer_cubit.dart';
 import 'package:lazurite/features/logs/data/log_entry.dart';
+import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
+import 'package:lazurite/shared/presentation/widgets/error_state.dart';
+import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 import 'package:share_plus/share_plus.dart';
 
 class LogsScreen extends StatelessWidget {
@@ -267,25 +270,22 @@ class _LogList extends StatelessWidget {
     return BlocBuilder<LogViewerCubit, LogViewerState>(
       builder: (context, state) {
         if (state.status == LogViewerStatus.loading) {
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingState();
         }
 
         if (state.status == LogViewerStatus.error) {
-          return Center(child: Text('Error: ${state.errorMessage}'));
+          return ErrorState(
+            title: 'Failed to load logs',
+            message: state.errorMessage ?? 'Unknown error',
+            onRetry: () => context.read<LogViewerCubit>().loadLogs(),
+          );
         }
 
         if (state.filteredEntries.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.description_outlined, size: 48, color: Theme.of(context).colorScheme.outline),
-                const SizedBox(height: 16),
-                Text('No logs yet', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text('Log entries will appear here', style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
+          return const EmptyState(
+            message: 'No logs yet',
+            subtitle: 'Log entries will appear here',
+            icon: Icons.description_outlined,
           );
         }
 

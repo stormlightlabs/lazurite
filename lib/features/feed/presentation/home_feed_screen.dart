@@ -12,6 +12,9 @@ import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/feed_layout_view.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
+import 'package:lazurite/shared/presentation/widgets/error_state.dart';
+import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 
 /// Returns the number of grid columns for [width] per the responsive
 /// breakpoints defined in the UI spec.
@@ -50,26 +53,16 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     return BlocBuilder<FeedPreferencesCubit, FeedPreferencesState>(
       builder: (context, prefsState) {
         if (prefsState.status == FeedPreferencesStatus.initial || prefsState.status == FeedPreferencesStatus.loading) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(body: LoadingState());
         }
 
         if (prefsState.status == FeedPreferencesStatus.error) {
           return Scaffold(
             appBar: const LazuriteAppBar(sectionLabel: 'Home'),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Failed to load feeds', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  Text(prefsState.message ?? 'Unknown error', textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () => context.read<FeedPreferencesCubit>().loadPreferences(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+            body: ErrorState(
+              title: 'Failed to load feeds',
+              message: prefsState.message ?? 'Unknown error',
+              onRetry: () => context.read<FeedPreferencesCubit>().loadPreferences(),
             ),
           );
         }
@@ -80,24 +73,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         if (pinnedFeeds.isEmpty) {
           return Scaffold(
             appBar: const LazuriteAppBar(sectionLabel: 'Home'),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('No feeds pinned', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Pin a timeline or custom feed to build your home tabs.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(onPressed: () => context.push('/feeds'), child: const Text('Manage Feeds')),
-                  ],
-                ),
-              ),
+            body: EmptyState(
+              message: 'No feeds pinned',
+              icon: Icons.rss_feed_outlined,
+              subtitle: 'Pin a timeline or custom feed to build your home tabs.',
+              action: FilledButton(onPressed: () => context.push('/feeds'), child: const Text('Manage Feeds')),
             ),
           );
         }
@@ -392,30 +372,20 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
     super.build(context);
 
     if (_showInitialLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const LoadingState();
     }
 
     if (_hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Failed to load feed', style: Theme.of(context).textTheme.bodyLarge),
-            const SizedBox(height: 8),
-            Text(
-              _errorMessage ?? 'Unknown error',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: _loadFeed, child: const Text('Retry')),
-          ],
-        ),
+      return ErrorState(
+        title: 'Failed to load feed',
+        message: _errorMessage ?? 'Unknown error',
+        onRetry: _loadFeed,
+        icon: Icons.sync_problem_outlined,
       );
     }
 
     if (_posts.isEmpty) {
-      return Center(child: Text('No posts yet', style: Theme.of(context).textTheme.bodyLarge));
+      return const EmptyState(message: 'No posts yet', icon: Icons.article_outlined);
     }
 
     final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
