@@ -5,7 +5,6 @@ import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -17,6 +16,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -615,22 +615,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   String _formatHistoryTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    }
-    if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    }
-    if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
-    }
-    if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    }
-    return DateFormat('MMM d').format(time);
+    return formatRelativeTime(time, nowLabel: 'Just now', includeAgo: true);
   }
 }
 
@@ -688,7 +673,7 @@ class _PostViewCard extends StatelessWidget {
             size: 44,
             ui: avatarUi,
             imageUrl: author.avatar,
-            initials: _initials(author.displayName ?? author.handle),
+            initials: formatInitials(author.displayName ?? author.handle),
             shape: BoxShape.circle,
           ),
           const SizedBox(width: 12),
@@ -704,7 +689,7 @@ class _PostViewCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '@${author.handle} · ${_formatTime(createdAt)}',
+                  '@${author.handle} · ${formatRelativeTime(createdAt)}',
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -764,36 +749,6 @@ class _PostViewCard extends StatelessWidget {
       return null;
     }
   }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inMinutes < 1) {
-      return 'now';
-    }
-    if (difference.inHours < 1) {
-      return '${difference.inMinutes}m';
-    }
-    if (difference.inDays < 1) {
-      return '${difference.inHours}h';
-    }
-    if (difference.inDays < 7) {
-      return '${difference.inDays}d';
-    }
-    return DateFormat('MMM d').format(time);
-  }
-
-  String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) {
-      return '?';
-    }
-    if (parts.length == 1) {
-      return parts.first.substring(0, 1).toUpperCase();
-    }
-    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
-  }
 }
 
 class _ActorResultTile extends StatelessWidget {
@@ -824,7 +779,7 @@ class _ActorResultTile extends StatelessWidget {
               size: 48,
               ui: avatarUi,
               imageUrl: actor.avatar,
-              initials: _initials(actor.displayName ?? actor.handle),
+              initials: formatInitials(actor.displayName ?? actor.handle),
               shape: BoxShape.circle,
             ),
             const SizedBox(width: 12),
@@ -876,17 +831,6 @@ class _ActorResultTile extends StatelessWidget {
       router.push('/profile/view?actor=${Uri.encodeQueryComponent(did)}');
     }
   }
-
-  String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) {
-      return '?';
-    }
-    if (parts.length == 1) {
-      return parts.first.substring(0, 1).toUpperCase();
-    }
-    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
-  }
 }
 
 class _ActorListTile extends StatelessWidget {
@@ -915,7 +859,7 @@ class _ActorListTile extends StatelessWidget {
               size: 40,
               ui: avatarUi,
               imageUrl: actor.avatar,
-              initials: _initials(actor.displayName ?? actor.handle),
+              initials: formatInitials(actor.displayName ?? actor.handle),
               shape: BoxShape.circle,
               placeholderTextStyle: Theme.of(context).textTheme.labelMedium,
             ),
@@ -947,17 +891,6 @@ class _ActorListTile extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) {
-      return '?';
-    }
-    if (parts.length == 1) {
-      return parts.first.substring(0, 1).toUpperCase();
-    }
-    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
   }
 }
 

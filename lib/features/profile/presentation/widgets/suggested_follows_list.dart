@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/cubit/suggested_follows_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class SuggestedFollowsList extends StatelessWidget {
   const SuggestedFollowsList({
@@ -124,7 +125,7 @@ class _SuggestedProfileTileBody extends StatelessWidget {
         return ListTile(
           leading: CircleAvatar(
             backgroundImage: profile.avatar != null ? NetworkImage(profile.avatar!) : null,
-            child: profile.avatar == null ? Text(title.substring(0, 1).toUpperCase()) : null,
+            child: profile.avatar == null ? Text(formatInitials(title)) : null,
           ),
           title: Text(title),
           subtitle: Text('@${profile.handle}'),
@@ -152,7 +153,7 @@ class _StaticSuggestedProfileTile extends StatelessWidget {
     return ListTile(
       leading: CircleAvatar(
         backgroundImage: profile.avatar != null ? NetworkImage(profile.avatar!) : null,
-        child: profile.avatar == null ? Text(title.substring(0, 1).toUpperCase()) : null,
+        child: profile.avatar == null ? Text(formatInitials(title)) : null,
       ),
       title: Text(title),
       subtitle: Text('@${profile.handle}'),

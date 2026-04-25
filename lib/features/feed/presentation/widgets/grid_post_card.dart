@@ -13,6 +13,7 @@ import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 const _greyscale = ColorFilter.matrix(<double>[
   0.2126,
@@ -169,7 +170,7 @@ class GridPostCard extends StatelessWidget {
             size: 40,
             ui: avatarUi,
             imageUrl: author.avatar,
-            initials: _initials(author.displayName ?? author.handle),
+            initials: formatInitials(author.displayName ?? author.handle),
             shape: BoxShape.rectangle,
             border: Border.all(color: colorScheme.outlineVariant),
             placeholderTextStyle: Theme.of(context).textTheme.labelMedium,
@@ -247,12 +248,5 @@ class GridPostCard extends StatelessWidget {
     } catch (_) {
       return null;
     }
-  }
-
-  String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
   }
 }

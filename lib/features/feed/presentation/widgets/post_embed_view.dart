@@ -16,6 +16,7 @@ import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Renders the appropriate embed widget for a post embed.
@@ -277,7 +278,7 @@ class PostEmbedView extends StatelessWidget {
                       ),
                       child: quoted.author.avatar != null
                           ? Image.network(quoted.author.avatar!, fit: BoxFit.cover)
-                          : Center(child: Text(_initials(quoted.author.displayName ?? quoted.author.handle))),
+                          : Center(child: Text(formatInitials(quoted.author.displayName ?? quoted.author.handle))),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -464,13 +465,6 @@ class PostEmbedView extends StatelessWidget {
     } catch (_) {
       return null;
     }
-  }
-
-  String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
   }
 }
 

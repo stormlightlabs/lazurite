@@ -2,30 +2,11 @@
 
 ## M0 - Shared Utilities Extraction
 
-- [ ] Create `lib/shared/utils/format_utils.dart` with `formatInitials`, `formatCount`, `formatRelativeTime`
-- [ ] Replace `_initials` in:
-  - `lib/features/feed/presentation/widgets/post_card.dart`
-  - `lib/features/feed/presentation/widgets/grid_post_card.dart`
-  - `lib/features/feed/presentation/widgets/post_embed_view.dart`
-  - `lib/features/notifications/presentation/widgets/notification_list_item.dart`
-  - `lib/features/notifications/presentation/widgets/grouped_notification_list_item.dart`
-  - `lib/features/profile/presentation/widgets/suggested_follows_list.dart`
-  - `lib/features/moderation/presentation/screens/labeler_detail_screen.dart`
-  - `lib/features/moderation/presentation/screens/moderation_settings_screen.dart`
-  - `lib/features/search/presentation/search_screen.dart`
-  - `lib/features/search/presentation/hashtag_screen.dart`
-- [ ] Replace `_formatCount` in:
-  - `lib/features/feed/presentation/widgets/post_action_bar.dart`
-  - `lib/features/feed/presentation/widgets/post_card_footer.dart`
-  - `lib/features/starter_packs/presentation/widgets/starter_pack_card.dart`
-  - `lib/features/starter_packs/presentation/starter_pack_detail_screen.dart`
-  - `lib/features/profile/presentation/profile_screen.dart`
-- [ ] Consolidate `_formatTime` with existing `formatPostTime` in `post_card_footer.dart`:
-  - `lib/features/notifications/presentation/widgets/notification_list_item.dart`
-  - `lib/features/notifications/presentation/widgets/grouped_notification_list_item.dart`
-  - `lib/features/search/presentation/search_screen.dart`
-  - `lib/features/search/presentation/hashtag_screen.dart`
-- [ ] Unit tests for all format functions (edge cases: empty string, zero, negative, boundary values)
+- [x] Create `lib/shared/utils/format_utils.dart` with `formatInitials`, `formatCount`, `formatRelativeTime`
+- [x] Replace `_initials`
+- [x] Replace `_formatCount`
+- [x] Consolidate `_formatTime` with existing `formatPostTime` in `post_card_footer.dart`
+- [x] Unit tests for all format functions (edge cases: empty string, zero, negative, boundary values)
 
 ## M1 - Shared State Widgets
 

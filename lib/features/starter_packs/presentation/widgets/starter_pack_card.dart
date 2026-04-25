@@ -1,5 +1,6 @@
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:flutter/material.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class StarterPackCard extends StatelessWidget {
   const StarterPackCard({super.key, required this.pack, this.onTap});
@@ -75,7 +76,7 @@ class StarterPackCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_formatCount(count), style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
+        Text(formatCount(count), style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
         Text(
           label,
           style: Theme.of(
@@ -84,11 +85,5 @@ class StarterPackCard extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  String _formatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
-    return '$count';
   }
 }

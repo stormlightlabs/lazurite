@@ -35,6 +35,7 @@ import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -317,7 +318,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         size: size,
         ui: avatarUi,
         imageUrl: profile?.avatar,
-        initials: _initials(profile?.displayName ?? profile?.handle ?? '?'),
+        initials: formatInitials(profile?.displayName ?? profile?.handle ?? '?'),
         shape: BoxShape.rectangle,
         border: Border.all(color: colorScheme.surfaceContainerLowest, width: 4),
         placeholderTextStyle: Theme.of(context).textTheme.headlineSmall,
@@ -453,10 +454,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          _formatCount(count),
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
+        Text(formatCount(count), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
         Text(
           label.toUpperCase(),
           style: TextStyle(fontSize: 11, letterSpacing: 1.1, color: colorScheme.onSurfaceVariant),
@@ -882,19 +880,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       case FeedFilter.postsWithMedia:
         return 'No media posts yet';
     }
-  }
-
-  String _formatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
-    return '$count';
-  }
-
-  String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
   }
 
   Future<void> _launchWebsite(String website) async {

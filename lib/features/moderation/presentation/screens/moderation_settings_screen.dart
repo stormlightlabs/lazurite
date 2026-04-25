@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class ModerationSettingsScreen extends StatefulWidget {
   const ModerationSettingsScreen({super.key});
@@ -406,7 +407,7 @@ class _LabelerCard extends StatelessWidget {
               ModeratedAvatar(
                 size: 52,
                 imageUrl: creator.avatar,
-                initials: _initials(creator.displayName ?? creator.handle),
+                initials: formatInitials(creator.displayName ?? creator.handle),
                 shape: BoxShape.circle,
               ),
               const SizedBox(width: 14),
@@ -479,14 +480,6 @@ class _LabelerCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+')).where((part) => part.isNotEmpty).take(2).toList();
-    if (parts.isEmpty) {
-      return '?';
-    }
-    return parts.map((part) => part[0].toUpperCase()).join();
   }
 }
 

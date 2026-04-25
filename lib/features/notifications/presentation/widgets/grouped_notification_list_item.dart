@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class NotificationGroup {
   const NotificationGroup({required this.notifications});
@@ -220,7 +221,7 @@ class GroupedNotificationListItem extends StatelessWidget {
 
   Widget _buildTime(ThemeData theme) {
     return Text(
-      _formatTime(group.latest.indexedAt),
+      formatRelativeTime(group.latest.indexedAt, nowLabel: 'Just now', includeAgo: true),
       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
     );
   }
@@ -248,25 +249,6 @@ class GroupedNotificationListItem extends StatelessWidget {
     }
 
     return 'interacted with you';
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    }
-
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    return '${months[time.month - 1]} ${time.day}';
   }
 
   bool _shouldShowPreview(bsky.Notification notification) {

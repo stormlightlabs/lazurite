@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class StarterPackDetailScreen extends StatelessWidget {
   const StarterPackDetailScreen({super.key, required this.packUri});
@@ -495,7 +496,7 @@ class _StarterPackContent extends StatelessWidget {
       decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
       child: Column(
         children: [
-          Text(_formatCount(count), style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text(formatCount(count), style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
           Text(label, style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
         ],
       ),
@@ -617,11 +618,5 @@ class _StarterPackContent extends StatelessWidget {
           ),
       ],
     );
-  }
-
-  String _formatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
-    return '$count';
   }
 }

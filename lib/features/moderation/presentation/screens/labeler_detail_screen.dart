@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class LabelerDetailScreen extends StatefulWidget {
   const LabelerDetailScreen({super.key, required this.did});
@@ -136,7 +137,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                         ModeratedAvatar(
                           size: 64,
                           imageUrl: creator.avatar,
-                          initials: _initials(creator.displayName ?? creator.handle),
+                          initials: formatInitials(creator.displayName ?? creator.handle),
                           shape: BoxShape.circle,
                         ),
                         const SizedBox(width: 16),
@@ -302,14 +303,6 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
         },
       ),
     );
-  }
-
-  String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+')).where((part) => part.isNotEmpty).take(2).toList();
-    if (parts.isEmpty) {
-      return '?';
-    }
-    return parts.map((part) => part[0].toUpperCase()).join();
   }
 }
 

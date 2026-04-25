@@ -5,7 +5,6 @@ import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
@@ -13,6 +12,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class HashtagScreen extends StatefulWidget {
   const HashtagScreen({super.key, required this.tag});
@@ -311,7 +311,7 @@ class _HashtagPostCard extends StatelessWidget {
             size: 44,
             ui: avatarUi,
             imageUrl: author.avatar,
-            initials: _initials(author.displayName ?? author.handle),
+            initials: formatInitials(author.displayName ?? author.handle),
             shape: BoxShape.circle,
           ),
           const SizedBox(width: 12),
@@ -327,7 +327,7 @@ class _HashtagPostCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '@${author.handle} · ${_formatTime(createdAt)}',
+                  '@${author.handle} · ${formatRelativeTime(createdAt)}',
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -386,35 +386,5 @@ class _HashtagPostCard extends StatelessWidget {
     } catch (_) {
       return null;
     }
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inMinutes < 1) {
-      return 'now';
-    }
-    if (difference.inHours < 1) {
-      return '${difference.inMinutes}m';
-    }
-    if (difference.inDays < 1) {
-      return '${difference.inHours}h';
-    }
-    if (difference.inDays < 7) {
-      return '${difference.inDays}d';
-    }
-    return DateFormat('MMM d').format(time);
-  }
-
-  String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) {
-      return '?';
-    }
-    if (parts.length == 1) {
-      return parts.first.substring(0, 1).toUpperCase();
-    }
-    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
   }
 }

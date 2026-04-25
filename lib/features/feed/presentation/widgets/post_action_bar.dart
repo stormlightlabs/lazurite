@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:share_plus/share_plus.dart';
 
 class PostActionBar extends StatelessWidget {
@@ -262,7 +263,7 @@ class _ActionButton extends StatelessWidget {
               Icon(isActive ? activeIcon : icon, size: 18, color: iconColor),
             if (count > 0) ...[
               const SizedBox(width: 4),
-              Text(_formatCount(count), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: iconColor)),
+              Text(formatCount(count), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: iconColor)),
             ],
           ],
         ),
@@ -282,15 +283,5 @@ class _ActionButton extends StatelessWidget {
     }
 
     return button;
-  }
-
-  String _formatCount(int count) {
-    if (count >= 1000000) {
-      return '${(count / 1000000).toStringAsFixed(1)}M';
-    }
-    if (count >= 1000) {
-      return '${(count / 1000).toStringAsFixed(1)}K';
-    }
-    return '$count';
   }
 }

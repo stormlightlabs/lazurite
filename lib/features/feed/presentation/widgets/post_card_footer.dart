@@ -1,18 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 /// Formats a post timestamp as a short, uppercase string.
 String formatPostTime(DateTime time) {
-  final now = DateTime.now();
-  final difference = now.difference(time);
-
-  if (difference.inMinutes < 1) return 'NOW';
-  if (difference.inHours < 1) return '${difference.inMinutes}M';
-  if (difference.inDays < 1) return '${difference.inHours}H';
-  if (difference.inDays < 7) return '${difference.inDays}D';
-  return DateFormat('MMM d').format(time).toUpperCase();
+  return formatRelativeTime(time, nowLabel: 'NOW', uppercase: true);
 }
 
 /// Shared footer for post cards. Renders a top-bordered row with
@@ -278,7 +271,7 @@ class _FooterAction extends StatelessWidget {
               Icon(isActive ? activeIcon : icon, size: iconSize, color: iconColor),
             if (showCount && count > 0) ...[
               const SizedBox(width: 4),
-              Text(_formatCount(count), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: iconColor)),
+              Text(formatCount(count), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: iconColor)),
             ],
           ],
         ),
@@ -290,15 +283,5 @@ class _FooterAction extends StatelessWidget {
     }
 
     return button;
-  }
-
-  String _formatCount(int count) {
-    if (count >= 1000000) {
-      return '${(count / 1000000).toStringAsFixed(1)}M';
-    }
-    if (count >= 1000) {
-      return '${(count / 1000).toStringAsFixed(1)}K';
-    }
-    return '$count';
   }
 }

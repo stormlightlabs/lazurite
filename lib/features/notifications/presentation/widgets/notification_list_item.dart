@@ -2,11 +2,11 @@ import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart' hide Notification;
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class NotificationListItem extends StatelessWidget {
   const NotificationListItem({super.key, required this.notification});
@@ -193,26 +193,9 @@ class NotificationListItem extends StatelessWidget {
 
   Widget _buildTime(ThemeData theme) {
     return Text(
-      _formatTime(notification.indexedAt),
+      formatRelativeTime(notification.indexedAt, nowLabel: 'Just now', includeAgo: true),
       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
     );
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
-      return DateFormat('MMM d').format(time);
-    }
   }
 
   bool get _shouldShowPreview {
