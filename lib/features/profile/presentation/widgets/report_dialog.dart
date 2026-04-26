@@ -1,9 +1,9 @@
 import 'package:atproto/com_atproto_moderation_defs.dart';
 import 'package:atproto_core/atproto_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
+import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 enum _ReportType { post, actor }
@@ -129,7 +129,7 @@ class _ReportDialogState extends State<ReportDialog> {
       onTap: _isSubmitting
           ? null
           : () {
-              HapticFeedback.selectionClick();
+              HapticHelper.selectionClick();
               setState(() {
                 _selectedReason = option.type;
               });

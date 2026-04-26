@@ -1,9 +1,8 @@
-import 'dart:async';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 
 class ProfileActionButtons extends StatelessWidget {
@@ -155,7 +154,7 @@ class ProfileActionButtons extends StatelessWidget {
   }
 
   Future<void> _confirmUnfollow(BuildContext context) async {
-    unawaited(HapticFeedback.mediumImpact());
+    HapticHelper.mediumImpact();
     await showConfirmationDialog(
       context: context,
       title: const Text('Unfollow?'),
@@ -166,7 +165,7 @@ class ProfileActionButtons extends StatelessWidget {
   }
 
   Future<void> _confirmMute(BuildContext context) async {
-    unawaited(HapticFeedback.mediumImpact());
+    HapticHelper.mediumImpact();
     await showConfirmationDialog(
       context: context,
       title: const Text('Mute Account?'),
@@ -177,7 +176,7 @@ class ProfileActionButtons extends StatelessWidget {
   }
 
   Future<void> _confirmUnmute(BuildContext context) async {
-    unawaited(HapticFeedback.mediumImpact());
+    HapticHelper.mediumImpact();
     await showConfirmationDialog(
       context: context,
       title: const Text('Unmute Account?'),
@@ -188,7 +187,7 @@ class ProfileActionButtons extends StatelessWidget {
   }
 
   Future<void> _confirmBlock(BuildContext context) async {
-    unawaited(HapticFeedback.heavyImpact());
+    HapticHelper.heavyImpact();
     await showConfirmationDialog(
       context: context,
       title: Row(
@@ -208,7 +207,7 @@ class ProfileActionButtons extends StatelessWidget {
   }
 
   Future<void> _confirmUnblock(BuildContext context) async {
-    unawaited(HapticFeedback.mediumImpact());
+    HapticHelper.mediumImpact();
     await showConfirmationDialog(
       context: context,
       title: const Text('Unblock Account?'),

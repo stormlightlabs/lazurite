@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -177,7 +177,7 @@ class PostCardFooter extends StatelessWidget {
   }
 
   void _showSaveOptions(BuildContext context) {
-    HapticFeedback.mediumImpact();
+    HapticHelper.mediumImpact();
     final isLocalSaved = isSaved && (saveType == 'local' || saveType == 'both');
     final isCloudSaved = saveType == 'cloud' || saveType == 'both';
 

@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -16,6 +15,7 @@ import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/grid_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
+import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 
 /// Controls which card layout variant is rendered by [PostCardWithActions].
@@ -171,7 +171,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
   }
 
   void _onReply(BuildContext context) {
-    HapticFeedback.selectionClick();
+    HapticHelper.selectionClick();
     final post = feedViewPost.post;
     final reply = feedViewPost.reply;
 
@@ -201,21 +201,21 @@ class _PostCardWithActionsContent extends StatelessWidget {
   Future<void> _onToggleSave(BuildContext context) async {
     final cubit = context.read<SavedPostsCubit>();
     final post = feedViewPost.post;
-    await HapticFeedback.lightImpact();
+    await HapticHelper.lightImpact();
     await cubit.toggleSave(postUri: post.uri.toString(), postJson: jsonEncode(post.toJson()));
   }
 
   Future<void> _onCloudSave(BuildContext context) async {
     final cubit = context.read<SavedPostsCubit>();
     final post = feedViewPost.post;
-    await HapticFeedback.lightImpact();
+    await HapticHelper.lightImpact();
     await cubit.cloudSave(postUri: post.uri.toString(), cid: post.cid, postJson: jsonEncode(post.toJson()));
   }
 
   Future<void> _onCloudUnsave(BuildContext context) async {
     final cubit = context.read<SavedPostsCubit>();
     final post = feedViewPost.post;
-    await HapticFeedback.lightImpact();
+    await HapticHelper.lightImpact();
     await cubit.cloudUnsave(post.uri.toString());
   }
 }

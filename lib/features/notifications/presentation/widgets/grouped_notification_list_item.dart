@@ -2,9 +2,9 @@ import 'package:bluesky/app_bsky_actor_defs.dart' as actor;
 import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart' hide Notification;
-import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/notification_icon_mapper.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
@@ -252,7 +252,7 @@ class GroupedNotificationListItem extends StatelessWidget {
     final reason = notification.reason;
 
     if (reason.isKnownValue && reason.knownValue == bsky.KnownNotificationReason.follow) {
-      context.push('/profile/view?actor=${notification.author.did}');
+      navigateToProfile(context, notification.author.did);
       return;
     }
 
@@ -261,6 +261,6 @@ class GroupedNotificationListItem extends StatelessWidget {
         (reason.knownValue == bsky.KnownNotificationReason.like ||
             reason.knownValue == bsky.KnownNotificationReason.repost);
     final uri = isLikeOrRepost ? (notification.reasonSubject ?? notification.uri) : notification.uri;
-    context.push('/post?uri=${Uri.encodeComponent(uri.toString())}');
+    navigateToPost(context, uri.toString());
   }
 }

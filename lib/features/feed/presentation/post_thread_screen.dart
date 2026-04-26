@@ -29,6 +29,7 @@ import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/report_dialog.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
@@ -793,7 +794,7 @@ class _FocusedPostContent extends StatelessWidget {
   }
 
   void _onReply(BuildContext context) {
-    HapticFeedback.selectionClick();
+    HapticHelper.selectionClick();
     final post = thread.post;
     final root = _findRoot();
 
@@ -810,7 +811,7 @@ class _FocusedPostContent extends StatelessWidget {
   }
 
   void _onQuote(BuildContext context) {
-    HapticFeedback.selectionClick();
+    HapticHelper.selectionClick();
     final post = thread.post;
 
     context.push(
@@ -823,12 +824,12 @@ class _FocusedPostContent extends StatelessWidget {
     final cubit = context.read<SavedPostsCubit>();
     final post = thread.post;
 
-    await HapticFeedback.lightImpact();
+    await HapticHelper.lightImpact();
     await cubit.toggleSave(postUri: post.uri.toString(), postJson: jsonEncode(post.toJson()));
   }
 
   void _showMoreOptions(BuildContext context) {
-    HapticFeedback.mediumImpact();
+    HapticHelper.mediumImpact();
     final post = thread.post;
     final postUri = post.uri.toString();
     final bskyUrl = _convertAtUriToBskyUrl(postUri);

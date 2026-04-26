@@ -4,7 +4,6 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/color_filters.dart';
 import 'package:lazurite/core/theme/spacing.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -15,6 +14,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dar
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
@@ -146,7 +146,7 @@ class GridPostCard extends StatelessWidget {
       children: [
         GestureDetector(
           key: const ValueKey('grid_post_card_avatar'),
-          onTap: () => GoRouter.maybeOf(context)?.push('/profile/view?actor=${Uri.encodeQueryComponent(author.did)}'),
+          onTap: () => navigateToProfile(context, author.did),
           child: ProfileAvatar(
             size: 40,
             moderationUi: avatarUi,

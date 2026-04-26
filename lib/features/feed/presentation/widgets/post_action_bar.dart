@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:share_plus/share_plus.dart';
@@ -123,7 +123,7 @@ class PostActionBar extends StatelessWidget {
   }
 
   void _showRepostOptions(BuildContext context) {
-    HapticFeedback.mediumImpact();
+    HapticHelper.mediumImpact();
     showOptionsSheet<void>(
       context: context,
       items: [
@@ -145,7 +145,7 @@ class PostActionBar extends StatelessWidget {
   }
 
   void _showSaveOptions(BuildContext context) {
-    HapticFeedback.mediumImpact();
+    HapticHelper.mediumImpact();
     final isLocalSaved = isSaved && (saveType == 'local' || saveType == 'both');
     final isCloudSaved = saveType == 'cloud' || saveType == 'both';
     showOptionsSheet<void>(

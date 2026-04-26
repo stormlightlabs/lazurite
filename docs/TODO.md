@@ -16,6 +16,7 @@ updated: 2026-04-14
   link to dev tools and follow audits.
 - Constellation URL should remain configurable internally but the option to change the
   URL should be removed from the UI.
+- Saved posts should be a tabbed view for local & ATProto/BSky saved posts.
 
 ## UX
 
