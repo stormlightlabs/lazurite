@@ -7,12 +7,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
-import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
@@ -309,11 +309,11 @@ class _HashtagPostCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ModeratedAvatar(
+          ProfileAvatar(
             size: 44,
-            ui: avatarUi,
+            moderationUi: avatarUi,
             imageUrl: author.avatar,
-            initials: formatInitials(author.displayName ?? author.handle),
+            fallbackText: author.displayName ?? author.handle,
             shape: BoxShape.circle,
           ),
           const SizedBox(width: 12),

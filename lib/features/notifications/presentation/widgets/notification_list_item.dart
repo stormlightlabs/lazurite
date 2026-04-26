@@ -3,9 +3,10 @@ import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart' hide Notification;
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
-import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
+import 'package:lazurite/shared/presentation/helpers/notification_icon_mapper.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
 class NotificationListItem extends StatelessWidget {
@@ -61,55 +62,13 @@ class NotificationListItem extends StatelessWidget {
   }
 
   Widget _buildReasonIcon(ThemeData theme) {
-    final reason = notification.reason;
-    final colorScheme = theme.colorScheme;
-
-    Color backgroundColor;
-    Color iconColor;
-    IconData iconData;
-
-    if (reason.isKnownValue) {
-      switch (reason.knownValue) {
-        case bsky.KnownNotificationReason.like:
-          backgroundColor = colorScheme.error.withValues(alpha: 0.1);
-          iconColor = colorScheme.error;
-          iconData = Icons.favorite;
-        case bsky.KnownNotificationReason.repost:
-          backgroundColor = Colors.green.withValues(alpha: 0.1);
-          iconColor = Colors.green;
-          iconData = Icons.repeat;
-        case bsky.KnownNotificationReason.follow:
-          backgroundColor = colorScheme.primary.withValues(alpha: 0.1);
-          iconColor = colorScheme.primary;
-          iconData = Icons.person_add;
-        case bsky.KnownNotificationReason.reply:
-          backgroundColor = colorScheme.secondary.withValues(alpha: 0.1);
-          iconColor = colorScheme.secondary;
-          iconData = Icons.chat_bubble;
-        case bsky.KnownNotificationReason.mention:
-          backgroundColor = colorScheme.primary.withValues(alpha: 0.1);
-          iconColor = colorScheme.primary;
-          iconData = Icons.alternate_email;
-        case bsky.KnownNotificationReason.quote:
-          backgroundColor = Colors.purple.withValues(alpha: 0.1);
-          iconColor = Colors.purple;
-          iconData = Icons.format_quote;
-        default:
-          backgroundColor = colorScheme.surfaceContainerHighest;
-          iconColor = colorScheme.onSurfaceVariant;
-          iconData = Icons.notifications;
-      }
-    } else {
-      backgroundColor = colorScheme.surfaceContainerHighest;
-      iconColor = colorScheme.onSurfaceVariant;
-      iconData = Icons.notifications;
-    }
+    final iconStyle = NotificationIconMapper.map(reason: notification.reason, colorScheme: theme.colorScheme);
 
     return Container(
       width: 32,
       height: 32,
-      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
-      child: Icon(iconData, size: 16, color: iconColor),
+      decoration: BoxDecoration(color: iconStyle.backgroundColor, shape: BoxShape.circle),
+      child: Icon(iconStyle.icon, size: 16, color: iconStyle.iconColor),
     );
   }
 
@@ -122,24 +81,16 @@ class NotificationListItem extends StatelessWidget {
 
     return Row(
       children: [
-        ModeratedAvatar(
+        ProfileAvatar(
           size: 28,
-          ui: avatarUi,
+          moderationUi: avatarUi,
           imageUrl: author.avatar,
-          initials: _getInitials(author.displayName ?? author.handle),
+          fallbackText: author.displayName ?? author.handle,
           shape: BoxShape.circle,
           placeholderTextStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54),
         ),
       ],
     );
-  }
-
-  String _getInitials(String text) {
-    final parts = text.split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return text.substring(0, text.length >= 2 ? 2 : 1).toUpperCase();
   }
 
   Widget _buildSummary(ThemeData theme) {

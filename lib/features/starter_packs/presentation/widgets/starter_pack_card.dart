@@ -1,5 +1,6 @@
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:flutter/material.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
@@ -31,10 +32,11 @@ class StarterPackCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 20,
+                  ProfileAvatar(
+                    size: 40,
+                    fallbackText: name,
                     backgroundColor: colorScheme.primaryContainer,
-                    child: Icon(Icons.group_outlined, color: colorScheme.onPrimaryContainer, size: 20),
+                    fallbackBuilder: (_) => Icon(Icons.group_outlined, color: colorScheme.onPrimaryContainer, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

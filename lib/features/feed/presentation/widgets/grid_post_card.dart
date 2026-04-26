@@ -13,10 +13,10 @@ import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dar
 import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
-import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
-import 'package:lazurite/shared/utils/format_utils.dart';
+import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
 const double _gridEmbedPreviewMaxHeight = 240;
 
@@ -147,11 +147,11 @@ class GridPostCard extends StatelessWidget {
         GestureDetector(
           key: const ValueKey('grid_post_card_avatar'),
           onTap: () => GoRouter.maybeOf(context)?.push('/profile/view?actor=${Uri.encodeQueryComponent(author.did)}'),
-          child: ModeratedAvatar(
+          child: ProfileAvatar(
             size: 40,
-            ui: avatarUi,
+            moderationUi: avatarUi,
             imageUrl: author.avatar,
-            initials: formatInitials(author.displayName ?? author.handle),
+            fallbackText: author.displayName ?? author.handle,
             shape: BoxShape.rectangle,
             border: Border.all(color: colorScheme.outlineVariant),
             placeholderTextStyle: context.textTheme.labelMedium,
@@ -159,27 +159,16 @@ class GridPostCard extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.xs),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (author.displayName != null && author.displayName!.isNotEmpty)
-                Text(
-                  author.displayName!,
-                  style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              Text(
-                '@${author.handle}'.toUpperCase(),
-                style: context.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          child: ActorNameWidget(
+            displayName: author.displayName,
+            handle: author.handle,
+            showDisplayNameOnlyWhenPresent: true,
+            displayNameStyle: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+            handleStyle: context.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],

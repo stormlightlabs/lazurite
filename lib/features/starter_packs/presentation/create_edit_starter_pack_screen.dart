@@ -8,6 +8,7 @@ import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
 /// Full-screen form for creating a new starter pack.
 ///
@@ -225,18 +226,11 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
                 final isAlreadyAdded = _selectedMembers.any((m) => m.did == profile.did);
                 return ListTile(
                   dense: true,
-                  leading: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: colorScheme.surfaceContainerHighest,
-                    backgroundImage: profile.avatar != null ? NetworkImage(profile.avatar!) : null,
-                    child: profile.avatar == null
-                        ? Text(
-                            (profile.displayName?.isNotEmpty == true ? profile.displayName! : profile.handle)
-                                .substring(0, 1)
-                                .toUpperCase(),
-                            style: const TextStyle(fontSize: 12),
-                          )
-                        : null,
+                  leading: ProfileAvatar(
+                    size: 32,
+                    imageUrl: profile.avatar,
+                    fallbackText: profile.displayName?.isNotEmpty == true ? profile.displayName! : profile.handle,
+                    placeholderTextStyle: const TextStyle(fontSize: 12),
                   ),
                   title: Text(profile.displayName ?? profile.handle, maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text('@${profile.handle}', style: TextStyle(color: colorScheme.onSurfaceVariant)),
@@ -255,17 +249,11 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
             runSpacing: 8,
             children: _selectedMembers.map((member) {
               return Chip(
-                avatar: CircleAvatar(
-                  backgroundImage: member.avatar != null ? NetworkImage(member.avatar!) : null,
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                  child: member.avatar == null
-                      ? Text(
-                          (member.displayName?.isNotEmpty == true ? member.displayName! : member.handle)
-                              .substring(0, 1)
-                              .toUpperCase(),
-                          style: const TextStyle(fontSize: 10),
-                        )
-                      : null,
+                avatar: ProfileAvatar(
+                  size: 24,
+                  imageUrl: member.avatar,
+                  fallbackText: member.displayName?.isNotEmpty == true ? member.displayName! : member.handle,
+                  placeholderTextStyle: const TextStyle(fontSize: 10),
                 ),
                 label: Text(member.displayName ?? member.handle, maxLines: 1, overflow: TextOverflow.ellipsis),
                 onDeleted: isCreating ? null : () => _removeMember(member.did),
@@ -295,11 +283,11 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
         for (final feed in _selectedFeeds)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(
-              radius: 20,
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              backgroundImage: feed.avatar != null ? NetworkImage(feed.avatar!) : null,
-              child: feed.avatar == null ? const Icon(Icons.rss_feed) : null,
+            leading: ProfileAvatar(
+              size: 40,
+              imageUrl: feed.avatar,
+              fallbackText: feed.displayName,
+              fallbackBuilder: (_) => const Icon(Icons.rss_feed),
             ),
             title: Text(feed.displayName, maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: feed.description != null
@@ -388,10 +376,11 @@ class _FeedPickerSheetState extends State<_FeedPickerSheet> {
                         final isSelected = widget.alreadySelected.contains(feed.uri);
 
                         return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: colorScheme.surfaceContainerHighest,
-                            backgroundImage: feed.avatar != null ? NetworkImage(feed.avatar!) : null,
-                            child: feed.avatar == null ? const Icon(Icons.rss_feed) : null,
+                          leading: ProfileAvatar(
+                            size: 40,
+                            imageUrl: feed.avatar,
+                            fallbackText: feed.displayName,
+                            fallbackBuilder: (_) => const Icon(Icons.rss_feed),
                           ),
                           title: Text(feed.displayName, maxLines: 1, overflow: TextOverflow.ellipsis),
                           subtitle: feed.description != null

@@ -19,6 +19,7 @@ import 'package:lazurite/features/search/cubit/semantic_search_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -55,9 +56,7 @@ class SettingsScreen extends StatelessWidget {
                       : '@${tokens.handle}';
 
                   return ListTile(
-                    leading: CircleAvatar(
-                      child: Text((tokens.displayName ?? tokens.handle).substring(0, 1).toUpperCase()),
-                    ),
+                    leading: ProfileAvatar(size: 40, fallbackText: tokens.displayName ?? tokens.handle),
                     title: Text(tokens.displayName ?? tokens.handle),
                     subtitle: Text(subtitle),
                     trailing: const Icon(Icons.chevron_right),

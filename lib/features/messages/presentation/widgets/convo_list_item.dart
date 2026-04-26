@@ -1,5 +1,8 @@
 import 'package:bluesky/chat_bsky_convo_defs.dart';
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
 class ConvoListItem extends StatelessWidget {
   const ConvoListItem({
@@ -19,22 +22,26 @@ class ConvoListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final other = convo.members.where((m) => m.did != currentUserDid).firstOrNull;
-    final displayName = other?.displayName ?? other?.handle ?? 'Unknown';
+    final displayName = other?.displayName;
+    final handle = other?.handle ?? 'unknown';
+    final fallbackName = displayName ?? handle;
     final lastMessageText = _lastMessageText();
 
     return ListTile(
       onTap: onTap,
-      leading: _buildAvatar(context, other?.avatar),
+      leading: _buildAvatar(other?.avatar, fallbackName),
       title: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(
-              displayName,
-              style: theme.textTheme.bodyLarge?.copyWith(
+            child: ActorNameWidget(
+              displayName: displayName,
+              handle: handle,
+              displayNameStyle: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: convo.unreadCount > 0 ? FontWeight.w700 : FontWeight.normal,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              handleStyle: theme.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
+              uppercaseHandle: false,
             ),
           ),
           if (convo.muted)
@@ -79,13 +86,12 @@ class ConvoListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar(BuildContext context, String? avatarUrl) {
-    final theme = Theme.of(context);
-    return CircleAvatar(
-      radius: 24,
-      backgroundColor: theme.colorScheme.surfaceContainerHighest,
-      backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-      child: avatarUrl == null ? const Icon(Icons.person) : null,
+  Widget _buildAvatar(String? avatarUrl, String fallbackText) {
+    return ProfileAvatar(
+      size: 48,
+      imageUrl: avatarUrl,
+      fallbackText: fallbackText,
+      fallbackBuilder: (_) => const Icon(Icons.person),
     );
   }
 

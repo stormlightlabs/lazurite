@@ -16,7 +16,8 @@ import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
-import 'package:lazurite/shared/utils/format_utils.dart';
+import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
@@ -266,28 +267,26 @@ class PostEmbedView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: context.colorScheme.surfaceContainerHighest,
-                        border: Border.all(color: context.colorScheme.outlineVariant),
-                      ),
-                      child: quoted.author.avatar != null
-                          ? Image.network(quoted.author.avatar!, fit: BoxFit.cover)
-                          : Center(child: Text(formatInitials(quoted.author.displayName ?? quoted.author.handle))),
+                    ProfileAvatar(
+                      size: 28,
+                      imageUrl: quoted.author.avatar,
+                      fallbackText: quoted.author.displayName ?? quoted.author.handle,
+                      shape: BoxShape.rectangle,
+                      border: Border.all(color: context.colorScheme.outlineVariant),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        '${quoted.author.displayName ?? quoted.author.handle} @${quoted.author.handle}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                      child: ActorNameWidget(
+                        displayName: quoted.author.displayName,
+                        handle: quoted.author.handle,
+                        displayNameStyle: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
                         ),
+                        handleStyle: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        uppercaseHandle: false,
                       ),
                     ),
                   ],

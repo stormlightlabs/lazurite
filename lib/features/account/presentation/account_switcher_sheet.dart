@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 
@@ -60,7 +61,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
                   final label = account.displayName ?? account.handle;
 
                   return ListTile(
-                    leading: CircleAvatar(child: Text(label.substring(0, 1).toUpperCase())),
+                    leading: ProfileAvatar(size: 40, fallbackText: label),
                     title: Text(label),
                     subtitle: Text('@${account.handle}'),
                     trailing: isActive ? const Icon(Icons.check) : null,

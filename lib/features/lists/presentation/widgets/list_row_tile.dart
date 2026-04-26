@@ -1,6 +1,7 @@
 import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
 /// A reusable tile for a single [bsky_graph.ListView] entry.
 class ListRowTile extends StatelessWidget {
@@ -19,10 +20,11 @@ class ListRowTile extends StatelessWidget {
 
     return ListTile(
       key: key,
-      leading: CircleAvatar(
-        backgroundImage: list.avatar != null ? NetworkImage(list.avatar!) : null,
-        backgroundColor: colorScheme.surfaceContainerHighest,
-        child: list.avatar == null ? Icon(Icons.list, color: colorScheme.onSurfaceVariant) : null,
+      leading: ProfileAvatar(
+        size: 40,
+        imageUrl: list.avatar,
+        fallbackText: list.name,
+        fallbackBuilder: (_) => Icon(Icons.list, color: colorScheme.onSurfaceVariant),
       ),
       title: Text(list.name, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text('${list.listItemCount ?? 0} members', style: TextStyle(color: colorScheme.onSurfaceVariant)),

@@ -11,13 +11,13 @@ import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
-import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
@@ -651,11 +651,11 @@ class _PostViewCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ModeratedAvatar(
+          ProfileAvatar(
             size: 44,
-            ui: avatarUi,
+            moderationUi: avatarUi,
             imageUrl: author.avatar,
-            initials: formatInitials(author.displayName ?? author.handle),
+            fallbackText: author.displayName ?? author.handle,
             shape: BoxShape.circle,
           ),
           const SizedBox(width: 12),
@@ -755,11 +755,11 @@ class _ActorResultTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ModeratedAvatar(
+            ProfileAvatar(
               size: 48,
-              ui: avatarUi,
+              moderationUi: avatarUi,
               imageUrl: actor.avatar,
-              initials: formatInitials(actor.displayName ?? actor.handle),
+              fallbackText: actor.displayName ?? actor.handle,
               shape: BoxShape.circle,
             ),
             const SizedBox(width: 12),
@@ -831,11 +831,11 @@ class _ActorListTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            ModeratedAvatar(
+            ProfileAvatar(
               size: 40,
-              ui: avatarUi,
+              moderationUi: avatarUi,
               imageUrl: actor.avatar,
-              initials: formatInitials(actor.displayName ?? actor.handle),
+              fallbackText: actor.displayName ?? actor.handle,
               shape: BoxShape.circle,
               placeholderTextStyle: context.textTheme.labelMedium,
             ),

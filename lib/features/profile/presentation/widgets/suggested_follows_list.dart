@@ -4,10 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/cubit/suggested_follows_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
-import 'package:lazurite/shared/utils/format_utils.dart';
 
 class SuggestedFollowsList extends StatelessWidget {
   const SuggestedFollowsList({
@@ -115,10 +115,7 @@ class _SuggestedProfileTileBody extends StatelessWidget {
       },
       builder: (context, state) {
         return ListTile(
-          leading: CircleAvatar(
-            backgroundImage: profile.avatar != null ? NetworkImage(profile.avatar!) : null,
-            child: profile.avatar == null ? Text(formatInitials(title)) : null,
-          ),
+          leading: ProfileAvatar(size: 40, imageUrl: profile.avatar, fallbackText: title),
           title: Text(title),
           subtitle: Text('@${profile.handle}'),
           trailing: _FollowButton(
@@ -143,10 +140,7 @@ class _StaticSuggestedProfileTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = profile.displayName?.isNotEmpty == true ? profile.displayName! : profile.handle;
     return ListTile(
-      leading: CircleAvatar(
-        backgroundImage: profile.avatar != null ? NetworkImage(profile.avatar!) : null,
-        child: profile.avatar == null ? Text(formatInitials(title)) : null,
-      ),
+      leading: ProfileAvatar(size: 40, imageUrl: profile.avatar, fallbackText: title),
       title: Text(title),
       subtitle: Text('@${profile.handle}'),
       onTap: onTap == null ? null : () => onTap!(profile),

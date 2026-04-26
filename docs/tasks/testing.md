@@ -36,33 +36,13 @@
 
 ## M4 - Widget Extraction
 
-- [ ] Create `lib/shared/presentation/widgets/profile_avatar.dart` (configurable size, shape, fallback)
-- [ ] Create `lib/shared/presentation/widgets/actor_name_widget.dart` (displayName + handle)
-- [ ] Create `lib/shared/presentation/helpers/notification_icon_mapper.dart`
-- [ ] Replace avatar patterns in:
-  - `lib/features/messages/presentation/widgets/convo_list_item.dart`
-  - `lib/features/lists/presentation/widgets/list_row_tile.dart`
-  - `lib/features/settings/presentation/settings_screen.dart`
-  - `lib/features/starter_packs/presentation/widgets/starter_pack_card.dart`
-  - `lib/features/starter_packs/presentation/create_edit_starter_pack_screen.dart`
-  - `lib/features/account/presentation/account_switcher_sheet.dart`
-  - `lib/features/profile/presentation/widgets/suggested_follows_list.dart`
-  - `lib/features/feed/presentation/widgets/post_card.dart`
-  - `lib/features/feed/presentation/widgets/grid_post_card.dart`
-  - `lib/features/feed/presentation/widgets/post_embed_view.dart`
-  - `lib/features/notifications/presentation/widgets/notification_list_item.dart`
-  - `lib/features/notifications/presentation/widgets/grouped_notification_list_item.dart`
-  - `lib/features/search/presentation/search_screen.dart`
-  - `lib/features/search/presentation/hashtag_screen.dart`
-- [ ] Replace author name patterns in:
-  - `lib/features/feed/presentation/widgets/post_card.dart`
-  - `lib/features/feed/presentation/widgets/grid_post_card.dart`
-  - `lib/features/feed/presentation/widgets/post_embed_view.dart`
-  - `lib/features/messages/presentation/widgets/convo_list_item.dart`
-- [ ] Replace notification icon switch in:
-  - `lib/features/notifications/presentation/widgets/notification_list_item.dart`
-  - `lib/features/notifications/presentation/widgets/grouped_notification_list_item.dart`
-- [ ] Widget tests for extracted widgets
+- [x] Create `lib/shared/presentation/widgets/profile_avatar.dart` (configurable size, shape, fallback)
+- [x] Create `lib/shared/presentation/widgets/actor_name_widget.dart` (displayName + handle)
+- [x] Create `lib/shared/presentation/helpers/notification_icon_mapper.dart`
+- [x] Replace avatar patterns
+- [x] Replace author name patterns
+- [x] Replace notification icon switch
+- [x] Widget tests for extracted widgets
 
 ## M5 - Navigation & Haptics Helpers
 
