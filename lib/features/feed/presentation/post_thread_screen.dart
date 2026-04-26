@@ -28,6 +28,9 @@ import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/report_dialog.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
+import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
+import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 
 class PostThreadScreen extends StatelessWidget {
   const PostThreadScreen({super.key, required this.postUri});
@@ -635,9 +638,7 @@ class _FocusedPostWithActions extends StatelessWidget {
       child: BlocListener<PostActionCubit, PostActionState>(
         listenWhen: (previous, current) => previous.error != current.error && current.error != null,
         listener: (context, state) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.error!), behavior: SnackBarBehavior.floating));
+          showAppSnackBar(context, state.error!, behavior: SnackBarBehavior.floating);
           context.read<PostActionCubit>().clearError();
         },
         child: _FocusedPostContent(thread: thread, accountDid: accountDid),
@@ -722,7 +723,7 @@ class _FocusedPostContent extends StatelessWidget {
 
   void _showInteractions(BuildContext context, PostView post, {required bool showLikes}) {
     final repository = context.read<PostActionRepository>();
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (_) => PostInteractionsSheet(
@@ -836,57 +837,34 @@ class _FocusedPostContent extends StatelessWidget {
     final postUri = post.uri.toString();
     final bskyUrl = _convertAtUriToBskyUrl(postUri);
 
-    showModalBottomSheet<void>(
+    showOptionsSheet<void>(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: const Text('Copy Link'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _copyToClipboard(context, bskyUrl);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: Text('View @${post.author.handle}'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                context.push('/profile/view?actor=${Uri.encodeQueryComponent(post.author.did)}');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.report_outlined, color: Colors.orange),
-              title: const Text('Report Post', style: TextStyle(color: Colors.orange)),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _showReportDialog(context);
-              },
-            ),
-            if (post.author.did == accountDid)
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('Edit Post'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  unawaited(_onEdit(context));
-                },
-              ),
-            if (post.author.did == accountDid)
-              ListTile(
-                leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                title: Text('Delete Post', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _confirmDelete(context);
-                },
-              ),
-          ],
+      items: [
+        OptionsSheetItem(
+          leading: const Icon(Icons.copy),
+          title: 'Copy Link',
+          onTap: () => _copyToClipboard(context, bskyUrl),
         ),
-      ),
+        OptionsSheetItem(
+          leading: const Icon(Icons.person_outline),
+          title: 'View @${post.author.handle}',
+          onTap: () => context.push('/profile/view?actor=${Uri.encodeQueryComponent(post.author.did)}'),
+        ),
+        OptionsSheetItem(
+          leading: const Icon(Icons.report_outlined, color: Colors.orange),
+          title: 'Report Post',
+          onTap: () => _showReportDialog(context),
+        ),
+        if (post.author.did == accountDid)
+          OptionsSheetItem(leading: const Icon(Icons.edit_outlined), title: 'Edit Post', onTap: () => _onEdit(context)),
+        if (post.author.did == accountDid)
+          OptionsSheetItem(
+            leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+            title: 'Delete Post',
+            isDestructive: true,
+            onTap: () => _confirmDelete(context),
+          ),
+      ],
     );
   }
 
@@ -956,11 +934,10 @@ class _FocusedPostContent extends StatelessWidget {
     }
 
     if (context.mounted && expectedText != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Edit saved. Your updates may take a moment to appear across feeds.'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showAppSnackBar(
+        context,
+        'Edit saved. Your updates may take a moment to appear across feeds.',
+        behavior: SnackBarBehavior.floating,
       );
     }
   }
@@ -980,35 +957,20 @@ class _FocusedPostContent extends StatelessWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context) {
-    showDialog<void>(
+  Future<void> _confirmDelete(BuildContext context) async {
+    await showConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Post?'),
-        content: const Text('This action cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              context.read<PostActionCubit>().deletePost();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      title: const Text('Delete Post?'),
+      content: const Text('This action cannot be undone.'),
+      confirmLabel: 'Delete',
+      confirmDestructive: true,
+      onConfirmed: () => context.read<PostActionCubit>().deletePost(),
     );
   }
 
   void _copyToClipboard(BuildContext context, String text) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Link copied to clipboard'), behavior: SnackBarBehavior.floating));
+    showAppSnackBar(context, 'Link copied to clipboard', behavior: SnackBarBehavior.floating);
   }
 
   (String, String) _findRoot() {

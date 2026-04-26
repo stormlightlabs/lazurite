@@ -16,6 +16,7 @@ import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/grid_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
+import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 
 /// Controls which card layout variant is rendered by [PostCardWithActions].
 enum PostCardVariant { linear, grid }
@@ -87,32 +88,27 @@ class _PostCardWithActionsContent extends StatelessWidget {
           (previous.error != current.error && current.error != null) || (!previous.isDeleted && current.isDeleted),
       listener: (context, state) {
         if (state.isDeleted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Post deleted'), behavior: SnackBarBehavior.floating));
+          showAppSnackBar(context, 'Post deleted', behavior: SnackBarBehavior.floating);
           onDeleted?.call();
           return;
         }
         if (state.error != null) {
           final cubit = context.read<PostActionCubit>();
           final error = state.error!;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(error),
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(
-                label: 'Retry',
-                onPressed: () {
-                  if (error.contains('like')) {
-                    cubit.toggleLike();
-                  } else if (error.contains('repost')) {
-                    cubit.toggleRepost();
-                  } else if (error.contains('delete')) {
-                    cubit.deletePost();
-                  }
-                },
-              ),
-            ),
+          showAppSnackBar(
+            context,
+            error,
+            behavior: SnackBarBehavior.floating,
+            actionLabel: 'Retry',
+            onAction: () {
+              if (error.contains('like')) {
+                cubit.toggleLike();
+              } else if (error.contains('repost')) {
+                cubit.toggleRepost();
+              } else if (error.contains('delete')) {
+                cubit.deletePost();
+              }
+            },
           );
           cubit.clearError();
         }

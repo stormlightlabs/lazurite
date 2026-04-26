@@ -18,34 +18,13 @@
 
 ## M2 - Dialog & Sheet Consolidation
 
-- [ ] Create `lib/shared/presentation/widgets/confirmation_dialog.dart`
-- [ ] Create `lib/shared/presentation/widgets/options_sheet.dart`
-- [ ] Create `lib/shared/presentation/helpers/snackbar_helper.dart` - `showAppSnackBar`
-- [ ] Replace confirmation dialogs in:
-  - `lib/features/profile/presentation/widgets/profile_action_buttons.dart` (5 dialogs)
-  - `lib/features/compose/presentation/compose_screen.dart` (6 dialogs)
-  - `lib/features/search/presentation/search_screen.dart` (2 dialogs)
-  - `lib/features/search/presentation/hashtag_screen.dart`
-  - `lib/features/feed/presentation/post_thread_screen.dart`
-  - `lib/features/feed/presentation/feed_management_screen.dart`
-  - `lib/features/lists/presentation/list_detail_screen.dart`
-  - `lib/features/settings/presentation/settings_screen.dart`
-  - `lib/features/moderation/presentation/screens/moderation_settings_screen.dart`
-  - `lib/features/account/presentation/account_switcher_sheet.dart`
-- [ ] Replace modal bottom sheets in:
-  - `lib/features/feed/presentation/widgets/post_action_bar.dart`
-  - `lib/features/feed/presentation/widgets/post_card_footer.dart`
-  - `lib/features/feed/presentation/post_thread_screen.dart`
-  - `lib/features/search/presentation/hashtag_screen.dart`
-  - `lib/features/profile/presentation/profile_screen.dart`
-- [ ] Replace SnackBar patterns in:
-  - `lib/features/feed/presentation/widgets/post_card_with_actions.dart`
-  - `lib/features/feed/presentation/feed_management_screen.dart`
-  - `lib/features/compose/presentation/compose_screen.dart`
-  - `lib/features/profile/presentation/profile_screen.dart`
-  - `lib/features/lists/presentation/list_detail_screen.dart`
-  - `lib/features/settings/presentation/settings_screen.dart`
-- [ ] Tests for dialog/sheet/snackbar helpers
+- [x] Create `lib/shared/presentation/widgets/confirmation_dialog.dart`
+- [x] Create `lib/shared/presentation/widgets/options_sheet.dart`
+- [x] Create `lib/shared/presentation/helpers/snackbar_helper.dart` - `showAppSnackBar`
+- [x] Replace confirmation dialogs
+- [x] Replace modal bottom sheets
+- [x] Replace SnackBar patterns
+- [x] Tests for dialog/sheet/snackbar helpers
 
 ## M3 - Theme & Spacing Constants
 

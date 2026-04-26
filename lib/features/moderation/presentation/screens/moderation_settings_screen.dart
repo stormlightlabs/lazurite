@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
+import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
+import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
 class ModerationSettingsScreen extends StatefulWidget {
@@ -61,7 +63,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
       _reload();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update adult content: $error')));
+        showAppSnackBar(context, 'Failed to update adult content: $error', isError: true);
       }
     } finally {
       if (mounted) {
@@ -76,7 +78,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
       _reload();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to unsubscribe: $error')));
+        showAppSnackBar(context, 'Failed to unsubscribe: $error', isError: true);
       }
     }
   }
@@ -119,7 +121,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
 
                   if (context.mounted) {
                     final name = details.creator.displayName ?? details.creator.handle;
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Subscribed to $name')));
+                    showAppSnackBar(context, 'Subscribed to $name');
                   }
                 }
               } catch (error) {
@@ -129,7 +131,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
               }
             }
 
-            return AlertDialog(
+            return ConfirmationDialog(
               title: const Text('Add labeler'),
               content: SizedBox(
                 width: 420,
@@ -155,13 +157,10 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: isSubmitting ? null : () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(onPressed: isSubmitting ? null : submit, child: Text(isSubmitting ? 'Adding...' : 'Add')),
-              ],
+              confirmLabel: isSubmitting ? 'Adding...' : 'Add',
+              confirmEnabled: !isSubmitting,
+              onCancel: isSubmitting ? null : () => Navigator.of(dialogContext).pop(),
+              onConfirm: submit,
             );
           },
         );

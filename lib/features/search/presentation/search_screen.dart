@@ -16,6 +16,8 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
+import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
+import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -93,23 +95,13 @@ class _SearchScreenState extends State<SearchScreen> {
     context.read<SearchBloc>().add(HistoryEntryDeleted(id: id));
   }
 
-  void _onClearHistory() {
-    showDialog(
+  Future<void> _onClearHistory() async {
+    await showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear search history?'),
-        content: const Text('This will delete all your recent searches.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<SearchBloc>().add(const HistoryCleared());
-            },
-            child: const Text('Clear'),
-          ),
-        ],
-      ),
+      title: const Text('Clear search history?'),
+      content: const Text('This will delete all your recent searches.'),
+      confirmLabel: 'Clear',
+      onConfirmed: () => context.read<SearchBloc>().add(const HistoryCleared()),
     );
   }
 
@@ -140,7 +132,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 });
               }
 
-              return AlertDialog(
+              return ConfirmationDialog(
                 title: const Text('Jump to profile'),
                 content: SizedBox(
                   width: 420,
@@ -209,19 +201,13 @@ class _SearchScreenState extends State<SearchScreen> {
                     },
                   ),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      searchBloc.add(const TypeaheadRequested(query: ''));
-                      Navigator.of(dialogContext).pop();
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: controller.text.trim().isEmpty ? null : submitHandle,
-                    child: const Text('Open'),
-                  ),
-                ],
+                confirmLabel: 'Open',
+                confirmEnabled: controller.text.trim().isNotEmpty,
+                onCancel: () {
+                  searchBloc.add(const TypeaheadRequested(query: ''));
+                  Navigator.of(dialogContext).pop();
+                },
+                onConfirm: submitHandle,
               );
             },
           ),
@@ -571,13 +557,11 @@ class _SearchScreenState extends State<SearchScreen> {
         return _FeedResultTile(
           feed: feed,
           onAdded: (displayName) {
-            final messenger = ScaffoldMessenger.of(context);
-            messenger.hideCurrentSnackBar();
-            messenger.showSnackBar(
-              SnackBar(
-                content: Text('Added $displayName to your saved feeds'),
-                action: SnackBarAction(label: 'Manage', onPressed: () => GoRouter.maybeOf(context)?.push('/feeds')),
-              ),
+            showAppSnackBar(
+              context,
+              'Added $displayName to your saved feeds',
+              actionLabel: 'Manage',
+              onAction: () => GoRouter.maybeOf(context)?.push('/feeds'),
             );
           },
         );

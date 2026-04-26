@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -124,34 +125,23 @@ class PostActionBar extends StatelessWidget {
 
   void _showRepostOptions(BuildContext context) {
     HapticFeedback.mediumImpact();
-    showModalBottomSheet<void>(
+    showOptionsSheet<void>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(isReposted ? Icons.repeat : Icons.repeat, color: isReposted ? Colors.green : null),
-              title: Text(isReposted ? 'Unrepost' : 'Repost'),
-              subtitle: Text(isReposted ? 'Remove this repost' : 'Share this post'),
-              onTap: () {
-                Navigator.pop(context);
-                onRepost?.call();
-              },
-            ),
-            if (!isReposted)
-              ListTile(
-                leading: const Icon(Icons.format_quote),
-                title: const Text('Quote Post'),
-                subtitle: const Text('Quote this post with your own text'),
-                onTap: () {
-                  Navigator.pop(context);
-                  onQuote?.call();
-                },
-              ),
-          ],
+      items: [
+        OptionsSheetItem(
+          leading: Icon(Icons.repeat, color: isReposted ? Colors.green : null),
+          title: isReposted ? 'Unrepost' : 'Repost',
+          subtitle: isReposted ? 'Remove this repost' : 'Share this post',
+          onTap: onRepost,
         ),
-      ),
+        if (!isReposted)
+          OptionsSheetItem(
+            leading: const Icon(Icons.format_quote),
+            title: 'Quote Post',
+            subtitle: 'Quote this post with your own text',
+            onTap: onQuote,
+          ),
+      ],
     );
   }
 
@@ -159,41 +149,26 @@ class PostActionBar extends StatelessWidget {
     HapticFeedback.mediumImpact();
     final isLocalSaved = isSaved && (saveType == 'local' || saveType == 'both');
     final isCloudSaved = saveType == 'cloud' || saveType == 'both';
-    showModalBottomSheet<void>(
+    showOptionsSheet<void>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(
-                isLocalSaved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined,
-                color: Colors.amber,
-              ),
-              title: Text(isLocalSaved ? 'Remove local save' : 'Save locally'),
-              onTap: () {
-                Navigator.pop(context);
-                onSave?.call();
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                isCloudSaved ? Icons.cloud_off_outlined : Icons.cloud_outlined,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              title: Text(isCloudSaved ? 'Remove from Bluesky' : 'Save to Bluesky'),
-              onTap: () {
-                Navigator.pop(context);
-                if (isCloudSaved) {
-                  onCloudUnsave?.call();
-                } else {
-                  onCloudSave?.call();
-                }
-              },
-            ),
-          ],
+      items: [
+        OptionsSheetItem(
+          leading: Icon(
+            isLocalSaved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined,
+            color: Colors.amber,
+          ),
+          title: isLocalSaved ? 'Remove local save' : 'Save locally',
+          onTap: onSave,
         ),
-      ),
+        OptionsSheetItem(
+          leading: Icon(
+            isCloudSaved ? Icons.cloud_off_outlined : Icons.cloud_outlined,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          title: isCloudSaved ? 'Remove from Bluesky' : 'Save to Bluesky',
+          onTap: isCloudSaved ? onCloudUnsave : onCloudSave,
+        ),
+      ],
     );
   }
 

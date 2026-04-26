@@ -35,6 +35,8 @@ import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
+import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
+import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -481,9 +483,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       child: BlocConsumer<ProfileActionCubit, ProfileActionState>(
         listener: (context, state) {
           if (state.error != null) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.error!), behavior: SnackBarBehavior.floating));
+            showAppSnackBar(context, state.error!, behavior: SnackBarBehavior.floating);
             context.read<ProfileActionCubit>().clearError();
           }
         },
@@ -510,92 +510,60 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   void _showOwnProfileMoreOptions(BuildContext context, ProfileViewDetailed profile) {
-    showModalBottomSheet<void>(
+    showOptionsSheet<void>(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.hub_outlined),
-              title: const Text('Profile Context'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                context.push(
-                  '/profile-context?did=${Uri.encodeComponent(profile.did)}&handle=${Uri.encodeComponent(profile.handle)}',
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.cleaning_services_outlined),
-              title: const Text('Clean Follows'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                context.push('/settings/clean-follows');
-              },
-            ),
-          ],
+      items: [
+        OptionsSheetItem(
+          leading: const Icon(Icons.hub_outlined),
+          title: 'Profile Context',
+          onTap: () => context.push(
+            '/profile-context?did=${Uri.encodeComponent(profile.did)}&handle=${Uri.encodeComponent(profile.handle)}',
+          ),
         ),
-      ),
+        OptionsSheetItem(
+          leading: const Icon(Icons.cleaning_services_outlined),
+          title: 'Clean Follows',
+          onTap: () => context.push('/settings/clean-follows'),
+        ),
+      ],
     );
   }
 
   void _showProfileMoreOptions(BuildContext context, ProfileViewDetailed profile) {
-    showModalBottomSheet<void>(
+    showOptionsSheet<void>(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: const Text('Copy DID'),
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: profile.did));
-                Navigator.pop(sheetContext);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('DID copied to clipboard'), behavior: SnackBarBehavior.floating),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.share_outlined),
-              title: const Text('Share Profile'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                final url = 'https://bsky.app/profile/${profile.handle}';
-                Share.share(url);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.playlist_add_outlined),
-              title: const Text('Add to list'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _showAddToList(context, profile);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.people_outline),
-              title: const Text('Suggested Follows'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _showSuggestedFollows(context, profile);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.hub_outlined),
-              title: const Text('Profile Context'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                context.push(
-                  '/profile-context?did=${Uri.encodeComponent(profile.did)}&handle=${Uri.encodeComponent(profile.handle)}',
-                );
-              },
-            ),
-          ],
+      items: [
+        OptionsSheetItem(
+          leading: const Icon(Icons.copy),
+          title: 'Copy DID',
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: profile.did));
+            showAppSnackBar(context, 'DID copied to clipboard', behavior: SnackBarBehavior.floating);
+          },
         ),
-      ),
+        OptionsSheetItem(
+          leading: const Icon(Icons.share_outlined),
+          title: 'Share Profile',
+          onTap: () => Share.share('https://bsky.app/profile/${profile.handle}'),
+        ),
+        OptionsSheetItem(
+          leading: const Icon(Icons.playlist_add_outlined),
+          title: 'Add to list',
+          onTap: () => _showAddToList(context, profile),
+        ),
+        OptionsSheetItem(
+          leading: const Icon(Icons.people_outline),
+          title: 'Suggested Follows',
+          onTap: () => _showSuggestedFollows(context, profile),
+        ),
+        OptionsSheetItem(
+          leading: const Icon(Icons.hub_outlined),
+          title: 'Profile Context',
+          onTap: () => context.push(
+            '/profile-context?did=${Uri.encodeComponent(profile.did)}&handle=${Uri.encodeComponent(profile.handle)}',
+          ),
+        ),
+      ],
     );
   }
 
@@ -611,7 +579,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     final cubit = AddToListCubit(listRepository: listRepository, currentUserDid: currentUserDid)
       ..load(targetDid: profile.did);
 
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => BlocProvider.value(
@@ -688,7 +656,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
     final cubit = SuggestedFollowsCubit(repository: profileRepository)..load(profile.did);
 
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => BlocProvider.value(

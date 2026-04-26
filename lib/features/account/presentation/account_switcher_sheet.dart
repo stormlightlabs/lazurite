@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
+import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
+import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 
 void showAccountSwitcherSheet(BuildContext context) {
   final cubit = context.read<AccountSwitcherCubit>();
   final authBloc = context.read<AuthBloc>();
 
-  showModalBottomSheet<void>(
+  showAppBottomSheet<void>(
     context: context,
     builder: (sheetContext) => BlocProvider.value(
       value: cubit,
@@ -97,7 +100,6 @@ class _AccountSwitcherSheet extends StatelessWidget {
   }
 
   Future<void> _onSwitchAccount(BuildContext context, String did) async {
-    final messenger = ScaffoldMessenger.of(context);
     final cubit = context.read<AccountSwitcherCubit>();
     Navigator.pop(context);
     final tokens = await cubit.switchAccount(did);
@@ -106,43 +108,39 @@ class _AccountSwitcherSheet extends StatelessWidget {
       return;
     }
 
-    messenger.showSnackBar(const SnackBar(content: Text('Unable to switch accounts. Sign in again for that account.')));
+    if (context.mounted) {
+      showAppSnackBar(context, 'Unable to switch accounts. Sign in again for that account.');
+    }
   }
 
   Future<void> _onAddAccount(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
     final cubit = context.read<AccountSwitcherCubit>();
     Navigator.pop(context);
 
+    final controller = TextEditingController();
     final handle = await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('Add Account'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(labelText: 'Handle or DID'),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
-              child: const Text('Continue'),
-            ),
-          ],
-        );
-      },
+      builder: (dialogContext) => ConfirmationDialog(
+        title: const Text('Add Account'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: 'Handle or DID'),
+          autofocus: true,
+        ),
+        confirmLabel: 'Continue',
+        onCancel: () => Navigator.pop(dialogContext),
+        onConfirm: () => Navigator.pop(dialogContext, controller.text.trim()),
+      ),
     );
+    controller.dispose();
 
     if (handle == null || handle.isEmpty) return;
 
     final tokens = await cubit.addAccountWithOAuth(handle);
     if (tokens != null) {
       authBloc.add(SessionRestored(tokens: tokens));
-    } else {
-      messenger.showSnackBar(const SnackBar(content: Text('Failed to add account')));
+    } else if (context.mounted) {
+      showAppSnackBar(context, 'Failed to add account', isError: true);
     }
   }
 }

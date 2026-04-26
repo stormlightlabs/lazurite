@@ -12,6 +12,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
+import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
 class HashtagScreen extends StatefulWidget {
@@ -72,7 +73,7 @@ class _HashtagScreenState extends State<HashtagScreen> {
       context.go('/hashtag?tag=${Uri.encodeQueryComponent(normalized)}');
     }
 
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) {

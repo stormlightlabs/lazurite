@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
 /// Formats a post timestamp as a short, uppercase string.
@@ -177,41 +178,26 @@ class PostCardFooter extends StatelessWidget {
     final isLocalSaved = isSaved && (saveType == 'local' || saveType == 'both');
     final isCloudSaved = saveType == 'cloud' || saveType == 'both';
 
-    showModalBottomSheet<void>(
+    showOptionsSheet<void>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(
-                isLocalSaved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined,
-                color: Colors.amber,
-              ),
-              title: Text(isLocalSaved ? 'Remove local save' : 'Save locally'),
-              onTap: () {
-                Navigator.pop(context);
-                onSave?.call();
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                isCloudSaved ? Icons.cloud_off_outlined : Icons.cloud_outlined,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              title: Text(isCloudSaved ? 'Remove from Bluesky' : 'Save to Bluesky'),
-              onTap: () {
-                Navigator.pop(context);
-                if (isCloudSaved) {
-                  onCloudUnsave?.call();
-                } else {
-                  onCloudSave?.call();
-                }
-              },
-            ),
-          ],
+      items: [
+        OptionsSheetItem(
+          leading: Icon(
+            isLocalSaved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined,
+            color: Colors.amber,
+          ),
+          title: isLocalSaved ? 'Remove local save' : 'Save locally',
+          onTap: onSave,
         ),
-      ),
+        OptionsSheetItem(
+          leading: Icon(
+            isCloudSaved ? Icons.cloud_off_outlined : Icons.cloud_outlined,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          title: isCloudSaved ? 'Remove from Bluesky' : 'Save to Bluesky',
+          onTap: isCloudSaved ? onCloudUnsave : onCloudSave,
+        ),
+      ],
     );
   }
 }

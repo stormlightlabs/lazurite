@@ -10,6 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
+import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 
 class ComposeScreen extends StatefulWidget {
   const ComposeScreen({
@@ -110,14 +112,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
   Future<void> _pickImage() async {
     final state = context.read<ComposeBloc>().state;
-    final theme = Theme.of(context);
     if (!state.canAddMoreMedia) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Maximum 4 images allowed', style: TextStyle(color: theme.colorScheme.error)),
-          ),
-        );
+        showAppSnackBar(context, 'Maximum 4 images allowed', isError: true);
       }
       return;
     }
@@ -136,7 +133,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
         const maxSize = 1 * 1024 * 1024;
         if (fileSize > maxSize) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image must be smaller than 1MB')));
+            showAppSnackBar(context, 'Image must be smaller than 1MB', isError: true);
           }
           return;
         }
@@ -145,9 +142,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
         const validExtensions = ['jpg', 'jpeg', 'png', 'webp'];
         if (!validExtensions.contains(extension)) {
           if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Image must be JPEG, PNG, or WebP')));
+            showAppSnackBar(context, 'Image must be JPEG, PNG, or WebP', isError: true);
           }
           return;
         }
@@ -164,7 +159,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
+        showAppSnackBar(context, 'Failed to pick image: $e', isError: true);
       }
     }
   }
@@ -173,9 +168,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
     final state = context.read<ComposeBloc>().state;
     if (!state.canAddVideo) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Remove existing media before adding a video')));
+        showAppSnackBar(context, 'Remove existing media before adding a video', isError: true);
       }
       return;
     }
@@ -187,7 +180,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to pick video: $e')));
+        showAppSnackBar(context, 'Failed to pick video: $e', isError: true);
       }
     }
   }
@@ -197,7 +190,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => ConfirmationDialog(
         title: const Text('Add video alt text'),
         content: TextField(
           controller: altController,
@@ -208,10 +201,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
             border: OutlineInputBorder(),
           ),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, altController.text), child: const Text('Save')),
-        ],
+        confirmLabel: 'Save',
+        onCancel: () => Navigator.pop(dialogContext),
+        onConfirm: () => Navigator.pop(dialogContext, altController.text),
       ),
     );
 
@@ -227,7 +219,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => ConfirmationDialog(
         title: const Text('Add alt text'),
         content: TextField(
           controller: altController,
@@ -238,10 +230,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
             border: OutlineInputBorder(),
           ),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, altController.text), child: const Text('Save')),
-        ],
+        confirmLabel: 'Save',
+        onCancel: () => Navigator.pop(dialogContext),
+        onConfirm: () => Navigator.pop(dialogContext, altController.text),
       ),
     );
 
@@ -325,7 +316,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
         return Container(
           constraints: const BoxConstraints(maxHeight: 280),
           decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: _theme.dividerColor)),
+            border: Border(top: BorderSide(color: theme.dividerColor)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -335,11 +326,11 @@ class _ComposeScreenState extends State<ComposeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Drafts', style: _theme.textTheme.titleMedium),
+                    Text('Drafts', style: theme.textTheme.titleMedium),
                     if (state.drafts.isNotEmpty)
                       Text(
                         '${state.drafts.length} draft${state.drafts.length != 1 ? 's' : ''}',
-                        style: _theme.textTheme.bodySmall?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
                   ],
                 ),
@@ -355,7 +346,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                   child: Center(
                     child: Text(
                       'No drafts saved',
-                      style: _theme.textTheme.bodyMedium?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                   ),
                 )
@@ -375,19 +366,19 @@ class _ComposeScreenState extends State<ComposeScreen> {
                         ),
                         subtitle: Row(
                           children: [
-                            Text(_formatDraftTime(draft.updatedAt), style: _theme.textTheme.bodySmall),
+                            Text(_formatDraftTime(draft.updatedAt), style: theme.textTheme.bodySmall),
                             if (draft.scheduledAt != null) ...[
                               const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: _theme.colorScheme.primaryContainer,
+                                  color: theme.colorScheme.primaryContainer,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   'Scheduled',
-                                  style: _theme.textTheme.bodySmall?.copyWith(
-                                    color: _theme.colorScheme.onPrimaryContainer,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onPrimaryContainer,
                                   ),
                                 ),
                               ),
@@ -395,28 +386,17 @@ class _ComposeScreenState extends State<ComposeScreen> {
                           ],
                         ),
                         trailing: IconButton(
-                          icon: Icon(Icons.delete_outline, color: _theme.colorScheme.error),
+                          icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
                           onPressed: () {
                             final bloc = context.read<ComposeBloc>();
-                            final theme = _theme;
-                            showDialog<bool>(
+                            showConfirmationDialog(
                               context: context,
-                              builder: (dialogContext) => AlertDialog(
-                                title: const Text('Delete Draft?'),
-                                content: const Text('This action cannot be undone.'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(dialogContext).pop(false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.of(dialogContext).pop(true),
-                                    child: Text('Delete', style: TextStyle(color: theme.colorScheme.error)),
-                                  ),
-                                ],
-                              ),
+                              title: const Text('Delete Draft?'),
+                              content: const Text('This action cannot be undone.'),
+                              confirmLabel: 'Delete',
+                              confirmDestructive: true,
                             ).then((confirmed) {
-                              if (confirmed == true && mounted) {
+                              if (confirmed && mounted) {
                                 bloc.add(DraftDeleted(draft.id));
                               }
                             });
@@ -437,7 +417,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
     );
   }
 
-  ThemeData get _theme => Theme.of(context);
+  ThemeData get theme => Theme.of(context);
 
   void _submitPost() {
     context.read<ComposeBloc>().add(const PostSubmitted());
@@ -447,26 +427,20 @@ class _ComposeScreenState extends State<ComposeScreen> {
     if (context.read<ComposeBloc>().state.isEditing) return;
     context.read<ComposeBloc>().add(const DraftSaved());
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Draft saved', style: TextStyle(color: _theme.colorScheme.onPrimary)),
-          backgroundColor: _theme.colorScheme.primary,
-        ),
-      );
+      showAppSnackBar(context, 'Draft saved');
     }
   }
 
-  void _showEditAlgorithmInfo() {
-    showDialog<void>(
+  Future<void> _showEditAlgorithmInfo() async {
+    await showConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('How Post Editing Works'),
-        content: const Text(
-          'Lazurite saves edits by deleting and recreating the post record with the same URI. During re-indexing, '
-          'ranking, counters, and search visibility can shift, and updates may take time to appear everywhere.',
-        ),
-        actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('OK'))],
+      title: const Text('How Post Editing Works'),
+      content: const Text(
+        'Lazurite saves edits by deleting and recreating the post record with the same URI. During re-indexing, '
+        'ranking, counters, and search visibility can shift, and updates may take time to appear everywhere.',
       ),
+      confirmLabel: 'OK',
+      showCancel: false,
     );
   }
 
@@ -478,18 +452,13 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
     if (state.isEditing) {
       if (state.isDraftDirty) {
-        showDialog<bool>(
+        showConfirmationDialog(
           context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Discard Changes?'),
-            content: const Text('You have unsaved edits. Discard them and leave?'),
-            actions: [
-              TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
-              TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Discard')),
-            ],
-          ),
+          title: const Text('Discard Changes?'),
+          content: const Text('You have unsaved edits. Discard them and leave?'),
+          confirmLabel: 'Discard',
         ).then((shouldDiscard) {
-          if (shouldDiscard == true && mounted) {
+          if (shouldDiscard && mounted) {
             navigator.pop(false);
           }
         });
@@ -500,28 +469,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
     }
 
     if (hasContent && state.isDraftDirty) {
-      showDialog<bool>(
+      showConfirmationDialog(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Save Draft?'),
-          content: const Text('You have unsaved content. Would you like to save it as a draft?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(false);
-              },
-              child: const Text('Discard'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(true);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
+        title: const Text('Save Draft?'),
+        content: const Text('You have unsaved content. Would you like to save it as a draft?'),
+        cancelLabel: 'Discard',
+        confirmLabel: 'Save',
       ).then((shouldSave) {
-        if (shouldSave == true) {
+        if (shouldSave) {
           _saveDraft();
         }
         if (mounted) {
@@ -544,17 +499,13 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
         if (state.isSuccess) {
           if (state.isEditing) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Changes saved.'), behavior: SnackBarBehavior.floating));
+            showAppSnackBar(context, 'Changes saved.', behavior: SnackBarBehavior.floating);
           }
           Navigator.of(context).pop(state.isEditing ? {'editedText': state.text} : null);
         }
 
         if (state.hasError && state.errorMessage != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.errorMessage!), behavior: SnackBarBehavior.floating));
+          showAppSnackBar(context, state.errorMessage!, behavior: SnackBarBehavior.floating, isError: true);
         }
       },
       child: PopScope(
@@ -607,19 +558,19 @@ class _ComposeScreenState extends State<ComposeScreen> {
                         margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: _theme.colorScheme.surfaceContainerHighest,
-                          border: Border.all(color: _theme.colorScheme.outlineVariant),
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          border: Border.all(color: theme.colorScheme.outlineVariant),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.info_outline, color: _theme.colorScheme.onSurfaceVariant, size: 20),
+                            Icon(Icons.info_outline, color: theme.colorScheme.onSurfaceVariant, size: 20),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'Edits are saved by replacing the record while keeping this post URI. Ranking, '
                                 'counts, and visibility may shift while networks re-index.',
-                                style: _theme.textTheme.bodySmall?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
+                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                               ),
                             ),
                             IconButton(
@@ -638,23 +589,23 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: _theme.colorScheme.surfaceContainerHighest,
-                        border: Border(bottom: BorderSide(color: _theme.dividerColor)),
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        border: Border(bottom: BorderSide(color: theme.dividerColor)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.reply, size: 16, color: _theme.colorScheme.onSurfaceVariant),
+                          Icon(Icons.reply, size: 16, color: theme.colorScheme.onSurfaceVariant),
                           const SizedBox(width: 8),
                           Text(
                             'Replying to ',
                             style: Theme.of(
                               context,
-                            ).textTheme.bodySmall?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
+                            ).textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                           ),
                           Text(
                             '@${widget.replyAuthorHandle}',
-                            style: _theme.textTheme.bodySmall?.copyWith(
-                              color: _theme.colorScheme.primary,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.primary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -676,7 +627,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
                       ),
-                      style: _theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+                      style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
                     ),
                   ),
                 ),
@@ -688,26 +639,26 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: _theme.colorScheme.primaryContainer,
+                        color: theme.colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.schedule, size: 16, color: _theme.colorScheme.onPrimaryContainer),
+                          Icon(Icons.schedule, size: 16, color: theme.colorScheme.onPrimaryContainer),
                           const SizedBox(width: 8),
                           Text(
                             'Scheduled for ${DateFormat('MMM d, h:mm a').format(state.scheduledAt!)}',
                             style: Theme.of(
                               context,
-                            ).textTheme.bodySmall?.copyWith(color: _theme.colorScheme.onPrimaryContainer),
+                            ).textTheme.bodySmall?.copyWith(color: theme.colorScheme.onPrimaryContainer),
                           ),
                           const SizedBox(width: 8),
                           GestureDetector(
                             onTap: () {
                               context.read<ComposeBloc>().add(const ScheduleCleared());
                             },
-                            child: Icon(Icons.close, size: 16, color: _theme.colorScheme.onPrimaryContainer),
+                            child: Icon(Icons.close, size: 16, color: theme.colorScheme.onPrimaryContainer),
                           ),
                         ],
                       ),
@@ -752,15 +703,15 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: attachment.altText.isNotEmpty
-                                            ? _theme.colorScheme.primary
+                                            ? theme.colorScheme.primary
                                             : Colors.black54,
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
                                         'ALT',
-                                        style: _theme.textTheme.labelSmall?.copyWith(
+                                        style: theme.textTheme.labelSmall?.copyWith(
                                           color: attachment.altText.isNotEmpty
-                                              ? _theme.colorScheme.onPrimary
+                                              ? theme.colorScheme.onPrimary
                                               : Colors.white,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -802,9 +753,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: _theme.colorScheme.surfaceContainerHighest,
+                        color: theme.colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: video.hasError ? _theme.colorScheme.error : _theme.dividerColor),
+                        border: Border.all(color: video.hasError ? theme.colorScheme.error : theme.dividerColor),
                       ),
                       child: Row(
                         children: [
@@ -812,7 +763,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: _theme.colorScheme.primaryContainer,
+                              color: theme.colorScheme.primaryContainer,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: video.isActive
@@ -828,8 +779,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                 : Icon(
                                     video.hasError ? Icons.error_outline : Icons.videocam_outlined,
                                     color: video.hasError
-                                        ? _theme.colorScheme.error
-                                        : _theme.colorScheme.onPrimaryContainer,
+                                        ? theme.colorScheme.error
+                                        : theme.colorScheme.onPrimaryContainer,
                                   ),
                           ),
                           const SizedBox(width: 12),
@@ -839,17 +790,17 @@ class _ComposeScreenState extends State<ComposeScreen> {
                               children: [
                                 Text(
                                   video.localPath.split('/').last,
-                                  style: _theme.textTheme.bodyMedium,
+                                  style: theme.textTheme.bodyMedium,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   _videoStatusLabel(video),
-                                  style: _theme.textTheme.bodySmall?.copyWith(
+                                  style: theme.textTheme.bodySmall?.copyWith(
                                     color: video.hasError
-                                        ? _theme.colorScheme.error
-                                        : _theme.colorScheme.onSurfaceVariant,
+                                        ? theme.colorScheme.error
+                                        : theme.colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                                 if (video.isActive && video.uploadProgress > 0) ...[
@@ -868,14 +819,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
                               tooltip: 'Add alt text',
                               onPressed: () => _showVideoAltTextDialog(video.altText),
                               color: video.altText.isNotEmpty
-                                  ? _theme.colorScheme.primary
-                                  : _theme.colorScheme.onSurfaceVariant,
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurfaceVariant,
                             ),
                           ],
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: () => context.read<ComposeBloc>().add(const VideoRemoved()),
-                            color: _theme.colorScheme.onSurfaceVariant,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ],
                       ),
@@ -892,7 +843,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: _theme.dividerColor)),
+                    border: Border(top: BorderSide(color: theme.dividerColor)),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: SafeArea(
@@ -906,8 +857,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                               icon: Icon(
                                 Icons.image_outlined,
                                 color: state.canAddMoreMedia
-                                    ? _theme.colorScheme.primary
-                                    : _theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                               ),
                               tooltip: 'Add image',
                             );
@@ -921,8 +872,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                               icon: Icon(
                                 Icons.videocam_outlined,
                                 color: state.canAddVideo
-                                    ? _theme.colorScheme.primary
-                                    : _theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                               ),
                               tooltip: 'Add video',
                             );
@@ -933,7 +884,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             if (state.isEditing) return const SizedBox.shrink();
                             return IconButton(
                               onPressed: _toggleDrafts,
-                              icon: Icon(Icons.drive_file_rename_outline, color: _theme.colorScheme.primary),
+                              icon: Icon(Icons.drive_file_rename_outline, color: theme.colorScheme.primary),
                               tooltip: 'Drafts',
                             );
                           },
@@ -943,7 +894,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             if (state.isEditing) return const SizedBox.shrink();
                             return IconButton(
                               onPressed: _showSchedulePicker,
-                              icon: Icon(Icons.schedule, color: _theme.colorScheme.primary),
+                              icon: Icon(Icons.schedule, color: theme.colorScheme.primary),
                               tooltip: 'Schedule',
                             );
                           },

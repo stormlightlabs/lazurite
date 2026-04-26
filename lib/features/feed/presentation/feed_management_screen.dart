@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
+import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
+import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 
@@ -50,14 +52,11 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
       body: BlocConsumer<FeedPreferencesCubit, FeedPreferencesState>(
         listener: (context, state) {
           if (state.status == FeedPreferencesStatus.saveError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Failed to sync: ${state.message}'),
-                action: SnackBarAction(
-                  label: 'Dismiss',
-                  onPressed: () => context.read<FeedPreferencesCubit>().clearError(),
-                ),
-              ),
+            showAppSnackBar(
+              context,
+              'Failed to sync: ${state.message}',
+              actionLabel: 'Dismiss',
+              onAction: () => context.read<FeedPreferencesCubit>().clearError(),
             );
           }
         },
@@ -334,23 +333,14 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
     return feed.uri.rkey;
   }
 
-  void _confirmRemoveFeed(BuildContext context, String feedId) {
-    showDialog<void>(
+  Future<void> _confirmRemoveFeed(BuildContext context, String feedId) async {
+    await showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remove Feed'),
-        content: const Text('Are you sure you want to remove this feed from your saved feeds?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              context.read<FeedPreferencesCubit>().removeFeed(feedId);
-              Navigator.of(context).pop();
-            },
-            child: Text('Remove', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          ),
-        ],
-      ),
+      title: const Text('Remove Feed'),
+      content: const Text('Are you sure you want to remove this feed from your saved feeds?'),
+      confirmLabel: 'Remove',
+      confirmDestructive: true,
+      onConfirmed: () => context.read<FeedPreferencesCubit>().removeFeed(feedId),
     );
   }
 }

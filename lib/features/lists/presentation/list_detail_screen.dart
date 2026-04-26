@@ -11,6 +11,8 @@ import 'package:lazurite/features/lists/bloc/list_bloc.dart';
 import 'package:lazurite/features/lists/bloc/list_feed_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/widgets/create_edit_list_dialog.dart';
+import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
+import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 
 class ListDetailScreen extends StatelessWidget {
   const ListDetailScreen({super.key, required this.listUri});
@@ -93,26 +95,15 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showConfirmationDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete list?'),
-        content: const Text('This action cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(dialogContext).colorScheme.error,
-              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      title: const Text('Delete list?'),
+      content: const Text('This action cannot be undone.'),
+      confirmLabel: 'Delete',
+      confirmDestructive: true,
     );
 
-    if (confirmed == true && context.mounted) {
+    if (confirmed && context.mounted) {
       final userDid = context.read<AuthBloc>().state.tokens?.did;
       if (userDid != null) {
         context.read<ListBloc>().add(ListDeleted(userDid: userDid));
@@ -128,62 +119,46 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
     final isBlocked = list.viewer?.hasBlocked ?? false;
     final isOwn = _isOwnList(context, list);
 
-    showModalBottomSheet<void>(
+    showOptionsSheet<void>(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isOwn) ...[
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('Edit list'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showEditDialog(context, list);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.person_add_outlined),
-                title: const Text('Add members'),
-                onTap: () async {
-                  final listUriStr = Uri.encodeComponent(list.uri.toString());
-                  Navigator.pop(sheetContext);
-                  await context.push('/list/members?uri=$listUriStr');
-                  if (context.mounted) {
-                    context.read<ListBloc>().add(const ListRefreshed());
-                  }
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                title: Text('Delete list', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _confirmDelete(context);
-                },
-              ),
-            ],
-            ListTile(
-              leading: Icon(isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined),
-              title: Text(isMuted ? 'Unmute list' : 'Mute list'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                context.read<ListBloc>().add(isMuted ? const ListUnmuted() : const ListMuted());
-              },
-            ),
-            if (list.purpose.knownValue == bsky_graph.KnownListPurpose.appBskyGraphDefsModlist)
-              ListTile(
-                leading: Icon(isBlocked ? Icons.block_flipped : Icons.block_outlined),
-                title: Text(isBlocked ? 'Unblock via list' : 'Block via list'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  context.read<ListBloc>().add(isBlocked ? const ListUnblocked() : const ListBlocked());
-                },
-              ),
-          ],
+      items: [
+        if (isOwn)
+          OptionsSheetItem(
+            leading: const Icon(Icons.edit_outlined),
+            title: 'Edit list',
+            onTap: () => _showEditDialog(context, list),
+          ),
+        if (isOwn)
+          OptionsSheetItem(
+            leading: const Icon(Icons.person_add_outlined),
+            title: 'Add members',
+            onTap: () async {
+              final listUriStr = Uri.encodeComponent(list.uri.toString());
+              await context.push('/list/members?uri=$listUriStr');
+              if (context.mounted) {
+                context.read<ListBloc>().add(const ListRefreshed());
+              }
+            },
+          ),
+        if (isOwn)
+          OptionsSheetItem(
+            leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+            title: 'Delete list',
+            isDestructive: true,
+            onTap: () => _confirmDelete(context),
+          ),
+        OptionsSheetItem(
+          leading: Icon(isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined),
+          title: isMuted ? 'Unmute list' : 'Mute list',
+          onTap: () => context.read<ListBloc>().add(isMuted ? const ListUnmuted() : const ListMuted()),
         ),
-      ),
+        if (list.purpose.knownValue == bsky_graph.KnownListPurpose.appBskyGraphDefsModlist)
+          OptionsSheetItem(
+            leading: Icon(isBlocked ? Icons.block_flipped : Icons.block_outlined),
+            title: isBlocked ? 'Unblock via list' : 'Block via list',
+            onTap: () => context.read<ListBloc>().add(isBlocked ? const ListUnblocked() : const ListBlocked()),
+          ),
+      ],
     );
   }
 

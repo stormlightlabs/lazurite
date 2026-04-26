@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 
 class ProfileActionButtons extends StatelessWidget {
   const ProfileActionButtons({
@@ -150,120 +153,67 @@ class ProfileActionButtons extends StatelessWidget {
     return button;
   }
 
-  void _confirmUnfollow(BuildContext context) {
-    HapticFeedback.mediumImpact();
-    showDialog<void>(
+  Future<void> _confirmUnfollow(BuildContext context) async {
+    unawaited(HapticFeedback.mediumImpact());
+    await showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unfollow?'),
-        content: const Text('You will no longer see their posts in your feed.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onUnfollow?.call();
-            },
-            child: const Text('Unfollow'),
-          ),
-        ],
-      ),
+      title: const Text('Unfollow?'),
+      content: const Text('You will no longer see their posts in your feed.'),
+      confirmLabel: 'Unfollow',
+      onConfirmed: onUnfollow,
     );
   }
 
-  void _confirmMute(BuildContext context) {
-    HapticFeedback.mediumImpact();
-    showDialog<void>(
+  Future<void> _confirmMute(BuildContext context) async {
+    unawaited(HapticFeedback.mediumImpact());
+    await showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Mute Account?'),
-        content: const Text('You will no longer see their posts or receive notifications from them.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onMute?.call();
-            },
-            child: const Text('Mute'),
-          ),
-        ],
-      ),
+      title: const Text('Mute Account?'),
+      content: const Text('You will no longer see their posts or receive notifications from them.'),
+      confirmLabel: 'Mute',
+      onConfirmed: onMute,
     );
   }
 
-  void _confirmUnmute(BuildContext context) {
-    HapticFeedback.mediumImpact();
-    showDialog<void>(
+  Future<void> _confirmUnmute(BuildContext context) async {
+    unawaited(HapticFeedback.mediumImpact());
+    await showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unmute Account?'),
-        content: const Text('You will see their posts and receive notifications again.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onUnmute?.call();
-            },
-            child: const Text('Unmute'),
-          ),
-        ],
-      ),
+      title: const Text('Unmute Account?'),
+      content: const Text('You will see their posts and receive notifications again.'),
+      confirmLabel: 'Unmute',
+      onConfirmed: onUnmute,
     );
   }
 
-  void _confirmBlock(BuildContext context) {
-    HapticFeedback.heavyImpact();
-    showDialog<void>(
+  Future<void> _confirmBlock(BuildContext context) async {
+    unawaited(HapticFeedback.heavyImpact());
+    await showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.block, color: Theme.of(context).colorScheme.error),
-            const SizedBox(width: 8),
-            const Text('Block Account?'),
-          ],
-        ),
-        content: const Text(
-          'They will not be able to see your posts or interact with you. They will not be notified that you blocked them.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onBlock?.call();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: const Text('Block'),
-          ),
+      title: Row(
+        children: [
+          Icon(Icons.block, color: Theme.of(context).colorScheme.error),
+          const SizedBox(width: 8),
+          const Text('Block Account?'),
         ],
       ),
+      content: const Text(
+        'They will not be able to see your posts or interact with you. They will not be notified that you blocked them.',
+      ),
+      confirmLabel: 'Block',
+      confirmDestructive: true,
+      onConfirmed: onBlock,
     );
   }
 
-  void _confirmUnblock(BuildContext context) {
-    HapticFeedback.mediumImpact();
-    showDialog<void>(
+  Future<void> _confirmUnblock(BuildContext context) async {
+    unawaited(HapticFeedback.mediumImpact());
+    await showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unblock Account?'),
-        content: const Text('They will be able to see your posts and interact with you again.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onUnblock?.call();
-            },
-            child: const Text('Unblock'),
-          ),
-        ],
-      ),
+      title: const Text('Unblock Account?'),
+      content: const Text('They will be able to see your posts and interact with you again.'),
+      confirmLabel: 'Unblock',
+      onConfirmed: onUnblock,
     );
   }
 }

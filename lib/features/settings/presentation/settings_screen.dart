@@ -17,6 +17,7 @@ import 'package:lazurite/features/search/cubit/semantic_index_cubit.dart';
 import 'package:lazurite/features/search/cubit/semantic_search_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
+import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -427,7 +428,7 @@ class _ModerationSettingsPreviewState extends State<_ModerationSettingsPreview> 
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update adult content: $error')));
+        showAppSnackBar(context, 'Failed to update adult content: $error', isError: true);
       }
     } finally {
       if (mounted) {
