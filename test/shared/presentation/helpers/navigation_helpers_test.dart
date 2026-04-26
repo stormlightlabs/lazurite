@@ -40,6 +40,42 @@ void main() {
       expect(Uri.parse(pushedRoute!).queryParameters['actor'], actorDid);
     });
 
+    testWidgets('navigateToProfile uses go from non-shell routes like /post', (tester) async {
+      const actorDid = 'did:plc:alice.test';
+      String? activePath;
+
+      final router = GoRouter(
+        initialLocation: '/post',
+        routes: [
+          GoRoute(
+            path: '/post',
+            builder: (context, state) => Scaffold(
+              body: Center(
+                child: FilledButton(onPressed: () => navigateToProfile(context, actorDid), child: const Text('go')),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/profile/view',
+            builder: (context, state) {
+              activePath = state.uri.path;
+              return const Scaffold(body: Text('profile'));
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('go'));
+      await tester.pumpAndSettle();
+
+      expect(activePath, '/profile/view');
+      expect(router.canPop(), isFalse);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('navigateToPost pushes encoded post route', (tester) async {
       const postUri = 'at://did:plc:alice/app.bsky.feed.post/123';
       String? pushedRoute;

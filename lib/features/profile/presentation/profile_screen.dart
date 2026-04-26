@@ -61,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     (label: 'Media', filter: FeedFilter.postsWithMedia),
   ];
 
-  static const _baseTabLabels = ['POSTS', 'REPLIES', 'MEDIA', 'LISTS', 'PACKS'];
+  static const _baseTabLabels = ['POSTS', 'REPLIES', 'MEDIA', 'LISTS', 'STARTER PACKS'];
   static const _suggestedTabLabel = 'SUGGESTED';
 
   late TabController _tabController;

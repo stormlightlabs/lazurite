@@ -30,6 +30,7 @@ import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/report_dialog.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
@@ -845,7 +846,7 @@ class _FocusedPostContent extends StatelessWidget {
         OptionsSheetItem(
           leading: const Icon(Icons.person_outline),
           title: 'View @${post.author.handle}',
-          onTap: () => context.push('/profile/view?actor=${Uri.encodeQueryComponent(post.author.did)}'),
+          onTap: () => navigateToProfile(context, post.author.did),
         ),
         OptionsSheetItem(
           leading: const Icon(Icons.report_outlined, color: Colors.orange),
