@@ -1,6 +1,6 @@
 ---
 title: To-Do/Parking Lot
-updated: 2026-04-14
+updated: 2026-04-26
 ---
 
 ## Tests
@@ -59,11 +59,6 @@ updated: 2026-04-14
 ---
 
 - Sidebar profile link should open account switcher, not go to profile. Long press to go to profile.
-
-## Privacy Policy
-
-- Should mention that Lazurite is an AppView that doesn't store any user data.
-  A link to BlueSky's privacy policy should be included.
 
 ## Feature Completeness
 

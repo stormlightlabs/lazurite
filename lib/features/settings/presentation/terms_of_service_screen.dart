@@ -9,6 +9,8 @@ class TermsOfServiceScreen extends StatelessWidget {
   static const _effectiveDate = 'April 15, 2026';
   static const _websiteUrl = 'https://stormlightlabs.org';
   static const _emailUrl = 'mailto:info@stormlightlabs.org';
+  static const _blueskyPrivacyUrl = 'https://bsky.social/about/support/privacy-policy';
+  static const _blueskyTermsUrl = 'https://bsky.social/about/support/tos';
 
   Future<void> _launch(String url) async {
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
@@ -72,7 +74,13 @@ class TermsOfServiceScreen extends StatelessWidget {
               'You may not misuse the app, break applicable law, or attempt unauthorized access to systems or accounts.',
             ],
           ),
-          // TODO: do we link to BlueSky's legalese here?
+          const _TermsSection(
+            title: 'Bluesky terms and policies',
+            paragraphs: [
+              'Lazurite depends on Bluesky services, and your use of Bluesky is governed by Bluesky\'s own legal terms.',
+            ],
+          ),
+          _PolicyLinks(onPrivacyTap: () => _launch(_blueskyPrivacyUrl), onTermsTap: () => _launch(_blueskyTermsUrl)),
           const _TermsSection(
             title: 'Your account and activity',
             paragraphs: [
@@ -149,6 +157,36 @@ class _TermsSection extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(paragraph, style: textTheme.bodyMedium),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PolicyLinks extends StatelessWidget {
+  const _PolicyLinks({required this.onPrivacyTap, required this.onTermsTap});
+
+  final VoidCallback onPrivacyTap;
+  final VoidCallback onTermsTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          OutlinedButton.icon(
+            onPressed: onPrivacyTap,
+            icon: const Icon(Icons.privacy_tip_outlined),
+            label: const Text('Bluesky Privacy Policy'),
+          ),
+          OutlinedButton.icon(
+            onPressed: onTermsTap,
+            icon: const Icon(Icons.description_outlined),
+            label: const Text('Bluesky Terms of Service'),
           ),
         ],
       ),

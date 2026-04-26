@@ -870,8 +870,7 @@ class _FocusedPostContent extends StatelessWidget {
     final post = thread.post;
     final record = Map<String, dynamic>.from(post.record);
 
-    // TODO surface this action from timeline/search/saved cards once those entry points expose onMore.
-    // TODO add edit affordance to additional owner-post contexts
+    // Editing is currently exposed through the thread-screen overflow menu for owner posts.
     final result = await context.push(
       '/compose',
       extra: ComposeRouteArgs(
