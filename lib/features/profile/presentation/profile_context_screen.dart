@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_context_repository.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ProfileContextScreen extends StatefulWidget {
@@ -183,8 +184,7 @@ class _BlockedByTab extends StatelessWidget {
                     return _ProfileTile(
                       key: ValueKey('blocked_by_${profile.did}'),
                       profile: profile,
-                      onTap: () =>
-                          context.push('/profile/view?actor=${Uri.encodeQueryComponent(_profileActor(profile))}'),
+                      onTap: () => navigateToProfile(context, _profileActor(profile)),
                     );
                   }
 
@@ -303,8 +303,7 @@ class _BlockingTab extends StatelessWidget {
                   return _ProfileTile(
                     key: ValueKey('blocking_${profile.did}'),
                     profile: profile,
-                    onTap: () =>
-                        context.push('/profile/view?actor=${Uri.encodeQueryComponent(_profileActor(profile))}'),
+                    onTap: () => navigateToProfile(context, _profileActor(profile)),
                   );
                 },
               ),

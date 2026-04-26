@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/notification_icon_mapper.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
@@ -193,7 +194,7 @@ class NotificationListItem extends StatelessWidget {
     final reason = notification.reason;
 
     if (reason.isKnownValue && reason.knownValue == bsky.KnownNotificationReason.follow) {
-      context.push('/profile/view?actor=${notification.author.did}');
+      navigateToProfile(context, notification.author.did);
     } else {
       final isLikeOrRepost =
           reason.isKnownValue &&

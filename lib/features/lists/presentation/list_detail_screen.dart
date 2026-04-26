@@ -11,6 +11,7 @@ import 'package:lazurite/features/lists/bloc/list_bloc.dart';
 import 'package:lazurite/features/lists/bloc/list_feed_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/widgets/create_edit_list_dialog.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -398,7 +399,7 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
             ),
             title: Text(subject.displayName ?? subject.handle, maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Text('@${subject.handle}', style: TextStyle(color: context.colorScheme.onSurfaceVariant)),
-            onTap: () => context.push('/profile/view?actor=${subject.did}'),
+            onTap: () => navigateToProfile(context, subject.did),
             trailing: isOwn
                 ? IconButton(
                     icon: Icon(Icons.remove_circle_outline, color: context.colorScheme.error),

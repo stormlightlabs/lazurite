@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/profile/presentation/widgets/suggested_follows_list.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class SuggestedFollowsSheet extends StatelessWidget {
@@ -30,11 +30,10 @@ class SuggestedFollowsSheet extends StatelessWidget {
               actor: actor,
               scrollController: scrollController,
               onProfileTap: (profile) {
-                final router = GoRouter.of(context);
                 if (Navigator.of(context).canPop()) {
                   Navigator.of(context).pop();
                 }
-                router.push('/profile/view?actor=${Uri.encodeComponent(profile.did)}');
+                navigateToProfile(context, profile.did);
               },
             ),
           ),

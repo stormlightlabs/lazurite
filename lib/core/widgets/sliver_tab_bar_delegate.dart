@@ -28,5 +28,5 @@ class SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(SliverTabBarDelegate oldDelegate) => false;
+  bool shouldRebuild(SliverTabBarDelegate oldDelegate) => oldDelegate.tabBar != tabBar;
 }

@@ -2,9 +2,9 @@ import 'package:atproto_core/atproto_core.dart' show AtUri;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/lists/bloc/list_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 /// Screen for adding and removing members from a list.
@@ -192,7 +192,7 @@ class _ListMembersViewState extends State<_ListMembersView> {
                 ),
                 title: Text(subject.displayName ?? subject.handle, maxLines: 1, overflow: TextOverflow.ellipsis),
                 subtitle: Text('@${subject.handle}', style: TextStyle(color: colorScheme.onSurfaceVariant)),
-                onTap: () => context.push('/profile/view?actor=${subject.did}'),
+                onTap: () => navigateToProfile(context, subject.did),
                 trailing: state.isMutating
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                     : IconButton(

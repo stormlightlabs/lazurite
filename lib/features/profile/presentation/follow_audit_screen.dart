@@ -4,9 +4,9 @@ import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/profile/cubit/follow_audit_cubit.dart';
 import 'package:lazurite/features/profile/data/follow_audit_repository.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 
 class FollowAuditScreen extends StatelessWidget {
   const FollowAuditScreen({super.key});
@@ -507,7 +507,7 @@ class _ResultRow extends StatelessWidget {
                         key: Key('follow_audit_handle_${item.record.rkey}'),
                         style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
                         onPressed: () {
-                          context.push('/profile/view?actor=${Uri.encodeComponent(item.record.subjectDid)}');
+                          navigateToProfile(context, item.record.subjectDid);
                         },
                         child: Text(
                           item.handle ?? item.record.subjectDid,

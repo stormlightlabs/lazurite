@@ -15,6 +15,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
@@ -128,7 +129,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 Navigator.of(dialogContext).pop();
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) {
-                    GoRouter.of(this.context).push('/profile/view?actor=${Uri.encodeQueryComponent(handle)}');
+                    navigateToProfile(this.context, handle);
                   }
                 });
               }
@@ -716,10 +717,7 @@ class _PostViewCard extends StatelessWidget {
   }
 
   void _navigateToProfile(BuildContext context, String did) {
-    final router = GoRouter.maybeOf(context);
-    if (router != null) {
-      router.push('/profile/view?actor=${Uri.encodeQueryComponent(did)}');
-    }
+    navigateToProfile(context, did);
   }
 
   FeedPostRecord? _tryParseRecord(Map<String, dynamic> record) {
@@ -802,10 +800,7 @@ class _ActorResultTile extends StatelessWidget {
   }
 
   void _navigateToProfile(BuildContext context, String did) {
-    final router = GoRouter.maybeOf(context);
-    if (router != null) {
-      router.push('/profile/view?actor=${Uri.encodeQueryComponent(did)}');
-    }
+    navigateToProfile(context, did);
   }
 }
 

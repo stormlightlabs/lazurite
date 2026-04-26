@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
@@ -420,7 +421,7 @@ class _StarterPackContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           GestureDetector(
-            onTap: () => context.push('/profile/view?actor=${pack.creator.did}'),
+            onTap: () => navigateToProfile(context, pack.creator.did),
             child: Row(
               children: [
                 CircleAvatar(
@@ -537,7 +538,7 @@ class _StarterPackContent extends StatelessWidget {
               itemBuilder: (context, index) {
                 final member = sample[index];
                 return GestureDetector(
-                  onTap: () => context.push('/profile/view?actor=${member.subject.did}'),
+                  onTap: () => navigateToProfile(context, member.subject.did),
                   child: Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: Column(

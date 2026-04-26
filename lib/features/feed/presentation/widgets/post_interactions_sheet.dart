@@ -1,9 +1,9 @@
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 
 enum InteractionTab { likes, reposts }
 
@@ -259,7 +259,7 @@ class _PostInteractionsSheetState extends State<PostInteractionsSheet> {
           subtitle: Text('@${profile.handle}', style: TextStyle(color: colorScheme.onSurfaceVariant)),
           onTap: () {
             Navigator.pop(context);
-            GoRouter.maybeOf(context)?.push('/profile/view?actor=${Uri.encodeQueryComponent(profile.did)}');
+            navigateToProfile(context, profile.did);
           },
         );
       },

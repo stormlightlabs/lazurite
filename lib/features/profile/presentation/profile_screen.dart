@@ -38,6 +38,7 @@ import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
@@ -121,10 +122,16 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
     final maxIndex = show ? _baseTabLabels.length : _baseTabLabels.length - 1;
     final nextIndex = _tabController.index.clamp(0, maxIndex);
-    _tabController.dispose();
+    final previousController = _tabController;
     _showSuggestedTab = show;
     _tabController = TabController(length: _tabLabels.length, vsync: this, initialIndex: nextIndex);
     setState(() {});
+
+    // Dispose after rebuild so widgets still referencing the previous
+    // controller do not observe a torn-down animation during this frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      previousController.dispose();
+    });
   }
 
   String _appBarTitle(ProfileViewDetailed? profile) {
@@ -645,10 +652,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       return const SizedBox.shrink();
     }
 
-    return _SuggestedFollowsTab(
-      actor: actor,
-      onProfileTap: (target) => context.push('/profile/view?actor=${Uri.encodeComponent(target.did)}'),
-    );
+    return _SuggestedFollowsTab(actor: actor, onProfileTap: (target) => navigateToProfile(context, target.did));
   }
 
   Widget? _buildComposeFab(BuildContext context) {

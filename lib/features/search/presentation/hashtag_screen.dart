@@ -11,6 +11,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
@@ -374,10 +375,7 @@ class _HashtagPostCard extends StatelessWidget {
   }
 
   void _navigateToProfile(BuildContext context, String did) {
-    final router = GoRouter.maybeOf(context);
-    if (router != null) {
-      router.push('/profile/view?actor=${Uri.encodeQueryComponent(did)}');
-    }
+    navigateToProfile(context, did);
   }
 
   FeedPostRecord? _tryParseRecord(Map<String, dynamic> record) {

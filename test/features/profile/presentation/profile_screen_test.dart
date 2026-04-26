@@ -424,6 +424,48 @@ void main() {
       expect(find.text('Replies'), findsNothing);
       expect(find.text('Media'), findsNothing);
     });
+
+    testWidgets('does not throw when suggested tab visibility toggles with profile changes', (tester) async {
+      useLargeScreen(tester);
+      const otherProfile = ProfileViewDetailed(
+        did: 'did:plc:other',
+        handle: 'other.bsky.social',
+        displayName: 'Other User',
+      );
+      final mockProfileActionRepository = MockProfileActionRepository();
+      final streamController = StreamController<ProfileState>.broadcast();
+      addTearDown(streamController.close);
+
+      when(() => profileBloc.state).thenReturn(ProfileState.loaded(profile: profile));
+      whenListen(profileBloc, streamController.stream, initialState: ProfileState.loaded(profile: profile));
+
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [RepositoryProvider<ProfileActionRepository>.value(value: mockProfileActionRepository)],
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: authBloc),
+              BlocProvider<ProfileBloc>.value(value: profileBloc),
+              BlocProvider<FeedBloc>.value(value: feedBloc),
+              BlocProvider<SettingsCubit>.value(value: settingsCubit),
+              BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+            ],
+            child: const MaterialApp(home: ProfileScreen()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      streamController.add(const ProfileState.loaded(profile: otherProfile));
+      await tester.pump();
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+
+      streamController.add(ProfileState.loaded(profile: profile));
+      await tester.pump();
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('Feed layout switching', () {

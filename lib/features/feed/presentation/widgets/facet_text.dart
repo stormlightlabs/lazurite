@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/router/in_app_link_resolver.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
+import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FacetText extends StatelessWidget {
@@ -198,12 +199,7 @@ final class _TagSegment extends _TextSegment {
 }
 
 void _openProfile(BuildContext context, String actor) {
-  final router = GoRouter.maybeOf(context);
-  if (router == null) {
-    return;
-  }
-
-  router.push('/profile/view?actor=${Uri.encodeQueryComponent(actor)}');
+  navigateToProfile(context, actor);
 }
 
 void _openLink(BuildContext context, String rawLink) {
