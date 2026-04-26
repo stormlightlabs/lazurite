@@ -14,6 +14,7 @@ import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class HashtagScreen extends StatefulWidget {
   const HashtagScreen({super.key, required this.tag});
@@ -88,7 +89,7 @@ class _HashtagScreenState extends State<HashtagScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Jump to hashtag', style: Theme.of(sheetContext).textTheme.titleMedium),
+              Text('Jump to hashtag', style: sheetContext.textTheme.titleMedium),
               const SizedBox(height: 12),
               TextField(
                 controller: inputController,
@@ -104,7 +105,7 @@ class _HashtagScreenState extends State<HashtagScreen> {
               ),
               if (suggestions.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                Text('Related', style: Theme.of(sheetContext).textTheme.titleSmall),
+                Text('Related', style: sheetContext.textTheme.titleSmall),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -286,7 +287,7 @@ class _HashtagPostCard extends StatelessWidget {
               if (postUi.alert || postUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: postUi)],
               if (record != null && record.text.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                FacetText(text: record.text, facets: record.facets, style: Theme.of(context).textTheme.bodyLarge),
+                FacetText(text: record.text, facets: record.facets, style: context.textTheme.bodyLarge),
               ],
               const SizedBox(height: 12),
               _buildActions(context),
@@ -322,16 +323,14 @@ class _HashtagPostCard extends StatelessWidget {
               children: [
                 Text(
                   author.displayName ?? author.handle,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+                  style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '@${author.handle} · ${formatRelativeTime(createdAt)}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -354,7 +353,7 @@ class _HashtagPostCard extends StatelessWidget {
   }
 
   Widget _buildActionButton(BuildContext context, IconData icon, String count) {
-    final iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final iconColor = context.colorScheme.onSurfaceVariant;
 
     return InkWell(
       onTap: () {},
@@ -366,7 +365,7 @@ class _HashtagPostCard extends StatelessWidget {
             Icon(icon, size: 18, color: iconColor),
             if (count.isNotEmpty) ...[
               const SizedBox(width: 4),
-              Text(count, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: iconColor)),
+              Text(count, style: context.textTheme.bodySmall?.copyWith(color: iconColor)),
             ],
           ],
         ),

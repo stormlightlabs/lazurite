@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showAppSnackBar(
   BuildContext context,
@@ -11,7 +12,7 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showAppSnackBar(
   VoidCallback? onAction,
 }) {
   final messenger = ScaffoldMessenger.of(context);
-  final colorScheme = Theme.of(context).colorScheme;
+  final colorScheme = context.colorScheme;
 
   if (hideCurrent) {
     messenger.hideCurrentSnackBar();

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
@@ -190,8 +191,8 @@ class _PostThreadContentState extends State<_PostThreadContent> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Text(
               'Replies',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              style: context.textTheme.labelSmall?.copyWith(
+                color: context.colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
               ),
@@ -379,7 +380,7 @@ class _CollapsedThreadReply extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final post = thread.post;
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -400,9 +401,7 @@ class _CollapsedThreadReply extends StatelessWidget {
               Text(
                 _hiddenReplyLabel(hiddenReplyCount).toUpperCase(),
                 key: ValueKey('collapsed-indicator-${post.uri}'),
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant, letterSpacing: 1.1),
+                style: context.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant, letterSpacing: 1.1),
               ),
             ],
           ),
@@ -419,7 +418,7 @@ class _CollapsedThreadHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final timestamp = _parsePostRecord(post.record)?.createdAt ?? post.indexedAt;
     final moderationService = maybeModerationService(context);
     final avatarUi =
@@ -447,7 +446,7 @@ class _CollapsedThreadHeader extends StatelessWidget {
                   Expanded(
                     child: Text(
                       post.author.displayName ?? post.author.handle,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+                      style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -455,16 +454,17 @@ class _CollapsedThreadHeader extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     DateFormat('MMM d').format(timestamp.toLocal()).toUpperCase(),
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant, letterSpacing: 0.8),
+                    style: context.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      letterSpacing: 0.8,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 2),
               Text(
                 '@${post.author.handle}'.toUpperCase(),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                style: context.textTheme.labelSmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.5,
@@ -577,7 +577,7 @@ int _countDescendantReplies(ThreadViewPost thread) {
 String _hiddenReplyLabel(int count) => count == 1 ? '1 reply hidden' : '$count replies hidden';
 
 List<Color> _threadLineColors(BuildContext context) {
-  final colorScheme = Theme.of(context).colorScheme;
+  final colorScheme = context.colorScheme;
   final surface = colorScheme.surface;
 
   Color blend(Color color, double amount) => Color.lerp(color, surface, amount)!;
@@ -672,9 +672,7 @@ class _FocusedPostContent extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               _formatTimestamp(timestamp),
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 10),
             const Divider(height: 1),
@@ -742,13 +740,11 @@ class _FocusedPostContent extends StatelessWidget {
         children: [
           TextSpan(
             text: '$count',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           TextSpan(
             text: ' $label',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -859,7 +855,7 @@ class _FocusedPostContent extends StatelessWidget {
           OptionsSheetItem(leading: const Icon(Icons.edit_outlined), title: 'Edit Post', onTap: () => _onEdit(context)),
         if (post.author.did == accountDid)
           OptionsSheetItem(
-            leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+            leading: Icon(Icons.delete_outline, color: context.colorScheme.error),
             title: 'Delete Post',
             isDestructive: true,
             onTap: () => _confirmDelete(context),

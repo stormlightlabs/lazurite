@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_context_repository.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ProfileContextScreen extends StatefulWidget {
   const ProfileContextScreen({super.key, required this.handle});
@@ -68,9 +69,7 @@ class _ProfileContextScreenState extends State<ProfileContextScreen> with Single
                 const Text('Profile Context'),
                 Text(
                   '@${widget.handle}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: context.textTheme.labelSmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -136,7 +135,7 @@ class _BlockedByTab extends StatelessWidget {
                   children: [
                     Text(
                       '${state.blockedByCount} account${state.blockedByCount == 1 ? '' : 's'}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                      style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const Spacer(),
                     if (state.blockedByStatus == ProfileContextTabStatus.initial)
@@ -260,7 +259,7 @@ class _BlockingTab extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Text(
                   '${state.blockingCount} account${state.blockingCount == 1 ? '' : 's'}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -410,7 +409,7 @@ class _ProfileTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final displayName = profile.displayName?.isNotEmpty == true ? profile.displayName! : profile.handle;
     final initials = _initials(displayName);
 
@@ -437,7 +436,7 @@ class _UnavailableAccountsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -471,7 +470,7 @@ class _UnavailableProfileTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     return ListTile(
       leading: Icon(Icons.person_off_outlined, color: colorScheme.onSurfaceVariant),
       title: Text(did, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -515,10 +514,7 @@ List<Widget> _buildListSections(
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
-            section.title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-          ),
+          child: Text(section.title, style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
         ),
       ),
       SliverList.builder(
@@ -575,7 +571,7 @@ class _ListContextCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final description = list.description?.trim();
 
     return Padding(
@@ -609,7 +605,7 @@ class _ListContextCard extends StatelessWidget {
                             '@${list.creator.handle}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                            style: context.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -643,7 +639,7 @@ class _ListPurposeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final (label, color) = switch (purpose) {
       bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist => ('CURATE', colorScheme.primary),
       bsky_graph.KnownListPurpose.appBskyGraphDefsModlist => ('MOD', colorScheme.error),
@@ -660,9 +656,7 @@ class _ListPurposeBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(
-          context,
-        ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, color: color, letterSpacing: 0.6),
+        style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, color: color, letterSpacing: 0.6),
       ),
     );
   }
@@ -676,7 +670,7 @@ class _ListMetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
 
     return DecoratedBox(
       decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(999)),
@@ -687,7 +681,7 @@ class _ListMetaChip extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
             const SizedBox(width: 6),
-            Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+            Text(label, style: context.textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
           ],
         ),
       ),
@@ -721,7 +715,7 @@ class _ShimmerListState extends State<_ShimmerList> with SingleTickerProviderSta
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, _) {

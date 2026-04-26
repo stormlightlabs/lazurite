@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 /// Full-screen form for creating a new starter pack.
 ///
@@ -180,8 +181,8 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
   }
 
   Widget _buildMembersSection(BuildContext context, bool isCreating) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = context.colorScheme;
+    final textTheme = context.textTheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,8 +278,8 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
   }
 
   Widget _buildFeedsSection(BuildContext context, bool isCreating) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = context.textTheme;
+    final colorScheme = context.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,7 +354,7 @@ class _FeedPickerSheetState extends State<_FeedPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
@@ -367,7 +368,7 @@ class _FeedPickerSheetState extends State<_FeedPickerSheet> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Row(
                 children: [
-                  Text('Select a feed', style: Theme.of(context).textTheme.titleMedium),
+                  Text('Select a feed', style: context.textTheme.titleMedium),
                   const Spacer(),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                 ],

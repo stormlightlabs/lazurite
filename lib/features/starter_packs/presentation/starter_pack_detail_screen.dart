@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class StarterPackDetailScreen extends StatelessWidget {
   const StarterPackDetailScreen({super.key, required this.packUri});
@@ -172,7 +173,7 @@ class _StarterPackDetailView extends StatelessWidget {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            style: FilledButton.styleFrom(backgroundColor: context.colorScheme.error),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete'),
           ),
@@ -253,7 +254,7 @@ class _EditStarterPackDialogState extends State<_EditStarterPackDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
 
     return AlertDialog(
       title: const Text('Edit starter pack'),
@@ -279,7 +280,7 @@ class _EditStarterPackDialogState extends State<_EditStarterPackDialog> {
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 12),
-              Text('Feeds', style: Theme.of(context).textTheme.labelLarge),
+              Text('Feeds', style: context.textTheme.labelLarge),
               const SizedBox(height: 8),
               for (final feed in _feeds)
                 ListTile(
@@ -342,7 +343,7 @@ class _FeedPickerSheetState extends State<_FeedPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
@@ -356,7 +357,7 @@ class _FeedPickerSheetState extends State<_FeedPickerSheet> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Row(
                 children: [
-                  Text('Select a feed', style: Theme.of(context).textTheme.titleMedium),
+                  Text('Select a feed', style: context.textTheme.titleMedium),
                   const Spacer(),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                 ],
@@ -407,8 +408,8 @@ class _StarterPackContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = context.colorScheme;
+    final textTheme = context.textTheme;
 
     final name = (pack.record['name'] as String?) ?? 'Starter Pack';
     final description = pack.record['description'] as String?;
@@ -504,8 +505,8 @@ class _StarterPackContent extends StatelessWidget {
   }
 
   Widget _buildMembersSection(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = context.colorScheme;
+    final textTheme = context.textTheme;
     final sample = pack.listItemsSample ?? const [];
     final refListUri = pack.list?.uri;
 

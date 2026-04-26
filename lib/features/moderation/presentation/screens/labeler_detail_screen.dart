@@ -2,6 +2,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_labeler_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
@@ -100,7 +101,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Unable to load labeler', style: Theme.of(context).textTheme.titleMedium),
+                    Text('Unable to load labeler', style: context.textTheme.titleMedium),
                     const SizedBox(height: 8),
                     Text('${snapshot.error}', textAlign: TextAlign.center),
                     const SizedBox(height: 16),
@@ -124,9 +125,9 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  color: context.colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                  border: Border.all(color: context.colorScheme.outlineVariant),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,14 +148,14 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                             children: [
                               Text(
                                 creator.displayName ?? creator.handle,
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                                style: context.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 '@${creator.handle}',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                style: context.textTheme.bodyMedium?.copyWith(
+                                  color: context.colorScheme.onSurfaceVariant,
+                                ),
                               ),
                             ],
                           ),
@@ -163,7 +164,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                     ),
                     if (creator.description?.isNotEmpty ?? false) ...[
                       const SizedBox(height: 16),
-                      Text(creator.description!, style: Theme.of(context).textTheme.bodyMedium),
+                      Text(creator.description!, style: context.textTheme.bodyMedium),
                     ],
                     const SizedBox(height: 16),
                     Wrap(
@@ -193,17 +194,15 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
               const SizedBox(height: 24),
               Text(
                 'Published policies'.toUpperCase(),
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+                style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
               ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                  color: context.colorScheme.surfaceContainerLowest,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                  border: Border.all(color: context.colorScheme.outlineVariant),
                 ),
                 child: Wrap(
                   spacing: 8,
@@ -214,9 +213,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
               const SizedBox(height: 24),
               Text(
                 'Label preferences'.toUpperCase(),
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+                style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
               ),
               const SizedBox(height: 8),
               if (definitions.isEmpty)
@@ -236,7 +233,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                         children: [
                           Text(
                             formatLocalizedLabelName(definition.locales, locale, fallback: definition.identifier),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                            style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -245,9 +242,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                               locale,
                               fallback: 'No description available for this label.',
                             ),
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
                           ),
                           const SizedBox(height: 12),
                           Wrap(
@@ -287,9 +282,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                             const SizedBox(height: 10),
                             Text(
                               'Enable adult content to change this 18+ label.',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                             ),
                           ],
                         ],
@@ -330,10 +323,10 @@ class _PolicyChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        color: context.colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(label, style: Theme.of(context).textTheme.labelSmall),
+      child: Text(label, style: context.textTheme.labelSmall),
     );
   }
 }
@@ -347,9 +340,9 @@ class _PreferenceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        color: context.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        border: Border.all(color: context.colorScheme.outlineVariant),
       ),
       child: child,
     );

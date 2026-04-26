@@ -7,6 +7,7 @@ import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class NotificationGroup {
   const NotificationGroup({required this.notifications});
@@ -98,13 +99,10 @@ class GroupedNotificationListItem extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            color: context.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(999),
           ),
-          child: Text(
-            '${group.count}',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
+          child: Text('${group.count}', style: context.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700)),
         ),
       ],
     );
@@ -119,7 +117,7 @@ class GroupedNotificationListItem extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
+        border: Border.all(color: context.colorScheme.surface, width: 2),
       ),
       child: ModeratedAvatar(
         size: 28,

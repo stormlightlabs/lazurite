@@ -3,6 +3,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 enum InteractionTab { likes, reposts }
 
@@ -97,7 +98,7 @@ class _PostInteractionsSheetState extends State<PostInteractionsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final hasBothTabs = widget.likeCount > 0 && widget.repostCount > 0;
 
     return DraggableScrollableSheet(

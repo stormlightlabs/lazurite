@@ -6,6 +6,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/core/widgets/app_breadcrumbs.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -293,14 +294,14 @@ class _Content extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+              Icon(Icons.error_outline, size: 48, color: context.colorScheme.error),
               const SizedBox(height: 16),
-              Text('Error', style: Theme.of(context).textTheme.titleMedium),
+              Text('Error', style: context.textTheme.titleMedium),
               const SizedBox(height: 8),
               Text(
                 state.errorMessage ?? 'Unknown error',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: context.textTheme.bodyMedium,
               ),
             ],
           ),
@@ -339,17 +340,15 @@ class _EmptyState extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.explore_outlined, size: 64, color: Theme.of(context).colorScheme.outline),
+                  Icon(Icons.explore_outlined, size: 64, color: context.colorScheme.outline),
                   const SizedBox(height: 16),
-                  Text('PDS Explorer', style: Theme.of(context).textTheme.titleMedium),
+                  Text('PDS Explorer', style: context.textTheme.titleMedium),
                   const SizedBox(height: 8),
                   Text(
                     'Enter a handle, DID, or AT-URI to explore\n'
                     'a user\'s repository.',
                     textAlign: TextAlign.center,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
+                    style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.outline),
                   ),
                   const SizedBox(height: 16),
                   TextButton.icon(
@@ -381,7 +380,7 @@ class _RepoOverview extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            color: context.colorScheme.surfaceContainerHighest,
             border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
           ),
           child: Column(
@@ -395,16 +394,11 @@ class _RepoOverview extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          state.repoHandle ?? state.handle ?? 'Unknown',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
+                        Text(state.repoHandle ?? state.handle ?? 'Unknown', style: context.textTheme.titleMedium),
                         const SizedBox(height: 2),
                         Text(
                           state.did ?? '',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
@@ -425,9 +419,7 @@ class _RepoOverview extends StatelessWidget {
                     totalRepoRecords == null
                         ? (state.isCollectionCountsLoading ? 'Counting records...' : 'Record counts unavailable')
                         : '$totalRepoRecords records',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall!.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: context.textTheme.bodySmall!.copyWith(color: context.colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -438,7 +430,7 @@ class _RepoOverview extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Text(
             'COLLECTIONS',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+            style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
           ),
         ),
         ...state.collections.map((collection) => _CollectionItem(collection: collection)),
@@ -460,9 +452,9 @@ class _CollectionItem extends StatelessWidget {
         height: 32,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          color: context.colorScheme.surfaceContainerHighest,
         ),
-        child: Icon(_getCollectionIcon(collection.name), size: 16, color: Theme.of(context).colorScheme.primary),
+        child: Icon(_getCollectionIcon(collection.name), size: 16, color: context.colorScheme.primary),
       ),
       title: Text(collection.name, style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13)),
       trailing: Row(
@@ -471,14 +463,12 @@ class _CollectionItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              color: context.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
               collection.countLabel,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall!.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: context.textTheme.labelSmall!.copyWith(color: context.colorScheme.onSurfaceVariant),
             ),
           ),
           const SizedBox(width: 4),
@@ -546,7 +536,7 @@ class _RecordsListState extends State<_RecordsList> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            color: context.colorScheme.surfaceContainerHighest,
             border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
           ),
           child: Row(
@@ -554,9 +544,9 @@ class _RecordsListState extends State<_RecordsList> {
               Expanded(
                 child: Text(
                   widget.state.selectedCollection ?? '',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  style: context.textTheme.titleSmall?.copyWith(
                     fontFamily: 'JetBrains Mono',
-                    color: Theme.of(context).colorScheme.primary,
+                    color: context.colorScheme.primary,
                   ),
                 ),
               ),
@@ -564,7 +554,7 @@ class _RecordsListState extends State<_RecordsList> {
                 selectedCollection?.recordCount == null
                     ? '${records.length} loaded'
                     : '${records.length} of ${selectedCollection!.recordCount}',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: context.textTheme.bodySmall,
               ),
             ],
           ),
@@ -641,7 +631,7 @@ class _RecordInspector extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            color: context.colorScheme.surfaceContainerHighest,
             border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
           ),
           child: Column(
@@ -649,22 +639,20 @@ class _RecordInspector extends StatelessWidget {
             children: [
               Text(
                 record.rkey,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.primary),
+                style: context.textTheme.titleSmall?.copyWith(color: context.colorScheme.primary),
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
               Text(
                 record.uri,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.tertiary),
+                style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.tertiary),
                 overflow: TextOverflow.ellipsis,
               ),
               if (record.cid != null) ...[
                 const SizedBox(height: 2),
                 Text(
                   'CID: ${record.cid!}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.secondary),
+                  style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.secondary),
                 ),
               ],
               const SizedBox(height: 8),

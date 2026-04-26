@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/material.dart';
 
@@ -32,7 +33,7 @@ class OptionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,

@@ -13,6 +13,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_avat
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class PostCard extends StatelessWidget {
   const PostCard({
@@ -39,7 +40,7 @@ class PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final post = feedViewPost.post;
     final record = _tryParseRecord(post.record);
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final moderationService = maybeModerationService(context);
     final postUi = moderationService?.postUi(post, moderationContext) ?? const bsky_moderation.ModerationUI();
 
@@ -87,7 +88,7 @@ class PostCard extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, ProfileViewBasic author) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final moderationService = maybeModerationService(context);
     final avatarUi =
         moderationService?.profileBasicUi(author, bsky_moderation.ModerationBehaviorContext.avatar) ??
@@ -114,14 +115,14 @@ class PostCard extends StatelessWidget {
             children: [
               Text(
                 author.displayName ?? author.handle,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+                style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
               Text(
                 '@${author.handle}'.toUpperCase(),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                style: context.textTheme.labelSmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.5,
@@ -139,16 +140,14 @@ class PostCard extends StatelessWidget {
   Widget _buildReplyLabel(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.reply, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(Icons.reply, size: 14, color: context.colorScheme.onSurfaceVariant),
         const SizedBox(width: 6),
         Flexible(
           child: Text(
             'Reply in a thread',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
           ),
         ),
       ],

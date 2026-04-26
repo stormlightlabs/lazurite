@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/presentation/widgets/convo_list_pane.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ConvoListScreen extends StatefulWidget {
   const ConvoListScreen({super.key});
@@ -40,7 +41,7 @@ class _ConvoListScreenState extends State<ConvoListScreen> with SingleTickerProv
     return Scaffold(
       appBar: AppBar(
         leading: const AppShellMenuButton(),
-        title: Text('Messages', style: Theme.of(context).textTheme.titleMedium),
+        title: Text('Messages', style: context.textTheme.titleMedium),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

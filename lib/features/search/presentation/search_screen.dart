@@ -19,6 +19,7 @@ import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pac
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -164,10 +165,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           if (showTypingHint)
                             Align(
                               alignment: Alignment.topLeft,
-                              child: Text(
-                                'Start typing to search handles.',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
+                              child: Text('Start typing to search handles.', style: context.textTheme.bodySmall),
                             ),
                           AnimatedSize(
                             duration: const Duration(milliseconds: 180),
@@ -416,12 +414,12 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Search failed', style: Theme.of(context).textTheme.titleMedium),
+            Text('Search failed', style: context.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
               state.errorMessage ?? 'Unknown error',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: context.textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
             FilledButton(
@@ -457,7 +455,7 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Recent Searches', style: Theme.of(context).textTheme.titleSmall),
+              Text('Recent Searches', style: context.textTheme.titleSmall),
               TextButton(onPressed: _onClearHistory, child: const Text('Clear All')),
             ],
           ),
@@ -480,8 +478,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 background: Container(
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 16),
-                  color: Theme.of(context).colorScheme.error,
-                  child: Icon(Icons.delete, color: Theme.of(context).colorScheme.onError),
+                  color: context.colorScheme.error,
+                  child: Icon(Icons.delete, color: context.colorScheme.onError),
                 ),
                 child: ListTile(
                   leading: const Icon(Icons.history),
@@ -500,7 +498,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildPostResults(BuildContext context, SearchState state) {
     final posts = state.posts;
     if (posts.isEmpty) {
-      return Center(child: Text('No posts found', style: Theme.of(context).textTheme.bodyLarge));
+      return Center(child: Text('No posts found', style: context.textTheme.bodyLarge));
     }
 
     return ListView.builder(
@@ -520,7 +518,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildActorResults(BuildContext context, SearchState state) {
     final actors = state.actors;
     if (actors.isEmpty) {
-      return Center(child: Text('No people found', style: Theme.of(context).textTheme.bodyLarge));
+      return Center(child: Text('No people found', style: context.textTheme.bodyLarge));
     }
 
     return ListView.builder(
@@ -540,7 +538,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildFeedResults(BuildContext context, SearchState state) {
     final feeds = state.feeds;
     if (feeds.isEmpty) {
-      return Center(child: Text('No feeds found', style: Theme.of(context).textTheme.bodyLarge));
+      return Center(child: Text('No feeds found', style: context.textTheme.bodyLarge));
     }
 
     return ListView.builder(
@@ -572,7 +570,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildStarterPackResults(BuildContext context, SearchState state) {
     final packs = state.starterPacks;
     if (packs.isEmpty) {
-      return Center(child: Text('No starter packs found', style: Theme.of(context).textTheme.bodyLarge));
+      return Center(child: Text('No starter packs found', style: context.textTheme.bodyLarge));
     }
 
     return ListView.builder(
@@ -632,7 +630,7 @@ class _PostViewCard extends StatelessWidget {
               if (postUi.alert || postUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: postUi)],
               if (record != null && record.text.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                FacetText(text: record.text, facets: record.facets, style: Theme.of(context).textTheme.bodyLarge),
+                FacetText(text: record.text, facets: record.facets, style: context.textTheme.bodyLarge),
               ],
               const SizedBox(height: 12),
               _buildActions(context),
@@ -667,16 +665,14 @@ class _PostViewCard extends StatelessWidget {
               children: [
                 Text(
                   author.displayName ?? author.handle,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+                  style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '@${author.handle} · ${formatRelativeTime(createdAt)}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -699,7 +695,7 @@ class _PostViewCard extends StatelessWidget {
   }
 
   Widget _buildActionButton(BuildContext context, IconData icon, String count) {
-    final iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final iconColor = context.colorScheme.onSurfaceVariant;
 
     return InkWell(
       onTap: () {},
@@ -711,7 +707,7 @@ class _PostViewCard extends StatelessWidget {
             Icon(icon, size: 18, color: iconColor),
             if (count.isNotEmpty) ...[
               const SizedBox(width: 4),
-              Text(count, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: iconColor)),
+              Text(count, style: context.textTheme.bodySmall?.copyWith(color: iconColor)),
             ],
           ],
         ),
@@ -773,15 +769,13 @@ class _ActorResultTile extends StatelessWidget {
                 children: [
                   Text(
                     actor.displayName ?? actor.handle,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                    style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     '@${actor.handle}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                   ),
                   if (profileUi.alert || profileUi.inform) ...[
                     const SizedBox(height: 8),
@@ -793,9 +787,7 @@ class _ActorResultTile extends StatelessWidget {
                       actor.description!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ],
@@ -845,7 +837,7 @@ class _ActorListTile extends StatelessWidget {
               imageUrl: actor.avatar,
               initials: formatInitials(actor.displayName ?? actor.handle),
               shape: BoxShape.circle,
-              placeholderTextStyle: Theme.of(context).textTheme.labelMedium,
+              placeholderTextStyle: context.textTheme.labelMedium,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -854,15 +846,13 @@ class _ActorListTile extends StatelessWidget {
                 children: [
                   Text(
                     actor.displayName ?? actor.handle,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                    style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     '@${actor.handle}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                   ),
                   if (profileUi.alert || profileUi.inform) ...[
                     const SizedBox(height: 8),
@@ -925,15 +915,13 @@ class _FeedResultTile extends StatelessWidget {
               children: [
                 Text(
                   displayName,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                  style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   'by @${feed.creator.handle}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                 ),
                 if (feed.description != null && feed.description!.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -941,7 +929,7 @@ class _FeedResultTile extends StatelessWidget {
                     feed.description!,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: context.textTheme.bodySmall,
                   ),
                 ],
               ],
@@ -1038,15 +1026,15 @@ class _SearchEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search, size: 64, color: Theme.of(context).colorScheme.outline),
+            Icon(Icons.search, size: 64, color: context.colorScheme.outline),
             const SizedBox(height: 16),
-            Text('Search', style: Theme.of(context).textTheme.titleMedium),
+            Text('Search', style: context.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
               'Find posts and people on the network.\n'
               'Use Jump to profile to quickly open a user.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
+              style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.outline),
             ),
           ],
         ),

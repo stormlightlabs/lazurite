@@ -18,6 +18,7 @@ import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 /// Renders the appropriate embed widget for a post embed.
 ///
@@ -116,7 +117,7 @@ class PostEmbedView extends StatelessWidget {
                   image.thumb,
                   fit: BoxFit.cover,
                   errorBuilder: (_, _, _) => ColoredBox(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: context.colorScheme.surfaceContainerHighest,
                     child: const Center(child: Icon(Icons.image_not_supported_outlined)),
                   ),
                 ),
@@ -204,15 +205,12 @@ class PostEmbedView extends StatelessWidget {
             AspectRatio(
               aspectRatio: video.aspectRatio == null ? 16 / 9 : video.aspectRatio!.width / video.aspectRatio!.height,
               child: video.thumbnail == null
-                  ? ColoredBox(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: const SizedBox.expand(),
-                    )
+                  ? ColoredBox(color: context.colorScheme.surfaceContainerHighest, child: const SizedBox.expand())
                   : Image.network(
                       video.thumbnail!,
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) => ColoredBox(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color: context.colorScheme.surfaceContainerHighest,
                         child: const SizedBox.expand(),
                       ),
                     ),
@@ -232,7 +230,7 @@ class PostEmbedView extends StatelessWidget {
                   video.alt!,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
+                  style: context.textTheme.bodySmall?.copyWith(color: Colors.white),
                 ),
               ),
           ],
@@ -273,8 +271,8 @@ class PostEmbedView extends StatelessWidget {
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                        color: context.colorScheme.surfaceContainerHighest,
+                        border: Border.all(color: context.colorScheme.outlineVariant),
                       ),
                       child: quoted.author.avatar != null
                           ? Image.network(quoted.author.avatar!, fit: BoxFit.cover)
@@ -330,13 +328,10 @@ class PostEmbedView extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        color: context.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-      ),
+      child: Text(label, style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant)),
     );
   }
 

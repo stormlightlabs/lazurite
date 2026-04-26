@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
@@ -33,7 +34,7 @@ class _ModeratedBlurOverlayState extends State<ModeratedBlurOverlay> {
       return widget.child;
     }
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final canReveal = !widget.ui.noOverride;
 
     Widget content = Stack(
@@ -65,7 +66,7 @@ class _ModeratedBlurOverlayState extends State<ModeratedBlurOverlay> {
                       Text(
                         moderationOverlayTitle(widget.ui, fallback: widget.fallbackLabel),
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                        style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -73,9 +74,7 @@ class _ModeratedBlurOverlayState extends State<ModeratedBlurOverlay> {
                             ? 'Hidden by your moderation settings. You can reveal it for this view.'
                             : 'Hidden by your moderation settings and cannot be revealed here.',
                         textAlign: TextAlign.center,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.35),
+                        style: context.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.35),
                       ),
                       if (canReveal) ...[
                         const SizedBox(height: 14),

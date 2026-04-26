@@ -5,6 +5,7 @@ import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class PostActionBar extends StatelessWidget {
   const PostActionBar({
@@ -69,7 +70,7 @@ class PostActionBar extends StatelessWidget {
           count: replyCount,
           onTap: isOffline ? null : onReply,
           tooltip: isOffline ? offlineActionMessage('reply to this post') : null,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          color: context.colorScheme.onSurfaceVariant,
         ),
         _ActionButton(
           icon: Icons.repeat,
@@ -99,17 +100,15 @@ class PostActionBar extends StatelessWidget {
           isActive: isSaved,
           onTap: onSave != null ? () => _showSaveOptions(context) : null,
           onLongPress: onLongPressSave,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          activeColor: (saveType == 'cloud' || saveType == 'both')
-              ? Theme.of(context).colorScheme.primary
-              : Colors.amber,
+          color: context.colorScheme.onSurfaceVariant,
+          activeColor: (saveType == 'cloud' || saveType == 'both') ? context.colorScheme.primary : Colors.amber,
         ),
         _ActionButton(
           icon: Icons.share_outlined,
           activeIcon: Icons.share,
           count: 0,
           onTap: onShare ?? () => _defaultShare(context),
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          color: context.colorScheme.onSurfaceVariant,
         ),
         if (onMore != null)
           _ActionButton(
@@ -117,7 +116,7 @@ class PostActionBar extends StatelessWidget {
             activeIcon: Icons.more_vert,
             count: 0,
             onTap: onMore,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: context.colorScheme.onSurfaceVariant,
           ),
       ],
     );
@@ -163,7 +162,7 @@ class PostActionBar extends StatelessWidget {
         OptionsSheetItem(
           leading: Icon(
             isCloudSaved ? Icons.cloud_off_outlined : Icons.cloud_outlined,
-            color: Theme.of(context).colorScheme.primary,
+            color: context.colorScheme.primary,
           ),
           title: isCloudSaved ? 'Remove from Bluesky' : 'Save to Bluesky',
           onTap: isCloudSaved ? onCloudUnsave : onCloudSave,
@@ -220,7 +219,7 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final defaultColor = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
+    final defaultColor = color ?? context.colorScheme.onSurfaceVariant;
     final iconColor = isActive ? (activeColor ?? defaultColor) : defaultColor;
 
     Widget button = InkWell(
@@ -238,7 +237,7 @@ class _ActionButton extends StatelessWidget {
               Icon(isActive ? activeIcon : icon, size: 18, color: iconColor),
             if (count > 0) ...[
               const SizedBox(width: 4),
-              Text(formatCount(count), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: iconColor)),
+              Text(formatCount(count), style: context.textTheme.bodySmall?.copyWith(color: iconColor)),
             ],
           ],
         ),

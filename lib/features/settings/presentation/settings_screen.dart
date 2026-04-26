@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +35,7 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () {
               context.read<AuthBloc>().add(const LogoutRequested());
             },
-            icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
+            icon: Icon(Icons.logout, color: context.colorScheme.error),
           ),
         ],
       ),
@@ -159,7 +160,7 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           const SizedBox(height: 24),
-          Center(child: Text('Lazurite v1.0.0', style: Theme.of(context).textTheme.bodySmall)),
+          Center(child: Text('Lazurite v1.0.0', style: context.textTheme.bodySmall)),
           const SizedBox(height: 24),
         ],
       ),
@@ -171,12 +172,12 @@ class SettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Text(
         title.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+        style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
       ),
     );
   }
 
-  Widget _title(BuildContext context) => Text('Settings', style: Theme.of(context).textTheme.titleLarge);
+  Widget _title(BuildContext context) => Text('Settings', style: context.textTheme.titleLarge);
 
   Widget _buildThemeSelector(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
@@ -198,8 +199,8 @@ class SettingsScreen extends StatelessWidget {
                 child: Center(
                   child: SegmentedButton<_AppearanceMode>(
                     style: SegmentedButton.styleFrom(
-                      selectedBackgroundColor: Theme.of(context).colorScheme.primary,
-                      selectedForegroundColor: Theme.of(context).colorScheme.onPrimary,
+                      selectedBackgroundColor: context.colorScheme.primary,
+                      selectedForegroundColor: context.colorScheme.onPrimary,
                     ),
                     segments: const [
                       ButtonSegment(value: _AppearanceMode.system, label: Text('System')),
@@ -230,9 +231,7 @@ class SettingsScreen extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'THEME',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                    style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
                   ),
                 ),
               ),
@@ -507,7 +506,7 @@ class _AtProtocolConnectionCard extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                  child: Text('AT Protocol Connection', style: Theme.of(context).textTheme.titleMedium),
+                  child: Text('AT Protocol Connection', style: context.textTheme.titleMedium),
                 ),
                 const Divider(height: 1),
                 _ConnectionDetailRow(label: 'Handle', value: '@${tokens.handle}'),
@@ -567,7 +566,7 @@ class _ThemePaletteRow extends StatelessWidget {
             ),
           if (isSelected) ...[
             const SizedBox(width: 12),
-            Icon(Icons.check, color: Theme.of(context).colorScheme.primary, size: 20),
+            Icon(Icons.check, color: context.colorScheme.primary, size: 20),
           ],
         ],
       ),
@@ -687,7 +686,7 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive ? Theme.of(context).colorScheme.error : null;
+    final color = isDestructive ? context.colorScheme.error : null;
 
     return ListTile(
       leading: icon != null ? Icon(icon, color: color) : null,
@@ -740,9 +739,7 @@ class _MaxResultsTile extends StatelessWidget {
           subtitle: const Text('Maximum number of search results'),
           trailing: Text(
             '$value',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontFamily: 'JetBrains Mono'),
+            style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontFamily: 'JetBrains Mono'),
           ),
         ),
         Padding(

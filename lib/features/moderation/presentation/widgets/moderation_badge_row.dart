@@ -1,6 +1,7 @@
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ModerationBadgeRow extends StatelessWidget {
   const ModerationBadgeRow({super.key, required this.ui, this.padding = EdgeInsets.zero});
@@ -15,7 +16,7 @@ class ModerationBadgeRow extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
 
     Widget chipFor(ModerationBadgeDescriptor descriptor, double maxWidth) {
       final isAlert = descriptor.tone == ModerationBadgeTone.alert;
@@ -45,7 +46,7 @@ class ModerationBadgeRow extends StatelessWidget {
                     descriptor.label,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    style: context.textTheme.labelSmall?.copyWith(
                       color: foreground,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.2,

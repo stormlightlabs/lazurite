@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -61,8 +62,8 @@ class ProfileActionButtons extends StatelessWidget {
         label: 'Unblock',
         onPressed: isOffline || onUnblock == null ? null : () => _confirmUnblock(context),
         isLoading: isLoadingBlock,
-        foregroundColor: Theme.of(context).colorScheme.onError,
-        backgroundColor: Theme.of(context).colorScheme.error,
+        foregroundColor: context.colorScheme.onError,
+        backgroundColor: context.colorScheme.error,
         tooltip: isOffline ? offlineActionMessage('unblock this account') : null,
       );
     }
@@ -192,7 +193,7 @@ class ProfileActionButtons extends StatelessWidget {
       context: context,
       title: Row(
         children: [
-          Icon(Icons.block, color: Theme.of(context).colorScheme.error),
+          Icon(Icons.block, color: context.colorScheme.error),
           const SizedBox(width: 8),
           const Text('Block Account?'),
         ],

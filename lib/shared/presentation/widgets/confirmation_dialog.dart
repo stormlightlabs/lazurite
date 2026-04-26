@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/material.dart';
 
@@ -38,8 +39,8 @@ class ConfirmationDialog extends StatelessWidget {
           onPressed: confirmEnabled ? onConfirm : null,
           style: confirmDestructive
               ? FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  foregroundColor: Theme.of(context).colorScheme.onError,
+                  backgroundColor: context.colorScheme.error,
+                  foregroundColor: context.colorScheme.onError,
                 )
               : null,
           child: Text(confirmLabel),

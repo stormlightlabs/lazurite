@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,7 +44,7 @@ class FollowAuditScreen extends StatelessWidget {
                     child: Text(
                       '${state.failedProfiles} profile(s) could not be loaded.',
                       key: const Key('follow_audit_failed_warning'),
-                      style: TextStyle(color: Theme.of(context).colorScheme.tertiary),
+                      style: TextStyle(color: context.colorScheme.tertiary),
                     ),
                   ),
                 ),
@@ -57,7 +58,7 @@ class FollowAuditScreen extends StatelessWidget {
                     child: Text(
                       'Unfollowed ${state.unfollowedCount} account(s)',
                       key: const Key('follow_audit_complete_message'),
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: context.textTheme.titleMedium,
                     ),
                   ),
                 ),
@@ -83,7 +84,7 @@ class FollowAuditScreen extends StatelessWidget {
                     return Row(
                       children: [
                         SizedBox(width: 280, child: filters),
-                        VerticalDivider(width: 1, color: Theme.of(context).colorScheme.outlineVariant),
+                        VerticalDivider(width: 1, color: context.colorScheme.outlineVariant),
                         Expanded(
                           child: _ResultsPanel(state: state, visibleEntries: visibleEntries),
                         ),
@@ -138,22 +139,22 @@ class _HeaderCard extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        color: context.colorScheme.surfaceContainerLowest,
+        border: Border.all(color: context.colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'AUDIT FOLLOWERS',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.1),
+            style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.1),
           ),
           const SizedBox(height: 6),
           Text(
             totalFollows > 0
                 ? '$totalFollows follows scanned for problematic accounts'
                 : 'Scan your follows for deleted, suspended, blocked, and hidden accounts.',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: context.textTheme.bodyMedium,
           ),
         ],
       ),
@@ -236,19 +237,19 @@ class _ErrorBanner extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.error),
-        color: Theme.of(context).colorScheme.errorContainer,
+        border: Border.all(color: context.colorScheme.error),
+        color: context.colorScheme.errorContainer,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onErrorContainer),
+          Icon(Icons.error_outline, color: context.colorScheme.onErrorContainer),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer)),
+                Text(message, style: TextStyle(color: context.colorScheme.onErrorContainer)),
                 const SizedBox(height: 8),
                 OutlinedButton(
                   key: const Key('follow_audit_retry_button'),
@@ -296,7 +297,7 @@ class _FilterControls extends StatelessWidget {
           )
         : Container(
             key: const Key('follow_audit_filter_sidebar'),
-            color: Theme.of(context).colorScheme.surfaceContainerLowest,
+            color: context.colorScheme.surfaceContainerLowest,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               children: [
@@ -304,9 +305,7 @@ class _FilterControls extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
                   child: Text(
                     'FILTERS',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelMedium?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.w700),
+                    style: context.textTheme.labelMedium?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.w700),
                   ),
                 ),
                 for (final status in FollowStatus.values)
@@ -353,8 +352,8 @@ class _FilterTile extends StatelessWidget {
       width: compact ? 220 : null,
       padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 12, vertical: compact ? 8 : 10),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        color: context.colorScheme.surfaceContainerLowest,
+        border: Border.all(color: context.colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,16 +365,16 @@ class _FilterTile extends StatelessWidget {
                   _labelForStatus(status).toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: context.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  color: context.colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: Text('$count', style: Theme.of(context).textTheme.labelSmall),
+                child: Text('$count', style: context.textTheme.labelSmall),
               ),
             ],
           ),
@@ -408,7 +407,7 @@ class _FilterTile extends StatelessWidget {
                   'Select All',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: context.textTheme.bodySmall,
                 ),
               ),
             ],
@@ -481,11 +480,11 @@ class _ResultRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedTint = Theme.of(context).colorScheme.error.withValues(alpha: 0.08);
+    final selectedTint = context.colorScheme.error.withValues(alpha: 0.08);
 
     return Container(
       key: Key('follow_audit_row_${item.record.rkey}'),
-      color: item.selected ? selectedTint : Theme.of(context).colorScheme.surfaceContainerLowest,
+      color: item.selected ? selectedTint : context.colorScheme.surfaceContainerLowest,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -513,7 +512,7 @@ class _ResultRow extends StatelessWidget {
                         child: Text(
                           item.handle ?? item.record.subjectDid,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                          style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -533,9 +532,9 @@ class _ResultRow extends StatelessWidget {
                           _truncateDid(item.record.subjectDid),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: context.textTheme.bodySmall?.copyWith(
                             fontFamily: 'JetBrains Mono',
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: context.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -576,11 +575,11 @@ class _SummaryFooter extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+        border: Border(top: BorderSide(color: context.colorScheme.outlineVariant)),
       ),
       child: Text(
         'Selected: $selectedCount/$total',
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+        style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }

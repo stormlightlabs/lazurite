@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
@@ -76,7 +77,7 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = context.colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
       child: TextField(
@@ -142,7 +143,7 @@ class _ScopeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = context.colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -155,7 +156,7 @@ class _ScopeChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          style: context.textTheme.labelMedium?.copyWith(
             color: isSelected ? scheme.onPrimary : scheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
           ),
@@ -259,9 +260,11 @@ class _RelevanceBadge extends StatelessWidget {
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99)),
       child: Text(
         '${score.round()}%',
-        style: Theme.of(
-          context,
-        ).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w600, fontFamily: 'JetBrains Mono'),
+        style: context.textTheme.labelSmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontFamily: 'JetBrains Mono',
+        ),
       ),
     );
   }
@@ -280,7 +283,7 @@ class _SourceTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = context.colorScheme;
     final (icon, label) = source == 'saved' ? (Icons.bookmark_outline, 'Saved') : (Icons.favorite_outline, 'Liked');
 
     return Container(
@@ -291,7 +294,7 @@ class _SourceTag extends StatelessWidget {
         children: [
           Icon(icon, size: 11, color: scheme.onSurfaceVariant),
           const SizedBox(width: 3),
-          Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
+          Text(label, style: context.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -318,7 +321,7 @@ class _EmptyQueryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = context.colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -327,15 +330,12 @@ class _EmptyQueryView extends StatelessWidget {
           children: [
             Icon(Icons.travel_explore_outlined, size: 64, color: scheme.outline),
             const SizedBox(height: 16),
-            Text(
-              'Search by meaning',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: scheme.onSurfaceVariant),
-            ),
+            Text('Search by meaning', style: context.textTheme.headlineSmall?.copyWith(color: scheme.onSurfaceVariant)),
             const SizedBox(height: 8),
             Text(
               'Search your saved and liked posts by meaning, not just keywords',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: context.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -349,7 +349,7 @@ class _NoResultsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = context.colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -358,12 +358,12 @@ class _NoResultsView extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'No similar posts found',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: scheme.onSurfaceVariant),
+            style: context.textTheme.headlineSmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           Text(
             'Try different keywords or a broader scope',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            style: context.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -398,7 +398,7 @@ class _UnavailableView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = context.colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -409,13 +409,13 @@ class _UnavailableView extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Semantic search unavailable',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: scheme.onSurfaceVariant),
+              style: context.textTheme.headlineSmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             Text(
               'The on-device language model could not be loaded on this device.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: context.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -431,7 +431,7 @@ class _BackfillBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = context.colorScheme;
     final completed = indexState.backfillCompleted ?? 0;
     final total = indexState.backfillTotal ?? 0;
     final progress = (total > 0) ? completed / total : 0.0;
@@ -447,7 +447,7 @@ class _BackfillBanner extends StatelessWidget {
               children: [
                 Text(
                   'Indexing: $completed/$total posts...',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                  style: context.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 4),
                 LinearProgressIndicator(value: progress > 0 ? progress : null),

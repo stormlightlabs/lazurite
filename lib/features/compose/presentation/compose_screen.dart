@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky_text/bluesky_text.dart';
 import 'package:flutter/material.dart';
@@ -932,7 +933,7 @@ class _FacetHighlightController extends TextEditingController {
     final entities = BlueskyText(text).entities.where((e) => e.type != EntityType.markdownLink).toList();
     if (entities.isEmpty) return TextSpan(style: style, text: text);
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final textBytes = utf8.encode(text);
     final spans = <InlineSpan>[];
     int lastCharEnd = 0;

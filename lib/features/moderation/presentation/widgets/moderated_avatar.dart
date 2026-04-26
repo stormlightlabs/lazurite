@@ -1,5 +1,6 @@
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ModeratedAvatar extends StatelessWidget {
   const ModeratedAvatar({
@@ -25,7 +26,7 @@ class ModeratedAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final shouldMask = ui?.blur ?? false;
 
     return Container(

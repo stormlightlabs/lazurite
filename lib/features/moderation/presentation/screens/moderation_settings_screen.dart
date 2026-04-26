@@ -9,6 +9,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_avat
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ModerationSettingsScreen extends StatefulWidget {
   const ModerationSettingsScreen({super.key});
@@ -152,7 +153,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
                     const SizedBox(height: 12),
                     Text(
                       'Paste a labeler DID to review and subscribe to its labels.',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: context.textTheme.bodySmall,
                     ),
                   ],
                 ),
@@ -189,7 +190,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Failed to load moderation settings', style: Theme.of(context).textTheme.titleMedium),
+                    Text('Failed to load moderation settings', style: context.textTheme.titleMedium),
                     const SizedBox(height: 8),
                     Text('${snapshot.error}', textAlign: TextAlign.center),
                     const SizedBox(height: 16),
@@ -228,9 +229,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
                   title: 'Built-in labeler',
                   trailing: Text(
                     'Always on',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
+                    style: context.textTheme.labelMedium?.copyWith(color: context.colorScheme.primary),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -308,7 +307,7 @@ class _SettingsHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -322,12 +321,12 @@ class _SettingsHero extends StatelessWidget {
         children: [
           Text(
             title.toUpperCase(),
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(letterSpacing: 1.1, fontWeight: FontWeight.w700),
+            style: context.textTheme.labelLarge?.copyWith(letterSpacing: 1.1, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
-          Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text(title, style: context.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+          Text(subtitle, style: context.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -347,7 +346,7 @@ class _SectionHeader extends StatelessWidget {
         Expanded(
           child: Text(
             title.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+            style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
           ),
         ),
         ?trailing,
@@ -365,9 +364,9 @@ class _SettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        color: context.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        border: Border.all(color: context.colorScheme.outlineVariant),
       ),
       child: child,
     );
@@ -421,19 +420,19 @@ class _LabelerCard extends StatelessWidget {
                             creator.displayName ?? creator.handle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                            style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
                         if (isOfficial)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primaryContainer,
+                              color: context.colorScheme.primaryContainer,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
                               'Built-in',
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+                              style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
                       ],
@@ -441,9 +440,7 @@ class _LabelerCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       '@${creator.handle}',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                     ),
                     if (creator.description?.isNotEmpty ?? false) ...[
                       const SizedBox(height: 8),
@@ -451,7 +448,7 @@ class _LabelerCard extends StatelessWidget {
                         creator.description!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        style: context.textTheme.bodyMedium,
                       ),
                     ],
                     const SizedBox(height: 10),
@@ -492,10 +489,10 @@ class _MetaChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        color: context.colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(label, style: Theme.of(context).textTheme.labelSmall),
+      child: Text(label, style: context.textTheme.labelSmall),
     );
   }
 }

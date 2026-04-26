@@ -7,7 +7,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/router/app_shell.dart';
+import 'package:lazurite/core/theme/color_filters.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
+import 'package:lazurite/core/theme/spacing.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/core/widgets/sliver_tab_bar_delegate.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
@@ -40,29 +43,6 @@ import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-const _greyscale = ColorFilter.matrix(<double>[
-  0.2126,
-  0.7152,
-  0.0722,
-  0,
-  0,
-  0.2126,
-  0.7152,
-  0.0722,
-  0,
-  0,
-  0.2126,
-  0.7152,
-  0.0722,
-  0,
-  0,
-  0,
-  0,
-  0,
-  1,
-  0,
-]);
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.actor, this.showBackButton = false});
@@ -211,7 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                       SliverToBoxAdapter(
                         child: switch (profileState.status) {
                           ProfileStatus.loading => const Padding(
-                            padding: EdgeInsets.all(24),
+                            padding: AppInsets.allLg,
                             child: Center(child: CircularProgressIndicator()),
                           ),
                           ProfileStatus.error => _buildProfileError(context, profileState.errorMessage),
@@ -258,12 +238,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     final width = MediaQuery.of(context).size.width;
     final coverHeight = width >= 600 ? 256.0 : 192.0;
     final avatarSize = width >= 600 ? 128.0 : 96.0;
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
 
     Widget coverContent;
     if (profile?.banner != null) {
       coverContent = ColorFiltered(
-        colorFilter: _greyscale,
+        colorFilter: AppColorFilters.greyscale,
         child: Image.network(
           profile!.banner!,
           fit: BoxFit.cover,
@@ -305,7 +285,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Widget _buildSquareAvatar(BuildContext context, ProfileViewDetailed? profile, double size) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final moderationService = maybeModerationService(context);
     final avatarUi = profile == null
         ? const bsky_moderation.ModerationUI()
@@ -323,7 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         initials: formatInitials(profile?.displayName ?? profile?.handle ?? '?'),
         shape: BoxShape.rectangle,
         border: Border.all(color: colorScheme.surfaceContainerLowest, width: 4),
-        placeholderTextStyle: Theme.of(context).textTheme.headlineSmall,
+        placeholderTextStyle: context.textTheme.headlineSmall,
       ),
     );
   }
@@ -334,9 +314,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Unable to load profile', style: Theme.of(context).textTheme.titleLarge),
+          Text('Unable to load profile', style: context.textTheme.titleLarge),
           const SizedBox(height: 8),
-          Text(errorMessage ?? 'Unknown error', style: Theme.of(context).textTheme.bodyMedium),
+          Text(errorMessage ?? 'Unknown error', style: context.textTheme.bodyMedium),
           const SizedBox(height: 12),
           FilledButton(onPressed: _loadProfileAndFeed, child: const Text('Try again')),
         ],
@@ -347,8 +327,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   Widget _buildProfileSummary(BuildContext context, ProfileViewDetailed? profile, bool isOwnProfile) {
     if (profile == null) return const SizedBox.shrink();
 
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = context.colorScheme;
+    final textTheme = context.textTheme;
     final moderationService = maybeModerationService(context);
     final profileUi =
         moderationService?.profileDetailedUi(profile, bsky_moderation.ModerationBehaviorContext.profileView) ??
@@ -427,20 +407,18 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: context.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(icon, size: 16, color: context.colorScheme.onSurfaceVariant),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
             ),
           ),
         ],
@@ -452,11 +430,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Widget _buildStat(BuildContext context, int count, String label) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(formatCount(count), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        Text(formatCount(count), style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
         Text(
           label.toUpperCase(),
           style: TextStyle(fontSize: 11, letterSpacing: 1.1, color: colorScheme.onSurfaceVariant),
@@ -593,10 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'Add to list',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                ),
+                child: Text('Add to list', style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
               ),
               const Divider(height: 1),
               Expanded(
@@ -628,9 +603,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                               ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                               : Icon(
                                   isMember ? Icons.check_circle : Icons.add_circle_outline,
-                                  color: isMember
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: isMember ? context.colorScheme.primary : context.colorScheme.onSurfaceVariant,
                                 ),
                           onTap: isToggling ? null : () => context.read<AddToListCubit>().toggleMembership(entry),
                         );

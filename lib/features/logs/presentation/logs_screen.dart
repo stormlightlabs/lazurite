@@ -7,6 +7,7 @@ import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class LogsScreen extends StatelessWidget {
   const LogsScreen({super.key});
@@ -89,7 +90,7 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
               onPressed: () => _shareLogs(context),
             ),
             IconButton(
-              icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+              icon: Icon(Icons.delete_outline, color: context.colorScheme.error),
               tooltip: 'Clear all logs',
               onPressed: () => _confirmClearLogs(context),
             ),
@@ -135,7 +136,7 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Clear', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text('Clear', style: TextStyle(color: context.colorScheme.error)),
           ),
         ],
       ),
@@ -155,7 +156,7 @@ class _AutoScrollIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
 
     return Material(
       color: colorScheme.surface,
@@ -201,7 +202,7 @@ class _SearchBar extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           isDense: true,
         ),
-        style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
+        style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13, color: context.colorScheme.onSurface),
         onChanged: (query) => context.read<LogViewerCubit>().setSearchQuery(query),
       ),
     );
@@ -245,11 +246,11 @@ class _LevelFilterChips extends StatelessWidget {
                 labelStyle: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isEnabled ? Theme.of(context).colorScheme.onPrimary : null,
+                  color: isEnabled ? context.colorScheme.onPrimary : null,
                 ),
-                selectedColor: Theme.of(context).colorScheme.primary,
-                backgroundColor: Theme.of(context).colorScheme.surface,
-                side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                selectedColor: context.colorScheme.primary,
+                backgroundColor: context.colorScheme.surface,
+                side: BorderSide(color: context.colorScheme.outlineVariant),
                 showCheckmark: false,
               );
             },
@@ -292,7 +293,7 @@ class _LogList extends StatelessWidget {
         return ListView.separated(
           controller: controller,
           itemCount: state.filteredEntries.length,
-          separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+          separatorBuilder: (context, index) => Divider(height: 1, color: context.colorScheme.outlineVariant),
           itemBuilder: (context, index) {
             return _LogEntryTile(entry: state.filteredEntries[index]);
           },
@@ -328,11 +329,7 @@ class _LogEntryTileState extends State<_LogEntryTile> {
           children: [
             Text(
               widget.entry.formatTimestamp(),
-              style: TextStyle(
-                fontFamily: 'JetBrains Mono',
-                fontSize: 11,
-                color: Theme.of(context).colorScheme.outline,
-              ),
+              style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 11, color: context.colorScheme.outline),
             ),
             const SizedBox(width: 8),
             Container(
@@ -355,11 +352,7 @@ class _LogEntryTileState extends State<_LogEntryTile> {
                 children: [
                   Text(
                     widget.entry.message,
-                    style: TextStyle(
-                      fontFamily: 'JetBrains Mono',
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                    style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 12, color: context.colorScheme.onSurface),
                     maxLines: _expanded ? null : 2,
                     overflow: _expanded ? null : TextOverflow.ellipsis,
                   ),
@@ -371,7 +364,7 @@ class _LogEntryTileState extends State<_LogEntryTile> {
                         style: TextStyle(
                           fontFamily: 'JetBrains Mono',
                           fontSize: 11,
-                          color: Theme.of(context).colorScheme.outline,
+                          color: context.colorScheme.outline,
                         ),
                       ),
                     ),
@@ -385,7 +378,7 @@ class _LogEntryTileState extends State<_LogEntryTile> {
   }
 
   Color _getLevelColor(BuildContext context, Level level) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     switch (level) {
       case Level.fatal:
       case Level.error:
@@ -400,7 +393,7 @@ class _LogEntryTileState extends State<_LogEntryTile> {
   }
 
   Color _getBadgeColor(BuildContext context, Level level) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     switch (level) {
       case Level.fatal:
         return colorScheme.error;

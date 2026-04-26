@@ -28,13 +28,11 @@
 
 ## M3 - Theme & Spacing Constants
 
-- [ ] Create `lib/core/theme/theme_extensions.dart` - `BuildContext` extension for `colorScheme` access
-- [ ] Create `lib/core/theme/spacing.dart` with padding/margin constants
-- [ ] Create `lib/core/theme/color_filters.dart` - extract greyscale matrix from:
-  - `lib/features/feed/presentation/widgets/grid_post_card.dart`
-  - `lib/features/profile/presentation/profile_screen.dart`
-- [ ] Refactor files to use new constants/extensions (27 files use `Theme.of(context).colorScheme`)
-- [ ] Tests for theme extension
+- [x] Create `lib/core/theme/theme_extensions.dart` - `BuildContext` extension for `colorScheme` access
+- [x] Create `lib/core/theme/spacing.dart` with padding/margin constants
+- [x] Create `lib/core/theme/color_filters.dart` - extract greyscale matrix
+- [x] Refactor files to use new constants/extensions
+- [x] Tests for theme extension
 
 ## M4 - Widget Extraction
 

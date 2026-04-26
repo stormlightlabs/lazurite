@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky/app_bsky_richtext_facet.dart';
 import 'package:bluesky_text/bluesky_text.dart';
@@ -144,7 +145,7 @@ abstract class _TextSegment {
 
   TextStyle _linkStyle(BuildContext context) {
     return TextStyle(
-      color: Theme.of(context).colorScheme.primary,
+      color: context.colorScheme.primary,
       decoration: TextDecoration.underline,
       fontWeight: FontWeight.w600,
     );

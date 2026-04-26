@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
@@ -98,8 +99,8 @@ class _SavedPostsContentState extends State<_SavedPostsContent> with SingleTicke
               context.read<SavedPostsCubit>().clearAllSaved();
             },
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
+              backgroundColor: context.colorScheme.error,
+              foregroundColor: context.colorScheme.onError,
             ),
             child: const Text('Clear All'),
           ),
@@ -181,8 +182,8 @@ class _SavedPostCard extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
-        color: Theme.of(context).colorScheme.error,
-        child: Icon(Icons.bookmark_remove, color: Theme.of(context).colorScheme.onError),
+        color: context.colorScheme.error,
+        child: Icon(Icons.bookmark_remove, color: context.colorScheme.onError),
       ),
       onDismissed: (_) => onUnsave(),
       child: feedViewPost != null
@@ -197,7 +198,7 @@ class _SavedPostCard extends StatelessWidget {
       child: ListTile(
         leading: const Icon(Icons.bookmark),
         title: const Text('Saved Post'),
-        subtitle: Text('Saved on ${_formatDate(savedPost.savedAt)}', style: Theme.of(context).textTheme.bodySmall),
+        subtitle: Text('Saved on ${_formatDate(savedPost.savedAt)}', style: context.textTheme.bodySmall),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

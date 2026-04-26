@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/material.dart';
 
@@ -17,7 +18,7 @@ class SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),

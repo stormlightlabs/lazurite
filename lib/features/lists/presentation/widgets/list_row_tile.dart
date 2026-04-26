@@ -1,5 +1,6 @@
 import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 /// A reusable tile for a single [bsky_graph.ListView] entry.
 class ListRowTile extends StatelessWidget {
@@ -11,7 +12,7 @@ class ListRowTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final isMod = list.purpose.knownValue == bsky_graph.KnownListPurpose.appBskyGraphDefsModlist;
     final purposeLabel = isMod ? 'MOD' : 'FEED';
     final purposeColor = isMod ? colorScheme.error : colorScheme.primary;

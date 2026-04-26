@@ -8,6 +8,7 @@ import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:provider/provider.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class AppShellScope extends InheritedWidget {
   const AppShellScope({super.key, required super.child, required this.openMenu});
@@ -446,7 +447,7 @@ class _MenuProfileAvatarState extends State<_MenuProfileAvatar> {
         final avatarUrl = snapshot.data;
         return CircleAvatar(
           radius: 24,
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          backgroundColor: context.colorScheme.surfaceContainerHighest,
           backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
           child: avatarUrl == null ? Text(widget.initials) : null,
         );

@@ -1,6 +1,7 @@
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class StarterPackCard extends StatelessWidget {
   const StarterPackCard({super.key, required this.pack, this.onTap});
@@ -10,8 +11,8 @@ class StarterPackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = context.colorScheme;
+    final textTheme = context.textTheme;
 
     final name = (pack.record['name'] as String?) ?? 'Starter Pack';
     final memberCount = pack.listItemCount;
@@ -76,13 +77,8 @@ class StarterPackCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(formatCount(count), style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
+        Text(formatCount(count), style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
+        Text(label, style: context.textTheme.labelSmall?.copyWith(color: context.colorScheme.onSurfaceVariant)),
       ],
     );
   }

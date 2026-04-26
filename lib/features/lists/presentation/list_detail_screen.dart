@@ -13,6 +13,7 @@ import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/widgets/create_edit_list_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ListDetailScreen extends StatelessWidget {
   const ListDetailScreen({super.key, required this.listUri});
@@ -142,7 +143,7 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
           ),
         if (isOwn)
           OptionsSheetItem(
-            leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+            leading: Icon(Icons.delete_outline, color: context.colorScheme.error),
             title: 'Delete list',
             isDestructive: true,
             onTap: () => _confirmDelete(context),
@@ -252,8 +253,8 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
   }
 
   Widget _buildHeader(BuildContext context, bsky_graph.ListView list) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = context.colorScheme;
+    final textTheme = context.textTheme;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -386,7 +387,7 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
             key: ValueKey(item.uri),
             leading: CircleAvatar(
               backgroundImage: subject.avatar != null ? NetworkImage(subject.avatar!) : null,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              backgroundColor: context.colorScheme.surfaceContainerHighest,
               child: subject.avatar == null
                   ? Text(
                       (subject.displayName?.isNotEmpty == true ? subject.displayName! : subject.handle)
@@ -396,14 +397,11 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
                   : null,
             ),
             title: Text(subject.displayName ?? subject.handle, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text(
-              '@${subject.handle}',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ),
+            subtitle: Text('@${subject.handle}', style: TextStyle(color: context.colorScheme.onSurfaceVariant)),
             onTap: () => context.push('/profile/view?actor=${subject.did}'),
             trailing: isOwn
                 ? IconButton(
-                    icon: Icon(Icons.remove_circle_outline, color: Theme.of(context).colorScheme.error),
+                    icon: Icon(Icons.remove_circle_outline, color: context.colorScheme.error),
                     onPressed: () => context.read<ListBloc>().add(ListItemRemoved(listItemUri: item.uri)),
                   )
                 : null,

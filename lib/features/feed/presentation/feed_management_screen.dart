@@ -8,6 +8,7 @@ import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class FeedManagementScreen extends StatefulWidget {
   const FeedManagementScreen({super.key});
@@ -138,7 +139,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
         children: [
           Text(
             title.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+            style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
           ),
           const Spacer(),
           if (showReorder) TextButton(onPressed: onAction, child: Text(isReordering ? 'Done' : 'Reorder')),
@@ -160,7 +161,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
       subtitle: Text(state.subtitleFor(feed)),
       trailing: IconButton(
         icon: const Icon(Icons.check_circle),
-        color: Theme.of(context).colorScheme.primary,
+        color: context.colorScheme.primary,
         onPressed: () => context.read<FeedPreferencesCubit>().unpinFeed(feed.id),
       ),
     );
@@ -183,7 +184,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
             onPressed: () => context.read<FeedPreferencesCubit>().pinFeed(feed.id),
           ),
           IconButton(
-            icon: Icon(Icons.close, color: Theme.of(context).colorScheme.error),
+            icon: Icon(Icons.close, color: context.colorScheme.error),
             onPressed: () => _confirmRemoveFeed(context, feed.id),
           ),
         ],
@@ -225,13 +226,11 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
                 children: [
                   Text(
                     _feedDisplayName(feed),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                    style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                   ),
                   Text(
                     'by ${feed.creator.displayName ?? feed.creator.handle}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                   ),
                   if (feed.description != null) ...[
                     const SizedBox(height: 4),
@@ -239,16 +238,14 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
                       feed.description!,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: context.textTheme.bodySmall,
                     ),
                   ],
                   if (feed.likeCount != null) ...[
                     const SizedBox(height: 4),
                     Text(
                       '${feed.likeCount} likes',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ],

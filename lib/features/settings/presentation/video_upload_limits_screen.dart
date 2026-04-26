@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/settings/cubit/video_upload_limits_cubit.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class VideoUploadLimitsScreen extends StatefulWidget {
   const VideoUploadLimitsScreen({super.key});
@@ -34,12 +35,12 @@ class _VideoUploadLimitsScreenState extends State<VideoUploadLimitsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.warning_amber_outlined, size: 48, color: Theme.of(context).colorScheme.error),
+                    Icon(Icons.warning_amber_outlined, size: 48, color: context.colorScheme.error),
                     const SizedBox(height: 16),
                     Text(
                       state.errorMessage ?? 'Failed to load video upload limits',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      style: TextStyle(color: context.colorScheme.error),
                     ),
                   ],
                 ),
@@ -135,8 +136,8 @@ class _LimitRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: Theme.of(context).textTheme.bodyLarge),
-          Text(value, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+          Text(label, style: context.textTheme.bodyLarge),
+          Text(value, style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
         ],
       ),
     );

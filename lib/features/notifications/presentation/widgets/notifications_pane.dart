@@ -9,6 +9,7 @@ import 'package:lazurite/features/notifications/presentation/widgets/notificatio
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class NotificationsPane extends StatefulWidget {
   const NotificationsPane({super.key});
@@ -229,15 +230,11 @@ class _OfflineNotificationsState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.cloud_off_outlined, size: 48, color: Theme.of(context).colorScheme.outline),
+            Icon(Icons.cloud_off_outlined, size: 48, color: context.colorScheme.outline),
             const SizedBox(height: 12),
-            Text('No connection', style: Theme.of(context).textTheme.titleMedium),
+            Text('No connection', style: context.textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(
-              'Reconnect to load notifications.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            Text('Reconnect to load notifications.', textAlign: TextAlign.center, style: context.textTheme.bodyMedium),
           ],
         ),
       ),

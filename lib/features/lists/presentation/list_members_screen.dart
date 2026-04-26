@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/lists/bloc/list_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 /// Screen for adding and removing members from a list.
 ///
@@ -104,7 +105,7 @@ class _ListMembersViewState extends State<_ListMembersView> {
 
   Widget _buildSearchResults(BuildContext context, ListState state) {
     final currentDids = state.items.map((item) => item.subject.did).toSet();
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
 
     return Expanded(
       child: ListView.builder(
@@ -152,7 +153,7 @@ class _ListMembersViewState extends State<_ListMembersView> {
       return const Center(child: Text('No members yet. Search above to add people.'));
     }
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

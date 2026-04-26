@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 /// Formats a post timestamp as a short, uppercase string.
 String formatPostTime(DateTime time) {
@@ -59,7 +60,7 @@ class PostCardFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final saveActiveColor = (saveType == 'cloud' || saveType == 'both') ? colorScheme.primary : Colors.amber;
     const horizontalPadding = 12.0;
     const iconSize = 18.0;
@@ -167,9 +168,11 @@ class PostCardFooter extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       softWrap: false,
-      style: Theme.of(
-        context,
-      ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.0),
+      style: context.textTheme.bodySmall?.copyWith(
+        color: colorScheme.onSurfaceVariant,
+        fontSize: 10,
+        letterSpacing: 1.0,
+      ),
     );
   }
 
@@ -192,7 +195,7 @@ class PostCardFooter extends StatelessWidget {
         OptionsSheetItem(
           leading: Icon(
             isCloudSaved ? Icons.cloud_off_outlined : Icons.cloud_outlined,
-            color: Theme.of(context).colorScheme.primary,
+            color: context.colorScheme.primary,
           ),
           title: isCloudSaved ? 'Remove from Bluesky' : 'Save to Bluesky',
           onTap: isCloudSaved ? onCloudUnsave : onCloudSave,
@@ -235,7 +238,7 @@ class _FooterAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final defaultColor = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
+    final defaultColor = color ?? context.colorScheme.onSurfaceVariant;
     final iconColor = isActive ? (activeColor ?? defaultColor) : defaultColor;
 
     Widget button = InkWell(
@@ -257,7 +260,7 @@ class _FooterAction extends StatelessWidget {
               Icon(isActive ? activeIcon : icon, size: iconSize, color: iconColor),
             if (showCount && count > 0) ...[
               const SizedBox(width: 4),
-              Text(formatCount(count), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: iconColor)),
+              Text(formatCount(count), style: context.textTheme.bodySmall?.copyWith(color: iconColor)),
             ],
           ],
         ),

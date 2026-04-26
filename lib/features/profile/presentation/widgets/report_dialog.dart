@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 enum _ReportType { post, actor }
 
@@ -85,14 +86,14 @@ class _ReportDialogState extends State<ReportDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Reason', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+            Text('Reason', style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             ..._reasonOptions.map((option) => _buildReasonOption(option)),
             if (_requiresExplanation) ...[
               const SizedBox(height: 16),
               Text(
                 'Explanation (required)',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               TextField(

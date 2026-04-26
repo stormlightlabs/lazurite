@@ -5,6 +5,9 @@ import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/theme/color_filters.dart';
+import 'package:lazurite/core/theme/spacing.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart';
@@ -15,28 +18,6 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
-const _greyscale = ColorFilter.matrix(<double>[
-  0.2126,
-  0.7152,
-  0.0722,
-  0,
-  0,
-  0.2126,
-  0.7152,
-  0.0722,
-  0,
-  0,
-  0.2126,
-  0.7152,
-  0.0722,
-  0,
-  0,
-  0,
-  0,
-  0,
-  1,
-  0,
-]);
 const double _gridEmbedPreviewMaxHeight = 240;
 
 /// Grid layout post card.
@@ -68,7 +49,7 @@ class GridPostCard extends StatelessWidget {
     final record = _tryParseRecord(post.record);
     final primaryImageUrl = _extractPrimaryImageUrl(post.embed);
     final bodyText = record?.text ?? '';
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final isCompactGrid = MediaQuery.of(context).size.width >= 600;
     final moderationService = maybeModerationService(context);
     final postUi = moderationService?.postUi(post, moderationContext) ?? const bsky_moderation.ModerationUI();
@@ -101,7 +82,7 @@ class GridPostCard extends StatelessWidget {
                   child: AspectRatio(
                     aspectRatio: 1.0,
                     child: ColorFiltered(
-                      colorFilter: _greyscale,
+                      colorFilter: AppColorFilters.greyscale,
                       child: Image.network(
                         primaryImageUrl,
                         fit: BoxFit.cover,
@@ -113,14 +94,14 @@ class GridPostCard extends StatelessWidget {
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: AppInsets.allMd,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildAuthorRow(context, post.author),
                     if (postUi.alert || postUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: postUi)],
                     if (bodyText.isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.xs),
                       if (primaryImageUrl == null && contentEmbed == null)
                         FacetText(
                           text: bodyText,
@@ -141,7 +122,7 @@ class GridPostCard extends StatelessWidget {
                         ),
                     ],
                     if (contentEmbed != null) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.xs),
                       _buildEmbedPreview(contentEmbed, compact: isCompactGrid),
                     ],
                   ],
@@ -156,7 +137,7 @@ class GridPostCard extends StatelessWidget {
   }
 
   Widget _buildAuthorRow(BuildContext context, ProfileViewBasic author) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final moderationService = maybeModerationService(context);
     final avatarUi =
         moderationService?.profileBasicUi(author, bsky_moderation.ModerationBehaviorContext.avatar) ??
@@ -173,10 +154,10 @@ class GridPostCard extends StatelessWidget {
             initials: formatInitials(author.displayName ?? author.handle),
             shape: BoxShape.rectangle,
             border: Border.all(color: colorScheme.outlineVariant),
-            placeholderTextStyle: Theme.of(context).textTheme.labelMedium,
+            placeholderTextStyle: context.textTheme.labelMedium,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,13 +165,13 @@ class GridPostCard extends StatelessWidget {
               if (author.displayName != null && author.displayName!.isNotEmpty)
                 Text(
                   author.displayName!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               Text(
                 '@${author.handle}'.toUpperCase(),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                style: context.textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.5,
                   color: colorScheme.onSurfaceVariant,

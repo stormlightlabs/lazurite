@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky/app_bsky_graph_defs.dart' show KnownListPurpose;
 import 'package:flutter/material.dart';
@@ -125,7 +126,7 @@ class _CreateEditListDialogState extends State<CreateEditListDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.colorScheme;
     final hasAvatar = _avatarBytes != null || widget.initialAvatarUrl != null;
 
     return AlertDialog(
@@ -189,7 +190,7 @@ class _CreateEditListDialogState extends State<CreateEditListDialog> {
               ),
               if (!_isEditing) ...[
                 const SizedBox(height: 12),
-                Text('Type', style: Theme.of(context).textTheme.labelLarge),
+                Text('Type', style: context.textTheme.labelLarge),
                 const SizedBox(height: 8),
                 SegmentedButton<KnownListPurpose>(
                   segments: const [
