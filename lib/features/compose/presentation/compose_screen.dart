@@ -502,7 +502,16 @@ class _ComposeScreenState extends State<ComposeScreen> {
           if (state.isEditing) {
             showAppSnackBar(context, 'Changes saved.', behavior: SnackBarBehavior.floating);
           }
-          Navigator.of(context).pop(state.isEditing ? {'editedText': state.text} : null);
+          Navigator.of(context).pop(
+            state.isEditing
+                ? {'editedText': state.text}
+                : {
+                    'status': state.hasScheduledTime ? 'scheduled' : 'posted',
+                    'isReply': state.isReply,
+                    'replyParentUri': state.replyParentUri,
+                    'replyRootUri': state.replyRootUri,
+                  },
+          );
         }
 
         if (state.hasError && state.errorMessage != null) {

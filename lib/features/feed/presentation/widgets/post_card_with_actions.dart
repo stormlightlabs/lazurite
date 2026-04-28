@@ -28,6 +28,7 @@ class PostCardWithActions extends StatelessWidget {
     required this.accountDid,
     this.variant = PostCardVariant.linear,
     this.onDeleted,
+    this.onReplySubmitted,
     this.moderationContext = bsky_moderation.ModerationBehaviorContext.contentList,
   });
 
@@ -35,6 +36,7 @@ class PostCardWithActions extends StatelessWidget {
   final String accountDid;
   final PostCardVariant variant;
   final VoidCallback? onDeleted;
+  final Future<void> Function(String replyParentUri)? onReplySubmitted;
   final bsky_moderation.ModerationBehaviorContext moderationContext;
 
   @override
@@ -60,6 +62,7 @@ class PostCardWithActions extends StatelessWidget {
         accountDid: accountDid,
         variant: variant,
         onDeleted: onDeleted,
+        onReplySubmitted: onReplySubmitted,
         moderationContext: moderationContext,
       ),
     );
@@ -72,6 +75,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
     required this.accountDid,
     required this.variant,
     this.onDeleted,
+    this.onReplySubmitted,
     required this.moderationContext,
   });
 
@@ -79,6 +83,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
   final String accountDid;
   final PostCardVariant variant;
   final VoidCallback? onDeleted;
+  final Future<void> Function(String replyParentUri)? onReplySubmitted;
   final bsky_moderation.ModerationBehaviorContext moderationContext;
 
   @override
@@ -171,6 +176,10 @@ class _PostCardWithActionsContent extends StatelessWidget {
   }
 
   void _onReply(BuildContext context) {
+    unawaited(_handleReply(context));
+  }
+
+  Future<void> _handleReply(BuildContext context) async {
     HapticHelper.selectionClick();
     final post = feedViewPost.post;
     final reply = feedViewPost.reply;
@@ -186,7 +195,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
       rootCid = post.cid;
     }
 
-    context.push(
+    final result = await context.push(
       '/compose',
       extra: ComposeRouteArgs(
         replyParentUri: post.uri.toString(),
@@ -196,6 +205,16 @@ class _PostCardWithActionsContent extends StatelessWidget {
         replyAuthorHandle: post.author.handle,
       ),
     );
+
+    if (!context.mounted) return;
+    if (!_didCreateImmediateReply(result)) return;
+
+    await onReplySubmitted?.call(post.uri.toString());
+  }
+
+  bool _didCreateImmediateReply(Object? result) {
+    if (result is! Map) return false;
+    return result['status'] == 'posted' && result['isReply'] == true;
   }
 
   Future<void> _onToggleSave(BuildContext context) async {

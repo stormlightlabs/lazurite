@@ -75,6 +75,7 @@ PostView _makePost({
   required String handle,
   required String rkey,
   required String text,
+  int? replyCount,
   DateTime? createdAt,
 }) {
   final time = createdAt ?? DateTime.utc(2026, 4, 14, 12);
@@ -84,12 +85,21 @@ PostView _makePost({
     author: ProfileViewBasic(did: did, handle: handle),
     record: {r'$type': 'app.bsky.feed.post', 'text': text, 'createdAt': time.toIso8601String()},
     indexedAt: time,
+    replyCount: replyCount,
   );
 }
 
-ThreadViewPost _makeThread({required String did, required String handle, required String rkey, required String text}) {
+ThreadViewPost _makeThread({
+  required String did,
+  required String handle,
+  required String rkey,
+  required String text,
+  int? replyCount,
+  List<ThreadViewPost> replies = const [],
+}) {
   return ThreadViewPost(
-    post: _makePost(did: did, handle: handle, rkey: rkey, text: text),
+    post: _makePost(did: did, handle: handle, rkey: rkey, text: text, replyCount: replyCount),
+    replies: replies.map((reply) => UThreadViewPostReplies.threadViewPost(data: reply)).toList(),
   );
 }
 
@@ -133,6 +143,8 @@ void main() {
     required String accountDid,
     required ThreadViewPost thread,
     required ValueSetter<ComposeRouteArgs> onComposeArgs,
+    Object? composePopResult = true,
+    bool stubThreadLoad = true,
   }) {
     final router = GoRouter(
       routes: [
@@ -149,7 +161,7 @@ void main() {
               body: Center(
                 child: ElevatedButton(
                   key: const ValueKey('complete-edit'),
-                  onPressed: () => Navigator.of(context).pop(true),
+                  onPressed: () => Navigator.of(context).pop(composePopResult),
                   child: const Text('Complete Edit'),
                 ),
               ),
@@ -159,7 +171,9 @@ void main() {
       ],
     );
 
-    when(() => postThreadRepository.getPostThread(postUri)).thenAnswer((_) async => thread);
+    if (stubThreadLoad) {
+      when(() => postThreadRepository.getPostThread(postUri)).thenAnswer((_) async => thread);
+    }
 
     return MultiRepositoryProvider(
       providers: [
@@ -248,5 +262,49 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(() => postThreadRepository.getPostThread(postUri)).called(1);
+  });
+
+  testWidgets('reloads thread after reply flow returns posted result', (tester) async {
+    final initialThread = _makeThread(
+      did: 'did:plc:owner',
+      handle: 'owner.bsky.social',
+      rkey: 'root',
+      text: 'Original post body',
+      replyCount: 0,
+    );
+    final refreshedThread = _makeThread(
+      did: 'did:plc:owner',
+      handle: 'owner.bsky.social',
+      rkey: 'root',
+      text: 'Original post body',
+      replyCount: 1,
+      replies: [_makeThread(did: 'did:plc:replier', handle: 'replier.bsky.social', rkey: 'child', text: 'New reply')],
+    );
+
+    var loadCount = 0;
+    when(() => postThreadRepository.getPostThread(postUri)).thenAnswer((_) async {
+      loadCount += 1;
+      return loadCount >= 2 ? refreshedThread : initialThread;
+    });
+
+    await tester.pumpWidget(
+      createSubjectWidget(
+        accountDid: 'did:plc:owner',
+        thread: initialThread,
+        onComposeArgs: (_) {},
+        composePopResult: {'status': 'posted', 'isReply': true, 'replyParentUri': postUri, 'replyRootUri': postUri},
+        stubThreadLoad: false,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    verify(() => postThreadRepository.getPostThread(postUri)).called(1);
+
+    await tester.tap(find.byIcon(Icons.chat_bubble_outline).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('complete-edit')));
+    await tester.pumpAndSettle();
+
+    expect(loadCount, greaterThanOrEqualTo(2));
   });
 }

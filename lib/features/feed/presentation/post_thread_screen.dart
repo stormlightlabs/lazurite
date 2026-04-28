@@ -126,6 +126,49 @@ class _PostThreadContentState extends State<_PostThreadContent> {
     });
   }
 
+  Future<void> _reloadThreadAfterReply(String replyParentUri) async {
+    final cubit = context.read<PostThreadCubit>();
+    final before = cubit.state.thread == null ? null : _snapshotForPostUri(cubit.state.thread!, replyParentUri);
+    final retryDelays = <Duration>[
+      Duration.zero,
+      const Duration(seconds: 1),
+      const Duration(seconds: 2),
+      const Duration(seconds: 4),
+    ];
+
+    for (final delay in retryDelays) {
+      if (delay > Duration.zero) {
+        await Future<void>.delayed(delay);
+      }
+      if (!mounted) return;
+
+      await cubit.load(widget.postUri);
+      final loadedThread = cubit.state.thread;
+      if (loadedThread == null) {
+        continue;
+      }
+
+      final after = _snapshotForPostUri(loadedThread, replyParentUri);
+      if (before == null || after == null) {
+        return;
+      }
+
+      final replyCountIncreased = after.directReplyCount > before.directReplyCount;
+      final descendantCountIncreased = after.descendantReplyCount > before.descendantReplyCount;
+      if (replyCountIncreased || descendantCountIncreased) {
+        return;
+      }
+    }
+
+    if (mounted) {
+      showAppSnackBar(
+        context,
+        'Reply posted. It may take a moment to appear in this thread.',
+        behavior: SnackBarBehavior.floating,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<PostThreadCubit, PostThreadState>(
@@ -183,11 +226,12 @@ class _PostThreadContentState extends State<_PostThreadContent> {
           PostCardWithActions(
             feedViewPost: FeedViewPost(post: parents[i].post),
             accountDid: accountDid,
+            onReplySubmitted: _reloadThreadAfterReply,
             moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
           ),
           _buildThreadConnector(context),
         ],
-        _FocusedPostWithActions(thread: thread, accountDid: accountDid),
+        _FocusedPostWithActions(thread: thread, accountDid: accountDid, onReplySubmitted: _reloadThreadAfterReply),
         if (replies.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -210,6 +254,7 @@ class _PostThreadContentState extends State<_PostThreadContent> {
               opDid: opDid,
               collapsedUris: _collapsedUris,
               onToggleCollapse: _toggleCollapsed,
+              onReplySubmitted: _reloadThreadAfterReply,
             ),
         ],
       ],
@@ -249,6 +294,7 @@ class ThreadReplyNode extends StatelessWidget {
     required this.opDid,
     required this.collapsedUris,
     required this.onToggleCollapse,
+    this.onReplySubmitted,
     this.onContinueThread,
   });
 
@@ -258,6 +304,7 @@ class ThreadReplyNode extends StatelessWidget {
   final String opDid;
   final Set<String> collapsedUris;
   final ValueChanged<String> onToggleCollapse;
+  final Future<void> Function(String replyParentUri)? onReplySubmitted;
   final ValueChanged<ThreadViewPost>? onContinueThread;
 
   @override
@@ -295,6 +342,7 @@ class ThreadReplyNode extends StatelessWidget {
                       opDid: opDid,
                       collapsedUris: collapsedUris,
                       onToggleCollapse: onToggleCollapse,
+                      onReplySubmitted: onReplySubmitted,
                       onContinueThread: onContinueThread,
                     ),
             ),
@@ -327,6 +375,7 @@ class _ExpandedThreadReply extends StatelessWidget {
     required this.opDid,
     required this.collapsedUris,
     required this.onToggleCollapse,
+    this.onReplySubmitted,
     this.onContinueThread,
   });
 
@@ -336,6 +385,7 @@ class _ExpandedThreadReply extends StatelessWidget {
   final String opDid;
   final Set<String> collapsedUris;
   final ValueChanged<String> onToggleCollapse;
+  final Future<void> Function(String replyParentUri)? onReplySubmitted;
   final ValueChanged<ThreadViewPost>? onContinueThread;
 
   @override
@@ -353,6 +403,7 @@ class _ExpandedThreadReply extends StatelessWidget {
           PostCardWithActions(
             feedViewPost: FeedViewPost(post: thread.post),
             accountDid: accountDid,
+            onReplySubmitted: onReplySubmitted,
             moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
           ),
           for (final reply in replies)
@@ -364,6 +415,7 @@ class _ExpandedThreadReply extends StatelessWidget {
               opDid: opDid,
               collapsedUris: collapsedUris,
               onToggleCollapse: onToggleCollapse,
+              onReplySubmitted: onReplySubmitted,
               onContinueThread: onContinueThread,
             ),
         ],
@@ -576,6 +628,31 @@ int _countDescendantReplies(ThreadViewPost thread) {
   return count;
 }
 
+_ReplyThreadSnapshot? _snapshotForPostUri(ThreadViewPost thread, String postUri) {
+  if (thread.post.uri.toString() == postUri) {
+    return _ReplyThreadSnapshot(
+      directReplyCount: thread.post.replyCount ?? 0,
+      descendantReplyCount: _countDescendantReplies(thread),
+    );
+  }
+
+  for (final reply in _threadRepliesOf(thread)) {
+    final nested = _snapshotForPostUri(reply, postUri);
+    if (nested != null) {
+      return nested;
+    }
+  }
+
+  return null;
+}
+
+class _ReplyThreadSnapshot {
+  const _ReplyThreadSnapshot({required this.directReplyCount, required this.descendantReplyCount});
+
+  final int directReplyCount;
+  final int descendantReplyCount;
+}
+
 String _hiddenReplyLabel(int count) => count == 1 ? '1 reply hidden' : '$count replies hidden';
 
 List<Color> _threadLineColors(BuildContext context) {
@@ -614,10 +691,11 @@ String _initials(String value) {
 }
 
 class _FocusedPostWithActions extends StatelessWidget {
-  const _FocusedPostWithActions({required this.thread, required this.accountDid});
+  const _FocusedPostWithActions({required this.thread, required this.accountDid, this.onReplySubmitted});
 
   final ThreadViewPost thread;
   final String accountDid;
+  final Future<void> Function(String replyParentUri)? onReplySubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -643,17 +721,18 @@ class _FocusedPostWithActions extends StatelessWidget {
           showAppSnackBar(context, state.error!, behavior: SnackBarBehavior.floating);
           context.read<PostActionCubit>().clearError();
         },
-        child: _FocusedPostContent(thread: thread, accountDid: accountDid),
+        child: _FocusedPostContent(thread: thread, accountDid: accountDid, onReplySubmitted: onReplySubmitted),
       ),
     );
   }
 }
 
 class _FocusedPostContent extends StatelessWidget {
-  const _FocusedPostContent({required this.thread, required this.accountDid});
+  const _FocusedPostContent({required this.thread, required this.accountDid, this.onReplySubmitted});
 
   final ThreadViewPost thread;
   final String accountDid;
+  final Future<void> Function(String replyParentUri)? onReplySubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -795,11 +874,15 @@ class _FocusedPostContent extends StatelessWidget {
   }
 
   void _onReply(BuildContext context) {
+    unawaited(_handleReply(context));
+  }
+
+  Future<void> _handleReply(BuildContext context) async {
     HapticHelper.selectionClick();
     final post = thread.post;
     final root = _findRoot();
 
-    context.push(
+    final result = await context.push(
       '/compose',
       extra: ComposeRouteArgs(
         replyParentUri: post.uri.toString(),
@@ -809,6 +892,16 @@ class _FocusedPostContent extends StatelessWidget {
         replyAuthorHandle: post.author.handle,
       ),
     );
+
+    if (!context.mounted) return;
+    if (!_didCreateImmediateReply(result)) return;
+
+    await onReplySubmitted?.call(post.uri.toString());
+  }
+
+  bool _didCreateImmediateReply(Object? result) {
+    if (result is! Map) return false;
+    return result['status'] == 'posted' && result['isReply'] == true;
   }
 
   void _onQuote(BuildContext context) {

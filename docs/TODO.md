@@ -75,3 +75,28 @@ feature parity with the official app.
 
 - Last read position
 - Autothreading of posts over char limit; splitting posts
+
+---
+
+- **Advanced Mute Filters:** Mute by regex pattern, time-limited mutes (e.g. mute for 24h),
+  and mute entire threads.
+- **Post Templates:** Save reusable post templates (e.g. recurring "what are you reading"
+  threads) for quick composition.
+- **Thread Bookmarks:** Save your position in long threads and resume reading later.
+- **Read-It-Later Queue:** A dedicated queue for posts you want to come back to, separate
+  from saved posts.
+- **Batch Actions:** Select multiple posts to save, delete, or export (as JSON) in bulk.
+
+### Data Ownership
+
+- **Account Data Export:** Export your posts, follows, likes, and saved posts to JSON/CSV.
+- **Account Data Import:** Migrate saved posts, drafts, and settings between accounts.
+
+### AT Protocol (in the explorer)
+
+- **Custom Feed Filters:** Layer client-side filters on top of any feed generator (hide
+  reposts, minimum engagement threshold, language filter).
+- **DID History Viewer:** Inspect the rotation history and recovery keys for any DID in the
+  network.
+- **Labeler Comparison:** Side-by-side view of how different labelers classify the same
+  content or account.
