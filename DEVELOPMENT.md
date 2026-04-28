@@ -12,13 +12,16 @@ flutter run
 
 Use `just` for common workflows:
 
-| Command       | Description                            |
-| ------------- | -------------------------------------- |
-| `just format` | Run `dart format`                      |
-| `just lint`   | Run `flutter analyze`                  |
-| `just test`   | Run the full `flutter test` suite      |
-| `just gen`    | Run `build_runner` for code generation |
-| `just check`  | Format, lint, and test in sequence     |
+| Command                       | Description                                  |
+| ----------------------------- | -------------------------------------------- |
+| `just format`                 | Run `dart format`                            |
+| `just lint`                   | Run `flutter analyze`                        |
+| `just test`                   | Run the full `flutter test` suite            |
+| `just gen`                    | Run `build_runner` for code generation       |
+| `just check`                  | Format, lint, and test in sequence           |
+| `just fastlane-lanes`         | List all configured Fastlane lanes           |
+| `just fastlane-ios-build`     | Build iOS simulator artifacts via Fastlane   |
+| `just fastlane-android-build` | Build Android APK/AAB artifacts via Fastlane |
 
 ## Architecture
 
@@ -170,3 +173,4 @@ dart run build_runner build --delete-conflicting-outputs
 - [Flutter Documentation](https://flutter.dev/docs)
 - [Drift Documentation](https://drift.simonbinder.eu/)
 - [ObjectBox Flutter](https://docs.objectbox.io/flutter)
+- [Fastlane Guide](docs/fastlane.md)

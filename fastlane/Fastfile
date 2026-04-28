@@ -1,0 +1,131 @@
+require 'shellwords'
+
+fastlane_version '2.226.0'
+default_platform(:ios)
+
+ENV['FLUTTER_SUPPRESS_ANALYTICS'] = 'true'
+ENV['DART_SUPPRESS_ANALYTICS'] = 'true'
+
+private_lane :repo_root do
+  File.expand_path('..', __dir__)
+end
+
+private_lane :require_env_vars do |options|
+  required = Array(options[:required])
+  context = options[:context] || 'lane'
+  missing = required.select { |key| ENV[key].to_s.strip.empty? }
+  return if missing.empty?
+
+  UI.user_error!("#{context} is missing required env vars: #{missing.join(', ')}")
+end
+
+private_lane :require_paths do |options|
+  paths = Array(options[:paths])
+  context = options[:context] || 'lane'
+  missing = paths.reject { |path| File.exist?(File.join(repo_root, path)) }
+  return if missing.empty?
+
+  UI.user_error!("#{context} is missing required files/directories: #{missing.join(', ')}")
+end
+
+private_lane :copy_artifacts do |options|
+  source_glob = options[:source_glob]
+  destination = File.join(repo_root, options[:destination])
+  artifacts = Dir.glob(File.join(repo_root, source_glob))
+
+  if artifacts.empty?
+    UI.important("No artifacts matched #{source_glob}")
+    next
+  end
+
+  sh("mkdir -p #{destination.shellescape}")
+  artifacts.each do |artifact|
+    sh("cp -R #{artifact.shellescape} #{destination.shellescape}/")
+  end
+  UI.success("Copied #{artifacts.size} artifact(s) to #{destination}")
+end
+
+platform :ios do
+  desc 'Build iOS simulator artifact without signing for local/CI validation'
+  lane :build do
+    sh("cd #{repo_root.shellescape} && flutter build ios --simulator --debug --no-codesign")
+
+    copy_artifacts(
+      source_glob: 'build/ios/iphonesimulator/Runner.app',
+      destination: 'build/fastlane_artifacts/ios',
+    )
+  end
+
+  desc 'Capture iOS screenshots via snapshot (requires UI tests and auth secrets)'
+  lane :screenshots do
+    require_env_vars(required: %w[BSKY_TEST_HANDLE BSKY_TEST_APP_PASSWORD], context: 'ios screenshots')
+    require_paths(paths: %w[fastlane/Snapfile ios/Runner.xcodeproj], context: 'ios screenshots')
+
+    unless Dir.exist?(File.join(repo_root, 'ios/RunnerUITests'))
+      UI.user_error!(
+        "TODO: Add ios/RunnerUITests snapshot coverage. " \
+        'Create UI tests that perform app-password login and call snapshot("name") for each target screen.'
+      )
+    end
+
+    snapshot(
+      scheme: ENV.fetch('IOS_SNAPSHOT_SCHEME', 'Runner'),
+      devices: ['iPhone 15 Pro'],
+      languages: ['en-US'],
+      output_directory: 'fastlane/screenshots/ios',
+      clear_previous_screenshots: true,
+      stop_after_first_error: true,
+      skip_open_summary: true,
+      erase_simulator: true,
+      reinstall_app: true,
+      launch_arguments: [
+        "-BSKY_TEST_HANDLE #{ENV['BSKY_TEST_HANDLE']}",
+        "-BSKY_TEST_APP_PASSWORD #{ENV['BSKY_TEST_APP_PASSWORD']}",
+        '-FASTLANE_AUTH_LOGIN YES',
+      ],
+    )
+  end
+end
+
+platform :android do
+  desc 'Build Android APK + AAB artifacts without production signing'
+  lane :build do
+    gradle(task: 'assemble', build_type: 'Release', project_dir: 'android')
+    gradle(task: 'bundle', build_type: 'Release', project_dir: 'android')
+
+    copy_artifacts(
+      source_glob: 'build/app/outputs/flutter-apk/*.apk',
+      destination: 'build/fastlane_artifacts/android/apk',
+    )
+    copy_artifacts(
+      source_glob: 'build/app/outputs/bundle/release/*.aab',
+      destination: 'build/fastlane_artifacts/android/aab',
+    )
+  end
+
+  desc 'Capture Android screenshots via screengrab (scaffold; requires androidTest setup)'
+  lane :screenshots do
+    require_env_vars(required: %w[BSKY_TEST_HANDLE BSKY_TEST_APP_PASSWORD], context: 'android screenshots')
+    require_paths(paths: %w[fastlane/Screengrabfile android/app/build.gradle.kts], context: 'android screenshots')
+
+    has_android_test = Dir.glob(File.join(repo_root, 'android/app/src/androidTest/**/*')).any? { |p| File.file?(p) }
+    unless has_android_test
+      UI.user_error!(
+        "TODO: Add android/app/src/androidTest screengrab tests. " \
+        'Include fastlane screengrab dependency, instrumentation login flow, and Screengrab.screenshot(...) calls.'
+      )
+    end
+
+    gradle(tasks: %w[assembleDebug assembleAndroidTest], project_dir: 'android')
+
+    screengrab(
+      clear_previous_screenshots: true,
+      output_directory: 'fastlane/screenshots/android',
+      skip_open_summary: true,
+      launch_arguments: [
+        "bsky_test_handle #{ENV['BSKY_TEST_HANDLE']}",
+        "bsky_test_app_password #{ENV['BSKY_TEST_APP_PASSWORD']}",
+      ],
+    )
+  end
+end

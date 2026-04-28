@@ -1,0 +1,118 @@
+name: Fastlane
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform lane group to run'
+        required: true
+        type: choice
+        default: ios
+        options:
+          - ios
+          - android
+      lane:
+        description: 'Lane to run for selected platform'
+        required: true
+        type: choice
+        default: build
+        options:
+          - build
+          - screenshots
+
+jobs:
+  ios:
+    if: ${{ inputs.platform == 'ios' }}
+    runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      BSKY_TEST_HANDLE: ${{ secrets.BSKY_TEST_HANDLE }}
+      BSKY_TEST_APP_PASSWORD: ${{ secrets.BSKY_TEST_APP_PASSWORD }}
+      IOS_APP_IDENTIFIER: ${{ secrets.IOS_APP_IDENTIFIER }}
+      APP_STORE_CONNECT_APPLE_ID: ${{ secrets.APP_STORE_CONNECT_APPLE_ID }}
+      APPLE_DEVELOPER_TEAM_ID: ${{ secrets.APPLE_DEVELOPER_TEAM_ID }}
+      APP_STORE_CONNECT_TEAM_ID: ${{ secrets.APP_STORE_CONNECT_TEAM_ID }}
+      # TODO: Add ASC_KEY_ID / ASC_ISSUER_ID / ASC_PRIVATE_KEY for distribution lanes.
+      # TODO: Add MATCH_GIT_URL / MATCH_PASSWORD when signing lanes are introduced.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run Fastlane
+        run: bundle exec fastlane ios ${{ inputs.lane }}
+
+      - name: Upload iOS artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-fastlane-${{ inputs.lane }}
+          if-no-files-found: ignore
+          path: |
+            build/fastlane_artifacts/ios
+            fastlane/screenshots/ios
+
+  android:
+    if: ${{ inputs.platform == 'android' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BSKY_TEST_HANDLE: ${{ secrets.BSKY_TEST_HANDLE }}
+      BSKY_TEST_APP_PASSWORD: ${{ secrets.BSKY_TEST_APP_PASSWORD }}
+      ANDROID_APP_IDENTIFIER: ${{ secrets.ANDROID_APP_IDENTIFIER }}
+      # TODO: Add ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD for release signing.
+      # TODO: Add PLAY_SERVICE_ACCOUNT_JSON for Play upload lanes.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run Fastlane
+        run: bundle exec fastlane android ${{ inputs.lane }}
+
+      - name: Upload Android artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-fastlane-${{ inputs.lane }}
+          if-no-files-found: ignore
+          path: |
+            build/fastlane_artifacts/android
+            fastlane/screenshots/android

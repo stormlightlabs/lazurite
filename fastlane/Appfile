@@ -1,0 +1,17 @@
+# iOS identifiers
+app_identifier(ENV.fetch('IOS_APP_IDENTIFIER', 'org.stormlightlabs.lazurite'))
+
+# TODO: Set APP_STORE_CONNECT_APPLE_ID when App Store Connect account ownership is finalized.
+apple_id(ENV.fetch('APP_STORE_CONNECT_APPLE_ID', 'TODO_APPLE_ID@example.com'))
+
+# TODO: Set APPLE_DEVELOPER_TEAM_ID if team changes from current default.
+team_id(ENV.fetch('APPLE_DEVELOPER_TEAM_ID', '8TVR4TPL9Y'))
+
+# TODO: Set APP_STORE_CONNECT_TEAM_ID for App Store Connect API workflows (deliver/pilot).
+itc_team_id(ENV.fetch('APP_STORE_CONNECT_TEAM_ID', 'TODO_ITC_TEAM_ID'))
+
+# Android identifiers
+package_name(ENV.fetch('ANDROID_APP_IDENTIFIER', 'org.stormlightlabs.lazurite'))
+
+# TODO: For Play upload lanes, provide PLAY_SERVICE_ACCOUNT_JSON path to service account key.
+json_key_file(ENV['PLAY_SERVICE_ACCOUNT_JSON']) if ENV['PLAY_SERVICE_ACCOUNT_JSON']

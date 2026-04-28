@@ -1,0 +1,24 @@
+# TODO: Add additional devices/languages once coverage is stable.
+devices([
+  'iPhone 15 Pro',
+])
+
+languages([
+  'en-US',
+])
+
+# TODO: Use a dedicated UI-test scheme once RunnerUITests is created.
+scheme(ENV.fetch('IOS_SNAPSHOT_SCHEME', 'Runner'))
+
+output_directory('fastlane/screenshots/ios')
+clear_previous_screenshots(true)
+skip_open_summary(true)
+reinstall_app(true)
+erase_simulator(true)
+
+# TODO: RunnerUITests should read these launch args and perform app-password login using secrets.
+launch_arguments([
+  "-BSKY_TEST_HANDLE #{ENV['BSKY_TEST_HANDLE']}",
+  "-BSKY_TEST_APP_PASSWORD #{ENV['BSKY_TEST_APP_PASSWORD']}",
+  '-FASTLANE_AUTH_LOGIN YES',
+])

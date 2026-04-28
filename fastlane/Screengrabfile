@@ -1,0 +1,16 @@
+# TODO: Add more locales/devices after androidTest screengrab coverage exists.
+locales(['en-US'])
+
+clear_previous_screenshots(true)
+output_directory('fastlane/screenshots/android')
+skip_open_summary(true)
+
+# TODO: androidTest should consume these launch args to perform app-password login.
+launch_arguments([
+  "bsky_test_handle #{ENV['BSKY_TEST_HANDLE']}",
+  "bsky_test_app_password #{ENV['BSKY_TEST_APP_PASSWORD']}",
+])
+
+# TODO: Set explicit package names once screengrab tests are added.
+# app_package_name('org.stormlightlabs.lazurite')
+# tests_package_name('org.stormlightlabs.lazurite.test')

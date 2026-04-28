@@ -39,6 +39,21 @@ gen: generate format
 # Run format, lint, and test
 check: format lint test
 
+fastlane-lanes:
+    bundle exec fastlane lanes
+
+fastlane-ios-build:
+    bundle exec fastlane ios build
+
+fastlane-android-build:
+    bundle exec fastlane android build
+
+fastlane-ios-screenshots:
+    bundle exec fastlane ios screenshots
+
+fastlane-android-screenshots:
+    bundle exec fastlane android screenshots
+
 find-comments:
     rg -n --pcre2 '^\s*//(?![!/])' -g '*.dart' -g '!*.g.dart' -g '!*.freezed.dart'
 
