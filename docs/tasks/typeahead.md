@@ -23,15 +23,8 @@
 
 ## M3 - TypeaheadTextField Widget
 
-- [ ] Create `lib/features/typeahead/presentation/typeahead_text_field.dart`
-  - Wraps `TextFormField` + `OverlayEntry` for suggestions dropdown
-  - Uses `LayerLink` + `CompositedTransformFollower` for positioning
-  - Props: `controller`, `repository`, `onSelected`, `decoration`, `debounceMs`, `minChars`, `limit`
-  - Each result row: avatar (CircleAvatar), display name, @handle
-  - Keyboard-aware: overlay repositions when keyboard shows/hides
-  - Tap result → calls `onSelected`, clears overlay
-  - Tap outside → dismisses overlay
-- [ ] Widget tests: overlay appears on input, results render, tap selects, tap-outside dismisses
+- [x] Create `lib/features/typeahead/presentation/typeahead_text_field.dart`
+- [x] Widget tests: overlay appears on input, results render, tap selects, tap-outside dismisses
 
 ## M4 - Login Integration
 

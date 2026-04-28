@@ -8,12 +8,15 @@ class TypeaheadCubit extends Cubit<TypeaheadState> {
   TypeaheadCubit({
     required TypeaheadRepository repository,
     Duration debounceDuration = const Duration(milliseconds: 300),
+    int searchLimit = 10,
   }) : _repository = repository,
        _debounceDuration = debounceDuration,
+       _searchLimit = searchLimit,
        super(const TypeaheadState());
 
   final TypeaheadRepository _repository;
   final Duration _debounceDuration;
+  final int _searchLimit;
 
   Timer? _debounceTimer;
   int _requestId = 0;
@@ -50,7 +53,7 @@ class TypeaheadCubit extends Cubit<TypeaheadState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      final results = await _repository.search(query: query);
+      final results = await _repository.search(query: query, limit: _searchLimit);
       if (!_isActiveRequest(requestId)) {
         return;
       }
