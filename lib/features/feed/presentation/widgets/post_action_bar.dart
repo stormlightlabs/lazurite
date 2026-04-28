@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
@@ -78,6 +80,7 @@ class PostActionBar extends StatelessWidget {
           count: repostCount,
           isActive: isReposted,
           isLoading: isLoadingRepost,
+          animateOnTap: true,
           onTap: isOffline ? null : onRepost,
           activeColor: Colors.green,
           onLongPress: !isOffline && onRepost != null ? () => _showRepostOptions(context) : null,
@@ -89,6 +92,7 @@ class PostActionBar extends StatelessWidget {
           count: likeCount,
           isActive: isLiked,
           isLoading: isLoadingLike,
+          animateOnTap: true,
           onTap: isOffline ? null : onLike,
           activeColor: Colors.pink,
           tooltip: isOffline ? offlineActionMessage('like this post') : null,
@@ -98,6 +102,7 @@ class PostActionBar extends StatelessWidget {
           activeIcon: Icons.bookmark,
           count: saveCount,
           isActive: isSaved,
+          animateOnTap: true,
           onTap: onSave != null ? () => _showSaveOptions(context) : null,
           onLongPress: onLongPressSave,
           color: context.colorScheme.onSurfaceVariant,
@@ -204,6 +209,7 @@ class _ActionButton extends StatelessWidget {
     this.color,
     this.activeColor,
     this.tooltip,
+    this.animateOnTap = false,
   });
 
   final IconData icon;
@@ -216,46 +222,123 @@ class _ActionButton extends StatelessWidget {
   final Color? color;
   final Color? activeColor;
   final String? tooltip;
+  final bool animateOnTap;
 
   @override
   Widget build(BuildContext context) {
-    final defaultColor = color ?? context.colorScheme.onSurfaceVariant;
-    final iconColor = isActive ? (activeColor ?? defaultColor) : defaultColor;
+    return _ActionButtonBody(
+      icon: icon,
+      activeIcon: activeIcon,
+      count: count,
+      isActive: isActive,
+      isLoading: isLoading,
+      onTap: onTap,
+      onLongPress: onLongPress,
+      color: color,
+      activeColor: activeColor,
+      tooltip: tooltip,
+      animateOnTap: animateOnTap,
+    );
+  }
+}
+
+class _ActionButtonBody extends StatefulWidget {
+  const _ActionButtonBody({
+    required this.icon,
+    required this.activeIcon,
+    required this.count,
+    required this.isActive,
+    required this.isLoading,
+    required this.onTap,
+    required this.onLongPress,
+    required this.color,
+    required this.activeColor,
+    required this.tooltip,
+    required this.animateOnTap,
+  });
+
+  final IconData icon;
+  final IconData activeIcon;
+  final int count;
+  final bool isActive;
+  final bool isLoading;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final Color? color;
+  final Color? activeColor;
+  final String? tooltip;
+  final bool animateOnTap;
+
+  @override
+  State<_ActionButtonBody> createState() => _ActionButtonBodyState();
+}
+
+class _ActionButtonBodyState extends State<_ActionButtonBody> {
+  int _tapSequence = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final defaultColor = widget.color ?? context.colorScheme.onSurfaceVariant;
+    final iconColor = widget.isActive ? (widget.activeColor ?? defaultColor) : defaultColor;
+    final iconWidget = widget.isLoading
+        ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: iconColor))
+        : AnimatedSwitcher(
+            duration: Anim.fast,
+            switchInCurve: Anim.enter,
+            switchOutCurve: Anim.exit,
+            transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+            child: Icon(
+              widget.isActive ? widget.activeIcon : widget.icon,
+              key: ValueKey('${widget.isActive}-${widget.isLoading}'),
+              size: 18,
+              color: iconColor,
+            ),
+          );
 
     Widget button = InkWell(
-      onTap: isLoading ? null : onTap,
-      onLongPress: onLongPress,
+      onTap: widget.isLoading ? null : _handleTap,
+      onLongPress: widget.onLongPress,
       borderRadius: BorderRadius.circular(999),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (isLoading)
-              SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: iconColor))
-            else
-              Icon(isActive ? activeIcon : icon, size: 18, color: iconColor),
-            if (count > 0) ...[
+            iconWidget,
+            if (widget.count > 0) ...[
               const SizedBox(width: 4),
-              Text(formatCount(count), style: context.textTheme.bodySmall?.copyWith(color: iconColor)),
+              Text(formatCount(widget.count), style: context.textTheme.bodySmall?.copyWith(color: iconColor)),
             ],
           ],
         ),
       ),
     );
 
-    if (onTap != null && !isLoading) {
-      button = GestureDetector(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: AnimatedScale(scale: isActive ? 1.0 : 1.0, duration: const Duration(milliseconds: 100), child: button),
+    if (widget.animateOnTap && _tapSequence > 0) {
+      button = button.animate(
+        key: ValueKey('action-${widget.icon.codePoint}-$_tapSequence'),
+        effects: const [
+          ScaleEffect(begin: Offset(1, 1), end: Offset(1.3, 1.3), duration: Anim.actionBounceIn, curve: Anim.enter),
+          ScaleEffect(begin: Offset(1.3, 1.3), end: Offset(1, 1), duration: Anim.actionBounceOut, curve: Anim.emphasis),
+        ],
       );
     }
 
-    if (tooltip != null) {
-      button = Tooltip(message: tooltip!, child: button);
+    if (widget.tooltip != null) {
+      button = Tooltip(message: widget.tooltip!, child: button);
     }
 
     return button;
+  }
+
+  void _handleTap() {
+    if (widget.onTap == null) {
+      return;
+    }
+
+    if (widget.animateOnTap) {
+      setState(() => _tapSequence++);
+    }
+    widget.onTap!.call();
   }
 }

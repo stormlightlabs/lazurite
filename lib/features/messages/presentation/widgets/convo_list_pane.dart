@@ -7,9 +7,11 @@ import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
 import 'package:lazurite/features/messages/presentation/widgets/convo_list_item.dart';
+import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
+import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ConvoListPane extends StatefulWidget {
@@ -23,6 +25,7 @@ class ConvoListPane extends StatefulWidget {
 
 class _ConvoListPaneState extends State<ConvoListPane> {
   final ScrollController _scrollController = ScrollController();
+  final Set<String> _seenConvoIds = <String>{};
 
   @override
   void initState() {
@@ -102,7 +105,7 @@ class _ConvoListPaneState extends State<ConvoListPane> {
           if (isOffline) {
             return const _OfflineConvoState();
           }
-          return RefreshIndicator(
+          return AnimatedRefreshIndicator(
             onRefresh: _onRefresh,
             child: ListView(
               controller: _scrollController,
@@ -121,24 +124,29 @@ class _ConvoListPaneState extends State<ConvoListPane> {
 
         final currentUserDid = _currentUserDid(context);
 
-        return RefreshIndicator(
+        return AnimatedRefreshIndicator(
           onRefresh: _onRefresh,
           child: ListView.builder(
             controller: _scrollController,
             itemCount: filtered.length,
             itemBuilder: (context, index) {
               final convo = filtered[index];
-              return ConvoListItem(
-                convo: convo,
-                currentUserDid: currentUserDid,
-                onTap: () => _openThread(context, convo, currentUserDid),
-                onMuteTap: () {
-                  if (convo.muted) {
-                    context.read<ConvoListBloc>().add(ConvoUnmuted(convoId: convo.id));
-                  } else {
-                    context.read<ConvoListBloc>().add(ConvoMuted(convoId: convo.id));
-                  }
-                },
+              return StaggeredEntrance(
+                itemKey: convo.id,
+                index: index,
+                seenKeys: _seenConvoIds,
+                child: ConvoListItem(
+                  convo: convo,
+                  currentUserDid: currentUserDid,
+                  onTap: () => _openThread(context, convo, currentUserDid),
+                  onMuteTap: () {
+                    if (convo.muted) {
+                      context.read<ConvoListBloc>().add(ConvoUnmuted(convoId: convo.id));
+                    } else {
+                      context.read<ConvoListBloc>().add(ConvoMuted(convoId: convo.id));
+                    }
+                  },
+                ),
               );
             },
           ),

@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/profile/cubit/follow_audit_cubit.dart';
 import 'package:lazurite/features/profile/data/follow_audit_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
+import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 
 class FollowAuditScreen extends StatelessWidget {
   const FollowAuditScreen({super.key});
@@ -439,34 +440,47 @@ class _FilterTile extends StatelessWidget {
   }
 }
 
-class _ResultsPanel extends StatelessWidget {
+class _ResultsPanel extends StatefulWidget {
   const _ResultsPanel({required this.state, required this.visibleEntries});
 
   final FollowAuditState state;
   final List<({int index, ClassifiedFollow item})> visibleEntries;
 
   @override
+  State<_ResultsPanel> createState() => _ResultsPanelState();
+}
+
+class _ResultsPanelState extends State<_ResultsPanel> {
+  final Set<String> _seenRows = <String>{};
+
+  @override
   Widget build(BuildContext context) {
-    if (state.status == FollowAuditStatus.initial) {
+    if (widget.state.status == FollowAuditStatus.initial) {
       return const Center(child: Text('Tap Scan to audit your follow list.'));
     }
 
-    if (state.results.isEmpty &&
-        (state.status == FollowAuditStatus.ready || state.status == FollowAuditStatus.complete)) {
+    if (widget.state.results.isEmpty &&
+        (widget.state.status == FollowAuditStatus.ready || widget.state.status == FollowAuditStatus.complete)) {
       return const Center(child: Text('No problematic follows found', key: Key('follow_audit_empty_message')));
     }
 
-    if (visibleEntries.isEmpty && state.results.isNotEmpty) {
+    if (widget.visibleEntries.isEmpty && widget.state.results.isNotEmpty) {
       return const Center(child: Text('No results visible for the current filters.'));
     }
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      itemCount: visibleEntries.length,
+      itemCount: widget.visibleEntries.length,
       separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
-        final entry = visibleEntries[index];
-        return _ResultRow(index: entry.index, item: entry.item);
+        final entry = widget.visibleEntries[index];
+        final rowKey = '${entry.item.record.subjectDid}:${entry.item.record.rkey}';
+        return StaggeredEntrance(
+          itemKey: rowKey,
+          index: index,
+          seenKeys: _seenRows,
+          child: _ResultRow(index: entry.index, item: entry.item),
+        );
       },
     );
   }

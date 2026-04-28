@@ -11,9 +11,11 @@ import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/search/presentation/semantic_search_tab.dart';
+import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
+import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:share_plus/share_plus.dart';
 
 class SavedPostsScreen extends StatelessWidget {
@@ -110,8 +112,15 @@ class _SavedPostsContentState extends State<_SavedPostsContent> with SingleTicke
   }
 }
 
-class _AllSavedTab extends StatelessWidget {
+class _AllSavedTab extends StatefulWidget {
   const _AllSavedTab();
+
+  @override
+  State<_AllSavedTab> createState() => _AllSavedTabState();
+}
+
+class _AllSavedTabState extends State<_AllSavedTab> {
+  final Set<String> _seenPostUris = <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -137,15 +146,20 @@ class _AllSavedTab extends StatelessWidget {
           );
         }
 
-        return RefreshIndicator(
+        return AnimatedRefreshIndicator(
           onRefresh: () => context.read<SavedPostsCubit>().loadSavedPosts(),
           child: ListView.builder(
             itemCount: state.savedPosts.length,
             itemBuilder: (context, index) {
               final savedPost = state.savedPosts[index];
-              return _SavedPostCard(
-                savedPost: savedPost,
-                onUnsave: () => context.read<SavedPostsCubit>().unsavePostById(savedPost.id),
+              return StaggeredEntrance(
+                itemKey: savedPost.postUri,
+                index: index,
+                seenKeys: _seenPostUris,
+                child: _SavedPostCard(
+                  savedPost: savedPost,
+                  onUnsave: () => context.read<SavedPostsCubit>().unsavePostById(savedPost.id),
+                ),
               );
             },
           ),

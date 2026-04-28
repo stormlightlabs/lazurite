@@ -25,6 +25,7 @@ void main() {
       expect(cubit.state.themeVariant, AppThemeVariant.dark);
       expect(cubit.state.useSystemTheme, false);
       expect(cubit.state.feedLayout, FeedLayout.card);
+      expect(cubit.state.animationsEnabled, true);
       expect(cubit.state.simulateOffline, false);
       expect(cubit.state.threadAutoCollapseDepth, isNull);
     });
@@ -36,6 +37,7 @@ void main() {
         initialVariant: AppThemeVariant.light,
         initialUseSystemTheme: true,
         initialFeedLayout: FeedLayout.compact,
+        initialAnimationsEnabled: false,
         initialSimulateOffline: true,
         initialThreadAutoCollapseDepth: 3,
       );
@@ -43,6 +45,7 @@ void main() {
       expect(cubit.state.themeVariant, AppThemeVariant.light);
       expect(cubit.state.useSystemTheme, true);
       expect(cubit.state.feedLayout, FeedLayout.compact);
+      expect(cubit.state.animationsEnabled, false);
       expect(cubit.state.simulateOffline, true);
       expect(cubit.state.threadAutoCollapseDepth, 3);
     });
@@ -55,6 +58,7 @@ void main() {
         await database.setSetting('theme_variant', 'light');
         await database.setSetting('use_system_theme', 'true');
         await database.setSetting('feed_architecture', 'linear');
+        await database.setSetting('animations_enabled', 'false');
         await database.setSetting('simulate_offline', 'true');
         await database.setSetting('thread_auto_collapse_depth', '4');
       },
@@ -65,6 +69,7 @@ void main() {
             .having((s) => s.themeVariant, 'themeVariant', AppThemeVariant.light)
             .having((s) => s.useSystemTheme, 'useSystemTheme', true)
             .having((s) => s.feedLayout, 'feedLayout', FeedLayout.compact)
+            .having((s) => s.animationsEnabled, 'animationsEnabled', false)
             .having((s) => s.simulateOffline, 'simulateOffline', true)
             .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', 4),
       ],
@@ -80,6 +85,7 @@ void main() {
             .having((s) => s.themeVariant, 'themeVariant', AppThemeVariant.dark)
             .having((s) => s.useSystemTheme, 'useSystemTheme', false)
             .having((s) => s.feedLayout, 'feedLayout', FeedLayout.card)
+            .having((s) => s.animationsEnabled, 'animationsEnabled', true)
             .having((s) => s.simulateOffline, 'simulateOffline', false)
             .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', isNull),
       ],
@@ -166,6 +172,17 @@ void main() {
       verify: (cubit) async {
         expect(await database.getSetting('feed_layout'), 'compact');
         expect(await database.getSetting('feed_architecture'), isNull);
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setAnimationsEnabled updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setAnimationsEnabled(false),
+      expect: () => [isA<SettingsState>().having((s) => s.animationsEnabled, 'animationsEnabled', false)],
+      verify: (cubit) async {
+        final value = await database.getSetting('animations_enabled');
+        expect(value, 'false');
       },
     );
 

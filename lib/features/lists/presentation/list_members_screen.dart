@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/lists/bloc/list_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
+import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 /// Screen for adding and removing members from a list.
@@ -32,6 +33,8 @@ class _ListMembersViewState extends State<_ListMembersView> {
   final _searchController = TextEditingController();
   List<ProfileViewBasic> _searchResults = [];
   bool _isSearching = false;
+  final Set<String> _seenSearchResultDids = <String>{};
+  final Set<String> _seenMemberUris = <String>{};
 
   @override
   void dispose() {
@@ -114,30 +117,35 @@ class _ListMembersViewState extends State<_ListMembersView> {
           final profile = _searchResults[index];
           final isAlreadyMember = currentDids.contains(profile.did);
 
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundImage: profile.avatar != null ? NetworkImage(profile.avatar!) : null,
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              child: profile.avatar == null
-                  ? Text(
-                      (profile.displayName?.isNotEmpty == true ? profile.displayName! : profile.handle)
-                          .substring(0, 1)
-                          .toUpperCase(),
-                    )
-                  : null,
+          return StaggeredEntrance(
+            itemKey: profile.did,
+            index: index,
+            seenKeys: _seenSearchResultDids,
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundImage: profile.avatar != null ? NetworkImage(profile.avatar!) : null,
+                backgroundColor: colorScheme.surfaceContainerHighest,
+                child: profile.avatar == null
+                    ? Text(
+                        (profile.displayName?.isNotEmpty == true ? profile.displayName! : profile.handle)
+                            .substring(0, 1)
+                            .toUpperCase(),
+                      )
+                    : null,
+              ),
+              title: Text(profile.displayName ?? profile.handle, maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text('@${profile.handle}', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+              trailing: isAlreadyMember
+                  ? Icon(Icons.check_circle, color: colorScheme.primary)
+                  : IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () {
+                        context.read<ListBloc>().add(ListItemAdded(subjectDid: profile.did));
+                        _searchController.clear();
+                        setState(() => _searchResults = []);
+                      },
+                    ),
             ),
-            title: Text(profile.displayName ?? profile.handle, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text('@${profile.handle}', style: TextStyle(color: colorScheme.onSurfaceVariant)),
-            trailing: isAlreadyMember
-                ? Icon(Icons.check_circle, color: colorScheme.primary)
-                : IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
-                    onPressed: () {
-                      context.read<ListBloc>().add(ListItemAdded(subjectDid: profile.did));
-                      _searchController.clear();
-                      setState(() => _searchResults = []);
-                    },
-                  ),
           );
         },
       ),
@@ -177,28 +185,33 @@ class _ListMembersViewState extends State<_ListMembersView> {
               final item = state.items[index];
               final subject = item.subject;
 
-              return ListTile(
-                key: ValueKey(item.uri),
-                leading: CircleAvatar(
-                  backgroundImage: subject.avatar != null ? NetworkImage(subject.avatar!) : null,
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                  child: subject.avatar == null
-                      ? Text(
-                          (subject.displayName?.isNotEmpty == true ? subject.displayName! : subject.handle)
-                              .substring(0, 1)
-                              .toUpperCase(),
-                        )
-                      : null,
+              return StaggeredEntrance(
+                itemKey: item.uri.toString(),
+                index: index,
+                seenKeys: _seenMemberUris,
+                child: ListTile(
+                  key: ValueKey(item.uri),
+                  leading: CircleAvatar(
+                    backgroundImage: subject.avatar != null ? NetworkImage(subject.avatar!) : null,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    child: subject.avatar == null
+                        ? Text(
+                            (subject.displayName?.isNotEmpty == true ? subject.displayName! : subject.handle)
+                                .substring(0, 1)
+                                .toUpperCase(),
+                          )
+                        : null,
+                  ),
+                  title: Text(subject.displayName ?? subject.handle, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text('@${subject.handle}', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+                  onTap: () => navigateToProfile(context, subject.did),
+                  trailing: state.isMutating
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : IconButton(
+                          icon: Icon(Icons.remove_circle_outline, color: colorScheme.error),
+                          onPressed: () => context.read<ListBloc>().add(ListItemRemoved(listItemUri: item.uri)),
+                        ),
                 ),
-                title: Text(subject.displayName ?? subject.handle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Text('@${subject.handle}', style: TextStyle(color: colorScheme.onSurfaceVariant)),
-                onTap: () => navigateToProfile(context, subject.did),
-                trailing: state.isMutating
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : IconButton(
-                        icon: Icon(Icons.remove_circle_outline, color: colorScheme.error),
-                        onPressed: () => context.read<ListBloc>().add(ListItemRemoved(listItemUri: item.uri)),
-                      ),
               );
             },
           ),

@@ -3,9 +3,12 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/router/app_shell.dart';
+import 'package:lazurite/core/theme/animation_tokens.dart';
+import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
@@ -19,6 +22,7 @@ import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
+import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
@@ -33,6 +37,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
+  final Set<String> _seenResultKeys = <String>{};
 
   @override
   void initState() {
@@ -218,11 +223,18 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openJumpToProfileDialog,
-        icon: const Icon(Icons.person_search),
-        label: const Text('Jump to profile'),
-      ),
+      floatingActionButton:
+          FloatingActionButton.extended(
+            onPressed: _openJumpToProfileDialog,
+            icon: const Icon(Icons.person_search),
+            label: const Text('Jump to profile'),
+          ).animateIfAllowed(
+            context,
+            effects: const [
+              FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
+              ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
+            ],
+          ),
       body: SafeArea(
         child: BlocBuilder<SearchBloc, SearchState>(
           builder: (context, state) {
@@ -511,7 +523,13 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
           );
         }
-        return _PostViewCard(post: posts[index]);
+        final post = posts[index];
+        return StaggeredEntrance(
+          itemKey: post.uri.toString(),
+          index: index,
+          seenKeys: _seenResultKeys,
+          child: _PostViewCard(post: post),
+        );
       },
     );
   }
@@ -531,7 +549,13 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
           );
         }
-        return _ActorResultTile(actor: actors[index]);
+        final actor = actors[index];
+        return StaggeredEntrance(
+          itemKey: actor.did,
+          index: index,
+          seenKeys: _seenResultKeys,
+          child: _ActorResultTile(actor: actor),
+        );
       },
     );
   }
@@ -553,16 +577,21 @@ class _SearchScreenState extends State<SearchScreen> {
         }
 
         final feed = feeds[index];
-        return _FeedResultTile(
-          feed: feed,
-          onAdded: (displayName) {
-            showAppSnackBar(
-              context,
-              'Added $displayName to your saved feeds',
-              actionLabel: 'Manage',
-              onAction: () => GoRouter.maybeOf(context)?.push('/feeds'),
-            );
-          },
+        return StaggeredEntrance(
+          itemKey: feed.uri.toString(),
+          index: index,
+          seenKeys: _seenResultKeys,
+          child: _FeedResultTile(
+            feed: feed,
+            onAdded: (displayName) {
+              showAppSnackBar(
+                context,
+                'Added $displayName to your saved feeds',
+                actionLabel: 'Manage',
+                onAction: () => GoRouter.maybeOf(context)?.push('/feeds'),
+              );
+            },
+          ),
         );
       },
     );
@@ -584,14 +613,19 @@ class _SearchScreenState extends State<SearchScreen> {
           );
         }
         final pack = packs[index];
-        return StarterPackCard(
-          pack: pack,
-          onTap: () {
-            final router = GoRouter.maybeOf(context);
-            if (router != null) {
-              router.push('/starter-pack?uri=${Uri.encodeComponent(pack.uri.toString())}');
-            }
-          },
+        return StaggeredEntrance(
+          itemKey: pack.uri.toString(),
+          index: index,
+          seenKeys: _seenResultKeys,
+          child: StarterPackCard(
+            pack: pack,
+            onTap: () {
+              final router = GoRouter.maybeOf(context);
+              if (router != null) {
+                router.push('/starter-pack?uri=${Uri.encodeComponent(pack.uri.toString())}');
+              }
+            },
+          ),
         );
       },
     );

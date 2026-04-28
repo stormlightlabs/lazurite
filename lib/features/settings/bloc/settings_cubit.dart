@@ -12,6 +12,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     AppThemeVariant? initialVariant,
     bool? initialUseSystemTheme,
     FeedLayout? initialFeedLayout,
+    bool? initialAnimationsEnabled,
     bool? initialSimulateOffline,
     int? initialThreadAutoCollapseDepth,
     String? initialConstellationUrl,
@@ -21,6 +22,7 @@ class SettingsCubit extends Cubit<SettingsState> {
            themeVariant: initialVariant ?? AppThemeVariant.dark,
            useSystemTheme: initialUseSystemTheme ?? false,
            feedLayout: initialFeedLayout ?? FeedLayout.card,
+           animationsEnabled: initialAnimationsEnabled ?? true,
            simulateOffline: initialSimulateOffline ?? false,
            threadAutoCollapseDepth: initialThreadAutoCollapseDepth,
            constellationUrl: initialConstellationUrl ?? 'https://constellation.microcosm.blue',
@@ -34,6 +36,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _keyUseSystemTheme = 'use_system_theme';
   static const String _keyFeedLayout = 'feed_layout';
   static const String _legacyKeyFeedArchitecture = 'feed_architecture';
+  static const String _keyAnimationsEnabled = 'animations_enabled';
   static const String _keySimulateOffline = 'simulate_offline';
   static const String _keyThreadAutoCollapseDepth = 'thread_auto_collapse_depth';
   static const String _keyConstellationUrl = 'constellation_url';
@@ -48,6 +51,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     final useSystemStr = await database.getSetting(_keyUseSystemTheme);
     final feedLayoutStr =
         await database.getSetting(_keyFeedLayout) ?? await database.getSetting(_legacyKeyFeedArchitecture);
+    final animationsEnabledStr = await database.getSetting(_keyAnimationsEnabled);
     final simulateOfflineStr = await database.getSetting(_keySimulateOffline);
     final threadAutoCollapseDepthStr = await database.getSetting(_keyThreadAutoCollapseDepth);
     final constellationUrlStr = await database.getSetting(_keyConstellationUrl);
@@ -61,6 +65,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         themeVariant: AppTheme.parseVariant(variantStr),
         useSystemTheme: useSystemStr == 'true',
         feedLayout: FeedLayout.fromString(feedLayoutStr),
+        animationsEnabled: animationsEnabledStr != 'false',
         simulateOffline: simulateOfflineStr == 'true',
         threadAutoCollapseDepth: int.tryParse(threadAutoCollapseDepthStr ?? ''),
         constellationUrl: constellationUrlStr ?? _defaultConstellationUrl,
@@ -96,6 +101,11 @@ class SettingsCubit extends Cubit<SettingsState> {
     await database.setSetting(_keyFeedLayout, layout.name);
     await database.deleteSetting(_legacyKeyFeedArchitecture);
     emit(state.copyWith(feedLayout: layout));
+  }
+
+  Future<void> setAnimationsEnabled(bool value) async {
+    await database.setSetting(_keyAnimationsEnabled, value.toString());
+    emit(state.copyWith(animationsEnabled: value));
   }
 
   Future<void> setSimulateOffline(bool value) async {

@@ -2,8 +2,11 @@ import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/theme/animation_tokens.dart';
+import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
@@ -15,6 +18,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actio
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
+import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 
 /// Returns the number of grid columns for [width] per the responsive
 /// breakpoints defined in the UI spec.
@@ -110,13 +114,20 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             itemBuilder: (context, index) =>
                 _FeedListView(feed: pinnedFeeds[index], key: ValueKey(pinnedFeeds[index].id)),
           ),
-          floatingActionButton: FloatingActionButton(
-            heroTag: 'home-compose-fab',
-            tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
-            onPressed: isOffline ? null : () => context.push('/compose'),
-            shape: const CircleBorder(),
-            child: const Icon(Icons.add),
-          ),
+          floatingActionButton:
+              FloatingActionButton(
+                heroTag: 'home-compose-fab',
+                tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
+                onPressed: isOffline ? null : () => context.push('/compose'),
+                shape: const CircleBorder(),
+                child: const Icon(Icons.add),
+              ).animateIfAllowed(
+                context,
+                effects: const [
+                  FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
+                  ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
+                ],
+              ),
         );
       },
     );
@@ -224,6 +235,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   bool _hasError = false;
   String? _errorMessage;
   final ScrollController _scrollController = ScrollController();
+  final Set<String> _seenPostUris = <String>{};
 
   @override
   bool get wantKeepAlive => true;
@@ -390,16 +402,21 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
 
     final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
 
-    PostCardWithActions buildCard(int index, PostCardVariant variant) {
+    Widget buildCard(int index, PostCardVariant variant) {
       final post = _posts[index];
-      return PostCardWithActions(
-        feedViewPost: post,
-        accountDid: accountDid,
-        variant: variant,
-        onDeleted: () {
-          final uri = post.post.uri.toString();
-          _setStateIfMounted(() => _posts.removeWhere((p) => p.post.uri.toString() == uri));
-        },
+      final postUri = post.post.uri.toString();
+      return StaggeredEntrance(
+        itemKey: postUri,
+        index: index,
+        seenKeys: _seenPostUris,
+        child: PostCardWithActions(
+          feedViewPost: post,
+          accountDid: accountDid,
+          variant: variant,
+          onDeleted: () {
+            _setStateIfMounted(() => _posts.removeWhere((p) => p.post.uri.toString() == postUri));
+          },
+        ),
       );
     }
 

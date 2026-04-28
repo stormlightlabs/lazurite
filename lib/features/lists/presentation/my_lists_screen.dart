@@ -1,15 +1,20 @@
 import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/theme/animation_tokens.dart';
+import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/widgets/create_edit_list_dialog.dart';
 import 'package:lazurite/features/lists/presentation/widgets/list_row_tile.dart';
+import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
+import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 
 class MyListsScreen extends StatelessWidget {
   const MyListsScreen({super.key});
@@ -33,6 +38,7 @@ class _MyListsView extends StatefulWidget {
 
 class _MyListsViewState extends State<_MyListsView> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  final Set<String> _seenListUris = <String>{};
 
   @override
   void initState() {
@@ -108,11 +114,18 @@ class _MyListsViewState extends State<_MyListsView> with SingleTickerProviderSta
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'my-lists-fab',
-        onPressed: () => _showCreateDialog(context),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton:
+          FloatingActionButton(
+            heroTag: 'my-lists-fab',
+            onPressed: () => _showCreateDialog(context),
+            child: const Icon(Icons.add),
+          ).animateIfAllowed(
+            context,
+            effects: const [
+              FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
+              ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
+            ],
+          ),
     );
   }
 
@@ -121,15 +134,23 @@ class _MyListsViewState extends State<_MyListsView> with SingleTickerProviderSta
       return const EmptyState(message: 'No lists yet', icon: Icons.list_alt_outlined);
     }
 
-    return RefreshIndicator(
+    return AnimatedRefreshIndicator(
       onRefresh: () => context.read<MyListsCubit>().refresh(),
       child: ListView.builder(
         itemCount: lists.length,
-        itemBuilder: (context, index) => ListRowTile(
-          key: ValueKey(lists[index].uri),
-          list: lists[index],
-          onTap: () => context.push('/list?uri=${Uri.encodeComponent(lists[index].uri.toString())}'),
-        ),
+        itemBuilder: (context, index) {
+          final list = lists[index];
+          return StaggeredEntrance(
+            itemKey: list.uri.toString(),
+            index: index,
+            seenKeys: _seenListUris,
+            child: ListRowTile(
+              key: ValueKey(list.uri),
+              list: list,
+              onTap: () => context.push('/list?uri=${Uri.encodeComponent(list.uri.toString())}'),
+            ),
+          );
+        },
       ),
     );
   }

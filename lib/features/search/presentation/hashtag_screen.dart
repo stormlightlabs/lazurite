@@ -3,8 +3,11 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/theme/animation_tokens.dart';
+import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
@@ -14,6 +17,8 @@ import 'package:lazurite/features/search/data/hashtag_utils.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
+import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
+import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
@@ -28,6 +33,7 @@ class HashtagScreen extends StatefulWidget {
 
 class _HashtagScreenState extends State<HashtagScreen> {
   final ScrollController _scrollController = ScrollController();
+  final Set<String> _seenPostUris = <String>{};
 
   @override
   void initState() {
@@ -142,6 +148,12 @@ class _HashtagScreenState extends State<HashtagScreen> {
             onPressed: state.isMissingTag ? null : () => _openHashtagJumpSheet(state),
             icon: const Icon(Icons.tag),
             label: const Text('Jump to hashtag'),
+          ).animateIfAllowed(
+            context,
+            effects: const [
+              FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
+              ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
+            ],
           );
         },
       ),
@@ -241,7 +253,7 @@ class _HashtagScreenState extends State<HashtagScreen> {
       return Center(child: Text('No posts found for #${state.tag}.'));
     }
 
-    return RefreshIndicator(
+    return AnimatedRefreshIndicator(
       onRefresh: () => context.read<HashtagCubit>().refreshCurrent(),
       child: ListView.builder(
         controller: _scrollController,
@@ -252,7 +264,13 @@ class _HashtagScreenState extends State<HashtagScreen> {
               child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
             );
           }
-          return _HashtagPostCard(post: timeline.posts[index]);
+          final post = timeline.posts[index];
+          return StaggeredEntrance(
+            itemKey: post.uri.toString(),
+            index: index,
+            seenKeys: _seenPostUris,
+            child: _HashtagPostCard(post: post),
+          );
         },
       ),
     );

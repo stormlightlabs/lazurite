@@ -3,10 +3,13 @@ import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/router/app_shell.dart';
+import 'package:lazurite/core/theme/animation_tokens.dart';
+import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/core/theme/color_filters.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/core/theme/spacing.dart';
@@ -67,6 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   late TabController _tabController;
   late bool _showSuggestedTab;
+  double _coverScrollOffset = 0;
 
   @override
   void initState() {
@@ -167,76 +171,101 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   if (_showSuggestedTab) _buildSuggestedFollowsTab(profile),
                 ];
 
-                return NestedScrollView(
-                  headerSliverBuilder: (context, innerBoxIsScrolled) {
-                    return [
-                      SliverAppBar(
-                        floating: true,
-                        pinned: true,
-                        snap: true,
-                        title: Text(_appBarTitle(profile)),
-                        leading: widget.showBackButton
-                            ? IconButton(
-                                icon: const Icon(Icons.arrow_back),
-                                onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
-                              )
-                            : const AppShellMenuButton(),
-                        actions: [
-                          if (profile != null && isOwnProfile)
+                return NotificationListener<ScrollUpdateNotification>(
+                  onNotification: (notification) {
+                    if (notification.metrics.axis != Axis.vertical) {
+                      return false;
+                    }
+                    final offset = notification.metrics.pixels;
+                    if ((offset - _coverScrollOffset).abs() >= 1) {
+                      setState(() => _coverScrollOffset = offset);
+                    }
+                    return false;
+                  },
+                  child: NestedScrollView(
+                    headerSliverBuilder: (context, innerBoxIsScrolled) {
+                      return [
+                        SliverAppBar(
+                          floating: true,
+                          pinned: true,
+                          snap: true,
+                          title: Text(_appBarTitle(profile)),
+                          leading: widget.showBackButton
+                              ? IconButton(
+                                  icon: const Icon(Icons.arrow_back),
+                                  onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
+                                )
+                              : const AppShellMenuButton(),
+                          actions: [
+                            if (profile != null && isOwnProfile)
+                              IconButton(
+                                key: const Key('profile_more_button'),
+                                icon: const Icon(Icons.more_vert),
+                                onPressed: () => _showOwnProfileMoreOptions(context, profile),
+                              ),
                             IconButton(
-                              key: const Key('profile_more_button'),
-                              icon: const Icon(Icons.more_vert),
-                              onPressed: () => _showOwnProfileMoreOptions(context, profile),
+                              icon: const Icon(Icons.settings_outlined),
+                              onPressed: () => context.go('/settings'),
                             ),
-                          IconButton(
-                            icon: const Icon(Icons.settings_outlined),
-                            onPressed: () => context.go('/settings'),
-                          ),
-                        ],
-                      ),
-                      SliverToBoxAdapter(child: _buildCoverSection(context, profile)),
-                      SliverToBoxAdapter(
-                        child: switch (profileState.status) {
-                          ProfileStatus.loading => const Padding(
-                            padding: AppInsets.allLg,
-                            child: Center(child: CircularProgressIndicator()),
-                          ),
-                          ProfileStatus.error => _buildProfileError(context, profileState.errorMessage),
-                          _ => _buildProfileSummary(context, profile, isOwnProfile),
-                        },
-                      ),
-                      SliverPersistentHeader(
-                        pinned: true,
-                        delegate: SliverTabBarDelegate(
-                          TabBar(
-                            controller: _tabController,
-                            tabs: [for (final label in _tabLabels) Tab(text: label)],
-                            onTap: (index) {
-                              if (index < _feedTabs.length) {
-                                _loadProfileAndFeed(filter: _feedTabs[index].filter);
-                              }
-                            },
-                            isScrollable: true,
-                            tabAlignment: TabAlignment.start,
-                            labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2.2),
-                            unselectedLabelStyle: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 2.2,
+                          ],
+                        ),
+                        SliverToBoxAdapter(child: _buildCoverSection(context, profile)),
+                        SliverToBoxAdapter(
+                          child: switch (profileState.status) {
+                            ProfileStatus.loading => const Padding(
+                              padding: AppInsets.allLg,
+                              child: Center(child: CircularProgressIndicator()),
                             ),
-                            indicatorWeight: 2,
+                            ProfileStatus.error => _buildProfileError(context, profileState.errorMessage),
+                            _ => _buildProfileSummary(context, profile, isOwnProfile),
+                          },
+                        ),
+                        SliverPersistentHeader(
+                          pinned: true,
+                          delegate: SliverTabBarDelegate(
+                            TabBar(
+                              controller: _tabController,
+                              tabs: [for (final label in _tabLabels) Tab(text: label)],
+                              onTap: (index) {
+                                if (index < _feedTabs.length) {
+                                  _loadProfileAndFeed(filter: _feedTabs[index].filter);
+                                }
+                              },
+                              isScrollable: true,
+                              tabAlignment: TabAlignment.start,
+                              labelStyle: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 2.2,
+                              ),
+                              unselectedLabelStyle: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 2.2,
+                              ),
+                              indicatorWeight: 2,
+                            ),
                           ),
                         ),
-                      ),
-                    ];
-                  },
-                  body: TabBarView(controller: _tabController, children: tabChildren),
+                      ];
+                    },
+                    body: TabBarView(controller: _tabController, children: tabChildren),
+                  ),
                 );
               },
             );
           },
         ),
-        floatingActionButton: _buildComposeFab(context),
+        floatingActionButton: AnimatedSwitcher(
+          duration: Anim.feedItem,
+          switchInCurve: Anim.enter,
+          switchOutCurve: Anim.exit,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(scale: animation, child: child),
+          ),
+          child: _buildComposeFab(context),
+        ),
       ),
     );
   }
@@ -274,11 +303,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             left: 0,
             right: 0,
             height: coverHeight,
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+            child: Transform.translate(
+              offset: Offset(0, -1.0 * (_coverScrollOffset * 0.5).clamp(0, coverHeight * 0.3).toDouble()),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+                ),
+                child: Opacity(opacity: 0.5, child: coverContent),
               ),
-              child: Opacity(opacity: 0.5, child: coverContent),
             ),
           ),
           Positioned(
@@ -655,11 +687,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return _SuggestedFollowsTab(actor: actor, onProfileTap: (target) => navigateToProfile(context, target.did));
   }
 
-  Widget? _buildComposeFab(BuildContext context) {
+  Widget _buildComposeFab(BuildContext context) {
     return BlocBuilder<ProfileBloc, ProfileState>(
       builder: (context, state) {
         final profile = state.profile;
-        if (profile == null) return const SizedBox.shrink();
+        if (profile == null) return const SizedBox.shrink(key: ValueKey('profile-compose-fab-empty'));
 
         final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
         final isOwnProfile = profile.did == currentUserDid;
@@ -667,12 +699,19 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
 
         return FloatingActionButton(
+          key: const ValueKey('profile-compose-fab'),
           heroTag: 'profile-compose-fab',
           tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
           onPressed: isOffline
               ? null
               : () => context.push('/compose', extra: ComposeRouteArgs(initialText: initialText)),
           child: const Icon(Icons.add),
+        ).animateIfAllowed(
+          context,
+          effects: const [
+            FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
+            ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
+          ],
         );
       },
     );

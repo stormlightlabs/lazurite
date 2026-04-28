@@ -1,61 +1,57 @@
 import 'dart:async';
 
 import 'package:atproto_core/atproto_core.dart' show AtUri;
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:bluesky/bluesky.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
-import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/core/router/app_shell.dart';
-import 'package:lazurite/features/auth/presentation/login_screen.dart';
+import 'package:lazurite/core/router/fade_through_page.dart';
 import 'package:lazurite/features/alerts/presentation/alerts_screen.dart';
+import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/presentation/login_screen.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/compose/presentation/compose_screen.dart';
 import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
-import 'package:lazurite/features/feed/presentation/media/image_viewer_screen.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
-import 'package:lazurite/features/feed/presentation/post_thread_screen.dart';
+import 'package:lazurite/features/feed/presentation/media/image_viewer_screen.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_screen.dart';
-import 'package:lazurite/features/logs/presentation/logs_screen.dart';
-import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
-import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
-import 'package:lazurite/features/notifications/data/notification_repository.dart';
-import 'package:lazurite/features/profile/presentation/profile_screen.dart';
-import 'package:lazurite/features/profile/presentation/follow_audit_screen.dart';
+import 'package:lazurite/features/feed/presentation/post_thread_screen.dart';
 import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
-import 'package:lazurite/features/search/presentation/search_screen.dart';
-import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
-import 'package:lazurite/features/search/data/hashtag_utils.dart';
-import 'package:lazurite/features/search/data/search_repository.dart';
-import 'package:lazurite/features/search/presentation/hashtag_screen.dart';
-import 'package:lazurite/features/messages/bloc/message_bloc.dart';
-import 'package:lazurite/features/messages/data/convo_repository.dart';
-import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
-import 'package:lazurite/features/messages/presentation/message_thread_screen.dart';
 import 'package:lazurite/features/lists/bloc/list_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/list_detail_screen.dart';
 import 'package:lazurite/features/lists/presentation/list_members_screen.dart';
 import 'package:lazurite/features/lists/presentation/my_lists_screen.dart';
+import 'package:lazurite/features/logs/presentation/logs_screen.dart';
+import 'package:lazurite/features/messages/bloc/message_bloc.dart';
+import 'package:lazurite/features/messages/data/convo_repository.dart';
+import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
+import 'package:lazurite/features/messages/presentation/message_thread_screen.dart';
 import 'package:lazurite/features/moderation/presentation/screens/labeler_detail_screen.dart';
 import 'package:lazurite/features/moderation/presentation/screens/moderation_settings_screen.dart';
-import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
-import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
-import 'package:lazurite/features/starter_packs/presentation/actor_starter_packs_screen.dart';
-import 'package:lazurite/features/starter_packs/presentation/create_edit_starter_pack_screen.dart';
-import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
-import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
+import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
+import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
+import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/profile/cubit/follow_audit_cubit.dart';
-import 'package:lazurite/features/profile/data/profile_context_repository.dart';
+import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
 import 'package:lazurite/features/profile/data/follow_audit_repository.dart';
+import 'package:lazurite/features/profile/data/profile_context_repository.dart';
+import 'package:lazurite/features/profile/presentation/follow_audit_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
-import 'package:lazurite/core/network/constellation_client.dart';
+import 'package:lazurite/features/profile/presentation/profile_screen.dart';
+import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
+import 'package:lazurite/features/search/data/hashtag_utils.dart';
+import 'package:lazurite/features/search/data/search_repository.dart';
+import 'package:lazurite/features/search/presentation/hashtag_screen.dart';
+import 'package:lazurite/features/search/presentation/search_screen.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/cubit/video_upload_limits_cubit.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
@@ -64,6 +60,11 @@ import 'package:lazurite/features/settings/presentation/privacy_policy_screen.da
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 import 'package:lazurite/features/settings/presentation/terms_of_service_screen.dart';
 import 'package:lazurite/features/settings/presentation/video_upload_limits_screen.dart';
+import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
+import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
+import 'package:lazurite/features/starter_packs/presentation/actor_starter_packs_screen.dart';
+import 'package:lazurite/features/starter_packs/presentation/create_edit_starter_pack_screen.dart';
+import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
 
 ComposeRouteArgs parseComposeRouteExtra(Object? extra) {
   if (extra is ComposeRouteArgs) {
@@ -128,6 +129,9 @@ class AppRouter {
   final GlobalKey<NavigatorState> _notificationsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'notifications');
   final GlobalKey<NavigatorState> _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
 
+  Page<dynamic> _page(BuildContext context, GoRouterState state, Widget child) =>
+      buildFadeThroughPage(context: context, state: state, child: child);
+
   GoRouter get router => GoRouter(
     navigatorKey: _rootNavigatorKey,
     refreshListenable: GoRouterRefreshStream(authBloc.stream),
@@ -150,36 +154,40 @@ class AppRouter {
       return null;
     },
     routes: [
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/terms', builder: (context, state) => const TermsOfServiceScreen()),
-      GoRoute(path: '/privacy', builder: (context, state) => const PrivacyPolicyScreen()),
+      GoRoute(path: '/login', pageBuilder: (context, state) => _page(context, state, const LoginScreen())),
+      GoRoute(path: '/terms', pageBuilder: (context, state) => _page(context, state, const TermsOfServiceScreen())),
+      GoRoute(path: '/privacy', pageBuilder: (context, state) => _page(context, state, const PrivacyPolicyScreen())),
       GoRoute(path: '/notifications', redirect: (_, _) => '/alerts'),
       GoRoute(path: '/messages', redirect: (_, _) => '/alerts/messages'),
       GoRoute(
         path: '/compose',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final args = parseComposeRouteExtra(state.extra);
-          return BlocProvider(
-            create: (_) => ComposeBloc(
-              composeRepository: ComposeRepository(bluesky: context.read<Bluesky>()),
-              database: context.read<AppDatabase>(),
-              accountDid: context.read<String>(),
-            ),
-            child: ComposeScreen(
-              replyParentUri: args.replyParentUri,
-              replyParentCid: args.replyParentCid,
-              replyRootUri: args.replyRootUri,
-              replyRootCid: args.replyRootCid,
-              replyAuthorHandle: args.replyAuthorHandle,
-              quoteUri: args.quoteUri,
-              quoteCid: args.quoteCid,
-              quoteAuthorHandle: args.quoteAuthorHandle,
-              draftId: args.draftId,
-              initialText: args.initialText,
-              editPostUri: args.editPostUri,
-              editPostCid: args.editPostCid,
-              editRecord: args.editRecord,
+          return _page(
+            context,
+            state,
+            BlocProvider(
+              create: (_) => ComposeBloc(
+                composeRepository: ComposeRepository(bluesky: context.read<Bluesky>()),
+                database: context.read<AppDatabase>(),
+                accountDid: context.read<String>(),
+              ),
+              child: ComposeScreen(
+                replyParentUri: args.replyParentUri,
+                replyParentCid: args.replyParentCid,
+                replyRootUri: args.replyRootUri,
+                replyRootCid: args.replyRootCid,
+                replyAuthorHandle: args.replyAuthorHandle,
+                quoteUri: args.quoteUri,
+                quoteCid: args.quoteCid,
+                quoteAuthorHandle: args.quoteAuthorHandle,
+                draftId: args.draftId,
+                initialText: args.initialText,
+                editPostUri: args.editPostUri,
+                editPostCid: args.editPostCid,
+                editRecord: args.editRecord,
+              ),
             ),
           );
         },
@@ -187,85 +195,97 @@ class AppRouter {
       GoRoute(
         path: '/post',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final uri = state.uri.queryParameters['uri'] ?? '';
-          return PostThreadScreen(postUri: Uri.decodeComponent(uri));
+          return _page(context, state, PostThreadScreen(postUri: Uri.decodeComponent(uri)));
         },
       ),
       GoRoute(
         path: '/hashtag',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final normalizedTag = normalizeHashtag(state.uri.queryParameters['tag'] ?? '');
-          return BlocProvider(
-            key: ValueKey('hashtag-$normalizedTag'),
-            create: (_) => HashtagCubit(searchRepository: context.read<SearchRepository>(), tag: normalizedTag),
-            child: HashtagScreen(tag: normalizedTag),
+          return _page(
+            context,
+            state,
+            BlocProvider(
+              key: ValueKey('hashtag-$normalizedTag'),
+              create: (_) => HashtagCubit(searchRepository: context.read<SearchRepository>(), tag: normalizedTag),
+              child: HashtagScreen(tag: normalizedTag),
+            ),
           );
         },
       ),
       GoRoute(
         path: '/images',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final args = state.extra as ImageViewerRouteArgs;
-          return ImageViewerScreen(args: args);
+          return _page(context, state, ImageViewerScreen(args: args));
         },
       ),
       GoRoute(
         path: '/video',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final args = state.extra as VideoPlayerRouteArgs;
-          return VideoPlayerScreen(args: args);
+          return _page(context, state, VideoPlayerScreen(args: args));
         },
       ),
       GoRoute(
         path: '/saved',
-        builder: (context, state) => SavedPostsScreen(accountDid: context.read<String>()),
+        pageBuilder: (context, state) => _page(context, state, SavedPostsScreen(accountDid: context.read<String>())),
       ),
-      GoRoute(path: '/lists', builder: (context, state) => const MyListsScreen()),
+      GoRoute(path: '/lists', pageBuilder: (context, state) => _page(context, state, const MyListsScreen())),
       GoRoute(
         path: '/create-starter-pack',
-        builder: (context, state) {
-          return BlocProvider(
-            create: (_) => StarterPackBloc(starterPackRepository: context.read<StarterPackRepository>()),
-            child: CreateStarterPackScreen(userDid: context.read<String>()),
+        pageBuilder: (context, state) {
+          return _page(
+            context,
+            state,
+            BlocProvider(
+              create: (_) => StarterPackBloc(starterPackRepository: context.read<StarterPackRepository>()),
+              child: CreateStarterPackScreen(userDid: context.read<String>()),
+            ),
           );
         },
       ),
       GoRoute(
         path: '/starter-pack',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final uriStr = Uri.decodeComponent(state.uri.queryParameters['uri'] ?? '');
           final packUri = AtUri.parse(uriStr);
-          return StarterPackDetailScreen(packUri: packUri);
+          return _page(context, state, StarterPackDetailScreen(packUri: packUri));
         },
       ),
       GoRoute(
         path: '/starter-packs',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final actor = state.uri.queryParameters['actor'] ?? '';
-          return ActorStarterPacksScreen(actor: actor);
+          return _page(context, state, ActorStarterPacksScreen(actor: actor));
         },
       ),
       GoRoute(
         path: '/list',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final uriStr = Uri.decodeComponent(state.uri.queryParameters['uri'] ?? '');
           final listUri = AtUri.parse(uriStr);
-          return ListDetailScreen(listUri: listUri);
+          return _page(context, state, ListDetailScreen(listUri: listUri));
         },
         routes: [
           GoRoute(
             path: 'members',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final uriStr = Uri.decodeComponent(state.uri.queryParameters['uri'] ?? '');
               final listUri = AtUri.parse(uriStr);
-              return BlocProvider(
-                create: (_) =>
-                    ListBloc(listRepository: context.read<ListRepository>())..add(ListRequested(listUri: listUri)),
-                child: ListMembersScreen(listUri: listUri),
+              return _page(
+                context,
+                state,
+                BlocProvider(
+                  create: (_) =>
+                      ListBloc(listRepository: context.read<ListRepository>())..add(ListRequested(listUri: listUri)),
+                  child: ListMembersScreen(listUri: listUri),
+                ),
               );
             },
           ),
@@ -273,7 +293,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/profile-context',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final did = state.uri.queryParameters['did'] ?? '';
           final handle = state.uri.queryParameters['handle'] ?? '';
           final isOwnProfile = did == context.read<String>();
@@ -283,9 +303,13 @@ class AppRouter {
             publicBluesky: Bluesky.anonymous(service: profileContextPublicAppViewService),
             constellationClient: ConstellationClient(baseUrl: constellationUrl),
           );
-          return BlocProvider(
-            create: (_) => ProfileContextCubit(repository: repository, did: did, isOwnProfile: isOwnProfile),
-            child: ProfileContextScreen(handle: handle),
+          return _page(
+            context,
+            state,
+            BlocProvider(
+              create: (_) => ProfileContextCubit(repository: repository, did: did, isOwnProfile: isOwnProfile),
+              child: ProfileContextScreen(handle: handle),
+            ),
           );
         },
       ),
@@ -322,45 +346,60 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/',
-                builder: (context, state) => const HomeFeedScreen(),
+                pageBuilder: (context, state) => _page(context, state, const HomeFeedScreen()),
                 routes: [
-                  GoRoute(path: 'feeds', builder: (context, state) => const FeedManagementScreen()),
+                  GoRoute(
+                    path: 'feeds',
+                    pageBuilder: (context, state) => _page(context, state, const FeedManagementScreen()),
+                  ),
                   GoRoute(
                     path: 'settings',
-                    builder: (context, state) => const SettingsScreen(),
+                    pageBuilder: (context, state) => _page(context, state, const SettingsScreen()),
                     routes: [
                       GoRoute(
                         path: 'moderation',
-                        builder: (context, state) => const ModerationSettingsScreen(),
+                        pageBuilder: (context, state) => _page(context, state, const ModerationSettingsScreen()),
                         routes: [
                           GoRoute(
                             path: 'detail',
-                            builder: (context, state) =>
-                                LabelerDetailScreen(did: state.uri.queryParameters['did'] ?? ''),
+                            pageBuilder: (context, state) =>
+                                _page(context, state, LabelerDetailScreen(did: state.uri.queryParameters['did'] ?? '')),
                           ),
                         ],
                       ),
-                      GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
-                      GoRoute(path: 'logs', builder: (context, state) => const LogsScreen()),
+                      GoRoute(
+                        path: 'about',
+                        pageBuilder: (context, state) => _page(context, state, const AboutScreen()),
+                      ),
+                      GoRoute(path: 'logs', pageBuilder: (context, state) => _page(context, state, const LogsScreen())),
                       GoRoute(
                         path: 'clean-follows',
-                        builder: (context, state) => BlocProvider(
-                          create: (_) => FollowAuditCubit(
-                            repository: FollowAuditRepository(bluesky: context.read<Bluesky>()),
-                            ownDid: context.read<String>(),
+                        pageBuilder: (context, state) => _page(
+                          context,
+                          state,
+                          BlocProvider(
+                            create: (_) => FollowAuditCubit(
+                              repository: FollowAuditRepository(bluesky: context.read<Bluesky>()),
+                              ownDid: context.read<String>(),
+                            ),
+                            child: const FollowAuditScreen(),
                           ),
-                          child: const FollowAuditScreen(),
                         ),
                       ),
                       GoRoute(
                         path: 'devtools',
-                        builder: (context, state) => DevToolsScreen(initialQuery: state.uri.queryParameters['query']),
+                        pageBuilder: (context, state) =>
+                            _page(context, state, DevToolsScreen(initialQuery: state.uri.queryParameters['query'])),
                       ),
                       GoRoute(
                         path: 'video-limits',
-                        builder: (context, state) => BlocProvider(
-                          create: (_) => VideoUploadLimitsCubit(repository: context.read<VideoRepository>()),
-                          child: const VideoUploadLimitsScreen(),
+                        pageBuilder: (context, state) => _page(
+                          context,
+                          state,
+                          BlocProvider(
+                            create: (_) => VideoUploadLimitsCubit(repository: context.read<VideoRepository>()),
+                            child: const VideoUploadLimitsScreen(),
+                          ),
                         ),
                       ),
                     ],
@@ -371,31 +410,41 @@ class AppRouter {
           ),
           StatefulShellBranch(
             navigatorKey: _searchNavigatorKey,
-            routes: [GoRoute(path: '/search', builder: (context, state) => const SearchScreen())],
+            routes: [
+              GoRoute(path: '/search', pageBuilder: (context, state) => _page(context, state, const SearchScreen())),
+            ],
           ),
           StatefulShellBranch(
             navigatorKey: _notificationsNavigatorKey,
             routes: [
               GoRoute(
                 path: '/alerts',
-                builder: (context, state) => _buildAlertsRoute(context, const AlertsScreen()),
+                pageBuilder: (context, state) =>
+                    _page(context, state, _buildAlertsRoute(context, const AlertsScreen())),
                 routes: [
                   GoRoute(
                     path: 'messages',
-                    builder: (context, state) =>
-                        _buildAlertsRoute(context, const AlertsScreen(initialTab: AlertsTab.messages)),
+                    pageBuilder: (context, state) => _page(
+                      context,
+                      state,
+                      _buildAlertsRoute(context, const AlertsScreen(initialTab: AlertsTab.messages)),
+                    ),
                     routes: [
                       GoRoute(
                         path: ':id',
-                        builder: (context, state) {
+                        pageBuilder: (context, state) {
                           final convoId = state.pathParameters['id']!;
                           final args = state.extra as MessageThreadRouteArgs?;
-                          return BlocProvider(
-                            create: (_) => MessageBloc(
-                              convoRepository: context.read<ConvoRepository>(),
-                              currentUserDid: context.read<String>(),
+                          return _page(
+                            context,
+                            state,
+                            BlocProvider(
+                              create: (_) => MessageBloc(
+                                convoRepository: context.read<ConvoRepository>(),
+                                currentUserDid: context.read<String>(),
+                              ),
+                              child: MessageThreadScreen(convoId: convoId, title: args?.title ?? 'Conversation'),
                             ),
-                            child: MessageThreadScreen(convoId: convoId, title: args?.title ?? 'Conversation'),
                           );
                         },
                       ),
@@ -403,8 +452,11 @@ class AppRouter {
                   ),
                   GoRoute(
                     path: 'requests',
-                    builder: (context, state) =>
-                        _buildAlertsRoute(context, const AlertsScreen(initialTab: AlertsTab.requests)),
+                    pageBuilder: (context, state) => _page(
+                      context,
+                      state,
+                      _buildAlertsRoute(context, const AlertsScreen(initialTab: AlertsTab.requests)),
+                    ),
                   ),
                 ],
               ),
@@ -415,12 +467,15 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/profile',
-                builder: (context, state) => const ProfileScreen(),
+                pageBuilder: (context, state) => _page(context, state, const ProfileScreen()),
                 routes: [
                   GoRoute(
                     path: 'view',
-                    builder: (context, state) =>
-                        ProfileScreen(actor: state.uri.queryParameters['actor'], showBackButton: true),
+                    pageBuilder: (context, state) => _page(
+                      context,
+                      state,
+                      ProfileScreen(actor: state.uri.queryParameters['actor'], showBackButton: true),
+                    ),
                   ),
                 ],
               ),

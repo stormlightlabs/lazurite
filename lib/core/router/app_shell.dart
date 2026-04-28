@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/theme/animation_tokens.dart';
+import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/features/account/presentation/account_switcher_sheet.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
@@ -85,31 +88,87 @@ class _AppShellState extends State<AppShell> {
   }
 
   List<Widget> get _destinations => [
-    NavigationDestination(
-      icon: const Icon(Icons.home_outlined),
-      selectedIcon: Transform.scale(scale: 1.15, child: const Icon(Icons.home)),
+    const NavigationDestination(
+      icon: _AnimatedNavIcon(selected: false, outlined: Icons.home_outlined, filled: Icons.home),
+      selectedIcon: _AnimatedNavIcon(selected: true, outlined: Icons.home_outlined, filled: Icons.home),
       label: 'HOME',
     ),
-    NavigationDestination(
-      icon: const Icon(Icons.search_outlined),
-      selectedIcon: Transform.scale(scale: 1.15, child: const Icon(Icons.search)),
+    const NavigationDestination(
+      icon: _AnimatedNavIcon(selected: false, outlined: Icons.search_outlined, filled: Icons.search),
+      selectedIcon: _AnimatedNavIcon(selected: true, outlined: Icons.search_outlined, filled: Icons.search),
       label: 'SEARCH',
     ),
-    NavigationDestination(
-      icon: const _NotificationDestinationIcon(selected: false),
-      selectedIcon: Transform.scale(scale: 1.15, child: const _NotificationDestinationIcon(selected: true)),
+    const NavigationDestination(
+      icon: _AnimatedNotificationNavIcon(selected: false),
+      selectedIcon: _AnimatedNotificationNavIcon(selected: true),
       label: 'ALERTS',
     ),
-    NavigationDestination(
-      icon: const Icon(Icons.person_outline),
-      selectedIcon: Transform.scale(scale: 1.15, child: const Icon(Icons.person)),
+    const NavigationDestination(
+      icon: _AnimatedNavIcon(selected: false, outlined: Icons.person_outline, filled: Icons.person),
+      selectedIcon: _AnimatedNavIcon(selected: true, outlined: Icons.person_outline, filled: Icons.person),
       label: 'PROFILE',
     ),
   ];
 }
 
+class _AnimatedNavIcon extends StatelessWidget {
+  const _AnimatedNavIcon({required this.selected, required this.outlined, required this.filled});
+
+  final bool selected;
+  final IconData outlined;
+  final IconData filled;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = Icon(selected ? filled : outlined, key: ValueKey(selected), size: selected ? 26 : 24);
+    final transitioned = AnimatedSwitcher(
+      duration: Anim.fast,
+      switchInCurve: Anim.enter,
+      switchOutCurve: Anim.exit,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(scale: animation, child: child),
+      ),
+      child: icon,
+    );
+
+    return transitioned.animateIfAllowed(
+      context,
+      effects: selected
+          ? const [ScaleEffect(begin: Offset(1, 1), end: Offset(1.15, 1.15), duration: Anim.fast, curve: Anim.enter)]
+          : const [],
+    );
+  }
+}
+
+class _AnimatedNotificationNavIcon extends StatelessWidget {
+  const _AnimatedNotificationNavIcon({required this.selected});
+
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = _NotificationDestinationIcon(selected: selected, key: ValueKey(selected));
+    return AnimatedSwitcher(
+      duration: Anim.fast,
+      switchInCurve: Anim.enter,
+      switchOutCurve: Anim.exit,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(scale: animation, child: child),
+      ),
+      child: icon,
+    ).animateIfAllowed(
+      context,
+      effects: selected
+          ? const [ScaleEffect(begin: Offset(1, 1), end: Offset(1.15, 1.15), duration: Anim.fast, curve: Anim.enter)]
+          : const [],
+    );
+  }
+}
+
 class _NotificationDestinationIcon extends StatelessWidget {
-  const _NotificationDestinationIcon({required this.selected});
+  const _NotificationDestinationIcon({super.key, required this.selected});
 
   final bool selected;
 

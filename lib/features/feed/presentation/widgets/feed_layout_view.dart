@@ -4,6 +4,7 @@ import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
+import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 
 const double _gridSpacing = 1;
 const double _gridCardChromeHeight = 160;
@@ -54,7 +55,7 @@ class FeedLayoutView extends StatelessWidget {
     }
     final tileWidth = (width - ((columns - 1) * _gridSpacing)) / columns;
 
-    return RefreshIndicator(
+    return AnimatedRefreshIndicator(
       onRefresh: onRefresh,
       child: CustomScrollView(
         controller: scrollController,
@@ -80,7 +81,7 @@ class FeedLayoutView extends StatelessWidget {
   }
 
   Widget _buildSingleColumnGrid(BuildContext context) {
-    return RefreshIndicator(
+    return AnimatedRefreshIndicator(
       onRefresh: onRefresh,
       child: CustomScrollView(
         controller: scrollController,
@@ -105,7 +106,7 @@ class FeedLayoutView extends StatelessWidget {
   }
 
   Widget _buildLinear(BuildContext context) {
-    return RefreshIndicator(
+    return AnimatedRefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.builder(
         controller: scrollController,

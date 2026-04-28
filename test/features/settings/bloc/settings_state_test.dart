@@ -82,6 +82,23 @@ void main() {
       expect(state1, isNot(equals(state2)));
     });
 
+    test('inequality when animationsEnabled differs', () {
+      const state1 = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        animationsEnabled: true,
+      );
+      const state2 = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        animationsEnabled: false,
+      );
+
+      expect(state1, isNot(equals(state2)));
+    });
+
     test('inequality when simulateOffline differs', () {
       const state1 = SettingsState(
         themePalette: AppThemePalette.oxocarbon,
@@ -128,6 +145,7 @@ void main() {
         themeVariant: AppThemeVariant.light,
         useSystemTheme: true,
         feedLayout: FeedLayout.compact,
+        animationsEnabled: false,
         simulateOffline: true,
         threadAutoCollapseDepth: 3,
       );
@@ -136,6 +154,7 @@ void main() {
       expect(updated.themeVariant, AppThemeVariant.light);
       expect(updated.useSystemTheme, true);
       expect(updated.feedLayout, FeedLayout.compact);
+      expect(updated.animationsEnabled, false);
       expect(updated.simulateOffline, true);
       expect(updated.threadAutoCollapseDepth, 3);
       expect(original.themePalette, AppThemePalette.oxocarbon);
@@ -147,6 +166,7 @@ void main() {
         themeVariant: AppThemeVariant.light,
         useSystemTheme: true,
         feedLayout: FeedLayout.compact,
+        animationsEnabled: false,
         simulateOffline: true,
         threadAutoCollapseDepth: 4,
       );
@@ -157,6 +177,7 @@ void main() {
       expect(updated.themeVariant, AppThemeVariant.light);
       expect(updated.useSystemTheme, true);
       expect(updated.feedLayout, FeedLayout.compact);
+      expect(updated.animationsEnabled, false);
       expect(updated.simulateOffline, true);
       expect(updated.threadAutoCollapseDepth, 4);
     });
@@ -180,6 +201,7 @@ void main() {
         themeVariant: AppThemeVariant.light,
         useSystemTheme: true,
         feedLayout: FeedLayout.compact,
+        animationsEnabled: false,
         simulateOffline: true,
         threadAutoCollapseDepth: 6,
       );
@@ -188,6 +210,7 @@ void main() {
       expect(state.props, contains(AppThemeVariant.light));
       expect(state.props, contains(true));
       expect(state.props, contains(FeedLayout.compact));
+      expect(state.props, contains(false));
       expect(state.props, contains(true));
       expect(state.props, contains(6));
     });
@@ -208,6 +231,15 @@ void main() {
         useSystemTheme: false,
       );
       expect(state.simulateOffline, isFalse);
+    });
+
+    test('defaults animationsEnabled to true', () {
+      const state = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+      );
+      expect(state.animationsEnabled, isTrue);
     });
 
     test('defaults threadAutoCollapseDepth to null', () {

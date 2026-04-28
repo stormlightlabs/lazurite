@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/theme/animation_tokens.dart';
+import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
+import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
+import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 
 class ActorStarterPacksScreen extends StatelessWidget {
   const ActorStarterPacksScreen({super.key, required this.actor});
@@ -24,6 +29,7 @@ class _ActorStarterPacksView extends StatelessWidget {
   const _ActorStarterPacksView({required this.actor});
 
   final String actor;
+  static final Set<String> _seenPackUris = <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +46,12 @@ class _ActorStarterPacksView extends StatelessWidget {
               onPressed: () => context.push('/create-starter-pack'),
               tooltip: 'Create starter pack',
               child: const Icon(Icons.add),
+            ).animateIfAllowed(
+              context,
+              effects: const [
+                FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
+                ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
+              ],
             )
           : null,
       body: BlocBuilder<ActorStarterPacksCubit, ActorStarterPacksState>(
@@ -68,7 +80,7 @@ class _ActorStarterPacksView extends StatelessWidget {
             return const Center(child: Text('No starter packs yet'));
           }
 
-          return RefreshIndicator(
+          return AnimatedRefreshIndicator(
             onRefresh: () => context.read<ActorStarterPacksCubit>().refresh(),
             child: NotificationListener<ScrollNotification>(
               onNotification: (notification) {
@@ -91,10 +103,15 @@ class _ActorStarterPacksView extends StatelessWidget {
                   }
 
                   final pack = state.starterPacks[index];
-                  return StarterPackCard(
-                    key: ValueKey(pack.uri),
-                    pack: pack,
-                    onTap: () => context.push('/starter-pack?uri=${Uri.encodeComponent(pack.uri.toString())}'),
+                  return StaggeredEntrance(
+                    itemKey: pack.uri.toString(),
+                    index: index,
+                    seenKeys: _seenPackUris,
+                    child: StarterPackCard(
+                      key: ValueKey(pack.uri),
+                      pack: pack,
+                      onTap: () => context.push('/starter-pack?uri=${Uri.encodeComponent(pack.uri.toString())}'),
+                    ),
                   );
                 },
               ),

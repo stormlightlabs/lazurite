@@ -70,3 +70,8 @@ feature parity with the official app.
 3. Lists
 4. Starter Packs
 5. Download images & videos
+
+---
+
+- Last read position
+- Autothreading of posts over char limit; splitting posts

@@ -286,6 +286,16 @@ class SettingsScreen extends StatelessWidget {
                 labelBuilder: (depth) => depth == null ? 'Off' : 'Depth $depth',
                 onChanged: settingsCubit.setThreadAutoCollapseDepth,
               ),
+              const Divider(height: 1),
+              _SettingsTile(
+                icon: Icons.motion_photos_off_outlined,
+                title: 'Animations',
+                subtitle: 'Turn off non-essential motion effects',
+                trailing: Switch.adaptive(
+                  value: state.animationsEnabled,
+                  onChanged: settingsCubit.setAnimationsEnabled,
+                ),
+              ),
             ],
           ),
         );

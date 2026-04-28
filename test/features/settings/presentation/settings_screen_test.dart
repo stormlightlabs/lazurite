@@ -117,6 +117,7 @@ void main() {
     expect(find.text('LAYOUT'), findsOneWidget);
     expect(find.text('Feed Layout'), findsOneWidget);
     expect(find.text('Thread Auto-Collapse'), findsOneWidget);
+    expect(find.text('Animations'), findsOneWidget);
   });
 
   testWidgets('shows the AT Protocol connection card for the authenticated account', (tester) async {

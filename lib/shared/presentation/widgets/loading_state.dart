@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/shared/presentation/widgets/shimmer_skeleton.dart';
 
 class LoadingState extends StatelessWidget {
   const LoadingState({super.key, this.message, this.padding = const EdgeInsets.all(24)});
@@ -14,7 +15,12 @@ class LoadingState extends StatelessWidget {
         padding: padding,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [const CircularProgressIndicator(), ..._message(message, theme.textTheme, theme.colorScheme)],
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            const _LoadingSkeleton(),
+            ..._message(message, theme.textTheme, theme.colorScheme),
+          ],
         ),
       ),
     );
@@ -30,4 +36,22 @@ class LoadingState extends StatelessWidget {
             style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ];
+}
+
+class _LoadingSkeleton extends StatelessWidget {
+  const _LoadingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 220,
+      child: Column(
+        children: [
+          ShimmerSkeletonLine(width: 220, height: 12),
+          SizedBox(height: 8),
+          ShimmerSkeletonLine(width: 168, height: 12),
+        ],
+      ),
+    );
+  }
 }

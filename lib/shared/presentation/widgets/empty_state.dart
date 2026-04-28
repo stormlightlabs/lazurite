@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lazurite/core/theme/animation_tokens.dart';
+import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class EmptyState extends StatelessWidget {
@@ -21,22 +24,34 @@ class EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
     final textTheme = context.textTheme;
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 48, color: colorScheme.outline),
+        const SizedBox(height: 12),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+        ..._subtitle(subtitle, textTheme, colorScheme),
+        ..._action(action),
+      ],
+    );
 
     return Center(
       child: Padding(
         padding: padding,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 48, color: colorScheme.outline),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+        child: content.animateIfAllowed(
+          context,
+          effects: const [
+            FadeEffect(duration: Anim.screenTransition, curve: Anim.enter),
+            ScaleEffect(
+              begin: Offset(0.95, 0.95),
+              end: Offset(1, 1),
+              duration: Anim.screenTransition,
+              curve: Anim.enter,
             ),
-            ..._subtitle(subtitle, textTheme, colorScheme),
-            ..._action(action),
           ],
         ),
       ),

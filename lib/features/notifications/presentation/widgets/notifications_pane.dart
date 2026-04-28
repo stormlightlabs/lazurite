@@ -6,9 +6,11 @@ import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/presentation/widgets/grouped_notification_list_item.dart';
 import 'package:lazurite/features/notifications/presentation/widgets/notification_list_item.dart';
+import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
+import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class NotificationsPane extends StatefulWidget {
@@ -20,6 +22,7 @@ class NotificationsPane extends StatefulWidget {
 
 class _NotificationsPaneState extends State<NotificationsPane> {
   final ScrollController _scrollController = ScrollController();
+  final Set<String> _seenNotificationKeys = <String>{};
 
   @override
   void initState() {
@@ -85,7 +88,7 @@ class _NotificationsPaneState extends State<NotificationsPane> {
 
         final groupedNotifications = _groupNotificationsByDay(state.notifications);
 
-        return RefreshIndicator(
+        return AnimatedRefreshIndicator(
           onRefresh: _onRefresh,
           child: ListView.builder(
             controller: _scrollController,
@@ -96,10 +99,11 @@ class _NotificationsPaneState extends State<NotificationsPane> {
               if (item is String) {
                 return _DayHeader(title: item);
               } else if (item is NotificationGroup) {
-                if (item.count == 1) {
-                  return NotificationListItem(notification: item.latest);
-                }
-                return GroupedNotificationListItem(group: item);
+                final key = '${item.latest.uri}:${item.latest.indexedAt.toIso8601String()}';
+                final child = item.count == 1
+                    ? NotificationListItem(notification: item.latest)
+                    : GroupedNotificationListItem(group: item);
+                return StaggeredEntrance(itemKey: key, index: index, seenKeys: _seenNotificationKeys, child: child);
               } else if (item == null) {
                 return const Center(
                   child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
