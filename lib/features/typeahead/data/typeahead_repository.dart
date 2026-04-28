@@ -10,14 +10,20 @@ import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 class TypeaheadRepository {
   TypeaheadRepository({
     dynamic bluesky,
-    required String provider,
+    String? provider,
+    String Function()? providerResolver,
     ModerationService? moderationService,
     http.Client? httpClient,
   }) : _bluesky = bluesky,
-       _provider = provider.trim().toLowerCase(),
+       _provider = provider?.trim().toLowerCase(),
+       _providerResolver = providerResolver,
        _moderationService = moderationService,
        _httpClient = httpClient ?? http.Client() {
-    if (!_isSupportedProvider(_provider)) {
+    if (_provider == null && _providerResolver == null) {
+      throw ArgumentError('Either a static provider or providerResolver must be supplied.');
+    }
+
+    if (_provider != null && !_isSupportedProvider(_provider)) {
       throw ArgumentError.value(provider, 'provider', 'Supported providers are "bluesky" and "community".');
     }
   }
@@ -29,7 +35,8 @@ class TypeaheadRepository {
   static const String _communityPath = '/xrpc/app.bsky.actor.searchActorsTypeahead';
 
   final dynamic _bluesky;
-  final String _provider;
+  final String? _provider;
+  final String Function()? _providerResolver;
   final ModerationService? _moderationService;
   final http.Client _httpClient;
 
@@ -40,8 +47,9 @@ class TypeaheadRepository {
     }
 
     final normalizedLimit = limit.clamp(1, 100);
+    final provider = _resolveProvider();
 
-    if (_provider == blueskyProvider) {
+    if (provider == blueskyProvider) {
       return _searchBluesky(query: normalizedQuery, limit: normalizedLimit);
     }
 
@@ -60,6 +68,26 @@ class TypeaheadRepository {
 
       return _searchBluesky(query: normalizedQuery, limit: normalizedLimit);
     }
+  }
+
+  String _resolveProvider() {
+    final resolver = _providerResolver;
+    if (resolver == null) {
+      return _provider!;
+    }
+
+    final resolvedProvider = resolver.call().trim().toLowerCase();
+    if (_isSupportedProvider(resolvedProvider)) {
+      return resolvedProvider;
+    }
+
+    if (resolvedProvider.isNotEmpty) {
+      log.w(
+        'TypeaheadRepository: unsupported provider "$resolvedProvider" from resolver; falling back to static/default provider.',
+      );
+    }
+
+    return _provider ?? blueskyProvider;
   }
 
   Future<List<TypeaheadResult>> _searchBluesky({required String query, required int limit}) async {

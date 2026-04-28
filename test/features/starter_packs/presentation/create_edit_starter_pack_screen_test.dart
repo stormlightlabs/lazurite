@@ -4,21 +4,22 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/starter_packs/presentation/create_edit_starter_pack_screen.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockStarterPackRepository extends Mock implements StarterPackRepository {}
 
-class MockListRepository extends Mock implements ListRepository {}
+class MockTypeaheadRepository extends Mock implements TypeaheadRepository {}
 
 class MockStarterPackBloc extends Mock implements StarterPackBloc {}
 
 void main() {
   late MockStarterPackRepository mockRepo;
-  late MockListRepository mockListRepo;
+  late MockTypeaheadRepository mockTypeaheadRepo;
 
   const userDid = 'did:plc:user';
   final packUri = AtUri.parse('at://did:plc:user/app.bsky.graph.starterpack/pack-1');
@@ -29,14 +30,20 @@ void main() {
 
   setUp(() {
     mockRepo = MockStarterPackRepository();
-    mockListRepo = MockListRepository();
+    mockTypeaheadRepo = MockTypeaheadRepository();
+    when(
+      () => mockTypeaheadRepo.search(
+        query: any(named: 'query'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => const []);
   });
 
   Widget buildSubject() {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<StarterPackRepository>.value(value: mockRepo),
-        RepositoryProvider<ListRepository>.value(value: mockListRepo),
+        RepositoryProvider<TypeaheadRepository>.value(value: mockTypeaheadRepo),
         RepositoryProvider.value(value: userDid),
       ],
       child: BlocProvider(
@@ -81,11 +88,11 @@ void main() {
     const profile = ProfileViewBasic(did: 'did:plc:member', handle: 'member.bsky.social', displayName: 'Alice');
 
     when(
-      () => mockListRepo.searchActorsTypeahead(
+      () => mockTypeaheadRepo.search(
         query: any(named: 'query'),
         limit: any(named: 'limit'),
       ),
-    ).thenAnswer((_) async => [profile]);
+    ).thenAnswer((_) async => [TypeaheadResult.fromProfileViewBasic(profile)]);
 
     await tester.pumpWidget(buildSubject());
 

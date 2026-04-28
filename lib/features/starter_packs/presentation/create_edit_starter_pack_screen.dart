@@ -4,9 +4,9 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
@@ -59,8 +59,12 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
     setState(() => _isSearching = true);
 
     try {
-      final results = await context.read<ListRepository>().searchActorsTypeahead(query: query.trim(), limit: 10);
-      if (mounted) setState(() => _searchResults = results);
+      final results = await context.read<TypeaheadRepository>().search(query: query.trim(), limit: 10);
+      if (mounted) {
+        setState(() {
+          _searchResults = results.map((result) => result.toProfileViewBasic()).toList(growable: false);
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _searchResults = []);
     } finally {

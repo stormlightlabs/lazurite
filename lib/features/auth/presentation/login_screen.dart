@@ -4,9 +4,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
+import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({this.typeaheadRepository, super.key});
+
+  final TypeaheadRepository? typeaheadRepository;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -17,6 +22,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _appPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _showDebugForm = false;
+  late final TypeaheadRepository _typeaheadRepository;
+
+  @override
+  void initState() {
+    super.initState();
+    _typeaheadRepository =
+        widget.typeaheadRepository ?? TypeaheadRepository(provider: TypeaheadRepository.communityProvider);
+  }
 
   @override
   void dispose() {
@@ -45,6 +58,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isHandleValid() {
     return _formKey.currentState?.validate() ?? false;
+  }
+
+  void _onTypeaheadSelected(TypeaheadResult result) {
+    _handleController.text = result.handle;
+    _onOAuthLogin();
   }
 
   @override
@@ -93,16 +111,21 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: 32),
-                        TextFormField(
+                        TypeaheadTextField(
                           controller: _handleController,
+                          repository: _typeaheadRepository,
+                          onSelected: _onTypeaheadSelected,
+                          minChars: 2,
+                          debounceMs: 300,
+                          limit: 8,
                           decoration: const InputDecoration(
                             labelText: 'Handle or DID',
                             hintText: 'username.bsky.social or did:plc:...',
                             prefixIcon: Icon(Icons.person_outline),
                             border: OutlineInputBorder(),
                           ),
-                          textInputAction: TextInputAction.next,
                           autocorrect: false,
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Enter your BlueSky handle or DID';

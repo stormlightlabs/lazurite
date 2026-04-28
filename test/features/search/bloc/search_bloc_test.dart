@@ -7,14 +7,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSearchRepository extends Mock implements SearchRepository {}
+
+class MockTypeaheadRepository extends Mock implements TypeaheadRepository {}
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
 void main() {
   late MockSearchRepository mockRepository;
+  late MockTypeaheadRepository mockTypeaheadRepository;
   late MockAppDatabase mockDatabase;
 
   final samplePost = PostView(
@@ -59,6 +64,7 @@ void main() {
 
   setUp(() {
     mockRepository = MockSearchRepository();
+    mockTypeaheadRepository = MockTypeaheadRepository();
     mockDatabase = MockAppDatabase();
 
     when(() => mockDatabase.getSearchHistory(any(), limit: any(named: 'limit'))).thenAnswer((_) async => []);
@@ -98,10 +104,20 @@ void main() {
         limit: any(named: 'limit'),
       ),
     ).thenAnswer((_) async => SearchFeedsResult(feeds: []));
+    when(
+      () => mockTypeaheadRepository.search(
+        query: any(named: 'query'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => const []);
   });
 
-  SearchBloc buildBloc() =>
-      SearchBloc(searchRepository: mockRepository, database: mockDatabase, accountDid: 'did:plc:test');
+  SearchBloc buildBloc() => SearchBloc(
+    searchRepository: mockRepository,
+    typeaheadRepository: mockTypeaheadRepository,
+    database: mockDatabase,
+    accountDid: 'did:plc:test',
+  );
 
   group('SearchTab enum', () {
     test('has posts, actors, feeds, and starterPacks values', () {
@@ -459,6 +475,34 @@ void main() {
         predicate<SearchState>((s) => s.isLoadingMore),
         predicate<SearchState>((s) => !s.isLoadingMore && s.feeds.length == 1),
       ],
+    );
+  });
+
+  group('Typeahead delegation', () {
+    blocTest<SearchBloc, SearchState>(
+      'TypeaheadRequested delegates to TypeaheadRepository and maps results to ProfileViewBasic',
+      build: buildBloc,
+      skip: 1,
+      setUp: () {
+        when(
+          () => mockTypeaheadRepository.search(
+            query: 'river',
+            limit: any(named: 'limit'),
+          ),
+        ).thenAnswer(
+          (_) async => const [TypeaheadResult(did: 'did:plc:river', handle: 'river.bsky.social', displayName: 'River')],
+        );
+      },
+      act: (bloc) => bloc.add(const TypeaheadRequested(query: '@river')),
+      wait: const Duration(milliseconds: 350),
+      expect: () => [
+        isA<SearchState>()
+            .having((state) => state.typeaheadActors.length, 'typeahead actors', 1)
+            .having((state) => state.typeaheadActors.first.handle, 'first handle', 'river.bsky.social'),
+      ],
+      verify: (_) {
+        verify(() => mockTypeaheadRepository.search(query: 'river', limit: 5)).called(1);
+      },
     );
   });
 

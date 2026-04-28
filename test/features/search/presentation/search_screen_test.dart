@@ -13,9 +13,13 @@ import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSearchRepository extends Mock implements SearchRepository {}
+
+class MockTypeaheadRepository extends Mock implements TypeaheadRepository {}
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
@@ -30,12 +34,14 @@ void main() {
 
   group('SearchScreen', () {
     late MockSearchRepository mockSearchRepository;
+    late MockTypeaheadRepository mockTypeaheadRepository;
     late MockAppDatabase mockDatabase;
     late MockConnectivityCubit connectivityCubit;
     late MockFeedPreferencesCubit feedPreferencesCubit;
 
     setUp(() {
       mockSearchRepository = MockSearchRepository();
+      mockTypeaheadRepository = MockTypeaheadRepository();
       mockDatabase = MockAppDatabase();
       connectivityCubit = MockConnectivityCubit();
       feedPreferencesCubit = MockFeedPreferencesCubit();
@@ -75,11 +81,11 @@ void main() {
         ),
       ).thenAnswer((_) async => SearchActorsResult(actors: []));
       when(
-        () => mockSearchRepository.searchActorsTypeahead(
+        () => mockTypeaheadRepository.search(
           query: any(named: 'query'),
           limit: any(named: 'limit'),
         ),
-      ).thenAnswer((_) async => []);
+      ).thenAnswer((_) async => const []);
       when(
         () => mockSearchRepository.searchStarterPacks(
           query: any(named: 'query'),
@@ -100,9 +106,11 @@ void main() {
       return MaterialApp(
         home: MultiBlocProvider(
           providers: [
+            RepositoryProvider<TypeaheadRepository>.value(value: mockTypeaheadRepository),
             BlocProvider<SearchBloc>(
               create: (_) => SearchBloc(
                 searchRepository: mockSearchRepository,
+                typeaheadRepository: mockTypeaheadRepository,
                 database: mockDatabase,
                 accountDid: 'did:plc:test',
               ),
@@ -120,18 +128,22 @@ void main() {
         routes: [
           GoRoute(
             path: '/',
-            builder: (context, state) => BlocProvider<SearchBloc>(
-              create: (_) => SearchBloc(
-                searchRepository: mockSearchRepository,
-                database: mockDatabase,
-                accountDid: 'did:plc:test',
-              ),
-              child: MultiBlocProvider(
-                providers: [
-                  BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
-                  BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
-                ],
-                child: const SearchScreen(),
+            builder: (context, state) => RepositoryProvider<TypeaheadRepository>.value(
+              value: mockTypeaheadRepository,
+              child: BlocProvider<SearchBloc>(
+                create: (_) => SearchBloc(
+                  searchRepository: mockSearchRepository,
+                  typeaheadRepository: mockTypeaheadRepository,
+                  database: mockDatabase,
+                  accountDid: 'did:plc:test',
+                ),
+                child: MultiBlocProvider(
+                  providers: [
+                    BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+                    BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
+                  ],
+                  child: const SearchScreen(),
+                ),
               ),
             ),
           ),
@@ -225,7 +237,7 @@ void main() {
       ).thenAnswer((_) async => SearchActorsResult(actors: []));
 
       when(
-        () => mockSearchRepository.searchActorsTypeahead(
+        () => mockTypeaheadRepository.search(
           query: any(named: 'query'),
           limit: any(named: 'limit'),
         ),
@@ -244,9 +256,11 @@ void main() {
         MaterialApp(
           home: MultiBlocProvider(
             providers: [
+              RepositoryProvider<TypeaheadRepository>.value(value: mockTypeaheadRepository),
               BlocProvider<SearchBloc>(
                 create: (_) => SearchBloc(
                   searchRepository: mockSearchRepository,
+                  typeaheadRepository: mockTypeaheadRepository,
                   database: mockDatabase,
                   accountDid: 'did:plc:test',
                 ),
@@ -288,9 +302,11 @@ void main() {
         MaterialApp(
           home: MultiBlocProvider(
             providers: [
+              RepositoryProvider<TypeaheadRepository>.value(value: mockTypeaheadRepository),
               BlocProvider<SearchBloc>(
                 create: (_) => SearchBloc(
                   searchRepository: mockSearchRepository,
+                  typeaheadRepository: mockTypeaheadRepository,
                   database: mockDatabase,
                   accountDid: 'did:plc:test',
                 ),
@@ -330,7 +346,7 @@ void main() {
 
       expect(find.text('Start typing to search handles.'), findsOneWidget);
 
-      await tester.enterText(find.byType(TextField).last, 'rive');
+      await tester.enterText(find.byType(TextFormField), 'rive');
       await tester.pumpAndSettle();
 
       expect(find.text('Start typing to search handles.'), findsNothing);
@@ -338,13 +354,13 @@ void main() {
 
     testWidgets('jump to profile dialog shows typeahead suggestions and navigates on selection', (tester) async {
       when(
-        () => mockSearchRepository.searchActorsTypeahead(
+        () => mockTypeaheadRepository.search(
           query: any(named: 'query'),
           limit: any(named: 'limit'),
         ),
       ).thenAnswer(
         (_) async => const [
-          ProfileViewBasic(did: 'did:plc:river', handle: 'river.bsky.social', displayName: 'River Tam'),
+          TypeaheadResult(did: 'did:plc:river', handle: 'river.bsky.social', displayName: 'River Tam'),
         ],
       );
 
@@ -354,7 +370,7 @@ void main() {
       await tester.tap(find.text('Jump to profile'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField).last, 'river');
+      await tester.enterText(find.byType(TextFormField), 'river');
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pumpAndSettle();
 
@@ -368,13 +384,13 @@ void main() {
 
     testWidgets('main search input with @ does not show autocomplete results', (tester) async {
       when(
-        () => mockSearchRepository.searchActorsTypeahead(
+        () => mockTypeaheadRepository.search(
           query: any(named: 'query'),
           limit: any(named: 'limit'),
         ),
       ).thenAnswer(
         (_) async => const [
-          ProfileViewBasic(did: 'did:plc:river', handle: 'river.bsky.social', displayName: 'River Tam'),
+          TypeaheadResult(did: 'did:plc:river', handle: 'river.bsky.social', displayName: 'River Tam'),
         ],
       );
 
@@ -395,7 +411,7 @@ void main() {
       await tester.tap(find.text('Jump to profile'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField).last, 'custom.bsky.social');
+      await tester.enterText(find.byType(TextFormField), 'custom.bsky.social');
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pumpAndSettle();
 
@@ -620,18 +636,22 @@ void main() {
         routes: [
           GoRoute(
             path: '/',
-            builder: (context, state) => BlocProvider<SearchBloc>(
-              create: (_) => SearchBloc(
-                searchRepository: mockSearchRepository,
-                database: mockDatabase,
-                accountDid: 'did:plc:test',
-              ),
-              child: MultiBlocProvider(
-                providers: [
-                  BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
-                  BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
-                ],
-                child: const SearchScreen(),
+            builder: (context, state) => RepositoryProvider<TypeaheadRepository>.value(
+              value: mockTypeaheadRepository,
+              child: BlocProvider<SearchBloc>(
+                create: (_) => SearchBloc(
+                  searchRepository: mockSearchRepository,
+                  typeaheadRepository: mockTypeaheadRepository,
+                  database: mockDatabase,
+                  accountDid: 'did:plc:test',
+                ),
+                child: MultiBlocProvider(
+                  providers: [
+                    BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+                    BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
+                  ],
+                  child: const SearchScreen(),
+                ),
               ),
             ),
           ),

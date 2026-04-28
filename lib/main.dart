@@ -49,6 +49,7 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -258,6 +259,16 @@ class _LazuriteAppState extends State<LazuriteApp> {
                       SearchRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
                 ),
                 RepositoryProvider(
+                  create: (context) {
+                    final settingsCubit = context.read<SettingsCubit>();
+                    return TypeaheadRepository(
+                      bluesky: bluesky,
+                      providerResolver: () => settingsCubit.state.typeaheadProvider,
+                      moderationService: context.read<ModerationService>(),
+                    );
+                  },
+                ),
+                RepositoryProvider(
                   create: (context) =>
                       ListRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
                 ),
@@ -327,6 +338,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
                   BlocProvider(
                     create: (context) => SearchBloc(
                       searchRepository: context.read<SearchRepository>(),
+                      typeaheadRepository: context.read<TypeaheadRepository>(),
                       database: widget.database,
                       accountDid: accountDid,
                     ),

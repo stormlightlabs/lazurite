@@ -3,7 +3,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/lists/bloc/list_bloc.dart';
-import 'package:lazurite/features/lists/data/list_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -51,8 +51,12 @@ class _ListMembersViewState extends State<_ListMembersView> {
     setState(() => _isSearching = true);
 
     try {
-      final results = await context.read<ListRepository>().searchActorsTypeahead(query: query.trim(), limit: 10);
-      if (mounted) setState(() => _searchResults = results);
+      final results = await context.read<TypeaheadRepository>().search(query: query.trim(), limit: 10);
+      if (mounted) {
+        setState(() {
+          _searchResults = results.map((result) => result.toProfileViewBasic()).toList(growable: false);
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _searchResults = []);
     } finally {

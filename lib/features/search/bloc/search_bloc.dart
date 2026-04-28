@@ -7,15 +7,21 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 
 part 'search_state.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
-  SearchBloc({required SearchRepository searchRepository, required AppDatabase database, required String accountDid})
-    : _searchRepository = searchRepository,
-      _database = database,
-      _accountDid = accountDid,
-      super(const SearchState.initial()) {
+  SearchBloc({
+    required SearchRepository searchRepository,
+    required TypeaheadRepository typeaheadRepository,
+    required AppDatabase database,
+    required String accountDid,
+  }) : _searchRepository = searchRepository,
+       _typeaheadRepository = typeaheadRepository,
+       _database = database,
+       _accountDid = accountDid,
+       super(const SearchState.initial()) {
     on<QuerySubmitted>(_onQuerySubmitted);
     on<SearchTabChanged>(_onSearchTabChanged);
     on<SearchSortChanged>(_onSearchSortChanged);
@@ -31,6 +37,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   }
 
   final SearchRepository _searchRepository;
+  final TypeaheadRepository _typeaheadRepository;
   final AppDatabase _database;
   final String _accountDid;
   Timer? _debounceTimer;
@@ -240,7 +247,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
   Future<void> _onTypeaheadResultsLoaded(TypeaheadResultsLoaded event, Emitter<SearchState> emit) async {
     try {
-      final actors = await _searchRepository.searchActorsTypeahead(query: event.query, limit: 5);
+      final results = await _typeaheadRepository.search(query: event.query, limit: 5);
+      final actors = results.map((result) => result.toProfileViewBasic()).toList(growable: false);
       emit(state.copyWith(typeaheadActors: actors));
     } catch (_) {
       emit(state.copyWith(typeaheadActors: []));

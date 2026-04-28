@@ -18,6 +18,8 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
@@ -114,107 +116,72 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _openJumpToProfileDialog() {
     final controller = TextEditingController();
-    final searchBloc = context.read<SearchBloc>();
+    final typeaheadRepository = context.read<TypeaheadRepository>();
 
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        return BlocProvider.value(
-          value: searchBloc,
-          child: StatefulBuilder(
-            builder: (context, setDialogState) {
-              void submitHandle([String? value]) {
-                final rawValue = (value ?? controller.text).trim();
-                final handle = rawValue.startsWith('@') ? rawValue.substring(1).trim() : rawValue;
-                if (handle.isEmpty) {
-                  return;
-                }
-
-                searchBloc.add(const TypeaheadRequested(query: ''));
-                Navigator.of(dialogContext).pop();
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    navigateToProfile(this.context, handle);
-                  }
-                });
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            void submitHandle([String? value]) {
+              final rawValue = (value ?? controller.text).trim();
+              final handle = rawValue.startsWith('@') ? rawValue.substring(1).trim() : rawValue;
+              if (handle.isEmpty) {
+                return;
               }
 
-              return ConfirmationDialog(
-                title: const Text('Jump to profile'),
-                content: SizedBox(
-                  width: 420,
-                  child: BlocBuilder<SearchBloc, SearchState>(
-                    builder: (context, state) {
-                      final hasResults = state.typeaheadActors.isNotEmpty;
-                      final showTypingHint = controller.text.trim().length <= 3;
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextField(
-                            controller: controller,
-                            autofocus: true,
-                            autocorrect: false,
-                            textInputAction: TextInputAction.search,
-                            decoration: const InputDecoration(
-                              labelText: 'Handle',
-                              hintText: 'alice.bsky.social',
-                              prefixText: '@',
-                              border: OutlineInputBorder(),
-                            ),
-                            onChanged: (value) {
-                              setDialogState(() {});
-                              searchBloc.add(TypeaheadRequested(query: value.isEmpty ? '' : '@$value'));
-                            },
-                            onSubmitted: submitHandle,
-                          ),
-                          const SizedBox(height: 12),
-                          if (showTypingHint)
-                            Align(
-                              alignment: Alignment.topLeft,
-                              child: Text('Start typing to search handles.', style: context.textTheme.bodySmall),
-                            ),
-                          AnimatedSize(
-                            duration: const Duration(milliseconds: 180),
-                            curve: Curves.easeOutCubic,
-                            alignment: Alignment.topCenter,
-                            child: hasResults
-                                ? Padding(
-                                    padding: const EdgeInsets.only(top: 12),
-                                    child: SizedBox(
-                                      height: 220,
-                                      child: ListView.builder(
-                                        shrinkWrap: true,
-                                        itemCount: state.typeaheadActors.length,
-                                        itemBuilder: (context, index) {
-                                          final actor = state.typeaheadActors[index];
-                                          return _ActorListTile(
-                                            actor: actor,
-                                            onTap: () {
-                                              controller.text = actor.handle;
-                                              submitHandle(actor.did);
-                                            },
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+              Navigator.of(dialogContext).pop();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  navigateToProfile(this.context, handle);
+                }
+              });
+            }
+
+            final showTypingHint = controller.text.trim().length <= 3;
+            return ConfirmationDialog(
+              title: const Text('Jump to profile'),
+              content: SizedBox(
+                width: 420,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TypeaheadTextField(
+                      controller: controller,
+                      repository: typeaheadRepository,
+                      onSelected: (result) {
+                        controller.text = result.handle;
+                        submitHandle(result.did);
+                      },
+                      minChars: 2,
+                      debounceMs: 300,
+                      limit: 8,
+                      autocorrect: false,
+                      textInputAction: TextInputAction.search,
+                      onFieldSubmitted: submitHandle,
+                      onChanged: (_) => setDialogState(() {}),
+                      decoration: const InputDecoration(
+                        labelText: 'Handle',
+                        hintText: 'alice.bsky.social',
+                        prefixText: '@',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (showTypingHint)
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text('Start typing to search handles.', style: context.textTheme.bodySmall),
+                      ),
+                  ],
                 ),
-                confirmLabel: 'Open',
-                confirmEnabled: controller.text.trim().isNotEmpty,
-                onCancel: () {
-                  searchBloc.add(const TypeaheadRequested(query: ''));
-                  Navigator.of(dialogContext).pop();
-                },
-                onConfirm: submitHandle,
-              );
-            },
-          ),
+              ),
+              confirmLabel: 'Open',
+              confirmEnabled: controller.text.trim().isNotEmpty,
+              onCancel: () => Navigator.of(dialogContext).pop(),
+              onConfirm: submitHandle,
+            );
+          },
         );
       },
     );
@@ -835,65 +802,6 @@ class _ActorResultTile extends StatelessWidget {
 
   void _navigateToProfile(BuildContext context, String did) {
     navigateToProfile(context, did);
-  }
-}
-
-class _ActorListTile extends StatelessWidget {
-  const _ActorListTile({required this.actor, required this.onTap});
-
-  final ProfileViewBasic actor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final moderationService = maybeModerationService(context);
-    final profileUi =
-        moderationService?.profileBasicUi(actor, bsky_moderation.ModerationBehaviorContext.profileList) ??
-        const bsky_moderation.ModerationUI();
-    final avatarUi =
-        moderationService?.profileBasicUi(actor, bsky_moderation.ModerationBehaviorContext.avatar) ??
-        const bsky_moderation.ModerationUI();
-
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            ProfileAvatar(
-              size: 40,
-              moderationUi: avatarUi,
-              imageUrl: actor.avatar,
-              fallbackText: actor.displayName ?? actor.handle,
-              shape: BoxShape.circle,
-              placeholderTextStyle: context.textTheme.labelMedium,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    actor.displayName ?? actor.handle,
-                    style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    '@${actor.handle}',
-                    style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
-                  ),
-                  if (profileUi.alert || profileUi.inform) ...[
-                    const SizedBox(height: 8),
-                    ModerationBadgeRow(ui: profileUi),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

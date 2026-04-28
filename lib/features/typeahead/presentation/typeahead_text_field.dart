@@ -15,6 +15,13 @@ class TypeaheadTextField extends StatefulWidget {
     this.debounceMs = 300,
     this.minChars = 2,
     this.limit = 10,
+    this.validator,
+    this.textInputAction,
+    this.onFieldSubmitted,
+    this.onChanged,
+    this.enabled = true,
+    this.autocorrect = false,
+    this.focusNode,
     super.key,
   });
 
@@ -25,6 +32,13 @@ class TypeaheadTextField extends StatefulWidget {
   final int debounceMs;
   final int minChars;
   final int limit;
+  final FormFieldValidator<String>? validator;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onFieldSubmitted;
+  final ValueChanged<String>? onChanged;
+  final bool enabled;
+  final bool autocorrect;
+  final FocusNode? focusNode;
 
   @override
   State<TypeaheadTextField> createState() => _TypeaheadTextFieldState();
@@ -33,7 +47,8 @@ class TypeaheadTextField extends StatefulWidget {
 class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBindingObserver {
   final LayerLink _layerLink = LayerLink();
   final GlobalKey _fieldKey = GlobalKey();
-  final FocusNode _focusNode = FocusNode();
+  late FocusNode _focusNode;
+  late bool _ownsFocusNode;
   final Object _tapRegionGroup = Object();
 
   TypeaheadCubit? _cubit;
@@ -43,6 +58,8 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
   @override
   void initState() {
     super.initState();
+    _ownsFocusNode = widget.focusNode == null;
+    _focusNode = widget.focusNode ?? FocusNode();
     WidgetsBinding.instance.addObserver(this);
     _focusNode.addListener(_handleFocusChange);
     _createCubit();
@@ -51,6 +68,16 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
   @override
   void didUpdateWidget(TypeaheadTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.focusNode != widget.focusNode) {
+      _focusNode.removeListener(_handleFocusChange);
+      if (_ownsFocusNode) {
+        _focusNode.dispose();
+      }
+      _ownsFocusNode = widget.focusNode == null;
+      _focusNode = widget.focusNode ?? FocusNode();
+      _focusNode.addListener(_handleFocusChange);
+    }
 
     final shouldRecreateCubit =
         oldWidget.repository != widget.repository ||
@@ -64,7 +91,14 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
       _runQuery(widget.controller.text);
     }
 
-    _overlayEntry?.markNeedsBuild();
+    if (_overlayEntry != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _overlayEntry?.markNeedsBuild();
+      });
+    }
   }
 
   @override
@@ -76,7 +110,9 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _focusNode.removeListener(_handleFocusChange);
-    _focusNode.dispose();
+    if (_ownsFocusNode) {
+      _focusNode.dispose();
+    }
 
     _removeOverlay();
     _stateSubscription?.cancel();
@@ -227,7 +263,15 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
           controller: widget.controller,
           focusNode: _focusNode,
           decoration: widget.decoration,
-          onChanged: _runQuery,
+          validator: widget.validator,
+          textInputAction: widget.textInputAction,
+          enabled: widget.enabled,
+          autocorrect: widget.autocorrect,
+          onFieldSubmitted: widget.onFieldSubmitted,
+          onChanged: (value) {
+            _runQuery(value);
+            widget.onChanged?.call(value);
+          },
         ),
       ),
     );

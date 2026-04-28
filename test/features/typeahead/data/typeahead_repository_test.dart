@@ -139,6 +139,47 @@ void main() {
       expect(actorService.lastLimit, 8);
     });
 
+    test('provider resolver picks up runtime provider changes without recreating repository', () async {
+      var selectedProvider = TypeaheadRepository.communityProvider;
+      var communityCalls = 0;
+
+      final actorService = _FakeActorService()
+        ..searchActorsResult = const _FakeActorsData(
+          actors: [ProfileViewBasic(did: 'did:plc:bluesky', handle: 'bluesky.bsky.social')],
+        );
+      final client = _CallbackClient((_) async {
+        communityCalls += 1;
+        return http.Response(
+          jsonEncode({
+            'actors': [
+              {'did': 'did:plc:community', 'handle': 'community.bsky.social'},
+            ],
+          }),
+          200,
+        );
+      });
+
+      final repository = TypeaheadRepository(
+        bluesky: _FakeBlueskyClient(actor: actorService),
+        providerResolver: () => selectedProvider,
+        moderationService: moderationService,
+        httpClient: client,
+      );
+
+      final communityResults = await repository.search(query: 'first', limit: 3);
+      expect(communityResults.map((actor) => actor.did).toList(), ['did:plc:community']);
+      expect(communityCalls, 1);
+      expect(actorService.lastQuery, isNull);
+
+      selectedProvider = TypeaheadRepository.blueskyProvider;
+
+      final blueskyResults = await repository.search(query: 'second', limit: 4);
+      expect(blueskyResults.map((actor) => actor.did).toList(), ['did:plc:bluesky']);
+      expect(communityCalls, 1);
+      expect(actorService.lastQuery, 'second');
+      expect(actorService.lastLimit, 4);
+    });
+
     test('community fallback does not trigger when no Bluesky session/client exists', () async {
       final client = _CallbackClient((_) async => throw const SocketException('no route to host'));
 

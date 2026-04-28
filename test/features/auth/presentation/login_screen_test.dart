@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
@@ -19,11 +21,18 @@ void main() {
   });
 
   Widget buildSubject() {
+    final typeaheadRepository = _FakeTypeaheadRepository(
+      searchHandler: ({required String query, int limit = 10}) async => const [],
+    );
+
     final router = GoRouter(
       routes: [
         GoRoute(
           path: '/login',
-          builder: (context, state) => BlocProvider<AuthBloc>.value(value: authBloc, child: const LoginScreen()),
+          builder: (context, state) => BlocProvider<AuthBloc>.value(
+            value: authBloc,
+            child: LoginScreen(typeaheadRepository: typeaheadRepository),
+          ),
         ),
         GoRoute(
           path: '/terms',
@@ -78,4 +87,52 @@ void main() {
 
     expect(find.text('privacy-route'), findsOneWidget);
   });
+
+  testWidgets('login typeahead shows community results and selecting triggers OAuth login', (tester) async {
+    final typeaheadRepository = _FakeTypeaheadRepository(
+      searchHandler: ({required String query, int limit = 10}) async {
+        if (query == 'ri') {
+          return const [TypeaheadResult(did: 'did:plc:river', handle: 'river.bsky.social', displayName: 'River Tam')];
+        }
+        return const [];
+      },
+    );
+
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/login',
+          builder: (context, state) => BlocProvider<AuthBloc>.value(
+            value: authBloc,
+            child: LoginScreen(typeaheadRepository: typeaheadRepository),
+          ),
+        ),
+      ],
+      initialLocation: '/login',
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).first, 'ri');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.text('River Tam'), findsOneWidget);
+    await tester.tap(find.text('River Tam'));
+    await tester.pumpAndSettle();
+
+    verify(() => authBloc.add(const OAuthLoginRequested(handle: 'river.bsky.social'))).called(1);
+  });
+}
+
+class _FakeTypeaheadRepository extends TypeaheadRepository {
+  _FakeTypeaheadRepository({required this.searchHandler}) : super(provider: TypeaheadRepository.communityProvider);
+
+  final Future<List<TypeaheadResult>> Function({required String query, int limit}) searchHandler;
+
+  @override
+  Future<List<TypeaheadResult>> search({required String query, int limit = 10}) {
+    return searchHandler(query: query, limit: limit);
+  }
 }

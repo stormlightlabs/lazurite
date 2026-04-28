@@ -10,15 +10,20 @@ import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/lists/bloc/list_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/list_members_screen.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
 class MockListRepository extends Mock implements ListRepository {}
 
+class MockTypeaheadRepository extends Mock implements TypeaheadRepository {}
+
 void main() {
   late MockAuthBloc authBloc;
   late MockListRepository listRepository;
+  late MockTypeaheadRepository typeaheadRepository;
 
   const tokens = AuthTokens(
     accessToken: 'access',
@@ -46,6 +51,7 @@ void main() {
   setUp(() {
     authBloc = MockAuthBloc();
     listRepository = MockListRepository();
+    typeaheadRepository = MockTypeaheadRepository();
 
     when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
@@ -57,13 +63,22 @@ void main() {
         limit: any(named: 'limit'),
       ),
     ).thenAnswer((_) async => ListDetailResult(list: curationList, items: [member], cursor: null));
+    when(
+      () => typeaheadRepository.search(
+        query: any(named: 'query'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => const []);
   });
 
   Widget buildSubject() {
     return MultiBlocProvider(
       providers: [BlocProvider<AuthBloc>.value(value: authBloc)],
       child: MultiRepositoryProvider(
-        providers: [RepositoryProvider<ListRepository>.value(value: listRepository)],
+        providers: [
+          RepositoryProvider<ListRepository>.value(value: listRepository),
+          RepositoryProvider<TypeaheadRepository>.value(value: typeaheadRepository),
+        ],
         child: MaterialApp(
           home: BlocProvider(
             create: (_) => ListBloc(listRepository: listRepository)..add(ListRequested(listUri: listUri)),
@@ -130,11 +145,11 @@ void main() {
     const searchResult = ProfileViewBasic(did: 'did:plc:new', handle: 'newuser.bsky.social', displayName: 'New User');
 
     when(
-      () => listRepository.searchActorsTypeahead(
+      () => typeaheadRepository.search(
         query: 'newuser',
         limit: any(named: 'limit'),
       ),
-    ).thenAnswer((_) async => [searchResult]);
+    ).thenAnswer((_) async => [TypeaheadResult.fromProfileViewBasic(searchResult)]);
 
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
