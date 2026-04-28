@@ -53,3 +53,7 @@ lib/libobjectbox-arm.so
 lib/libobjectbox-arm64.so
 lib/objectbox.dll
 download/
+
+AGENTS.md
+CLAUDE.md
+GEMINI.md
