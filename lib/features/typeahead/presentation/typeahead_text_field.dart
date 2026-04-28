@@ -50,6 +50,7 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
   late FocusNode _focusNode;
   late bool _ownsFocusNode;
   final Object _tapRegionGroup = Object();
+  bool _isLoading = false;
 
   TypeaheadCubit? _cubit;
   StreamSubscription<TypeaheadState>? _stateSubscription;
@@ -134,6 +135,10 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
   void _onStateChanged(TypeaheadState state) {
     if (!mounted) {
       return;
+    }
+
+    if (_isLoading != state.isLoading) {
+      setState(() => _isLoading = state.isLoading);
     }
 
     if (!_focusNode.hasFocus || widget.controller.text.trim().length < widget.minChars) {
@@ -253,6 +258,21 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
 
   @override
   Widget build(BuildContext context) {
+    final resolvedDecoration = _isLoading
+        ? (widget.decoration ?? const InputDecoration()).copyWith(
+            suffixIcon: const Padding(
+              padding: EdgeInsets.all(12),
+              child: SizedBox(
+                key: ValueKey('typeahead-input-loading-spinner'),
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            suffixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+          )
+        : widget.decoration;
+
     return TapRegion(
       groupId: _tapRegionGroup,
       onTapOutside: _onTapOutside,
@@ -262,7 +282,7 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
           key: _fieldKey,
           controller: widget.controller,
           focusNode: _focusNode,
-          decoration: widget.decoration,
+          decoration: resolvedDecoration,
           validator: widget.validator,
           textInputAction: widget.textInputAction,
           enabled: widget.enabled,

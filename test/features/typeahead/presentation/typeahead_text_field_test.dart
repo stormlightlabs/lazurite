@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
@@ -93,6 +95,26 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(queryCount, 0);
+    });
+
+    testWidgets('shows and hides input loading spinner while fetching suggestions', (tester) async {
+      final controller = TextEditingController();
+      final completer = Completer<List<TypeaheadResult>>();
+      final repository = _FakeTypeaheadRepository(
+        searchHandler: ({required String query, int limit = 10}) => completer.future,
+      );
+
+      await tester.pumpWidget(_buildSubject(controller: controller, repository: repository, onSelected: (_) {}));
+
+      await tester.enterText(find.byType(TextFormField), 'alice');
+      await tester.pump(const Duration(milliseconds: 5));
+
+      expect(find.byKey(const ValueKey('typeahead-input-loading-spinner')), findsOneWidget);
+
+      completer.complete(const [TypeaheadResult(did: 'did:plc:alice', handle: 'alice.bsky.social')]);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('typeahead-input-loading-spinner')), findsNothing);
     });
   });
 }

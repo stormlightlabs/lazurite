@@ -21,7 +21,7 @@ import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 /// Controls which card layout variant is rendered by [PostCardWithActions].
 enum PostCardVariant { linear, grid }
 
-class PostCardWithActions extends StatelessWidget {
+class PostCardWithActions extends StatefulWidget {
   const PostCardWithActions({
     super.key,
     required this.feedViewPost,
@@ -40,30 +40,73 @@ class PostCardWithActions extends StatelessWidget {
   final bsky_moderation.ModerationBehaviorContext moderationContext;
 
   @override
-  Widget build(BuildContext context) {
-    final post = feedViewPost.post;
+  State<PostCardWithActions> createState() => _PostCardWithActionsState();
+}
+
+class _PostCardWithActionsState extends State<PostCardWithActions> with AutomaticKeepAliveClientMixin {
+  late PostActionCubit _postActionCubit;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _postActionCubit = _createCubit();
+  }
+
+  @override
+  void didUpdateWidget(covariant PostCardWithActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final previousPost = oldWidget.feedViewPost.post;
+    final currentPost = widget.feedViewPost.post;
+    final postIdentityChanged =
+        previousPost.uri.toString() != currentPost.uri.toString() || previousPost.cid != currentPost.cid;
+    if (!postIdentityChanged) {
+      return;
+    }
+
+    _postActionCubit.close();
+    _postActionCubit = _createCubit();
+  }
+
+  @override
+  void dispose() {
+    _postActionCubit.close();
+    super.dispose();
+  }
+
+  PostActionCubit _createCubit() {
+    final post = widget.feedViewPost.post;
     final viewer = post.viewer;
 
-    return BlocProvider(
-      create: (ctx) => PostActionCubit(
-        postActionRepository: ctx.read<PostActionRepository>(),
-        postUri: post.uri.toString(),
-        postCid: post.cid,
-        isLiked: viewer?.like != null,
-        isReposted: viewer?.repost != null,
-        likeCount: post.likeCount ?? 0,
-        repostCount: post.repostCount ?? 0,
-        likeUri: viewer?.like?.toString(),
-        repostUri: viewer?.repost?.toString(),
-        cache: ctx.read<PostActionCache>(),
-      ),
+    return PostActionCubit(
+      postActionRepository: context.read<PostActionRepository>(),
+      postUri: post.uri.toString(),
+      postCid: post.cid,
+      isLiked: viewer?.like != null,
+      isReposted: viewer?.repost != null,
+      likeCount: post.likeCount ?? 0,
+      repostCount: post.repostCount ?? 0,
+      likeUri: viewer?.like?.toString(),
+      repostUri: viewer?.repost?.toString(),
+      cache: context.read<PostActionCache>(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return BlocProvider<PostActionCubit>.value(
+      value: _postActionCubit,
       child: _PostCardWithActionsContent(
-        feedViewPost: feedViewPost,
-        accountDid: accountDid,
-        variant: variant,
-        onDeleted: onDeleted,
-        onReplySubmitted: onReplySubmitted,
-        moderationContext: moderationContext,
+        feedViewPost: widget.feedViewPost,
+        accountDid: widget.accountDid,
+        variant: widget.variant,
+        onDeleted: widget.onDeleted,
+        onReplySubmitted: widget.onReplySubmitted,
+        moderationContext: widget.moderationContext,
       ),
     );
   }
