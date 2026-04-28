@@ -11,12 +11,22 @@ alias fmt := format
 lint:
     flutter analyze
 
+# Install pinned ObjectBox runtime library for local development
+objectbox-setup:
+    bash scripts/objectbox_runtime.sh install
+
+# Verify ObjectBox runtime library is present (fails fast if missing)
+objectbox-check:
+    bash scripts/objectbox_runtime.sh check
+
 # Test with failures only to focus on failures and hanging tests
 test-quiet *paths='':
+    just objectbox-check
     flutter test {{ paths }} --reporter=failures-only --fail-fast --timeout=120s
 
 # Run all tests
 test *paths='':
+    just objectbox-check
     flutter test {{ paths }} --fail-fast --timeout=120s
 
 generate:

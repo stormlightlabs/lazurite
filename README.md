@@ -101,6 +101,8 @@ flowchart LR
 ```
 
 For development setup, tooling, database schema, and contribution notes, see [DEVELOPMENT.md](DEVELOPMENT.md).
+If you run tests locally on macOS or Linux, run `just objectbox-setup` once
+to install the pinned ObjectBox native runtime.
 
 ## References
 

@@ -32,7 +32,7 @@ jobs:
         run: flutter pub get
 
       - name: Install ObjectBox native library
-        run: curl -sSfL https://raw.githubusercontent.com/objectbox/objectbox-dart/main/install.sh | bash
+        run: bash scripts/objectbox_runtime.sh install
 
       - name: Analyze code
         run: flutter analyze

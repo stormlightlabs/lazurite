@@ -4,6 +4,7 @@
 
 ```sh
 flutter pub get
+just objectbox-setup # once per machine (macOS/Linux)
 just gen
 flutter run
 ```
@@ -12,13 +13,15 @@ flutter run
 
 Use `just` for common workflows:
 
-| Command       | Description                            |
-| ------------- | -------------------------------------- |
-| `just format` | Run `dart format`                      |
-| `just lint`   | Run `flutter analyze`                  |
-| `just test`   | Run the full `flutter test` suite      |
-| `just gen`    | Run `build_runner` for code generation |
-| `just check`  | Format, lint, and test in sequence     |
+| Command                | Description                                           |
+| ---------------------- | ----------------------------------------------------- |
+| `just format`          | Run `dart format`                                     |
+| `just lint`            | Run `flutter analyze`                                 |
+| `just objectbox-setup` | Install pinned ObjectBox native runtime (macOS/Linux) |
+| `just objectbox-check` | Verify ObjectBox native runtime is present            |
+| `just test`            | Run the full `flutter test` suite                     |
+| `just gen`             | Run `build_runner` for code generation                |
+| `just check`           | Format, lint, and test in sequence                    |
 
 ## Architecture
 
@@ -94,13 +97,20 @@ After modifying `EmbeddedPost`, run `just gen` to regenerate `objectbox.g.dart` 
 
 #### Running unit tests (ObjectBox native library)
 
-ObjectBox requires a platform native library to run `flutter test` locally:
+ObjectBox requires a platform native library to run `flutter test` locally.
+Lazurite standardizes this setup through a pinned installer script.
+
+Supported local platforms: macOS and Linux.
+
+Run this once per machine:
 
 ```sh
-bash <(curl -s https://raw.githubusercontent.com/objectbox/objectbox-dart/main/install.sh)
+just objectbox-setup
 ```
 
-This installs `lib/libobjectbox.dylib` (macOS) or the equivalent. The file is gitignored and not required to build the app.
+`just test` and `just test-quiet` intentionally run a preflight check
+(`just objectbox-check`) and fail fast with setup instructions if the
+runtime is missing.
 
 ## Semantic Search
 
@@ -119,11 +129,12 @@ Liked posts are synced from the Bluesky API and persisted locally in the `liked_
 
 **`LikedPostsRepository`** (`lib/features/feed/data/liked_posts_repository.dart`):
 
-| Method                                       | Description                                                                                              |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `syncLikes(accountDid)`                      | Paginate `getActorLikes` until a known URI is hit or 1000-post cap is reached; evicts oldest on overflow |
-| `getLikedPosts(accountDid, {limit, offset})` | Paginated query ordered by `likedAt DESC`                                                                |
-| `removeLike(accountDid, postUri)`            | Delete a single entry                                                                                    |
+| Method                                       | Description                                                                   |
+| -------------------------------------------- | ----------------------------------------------------------------------------- |
+| `syncLikes(accountDid)`                      | Paginate `getActorLikes` until a known URI is hit or 1000-post cap is reached |
+|                                              | evicts oldest on overflow                                                     |
+| `getLikedPosts(accountDid, {limit, offset})` | Paginated query ordered by `likedAt DESC`                                     |
+| `removeLike(accountDid, postUri)`            | Delete a single entry                                                         |
 
 ## Testing
 
@@ -132,7 +143,7 @@ Run the full suite:
 ```sh
 just test
 # or with failure-only reporter (recommended for large suites):
-flutter test --reporter=failures-only
+just test-quiet
 ```
 
 Coverage target: **>99%** (±5% acceptable). All new code must have tests. Widget tests use `NativeDatabase.memory()` for Drift and mocktail for API mocks.
