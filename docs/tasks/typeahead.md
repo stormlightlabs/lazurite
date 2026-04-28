@@ -2,42 +2,24 @@
 
 ## M0 - Data Layer
 
-- [ ] Create `lib/features/typeahead/data/typeahead_result.dart` - `TypeaheadResult` model (`did`, `handle`, `displayName`, `avatarUrl`, `labels`)
-  - Factory `fromProfileViewBasic` for Bluesky backend
-  - Factory `fromJson` for community backend raw JSON
-- [ ] Create `lib/features/typeahead/data/typeahead_repository.dart`
-  - Constructor takes optional `Bluesky`, required `provider` string, optional `ModerationService`
-  - `search(query, limit)` dispatches to Bluesky SDK or HTTP based on provider
-  - Bluesky path: `bluesky.actor.searchActorsTypeahead(q:, limit:)` + moderation headers + filtering
-  - Community path: HTTP GET to `https://typeahead.waow.tech/xrpc/app.bsky.actor.searchActorsTypeahead?q=&limit=` with `X-Client: lazurite` header
-  - Fallback: community failure → Bluesky endpoint (when session available), log via `AppLogger`
-- [ ] Unit tests for `TypeaheadRepository`
-  - Bluesky provider delegates to SDK, applies moderation filtering
-  - Community provider makes HTTP request, parses JSON, applies local moderation
-  - Fallback triggers on community error when Bluesky available
-  - Fallback does not trigger when no session (login context)
+- [x] Create `lib/features/typeahead/data/typeahead_result.dart` - `TypeaheadResult` model (`did`, `handle`, `displayName`, `avatarUrl`, `labels`)
+- [x] Create `lib/features/typeahead/data/typeahead_repository.dart`
+- [x] Unit tests for `TypeaheadRepository`
 
 ## M1 - Settings Integration
 
-- [ ] Add `typeahead_provider` column to settings table (Drift migration)
-  - Type: text, default: `'bluesky'`, allowed: `'bluesky'` | `'community'`
-- [ ] Add `typeaheadProvider` to `SettingsState`
-- [ ] Add `setTypeaheadProvider(String)` to `SettingsCubit`
-- [ ] Settings UI: add "Typeahead Provider" option under a "Search" section
-  - Radio/segmented control: Bluesky / Community (waow.tech)
-  - Brief description for each, note community is third-party
-- [ ] Unit test: `SettingsCubit` persists and restores typeahead provider
-- [ ] Widget test: settings screen shows typeahead provider selector
+- [x] Add `typeahead_provider` column to settings table (Drift migration)
+- [x] Add `typeaheadProvider` to `SettingsState`
+- [x] Add `setTypeaheadProvider(String)` to `SettingsCubit`
+- [x] Settings UI: add "Typeahead Provider" option under a "Search" section
+- [x] Unit test: `SettingsCubit` persists and restores typeahead provider
+- [x] Widget test: settings screen shows typeahead provider selector
 
 ## M2 - TypeaheadCubit
 
-- [ ] Create `lib/features/typeahead/cubit/typeahead_cubit.dart`
-- [ ] Create `lib/features/typeahead/cubit/typeahead_state.dart`
-  - State: `results`, `isLoading`, `error`
-  - Methods: `onQueryChanged(String)` (300ms debounce), `clear()`
-  - Cancel in-flight on new query
-  - Empty/whitespace → emit empty results immediately
-- [ ] Unit tests: debounce fires, cancel-on-new-query, empty input handling
+- [x] Create `lib/features/typeahead/cubit/typeahead_cubit.dart`
+- [x] Create `lib/features/typeahead/cubit/typeahead_state.dart`
+- [x] Unit tests: debounce fires, cancel-on-new-query, empty input handling
 
 ## M3 - TypeaheadTextField Widget
 
@@ -72,11 +54,3 @@
 - [ ] Update starter pack member search to use `TypeaheadRepository`
 - [ ] Unit tests: `SearchBloc` typeahead delegates to `TypeaheadRepository`
 - [ ] Widget tests: search typeahead renders results from configured provider
-
-## M6 - Polish & Validation
-
-- [ ] Verify rate limiting: 300ms debounce keeps community usage well under 60 req/min
-- [ ] Graceful degradation: community results without `viewer` → hide follow badge
-- [ ] Error handling: network timeout → show inline error, not crash
-- [ ] `flutter analyze` clean
-- [ ] Full test suite passes

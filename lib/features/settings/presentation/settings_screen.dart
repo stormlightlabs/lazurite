@@ -316,6 +316,32 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
+              ListTile(
+                leading: const Icon(Icons.tune_outlined),
+                title: const Text('Typeahead Provider'),
+                subtitle: Text(
+                  settingsState.typeaheadProvider == 'community'
+                      ? 'Community (waow.tech) selected. Third-party service, works before login.'
+                      : 'Bluesky official endpoint selected. Requires login.',
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment<String>(value: 'bluesky', label: Text('Bluesky')),
+                      ButtonSegment<String>(value: 'community', label: Text('Community')),
+                    ],
+                    selected: {settingsState.typeaheadProvider},
+                    onSelectionChanged: (selection) {
+                      context.read<SettingsCubit>().setTypeaheadProvider(selection.first);
+                    },
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
               _SettingsTile(
                 icon: Icons.manage_search_outlined,
                 title: 'Semantic Search',

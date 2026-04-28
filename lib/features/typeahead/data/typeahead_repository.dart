@@ -1,0 +1,130 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:http/http.dart' as http;
+import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/features/moderation/data/moderation_service.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
+
+class TypeaheadRepository {
+  TypeaheadRepository({
+    dynamic bluesky,
+    required String provider,
+    ModerationService? moderationService,
+    http.Client? httpClient,
+  }) : _bluesky = bluesky,
+       _provider = provider.trim().toLowerCase(),
+       _moderationService = moderationService,
+       _httpClient = httpClient ?? http.Client() {
+    if (!_isSupportedProvider(_provider)) {
+      throw ArgumentError.value(provider, 'provider', 'Supported providers are "bluesky" and "community".');
+    }
+  }
+
+  static const String blueskyProvider = 'bluesky';
+  static const String communityProvider = 'community';
+
+  static const String _communityHost = 'typeahead.waow.tech';
+  static const String _communityPath = '/xrpc/app.bsky.actor.searchActorsTypeahead';
+
+  final dynamic _bluesky;
+  final String _provider;
+  final ModerationService? _moderationService;
+  final http.Client _httpClient;
+
+  Future<List<TypeaheadResult>> search({required String query, int limit = 10}) async {
+    final normalizedQuery = query.trim();
+    if (normalizedQuery.isEmpty) {
+      return const [];
+    }
+
+    final normalizedLimit = limit.clamp(1, 100);
+
+    if (_provider == blueskyProvider) {
+      return _searchBluesky(query: normalizedQuery, limit: normalizedLimit);
+    }
+
+    try {
+      return await _searchCommunity(query: normalizedQuery, limit: normalizedLimit);
+    } catch (error, stackTrace) {
+      if (_bluesky == null) {
+        rethrow;
+      }
+
+      log.w(
+        'TypeaheadRepository: community provider failed; falling back to Bluesky provider.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      return _searchBluesky(query: normalizedQuery, limit: normalizedLimit);
+    }
+  }
+
+  Future<List<TypeaheadResult>> _searchBluesky({required String query, required int limit}) async {
+    final bluesky = _bluesky;
+    if (bluesky == null) {
+      throw StateError('Bluesky provider requires an authenticated Bluesky client.');
+    }
+
+    final response = await bluesky.actor.searchActorsTypeahead(
+      q: query,
+      limit: limit,
+      $headers: await _moderationService?.headersForRequest(),
+    );
+
+    final results = (response.data.actors as List)
+        .whereType<ProfileViewBasic>()
+        .map(TypeaheadResult.fromProfileViewBasic)
+        .toList(growable: false);
+    return _applyModeration(results);
+  }
+
+  Future<List<TypeaheadResult>> _searchCommunity({required String query, required int limit}) async {
+    final uri = Uri.https(_communityHost, _communityPath, {'q': query, 'limit': limit.toString()});
+    final response = await _httpClient.get(uri, headers: const {'X-Client': 'lazurite'});
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw HttpException('Community typeahead request failed: HTTP ${response.statusCode}', uri: uri);
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('Community typeahead response was not a JSON object.');
+    }
+
+    final actors = decoded['actors'];
+    if (actors is! List) {
+      return const [];
+    }
+
+    final results = <TypeaheadResult>[];
+    for (final actor in actors) {
+      if (actor is! Map<String, dynamic>) {
+        continue;
+      }
+
+      try {
+        results.add(TypeaheadResult.fromJson(actor));
+      } catch (error, stackTrace) {
+        log.w('TypeaheadRepository: skipped invalid community actor payload.', error: error, stackTrace: stackTrace);
+      }
+    }
+
+    return _applyModeration(results);
+  }
+
+  List<TypeaheadResult> _applyModeration(List<TypeaheadResult> results) {
+    final moderationService = _moderationService;
+    if (moderationService == null) {
+      return results;
+    }
+
+    return results
+        .where((result) => !moderationService.shouldFilterProfileBasicInList(result.toProfileViewBasic()))
+        .toList(growable: false);
+  }
+
+  static bool _isSupportedProvider(String provider) => provider == blueskyProvider || provider == communityProvider;
+}

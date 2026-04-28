@@ -44,6 +44,9 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _keySemanticSearchEnabled = 'semantic_search_enabled';
   static const String _keySearchScope = 'search_scope';
   static const String _keySemanticSearchMaxResults = 'semantic_search_max_results';
+  static const String _keyTypeaheadProvider = 'typeahead_provider';
+  static const String _defaultTypeaheadProvider = 'bluesky';
+  static const Set<String> _supportedTypeaheadProviders = {'bluesky', 'community'};
 
   Future<void> loadSettings() async {
     final paletteStr = await database.getSetting(_keyThemePalette);
@@ -58,6 +61,10 @@ class SettingsCubit extends Cubit<SettingsState> {
     final semanticSearchEnabledStr = await database.getSetting(_keySemanticSearchEnabled);
     final searchScopeStr = await database.getSetting(_keySearchScope);
     final semanticSearchMaxResultsStr = await database.getSetting(_keySemanticSearchMaxResults);
+    final typeaheadProviderStr = await database.getSetting(_keyTypeaheadProvider);
+    final resolvedTypeaheadProvider = _supportedTypeaheadProviders.contains(typeaheadProviderStr)
+        ? typeaheadProviderStr!
+        : _defaultTypeaheadProvider;
 
     emit(
       state.copyWith(
@@ -72,6 +79,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         semanticSearchEnabled: semanticSearchEnabledStr == 'true',
         searchScope: SearchScope.values.firstWhere((s) => s.name == searchScopeStr, orElse: () => SearchScope.both),
         semanticSearchMaxResults: int.tryParse(semanticSearchMaxResultsStr ?? '') ?? 20,
+        typeaheadProvider: resolvedTypeaheadProvider,
       ),
     );
   }
@@ -140,5 +148,19 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setSemanticSearchMaxResults(int value) async {
     await database.setSetting(_keySemanticSearchMaxResults, value.toString());
     emit(state.copyWith(semanticSearchMaxResults: value));
+  }
+
+  Future<void> setTypeaheadProvider(String provider) async {
+    final normalizedProvider = provider.trim().toLowerCase();
+    if (!_supportedTypeaheadProviders.contains(normalizedProvider)) {
+      throw ArgumentError.value(
+        provider,
+        'provider',
+        'Supported typeahead providers are: ${_supportedTypeaheadProviders.join(', ')}.',
+      );
+    }
+
+    await database.setSetting(_keyTypeaheadProvider, normalizedProvider);
+    emit(state.copyWith(typeaheadProvider: normalizedProvider));
   }
 }

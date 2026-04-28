@@ -223,6 +223,11 @@ void main() {
     });
 
     group('Settings operations', () {
+      test('should seed default typeahead provider on database creation', () async {
+        final value = await database.getSetting('typeahead_provider');
+        expect(value, equals('bluesky'));
+      });
+
       test('should set and get setting', () async {
         await database.setSetting('theme', 'dark');
         final value = await database.getSetting('theme');

@@ -26,12 +26,13 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) async {
       await migrator.createAll();
+      await customStatement("INSERT OR IGNORE INTO settings (key, value) VALUES ('typeahead_provider', 'bluesky')");
     },
     onUpgrade: (migrator, from, to) async {
       if (from < 2) {
@@ -114,6 +115,9 @@ class AppDatabase extends _$AppDatabase {
             AND dpop_public_key IS NOT NULL
             AND dpop_private_key IS NOT NULL
         ''');
+      }
+      if (from < 17) {
+        await customStatement("INSERT OR IGNORE INTO settings (key, value) VALUES ('typeahead_provider', 'bluesky')");
       }
     },
   );

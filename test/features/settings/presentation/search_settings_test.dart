@@ -58,6 +58,7 @@ void main() {
     final initialSettings = _baseSettings();
     when(() => settingsCubit.state).thenReturn(initialSettings);
     whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: initialSettings);
+    when(() => settingsCubit.setTypeaheadProvider(any())).thenAnswer((_) async {});
 
     when(() => indexCubit.state).thenReturn(const SemanticIndexState());
     whenListen(indexCubit, const Stream<SemanticIndexState>.empty(), initialState: const SemanticIndexState());
@@ -85,6 +86,31 @@ void main() {
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('SEARCH'), 300);
       expect(find.text('SEARCH'), findsOneWidget);
+    });
+
+    testWidgets('shows typeahead provider selector', (tester) async {
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Typeahead Provider'), 300);
+
+      expect(find.text('Typeahead Provider'), findsOneWidget);
+      expect(find.text('Bluesky official endpoint selected. Requires login.'), findsOneWidget);
+      expect(find.text('Bluesky'), findsOneWidget);
+      expect(find.text('Community'), findsOneWidget);
+    });
+
+    testWidgets('selecting community provider calls setTypeaheadProvider', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 2400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Typeahead Provider'), 300);
+
+      await tester.tap(find.text('Community'));
+      await tester.pumpAndSettle();
+
+      verify(() => settingsCubit.setTypeaheadProvider('community')).called(1);
     });
 
     testWidgets('shows Semantic Search toggle set to off by default', (tester) async {

@@ -87,7 +87,8 @@ void main() {
             .having((s) => s.feedLayout, 'feedLayout', FeedLayout.card)
             .having((s) => s.animationsEnabled, 'animationsEnabled', true)
             .having((s) => s.simulateOffline, 'simulateOffline', false)
-            .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', isNull),
+            .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', isNull)
+            .having((s) => s.typeaheadProvider, 'typeaheadProvider', 'bluesky'),
       ],
     );
 
@@ -283,6 +284,26 @@ void main() {
           'https://constellation.microcosm.blue',
         ),
       ],
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setTypeaheadProvider updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setTypeaheadProvider('community'),
+      expect: () => [isA<SettingsState>().having((s) => s.typeaheadProvider, 'typeaheadProvider', 'community')],
+      verify: (_) async {
+        expect(await database.getSetting('typeahead_provider'), 'community');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'loadSettings restores persisted typeahead provider',
+      build: () => SettingsCubit(database: database),
+      setUp: () async {
+        await database.setSetting('typeahead_provider', 'community');
+      },
+      act: (cubit) => cubit.loadSettings(),
+      expect: () => [isA<SettingsState>().having((s) => s.typeaheadProvider, 'typeaheadProvider', 'community')],
     );
   });
 }
