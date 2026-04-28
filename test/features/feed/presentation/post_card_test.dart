@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_embed_external.dart';
+import 'package:bluesky/app_bsky_embed_images.dart';
 import 'package:bluesky/app_bsky_embed_record.dart';
+import 'package:bluesky/app_bsky_embed_recordwithmedia.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/app_bsky_richtext_facet.dart';
@@ -434,5 +436,69 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(pushedRoute, contains('did%3Aplc%3Atest'));
+  });
+
+  testWidgets('uses unique image hero tags across record-with-media and quoted embeds', (tester) async {
+    final quotedRecord = FeedPostRecord(text: 'Quoted with image', createdAt: DateTime.utc(2026, 3, 15));
+    final post = FeedViewPost(
+      post: PostView(
+        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
+        cid: 'cid-xyz',
+        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+        record: FeedPostRecord(text: 'Main post with media quote', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
+        indexedAt: DateTime.utc(2026, 3, 16),
+        embed: UPostViewEmbed.embedRecordWithMediaView(
+          data: EmbedRecordWithMediaView(
+            media: const UEmbedRecordWithMediaViewMedia.embedImagesView(
+              data: EmbedImagesView(
+                images: [
+                  EmbedImagesViewImage(
+                    thumb: 'https://example.com/main-thumb.jpg',
+                    fullsize: 'https://example.com/main-full.jpg',
+                    alt: 'main image',
+                  ),
+                ],
+              ),
+            ),
+            record: EmbedRecordView(
+              record: UEmbedRecordViewRecord.embedRecordViewRecord(
+                data: EmbedRecordViewRecord(
+                  uri: AtUri.parse('at://did:plc:quoted/app.bsky.feed.post/quoted123'),
+                  cid: 'cid-quoted',
+                  author: const ProfileViewBasic(did: 'did:plc:quoted', handle: 'quoted.bsky.social'),
+                  value: quotedRecord.toJson(),
+                  embeds: [
+                    const UEmbedRecordViewRecordEmbeds.embedImagesView(
+                      data: EmbedImagesView(
+                        images: [
+                          EmbedImagesViewImage(
+                            thumb: 'https://example.com/quoted-thumb.jpg',
+                            fullsize: 'https://example.com/quoted-full.jpg',
+                            alt: 'quoted image',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  indexedAt: DateTime.utc(2026, 3, 15),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(child: PostCard(feedViewPost: post)),
+        ),
+      ),
+    );
+
+    final heroTags = tester.widgetList<Hero>(find.byType(Hero)).map((hero) => hero.tag).toList();
+    expect(heroTags.length, greaterThanOrEqualTo(2));
+    expect(heroTags.toSet().length, heroTags.length);
   });
 }

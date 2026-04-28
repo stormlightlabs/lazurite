@@ -169,6 +169,56 @@ void main() {
     );
 
     blocTest<FeedPreferencesCubit, FeedPreferencesState>(
+      'loadPreferences hydrates generator views in bounded batches',
+      build: () =>
+          FeedPreferencesCubit(feedRepository: mockFeedRepository, database: database, accountDid: 'did:plc:test'),
+      setUp: () {
+        final feeds = List.generate(
+          65,
+          (i) =>
+              createTestFeed(id: 'feed-$i', pinned: i == 0, value: 'at://did:plc:test/app.bsky.feed.generator/feed-$i'),
+        );
+
+        when(() => mockFeedRepository.getPreferences()).thenAnswer(
+          (_) async => PreferencesResult(
+            preferences: [UPreferences.savedFeedsPrefV2(data: SavedFeedsPrefV2(items: feeds))],
+          ),
+        );
+
+        when(() => mockFeedRepository.getFeedGenerators(any())).thenAnswer((invocation) async {
+          final chunk = invocation.positionalArguments.first as List<AtUri>;
+          return [
+            for (final uri in chunk)
+              GeneratorView(
+                uri: uri,
+                cid: 'cid-${uri.rkey}',
+                creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+                did: 'did:plc:test',
+                displayName: uri.rkey,
+                indexedAt: DateTime.utc(2026, 3, 16),
+              ),
+          ];
+        });
+      },
+      act: (cubit) => cubit.loadPreferences(),
+      expect: () => [
+        isA<FeedPreferencesState>().having((s) => s.status, 'status', FeedPreferencesStatus.loading),
+        isA<FeedPreferencesState>().having((s) => s.status, 'status', FeedPreferencesStatus.loaded),
+        isA<FeedPreferencesState>()
+            .having((s) => s.status, 'status', FeedPreferencesStatus.loaded)
+            .having((s) => s.generatorViews.length, 'generatorViews.length', 65),
+      ],
+      verify: (_) {
+        final captured = verify(() => mockFeedRepository.getFeedGenerators(captureAny())).captured.cast<List<AtUri>>();
+        expect(captured.length, 3);
+        expect(captured[0].length, 25);
+        expect(captured[1].length, 25);
+        expect(captured[2].length, 15);
+        verifyNever(() => mockFeedRepository.getFeedGenerator(any()));
+      },
+    );
+
+    blocTest<FeedPreferencesCubit, FeedPreferencesState>(
       'pinFeed moves feed to pinned section',
       build: () =>
           FeedPreferencesCubit(feedRepository: mockFeedRepository, database: database, accountDid: 'did:plc:test'),

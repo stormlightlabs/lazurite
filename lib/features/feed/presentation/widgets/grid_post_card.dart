@@ -66,7 +66,7 @@ class GridPostCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: colorScheme.outlineVariant),
-        color: colorScheme.surfaceContainerLowest,
+        color: colorScheme.surface.withValues(alpha: 0.91),
       ),
       child: ModeratedBlurOverlay(
         ui: postUi,

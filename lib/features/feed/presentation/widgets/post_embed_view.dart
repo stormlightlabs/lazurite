@@ -34,12 +34,13 @@ class PostEmbedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _buildEmbed(context, embed) ?? const SizedBox.shrink();
+    final rootHeroNamespace = '${feedViewPost.post.uri}#${identityHashCode(this)}';
+    return _buildEmbed(context, embed, heroNamespace: rootHeroNamespace) ?? const SizedBox.shrink();
   }
 
-  Widget? _buildEmbed(BuildContext context, UPostViewEmbed embed) {
+  Widget? _buildEmbed(BuildContext context, UPostViewEmbed embed, {required String heroNamespace}) {
     if (embed.isEmbedImagesView) {
-      return _buildImagesEmbed(context, embed.embedImagesView!.images);
+      return _buildImagesEmbed(context, embed.embedImagesView!.images, heroNamespace: '$heroNamespace/images');
     }
 
     if (embed.isEmbedExternalView) {
@@ -47,7 +48,7 @@ class PostEmbedView extends StatelessWidget {
     }
 
     if (embed.isEmbedRecordView) {
-      return _buildQuotedRecord(context, embed.embedRecordView!);
+      return _buildQuotedRecord(context, embed.embedRecordView!, heroNamespace: '$heroNamespace/record');
     }
 
     if (embed.isEmbedVideoView) {
@@ -59,9 +60,9 @@ class PostEmbedView extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildRecordWithMediaMedia(context, recordWithMedia.media),
+          _buildRecordWithMediaMedia(context, recordWithMedia.media, heroNamespace: '$heroNamespace/rwm-media'),
           const SizedBox(height: 8),
-          _buildQuotedRecord(context, recordWithMedia.record),
+          _buildQuotedRecord(context, recordWithMedia.record, heroNamespace: '$heroNamespace/rwm-record'),
         ],
       );
     }
@@ -69,9 +70,13 @@ class PostEmbedView extends StatelessWidget {
     return null;
   }
 
-  Widget _buildRecordWithMediaMedia(BuildContext context, UEmbedRecordWithMediaViewMedia media) {
+  Widget _buildRecordWithMediaMedia(
+    BuildContext context,
+    UEmbedRecordWithMediaViewMedia media, {
+    required String heroNamespace,
+  }) {
     if (media.isEmbedImagesView) {
-      return _buildImagesEmbed(context, media.embedImagesView!.images);
+      return _buildImagesEmbed(context, media.embedImagesView!.images, heroNamespace: '$heroNamespace/images');
     }
     if (media.isEmbedExternalView) {
       return _buildExternalEmbed(context, media.embedExternalView!.external);
@@ -82,10 +87,9 @@ class PostEmbedView extends StatelessWidget {
     return const SizedBox.shrink();
   }
 
-  Widget _buildImagesEmbed(BuildContext context, List<EmbedImagesViewImage> images) {
+  Widget _buildImagesEmbed(BuildContext context, List<EmbedImagesViewImage> images, {required String heroNamespace}) {
     final crossAxisCount = images.length == 1 ? 1 : 2;
     final childAspectRatio = images.length == 1 ? 16 / 9 : 1.0;
-    final postUri = feedViewPost.post.uri.toString();
     final moderationService = maybeModerationService(context);
     final mediaUi =
         moderationService?.postUi(feedViewPost.post, bsky_moderation.ModerationBehaviorContext.contentMedia) ??
@@ -106,12 +110,12 @@ class PostEmbedView extends StatelessWidget {
         ),
         itemBuilder: (context, index) {
           final image = images[index];
-          final heroTag = _imageHeroTag(postUri, index);
+          final heroTag = _imageHeroTag(heroNamespace, index);
 
           return GestureDetector(
             onLongPressStart: (details) => _showImageContextMenu(context, details.globalPosition, image: image),
             child: InkWell(
-              onTap: () => _openImageViewer(context, images, initialIndex: index),
+              onTap: () => _openImageViewer(context, images, initialIndex: index, heroNamespace: heroNamespace),
               child: Hero(
                 tag: heroTag,
                 child: Image.network(
@@ -240,7 +244,7 @@ class PostEmbedView extends StatelessWidget {
     );
   }
 
-  Widget _buildQuotedRecord(BuildContext context, EmbedRecordView recordView) {
+  Widget _buildQuotedRecord(BuildContext context, EmbedRecordView recordView, {required String heroNamespace}) {
     final record = recordView.record;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -248,7 +252,8 @@ class PostEmbedView extends StatelessWidget {
     if (record.isEmbedRecordViewRecord) {
       final quoted = record.embedRecordViewRecord!;
       final quotedRecord = _tryParseRecord(quoted.value);
-      final nestedEmbed = _buildQuotedEmbeds(context, quoted.embeds);
+      final nestedHeroNamespace = '$heroNamespace/quote:${quoted.uri}';
+      final nestedEmbed = _buildQuotedEmbeds(context, quoted.embeds, heroNamespace: '$nestedHeroNamespace/embeds');
 
       return Container(
         decoration: BoxDecoration(
@@ -334,13 +339,17 @@ class PostEmbedView extends StatelessWidget {
     );
   }
 
-  Widget? _buildQuotedEmbeds(BuildContext context, List<UEmbedRecordViewRecordEmbeds>? embeds) {
+  Widget? _buildQuotedEmbeds(
+    BuildContext context,
+    List<UEmbedRecordViewRecordEmbeds>? embeds, {
+    required String heroNamespace,
+  }) {
     if (embeds == null || embeds.isEmpty) return null;
 
     final embed = embeds.first;
 
     if (embed.isEmbedImagesView) {
-      return _buildImagesEmbed(context, embed.embedImagesView!.images);
+      return _buildImagesEmbed(context, embed.embedImagesView!.images, heroNamespace: '$heroNamespace/images');
     }
     if (embed.isEmbedExternalView) {
       return _buildExternalEmbed(context, embed.embedExternalView!.external);
@@ -353,9 +362,9 @@ class PostEmbedView extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildRecordWithMediaMedia(context, recordWithMedia.media),
+          _buildRecordWithMediaMedia(context, recordWithMedia.media, heroNamespace: '$heroNamespace/rwm-media'),
           const SizedBox(height: 8),
-          _buildQuotedRecord(context, recordWithMedia.record),
+          _buildQuotedRecord(context, recordWithMedia.record, heroNamespace: '$heroNamespace/rwm-record'),
         ],
       );
     }
@@ -363,7 +372,12 @@ class PostEmbedView extends StatelessWidget {
     return null;
   }
 
-  void _openImageViewer(BuildContext context, List<EmbedImagesViewImage> images, {required int initialIndex}) {
+  void _openImageViewer(
+    BuildContext context,
+    List<EmbedImagesViewImage> images, {
+    required int initialIndex,
+    required String heroNamespace,
+  }) {
     GoRouter.maybeOf(context)?.push(
       '/images',
       extra: ImageViewerRouteArgs(
@@ -373,7 +387,7 @@ class PostEmbedView extends StatelessWidget {
               fullsizeUrl: images[i].fullsize,
               thumbnailUrl: images[i].thumb,
               altText: images[i].alt,
-              heroTag: _imageHeroTag(feedViewPost.post.uri.toString(), i),
+              heroTag: _imageHeroTag(heroNamespace, i),
             ),
         ],
         initialIndex: initialIndex,
@@ -420,7 +434,7 @@ class PostEmbedView extends StatelessWidget {
     );
   }
 
-  String _imageHeroTag(String postUri, int index) => 'post-image-$postUri-$index';
+  String _imageHeroTag(String heroNamespace, int index) => 'post-image-$heroNamespace-$index';
 
   String _downloadFileName(String url) {
     final uri = Uri.tryParse(url);

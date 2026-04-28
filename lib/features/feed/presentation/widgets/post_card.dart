@@ -3,6 +3,7 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart';
@@ -13,7 +14,6 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderation_bad
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class PostCard extends StatelessWidget {
   const PostCard({
@@ -50,7 +50,7 @@ class PostCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 1),
       decoration: BoxDecoration(
         border: Border.all(color: colorScheme.outlineVariant),
-        color: colorScheme.surfaceContainerLowest,
+        color: colorScheme.surface.withValues(alpha: 0.9),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

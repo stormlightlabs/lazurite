@@ -19,6 +19,8 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
        _accountDid = accountDid,
        super(const FeedPreferencesState.initial());
 
+  static const int _generatorHydrationBatchSize = 25;
+
   final FeedRepository _feedRepository;
   final AppDatabase _database;
   final String _accountDid;
@@ -248,34 +250,40 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
       return;
     }
 
-    try {
-      final generatorViews = await _feedRepository.getFeedGenerators(feedUris);
-      log.d('FeedPreferencesCubit: Hydrated ${generatorViews.length} generator views for $_accountDid');
-      emit(state.copyWith(generatorViews: generatorViews, status: FeedPreferencesStatus.loaded, feeds: feeds));
-    } catch (e, stackTrace) {
-      log.w(
-        'FeedPreferencesCubit: Failed to hydrate ${feedUris.length} generator views for $_accountDid',
-        error: e,
-        stackTrace: stackTrace,
-      );
+    final generatorViews = <GeneratorView>[];
 
-      // Fall back to per-feed hydration so one bad feed URI does not suppress
-      // metadata (display names / avatars) for all remaining feeds.
-      final fallbackViews = <GeneratorView>[];
-      for (final feedUri in feedUris) {
+    for (var i = 0; i < feedUris.length; i += _generatorHydrationBatchSize) {
+      final end = i + _generatorHydrationBatchSize > feedUris.length
+          ? feedUris.length
+          : i + _generatorHydrationBatchSize;
+      final chunk = feedUris.sublist(i, end);
+
+      try {
+        final chunkViews = await _feedRepository.getFeedGenerators(chunk);
+        generatorViews.addAll(chunkViews);
+        continue;
+      } catch (_) {
+        // Fall back to per-feed hydration for this chunk so one bad URI (or
+        // oversized/invalid batch response) does not suppress all remaining
+        // metadata.
+      }
+
+      for (final feedUri in chunk) {
         try {
-          fallbackViews.add(await _feedRepository.getFeedGenerator(feedUri));
+          generatorViews.add(await _feedRepository.getFeedGenerator(feedUri));
         } catch (_) {
           continue;
         }
       }
+    }
 
-      if (fallbackViews.isNotEmpty) {
-        log.d(
-          'FeedPreferencesCubit: Fallback hydrated ${fallbackViews.length}/${feedUris.length} generator views for $_accountDid',
-        );
-        emit(state.copyWith(generatorViews: fallbackViews, status: FeedPreferencesStatus.loaded, feeds: feeds));
-      }
+    if (generatorViews.isNotEmpty) {
+      log.d(
+        'FeedPreferencesCubit: Hydrated ${generatorViews.length}/${feedUris.length} generator views for $_accountDid',
+      );
+      emit(state.copyWith(generatorViews: generatorViews, status: FeedPreferencesStatus.loaded, feeds: feeds));
+    } else if (state.generatorViews.isNotEmpty) {
+      emit(state.copyWith(generatorViews: const [], status: FeedPreferencesStatus.loaded, feeds: feeds));
     }
   }
 
