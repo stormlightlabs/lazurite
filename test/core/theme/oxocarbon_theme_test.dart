@@ -135,5 +135,59 @@ void main() {
         expect(OxocarbonTheme.lightBase0F, const Color(0xFFFFAB91));
       });
     });
+
+    group('ThemeData', () {
+      test('dark theme maps expected tokens', () {
+        final theme = OxocarbonTheme.dark();
+        final scheme = theme.colorScheme;
+
+        expect(theme.useMaterial3, isTrue);
+        expect(theme.brightness, Brightness.dark);
+        expect(scheme.primary, OxocarbonTheme.darkBase09);
+        expect(scheme.secondary, OxocarbonTheme.darkBase0E);
+        expect(scheme.tertiary, OxocarbonTheme.darkBase07);
+        expect(scheme.surface, OxocarbonTheme.darkBase01);
+        expect(scheme.onSurface, OxocarbonTheme.darkBase05);
+        expect(scheme.surfaceContainerHighest, OxocarbonTheme.darkBase02);
+        expect(scheme.outline, OxocarbonTheme.darkBase03);
+        expect(scheme.outlineVariant, OxocarbonTheme.darkBase02);
+        expect(theme.scaffoldBackgroundColor, OxocarbonTheme.darkBase00);
+        expect(theme.appBarTheme.backgroundColor, OxocarbonTheme.darkBase00);
+        expect(theme.cardTheme.color, OxocarbonTheme.darkBase01);
+        expect(theme.dividerTheme.color, OxocarbonTheme.darkBase02);
+        expect(theme.iconTheme.color, OxocarbonTheme.darkBase04);
+        expect(theme.listTileTheme.textColor, OxocarbonTheme.darkBase05);
+        expect(theme.floatingActionButtonTheme.backgroundColor, OxocarbonTheme.darkBase09);
+        expect(theme.inputDecorationTheme.filled, isTrue);
+        expect(theme.inputDecorationTheme.fillColor, OxocarbonTheme.darkBase01);
+        expect(theme.snackBarTheme.backgroundColor, OxocarbonTheme.darkBase01);
+      });
+
+      test('light theme maps expected tokens', () {
+        final theme = OxocarbonTheme.light();
+        final scheme = theme.colorScheme;
+
+        expect(theme.useMaterial3, isTrue);
+        expect(theme.brightness, Brightness.light);
+        expect(scheme.primary, OxocarbonTheme.lightBase0B);
+        expect(scheme.secondary, OxocarbonTheme.lightBase0C);
+        expect(scheme.tertiary, OxocarbonTheme.lightBase07);
+        expect(scheme.surface, OxocarbonTheme.lightBase01);
+        expect(scheme.onSurface, OxocarbonTheme.lightBase03);
+        expect(scheme.surfaceContainerHighest, OxocarbonTheme.lightBase02);
+        expect(scheme.outline, OxocarbonTheme.lightBase05);
+        expect(scheme.outlineVariant, OxocarbonTheme.lightBase02);
+        expect(theme.scaffoldBackgroundColor, OxocarbonTheme.lightBase00);
+        expect(theme.appBarTheme.backgroundColor, OxocarbonTheme.lightBase00);
+        expect(theme.cardTheme.color, OxocarbonTheme.lightBase01);
+        expect(theme.dividerTheme.color, OxocarbonTheme.lightBase02);
+        expect(theme.iconTheme.color, OxocarbonTheme.lightBase04);
+        expect(theme.listTileTheme.textColor, OxocarbonTheme.lightBase03);
+        expect(theme.floatingActionButtonTheme.backgroundColor, OxocarbonTheme.lightBase0B);
+        expect(theme.inputDecorationTheme.filled, isTrue);
+        expect(theme.inputDecorationTheme.fillColor, OxocarbonTheme.lightBase01);
+        expect(theme.snackBarTheme.backgroundColor, OxocarbonTheme.lightBase01);
+      });
+    });
   });
 }

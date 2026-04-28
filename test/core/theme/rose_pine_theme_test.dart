@@ -103,5 +103,59 @@ void main() {
         expect(RosePineTheme.dawnIris, const Color(0xFF907aa9));
       });
     });
+
+    group('ThemeData', () {
+      test('dark theme maps expected tokens', () {
+        final theme = RosePineTheme.dark();
+        final scheme = theme.colorScheme;
+
+        expect(theme.useMaterial3, isTrue);
+        expect(theme.brightness, Brightness.dark);
+        expect(scheme.primary, RosePineTheme.mainRose);
+        expect(scheme.secondary, RosePineTheme.mainIris);
+        expect(scheme.tertiary, RosePineTheme.mainFoam);
+        expect(scheme.surface, RosePineTheme.mainSurface);
+        expect(scheme.onSurface, RosePineTheme.mainText);
+        expect(scheme.surfaceContainerHighest, RosePineTheme.mainOverlay);
+        expect(scheme.outline, RosePineTheme.mainMuted);
+        expect(scheme.outlineVariant, RosePineTheme.mainOverlay);
+        expect(theme.scaffoldBackgroundColor, RosePineTheme.mainBase);
+        expect(theme.appBarTheme.backgroundColor, RosePineTheme.mainBase);
+        expect(theme.cardTheme.color, RosePineTheme.mainSurface);
+        expect(theme.dividerTheme.color, RosePineTheme.mainOverlay);
+        expect(theme.iconTheme.color, RosePineTheme.mainSubtle);
+        expect(theme.listTileTheme.textColor, RosePineTheme.mainText);
+        expect(theme.floatingActionButtonTheme.backgroundColor, RosePineTheme.mainRose);
+        expect(theme.inputDecorationTheme.filled, isTrue);
+        expect(theme.inputDecorationTheme.fillColor, RosePineTheme.mainSurface);
+        expect(theme.snackBarTheme.backgroundColor, RosePineTheme.mainSurface);
+      });
+
+      test('light theme maps expected tokens', () {
+        final theme = RosePineTheme.light();
+        final scheme = theme.colorScheme;
+
+        expect(theme.useMaterial3, isTrue);
+        expect(theme.brightness, Brightness.light);
+        expect(scheme.primary, RosePineTheme.dawnRose);
+        expect(scheme.secondary, RosePineTheme.dawnIris);
+        expect(scheme.tertiary, RosePineTheme.dawnFoam);
+        expect(scheme.surface, RosePineTheme.dawnSurface);
+        expect(scheme.onSurface, RosePineTheme.dawnText);
+        expect(scheme.surfaceContainerHighest, RosePineTheme.dawnOverlay);
+        expect(scheme.outline, RosePineTheme.dawnMuted);
+        expect(scheme.outlineVariant, RosePineTheme.dawnOverlay);
+        expect(theme.scaffoldBackgroundColor, RosePineTheme.dawnBase);
+        expect(theme.appBarTheme.backgroundColor, RosePineTheme.dawnBase);
+        expect(theme.cardTheme.color, RosePineTheme.dawnSurface);
+        expect(theme.dividerTheme.color, RosePineTheme.dawnOverlay);
+        expect(theme.iconTheme.color, RosePineTheme.dawnSubtle);
+        expect(theme.listTileTheme.textColor, RosePineTheme.dawnText);
+        expect(theme.floatingActionButtonTheme.backgroundColor, RosePineTheme.dawnRose);
+        expect(theme.inputDecorationTheme.filled, isTrue);
+        expect(theme.inputDecorationTheme.fillColor, RosePineTheme.dawnSurface);
+        expect(theme.snackBarTheme.backgroundColor, RosePineTheme.dawnSurface);
+      });
+    });
   });
 }

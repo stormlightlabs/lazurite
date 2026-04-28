@@ -4,6 +4,16 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTypography {
   AppTypography._();
 
+  static bool _disableFontsForTests = false;
+
+  static void disableFontsForTests() {
+    _disableFontsForTests = true;
+  }
+
+  static void enableFonts() {
+    _disableFontsForTests = false;
+  }
+
   static TextStyle googleSans({
     double fontSize = 14,
     FontWeight fontWeight = FontWeight.normal,
@@ -11,6 +21,16 @@ class AppTypography {
     double? letterSpacing,
     double? height,
   }) {
+    if (_disableFontsForTests) {
+      return TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+        letterSpacing: letterSpacing,
+        height: height,
+      );
+    }
+
     return GoogleFonts.googleSans(
       fontSize: fontSize,
       fontWeight: fontWeight,
@@ -27,6 +47,16 @@ class AppTypography {
     double? letterSpacing,
     double? height,
   }) {
+    if (_disableFontsForTests) {
+      return TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+        letterSpacing: letterSpacing,
+        height: height,
+      );
+    }
+
     return GoogleFonts.lora(
       fontSize: fontSize,
       fontWeight: fontWeight,
@@ -43,6 +73,16 @@ class AppTypography {
     double? letterSpacing,
     double? height,
   }) {
+    if (_disableFontsForTests) {
+      return TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+        letterSpacing: letterSpacing,
+        height: height,
+      );
+    }
+
     return GoogleFonts.googleSansCode(
       fontSize: fontSize,
       fontWeight: fontWeight,

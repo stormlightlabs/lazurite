@@ -69,5 +69,59 @@ void main() {
         expect(NordTheme.nord15, const Color(0xFFb48ead));
       });
     });
+
+    group('ThemeData', () {
+      test('dark theme maps expected tokens', () {
+        final theme = NordTheme.dark();
+        final scheme = theme.colorScheme;
+
+        expect(theme.useMaterial3, isTrue);
+        expect(theme.brightness, Brightness.dark);
+        expect(scheme.primary, NordTheme.nord8);
+        expect(scheme.secondary, NordTheme.nord9);
+        expect(scheme.tertiary, NordTheme.nord7);
+        expect(scheme.surface, NordTheme.nord1);
+        expect(scheme.onSurface, NordTheme.nord5);
+        expect(scheme.surfaceContainerHighest, NordTheme.nord2);
+        expect(scheme.outline, NordTheme.nord3);
+        expect(scheme.outlineVariant, NordTheme.nord2);
+        expect(theme.scaffoldBackgroundColor, NordTheme.nord0);
+        expect(theme.appBarTheme.backgroundColor, NordTheme.nord0);
+        expect(theme.cardTheme.color, NordTheme.nord1);
+        expect(theme.dividerTheme.color, NordTheme.nord2);
+        expect(theme.iconTheme.color, NordTheme.nord4);
+        expect(theme.listTileTheme.textColor, NordTheme.nord5);
+        expect(theme.floatingActionButtonTheme.backgroundColor, NordTheme.nord8);
+        expect(theme.inputDecorationTheme.filled, isTrue);
+        expect(theme.inputDecorationTheme.fillColor, NordTheme.nord1);
+        expect(theme.snackBarTheme.backgroundColor, NordTheme.nord1);
+      });
+
+      test('light theme maps expected tokens', () {
+        final theme = NordTheme.light();
+        final scheme = theme.colorScheme;
+
+        expect(theme.useMaterial3, isTrue);
+        expect(theme.brightness, Brightness.light);
+        expect(scheme.primary, NordTheme.nord8);
+        expect(scheme.secondary, NordTheme.nord9);
+        expect(scheme.tertiary, NordTheme.nord7);
+        expect(scheme.surface, NordTheme.nord1);
+        expect(scheme.onSurface, NordTheme.nord3);
+        expect(scheme.surfaceContainerHighest, NordTheme.nord2);
+        expect(scheme.outline, NordTheme.nord3);
+        expect(scheme.outlineVariant, NordTheme.nord2);
+        expect(theme.scaffoldBackgroundColor, NordTheme.nord6);
+        expect(theme.appBarTheme.backgroundColor, NordTheme.nord6);
+        expect(theme.cardTheme.color, NordTheme.nord5);
+        expect(theme.dividerTheme.color, NordTheme.nord2);
+        expect(theme.iconTheme.color, NordTheme.nord4);
+        expect(theme.listTileTheme.textColor, NordTheme.nord3);
+        expect(theme.floatingActionButtonTheme.backgroundColor, NordTheme.nord8);
+        expect(theme.inputDecorationTheme.filled, isTrue);
+        expect(theme.inputDecorationTheme.fillColor, NordTheme.nord5);
+        expect(theme.snackBarTheme.backgroundColor, NordTheme.nord5);
+      });
+    });
   });
 }

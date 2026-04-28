@@ -23,4 +23,6 @@ comment:
 ignore:
   - "**/*.g.dart"
   - "**/*.freezed.dart"
+  - "**/*_route_args.dart"
+  - "**/*_event.dart"
   - "test/**"

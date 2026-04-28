@@ -6,6 +6,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/theme/typography.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/core/widgets/app_breadcrumbs.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
@@ -119,7 +120,7 @@ class _SearchInputState extends State<_SearchInput> {
                     contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     isDense: true,
                   ),
-                  style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13),
+                  style: AppTypography.googleSansCode(fontSize: 13),
                   onChanged: _onQueryChanged,
                   onSubmitted: _resolve,
                 ),
@@ -456,7 +457,7 @@ class _CollectionItem extends StatelessWidget {
         ),
         child: Icon(_getCollectionIcon(collection.name), size: 16, color: context.colorScheme.primary),
       ),
-      title: Text(collection.name, style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13)),
+      title: Text(collection.name, style: AppTypography.googleSansCode(fontSize: 13)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -544,8 +545,11 @@ class _RecordsListState extends State<_RecordsList> {
               Expanded(
                 child: Text(
                   widget.state.selectedCollection ?? '',
-                  style: context.textTheme.titleSmall?.copyWith(
-                    fontFamily: 'JetBrains Mono',
+                  style: AppTypography.googleSansCode(
+                    fontSize: context.textTheme.titleSmall?.fontSize ?? 14,
+                    fontWeight: context.textTheme.titleSmall?.fontWeight ?? FontWeight.w500,
+                    letterSpacing: context.textTheme.titleSmall?.letterSpacing,
+                    height: context.textTheme.titleSmall?.height,
                     color: context.colorScheme.primary,
                   ),
                 ),
@@ -594,7 +598,7 @@ class _RecordItem extends StatelessWidget {
     final preview = _getRecordPreview(record.value);
 
     return ListTile(
-      title: Text(rkey, style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13)),
+      title: Text(rkey, style: AppTypography.googleSansCode(fontSize: 13)),
       subtitle: preview != null ? Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis) : null,
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.read<DevToolsCubit>().loadRecord(record),
@@ -698,10 +702,7 @@ class _JsonViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SelectableText(
-      _formatJson(json),
-      style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 12, height: 1.8),
-    );
+    return SelectableText(_formatJson(json), style: AppTypography.googleSansCode(fontSize: 12, height: 1.8));
   }
 }
 
