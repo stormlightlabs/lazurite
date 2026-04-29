@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -33,12 +34,14 @@ class AuthRepository {
     SupportsCloseForMode supportsCloseForMode = supportsCloseForLaunchMode,
     OAuthRefreshSession oauthRefreshSession = _defaultOAuthRefreshSession,
     Future<OAuthClientMetadata> Function(String clientId) loadClientMetadata = getClientMetadata,
+    String Function()? oauthServiceResolver,
   }) : _database = database,
        _launchUrlWithMode = launchUrlWithMode,
        _closeInAppBrowser = closeInAppBrowser,
        _supportsCloseForMode = supportsCloseForMode,
        _oauthRefreshSession = oauthRefreshSession,
-       _loadClientMetadata = loadClientMetadata;
+       _loadClientMetadata = loadClientMetadata,
+       _oauthServiceResolver = oauthServiceResolver ?? _defaultOAuthServiceResolver;
 
   static const String kClientId = 'https://lazurite.stormlightlabs.org/client-metadata.json';
   static const String _oauthService = 'bsky.social';
@@ -51,6 +54,7 @@ class AuthRepository {
   final SupportsCloseForMode _supportsCloseForMode;
   final OAuthRefreshSession _oauthRefreshSession;
   final Future<OAuthClientMetadata> Function(String clientId) _loadClientMetadata;
+  final String Function() _oauthServiceResolver;
 
   HttpServer? _callbackServer;
   StreamSubscription<HttpRequest>? _callbackSubscription;
@@ -148,7 +152,7 @@ class AuthRepository {
     try {
       _oauthCompleter = Completer<AuthTokens?>();
       _pendingHandle = handle.trim();
-      _pendingService = _oauthService;
+      _pendingService = normalizeAtprotoServiceHost(_oauthServiceResolver()) ?? _oauthService;
       log.i('AuthRepository: Starting OAuth login for ${_pendingHandle!}');
 
       final metadata = await _loadClientMetadata(kClientId);
@@ -721,6 +725,10 @@ class AuthRepository {
   }) {
     final oauthClient = OAuthClient(metadata, service: service);
     return oauthClient.refresh(session);
+  }
+
+  static String _defaultOAuthServiceResolver() {
+    return AppViewProviders.descriptorForSetting(AppViewProviders.defaultKey).entrywayUrl.host;
   }
 
   String _summarizeOAuthRefreshError(Object error) {

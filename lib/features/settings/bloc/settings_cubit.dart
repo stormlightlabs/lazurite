@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/search/data/search_scope.dart';
@@ -47,6 +48,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _keyTypeaheadProvider = 'typeahead_provider';
   static const String _defaultTypeaheadProvider = 'bluesky';
   static const Set<String> _supportedTypeaheadProviders = {'bluesky', 'community'};
+  static const String _keyAppViewProvider = 'appview_provider';
 
   Future<void> loadSettings() async {
     final paletteStr = await database.getSetting(_keyThemePalette);
@@ -62,9 +64,11 @@ class SettingsCubit extends Cubit<SettingsState> {
     final searchScopeStr = await database.getSetting(_keySearchScope);
     final semanticSearchMaxResultsStr = await database.getSetting(_keySemanticSearchMaxResults);
     final typeaheadProviderStr = await database.getSetting(_keyTypeaheadProvider);
+    final appViewProviderStr = await database.getSetting(_keyAppViewProvider);
     final resolvedTypeaheadProvider = _supportedTypeaheadProviders.contains(typeaheadProviderStr)
         ? typeaheadProviderStr!
         : _defaultTypeaheadProvider;
+    final resolvedAppViewProvider = AppViewProviders.normalizeSettingKey(appViewProviderStr);
 
     emit(
       state.copyWith(
@@ -80,6 +84,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         searchScope: SearchScope.values.firstWhere((s) => s.name == searchScopeStr, orElse: () => SearchScope.both),
         semanticSearchMaxResults: int.tryParse(semanticSearchMaxResultsStr ?? '') ?? 20,
         typeaheadProvider: resolvedTypeaheadProvider,
+        appViewProvider: resolvedAppViewProvider,
       ),
     );
   }
@@ -162,5 +167,11 @@ class SettingsCubit extends Cubit<SettingsState> {
 
     await database.setSetting(_keyTypeaheadProvider, normalizedProvider);
     emit(state.copyWith(typeaheadProvider: normalizedProvider));
+  }
+
+  Future<void> setAppViewProvider(String provider) async {
+    final normalizedProvider = AppViewProviders.normalizeSettingKey(provider);
+    await database.setSetting(_keyAppViewProvider, normalizedProvider);
+    emit(state.copyWith(appViewProvider: normalizedProvider));
   }
 }

@@ -3,22 +3,14 @@ title: AppView Routing + Trending Milestones
 updated: 2026-04-29
 ---
 
-## M0 - Research + Planning (Complete)
-
-- [x] Validate Bluesky and Blacksky AppView DID/service identities
-- [x] Validate live compatibility for trends/trending-topics endpoints
-- [x] Capture provider divergence (link formats, `suggested` behavior)
-- [x] Update routing spec with provider-switch UX contract and state safety rules
-- [x] Update routing/task plan to include Trending button + `/trending` screen
-
 ## M1 - Core Routing Model
 
-- [ ] Add `appview_provider` setting with defaults and validation
-- [ ] Add login-screen provider selector (Bluesky + Blacksky visible by default)
-- [ ] Persist login-screen provider choice before any auth/network call
-- [ ] Add provider descriptor (`serviceDid`, `publicBaseUrl`, `entrywayUrl`, `webBaseUrl`)
-- [ ] Add `AppViewRouter` abstraction for endpoint/header/link resolution
-- [ ] Add unit tests for provider normalization/defaults and bootstrap ordering
+- [x] Add `appview_provider` setting with defaults and validation
+- [x] Add login-screen provider selector (Bluesky + Blacksky visible by default)
+- [x] Persist login-screen provider choice before any auth/network call
+- [x] Add provider descriptor (`serviceDid`, `publicBaseUrl`, `entrywayUrl`, `webBaseUrl`)
+- [x] Add `AppViewRouter` abstraction for endpoint/header/link resolution
+- [x] Add unit tests for provider normalization/defaults and bootstrap ordering
 
 ## M2 - Header + Request Integration
 

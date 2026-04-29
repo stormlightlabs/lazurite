@@ -5,11 +5,14 @@ import 'package:bluesky/bluesky_chat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/bootstrap/auth_bootstrap.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/embedding/embedding_service.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
 import 'package:lazurite/core/logging/logging_navigator_observer.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/app_view_router.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/objectbox/objectbox_store.dart';
 import 'package:lazurite/core/router/app_router.dart';
@@ -62,17 +65,27 @@ Future<void> main() async {
   final objectBoxStore = await ObjectBoxStore.open();
   final embeddingService = EmbeddingService();
   unawaited(embeddingService.initialize());
-  final authRepository = AuthRepository(database: database);
-  final restoredSession = await authRepository.restoreSession();
+  final settingsCubit = SettingsCubit(database: database);
+  final authBootstrap = await bootstrapAuthDependencies(
+    loadSettings: settingsCubit.loadSettings,
+    createAuthRepository: () => AuthRepository(
+      database: database,
+      oauthServiceResolver: () {
+        final provider = AppViewProviders.descriptorForSetting(settingsCubit.state.appViewProvider);
+        final router = AppViewRouter(provider: provider);
+        return router.entrywayForAuth().host;
+      },
+    ),
+    restoreSession: (authRepository) => authRepository.restoreSession(),
+  );
+  final authRepository = authBootstrap.authRepository;
+  final restoredSession = authBootstrap.restoredSession;
   final authBloc = AuthBloc(
     authRepository: authRepository,
     initialState: restoredSession != null
         ? AuthState.authenticated(restoredSession)
         : const AuthState.unauthenticated(),
   );
-
-  final settingsCubit = SettingsCubit(database: database);
-  await settingsCubit.loadSettings();
   final connectivityCubit = ConnectivityCubit(simulateOffline: settingsCubit.state.simulateOffline);
 
   final accountSwitcherCubit = AccountSwitcherCubit(database: database, authRepository: authRepository);

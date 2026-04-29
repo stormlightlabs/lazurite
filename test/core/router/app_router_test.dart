@@ -363,8 +363,11 @@ void main() {
     final router = AppRouter(authBloc: authBloc).router;
 
     await tester.pumpWidget(
-      BlocProvider<AuthBloc>.value(
-        value: authBloc,
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        ],
         child: MaterialApp.router(routerConfig: router),
       ),
     );

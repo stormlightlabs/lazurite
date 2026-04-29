@@ -148,6 +148,7 @@ void main() {
         animationsEnabled: false,
         simulateOffline: true,
         threadAutoCollapseDepth: 3,
+        appViewProvider: 'blacksky',
       );
 
       expect(updated.themePalette, AppThemePalette.nord);
@@ -157,6 +158,7 @@ void main() {
       expect(updated.animationsEnabled, false);
       expect(updated.simulateOffline, true);
       expect(updated.threadAutoCollapseDepth, 3);
+      expect(updated.appViewProvider, 'blacksky');
       expect(original.themePalette, AppThemePalette.oxocarbon);
     });
 
@@ -180,6 +182,7 @@ void main() {
       expect(updated.animationsEnabled, false);
       expect(updated.simulateOffline, true);
       expect(updated.threadAutoCollapseDepth, 4);
+      expect(updated.appViewProvider, 'bluesky');
     });
 
     test('copyWith can clear threadAutoCollapseDepth', () {
@@ -213,6 +216,7 @@ void main() {
       expect(state.props, contains(false));
       expect(state.props, contains(true));
       expect(state.props, contains(6));
+      expect(state.props, contains('bluesky'));
     });
 
     test('defaults feedLayout to card', () {
@@ -249,6 +253,15 @@ void main() {
         useSystemTheme: false,
       );
       expect(state.threadAutoCollapseDepth, isNull);
+    });
+
+    test('defaults appViewProvider to bluesky', () {
+      const state = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+      );
+      expect(state.appViewProvider, 'bluesky');
     });
   });
 }

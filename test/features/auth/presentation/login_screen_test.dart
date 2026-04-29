@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
@@ -11,13 +14,25 @@ import 'package:mocktail/mocktail.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
+class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
+
 void main() {
   late MockAuthBloc authBloc;
+  late MockSettingsCubit settingsCubit;
 
   setUp(() {
     authBloc = MockAuthBloc();
+    settingsCubit = MockSettingsCubit();
     when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.unauthenticated());
+    const settingsState = SettingsState(
+      themePalette: AppThemePalette.oxocarbon,
+      themeVariant: AppThemeVariant.dark,
+      useSystemTheme: false,
+    );
+    when(() => settingsCubit.state).thenReturn(settingsState);
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: settingsState);
+    when(() => settingsCubit.setAppViewProvider(any())).thenAnswer((_) async {});
   });
 
   Widget buildSubject() {
@@ -29,8 +44,11 @@ void main() {
       routes: [
         GoRoute(
           path: '/login',
-          builder: (context, state) => BlocProvider<AuthBloc>.value(
-            value: authBloc,
+          builder: (context, state) => MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: authBloc),
+              BlocProvider<SettingsCubit>.value(value: settingsCubit),
+            ],
             child: LoginScreen(typeaheadRepository: typeaheadRepository),
           ),
         ),
@@ -102,8 +120,11 @@ void main() {
       routes: [
         GoRoute(
           path: '/login',
-          builder: (context, state) => BlocProvider<AuthBloc>.value(
-            value: authBloc,
+          builder: (context, state) => MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: authBloc),
+              BlocProvider<SettingsCubit>.value(value: settingsCubit),
+            ],
             child: LoginScreen(typeaheadRepository: typeaheadRepository),
           ),
         ),
@@ -123,6 +144,20 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(() => authBloc.add(const OAuthLoginRequested(handle: 'river.bsky.social'))).called(1);
+  });
+
+  testWidgets('persists selected provider before triggering OAuth login', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).first, 'river.bsky.social');
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    verifyInOrder([
+      () => settingsCubit.setAppViewProvider('bluesky'),
+      () => authBloc.add(const OAuthLoginRequested(handle: 'river.bsky.social')),
+    ]);
   });
 }
 

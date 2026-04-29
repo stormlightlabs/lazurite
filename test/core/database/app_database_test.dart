@@ -228,6 +228,11 @@ void main() {
         expect(value, equals('bluesky'));
       });
 
+      test('should seed default appview provider on database creation', () async {
+        final value = await database.getSetting('appview_provider');
+        expect(value, equals('bluesky'));
+      });
+
       test('should set and get setting', () async {
         await database.setSetting('theme', 'dark');
         final value = await database.getSetting('theme');

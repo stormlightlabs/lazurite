@@ -28,6 +28,7 @@ void main() {
       expect(cubit.state.animationsEnabled, true);
       expect(cubit.state.simulateOffline, false);
       expect(cubit.state.threadAutoCollapseDepth, isNull);
+      expect(cubit.state.appViewProvider, 'bluesky');
     });
 
     test('accepts initial values via constructor', () {
@@ -88,7 +89,8 @@ void main() {
             .having((s) => s.animationsEnabled, 'animationsEnabled', true)
             .having((s) => s.simulateOffline, 'simulateOffline', false)
             .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', isNull)
-            .having((s) => s.typeaheadProvider, 'typeaheadProvider', 'bluesky'),
+            .having((s) => s.typeaheadProvider, 'typeaheadProvider', 'bluesky')
+            .having((s) => s.appViewProvider, 'appViewProvider', 'bluesky'),
       ],
     );
 
@@ -304,6 +306,26 @@ void main() {
       },
       act: (cubit) => cubit.loadSettings(),
       expect: () => [isA<SettingsState>().having((s) => s.typeaheadProvider, 'typeaheadProvider', 'community')],
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setAppViewProvider normalizes and persists provider key',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setAppViewProvider(' BlackSky '),
+      expect: () => [isA<SettingsState>().having((s) => s.appViewProvider, 'appViewProvider', 'blacksky')],
+      verify: (_) async {
+        expect(await database.getSetting('appview_provider'), 'blacksky');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'loadSettings falls back to default app view provider for invalid persisted value',
+      build: () => SettingsCubit(database: database),
+      setUp: () async {
+        await database.setSetting('appview_provider', 'unknown-provider');
+      },
+      act: (cubit) => cubit.loadSettings(),
+      expect: () => [isA<SettingsState>().having((s) => s.appViewProvider, 'appViewProvider', 'bluesky')],
     );
   });
 }

@@ -19,6 +19,7 @@ class SettingsState extends Equatable {
     this.searchScope = SearchScope.both,
     this.semanticSearchMaxResults = 20,
     this.typeaheadProvider = 'bluesky',
+    this.appViewProvider = 'bluesky',
   });
 
   final AppThemePalette themePalette;
@@ -42,6 +43,9 @@ class SettingsState extends Equatable {
   /// Configured typeahead backend provider (`bluesky` or `community`).
   final String typeaheadProvider;
 
+  /// Configured AppView provider (`bluesky` or `blacksky`).
+  final String appViewProvider;
+
   SettingsState copyWith({
     AppThemePalette? themePalette,
     AppThemeVariant? themeVariant,
@@ -55,6 +59,7 @@ class SettingsState extends Equatable {
     SearchScope? searchScope,
     int? semanticSearchMaxResults,
     String? typeaheadProvider,
+    String? appViewProvider,
   }) {
     return SettingsState(
       themePalette: themePalette ?? this.themePalette,
@@ -71,6 +76,7 @@ class SettingsState extends Equatable {
       searchScope: searchScope ?? this.searchScope,
       semanticSearchMaxResults: semanticSearchMaxResults ?? this.semanticSearchMaxResults,
       typeaheadProvider: typeaheadProvider ?? this.typeaheadProvider,
+      appViewProvider: appViewProvider ?? this.appViewProvider,
     );
   }
 
@@ -88,5 +94,6 @@ class SettingsState extends Equatable {
     searchScope,
     semanticSearchMaxResults,
     typeaheadProvider,
+    appViewProvider,
   ];
 }

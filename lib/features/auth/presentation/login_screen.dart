@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.dart';
@@ -22,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _appPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _showDebugForm = false;
+  bool _isPersistingProvider = false;
   late final TypeaheadRepository _typeaheadRepository;
 
   @override
@@ -38,19 +44,33 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _onOAuthLogin() {
+  Future<void> _onOAuthLogin() async {
     if (!_isHandleValid()) {
       return;
     }
 
+    final persisted = await _persistSelectedProvider();
+    if (!persisted) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
     context.read<AuthBloc>().add(OAuthLoginRequested(handle: _handleController.text.trim()));
   }
 
-  void _onAppPasswordLogin() {
+  Future<void> _onAppPasswordLogin() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
+    final persisted = await _persistSelectedProvider();
+    if (!persisted) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
     context.read<AuthBloc>().add(
       LoginRequested(handle: _handleController.text.trim(), appPassword: _appPasswordController.text.trim()),
     );
@@ -62,7 +82,35 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onTypeaheadSelected(TypeaheadResult result) {
     _handleController.text = result.handle;
-    _onOAuthLogin();
+    unawaited(_onOAuthLogin());
+  }
+
+  Future<bool> _persistSelectedProvider() async {
+    final settingsCubit = context.read<SettingsCubit>();
+    if (_isPersistingProvider) {
+      return false;
+    }
+
+    setState(() {
+      _isPersistingProvider = true;
+    });
+    try {
+      await settingsCubit.setAppViewProvider(settingsCubit.state.appViewProvider);
+      return true;
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save provider selection: $error')));
+      }
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPersistingProvider = false;
+        });
+      }
+    }
   }
 
   @override
@@ -111,6 +159,39 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: 32),
+                        BlocBuilder<SettingsCubit, SettingsState>(
+                          builder: (context, settingsState) {
+                            final selectedProvider = settingsState.appViewProvider;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'AppView Provider',
+                                  style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 8),
+                                SegmentedButton<String>(
+                                  segments: const [
+                                    ButtonSegment<String>(value: AppViewProviders.blueskyKey, label: Text('Bluesky')),
+                                    ButtonSegment<String>(value: AppViewProviders.blackskyKey, label: Text('Blacksky')),
+                                  ],
+                                  selected: {selectedProvider},
+                                  onSelectionChanged: (selection) {
+                                    unawaited(context.read<SettingsCubit>().setAppViewProvider(selection.first));
+                                  },
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  selectedProvider == AppViewProviders.blackskyKey
+                                      ? 'Sign-in will use Blacksky entryway defaults.'
+                                      : 'Sign-in will use Bluesky entryway defaults.',
+                                  style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                            );
+                          },
+                        ),
                         TypeaheadTextField(
                           controller: _handleController,
                           repository: _typeaheadRepository,
@@ -136,16 +217,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 20),
                         BlocBuilder<AuthBloc, AuthState>(
                           builder: (context, state) {
+                            final busy = state.isLoading || _isPersistingProvider;
                             return FilledButton.icon(
-                              onPressed: state.isLoading ? null : _onOAuthLogin,
-                              icon: state.isLoading
+                              onPressed: busy
+                                  ? null
+                                  : () {
+                                      unawaited(_onOAuthLogin());
+                                    },
+                              icon: busy
                                   ? const SizedBox(
                                       width: 18,
                                       height: 18,
                                       child: CircularProgressIndicator(strokeWidth: 2),
                                     )
                                   : const Icon(Icons.language),
-                              label: Text(state.isLoading ? 'Starting sign in...' : 'Continue'),
+                              label: Text(busy ? 'Starting sign in...' : 'Continue'),
                               style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 18)),
                             );
                           },
@@ -206,8 +292,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                     const SizedBox(height: 12),
                                     BlocBuilder<AuthBloc, AuthState>(
                                       builder: (context, state) {
+                                        final busy = state.isLoading || _isPersistingProvider;
                                         return OutlinedButton.icon(
-                                          onPressed: state.isLoading ? null : _onAppPasswordLogin,
+                                          onPressed: busy
+                                              ? null
+                                              : () {
+                                                  unawaited(_onAppPasswordLogin());
+                                                },
                                           icon: const Icon(Icons.login),
                                           label: const Text('Sign In'),
                                         );
