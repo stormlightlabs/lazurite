@@ -96,8 +96,8 @@ class SearchState extends Equatable {
          starterPacksCursor: starterPacksCursor,
        );
 
-  const SearchState.error({required String query, required String message})
-    : this._(status: SearchStatus.error, query: query, errorMessage: message);
+  const SearchState.error({required String query, required String message, required SearchTab tab, String sort = 'top'})
+    : this._(status: SearchStatus.error, query: query, currentTab: tab, currentSort: sort, errorMessage: message);
 
   static const Object _unset = Object();
 

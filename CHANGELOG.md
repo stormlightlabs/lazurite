@@ -52,6 +52,8 @@
 #### 2026-04-01
 
 - Profile Context (Blocking/Blocked By, Lists, etc.) section accessible from profiles
+- Suggested Follows tab (for non-currently authenticated users) in the Profile screen
+- Video upload limits in settings
 
 #### 2026-04-11
 
@@ -71,3 +73,4 @@
 #### 2026-04-29
 
 - Configurable autocomplete/typeahead for login & profile/actor search
+- Starter Pack search (not implemented upstream) screen

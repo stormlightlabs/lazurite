@@ -268,8 +268,14 @@ class _LazuriteAppState extends State<LazuriteApp> {
                   ),
                 ),
                 RepositoryProvider(
-                  create: (context) =>
-                      SearchRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
+                  create: (context) {
+                    final settingsCubit = context.read<SettingsCubit>();
+                    return SearchRepository(
+                      bluesky: bluesky,
+                      moderationService: context.read<ModerationService>(),
+                      appViewProviderResolver: () => settingsCubit.state.appViewProvider,
+                    );
+                  },
                 ),
                 RepositoryProvider(
                   create: (context) {

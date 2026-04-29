@@ -3,15 +3,24 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_searchposts.dart';
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:bluesky/bluesky.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class SearchRepository {
-  SearchRepository({required Bluesky bluesky, ModerationService? moderationService})
-    : _bluesky = bluesky,
-      _moderationService = moderationService;
+  SearchRepository({
+    required Bluesky bluesky,
+    ModerationService? moderationService,
+    String? appViewProvider,
+    String Function()? appViewProviderResolver,
+  }) : _bluesky = bluesky,
+       _moderationService = moderationService,
+       _appViewProvider = AppViewProviders.normalizeSettingKey(appViewProvider),
+       _appViewProviderResolver = appViewProviderResolver;
 
   final Bluesky _bluesky;
   final ModerationService? _moderationService;
+  final String _appViewProvider;
+  final String Function()? _appViewProviderResolver;
 
   Future<SearchPostsResult> searchPosts({
     required String query,
@@ -50,16 +59,25 @@ class SearchRepository {
   }
 
   Future<SearchStarterPacksResult> searchStarterPacks({required String query, String? cursor, int limit = 25}) async {
-    final response = await _bluesky.graph.searchStarterPacks(q: query, cursor: cursor, limit: limit);
+    final appViewDescriptor = AppViewProviders.descriptorForSetting(_resolveAppViewProvider());
+    final response = await _bluesky.graph.searchStarterPacks(
+      q: query,
+      cursor: cursor,
+      limit: limit,
+      $service: appViewDescriptor.publicBaseUrl.host,
+      $headers: await _moderationService?.headersForRequest(),
+    );
 
     return SearchStarterPacksResult(starterPacks: response.data.starterPacks, cursor: response.data.cursor);
   }
 
   Future<SearchFeedsResult> searchFeedGenerators({required String query, String? cursor, int limit = 25}) async {
+    final appViewDescriptor = AppViewProviders.descriptorForSetting(_resolveAppViewProvider());
     final response = await _bluesky.unspecced.getPopularFeedGenerators(
       query: query,
       cursor: cursor,
       limit: limit,
+      $service: appViewDescriptor.publicBaseUrl.host,
       $headers: await _moderationService?.headersForRequest(),
     );
 
@@ -101,6 +119,15 @@ class SearchRepository {
     }
 
     return profiles.where((profile) => !moderationService.shouldFilterProfileBasicInList(profile)).toList();
+  }
+
+  String _resolveAppViewProvider() {
+    final resolver = _appViewProviderResolver;
+    if (resolver == null) {
+      return _appViewProvider;
+    }
+
+    return AppViewProviders.normalizeSettingKey(resolver.call());
   }
 }
 

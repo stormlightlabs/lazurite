@@ -2,7 +2,6 @@ import 'package:atproto_core/atproto_core.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -165,7 +164,8 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
-      expect(find.text('Search posts or people'), findsOneWidget);
+      final searchField = tester.widget<TextField>(find.byType(TextField).first);
+      expect(searchField.decoration?.hintText, 'Search posts');
       expect(find.text('Posts'), findsOneWidget);
       expect(find.text('People'), findsOneWidget);
       expect(find.text('Feeds'), findsOneWidget);
@@ -187,12 +187,36 @@ void main() {
       expect(starterPackLabel.softWrap, isFalse);
     });
 
-    testWidgets('shows empty state when no search history', (tester) async {
+    testWidgets('shows tab-aware empty state when no search history', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
-      expect(find.text('Search'), findsOneWidget);
-      expect(find.textContaining('Find posts and people'), findsOneWidget);
+      expect(find.text('Search posts'), findsWidgets);
+      expect(find.textContaining('Find conversations and keywords across posts'), findsOneWidget);
+    });
+
+    testWidgets('updates placeholder and empty-state copy when changing tabs', (tester) async {
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Search posts'), findsWidgets);
+
+      await tester.tap(find.text('People'));
+      await tester.pumpAndSettle();
+      expect(find.text('Search people'), findsWidgets);
+      expect(find.textContaining('Look up accounts by handle or name'), findsOneWidget);
+
+      await tester.tap(find.text('Feeds'));
+      await tester.pumpAndSettle();
+      expect(find.text('Search feeds'), findsWidgets);
+      expect(find.textContaining('Discover custom feeds by topic'), findsOneWidget);
+
+      await tester.tap(find.text('Starter Packs'));
+      await tester.pumpAndSettle();
+      final searchField = tester.widget<TextField>(find.byType(TextField).first);
+      expect(searchField.decoration?.hintText, 'Starter pack search unavailable');
+      expect(find.text('Starter Pack Search Is Unavailable'), findsOneWidget);
+      expect(find.textContaining('not yet implemented in the BlueSky API'), findsOneWidget);
     });
 
     testWidgets('tab switching works correctly', (tester) async {
@@ -425,15 +449,7 @@ void main() {
       expect(find.text('Starter Packs'), findsOneWidget);
     });
 
-    testWidgets('switching to Starter Packs tab shows empty state when no results', (tester) async {
-      when(
-        () => mockDatabase.addSearchHistoryEntry(
-          query: any(named: 'query'),
-          type: any(named: 'type'),
-          accountDid: any(named: 'accountDid'),
-        ),
-      ).thenAnswer((_) async {});
-
+    testWidgets('starter packs tab shows unavailable message and does not search', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
@@ -445,7 +461,15 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pumpAndSettle();
 
-      expect(find.text('No starter packs found'), findsOneWidget);
+      expect(find.text('Starter Pack Search Is Unavailable'), findsOneWidget);
+      expect(find.text('Track API progress'), findsOneWidget);
+      verifyNever(
+        () => mockSearchRepository.searchStarterPacks(
+          query: any(named: 'query'),
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      );
     });
 
     testWidgets('feed tab shows search results and adds a feed with snackbar action', (tester) async {
@@ -552,131 +576,15 @@ void main() {
       expect(find.text('fallback-name'), findsOneWidget);
     });
 
-    testWidgets('starter pack results display name and creator handle', (tester) async {
-      final samplePack = StarterPackViewBasic(
-        uri: AtUri.parse('at://did:plc:creator/app.bsky.graph.starterpack/pack-1'),
-        cid: 'cid-pack-1',
-        record: const {
-          r'$type': 'app.bsky.graph.starterpack',
-          'name': 'My Starter Pack',
-          'list': 'at://did:plc:creator/app.bsky.graph.list/list-1',
-          'createdAt': '2026-01-01T00:00:00.000Z',
-        },
-        creator: const ProfileViewBasic(did: 'did:plc:creator', handle: 'creator.bsky.social'),
-        listItemCount: 10,
-        joinedWeekCount: 3,
-        joinedAllTimeCount: 42,
-        indexedAt: DateTime.utc(2026, 1, 1),
-      );
-
-      when(
-        () => mockSearchRepository.searchStarterPacks(
-          query: any(named: 'query'),
-          cursor: any(named: 'cursor'),
-          limit: any(named: 'limit'),
-        ),
-      ).thenAnswer((_) async => SearchStarterPacksResult(starterPacks: [samplePack]));
-
-      when(
-        () => mockDatabase.addSearchHistoryEntry(
-          query: any(named: 'query'),
-          type: any(named: 'type'),
-          accountDid: any(named: 'accountDid'),
-        ),
-      ).thenAnswer((_) async {});
-
+    testWidgets('starter packs tab shows Bluesky issue link text', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Starter Packs'));
       await tester.pumpAndSettle();
 
-      final searchField = find.byType(TextField);
-      await tester.enterText(searchField, 'starter');
-      await tester.testTextInput.receiveAction(TextInputAction.search);
-      await tester.pumpAndSettle();
-
-      expect(find.text('My Starter Pack'), findsOneWidget);
-      expect(find.text('by @creator.bsky.social'), findsOneWidget);
-      expect(find.text('10'), findsOneWidget);
-    });
-
-    testWidgets('tapping starter pack result navigates to starter pack detail', (tester) async {
-      final packUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.starterpack/pack-1');
-      final samplePack = StarterPackViewBasic(
-        uri: packUri,
-        cid: 'cid-pack-1',
-        record: const {
-          r'$type': 'app.bsky.graph.starterpack',
-          'name': 'My Starter Pack',
-          'list': 'at://did:plc:creator/app.bsky.graph.list/list-1',
-          'createdAt': '2026-01-01T00:00:00.000Z',
-        },
-        creator: const ProfileViewBasic(did: 'did:plc:creator', handle: 'creator.bsky.social'),
-        indexedAt: DateTime.utc(2026, 1, 1),
-      );
-
-      when(
-        () => mockSearchRepository.searchStarterPacks(
-          query: any(named: 'query'),
-          cursor: any(named: 'cursor'),
-          limit: any(named: 'limit'),
-        ),
-      ).thenAnswer((_) async => SearchStarterPacksResult(starterPacks: [samplePack]));
-
-      when(
-        () => mockDatabase.addSearchHistoryEntry(
-          query: any(named: 'query'),
-          type: any(named: 'type'),
-          accountDid: any(named: 'accountDid'),
-        ),
-      ).thenAnswer((_) async {});
-
-      final router = GoRouter(
-        routes: [
-          GoRoute(
-            path: '/',
-            builder: (context, state) => RepositoryProvider<TypeaheadRepository>.value(
-              value: mockTypeaheadRepository,
-              child: BlocProvider<SearchBloc>(
-                create: (_) => SearchBloc(
-                  searchRepository: mockSearchRepository,
-                  typeaheadRepository: mockTypeaheadRepository,
-                  database: mockDatabase,
-                  accountDid: 'did:plc:test',
-                ),
-                child: MultiBlocProvider(
-                  providers: [
-                    BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
-                    BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
-                  ],
-                  child: const SearchScreen(),
-                ),
-              ),
-            ),
-          ),
-          GoRoute(
-            path: '/starter-pack',
-            builder: (context, state) => Scaffold(body: Text('starterpack:${state.uri.queryParameters['uri']}')),
-          ),
-        ],
-      );
-
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Starter Packs'));
-      await tester.pumpAndSettle();
-
-      final searchField = find.byType(TextField);
-      await tester.enterText(searchField, 'starter');
-      await tester.testTextInput.receiveAction(TextInputAction.search);
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('My Starter Pack'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('starterpack:${packUri.toString()}'), findsOneWidget);
+      expect(find.text('Track API progress'), findsOneWidget);
+      expect(find.textContaining('https://github.com/bluesky-social/bsky-docs/issues/306'), findsNothing);
     });
   });
 }

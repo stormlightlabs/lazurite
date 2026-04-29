@@ -27,6 +27,7 @@ import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -36,6 +37,8 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  static final Uri _starterPackSearchIssueUri = Uri.parse('https://github.com/bluesky-social/bsky-docs/issues/306');
+
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
@@ -69,6 +72,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onSubmit(String query) {
     if (query.trim().isEmpty) return;
+    if (context.read<SearchBloc>().state.currentTab == SearchTab.starterPacks) {
+      _focusNode.unfocus();
+      return;
+    }
     context.read<SearchBloc>().add(QuerySubmitted(query: query));
     _focusNode.unfocus();
   }
@@ -238,7 +245,7 @@ class _SearchScreenState extends State<SearchScreen> {
               onSubmitted: _onSubmit,
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'Search posts or people',
+                hintText: _searchPlaceholderForTab(state.currentTab),
                 prefixIcon: const Icon(Icons.search, size: 20),
                 suffixIcon: hasText ? _buildSuffixIcon(context, theme) : null,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(999)),
@@ -381,6 +388,10 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildBody(BuildContext context, SearchState state) {
+    if (state.currentTab == SearchTab.starterPacks) {
+      return _buildStarterPacksUnavailableState(context);
+    }
+
     if (state.query.isEmpty) {
       return _buildSearchHistory(context, state);
     }
@@ -425,7 +436,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildSearchHistory(BuildContext context, SearchState state) {
     final history = state.searchHistory;
     if (history.isEmpty) {
-      return const _SearchEmptyState();
+      return _SearchEmptyState(tab: state.currentTab);
     }
 
     return Column(
@@ -478,7 +489,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildPostResults(BuildContext context, SearchState state) {
     final posts = state.posts;
     if (posts.isEmpty) {
-      return Center(child: Text('No posts found', style: context.textTheme.bodyLarge));
+      return _SearchNoResultsState(tab: SearchTab.posts, query: state.query);
     }
 
     return ListView.builder(
@@ -504,7 +515,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildActorResults(BuildContext context, SearchState state) {
     final actors = state.actors;
     if (actors.isEmpty) {
-      return Center(child: Text('No people found', style: context.textTheme.bodyLarge));
+      return _SearchNoResultsState(tab: SearchTab.actors, query: state.query);
     }
 
     return ListView.builder(
@@ -530,7 +541,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildFeedResults(BuildContext context, SearchState state) {
     final feeds = state.feeds;
     if (feeds.isEmpty) {
-      return Center(child: Text('No feeds found', style: context.textTheme.bodyLarge));
+      return _SearchNoResultsState(tab: SearchTab.feeds, query: state.query);
     }
 
     return ListView.builder(
@@ -567,7 +578,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildStarterPackResults(BuildContext context, SearchState state) {
     final packs = state.starterPacks;
     if (packs.isEmpty) {
-      return Center(child: Text('No starter packs found', style: context.textTheme.bodyLarge));
+      return _SearchNoResultsState(tab: SearchTab.starterPacks, query: state.query);
     }
 
     return ListView.builder(
@@ -600,6 +611,52 @@ class _SearchScreenState extends State<SearchScreen> {
 
   String _formatHistoryTime(DateTime time) {
     return formatRelativeTime(time, nowLabel: 'Just now', includeAgo: true);
+  }
+
+  String _searchPlaceholderForTab(SearchTab tab) => switch (tab) {
+    SearchTab.posts => 'Search posts',
+    SearchTab.actors => 'Search people',
+    SearchTab.feeds => 'Search feeds',
+    SearchTab.starterPacks => 'Starter pack search unavailable',
+  };
+
+  Widget _buildStarterPacksUnavailableState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.info_outline, size: 52, color: context.colorScheme.outline),
+            const SizedBox(height: 16),
+            Text(
+              'Starter Pack Search Is Unavailable',
+              style: context.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '(Starter Pack Search is not yet implemented in the BlueSky API)',
+              style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 14),
+            TextButton.icon(
+              onPressed: _openStarterPackIssue,
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Track API progress'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openStarterPackIssue() async {
+    final launched = await launchUrl(_starterPackSearchIssueUri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      showAppSnackBar(context, 'Could not open issue link.');
+    }
   }
 }
 
@@ -953,10 +1010,25 @@ class _FollowButtonState extends State<_FollowButton> {
 }
 
 class _SearchEmptyState extends StatelessWidget {
-  const _SearchEmptyState();
+  const _SearchEmptyState({required this.tab});
+
+  final SearchTab tab;
 
   @override
   Widget build(BuildContext context) {
+    final (title, message) = switch (tab) {
+      SearchTab.posts => (
+        'Search posts',
+        'Find conversations and keywords across posts.\nUse Jump to profile to quickly open a user.',
+      ),
+      SearchTab.actors => (
+        'Search people',
+        'Look up accounts by handle or name.\nUse Jump to profile when you know the exact handle.',
+      ),
+      SearchTab.feeds => ('Search feeds', 'Discover custom feeds by topic, creator, or keyword.'),
+      SearchTab.starterPacks => ('Search starter packs', 'Find curated starter packs to discover accounts and feeds.'),
+    };
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -965,13 +1037,62 @@ class _SearchEmptyState extends StatelessWidget {
           children: [
             Icon(Icons.search, size: 64, color: context.colorScheme.outline),
             const SizedBox(height: 16),
-            Text('Search', style: context.textTheme.titleMedium),
+            Text(title, style: context.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Find posts and people on the network.\n'
-              'Use Jump to profile to quickly open a user.',
+              message,
               textAlign: TextAlign.center,
               style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.outline),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchNoResultsState extends StatelessWidget {
+  const _SearchNoResultsState({required this.tab, required this.query});
+
+  final SearchTab tab;
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final safeQuery = query.trim();
+    final (title, message) = switch (tab) {
+      SearchTab.posts => (
+        'No posts found',
+        'Try broader keywords or a shorter phrase${safeQuery.isEmpty ? '' : ' for "$safeQuery"'}.',
+      ),
+      SearchTab.actors => (
+        'No people found',
+        'Try a handle, display name, or fewer terms${safeQuery.isEmpty ? '' : ' for "$safeQuery"'}.',
+      ),
+      SearchTab.feeds => (
+        'No feeds found',
+        'Try searching by topic or feed creator${safeQuery.isEmpty ? '' : ' for "$safeQuery"'}.',
+      ),
+      SearchTab.starterPacks => (
+        'No starter packs found',
+        'Try another topic or broader keyword${safeQuery.isEmpty ? '' : ' for "$safeQuery"'}.',
+      ),
+    };
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_off_rounded, size: 44, color: context.colorScheme.outline),
+            const SizedBox(height: 12),
+            Text(title, style: context.textTheme.bodyLarge),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
             ),
           ],
         ),

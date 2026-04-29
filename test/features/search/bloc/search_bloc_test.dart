@@ -187,50 +187,38 @@ void main() {
 
   group('QuerySubmitted - starterPacks tab', () {
     blocTest<SearchBloc, SearchState>(
-      'searches starter packs when starterPacks tab is active',
+      'does not call starter packs API when starterPacks tab is active',
       build: buildBloc,
       seed: () => const SearchState.initial().copyWith(currentTab: SearchTab.starterPacks),
-      setUp: () {
-        when(
-          () => mockRepository.searchStarterPacks(
-            query: 'flutter',
-            cursor: any(named: 'cursor'),
-            limit: any(named: 'limit'),
-          ),
-        ).thenAnswer((_) async => SearchStarterPacksResult(starterPacks: [sampleStarterPack], cursor: 'c1'));
-      },
       act: (bloc) => bloc.add(const QuerySubmitted(query: 'flutter')),
       expect: () => [
-        predicate<SearchState>(
-          (s) => s.status == SearchStatus.loading && s.currentTab == SearchTab.starterPacks && s.query == 'flutter',
-        ),
         predicate<SearchState>(
           (s) =>
               s.status == SearchStatus.loaded &&
               s.currentTab == SearchTab.starterPacks &&
-              s.starterPacks.length == 1 &&
-              s.starterPacksCursor == 'c1',
+              s.starterPacks.isEmpty &&
+              s.starterPacksCursor == null &&
+              s.query == 'flutter',
         ),
       ],
-    );
-
-    blocTest<SearchBloc, SearchState>(
-      'emits error when starterPacks search fails',
-      build: buildBloc,
-      seed: () => const SearchState.initial().copyWith(currentTab: SearchTab.starterPacks),
-      setUp: () {
-        when(
+      verify: (_) {
+        verifyNever(
           () => mockRepository.searchStarterPacks(
             query: any(named: 'query'),
             cursor: any(named: 'cursor'),
             limit: any(named: 'limit'),
           ),
-        ).thenThrow(Exception('network error'));
+        );
       },
+    );
+
+    blocTest<SearchBloc, SearchState>(
+      'never enters error state for starterPacks searches',
+      build: buildBloc,
+      seed: () => const SearchState.initial().copyWith(currentTab: SearchTab.starterPacks),
       act: (bloc) => bloc.add(const QuerySubmitted(query: 'fail')),
       expect: () => [
-        predicate<SearchState>((s) => s.status == SearchStatus.loading),
-        predicate<SearchState>((s) => s.status == SearchStatus.error && s.errorMessage != null),
+        predicate<SearchState>((s) => s.status == SearchStatus.loaded && s.currentTab == SearchTab.starterPacks),
       ],
     );
 
@@ -299,31 +287,34 @@ void main() {
       act: (bloc) => bloc.add(const QuerySubmitted(query: 'fail feed')),
       expect: () => [
         predicate<SearchState>((s) => s.status == SearchStatus.loading && s.currentTab == SearchTab.feeds),
-        predicate<SearchState>((s) => s.status == SearchStatus.error && s.errorMessage != null),
+        predicate<SearchState>(
+          (s) => s.status == SearchStatus.error && s.errorMessage != null && s.currentTab == SearchTab.feeds,
+        ),
       ],
     );
   });
 
   group('SearchTabChanged', () {
     blocTest<SearchBloc, SearchState>(
-      'switches to starterPacks tab and re-searches when query present',
+      'switches to starterPacks tab without calling starter packs API',
       build: buildBloc,
       seed: () => SearchState.loadedPosts(query: 'flutter', sort: 'top', posts: [samplePost], cursor: null),
-      setUp: () {
-        when(
-          () => mockRepository.searchStarterPacks(
-            query: 'flutter',
-            cursor: any(named: 'cursor'),
-            limit: any(named: 'limit'),
-          ),
-        ).thenAnswer((_) async => SearchStarterPacksResult(starterPacks: [sampleStarterPack]));
-      },
       act: (bloc) => bloc.add(const SearchTabChanged(tab: SearchTab.starterPacks)),
       expect: () => [
         predicate<SearchState>((s) => s.currentTab == SearchTab.starterPacks),
-        predicate<SearchState>((s) => s.status == SearchStatus.loading && s.currentTab == SearchTab.starterPacks),
-        predicate<SearchState>((s) => s.status == SearchStatus.loaded && s.starterPacks.length == 1),
+        predicate<SearchState>(
+          (s) => s.status == SearchStatus.loaded && s.currentTab == SearchTab.starterPacks && s.starterPacks.isEmpty,
+        ),
       ],
+      verify: (_) {
+        verifyNever(
+          () => mockRepository.searchStarterPacks(
+            query: any(named: 'query'),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+          ),
+        );
+      },
     );
 
     blocTest<SearchBloc, SearchState>(
@@ -351,39 +342,24 @@ void main() {
 
   group('LoadMoreRequested - starterPacks tab', () {
     blocTest<SearchBloc, SearchState>(
-      'loads more starter packs using starterPacksCursor',
+      'does nothing on load more for starterPacks tab',
       build: buildBloc,
       seed: () => SearchState.loadedStarterPacks(
         query: 'flutter',
         starterPacks: [sampleStarterPack],
         starterPacksCursor: 'cursor-page-1',
       ),
-      setUp: () {
-        final secondPack = StarterPackViewBasic(
-          uri: AtUri.parse('at://did:plc:creator/app.bsky.graph.starterpack/pack-2'),
-          cid: 'cid-pack-2',
-          record: const {
-            r'$type': 'app.bsky.graph.starterpack',
-            'name': 'Another Pack',
-            'list': 'at://did:plc:creator/app.bsky.graph.list/list-2',
-            'createdAt': '2026-01-01T00:00:00.000Z',
-          },
-          creator: const ProfileViewBasic(did: 'did:plc:creator', handle: 'creator.bsky.social'),
-          indexedAt: DateTime.utc(2026, 1, 1),
-        );
-        when(
+      act: (bloc) => bloc.add(const LoadMoreRequested()),
+      expect: () => [],
+      verify: (_) {
+        verifyNever(
           () => mockRepository.searchStarterPacks(
-            query: 'flutter',
-            cursor: 'cursor-page-1',
+            query: any(named: 'query'),
+            cursor: any(named: 'cursor'),
             limit: any(named: 'limit'),
           ),
-        ).thenAnswer((_) async => SearchStarterPacksResult(starterPacks: [secondPack], cursor: null));
+        );
       },
-      act: (bloc) => bloc.add(const LoadMoreRequested()),
-      expect: () => [
-        predicate<SearchState>((s) => s.isLoadingMore),
-        predicate<SearchState>((s) => !s.isLoadingMore && s.starterPacks.length == 2 && s.starterPacksCursor == null),
-      ],
     );
 
     blocTest<SearchBloc, SearchState>(
@@ -393,30 +369,6 @@ void main() {
           SearchState.loadedStarterPacks(query: 'flutter', starterPacks: [sampleStarterPack], starterPacksCursor: null),
       act: (bloc) => bloc.add(const LoadMoreRequested()),
       expect: () => [],
-    );
-
-    blocTest<SearchBloc, SearchState>(
-      'handles load more error gracefully',
-      build: buildBloc,
-      seed: () => SearchState.loadedStarterPacks(
-        query: 'flutter',
-        starterPacks: [sampleStarterPack],
-        starterPacksCursor: 'cursor-1',
-      ),
-      setUp: () {
-        when(
-          () => mockRepository.searchStarterPacks(
-            query: any(named: 'query'),
-            cursor: any(named: 'cursor'),
-            limit: any(named: 'limit'),
-          ),
-        ).thenThrow(Exception('network error'));
-      },
-      act: (bloc) => bloc.add(const LoadMoreRequested()),
-      expect: () => [
-        predicate<SearchState>((s) => s.isLoadingMore),
-        predicate<SearchState>((s) => !s.isLoadingMore && s.starterPacks.length == 1),
-      ],
     );
   });
 

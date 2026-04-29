@@ -71,7 +71,14 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           ).copyWith(searchHistory: history),
         );
       } catch (error) {
-        emit(SearchState.error(query: query, message: 'Failed to search posts: $error'));
+        emit(
+          SearchState.error(
+            query: query,
+            message: 'Failed to search posts: $error',
+            tab: currentTab,
+            sort: currentSort,
+          ),
+        );
       }
     } else if (currentTab == SearchTab.actors) {
       emit(SearchState.loadingActors(query: query));
@@ -89,7 +96,14 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           ).copyWith(searchHistory: history),
         );
       } catch (error) {
-        emit(SearchState.error(query: query, message: 'Failed to search actors: $error'));
+        emit(
+          SearchState.error(
+            query: query,
+            message: 'Failed to search actors: $error',
+            tab: currentTab,
+            sort: currentSort,
+          ),
+        );
       }
     } else if (currentTab == SearchTab.feeds) {
       emit(SearchState.loadingFeeds(query: query));
@@ -107,24 +121,23 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           ).copyWith(searchHistory: history),
         );
       } catch (error) {
-        emit(SearchState.error(query: query, message: 'Failed to search feeds: $error'));
-      }
-    } else {
-      emit(SearchState.loadingStarterPacks(query: query));
-
-      try {
-        final result = await _searchRepository.searchStarterPacks(query: query, limit: 25);
-
         emit(
-          SearchState.loadedStarterPacks(
+          SearchState.error(
             query: query,
-            starterPacks: result.starterPacks,
-            starterPacksCursor: result.cursor,
+            message: 'Failed to search feeds: $error',
+            tab: currentTab,
+            sort: currentSort,
           ),
         );
-      } catch (error) {
-        emit(SearchState.error(query: query, message: 'Failed to search starter packs: $error'));
       }
+    } else {
+      emit(
+        SearchState.loadedStarterPacks(
+          query: query,
+          starterPacks: const [],
+          starterPacksCursor: null,
+        ).copyWith(searchHistory: state.searchHistory, typeaheadActors: state.typeaheadActors),
+      );
     }
   }
 
@@ -152,27 +165,6 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     if (state.isLoadingMore) return;
 
     if (state.currentTab == SearchTab.starterPacks) {
-      if (state.starterPacksCursor == null) return;
-
-      emit(state.copyWith(isLoadingMore: true));
-
-      try {
-        final result = await _searchRepository.searchStarterPacks(
-          query: state.query,
-          cursor: state.starterPacksCursor,
-          limit: 25,
-        );
-
-        emit(
-          SearchState.loadedStarterPacks(
-            query: state.query,
-            starterPacks: [...state.starterPacks, ...result.starterPacks],
-            starterPacksCursor: result.cursor,
-          ).copyWith(searchHistory: state.searchHistory, typeaheadActors: state.typeaheadActors),
-        );
-      } catch (error) {
-        emit(state.copyWith(isLoadingMore: false));
-      }
       return;
     }
 

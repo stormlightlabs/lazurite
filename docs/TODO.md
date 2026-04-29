@@ -11,12 +11,15 @@ updated: 2026-04-26
 ## UI
 
 - Show feed icons in the feed management UI
-- (bug) In the side menu, navigation items scroll behind the logged in account label
 - We should create a section for "Advanced Features" in the side menu, and include a
   link to dev tools and follow audits.
 - Constellation URL should remain configurable internally but the option to change the
   URL should be removed from the UI.
 - Saved posts should be a tabbed view for local & ATProto/BSky saved posts.
+
+- Disabled/inactive inputs need distinct visual language and some disabled inputs aren't
+  actually disabled (starterpack search)
+- The Navigation Menu links aren't fully route/context aware.
 
 ## UX
 
