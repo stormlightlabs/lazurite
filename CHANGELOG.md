@@ -67,3 +67,7 @@
 - Added url resolution for in-app links (profiles, posts, hashtags) with dedicated hashtag
   screen (matches bsky.app implementation with Top/Latest sorting)
 - Jump to hashtag action from the hashtag screen with related hashtags & search
+
+#### 2026-04-29
+
+- Configurable autocomplete/typeahead for login & profile/actor search
