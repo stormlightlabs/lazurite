@@ -1,5 +1,5 @@
 ---
-title: AppView Routing (Bluesky + Blacksky + microcosm Fallbacks)
+title: AppView Routing + Trending (Bluesky + Blacksky + microcosm Fallbacks)
 updated: 2026-04-29
 ---
 
@@ -7,57 +7,69 @@ Introduce explicit AppView routing so Lazurite can target:
 
 1. Bluesky (`did:web:api.bsky.app#bsky_appview`)
 2. Blacksky (`did:web:api.blacksky.community#bsky_appview`)
-3. microcosm fallbacks for specific degraded paths (identity and backlink-style enrichments)
+3. microcosm fallbacks for specific degraded paths (identity and backlink enrichments)
 
-Design goal: route intentionally, fail predictably, and avoid hidden dependence on any single provider.
+Design goal: route intentionally, fail predictably, and avoid hidden dependence on one provider.
 
 ## Product Decisions
 
 1. Provider selection is chosen on the login screen.
-2. Provider selection can be changed later in Settings, but change requires app reset.
-3. Cross-provider fallback (provider A -> provider B) is user-controlled, not automatic by default.
-4. Slingshot identity fallback is controlled by a setting.
+2. Provider selection can be changed in Settings, but change requires app reset.
+3. Cross-provider fallback (A -> B) is user-controlled (default off).
+4. Slingshot identity fallback is setting-gated.
 5. Provider health/capability probes run at startup, with manual refresh in Settings.
-6. Blacksky must be available by default on login/onboarding (no advanced-toggle gate).
+6. Blacksky is available by default on login/onboarding.
+7. Trending is first-class: Home/Feed includes a Trending action, and app has a dedicated Trending screen.
 
 ## Current State (Lazurite)
 
-- OAuth entryway is currently hardcoded to `bsky.social` in auth flow.
-- App-level settings already support configurable network services in some areas:
-  - Typeahead provider (`bluesky`/`community`)
-  - Constellation base URL (default `https://constellation.microcosm.blue`)
-- Public profile context lookups already use direct AppView host `public.api.bsky.app` in one path.
+- OAuth entryway is hardcoded to `bsky.social` in auth flow.
 - There is no shared AppView routing abstraction and no user-selectable AppView provider.
+- Home feed app bar has feed-management action only; no Trending action.
+- Router has no `/trending` route.
 
 ## Research Findings
 
-### 1. Official routing expectations
+### 1. Routing and proxy expectations
 
-- Bluesky docs: authenticated `app.bsky.*` requests go through the user's PDS and are proxied to AppView.
-- Bluesky docs: public `app.bsky.*` endpoints can be called directly on `https://public.api.bsky.app`.
-- AT Protocol roadmap: clients should set `atproto-proxy` explicitly and should not depend on legacy default forwarding.
+- `app.bsky.*` should route via user PDS for authenticated requests, with explicit `atproto-proxy` toward selected AppView.
+- Public `app.bsky.*` reads can call AppView host directly (`public.api.bsky.app` for Bluesky).
+- Clients should not rely on legacy default forwarding behavior.
 
-### 2. Live AppView DID documents (verified)
+### 2. Verified AppViews and compatibility (live checks, 2026-04-29)
 
-- `https://api.bsky.app/.well-known/did.json` includes:
-  - `#bsky_appview` at `https://api.bsky.app`
-  - `#bsky_notif` at `https://api.bsky.app`
-- `https://api.blacksky.community/.well-known/did.json` includes:
-  - `#bsky_appview` at `https://api.blacksky.community`
-  - `#bsky_notif` at `https://api.blacksky.community`
+- Bluesky DID/service:
+  - `did:web:api.bsky.app#bsky_appview`
+  - public host: `https://public.api.bsky.app`
+- Blacksky DID/service:
+  - `did:web:api.blacksky.community#bsky_appview`
+  - public host: `https://api.blacksky.community`
+- Both hosts currently respond for:
+  - `app.bsky.actor.getProfile`
+  - `app.bsky.unspecced.getTrends`
+  - `app.bsky.unspecced.getTrendingTopics`
 
-### 3. Live Blacksky API compatibility (spot checks)
+### 3. Trending endpoint contract (official lexicons)
 
-- `https://api.blacksky.community/xrpc/app.bsky.actor.getProfile?...` returns valid profile payload.
-- `https://api.blacksky.community/xrpc/app.bsky.unspecced.getTrends` returns trends payload.
+- `app.bsky.unspecced.getTrends`
+  - params: `limit` (default 10, min 1, max 25)
+  - output: `trends[]` (`trendView`)
+- `app.bsky.unspecced.getTrendingTopics`
+  - params: `viewer?` DID, `limit` (default 10, min 1, max 25)
+  - output: `topics[]` + `suggested[]` (`trendingTopic`)
 
-### 4. microcosm services (verified)
+### 4. Live provider divergence relevant to UI
 
-- Constellation endpoint is live for backlink-style counts:
-  - `https://constellation.microcosm.blue/xrpc/blue.microcosm.links.getBacklinksCount`
-- Slingshot identity endpoint is live:
-  - `https://slingshot.microcosm.blue/xrpc/com.bad-example.identity.resolveMiniDoc`
-  - Returns DID, handle, and PDS.
+- Bluesky `getTrendingTopics` currently returns both `topics` and non-empty `suggested`.
+- Blacksky `getTrendingTopics` currently returns `topics` and often empty `suggested`.
+- Link formats differ:
+  - Bluesky trend links often `/profile/.../feed/...`
+  - Blacksky trend links often `/topic/<id>`
+
+### 5. Other AppViews in ecosystem
+
+- There are additional self-hosted/experimental AppView implementations in the ecosystem.
+- For this phase, treat these as `custom` providers only (advanced path), not default onboarding options, until each candidate is validated for DID/service health and endpoint parity.
 
 ## Design
 
@@ -67,12 +79,7 @@ Add settings-backed provider selection:
 
 - `bluesky` (default)
 - `blacksky`
-- `custom` (optional advanced path; disabled in UI until validated)
-
-Selection lifecycle:
-
-- Initial selection is made on the login screen before auth flow starts.
-- Post-login changes are allowed in Settings but must trigger an app reset flow to avoid mixed-session routing state.
+- `custom` (advanced, validation-gated)
 
 Provider descriptor:
 
@@ -80,55 +87,107 @@ Provider descriptor:
 class AppViewProvider {
   final String key; // bluesky, blacksky, custom
   final String serviceDid; // did:web:...#bsky_appview
-  final Uri publicBaseUrl; // public unauthenticated app.bsky host
+  final Uri publicBaseUrl; // public app.bsky host
   final Uri entrywayUrl; // login/account entryway
+  final Uri webBaseUrl; // provider web base for relative trend links
 }
 ```
 
 Built-in defaults:
 
-- Bluesky:
-  - service DID: `did:web:api.bsky.app#bsky_appview`
-  - public base: `https://public.api.bsky.app`
-  - entryway: `https://bsky.social`
-- Blacksky:
-  - service DID: `did:web:api.blacksky.community#bsky_appview`
-  - public base: `https://api.blacksky.community`
-  - entryway: `https://blacksky.app`
+- Bluesky: `public.api.bsky.app`, `bsky.social`, `https://bsky.app`
+- Blacksky: `api.blacksky.community`, `blacksky.app`, `https://blacksky.app`
 
 ### Router abstraction
 
-Introduce `AppViewRouter` as a single source of truth:
+Introduce `AppViewRouter` as single source of truth:
 
 - `Map<String, String> appBskyProxyHeaders()`
 - `Uri publicEndpoint(String xrpcPath, Map<String, String> query)`
 - `Uri entrywayForAuth()`
+- `Uri resolveWebLink(String relativeOrAbsolute)`
 - `Future<AppViewHealth> probeProvider()`
-
-This keeps routing policy out of individual repositories.
 
 ### Request routing policy
 
-1. **Authenticated `app.bsky.*`**
-   - Route through PDS as today.
-   - Explicitly set `atproto-proxy` to selected provider DID.
-2. **Signed-out/public `app.bsky.*`**
-   - Call selected provider `publicBaseUrl` directly.
-3. **`com.atproto.*`**
-   - Never AppView-routed. Resolve target PDS by DID/handle as normal.
+1. Authenticated `app.bsky.*`
+- Route through PDS.
+- Set explicit `atproto-proxy` to selected provider DID.
+
+2. Signed-out/public `app.bsky.*`
+- Call selected provider `publicBaseUrl` directly.
+
+3. `com.atproto.*`
+- Never AppView-routed; resolve PDS by DID/handle as normal.
+
+### Trending UX and routing
+
+1. Home app bar adds `Trending` action button.
+- Route target: `/trending`.
+
+2. Add dedicated `TrendingScreen`.
+- Primary data source: `getTrendingTopics(limit=10)`.
+- Required enrichment (initial implementation): `getTrends(limit=10)` for richer metadata (actors, postCount, status/category).
+- UI sections:
+  - `Topics`
+  - `Suggested` (hidden when empty)
+
+Implementation note:
+
+- The first shipped Trending screen must join `getTrendingTopics` + `getTrends` data in one load flow.
+- If `getTrends` fails and cross-provider fallback is disabled or unavailable, render `topics` with a degraded metadata state and explicit non-blocking error indicator.
+
+Deterministic join contract:
+
+- Build a stable join key for both `topics[]` and `trends[]` before matching.
+- Key precedence (in order):
+1. Parsed link key (preferred):
+  - `/topic/<id>` -> `topic:<id>`
+  - `/profile/<actor>/feed/<rkey>` -> `feed:<actor>:<rkey>`
+2. Normalized topic string fallback:
+  - lowercase
+  - trim
+  - collapse internal whitespace
+  - drop leading `#`
+- Matching algorithm:
+1. Try exact parsed-link-key match.
+2. If absent, try normalized-topic-string match.
+3. If multiple trend candidates match, pick the candidate with newest `startedAt`.
+4. If still tied, pick lexicographically smallest `link` for deterministic output.
+5. If no match, keep topic row and mark metadata as unavailable.
+
+Trending UI state contract:
+
+- `topics` load success + `trends` load success:
+  - render fully enriched rows (actors/postCount/status/category when present).
+- `topics` load success + `trends` degraded/failure:
+  - render topic rows without metadata fields.
+  - show non-blocking banner/chip: `Metadata temporarily unavailable`.
+  - keep row navigation actions enabled.
+- `topics` failure:
+  - render blocking error state for Trending screen.
+
+3. Trend row actions:
+- Use provider-aware `resolveWebLink` for relative links.
+- If link maps to supported internal route, deep-link internally.
+- If unsupported, open external browser to provider `webBaseUrl + link`.
+
+4. Link parsing safety:
+- Never assume one provider link format.
+- Support at least:
+  - `/profile/<actor>/feed/<rkey>`
+  - `/topic/<id>`
+- Unknown path formats degrade to external open.
 
 ### Fallback policy (defensive)
 
-Fallback order must be explicit and bounded:
-
 1. Try selected provider.
-2. If user enabled "Cross-provider fallback", then on transient failure (`429`, `5xx`, timeout, DNS):
-   - Try alternate built-in provider for read-only public endpoints.
-3. For specific non-AppView enrichments:
-   - Backlink/social graph counts and related index lookups: Constellation.
-   - Identity mini-doc resolution when handle resolution is flaky: Slingshot `resolveMiniDoc` (only when enabled in settings).
-4. Record failure reason and chosen fallback in logs.
-5. Apply a short circuit-breaker window per failed provider/endpoint to prevent retry storms.
+2. If cross-provider fallback setting is ON, then on transient read failures (`429`, `5xx`, timeout, DNS):
+- Try alternate built-in provider for read-only public endpoints.
+3. For non-AppView enrichments:
+- Backlink/index enrichments: Constellation.
+- Identity fallback: Slingshot `resolveMiniDoc` only when enabled.
+4. Log fallback reason/provider and apply endpoint-level circuit breaker.
 
 Do not fallback across write operations.
 
@@ -136,109 +195,109 @@ Do not fallback across write operations.
 
 Track endpoint support per provider to avoid blind retries:
 
-- `app.bsky.actor.getProfile` (public read): bluesky + blacksky
-- `app.bsky.feed.getPostThread` (public read): bluesky + blacksky
-- `app.bsky.unspecced.getTrends` (public read): bluesky + blacksky (verify by probe)
-- Custom namespaces: provider-specific only
-
-### Auth and account UX implications
-
-- If user selects Blacksky provider, default login entryway should become `https://blacksky.app`.
-- Existing accounts keep current PDS/session behavior; AppView selection changes only request routing.
-- Add a warning in settings: provider choice affects content ranking, moderation context, and availability.
-- Login/onboarding must show both Bluesky and Blacksky as first-class provider options by default.
-- Changing provider in settings must present a reset confirmation flow.
+- `app.bsky.actor.getProfile`
+- `app.bsky.feed.getPostThread`
+- `app.bsky.unspecced.getTrends`
+- `app.bsky.unspecced.getTrendingTopics`
 
 ### Reset UX contract (recommended)
 
-Best UX contract for provider switching:
+Best contract for provider switching:
 
-1. User selects a new provider in Settings.
-2. App shows a blocking confirmation sheet:
-   - "Apply and restart now"
-   - "Cancel"
-   - Message: "You will remain signed in. No local data will be deleted."
-3. On confirm, app performs a soft restart:
-   - Persist new provider selection first.
-   - Cancel in-flight requests.
-   - Tear down and rebuild app-level DI/blocs/repositories.
-   - Return to bootstrap/splash and rehydrate from persisted state.
+1. User selects provider in Settings.
+2. Blocking confirmation sheet:
+- `Apply and restart now`
+- `Cancel`
+- Copy: user stays signed in; no local DB wipe.
+3. On confirm, perform soft restart:
+- Persist provider first.
+- Stop new requests and cancel in-flight work.
+- Tear down and rebuild app-level DI/blocs/services.
+- Return to bootstrap and rehydrate from persisted state.
 
-For this phase, do not log out users and do not wipe local database on provider change.
+This avoids mixed in-memory routing state while preserving session continuity.
 
 ### State safety requirements
 
-To avoid mixed in-memory routing state:
-
 1. `AppViewRouter` is the only runtime source of provider state.
-2. Long-lived repositories/blocs must not cache provider values separately.
-3. Provider switch path must block new requests until rebuild completes.
-4. Use a routing epoch/version so stale pre-reset responses are ignored post-reset.
+2. Long-lived repos/blocs must not cache provider independently.
+3. Provider switch blocks new requests until rebuild completes.
+4. Use routing epoch/version so stale pre-reset responses are dropped.
 
 ### Login-time persistence ordering
 
-To ensure provider choice is honored from first network call:
-
-1. Persist login-screen provider choice before starting OAuth/app-password calls.
-2. Disable login submission while provider persistence is in flight.
-3. Construct auth/network clients only after persisted provider is available in bootstrap.
+1. Persist login-screen provider selection before any auth/network request.
+2. Disable login submission while persistence is in-flight.
+3. Construct auth/network clients only after provider setting loads at bootstrap.
 
 ### Health probes
 
-- Run provider health/capability probes once at startup.
-- Expose a manual "Refresh Provider Health" control in Settings.
-- Do not run periodic background probes in this phase.
+- Run once at startup.
+- Expose manual `Refresh Provider Health` in Settings.
+- No periodic background probes in this phase.
 
-## Adversarial checks (assumptions to challenge)
+## Adversarial checks
 
-1. A provider advertises `#bsky_appview` but only partially implements endpoints.
-2. A provider endpoint is live but semantically diverges (labels, trends, moderation filters).
-3. Docs may lag live infrastructure (observed for Blacksky roadmap vs live API host).
-4. Transient success can mask long-tail reliability problems without health telemetry.
+1. Provider advertises `#bsky_appview` but partially implements endpoints.
+2. Semantics diverge even when endpoint exists (moderation, trends, topic links).
+3. Docs can lag live infrastructure.
+4. Trend link paths can drift by provider/version.
 
 Mitigation:
 
-- Runtime capability probes.
+- Startup capability probes.
 - Endpoint-level fallback gates.
-- Structured logs + per-provider failure counters.
+- Structured logs + provider failure counters.
+- Defensive link resolver with safe external fallback.
 
 ## Testing Strategy
 
 ### Unit
 
-- Provider selection and normalization.
-- Login-time provider selection persistence + settings-change reset requirement.
-- Bootstrap ordering: no auth/network client creation before provider setting load.
-- Routing epoch/version stale-response guard behavior.
-- Header injection (`atproto-proxy`) per request class.
-- Fallback state machine and circuit breaker behavior.
-- Capability matrix enforcement.
+- Provider selection/normalization.
+- Login-time provider persistence before auth call.
+- Bootstrap ordering (no client creation before provider load).
+- Routing epoch stale-response guard.
+- Header injection (`atproto-proxy`).
+- Fallback + circuit-breaker transitions.
+- Trending limit clamping (1..25).
+- Trend link parsing and resolver fallback behavior.
+- Deterministic topic/trend join precedence and tie-break behavior.
+- Topic-string normalization behavior for join fallback.
 
 ### Integration
 
-- Signed-out profile/thread fetch through Bluesky and Blacksky.
-- Forced primary failure -> alternate provider fallback (when enabled).
-- Forced primary failure -> no cross-provider fallback (when disabled).
-- Constellation + Slingshot fallback success path.
+- `/trending` route reachable from Home button.
+- Bluesky and Blacksky trending fetch paths.
+- Empty `suggested` renders cleanly.
+- `topics` success + `trends` failure renders degraded metadata indicator with usable navigation.
+- Forced primary failure with fallback ON/OFF.
+- Provider switch soft restart fully rebuilds routing consumers.
 
 ### Regression
 
-- Ensure `com.atproto.*` routes are unaffected.
-- Ensure OAuth/App Password auth flows still resolve correct PDS.
+- `com.atproto.*` unaffected.
+- OAuth/App Password flows keep correct PDS behavior.
+- Provider switch does not mix stale in-memory routing state.
 
-## Non-goals (for this phase)
+## Non-goals (this phase)
 
-- Supporting arbitrary third-party AppViews in UI without validation.
-- Automatic provider switching for write endpoints.
+- Auto-switch providers for write operations.
+- Unvalidated public listing of arbitrary third-party AppViews in onboarding.
 - Replacing existing Constellation features.
 
 ## Sources
 
 - <https://docs.bsky.app/docs/advanced-guides/api-directory>
-- <https://atproto.com/blog/2025-protocol-roadmap-spring>
+- <https://docs.bsky.app/blog/2025-protocol-roadmap-spring>
 - <https://api.bsky.app/.well-known/did.json>
 - <https://api.blacksky.community/.well-known/did.json>
-- <https://docs.blacksky.community/list-of-our-services>
+- <https://raw.githubusercontent.com/bluesky-social/atproto/main/lexicons/app/bsky/unspecced/getTrends.json>
+- <https://raw.githubusercontent.com/bluesky-social/atproto/main/lexicons/app/bsky/unspecced/getTrendingTopics.json>
+- <https://raw.githubusercontent.com/bluesky-social/atproto/main/lexicons/app/bsky/unspecced/defs.json>
+- <https://raw.githubusercontent.com/bluesky-social/atproto/main/lexicons/app/bsky/unspecced/getTrendsSkeleton.json>
 - <https://www.microcosm.blue/>
 - <https://constellation.microcosm.blue/>
 - <https://slingshot.microcosm.blue/>
+- <https://tangled.org/why.bsky.team/konbini>
+- <https://sdk.blue/>
