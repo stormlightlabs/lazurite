@@ -24,8 +24,8 @@ void main() {
 
       expect(blacksky.serviceDid, equals('did:web:api.blacksky.community#bsky_appview'));
       expect(blacksky.publicBaseUrl.host, equals('api.blacksky.community'));
-      expect(blacksky.entrywayUrl.host, equals('blacksky.app'));
-      expect(blacksky.webBaseUrl.host, equals('blacksky.app'));
+      expect(blacksky.entrywayUrl.host, equals('blacksky.community'));
+      expect(blacksky.webBaseUrl.host, equals('blacksky.community'));
     });
   });
 }

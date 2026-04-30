@@ -10,7 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/app_view_web_links.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
@@ -926,7 +927,7 @@ class _FocusedPostContent extends StatelessWidget {
     HapticHelper.mediumImpact();
     final post = thread.post;
     final postUri = post.uri.toString();
-    final bskyUrl = _convertAtUriToBskyUrl(postUri);
+    final bskyUrl = AppViewWebLinks.postFromAtUri(postUri, appViewProvider: _resolveAppViewProvider(context));
 
     showOptionsSheet<void>(
       context: context,
@@ -1089,18 +1090,11 @@ class _FocusedPostContent extends StatelessWidget {
     return text is String ? text : '';
   }
 
-  String _convertAtUriToBskyUrl(String atUri) {
+  String _resolveAppViewProvider(BuildContext context) {
     try {
-      final uri = Uri.parse(atUri);
-      final parts = uri.pathSegments;
-      if (parts.length >= 2) {
-        final did = uri.host;
-        final rkey = parts.last;
-        return 'https://bsky.app/profile/$did/post/$rkey';
-      }
+      return context.read<SettingsCubit>().state.appViewProvider;
     } catch (_) {
-      log.d('failed to convert atUri to bskyUrl');
+      return AppViewProviders.defaultKey;
     }
-    return atUri;
   }
 }

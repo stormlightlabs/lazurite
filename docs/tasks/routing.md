@@ -1,6 +1,6 @@
 ---
 title: AppView Routing + Trending Milestones
-updated: 2026-04-29
+updated: 2026-04-30
 ---
 
 ## M1 - Core Routing Model
@@ -62,7 +62,7 @@ updated: 2026-04-29
 
 ## M8 - Auth + Reset Safety
 
-- [ ] Tie OAuth entryway default to selected provider (`bsky.social` / `blacksky.app`)
+- [x] Resolve OAuth entryway from account authority first (PDS `authorization_servers`), with provider/default fallbacks
 - [ ] Ensure app-password and OAuth flows remain backward compatible
 - [ ] Add migration behavior for existing saved sessions/accounts
 - [ ] Ensure provider switch rebuilds DI/blocs/services before new requests

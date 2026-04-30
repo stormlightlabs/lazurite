@@ -157,6 +157,57 @@ void main() {
       service.dispose();
     });
 
+    test('uses selected AppView proxy headers for preference reads and writes', () async {
+      final actor = _FakeActorService(preferences: const []);
+      final service = ModerationService(
+        bluesky: _FakeBlueskyClient(actor: actor, labeler: const _FakeLabelerService()),
+        database: database,
+        accountDid: _accountDid,
+        userDid: _accountDid,
+        appViewProvider: 'blacksky',
+      );
+
+      await service.ensureInitialized();
+      expect(actor.lastGetPreferencesHeaders?['atproto-proxy'], 'did:web:api.blacksky.community#bsky_appview');
+
+      await service.subscribeToLabeler(_customLabelerDid);
+      expect(actor.lastPutPreferencesHeaders?['atproto-proxy'], 'did:web:api.blacksky.community#bsky_appview');
+      expect(actor.lastPutPreferencesHeaders?['atproto-accept-labelers'], contains(_customLabelerDid));
+
+      service.dispose();
+    });
+
+    test('retries preferences without AppView proxy when proxied request returns 404', () async {
+      final actor = _FakeActorService(
+        preferences: const [],
+        errorOnProxyGetPreferences: _proxyNotSupported(
+          method: HttpMethod.get,
+          xrpcMethod: 'app.bsky.actor.getPreferences',
+        ),
+        errorOnProxyPutPreferences: _proxyNotSupported(
+          method: HttpMethod.post,
+          xrpcMethod: 'app.bsky.actor.putPreferences',
+        ),
+      );
+      final service = ModerationService(
+        bluesky: _FakeBlueskyClient(actor: actor, labeler: const _FakeLabelerService()),
+        database: database,
+        accountDid: _accountDid,
+        userDid: _accountDid,
+        appViewProvider: 'blacksky',
+      );
+
+      await service.ensureInitialized();
+      expect(actor.getPreferencesCallCount, 2);
+      expect(actor.lastGetPreferencesHeaders?['atproto-proxy'], isNull);
+
+      await service.subscribeToLabeler(_customLabelerDid);
+      expect(actor.putPreferencesCallCount, 2);
+      expect(actor.lastPutPreferencesHeaders?['atproto-proxy'], isNull);
+
+      service.dispose();
+    });
+
     test('setLabelPreference stores contentLabelPref entries', () async {
       final actor = _FakeActorService(preferences: const []);
       final service = ModerationService(
@@ -231,21 +282,49 @@ class _FakeBlueskyClient {
 }
 
 class _FakeActorService {
-  _FakeActorService({this.preferences = const [], this.error});
+  _FakeActorService({
+    this.preferences = const [],
+    this.error,
+    this.errorOnProxyGetPreferences,
+    this.errorOnProxyPutPreferences,
+  });
 
   final List<UPreferences> preferences;
   final Object? error;
+  final Object? errorOnProxyGetPreferences;
+  final Object? errorOnProxyPutPreferences;
   List<UPreferences>? lastPutPreferences;
+  Map<String, String>? lastGetPreferencesHeaders;
+  Map<String, String>? lastPutPreferencesHeaders;
+  int getPreferencesCallCount = 0;
+  int putPreferencesCallCount = 0;
 
-  Future<_FakePreferencesResponse> getPreferences() async {
+  Future<_FakePreferencesResponse> getPreferences({Map<String, String>? $headers}) async {
+    getPreferencesCallCount++;
     if (error != null) {
       throw error!;
     }
+    if (_hasAppViewProxyHeader($headers) && errorOnProxyGetPreferences != null) {
+      throw errorOnProxyGetPreferences!;
+    }
+    lastGetPreferencesHeaders = $headers;
     return _FakePreferencesResponse(_FakePreferencesData(preferences));
   }
 
-  Future<void> putPreferences({required List<UPreferences> preferences}) async {
+  Future<void> putPreferences({required List<UPreferences> preferences, Map<String, String>? $headers}) async {
+    putPreferencesCallCount++;
+    if (_hasAppViewProxyHeader($headers) && errorOnProxyPutPreferences != null) {
+      throw errorOnProxyPutPreferences!;
+    }
     lastPutPreferences = preferences;
+    lastPutPreferencesHeaders = $headers;
+  }
+
+  bool _hasAppViewProxyHeader(Map<String, String>? headers) {
+    if (headers == null) {
+      return false;
+    }
+    return headers.keys.any((key) => key.toLowerCase() == 'atproto-proxy');
   }
 }
 
@@ -288,4 +367,16 @@ class _FakeGetServicesData {
   const _FakeGetServicesData(this.views);
 
   final List<ULabelerGetServicesViews> views;
+}
+
+InvalidRequestException _proxyNotSupported({required HttpMethod method, required String xrpcMethod}) {
+  return InvalidRequestException(
+    XRPCResponse<XRPCError>(
+      headers: const {},
+      status: HttpStatus.notFound,
+      request: XRPCRequest(method: method, url: Uri.parse('https://example.test/xrpc/$xrpcMethod')),
+      rateLimit: RateLimit.unlimited(),
+      data: const XRPCError(error: 'XRPCNotSupported', message: 'XRPC Not Supported'),
+    ),
+  );
 }

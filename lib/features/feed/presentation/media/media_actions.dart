@@ -4,10 +4,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/shared/presentation/helpers/share_helper.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:share_plus/share_plus.dart';
 
 enum MediaAssetType { image, video }
 
@@ -15,7 +15,7 @@ class MediaActions {
   MediaActions._();
 
   static Future<void> shareImage(BuildContext context, String imageUrl) async {
-    await Share.share(imageUrl);
+    await ShareHelper.shareText(context, imageUrl);
   }
 
   static Future<void> downloadImage(

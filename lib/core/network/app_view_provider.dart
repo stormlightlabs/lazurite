@@ -32,8 +32,8 @@ abstract final class AppViewProviders {
     key: blackskyKey,
     serviceDid: 'did:web:api.blacksky.community#bsky_appview',
     publicBaseUrl: Uri.https('api.blacksky.community'),
-    entrywayUrl: Uri.https('blacksky.app'),
-    webBaseUrl: Uri.https('blacksky.app'),
+    entrywayUrl: Uri.https('blacksky.community'),
+    webBaseUrl: Uri.https('blacksky.community'),
   );
 
   static final Map<String, AppViewProviderDescriptor> _builtIns = {blueskyKey: bluesky, blackskyKey: blacksky};

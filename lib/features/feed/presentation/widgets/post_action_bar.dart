@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/app_view_web_links.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
+import 'package:lazurite/shared/presentation/helpers/share_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class PostActionBar extends StatelessWidget {
@@ -177,23 +180,16 @@ class PostActionBar extends StatelessWidget {
   }
 
   Future<void> _defaultShare(BuildContext context) async {
-    final url = _convertAtUriToBskyUrl(postUri);
-    await Share.share(url);
+    final url = AppViewWebLinks.postFromAtUri(postUri, appViewProvider: _resolveAppViewProvider(context));
+    await ShareHelper.shareText(context, url);
   }
 
-  String _convertAtUriToBskyUrl(String atUri) {
+  String _resolveAppViewProvider(BuildContext context) {
     try {
-      final uri = Uri.parse(atUri);
-      final parts = uri.pathSegments;
-      if (parts.length >= 2) {
-        final did = uri.host;
-        final rkey = parts.last;
-        return 'https://bsky.app/profile/$did/post/$rkey';
-      }
+      return context.read<SettingsCubit>().state.appViewProvider;
     } catch (_) {
-      log.d('failed to convert atUri to bskyUrl');
+      return AppViewProviders.defaultKey;
     }
-    return atUri;
   }
 }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:atproto_core/atproto_core.dart' as atp_core;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_actor_getpreferences.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
@@ -328,11 +329,25 @@ class ModerationService {
       return _preferences;
     }
 
+    final headers = _appViewContext.appBskyHeaders();
     try {
-      final prefsResponse = await _bluesky.actor.getPreferences();
+      final prefsResponse = await _bluesky.actor.getPreferences($headers: headers);
       final preferences = prefsResponse.data.preferences;
       await _cachePreferences(preferences);
       return preferences;
+    } on atp_core.XRPCException catch (error) {
+      if (_shouldRetryPreferencesWithoutProxy(error: error, headers: headers)) {
+        final fallbackHeaders = _withoutAppViewProxyHeader(headers);
+        log.w(
+          'ModerationService: getPreferences returned ${error.response.status.code} with AppView proxy; '
+          'retrying without atproto-proxy.',
+        );
+        final prefsResponse = await _bluesky.actor.getPreferences($headers: fallbackHeaders);
+        final preferences = prefsResponse.data.preferences;
+        await _cachePreferences(preferences);
+        return preferences;
+      }
+      rethrow;
     } catch (error) {
       final cached = await _loadCachedPreferences();
       if (cached != null) {
@@ -345,7 +360,22 @@ class ModerationService {
   }
 
   Future<void> _putAndRefresh(List<UPreferences> preferences) async {
-    await _bluesky.actor.putPreferences(preferences: preferences);
+    final moderationPrefs = _toModerationPrefs(preferences);
+    final headers = _buildHeadersForPrefs(moderationPrefs);
+    try {
+      await _bluesky.actor.putPreferences(preferences: preferences, $headers: headers);
+    } on atp_core.XRPCException catch (error) {
+      if (_shouldRetryPreferencesWithoutProxy(error: error, headers: headers)) {
+        final fallbackHeaders = _withoutAppViewProxyHeader(headers);
+        log.w(
+          'ModerationService: putPreferences returned ${error.response.status.code} with AppView proxy; '
+          'retrying without atproto-proxy.',
+        );
+        await _bluesky.actor.putPreferences(preferences: preferences, $headers: fallbackHeaders);
+      } else {
+        rethrow;
+      }
+    }
     await updatePreferences(preferences: preferences);
   }
 
@@ -545,6 +575,23 @@ class ModerationService {
 
   Map<String, String> _buildHeadersForPrefs(bsky_moderation.ModerationPrefs prefs) {
     return _appViewContext.appBskyHeaders(_buildLabelerHeaders(prefs.labelers.map((labeler) => labeler.did)));
+  }
+
+  bool _shouldRetryPreferencesWithoutProxy({
+    required atp_core.XRPCException error,
+    required Map<String, String> headers,
+  }) {
+    return _hasAppViewProxyHeader(headers) && error.response.status.code == 404;
+  }
+
+  bool _hasAppViewProxyHeader(Map<String, String> headers) {
+    return headers.keys.any((key) => key.toLowerCase() == 'atproto-proxy');
+  }
+
+  Map<String, String> _withoutAppViewProxyHeader(Map<String, String> headers) {
+    final copy = Map<String, String>.from(headers);
+    copy.removeWhere((key, _) => key.toLowerCase() == 'atproto-proxy');
+    return copy;
   }
 
   String? get _preferencesCacheKey {

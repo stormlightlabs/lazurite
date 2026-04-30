@@ -7,6 +7,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/app_view_web_links.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
@@ -42,10 +44,10 @@ import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
+import 'package:lazurite/shared/presentation/helpers/share_helper.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -561,7 +563,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         OptionsSheetItem(
           leading: const Icon(Icons.share_outlined),
           title: 'Share Profile',
-          onTap: () => Share.share('https://bsky.app/profile/${profile.handle}'),
+          onTap: () => ShareHelper.shareText(
+            context,
+            AppViewWebLinks.profile(profile.handle, appViewProvider: _resolveAppViewProvider(context)),
+          ),
         ),
         OptionsSheetItem(
           leading: const Icon(Icons.playlist_add_outlined),
@@ -656,6 +661,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         ),
       ),
     ).whenComplete(cubit.close);
+  }
+
+  String _resolveAppViewProvider(BuildContext context) {
+    try {
+      return context.read<SettingsCubit>().state.appViewProvider;
+    } catch (_) {
+      return AppViewProviders.defaultKey;
+    }
   }
 
   void _showSuggestedFollows(BuildContext context, ProfileViewDetailed profile) {

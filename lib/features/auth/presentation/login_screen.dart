@@ -76,9 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  bool _isHandleValid() {
-    return _formKey.currentState?.validate() ?? false;
-  }
+  bool _isHandleValid() => _formKey.currentState?.validate() ?? false;
 
   void _onTypeaheadSelected(TypeaheadResult result) {
     _handleController.text = result.handle;
@@ -163,31 +161,33 @@ class _LoginScreenState extends State<LoginScreen> {
                           builder: (context, settingsState) {
                             final selectedProvider = settingsState.appViewProvider;
                             return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
-                                  'AppView Provider',
+                                  'Choose your portal',
+                                  textAlign: TextAlign.center,
                                   style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
                                 ),
                                 const SizedBox(height: 8),
-                                SegmentedButton<String>(
-                                  segments: const [
-                                    ButtonSegment<String>(value: AppViewProviders.blueskyKey, label: Text('Bluesky')),
-                                    ButtonSegment<String>(value: AppViewProviders.blackskyKey, label: Text('Blacksky')),
-                                  ],
-                                  selected: {selectedProvider},
-                                  onSelectionChanged: (selection) {
-                                    unawaited(context.read<SettingsCubit>().setAppViewProvider(selection.first));
-                                  },
+                                Center(
+                                  child: SegmentedButton<String>(
+                                    segments: const [
+                                      ButtonSegment<String>(
+                                        value: AppViewProviders.blueskyKey,
+                                        label: _ProviderTabLabel(assetPath: 'assets/bluesky.svg', name: 'BlueSky'),
+                                      ),
+                                      ButtonSegment<String>(
+                                        value: AppViewProviders.blackskyKey,
+                                        label: _ProviderTabLabel(assetPath: 'assets/blacksky.svg', name: 'BlackSky'),
+                                      ),
+                                    ],
+                                    selected: {selectedProvider},
+                                    onSelectionChanged: (selection) {
+                                      unawaited(context.read<SettingsCubit>().setAppViewProvider(selection.first));
+                                    },
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
-                                Text(
-                                  selectedProvider == AppViewProviders.blackskyKey
-                                      ? 'Sign-in will use Blacksky entryway defaults.'
-                                      : 'Sign-in will use Bluesky entryway defaults.',
-                                  style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                                ),
-                                const SizedBox(height: 16),
                               ],
                             );
                           },
@@ -340,32 +340,40 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+class _ProviderTabLabel extends StatelessWidget {
+  const _ProviderTabLabel({required this.assetPath, required this.name});
+
+  final String assetPath;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [SvgPicture.asset(assetPath, height: 16), const SizedBox(width: 8), Text(name)],
+  );
+}
+
 class _LogoCard extends StatelessWidget {
   const _LogoCard({required this.colorScheme});
 
   final ColorScheme colorScheme;
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 88,
-        height: 88,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          gradient: LinearGradient(colors: [colorScheme.primary, colorScheme.secondary]),
-          boxShadow: [
-            BoxShadow(color: colorScheme.primary.withValues(alpha: 0.24), blurRadius: 28, offset: const Offset(0, 12)),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: SvgPicture.asset(
-            'assets/logo.svg',
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-          ),
-        ),
+  Widget build(BuildContext context) => Center(
+    child: Container(
+      width: 88,
+      height: 88,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(colors: [colorScheme.primary, colorScheme.secondary]),
+        boxShadow: [
+          BoxShadow(color: colorScheme.primary.withValues(alpha: 0.24), blurRadius: 28, offset: const Offset(0, 12)),
+        ],
       ),
-    );
-  }
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: SvgPicture.asset('assets/logo.svg', colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
+      ),
+    ),
+  );
 }

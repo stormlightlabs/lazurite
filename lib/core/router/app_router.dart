@@ -9,6 +9,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/router/fade_through_page.dart';
 import 'package:lazurite/features/alerts/presentation/alerts_screen.dart';
@@ -303,7 +304,11 @@ class AppRouter {
           final appViewProvider = AppViewProviders.descriptorForSetting(settingsState.appViewProvider);
           final repository = ProfileContextRepository(
             bluesky: context.read<Bluesky>(),
-            publicBluesky: Bluesky.anonymous(service: appViewProvider.publicBaseUrl.host),
+            publicBluesky: Bluesky.anonymous(
+              service: appViewProvider.publicBaseUrl.host,
+              getClient: XrpcNetworkInterceptor.wrapGetClient(),
+              postClient: XrpcNetworkInterceptor.wrapPostClient(),
+            ),
             constellationClient: ConstellationClient(baseUrl: constellationUrl),
           );
           return _page(

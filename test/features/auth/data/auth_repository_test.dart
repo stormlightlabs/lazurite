@@ -249,6 +249,28 @@ void main() {
       });
     });
 
+    group('oauth authorize candidates', () {
+      test('prioritizes resolved auth service before provider preference', () {
+        final candidates = AuthRepository.oauthAuthorizeServiceCandidatesForTest(
+          preferredAuthService: 'blacksky.community',
+          resolvedPdsHost: 'https://porcini.us-east.host.bsky.network',
+          resolvedAuthService: 'https://bsky.social',
+        );
+
+        expect(candidates, equals(['bsky.social', 'porcini.us-east.host.bsky.network', 'blacksky.community']));
+      });
+
+      test('deduplicates when preferred and resolved hosts match defaults', () {
+        final candidates = AuthRepository.oauthAuthorizeServiceCandidatesForTest(
+          preferredAuthService: 'https://bsky.social',
+          resolvedPdsHost: 'bsky.social',
+          resolvedAuthService: 'bsky.social',
+        );
+
+        expect(candidates, equals(['bsky.social']));
+      });
+    });
+
     group('clearSession', () {
       test('should delete all accounts', () async {
         when(() => mockDatabase.deleteAllAccounts()).thenAnswer((_) async => 1);

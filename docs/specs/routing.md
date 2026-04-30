@@ -1,6 +1,6 @@
 ---
 title: AppView Routing + Trending (Bluesky + Blacksky + microcosm Fallbacks)
-updated: 2026-04-29
+updated: 2026-04-30
 ---
 
 Introduce explicit AppView routing so Lazurite can target:
@@ -23,8 +23,8 @@ Design goal: route intentionally, fail predictably, and avoid hidden dependence 
 
 ## Current State (Lazurite)
 
-- OAuth entryway is hardcoded to `bsky.social` in auth flow.
-- There is no shared AppView routing abstraction and no user-selectable AppView provider.
+- OAuth login now resolves account authority first (handle/DID -> PDS -> `authorization_servers`) and only falls back when resolution fails.
+- AppView provider routing is implemented for `app.bsky.*` headers/public reads, and `com.atproto.*` bypasses AppView routing.
 - Home feed app bar has feed-management action only; no Trending action.
 - Router has no `/trending` route.
 
@@ -96,7 +96,7 @@ class AppViewProvider {
 Built-in defaults:
 
 - Bluesky: `public.api.bsky.app`, `bsky.social`, `https://bsky.app`
-- Blacksky: `api.blacksky.community`, `blacksky.app`, `https://blacksky.app`
+- Blacksky: `api.blacksky.community`, `blacksky.community`, `https://blacksky.community`
 
 ### Router abstraction
 
@@ -111,26 +111,23 @@ Introduce `AppViewRouter` as single source of truth:
 ### Request routing policy
 
 1. Authenticated `app.bsky.*`
-- Route through PDS.
-- Set explicit `atproto-proxy` to selected provider DID.
-
+    - Route through PDS.
+    - Set explicit `atproto-proxy` to selected provider DID.
 2. Signed-out/public `app.bsky.*`
-- Call selected provider `publicBaseUrl` directly.
-
+    - Call selected provider `publicBaseUrl` directly.
 3. `com.atproto.*`
-- Never AppView-routed; resolve PDS by DID/handle as normal.
+    - Never AppView-routed; resolve PDS by DID/handle as normal.
 
 ### Trending UX and routing
 
 1. Home app bar adds `Trending` action button.
-- Route target: `/trending`.
-
+    - Route target: `/trending`.
 2. Add dedicated `TrendingScreen`.
-- Primary data source: `getTrendingTopics(limit=10)`.
-- Required enrichment (initial implementation): `getTrends(limit=10)` for richer metadata (actors, postCount, status/category).
-- UI sections:
-  - `Topics`
-  - `Suggested` (hidden when empty)
+    - Primary data source: `getTrendingTopics(limit=10)`.
+    - Required enrichment (initial implementation): `getTrends(limit=10)` for richer metadata (actors, postCount, status/category).
+    - UI sections:
+      - `Topics`
+      - `Suggested` (hidden when empty)
 
 Implementation note:
 
@@ -141,52 +138,53 @@ Deterministic join contract:
 
 - Build a stable join key for both `topics[]` and `trends[]` before matching.
 - Key precedence (in order):
+
 1. Parsed link key (preferred):
-  - `/topic/<id>` -> `topic:<id>`
-  - `/profile/<actor>/feed/<rkey>` -> `feed:<actor>:<rkey>`
+    - `/topic/<id>` -> `topic:<id>`
+    - `/profile/<actor>/feed/<rkey>` -> `feed:<actor>:<rkey>`
 2. Normalized topic string fallback:
-  - lowercase
-  - trim
-  - collapse internal whitespace
-  - drop leading `#`
-- Matching algorithm:
-1. Try exact parsed-link-key match.
-2. If absent, try normalized-topic-string match.
-3. If multiple trend candidates match, pick the candidate with newest `startedAt`.
-4. If still tied, pick lexicographically smallest `link` for deterministic output.
-5. If no match, keep topic row and mark metadata as unavailable.
+    - lowercase
+    - trim
+    - collapse internal whitespace
+    - drop leading `#`
+    - Matching algorithm:
+    1. Try exact parsed-link-key match.
+    2. If absent, try normalized-topic-string match.
+    3. If multiple trend candidates match, pick the candidate with newest `startedAt`.
+    4. If still tied, pick lexicographically smallest `link` for deterministic output.
+    5. If no match, keep topic row and mark metadata as unavailable.
 
-Trending UI state contract:
+    Trending UI state contract:
 
-- `topics` load success + `trends` load success:
-  - render fully enriched rows (actors/postCount/status/category when present).
-- `topics` load success + `trends` degraded/failure:
-  - render topic rows without metadata fields.
-  - show non-blocking banner/chip: `Metadata temporarily unavailable`.
-  - keep row navigation actions enabled.
-- `topics` failure:
-  - render blocking error state for Trending screen.
+    - `topics` load success + `trends` load success:
+      - render fully enriched rows (actors/postCount/status/category when present).
+    - `topics` load success + `trends` degraded/failure:
+      - render topic rows without metadata fields.
+      - show non-blocking banner/chip: `Metadata temporarily unavailable`.
+      - keep row navigation actions enabled.
+    - `topics` failure:
+      - render blocking error state for Trending screen.
 
 3. Trend row actions:
-- Use provider-aware `resolveWebLink` for relative links.
-- If link maps to supported internal route, deep-link internally.
-- If unsupported, open external browser to provider `webBaseUrl + link`.
+    - Use provider-aware `resolveWebLink` for relative links.
+    - If link maps to supported internal route, deep-link internally.
+    - If unsupported, open external browser to provider `webBaseUrl + link`.
 
 4. Link parsing safety:
-- Never assume one provider link format.
-- Support at least:
-  - `/profile/<actor>/feed/<rkey>`
-  - `/topic/<id>`
-- Unknown path formats degrade to external open.
+    - Never assume one provider link format.
+    - Support at least:
+      - `/profile/<actor>/feed/<rkey>`
+      - `/topic/<id>`
+    - Unknown path formats degrade to external open.
 
 ### Fallback policy (defensive)
 
 1. Try selected provider.
 2. If cross-provider fallback setting is ON, then on transient read failures (`429`, `5xx`, timeout, DNS):
-- Try alternate built-in provider for read-only public endpoints.
+    - Try alternate built-in provider for read-only public endpoints.
 3. For non-AppView enrichments:
-- Backlink/index enrichments: Constellation.
-- Identity fallback: Slingshot `resolveMiniDoc` only when enabled.
+    - Backlink/index enrichments: Constellation.
+    - Identity fallback: Slingshot `resolveMiniDoc` only when enabled.
 4. Log fallback reason/provider and apply endpoint-level circuit breaker.
 
 Do not fallback across write operations.
@@ -206,14 +204,14 @@ Best contract for provider switching:
 
 1. User selects provider in Settings.
 2. Blocking confirmation sheet:
-- `Apply and restart now`
-- `Cancel`
-- Copy: user stays signed in; no local DB wipe.
+    - `Apply and restart now`
+    - `Cancel`
+    - Copy: user stays signed in; no local DB wipe.
 3. On confirm, perform soft restart:
-- Persist provider first.
-- Stop new requests and cancel in-flight work.
-- Tear down and rebuild app-level DI/blocs/services.
-- Return to bootstrap and rehydrate from persisted state.
+    - Persist provider first.
+    - Stop new requests and cancel in-flight work.
+    - Tear down and rebuild app-level DI/blocs/services.
+    - Return to bootstrap and rehydrate from persisted state.
 
 This avoids mixed in-memory routing state while preserving session continuity.
 
@@ -229,6 +227,20 @@ This avoids mixed in-memory routing state while preserving session continuity.
 1. Persist login-screen provider selection before any auth/network request.
 2. Disable login submission while persistence is in-flight.
 3. Construct auth/network clients only after provider setting loads at bootstrap.
+
+### OAuth authority selection (account vs selected AppView)
+
+1. Selected AppView controls content routing (`app.bsky.*`) and web link resolution.
+2. OAuth authorization host must come from account authority metadata:
+    - resolve handle/DID to PDS
+    - fetch `/.well-known/oauth-protected-resource`
+    - use `authorization_servers` issuer host first
+3. Fallback chain when metadata lookup fails:
+    - resolved PDS host
+    - `bsky.social`
+    - selected-provider entryway
+    - final default fallback
+4. Do not force OAuth host to selected AppView, because users can choose one AppView for reading while their account is hosted/authenticated elsewhere.
 
 ### Health probes
 

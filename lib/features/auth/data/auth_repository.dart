@@ -13,6 +13,7 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
+import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -152,25 +153,72 @@ class AuthRepository {
     try {
       _oauthCompleter = Completer<AuthTokens?>();
       _pendingHandle = handle.trim();
-      _pendingService = normalizeAtprotoServiceHost(_oauthServiceResolver()) ?? _oauthService;
+      final preferredOauthService = normalizeAtprotoServiceHost(_oauthServiceResolver()) ?? _oauthService;
+      String? resolvedPdsHost;
+      String? resolvedAuthService;
+      try {
+        resolvedPdsHost = await _resolveServiceForIdentifier(_pendingHandle!);
+        resolvedAuthService = await _resolveAuthorizationServiceForPdsHost(resolvedPdsHost);
+      } catch (error, stackTrace) {
+        log.w(
+          'AuthRepository: Failed to pre-resolve OAuth account authority for ${_pendingHandle!}; '
+          'continuing with fallback auth service chain.',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+      final oauthServices = _oauthAuthorizeServiceCandidates(
+        preferredAuthService: preferredOauthService,
+        resolvedPdsHost: resolvedPdsHost,
+        resolvedAuthService: resolvedAuthService,
+      );
       log.i('AuthRepository: Starting OAuth login for ${_pendingHandle!}');
+      log.d('AuthRepository: OAuth auth service candidates: ${oauthServices.join(', ')}');
 
       final metadata = await _loadClientMetadata(kClientId);
       log.d('AuthRepository: Loaded client metadata with redirect URIs: ${metadata.redirectUris.join(', ')}');
       final redirectUriTemplate = Uri.parse(metadata.redirectUris.first);
       final redirectUri = await _startCallbackServer(redirectUriTemplate);
-      final oauthClient = OAuthClient(
-        metadata.copyWith(redirectUris: [redirectUri.toString()]),
-        service: _pendingService!,
+
+      Object? lastAttemptError;
+      StackTrace? lastAttemptStackTrace;
+      final failedAttemptSummaries = <String>[];
+
+      for (final oauthService in oauthServices) {
+        try {
+          final oauthClient = OAuthClient(
+            metadata.copyWith(redirectUris: [redirectUri.toString()]),
+            service: oauthService,
+          );
+          final (authorizationUrl, context) = await oauthClient.authorize(_pendingHandle);
+
+          _pendingService = oauthService;
+          _pendingOAuthClient = oauthClient;
+          _pendingOAuthContext = context;
+          log.i('AuthRepository: OAuth PAR completed, launching browser to ${_sanitizeUriForLog(authorizationUrl)}');
+          await _launchUrl(authorizationUrl);
+
+          return await _oauthCompleter!.future;
+        } catch (error, stackTrace) {
+          lastAttemptError = error;
+          lastAttemptStackTrace = stackTrace;
+          final summary = _summarizeOAuthRefreshError(error);
+          failedAttemptSummaries.add('$oauthService=$summary');
+          log.w(
+            'AuthRepository: OAuth authorize attempt failed using auth service $oauthService ($summary)',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
+      }
+
+      Error.throwWithStackTrace(
+        Exception(
+          'OAuth authorize failed across ${oauthServices.length} auth service candidate(s). '
+          'Attempts: ${failedAttemptSummaries.join(' | ')}. Last error: $lastAttemptError',
+        ),
+        lastAttemptStackTrace ?? StackTrace.current,
       );
-      final (authorizationUrl, context) = await oauthClient.authorize(_pendingHandle);
-
-      _pendingOAuthClient = oauthClient;
-      _pendingOAuthContext = context;
-      log.i('AuthRepository: OAuth PAR completed, launching browser to ${_sanitizeUriForLog(authorizationUrl)}');
-      await _launchUrl(authorizationUrl);
-
-      return await _oauthCompleter!.future;
     } catch (error, stackTrace) {
       log.e('AuthRepository: OAuth login failed', error: error, stackTrace: stackTrace);
       await _stopCallbackServer();
@@ -533,7 +581,11 @@ class AuthRepository {
 
   Future<String> _resolveServiceForIdentifier(String identifier) async {
     log.d('AuthRepository: Resolving AT Protocol service for $identifier');
-    final client = atp.ATProto.anonymous(service: _fallbackService);
+    final client = atp.ATProto.anonymous(
+      service: _fallbackService,
+      getClient: XrpcNetworkInterceptor.wrapGetClient(),
+      postClient: XrpcNetworkInterceptor.wrapPostClient(),
+    );
 
     final did = identifier.startsWith('did:')
         ? identifier
@@ -544,6 +596,45 @@ class AuthRepository {
     final serviceEndpoint = _extractServiceEndpoint(didDoc) ?? _fallbackService;
     log.d('AuthRepository: Resolved DID $did to service endpoint $serviceEndpoint');
     return serviceEndpoint;
+  }
+
+  Future<String?> _resolveAuthorizationServiceForPdsHost(String pdsHost) async {
+    final normalizedPdsHost = normalizeAtprotoServiceHost(pdsHost);
+    if (normalizedPdsHost == null) {
+      return null;
+    }
+
+    final uri = Uri.https(normalizedPdsHost, '/.well-known/oauth-protected-resource');
+    log.d('AuthRepository: Fetching protected resource metadata from ${_sanitizeUriForLog(uri)}');
+    final response = await http.get(uri);
+    if (response.statusCode != HttpStatus.ok) {
+      throw Exception(
+        'Failed to resolve authorization server for $normalizedPdsHost: '
+        'HTTP ${response.statusCode}',
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('Invalid protected resource metadata for $normalizedPdsHost');
+    }
+
+    final rawAuthorizationServers = decoded['authorization_servers'];
+    if (rawAuthorizationServers is! List) {
+      return null;
+    }
+
+    for (final candidate in rawAuthorizationServers) {
+      if (candidate is! String) {
+        continue;
+      }
+      final host = normalizeAtprotoServiceHost(candidate);
+      if (host != null && host.isNotEmpty) {
+        return host;
+      }
+    }
+
+    return null;
   }
 
   Future<Map<String, dynamic>> _resolveDidDocument(String did) async {
@@ -764,12 +855,53 @@ class AuthRepository {
     return candidates.toList(growable: false);
   }
 
+  static List<String> _oauthAuthorizeServiceCandidates({
+    required String? preferredAuthService,
+    required String? resolvedPdsHost,
+    required String? resolvedAuthService,
+  }) {
+    final candidates = <String>{};
+
+    final resolvedAuthHost = normalizeAtprotoServiceHost(resolvedAuthService);
+    if (resolvedAuthHost != null) {
+      candidates.add(resolvedAuthHost);
+    }
+
+    final resolvedHost = normalizeAtprotoServiceHost(resolvedPdsHost);
+    if (resolvedHost != null) {
+      candidates.add(resolvedHost);
+    }
+
+    candidates.add(_oauthService);
+
+    final preferredHost = normalizeAtprotoServiceHost(preferredAuthService);
+    if (preferredHost != null) {
+      candidates.add(preferredHost);
+    }
+
+    candidates.add(_fallbackService);
+    return candidates.toList(growable: false);
+  }
+
   @visibleForTesting
   static List<String> oauthRefreshServiceCandidatesForTest({
     required String? storedAuthService,
     required String? issuer,
   }) {
     return _oauthRefreshServiceCandidates(storedAuthService: storedAuthService, issuer: issuer);
+  }
+
+  @visibleForTesting
+  static List<String> oauthAuthorizeServiceCandidatesForTest({
+    required String? preferredAuthService,
+    required String? resolvedPdsHost,
+    required String? resolvedAuthService,
+  }) {
+    return _oauthAuthorizeServiceCandidates(
+      preferredAuthService: preferredAuthService,
+      resolvedPdsHost: resolvedPdsHost,
+      resolvedAuthService: resolvedAuthService,
+    );
   }
 
   @visibleForTesting

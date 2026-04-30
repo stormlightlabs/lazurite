@@ -7,16 +7,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/app_view_web_links.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/search/presentation/semantic_search_tab.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
+import 'package:lazurite/shared/presentation/helpers/share_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
-import 'package:share_plus/share_plus.dart';
 
 class SavedPostsScreen extends StatelessWidget {
   const SavedPostsScreen({super.key, required this.accountDid});
@@ -223,7 +226,10 @@ class _SavedPostCard extends StatelessWidget {
             ),
             IconButton(
               icon: const Icon(Icons.share_outlined),
-              onPressed: () => Share.share(_convertAtUriToBskyUrl(savedPost.postUri)),
+              onPressed: () => ShareHelper.shareText(
+                context,
+                AppViewWebLinks.postFromAtUri(savedPost.postUri, appViewProvider: _resolveAppViewProvider(context)),
+              ),
               tooltip: 'Share',
             ),
             IconButton(icon: const Icon(Icons.delete_outline), onPressed: onUnsave, tooltip: 'Remove'),
@@ -244,18 +250,11 @@ class _SavedPostCard extends StatelessWidget {
     return '${date.month}/${date.day}/${date.year}';
   }
 
-  String _convertAtUriToBskyUrl(String atUri) {
+  String _resolveAppViewProvider(BuildContext context) {
     try {
-      final uri = Uri.parse(atUri);
-      final parts = uri.pathSegments;
-      if (parts.length >= 2) {
-        final did = uri.host;
-        final rkey = parts.last;
-        return 'https://bsky.app/profile/$did/post/$rkey';
-      }
+      return context.read<SettingsCubit>().state.appViewProvider;
     } catch (_) {
-      log.d('failed to convert atUri to bskyUrl');
+      return AppViewProviders.defaultKey;
     }
-    return atUri;
   }
 }
