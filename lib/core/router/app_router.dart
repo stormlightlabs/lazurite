@@ -477,12 +477,26 @@ class AppRouter {
                 pageBuilder: (context, state) => _page(context, state, const ProfileScreen()),
                 routes: [
                   GoRoute(
-                    path: 'view',
+                    path: ':actor',
                     pageBuilder: (context, state) => _page(
                       context,
                       state,
-                      ProfileScreen(actor: state.uri.queryParameters['actor'], showBackButton: true),
+                      ProfileScreen(
+                        actor: Uri.decodeComponent(state.pathParameters['actor'] ?? ''),
+                        showBackButton: true,
+                      ),
                     ),
+                  ),
+                  GoRoute(
+                    path: 'view',
+                    redirect: (_, state) {
+                      final rawActor = state.uri.queryParameters['actor']?.trim() ?? '';
+                      if (rawActor.isEmpty) {
+                        return '/profile';
+                      }
+                      final normalizedActor = rawActor.startsWith('@') ? rawActor.substring(1) : rawActor;
+                      return '/profile/${Uri.encodeComponent(normalizedActor)}';
+                    },
                   ),
                 ],
               ),

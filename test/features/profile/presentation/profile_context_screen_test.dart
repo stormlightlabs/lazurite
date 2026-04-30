@@ -73,8 +73,8 @@ void main() {
           ),
           routes: [
             GoRoute(
-              path: 'profile/view',
-              builder: (context, state) => Scaffold(body: Text('Profile View ${state.uri.queryParameters['actor']}')),
+              path: 'profile/:actor',
+              builder: (context, state) => Scaffold(body: Text('Profile View ${state.pathParameters['actor']}')),
             ),
             GoRoute(
               path: 'list',
@@ -148,7 +148,7 @@ void main() {
         expect(find.text('User did:plc:user2'), findsOneWidget);
       });
 
-      testWidgets('profile tile navigates to /profile/view on tap', (tester) async {
+      testWidgets('profile tile navigates to /profile/:actor on tap', (tester) async {
         final profiles = [_profile('did:plc:user1')];
         final state = initialState().copyWith(
           blockedByStatus: ProfileContextTabStatus.loaded,
@@ -352,7 +352,7 @@ void main() {
         verify(() => cubit.loadBlocking()).called(greaterThanOrEqualTo(1));
       });
 
-      testWidgets('profile tile navigates to /profile/view on tap', (tester) async {
+      testWidgets('profile tile navigates to /profile/:actor on tap', (tester) async {
         final profiles = [_profile('did:plc:blocked1')];
         final state = const ProfileContextState.initial(
           did: _did,

@@ -232,7 +232,7 @@ void main() {
           ),
         ),
         GoRoute(
-          path: '/profile/view',
+          path: '/profile/:actor',
           builder: (context, state) {
             pushedRoute = state.uri.toString();
             return const Scaffold(body: Text('profile'));

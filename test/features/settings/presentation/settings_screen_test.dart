@@ -112,9 +112,13 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.text('APPEARANCE'), findsOneWidget);
+    expect(find.text('APPEARANCE', skipOffstage: false), findsOneWidget);
     expect(find.text('System'), findsOneWidget);
-    expect(find.text('LAYOUT'), findsOneWidget);
+
+    await tester.scrollUntilVisible(find.text('Feed Layout'), 300);
+    await tester.pumpAndSettle();
+
+    expect(find.text('LAYOUT', skipOffstage: false), findsOneWidget);
     expect(find.text('Feed Layout'), findsOneWidget);
     expect(find.text('Thread Auto-Collapse'), findsOneWidget);
     expect(find.text('Animations'), findsOneWidget);

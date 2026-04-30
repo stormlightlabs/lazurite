@@ -35,7 +35,7 @@ class FeedBloc extends Bloc<FeedEvent, FeedState> {
         ),
       );
     } catch (error) {
-      emit(FeedState.error('Failed to load feed: $error'));
+      emit(FeedState.error('Failed to load feed: $error', actor: event.actor, filter: event.filter));
     }
   }
 

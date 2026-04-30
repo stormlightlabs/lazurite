@@ -41,8 +41,8 @@ void main() {
           ),
           routes: [
             GoRoute(
-              path: 'profile/view',
-              builder: (context, state) => Scaffold(body: Text('Profile View ${state.uri.queryParameters['actor']}')),
+              path: 'profile/:actor',
+              builder: (context, state) => Scaffold(body: Text('Profile View ${state.pathParameters['actor']}')),
             ),
           ],
         ),
@@ -147,7 +147,7 @@ void main() {
     expect(find.text('Following'), findsOneWidget);
   });
 
-  testWidgets('tapping a suggestion navigates to /profile/view', (tester) async {
+  testWidgets('tapping a suggestion navigates to /profile/:actor', (tester) async {
     final profiles = [_profile('did:plc:bob', displayName: 'Bob Builder')];
     when(() => cubit.state).thenReturn(SuggestedFollowsState.loaded(profiles));
     whenListen(

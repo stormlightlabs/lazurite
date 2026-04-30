@@ -28,7 +28,8 @@ class FeedState extends Equatable {
     bool hasMore = true,
   }) : this._(status: FeedStatus.loaded, actor: actor, posts: posts, cursor: cursor, filter: filter, hasMore: hasMore);
 
-  const FeedState.error(String message) : this._(status: FeedStatus.error, errorMessage: message);
+  const FeedState.error(String message, {String? actor, FeedFilter filter = FeedFilter.postsAndAuthorThreads})
+    : this._(status: FeedStatus.error, actor: actor, errorMessage: message, filter: filter, hasMore: false);
 
   static const Object _unset = Object();
 

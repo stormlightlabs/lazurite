@@ -46,8 +46,8 @@ void main() {
           },
         ),
         GoRoute(
-          path: '/profile/view',
-          builder: (context, state) => Scaffold(body: Text('profile:${state.uri.queryParameters['actor']}')),
+          path: '/profile/:actor',
+          builder: (context, state) => Scaffold(body: Text('profile:${state.pathParameters['actor']}')),
         ),
         GoRoute(
           path: '/post',

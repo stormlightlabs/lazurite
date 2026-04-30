@@ -76,7 +76,7 @@ void main() {
           builder: (context, state) => const Scaffold(body: FacetText(text: text)),
         ),
         GoRoute(
-          path: '/profile/view',
+          path: '/profile/:actor',
           builder: (context, state) {
             pushed = state.uri.toString();
             return const Scaffold(body: Text('profile'));
@@ -92,8 +92,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(pushed, isNotNull);
-    expect(Uri.parse(pushed!).path, '/profile/view');
-    expect(Uri.parse(pushed!).queryParameters['actor'], 'alice.bsky.social');
+    expect(Uri.parse(pushed!).path, '/profile/alice.bsky.social');
   });
 
   testWidgets('at:// post URI routes in-app to post thread', (tester) async {

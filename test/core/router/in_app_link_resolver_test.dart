@@ -6,7 +6,7 @@ void main() {
     test('resolves bsky profile URL to in-app profile route', () {
       final route = InAppLinkResolver.resolveRoute('https://bsky.app/profile/alice.bsky.social');
 
-      expect(route, '/profile/view?actor=alice.bsky.social');
+      expect(route, '/profile/alice.bsky.social');
     });
 
     test('resolves bsky post URL to in-app post route', () {
@@ -24,7 +24,7 @@ void main() {
     test('resolves at:// profile URI to in-app profile route', () {
       final route = InAppLinkResolver.resolveRoute('at://did:plc:alice/app.bsky.actor.profile/self');
 
-      expect(route, '/profile/view?actor=did%3Aplc%3Aalice');
+      expect(route, '/profile/did%3Aplc%3Aalice');
     });
 
     test('returns null for unsupported hosts and malformed values', () {

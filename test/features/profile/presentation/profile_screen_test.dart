@@ -254,6 +254,19 @@ void main() {
       const Stream<ProfileState>.empty(),
       initialState: const ProfileState.loaded(profile: otherProfile),
     );
+    when(() => feedBloc.state).thenReturn(
+      const FeedState.loaded(actor: 'did:plc:other', posts: [], filter: FeedFilter.postsNoReplies, hasMore: false),
+    );
+    whenListen(
+      feedBloc,
+      const Stream<FeedState>.empty(),
+      initialState: const FeedState.loaded(
+        actor: 'did:plc:other',
+        posts: [],
+        filter: FeedFilter.postsNoReplies,
+        hasMore: false,
+      ),
+    );
     when(() => profileRepository.getSuggestedFollows('did:plc:other')).thenAnswer((_) async => suggestions);
 
     await tester.pumpWidget(
@@ -297,6 +310,19 @@ void main() {
       profileBloc,
       const Stream<ProfileState>.empty(),
       initialState: const ProfileState.loaded(profile: otherProfile),
+    );
+    when(() => feedBloc.state).thenReturn(
+      const FeedState.loaded(actor: 'did:plc:other', posts: [], filter: FeedFilter.postsNoReplies, hasMore: false),
+    );
+    whenListen(
+      feedBloc,
+      const Stream<FeedState>.empty(),
+      initialState: const FeedState.loaded(
+        actor: 'did:plc:other',
+        posts: [],
+        filter: FeedFilter.postsNoReplies,
+        hasMore: false,
+      ),
     );
     final mockProfileActionRepository = MockProfileActionRepository();
 
@@ -683,6 +709,19 @@ void main() {
         const Stream<ProfileState>.empty(),
         initialState: const ProfileState.loaded(profile: otherProfile),
       );
+      when(() => feedBloc.state).thenReturn(
+        const FeedState.loaded(actor: 'did:plc:other', posts: [], filter: FeedFilter.postsNoReplies, hasMore: false),
+      );
+      whenListen(
+        feedBloc,
+        const Stream<FeedState>.empty(),
+        initialState: const FeedState.loaded(
+          actor: 'did:plc:other',
+          posts: [],
+          filter: FeedFilter.postsNoReplies,
+          hasMore: false,
+        ),
+      );
 
       final mockProfileActionRepository = MockProfileActionRepository();
 
@@ -724,6 +763,19 @@ void main() {
         profileBloc,
         const Stream<ProfileState>.empty(),
         initialState: const ProfileState.loaded(profile: otherProfile),
+      );
+      when(() => feedBloc.state).thenReturn(
+        const FeedState.loaded(actor: 'did:plc:other', posts: [], filter: FeedFilter.postsNoReplies, hasMore: false),
+      );
+      whenListen(
+        feedBloc,
+        const Stream<FeedState>.empty(),
+        initialState: const FeedState.loaded(
+          actor: 'did:plc:other',
+          posts: [],
+          filter: FeedFilter.postsNoReplies,
+          hasMore: false,
+        ),
       );
 
       final mockProfileActionRepository = MockProfileActionRepository();

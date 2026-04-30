@@ -11,7 +11,13 @@ Future<T?>? navigateToProfile<T>(BuildContext context, String actorDid) {
     return null;
   }
 
-  final location = '/profile/view?actor=${Uri.encodeQueryComponent(actorDid)}';
+  final actor = actorDid.trim();
+  if (actor.isEmpty) {
+    return null;
+  }
+
+  final normalizedActor = actor.startsWith('@') ? actor.substring(1) : actor;
+  final location = '/profile/${Uri.encodeComponent(normalizedActor)}';
   final currentPath = _currentPath(context);
 
   if (!_isStatefulShellPath(currentPath)) {

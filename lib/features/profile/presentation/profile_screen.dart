@@ -80,6 +80,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   int? _headerTrackingPointer;
   double _headerPullDistance = 0;
   bool _headerRefreshInFlight = false;
+  String? _lastScheduledProfileActorLoad;
+  String? _lastScheduledFeedLoadKey;
 
   @override
   void initState() {
@@ -116,7 +118,103 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   String? get _resolvedActor {
     final authState = context.read<AuthBloc>().state;
     if (!authState.isAuthenticated) return null;
-    return widget.actor ?? authState.tokens?.did;
+    final rawActor = widget.actor ?? authState.tokens?.did;
+    if (rawActor == null) {
+      return null;
+    }
+
+    final normalizedActor = _normalizeActor(rawActor);
+    return normalizedActor.isEmpty ? null : normalizedActor;
+  }
+
+  String _normalizeActor(String actor) {
+    final trimmed = actor.trim();
+    if (trimmed.startsWith('@')) {
+      return trimmed.substring(1);
+    }
+    return trimmed;
+  }
+
+  String _canonicalActorForCompare(String actor) => _normalizeActor(actor).toLowerCase();
+
+  bool _profileMatchesExpectedActor(ProfileViewDetailed? profile, String expectedActor) {
+    if (profile == null) {
+      return false;
+    }
+
+    final expected = _canonicalActorForCompare(expectedActor);
+    return _canonicalActorForCompare(profile.did) == expected || _canonicalActorForCompare(profile.handle) == expected;
+  }
+
+  bool _feedMatchesExpectedActor(FeedState feedState, String expectedActor, ProfileViewDetailed? profile) {
+    final stateActor = feedState.actor;
+    if (stateActor == null) {
+      return false;
+    }
+
+    final normalizedStateActor = _canonicalActorForCompare(stateActor);
+    final normalizedExpectedActor = _canonicalActorForCompare(expectedActor);
+    if (normalizedStateActor == normalizedExpectedActor) {
+      return true;
+    }
+
+    if (profile != null) {
+      return normalizedStateActor == _canonicalActorForCompare(profile.did) ||
+          normalizedStateActor == _canonicalActorForCompare(profile.handle);
+    }
+
+    return false;
+  }
+
+  void _scheduleProfileLoadIfNeeded(String actor, ProfileState profileState) {
+    if (_profileMatchesExpectedActor(profileState.profile, actor)) {
+      _lastScheduledProfileActorLoad = null;
+      return;
+    }
+
+    if (profileState.status == ProfileStatus.loading) {
+      return;
+    }
+
+    if (_lastScheduledProfileActorLoad == actor) {
+      return;
+    }
+
+    _lastScheduledProfileActorLoad = actor;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      context.read<ProfileBloc>().add(ProfileLoadRequested(actor: actor));
+    });
+  }
+
+  void _scheduleFeedLoadIfNeeded(String actor, FeedFilter filter, FeedState feedState, ProfileViewDetailed? profile) {
+    if (feedState.status == FeedStatus.loading &&
+        feedState.filter == filter &&
+        _feedMatchesExpectedActor(feedState, actor, profile)) {
+      return;
+    }
+
+    if (feedState.status == FeedStatus.loaded &&
+        feedState.filter == filter &&
+        _feedMatchesExpectedActor(feedState, actor, profile)) {
+      _lastScheduledFeedLoadKey = null;
+      return;
+    }
+
+    final requestKey = '$actor|${filter.name}';
+    if (_lastScheduledFeedLoadKey == requestKey) {
+      return;
+    }
+
+    _lastScheduledFeedLoadKey = requestKey;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      context.read<FeedBloc>().add(FeedLoadRequested(actor: actor, filter: filter));
+    });
   }
 
   List<String> get _tabLabels =>
@@ -234,10 +332,19 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               return BlocBuilder<FeedBloc, FeedState>(
                 builder: (context, feedState) {
                   final profile = profileState.profile;
+                  final expectedActor = _resolvedActor;
+                  final profileMatchesExpectedActor = expectedActor == null
+                      ? true
+                      : _profileMatchesExpectedActor(profile, expectedActor);
+                  if (expectedActor != null) {
+                    _scheduleProfileLoadIfNeeded(expectedActor, profileState);
+                    _scheduleFeedLoadIfNeeded(expectedActor, _currentFilter, feedState, profile);
+                  }
+
                   final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
                   final isOwnProfile = profile?.did == currentUserDid;
                   final tabChildren = <Widget>[
-                    ..._feedTabs.map((t) => _buildFeedList(feedState, t.filter, profile)),
+                    ..._feedTabs.map((t) => _buildFeedList(feedState, t.filter, profile, expectedActor)),
                     _buildListsTab(context, profile),
                     _buildStarterPacksTab(context, profile),
                     if (_showSuggestedTab) _buildSuggestedFollowsTab(profile),
@@ -298,6 +405,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                     child: Center(child: CircularProgressIndicator()),
                                   ),
                                   ProfileStatus.error => _buildProfileError(context, profileState.errorMessage),
+                                  _ when !profileMatchesExpectedActor => const Padding(
+                                    padding: AppInsets.allLg,
+                                    child: Center(child: CircularProgressIndicator()),
+                                  ),
                                   _ => _buildProfileSummary(context, profile, isOwnProfile),
                                 },
                               ),
@@ -815,13 +926,43 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildFeedList(FeedState feedState, FeedFilter tabFilter, ProfileViewDetailed? profile) {
+  Widget _buildFeedList(
+    FeedState feedState,
+    FeedFilter tabFilter,
+    ProfileViewDetailed? profile,
+    String? expectedActor,
+  ) {
+    final isActiveTab = tabFilter == _currentFilter;
+    final feedMatchesExpectedActor = expectedActor == null
+        ? true
+        : _feedMatchesExpectedActor(feedState, expectedActor, profile);
+
+    if (expectedActor != null && isActiveTab && !feedMatchesExpectedActor) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (isActiveTab && feedState.status == FeedStatus.initial) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     if (feedState.isLoading && feedState.filter == tabFilter) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (feedState.hasError && feedState.filter == tabFilter) {
-      return Center(child: Text(feedState.errorMessage ?? 'Failed to load posts'));
+    if (feedState.hasError && feedState.filter == tabFilter && feedMatchesExpectedActor) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(feedState.errorMessage ?? 'Failed to load posts'),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () => _loadProfileAndFeed(filter: tabFilter),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
     }
 
     if (feedState.filter != tabFilter) {

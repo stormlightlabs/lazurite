@@ -250,7 +250,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   final List<FeedViewPost> _posts = [];
   String? _cursor;
   bool _isLoading = false;
-  bool _showInitialLoading = false;
+  bool _showInitialLoading = true;
   bool _isLoadingMore = false;
   bool _hasError = false;
   String? _errorMessage;
@@ -294,6 +294,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
         _cursor = cachedResult.cursor;
         _hasError = false;
         _errorMessage = null;
+        _showInitialLoading = false;
       });
     }
 

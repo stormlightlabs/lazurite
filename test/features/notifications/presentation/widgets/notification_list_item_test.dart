@@ -32,7 +32,7 @@ void main() {
             builder: (context, state) => Scaffold(body: NotificationListItem(notification: notification)),
           ),
           GoRoute(
-            path: '/profile/view',
+            path: '/profile/:actor',
             builder: (context, state) {
               pushedRoute = state.uri.toString();
               return const Scaffold(body: Text('profile'));
@@ -48,7 +48,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(pushedRoute, isNotNull);
-      expect(Uri.parse(pushedRoute!).path, '/profile/view');
+      expect(Uri.parse(pushedRoute!).path, '/profile/${Uri.encodeComponent('did:plc:author')}');
     });
 
     testWidgets('like notification uses reasonSubject to navigate to post', (tester) async {

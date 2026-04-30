@@ -47,7 +47,7 @@ class InAppLinkResolver {
     }
 
     if (collection == 'app.bsky.actor.profile') {
-      return '/profile/view?actor=${Uri.encodeQueryComponent(actor)}';
+      return '/profile/${Uri.encodeComponent(actor)}';
     }
 
     return null;
@@ -73,6 +73,6 @@ class InAppLinkResolver {
       return '/post?uri=${Uri.encodeQueryComponent(atUri)}';
     }
 
-    return '/profile/view?actor=${Uri.encodeQueryComponent(actor)}';
+    return '/profile/${Uri.encodeComponent(actor)}';
   }
 }

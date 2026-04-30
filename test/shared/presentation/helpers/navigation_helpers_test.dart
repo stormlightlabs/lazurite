@@ -20,7 +20,7 @@ void main() {
             ),
           ),
           GoRoute(
-            path: '/profile/view',
+            path: '/profile/:actor',
             builder: (context, state) {
               pushedRoute = state.uri.toString();
               return const Scaffold(body: Text('profile'));
@@ -36,8 +36,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(pushedRoute, isNotNull);
-      expect(Uri.parse(pushedRoute!).path, '/profile/view');
-      expect(Uri.parse(pushedRoute!).queryParameters['actor'], actorDid);
+      expect(Uri.parse(pushedRoute!).path, '/profile/${Uri.encodeComponent(actorDid)}');
     });
 
     testWidgets('navigateToProfile uses go from non-shell routes like /post', (tester) async {
@@ -56,7 +55,7 @@ void main() {
             ),
           ),
           GoRoute(
-            path: '/profile/view',
+            path: '/profile/:actor',
             builder: (context, state) {
               activePath = state.uri.path;
               return const Scaffold(body: Text('profile'));
@@ -71,7 +70,7 @@ void main() {
       await tester.tap(find.text('go'));
       await tester.pumpAndSettle();
 
-      expect(activePath, '/profile/view');
+      expect(activePath, '/profile/${Uri.encodeComponent(actorDid)}');
       expect(router.canPop(), isFalse);
       expect(tester.takeException(), isNull);
     });
