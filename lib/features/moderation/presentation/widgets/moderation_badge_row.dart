@@ -4,14 +4,27 @@ import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ModerationBadgeRow extends StatelessWidget {
-  const ModerationBadgeRow({super.key, required this.ui, this.padding = EdgeInsets.zero});
+  const ModerationBadgeRow({super.key, required this.ui, this.padding = EdgeInsets.zero, this.labelResolver});
 
   final bsky_moderation.ModerationUI ui;
   final EdgeInsetsGeometry padding;
+  final ModerationLabelResolver? labelResolver;
 
   @override
   Widget build(BuildContext context) {
-    final badges = moderationBadgesForUi(ui);
+    final moderationService = maybeModerationService(context);
+    final locale = Localizations.localeOf(context);
+    final effectiveResolver =
+        labelResolver ??
+        (moderationService == null
+            ? null
+            : ({required String identifier, String? labelerDid}) => moderationService.resolveLabelDisplayName(
+                identifier: identifier,
+                labelerDid: labelerDid,
+                preferredLanguages: [locale.toLanguageTag(), locale.languageCode],
+              ));
+
+    final badges = moderationBadgesForUi(ui, labelResolver: effectiveResolver);
     if (badges.isEmpty) {
       return const SizedBox.shrink();
     }

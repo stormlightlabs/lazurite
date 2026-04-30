@@ -13,6 +13,7 @@ class ModeratedBlurOverlay extends StatefulWidget {
     this.borderRadius,
     this.fallbackLabel = 'Sensitive content',
     this.fillWidth = true,
+    this.labelResolver,
   });
 
   final bsky_moderation.ModerationUI ui;
@@ -20,6 +21,7 @@ class ModeratedBlurOverlay extends StatefulWidget {
   final BorderRadius? borderRadius;
   final String fallbackLabel;
   final bool fillWidth;
+  final ModerationLabelResolver? labelResolver;
 
   @override
   State<ModeratedBlurOverlay> createState() => _ModeratedBlurOverlayState();
@@ -36,6 +38,17 @@ class _ModeratedBlurOverlayState extends State<ModeratedBlurOverlay> {
 
     final colorScheme = context.colorScheme;
     final canReveal = !widget.ui.noOverride;
+    final moderationService = maybeModerationService(context);
+    final locale = Localizations.localeOf(context);
+    final effectiveResolver =
+        widget.labelResolver ??
+        (moderationService == null
+            ? null
+            : ({required String identifier, String? labelerDid}) => moderationService.resolveLabelDisplayName(
+                identifier: identifier,
+                labelerDid: labelerDid,
+                preferredLanguages: [locale.toLanguageTag(), locale.languageCode],
+              ));
 
     Widget content = Stack(
       fit: StackFit.passthrough,
@@ -64,7 +77,11 @@ class _ModeratedBlurOverlayState extends State<ModeratedBlurOverlay> {
                       Icon(Icons.visibility_off_outlined, color: colorScheme.onSurface, size: 24),
                       const SizedBox(height: 10),
                       Text(
-                        moderationOverlayTitle(widget.ui, fallback: widget.fallbackLabel),
+                        moderationOverlayTitle(
+                          widget.ui,
+                          fallback: widget.fallbackLabel,
+                          labelResolver: effectiveResolver,
+                        ),
                         textAlign: TextAlign.center,
                         style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                       ),

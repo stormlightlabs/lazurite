@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:atproto/com_atproto_label_defs.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_actor_getpreferences.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
@@ -47,6 +48,7 @@ class ModerationService {
   Future<void>? _initializationFuture;
   bool _disposed = false;
   final _optsController = StreamController<bsky_moderation.ModerationOpts>.broadcast();
+  final Map<String, LabelerPolicies> _labelerPoliciesByDid = {};
 
   Stream<bsky_moderation.ModerationOpts> get optsStream => _optsController.stream;
   bsky_moderation.ModerationOpts? get currentOpts => _opts;
@@ -258,6 +260,51 @@ class ModerationService {
     bsky_moderation.ModerationBehaviorContext context,
   ) => moderateNotification(notification).getUI(context);
 
+  String? resolveLabelDisplayName({
+    required String identifier,
+    String? labelerDid,
+    Iterable<String> preferredLanguages = const [],
+  }) {
+    if (identifier.isEmpty) {
+      return null;
+    }
+
+    final requestedDid = (labelerDid == null || labelerDid.isEmpty) ? null : labelerDid;
+    final candidateDids = <String>{_officialBlueskyLabelerDid};
+    if (requestedDid != null) {
+      candidateDids.add(requestedDid);
+    }
+
+    for (final did in candidateDids) {
+      final definition = _labelValueDefinitionForIdentifier(_labelerPoliciesByDid[did], identifier);
+      if (definition == null) {
+        continue;
+      }
+
+      final localized = _localizedLabelName(definition.locales, preferredLanguages);
+      if (localized != null && localized.isNotEmpty) {
+        return localized;
+      }
+    }
+
+    if (requestedDid != null) {
+      return null;
+    }
+
+    for (final policies in _labelerPoliciesByDid.values) {
+      final definition = _labelValueDefinitionForIdentifier(policies, identifier);
+      if (definition == null) {
+        continue;
+      }
+      final localized = _localizedLabelName(definition.locales, preferredLanguages);
+      if (localized != null && localized.isNotEmpty) {
+        return localized;
+      }
+    }
+
+    return null;
+  }
+
   bool shouldFilterFeedViewPostInList(FeedViewPost post) => shouldFilterPostInList(post.post);
 
   bool shouldFilterPostInList(PostView post) =>
@@ -385,6 +432,13 @@ class ModerationService {
 
   Future<void> _cacheLabelerPolicies(List<ULabelerGetServicesViews> views) async {
     if (_database == null) {
+      for (final view in views) {
+        if (!view.isLabelerViewDetailed) {
+          continue;
+        }
+        final detailed = view.labelerViewDetailed!;
+        _labelerPoliciesByDid[detailed.creator.did] = detailed.policies;
+      }
       return;
     }
 
@@ -394,6 +448,7 @@ class ModerationService {
       }
 
       final detailed = view.labelerViewDetailed!;
+      _labelerPoliciesByDid[detailed.creator.did] = detailed.policies;
       await _database.upsertLabelerCache(detailed.creator.did, jsonEncode(detailed.policies.toJson()));
     }
   }
@@ -413,6 +468,7 @@ class ModerationService {
       }
 
       final policies = LabelerPolicies.fromJson(jsonDecode(cached.policiesJson) as Map<String, dynamic>);
+      _labelerPoliciesByDid[did] = policies;
       definitions[did] = _interpretedLabelDefinitionsFromPolicies(policies, labelerDid: did);
     }
 
@@ -570,6 +626,53 @@ class ModerationService {
     final bluesky = _bluesky;
     if (bluesky is Bluesky) {
       return bluesky.oAuthSession?.sub ?? bluesky.session?.did;
+    }
+
+    return null;
+  }
+
+  LabelValueDefinition? _labelValueDefinitionForIdentifier(LabelerPolicies? policies, String identifier) {
+    if (policies == null) {
+      return null;
+    }
+    for (final definition in policies.labelValueDefinitions ?? const <LabelValueDefinition>[]) {
+      if (definition.identifier == identifier) {
+        return definition;
+      }
+    }
+    return null;
+  }
+
+  String? _localizedLabelName(List<LabelValueDefinitionStrings> locales, Iterable<String> preferredLanguages) {
+    if (locales.isEmpty) {
+      return null;
+    }
+
+    final normalizedLanguages = preferredLanguages
+        .map((language) => language.trim().toLowerCase())
+        .where((language) => language.isNotEmpty)
+        .toList(growable: false);
+
+    for (final language in normalizedLanguages) {
+      for (final entry in locales) {
+        if (entry.lang.toLowerCase() == language) {
+          return entry.name;
+        }
+      }
+
+      final baseLanguage = language.split(RegExp(r'[-_]')).first;
+      for (final entry in locales) {
+        final lang = entry.lang.toLowerCase();
+        if (lang == baseLanguage || lang.startsWith('$baseLanguage-')) {
+          return entry.name;
+        }
+      }
+    }
+
+    for (final entry in locales) {
+      if (entry.name.isNotEmpty) {
+        return entry.name;
+      }
     }
 
     return null;

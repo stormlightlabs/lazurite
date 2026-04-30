@@ -9,6 +9,8 @@ const officialBlueskyLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
 
 enum ModerationBadgeTone { alert, inform }
 
+typedef ModerationLabelResolver = String? Function({required String identifier, String? labelerDid});
+
 class ModerationBadgeDescriptor {
   const ModerationBadgeDescriptor({required this.label, required this.description, required this.tone});
 
@@ -69,13 +71,16 @@ String formatLocalizedLabelDescription(
   return locales.first.description;
 }
 
-List<ModerationBadgeDescriptor> moderationBadgesForUi(bsky_moderation.ModerationUI ui) {
+List<ModerationBadgeDescriptor> moderationBadgesForUi(
+  bsky_moderation.ModerationUI ui, {
+  ModerationLabelResolver? labelResolver,
+}) {
   final badges = <ModerationBadgeDescriptor>[];
   final seen = <String>{};
 
   void addDescriptors(List<bsky_moderation.ModerationCause> causes, ModerationBadgeTone tone) {
     for (final cause in causes) {
-      final descriptor = moderationDescriptorForCause(cause, tone: tone);
+      final descriptor = moderationDescriptorForCause(cause, tone: tone, labelResolver: labelResolver);
       final key = '${tone.name}:${descriptor.label}:${descriptor.description}';
       if (seen.add(key)) {
         badges.add(descriptor);
@@ -88,12 +93,16 @@ List<ModerationBadgeDescriptor> moderationBadgesForUi(bsky_moderation.Moderation
   return badges;
 }
 
-List<String> moderationBlurLabels(bsky_moderation.ModerationUI ui) {
+List<String> moderationBlurLabels(bsky_moderation.ModerationUI ui, {ModerationLabelResolver? labelResolver}) {
   final labels = <String>[];
   final seen = <String>{};
 
   for (final cause in ui.blurs) {
-    final descriptor = moderationDescriptorForCause(cause, tone: ModerationBadgeTone.alert);
+    final descriptor = moderationDescriptorForCause(
+      cause,
+      tone: ModerationBadgeTone.alert,
+      labelResolver: labelResolver,
+    );
     if (seen.add(descriptor.label)) {
       labels.add(descriptor.label);
     }
@@ -105,10 +114,17 @@ List<String> moderationBlurLabels(bsky_moderation.ModerationUI ui) {
 ModerationBadgeDescriptor moderationDescriptorForCause(
   bsky_moderation.ModerationCause cause, {
   required ModerationBadgeTone tone,
+  ModerationLabelResolver? labelResolver,
 }) {
   return cause.maybeWhen(
     label: (data) {
-      final label = humanizeModerationLabel(data.labelDef.identifier);
+      final resolvedLabel = labelResolver?.call(
+        identifier: data.labelDef.identifier,
+        labelerDid: data.label.src.isEmpty ? null : data.label.src,
+      );
+      final label = (resolvedLabel == null || resolvedLabel.isEmpty)
+          ? humanizeModerationLabel(data.labelDef.identifier)
+          : resolvedLabel;
       final source = data.labelDef.definedBy == officialBlueskyLabelerDid ? 'Bluesky' : 'Subscribed labeler';
       return ModerationBadgeDescriptor(label: label, description: '$source label', tone: tone);
     },
@@ -144,8 +160,12 @@ ModerationBadgeDescriptor moderationDescriptorForCause(
   );
 }
 
-String moderationOverlayTitle(bsky_moderation.ModerationUI ui, {String fallback = 'Sensitive content'}) {
-  final labels = moderationBlurLabels(ui);
+String moderationOverlayTitle(
+  bsky_moderation.ModerationUI ui, {
+  String fallback = 'Sensitive content',
+  ModerationLabelResolver? labelResolver,
+}) {
+  final labels = moderationBlurLabels(ui, labelResolver: labelResolver);
   if (labels.isEmpty) {
     return fallback;
   }

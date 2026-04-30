@@ -4,6 +4,7 @@ import 'package:atproto/com_atproto_label_defs.dart';
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:bluesky/app_bsky_labeler_defs.dart';
 import 'package:bluesky/app_bsky_labeler_getservices.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -269,6 +270,50 @@ void main() {
 
       service.dispose();
     });
+
+    test('resolves localized custom label names from labeler policies', () async {
+      final service = ModerationService(
+        bluesky: _FakeBlueskyClient(
+          actor: _FakeActorService(
+            preferences: [
+              const UPreferences.labelersPref(
+                data: LabelersPref(labelers: [LabelerPrefItem(did: _customLabelerDid)]),
+              ),
+            ],
+          ),
+          labeler: _FakeLabelerService(
+            views: [
+              ULabelerGetServicesViews.labelerViewDetailed(
+                data: _buildLabeler(
+                  did: _customLabelerDid,
+                  handle: 'labels.example',
+                  displayName: 'Custom Labels',
+                  description: 'Community labels.',
+                  definitionIdentifier: 'aaa',
+                  definitionName: '🅰️',
+                ),
+              ),
+            ],
+          ),
+        ),
+        database: database,
+        accountDid: _accountDid,
+        userDid: _accountDid,
+      );
+
+      await service.ensureInitialized();
+
+      expect(
+        service.resolveLabelDisplayName(
+          identifier: 'aaa',
+          labelerDid: _customLabelerDid,
+          preferredLanguages: const ['en-US', 'en'],
+        ),
+        '🅰️',
+      );
+
+      service.dispose();
+    });
   });
 }
 
@@ -329,9 +374,10 @@ class _FakeActorService {
 }
 
 class _FakeLabelerService {
-  const _FakeLabelerService({this.error});
+  const _FakeLabelerService({this.error, this.views = const []});
 
   final Object? error;
+  final List<ULabelerGetServicesViews> views;
 
   Future<_FakeGetServicesResponse> getServices({
     required List<String> dids,
@@ -341,7 +387,7 @@ class _FakeLabelerService {
     if (error != null) {
       throw error!;
     }
-    return const _FakeGetServicesResponse(_FakeGetServicesData([]));
+    return _FakeGetServicesResponse(_FakeGetServicesData(views));
   }
 }
 
@@ -378,5 +424,42 @@ InvalidRequestException _proxyNotSupported({required HttpMethod method, required
       rateLimit: RateLimit.unlimited(),
       data: const XRPCError(error: 'XRPCNotSupported', message: 'XRPC Not Supported'),
     ),
+  );
+}
+
+LabelerViewDetailed _buildLabeler({
+  required String did,
+  required String handle,
+  required String displayName,
+  required String description,
+  required String definitionIdentifier,
+  required String definitionName,
+}) {
+  return LabelerViewDetailed(
+    uri: AtUri.parse('at://$did/app.bsky.labeler.service/self'),
+    cid: 'cid-$did',
+    creator: ProfileView(
+      did: did,
+      handle: handle,
+      displayName: displayName,
+      description: description,
+      avatar: 'https://example.com/$handle.png',
+    ),
+    policies: LabelerPolicies(
+      labelValues: [LabelValue.unknown(data: definitionIdentifier)],
+      labelValueDefinitions: [
+        LabelValueDefinition(
+          identifier: definitionIdentifier,
+          severity: const LabelValueDefinitionSeverity.knownValue(data: KnownLabelValueDefinitionSeverity.alert),
+          blurs: const LabelValueDefinitionBlurs.knownValue(data: KnownLabelValueDefinitionBlurs.content),
+          defaultSetting: const LabelValueDefinitionDefaultSetting.knownValue(
+            data: KnownLabelValueDefinitionDefaultSetting.warn,
+          ),
+          adultOnly: false,
+          locales: [LabelValueDefinitionStrings(lang: 'en', name: definitionName, description: 'Example description')],
+        ),
+      ],
+    ),
+    indexedAt: DateTime.utc(2026, 4, 30),
   );
 }
