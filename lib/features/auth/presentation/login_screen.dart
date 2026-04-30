@@ -343,13 +343,26 @@ class _LoginScreenState extends State<LoginScreen> {
 class _ProviderTabLabel extends StatelessWidget {
   const _ProviderTabLabel({required this.assetPath, required this.name});
 
+  static const _blackSkyAssetPath = 'assets/blacksky.svg';
+  static const _blackSkyDarkModeColor = Color(0xFF6868B6);
+
   final String assetPath;
   final String name;
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
-    children: [SvgPicture.asset(assetPath, height: 16), const SizedBox(width: 8), Text(name)],
+    children: [
+      SvgPicture.asset(
+        assetPath,
+        height: 16,
+        colorFilter: assetPath == _blackSkyAssetPath && Theme.of(context).brightness == Brightness.dark
+            ? const ColorFilter.mode(_blackSkyDarkModeColor, BlendMode.srcIn)
+            : null,
+      ),
+      const SizedBox(width: 8),
+      Text(name),
+    ],
   );
 }
 

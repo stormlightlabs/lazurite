@@ -1,6 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
@@ -35,7 +36,7 @@ void main() {
     when(() => settingsCubit.setAppViewProvider(any())).thenAnswer((_) async {});
   });
 
-  Widget buildSubject() {
+  Widget buildSubject({ThemeMode themeMode = ThemeMode.system}) {
     final typeaheadRepository = _FakeTypeaheadRepository(
       searchHandler: ({required String query, int limit = 10}) async => const [],
     );
@@ -64,7 +65,12 @@ void main() {
       initialLocation: '/login',
     );
 
-    return MaterialApp.router(routerConfig: router);
+    return MaterialApp.router(
+      routerConfig: router,
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
+      themeMode: themeMode,
+    );
   }
 
   testWidgets('shows terms and privacy links', (tester) async {
@@ -158,6 +164,24 @@ void main() {
       () => settingsCubit.setAppViewProvider('bluesky'),
       () => authBloc.add(const OAuthLoginRequested(handle: 'river.bsky.social')),
     ]);
+  });
+
+  testWidgets('tints BlackSky logo in dark mode', (tester) async {
+    await tester.pumpWidget(buildSubject(themeMode: ThemeMode.dark));
+    await tester.pumpAndSettle();
+
+    final blackSkyRow = find.ancestor(of: find.text('BlackSky'), matching: find.byType(Row));
+    final blackSkyLogo = find.descendant(of: blackSkyRow, matching: find.byType(SvgPicture));
+    final blackSkySvg = tester.widget<SvgPicture>(blackSkyLogo.first);
+    expect(
+      blackSkySvg.colorFilter,
+      const ColorFilter.mode(Color(0xFF6868B6), BlendMode.srcIn),
+    );
+
+    final blueSkyRow = find.ancestor(of: find.text('BlueSky'), matching: find.byType(Row));
+    final blueSkyLogo = find.descendant(of: blueSkyRow, matching: find.byType(SvgPicture));
+    final blueSkySvg = tester.widget<SvgPicture>(blueSkyLogo.first);
+    expect(blueSkySvg.colorFilter, isNull);
   });
 }
 
