@@ -21,7 +21,7 @@ class PostActionRepository {
     final response = await _bluesky.feed.like.create(
       subject: RepoStrongRef(cid: cid, uri: uri),
       createdAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeaders(),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(),
     );
 
     return response.data.uri.toString();
@@ -29,14 +29,14 @@ class PostActionRepository {
 
   Future<void> unlikePost({required String likeUri}) async {
     final rkey = _extractRkey(likeUri);
-    await _bluesky.feed.like.delete(rkey: rkey, $headers: _appViewContext.appBskyHeaders());
+    await _bluesky.feed.like.delete(rkey: rkey, $headers: _appViewContext.appBskyHeadersWithoutProxy());
   }
 
   Future<String> repostPost({required AtUri uri, required String cid}) async {
     final response = await _bluesky.feed.repost.create(
       subject: RepoStrongRef(cid: cid, uri: uri),
       createdAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeaders(),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(),
     );
 
     return response.data.uri.toString();
@@ -44,20 +44,20 @@ class PostActionRepository {
 
   Future<void> unrepostPost({required String repostUri}) async {
     final rkey = _extractRkey(repostUri);
-    await _bluesky.feed.repost.delete(rkey: rkey, $headers: _appViewContext.appBskyHeaders());
+    await _bluesky.feed.repost.delete(rkey: rkey, $headers: _appViewContext.appBskyHeadersWithoutProxy());
   }
 
   Future<void> deletePost({required String postUri}) async {
     final rkey = _extractRkey(postUri);
-    await _bluesky.feed.post.delete(rkey: rkey, $headers: _appViewContext.appBskyHeaders());
+    await _bluesky.feed.post.delete(rkey: rkey, $headers: _appViewContext.appBskyHeadersWithoutProxy());
   }
 
   Future<void> createBookmark({required AtUri uri, required String cid}) async {
-    await _bluesky.bookmark.createBookmark(uri: uri, cid: cid, $headers: _appViewContext.appBskyHeaders());
+    await _bluesky.bookmark.createBookmark(uri: uri, cid: cid, $headers: _appViewContext.appBskyHeadersWithoutProxy());
   }
 
   Future<void> deleteBookmark({required AtUri uri}) async {
-    await _bluesky.bookmark.deleteBookmark(uri: uri, $headers: _appViewContext.appBskyHeaders());
+    await _bluesky.bookmark.deleteBookmark(uri: uri, $headers: _appViewContext.appBskyHeadersWithoutProxy());
   }
 
   Future<BookmarkGetBookmarksOutput> getBookmarks({int? limit, String? cursor}) async {

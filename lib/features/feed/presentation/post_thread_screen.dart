@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
@@ -12,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_web_links.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
@@ -960,11 +960,11 @@ class _FocusedPostContent extends StatelessWidget {
     );
   }
 
+  /// Editing is currently exposed through the thread-screen overflow menu for owner posts.
   Future<void> _onEdit(BuildContext context) async {
     final post = thread.post;
     final record = Map<String, dynamic>.from(post.record);
 
-    // Editing is currently exposed through the thread-screen overflow menu for owner posts.
     final result = await context.push(
       '/compose',
       extra: ComposeRouteArgs(

@@ -19,8 +19,9 @@ class PostActionState extends Equatable {
     this.isDeleted = false,
     this.error,
   });
-  // Sentinel used by copyWith to distinguish "keep existing value"
-  // from an explicit null assignment for nullable fields.
+
+  /// Sentinel used by copyWith to distinguish "keep existing value" from
+  /// an explicit null assignment for nullable fields.
   static const Object _unset = Object();
 
   final String postUri;

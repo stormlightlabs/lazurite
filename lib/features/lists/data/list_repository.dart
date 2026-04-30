@@ -103,7 +103,7 @@ class ListRepository {
       list: listUri,
       subject: subjectDid,
       createdAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
     );
 
     return response.data.uri.toString();
@@ -112,21 +112,21 @@ class ListRepository {
   Future<void> removeListItem({required AtUri listItemUri}) async {
     await _bluesky.graph.listitem.delete(
       rkey: listItemUri.rkey,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
     );
   }
 
   Future<void> muteList({required AtUri listUri}) async {
     await _bluesky.graph.muteActorList(
       list: listUri,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
     );
   }
 
   Future<void> unmuteList({required AtUri listUri}) async {
     await _bluesky.graph.unmuteActorList(
       list: listUri,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
     );
   }
 
@@ -134,7 +134,7 @@ class ListRepository {
     final response = await _bluesky.graph.listblock.create(
       subject: listUri,
       createdAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
     );
 
     return response.data.uri.toString();
@@ -143,7 +143,7 @@ class ListRepository {
   Future<void> unblockList({required AtUri blockUri}) async {
     await _bluesky.graph.listblock.delete(
       rkey: blockUri.rkey,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
     );
   }
 

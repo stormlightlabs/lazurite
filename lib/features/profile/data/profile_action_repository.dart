@@ -24,7 +24,7 @@ class ProfileActionRepository {
     final response = await _bluesky.graph.follow.create(
       subject: did,
       createdAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeaders(),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(),
     );
 
     return response.data.uri.toString();
@@ -32,22 +32,22 @@ class ProfileActionRepository {
 
   Future<void> unfollowActor({required String followUri}) async {
     final rkey = _extractRkey(followUri);
-    await _bluesky.graph.follow.delete(rkey: rkey, $headers: _appViewContext.appBskyHeaders());
+    await _bluesky.graph.follow.delete(rkey: rkey, $headers: _appViewContext.appBskyHeadersWithoutProxy());
   }
 
   Future<void> muteActor({required String did}) async {
-    await _bluesky.graph.muteActor(actor: did, $headers: _appViewContext.appBskyHeaders());
+    await _bluesky.graph.muteActor(actor: did, $headers: _appViewContext.appBskyHeadersWithoutProxy());
   }
 
   Future<void> unmuteActor({required String did}) async {
-    await _bluesky.graph.unmuteActor(actor: did, $headers: _appViewContext.appBskyHeaders());
+    await _bluesky.graph.unmuteActor(actor: did, $headers: _appViewContext.appBskyHeadersWithoutProxy());
   }
 
   Future<String> blockActor({required String did}) async {
     final response = await _bluesky.graph.block.create(
       subject: did,
       createdAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeaders(),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(),
     );
 
     return response.data.uri.toString();
@@ -55,7 +55,7 @@ class ProfileActionRepository {
 
   Future<void> unblockActor({required String blockUri}) async {
     final rkey = _extractRkey(blockUri);
-    await _bluesky.graph.block.delete(rkey: rkey, $headers: _appViewContext.appBskyHeaders());
+    await _bluesky.graph.block.delete(rkey: rkey, $headers: _appViewContext.appBskyHeadersWithoutProxy());
   }
 
   Future<String> reportPost({

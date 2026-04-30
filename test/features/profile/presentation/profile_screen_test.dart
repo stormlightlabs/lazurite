@@ -408,6 +408,52 @@ void main() {
 
       expect(find.byKey(const ValueKey('profile_square_avatar')), findsOneWidget);
     });
+
+    testWidgets('pulling from the cover area refreshes profile and feed when no banner exists', (tester) async {
+      useLargeScreen(tester);
+      await tester.pumpWidget(buildSubject());
+
+      await tester.drag(find.byKey(const ValueKey('profile_cover_refresh_zone')), const Offset(0, 320));
+      await tester.pumpAndSettle();
+
+      verify(() => profileBloc.add(const ProfileRefreshRequested())).called(1);
+      verify(() => feedBloc.add(const FeedRefreshRequested())).called(1);
+    });
+
+    testWidgets('pulling from the cover image refreshes profile and feed when banner exists', (tester) async {
+      useLargeScreen(tester);
+      const profileWithBanner = ProfileViewDetailed(
+        did: 'did:plc:me',
+        handle: 'me.bsky.social',
+        displayName: 'River Tam',
+        banner: 'https://example.com/banner.jpg',
+      );
+      when(() => profileBloc.state).thenReturn(const ProfileState.loaded(profile: profileWithBanner));
+      whenListen(
+        profileBloc,
+        const Stream<ProfileState>.empty(),
+        initialState: const ProfileState.loaded(profile: profileWithBanner),
+      );
+
+      await tester.pumpWidget(buildSubject());
+
+      await tester.drag(find.byKey(const ValueKey('profile_cover_refresh_zone')), const Offset(0, 320));
+      await tester.pumpAndSettle();
+
+      verify(() => profileBloc.add(const ProfileRefreshRequested())).called(1);
+      verify(() => feedBloc.add(const FeedRefreshRequested())).called(1);
+    });
+
+    testWidgets('pulling from profile header details area refreshes profile and feed', (tester) async {
+      useLargeScreen(tester);
+      await tester.pumpWidget(buildSubject());
+
+      await tester.drag(find.text('RIVER TAM'), const Offset(0, 320));
+      await tester.pumpAndSettle();
+
+      verify(() => profileBloc.add(const ProfileRefreshRequested())).called(1);
+      verify(() => feedBloc.add(const FeedRefreshRequested())).called(1);
+    });
   });
 
   group('Tab bar', () {

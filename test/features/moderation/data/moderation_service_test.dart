@@ -157,7 +157,7 @@ void main() {
       service.dispose();
     });
 
-    test('uses selected AppView proxy headers for preference reads and writes', () async {
+    test('does not force AppView proxy headers for preference reads and writes', () async {
       final actor = _FakeActorService(preferences: const []);
       final service = ModerationService(
         bluesky: _FakeBlueskyClient(actor: actor, labeler: const _FakeLabelerService()),
@@ -168,16 +168,16 @@ void main() {
       );
 
       await service.ensureInitialized();
-      expect(actor.lastGetPreferencesHeaders?['atproto-proxy'], 'did:web:api.blacksky.community#bsky_appview');
+      expect(actor.lastGetPreferencesHeaders?['atproto-proxy'], isNull);
 
       await service.subscribeToLabeler(_customLabelerDid);
-      expect(actor.lastPutPreferencesHeaders?['atproto-proxy'], 'did:web:api.blacksky.community#bsky_appview');
+      expect(actor.lastPutPreferencesHeaders?['atproto-proxy'], isNull);
       expect(actor.lastPutPreferencesHeaders?['atproto-accept-labelers'], contains(_customLabelerDid));
 
       service.dispose();
     });
 
-    test('retries preferences without AppView proxy when proxied request returns 404', () async {
+    test('does not perform proxy-retry cycle for preferences', () async {
       final actor = _FakeActorService(
         preferences: const [],
         errorOnProxyGetPreferences: _proxyNotSupported(
@@ -198,11 +198,11 @@ void main() {
       );
 
       await service.ensureInitialized();
-      expect(actor.getPreferencesCallCount, 2);
+      expect(actor.getPreferencesCallCount, 1);
       expect(actor.lastGetPreferencesHeaders?['atproto-proxy'], isNull);
 
       await service.subscribeToLabeler(_customLabelerDid);
-      expect(actor.putPreferencesCallCount, 2);
+      expect(actor.putPreferencesCallCount, 1);
       expect(actor.lastPutPreferencesHeaders?['atproto-proxy'], isNull);
 
       service.dispose();

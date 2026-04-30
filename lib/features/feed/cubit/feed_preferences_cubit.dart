@@ -263,9 +263,9 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
         generatorViews.addAll(chunkViews);
         continue;
       } catch (_) {
-        // Fall back to per-feed hydration for this chunk so one bad URI (or
-        // oversized/invalid batch response) does not suppress all remaining
-        // metadata.
+        log.d(
+          'FeedPreferencesCubit: Batch hydration failed for ${chunk.length} generators, falling back to individual fetches for $_accountDid',
+        );
       }
 
       for (final feedUri in chunk) {

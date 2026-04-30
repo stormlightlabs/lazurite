@@ -76,7 +76,7 @@ class StarterPackRepository {
       list: refListUri,
       feeds: feeds.isEmpty ? null : feeds,
       createdAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
     );
 
     return response.data.uri;
@@ -98,7 +98,7 @@ class StarterPackRepository {
       list: referenceListUri,
       feeds: feeds.isEmpty ? null : feeds,
       createdAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
     );
   }
 
@@ -109,7 +109,7 @@ class StarterPackRepository {
   }) async {
     await _bluesky.graph.starterpack.delete(
       rkey: packUri.rkey,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
     );
     await _bluesky.atproto.repo.deleteRecord(
       repo: userDid,
@@ -123,7 +123,7 @@ class StarterPackRepository {
       list: listUri,
       subject: subjectDid,
       createdAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
     );
 
     return response.data.uri.toString();
@@ -132,7 +132,7 @@ class StarterPackRepository {
   Future<void> removeMember({required AtUri listItemUri}) async {
     await _bluesky.graph.listitem.delete(
       rkey: listItemUri.rkey,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
     );
   }
 
@@ -156,7 +156,7 @@ class StarterPackRepository {
           await _bluesky.graph.follow.create(
             subject: item.subject.did as String,
             createdAt: DateTime.now(),
-            $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+            $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
           );
           count++;
         } catch (_) {

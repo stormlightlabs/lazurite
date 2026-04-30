@@ -70,10 +70,16 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   static const _baseTabLabels = ['POSTS', 'REPLIES', 'MEDIA', 'LISTS', 'STARTER PACKS'];
   static const _suggestedTabLabel = 'SUGGESTED';
+  static const _coverRefreshTriggerDistance = 72.0;
 
   late TabController _tabController;
+  final ScrollController _profileScrollController = ScrollController();
+  final GlobalKey<RefreshIndicatorState> _profileRefreshKey = GlobalKey<RefreshIndicatorState>();
   late bool _showSuggestedTab;
   double _coverScrollOffset = 0;
+  int? _headerTrackingPointer;
+  double _headerPullDistance = 0;
+  bool _headerRefreshInFlight = false;
 
   @override
   void initState() {
@@ -96,6 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   @override
   void dispose() {
     _tabController.dispose();
+    _profileScrollController.dispose();
     super.dispose();
   }
 
@@ -122,6 +129,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return profile.did != context.read<AuthBloc>().state.tokens?.did;
   }
 
+  /// Updates tab controller and visibility state to show or hide the Suggested tab based on the current profile.
+  ///
+  /// We dispose after rebuild so widgets still referencing the previous
+  /// controller do not observe a torn-down animation during this frame.
   void _setSuggestedTabVisibility(bool show) {
     if (_showSuggestedTab == show) {
       return;
@@ -134,8 +145,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     _tabController = TabController(length: _tabLabels.length, vsync: this, initialIndex: nextIndex);
     setState(() {});
 
-    // Dispose after rebuild so widgets still referencing the previous
-    // controller do not observe a torn-down animation during this frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       previousController.dispose();
     });
@@ -150,6 +159,65 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     context.read<ProfileBloc>().add(const ProfileRefreshRequested());
     context.read<FeedBloc>().add(const FeedRefreshRequested());
     await Future<void>.delayed(const Duration(milliseconds: 250));
+  }
+
+  bool get _isAtTop => !_profileScrollController.hasClients || _profileScrollController.position.pixels <= 0.5;
+
+  void _onHeaderPointerDown(PointerDownEvent event) {
+    _headerTrackingPointer = event.pointer;
+    _headerPullDistance = 0;
+  }
+
+  Future<void> _onHeaderPointerMove(PointerMoveEvent event) async {
+    if (_headerTrackingPointer != event.pointer || _headerRefreshInFlight) {
+      return;
+    }
+
+    if (!_isAtTop) {
+      _headerPullDistance = 0;
+      return;
+    }
+
+    if (event.delta.dy <= 0) {
+      return;
+    }
+
+    _headerPullDistance += event.delta.dy;
+    if (_headerPullDistance < _coverRefreshTriggerDistance) {
+      return;
+    }
+
+    _headerPullDistance = 0;
+    _headerRefreshInFlight = true;
+    await (_profileRefreshKey.currentState?.show() ?? _refresh());
+    _headerRefreshInFlight = false;
+  }
+
+  void _onHeaderPointerUp(PointerUpEvent event) {
+    if (_headerTrackingPointer != event.pointer) {
+      return;
+    }
+    _headerTrackingPointer = null;
+    _headerPullDistance = 0;
+  }
+
+  void _onHeaderPointerCancel(PointerCancelEvent event) {
+    if (_headerTrackingPointer != event.pointer) {
+      return;
+    }
+    _headerTrackingPointer = null;
+    _headerPullDistance = 0;
+  }
+
+  Widget _buildProfileHeaderRefreshZone({required Widget child, Key? key}) {
+    return Listener(
+      key: key,
+      onPointerDown: _onHeaderPointerDown,
+      onPointerMove: _onHeaderPointerMove,
+      onPointerUp: _onHeaderPointerUp,
+      onPointerCancel: _onHeaderPointerCancel,
+      child: child,
+    );
   }
 
   @override
@@ -186,74 +254,85 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                       }
                       return false;
                     },
-                    child: NestedScrollView(
-                      headerSliverBuilder: (context, innerBoxIsScrolled) {
-                        return [
-                          SliverAppBar(
-                            floating: true,
-                            pinned: true,
-                            snap: true,
-                            title: Text(_appBarTitle(profile)),
-                            leading: widget.showBackButton
-                                ? IconButton(
-                                    icon: const Icon(Icons.arrow_back),
-                                    onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
-                                  )
-                                : const AppShellMenuButton(),
-                            actions: [
-                              if (profile != null && isOwnProfile)
+                    child: RefreshIndicator(
+                      key: _profileRefreshKey,
+                      onRefresh: _refresh,
+                      notificationPredicate: (notification) =>
+                          notification.depth == 0 && notification.metrics.axis == Axis.vertical,
+                      child: NestedScrollView(
+                        controller: _profileScrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        headerSliverBuilder: (context, innerBoxIsScrolled) {
+                          return [
+                            SliverAppBar(
+                              floating: true,
+                              pinned: true,
+                              snap: true,
+                              title: Text(_appBarTitle(profile)),
+                              leading: widget.showBackButton
+                                  ? IconButton(
+                                      icon: const Icon(Icons.arrow_back),
+                                      onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
+                                    )
+                                  : const AppShellMenuButton(),
+                              actions: [
+                                if (profile != null && isOwnProfile)
+                                  IconButton(
+                                    key: const Key('profile_more_button'),
+                                    icon: const Icon(Icons.more_vert),
+                                    onPressed: () => _showOwnProfileMoreOptions(context, profile),
+                                  ),
                                 IconButton(
-                                  key: const Key('profile_more_button'),
-                                  icon: const Icon(Icons.more_vert),
-                                  onPressed: () => _showOwnProfileMoreOptions(context, profile),
+                                  icon: const Icon(Icons.settings_outlined),
+                                  onPressed: () => context.go('/settings'),
                                 ),
-                              IconButton(
-                                icon: const Icon(Icons.settings_outlined),
-                                onPressed: () => context.go('/settings'),
-                              ),
-                            ],
-                          ),
-                          SliverToBoxAdapter(child: _buildCoverSection(context, profile)),
-                          SliverToBoxAdapter(
-                            child: switch (profileState.status) {
-                              ProfileStatus.loading => const Padding(
-                                padding: AppInsets.allLg,
-                                child: Center(child: CircularProgressIndicator()),
-                              ),
-                              ProfileStatus.error => _buildProfileError(context, profileState.errorMessage),
-                              _ => _buildProfileSummary(context, profile, isOwnProfile),
-                            },
-                          ),
-                          SliverPersistentHeader(
-                            pinned: true,
-                            delegate: SliverTabBarDelegate(
-                              TabBar(
-                                controller: _tabController,
-                                tabs: [for (final label in _tabLabels) Tab(text: label)],
-                                onTap: (index) {
-                                  if (index < _feedTabs.length) {
-                                    _loadProfileAndFeed(filter: _feedTabs[index].filter);
-                                  }
+                              ],
+                            ),
+                            SliverToBoxAdapter(child: _buildCoverSection(context, profile)),
+                            SliverToBoxAdapter(
+                              child: _buildProfileHeaderRefreshZone(
+                                key: const ValueKey('profile_header_details_refresh_zone'),
+                                child: switch (profileState.status) {
+                                  ProfileStatus.loading => const Padding(
+                                    padding: AppInsets.allLg,
+                                    child: Center(child: CircularProgressIndicator()),
+                                  ),
+                                  ProfileStatus.error => _buildProfileError(context, profileState.errorMessage),
+                                  _ => _buildProfileSummary(context, profile, isOwnProfile),
                                 },
-                                isScrollable: true,
-                                tabAlignment: TabAlignment.start,
-                                labelStyle: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 2.2,
-                                ),
-                                unselectedLabelStyle: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 2.2,
-                                ),
-                                indicatorWeight: 2,
                               ),
                             ),
-                          ),
-                        ];
-                      },
-                      body: TabBarView(controller: _tabController, children: tabChildren),
+                            SliverPersistentHeader(
+                              pinned: true,
+                              delegate: SliverTabBarDelegate(
+                                TabBar(
+                                  controller: _tabController,
+                                  tabs: [for (final label in _tabLabels) Tab(text: label)],
+                                  onTap: (index) {
+                                    if (index < _feedTabs.length) {
+                                      _loadProfileAndFeed(filter: _feedTabs[index].filter);
+                                    }
+                                  },
+                                  isScrollable: true,
+                                  tabAlignment: TabAlignment.start,
+                                  labelStyle: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 2.2,
+                                  ),
+                                  unselectedLabelStyle: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 2.2,
+                                  ),
+                                  indicatorWeight: 2,
+                                ),
+                              ),
+                            ),
+                          ];
+                        },
+                        body: TabBarView(controller: _tabController, children: tabChildren),
+                      ),
                     ),
                   );
                 },
@@ -298,32 +377,35 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       coverContent = ColoredBox(color: colorScheme.surfaceContainerHigh, child: const SizedBox.expand());
     }
 
-    return SizedBox(
-      height: coverHeight + avatarSize / 2,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: coverHeight,
-            child: Transform.translate(
-              offset: Offset(0, -1.0 * (_coverScrollOffset * 0.5).clamp(0, coverHeight * 0.3).toDouble()),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+    return _buildProfileHeaderRefreshZone(
+      key: const ValueKey('profile_cover_refresh_zone'),
+      child: SizedBox(
+        height: coverHeight + avatarSize / 2,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: coverHeight,
+              child: Transform.translate(
+                offset: Offset(0, -1.0 * (_coverScrollOffset * 0.5).clamp(0, coverHeight * 0.3).toDouble()),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+                  ),
+                  child: Opacity(opacity: 0.5, child: coverContent),
                 ),
-                child: Opacity(opacity: 0.5, child: coverContent),
               ),
             ),
-          ),
-          Positioned(
-            top: coverHeight - avatarSize / 2,
-            left: 16,
-            child: _buildSquareAvatar(context, profile, avatarSize),
-          ),
-        ],
+            Positioned(
+              top: coverHeight - avatarSize / 2,
+              left: 16,
+              child: _buildSquareAvatar(context, profile, avatarSize),
+            ),
+          ],
+        ),
       ),
     );
   }

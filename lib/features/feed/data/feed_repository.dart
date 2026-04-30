@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:atproto_core/atproto_core.dart';
+import 'package:atproto_core/atproto_core.dart' show AtUri;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_getauthorfeed.dart';
@@ -109,44 +109,14 @@ class FeedRepository {
   }
 
   Future<PreferencesResult> getPreferences() async {
-    final headers = _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest());
-    try {
-      final response = await _bluesky.actor.getPreferences($headers: headers);
-      return PreferencesResult(preferences: response.data.preferences);
-    } on XRPCException catch (error) {
-      if (_shouldRetryPreferencesWithoutProxy(error: error, headers: headers)) {
-        final response = await _bluesky.actor.getPreferences($headers: _withoutAppViewProxyHeader(headers));
-        return PreferencesResult(preferences: response.data.preferences);
-      }
-      rethrow;
-    }
+    final headers = _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest());
+    final response = await _bluesky.actor.getPreferences($headers: headers);
+    return PreferencesResult(preferences: response.data.preferences);
   }
 
   Future<void> putPreferences({required List<UPreferences> preferences}) async {
-    final headers = _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest());
-    try {
-      await _bluesky.actor.putPreferences(preferences: preferences, $headers: headers);
-    } on XRPCException catch (error) {
-      if (_shouldRetryPreferencesWithoutProxy(error: error, headers: headers)) {
-        await _bluesky.actor.putPreferences(preferences: preferences, $headers: _withoutAppViewProxyHeader(headers));
-        return;
-      }
-      rethrow;
-    }
-  }
-
-  bool _shouldRetryPreferencesWithoutProxy({required XRPCException error, required Map<String, String> headers}) {
-    return _hasAppViewProxyHeader(headers) && error.response.status.code == 404;
-  }
-
-  bool _hasAppViewProxyHeader(Map<String, String> headers) {
-    return headers.keys.any((key) => key.toLowerCase() == 'atproto-proxy');
-  }
-
-  Map<String, String> _withoutAppViewProxyHeader(Map<String, String> headers) {
-    final copy = Map<String, String>.from(headers);
-    copy.removeWhere((key, _) => key.toLowerCase() == 'atproto-proxy');
-    return copy;
+    final headers = _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest());
+    await _bluesky.actor.putPreferences(preferences: preferences, $headers: headers);
   }
 
   Future<List<GeneratorView>> getSuggestedFeeds({String? cursor, int limit = 50}) async {

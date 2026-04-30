@@ -1,6 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+/// Profile navigation helper
+///
+/// This avoids pushing a second shell stack from top-level routes like `/post`,
+/// that can duplicate navigator keys and trip a framework assertion.
 Future<T?>? navigateToProfile<T>(BuildContext context, String actorDid) {
   final router = GoRouter.maybeOf(context);
   if (router == null) {
@@ -10,8 +14,6 @@ Future<T?>? navigateToProfile<T>(BuildContext context, String actorDid) {
   final location = '/profile/view?actor=${Uri.encodeQueryComponent(actorDid)}';
   final currentPath = _currentPath(context);
 
-  // Avoid pushing a second shell stack from top-level routes like `/post`.
-  // That can duplicate navigator keys and trip a framework assertion.
   if (!_isStatefulShellPath(currentPath)) {
     router.go(location);
     return null;
