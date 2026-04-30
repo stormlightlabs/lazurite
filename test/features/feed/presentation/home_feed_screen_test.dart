@@ -16,6 +16,7 @@ import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/feed/presentation/widgets/feed_layout_view.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
+import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
@@ -340,6 +341,7 @@ void main() {
       );
       await tester.pump();
 
+      expect(find.byType(AppScreenEntrance), findsOneWidget);
       expect(find.byIcon(Icons.trending_up_outlined), findsOneWidget);
       expect(find.byIcon(Icons.rss_feed), findsOneWidget);
       expect(find.byIcon(Icons.chat_bubble_outline), findsNothing);

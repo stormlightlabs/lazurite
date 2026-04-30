@@ -26,6 +26,7 @@ import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
+import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
@@ -153,6 +154,7 @@ void main() {
     useLargeScreen(tester);
     await tester.pumpWidget(buildSubject());
 
+    expect(find.byType(AppScreenEntrance), findsOneWidget);
     verify(() => profileBloc.add(const ProfileLoadRequested(actor: 'did:plc:me'))).called(1);
     verify(
       () => feedBloc.add(const FeedLoadRequested(actor: 'did:plc:me', filter: FeedFilter.postsNoReplies)),

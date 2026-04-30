@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -38,9 +41,10 @@ class AppShellMenuButton extends StatelessWidget {
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.navigationShell});
+  const AppShell({super.key, required this.navigationShell, required this.branchNavigatorKeys});
 
   final StatefulNavigationShell navigationShell;
+  final List<GlobalKey<NavigatorState>> branchNavigatorKeys;
 
   /// Global key for the shell [Scaffold]. Accessible from any screen, even
   /// screens pushed onto the root navigator that are outside [AppShellScope].
@@ -56,31 +60,69 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   void _openMenu() => AppShell.openDrawer();
 
+  bool get _isAndroid => Theme.of(context).platform == TargetPlatform.android;
+
+  NavigatorState? get _activeBranchNavigator {
+    final index = widget.navigationShell.currentIndex;
+    if (index < 0 || index >= widget.branchNavigatorKeys.length) {
+      return null;
+    }
+    return widget.branchNavigatorKeys[index].currentState;
+  }
+
+  bool _activeBranchCanPop() => _activeBranchNavigator?.canPop() ?? false;
+
+  bool _isAndroidHomeRoot() => _isAndroid && widget.navigationShell.currentIndex == 0 && !_activeBranchCanPop();
+
+  Future<void> _handleAndroidBack() async {
+    final activeNavigator = _activeBranchNavigator;
+    if (activeNavigator != null && activeNavigator.canPop()) {
+      await activeNavigator.maybePop();
+      return;
+    }
+
+    if (widget.navigationShell.currentIndex != 0) {
+      widget.navigationShell.goBranch(0);
+      return;
+    }
+
+    await SystemNavigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AppShellScope(
       openMenu: _openMenu,
-      child: Scaffold(
-        key: AppShell.scaffoldKey,
-        drawer: _AppMenu(navigationShell: widget.navigationShell, rootContext: context),
-        body: widget.navigationShell,
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withValues(alpha: 0.92),
-            border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
-          ),
-          child: NavigationBar(
-            height: 80,
-            backgroundColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-            indicatorColor: Colors.transparent,
-            selectedIndex: widget.navigationShell.currentIndex,
-            onDestinationSelected: (index) {
-              widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
-            },
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: _destinations,
+      child: PopScope(
+        canPop: !_isAndroid || _isAndroidHomeRoot(),
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop || !_isAndroid) {
+            return;
+          }
+          unawaited(_handleAndroidBack());
+        },
+        child: Scaffold(
+          key: AppShell.scaffoldKey,
+          drawer: _AppMenu(navigationShell: widget.navigationShell, rootContext: context),
+          body: widget.navigationShell,
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface.withValues(alpha: 0.92),
+              border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
+            ),
+            child: NavigationBar(
+              height: 80,
+              backgroundColor: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
+              indicatorColor: Colors.transparent,
+              selectedIndex: widget.navigationShell.currentIndex,
+              onDestinationSelected: (index) {
+                widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
+              },
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              destinations: _destinations,
+            ),
           ),
         ),
       ),

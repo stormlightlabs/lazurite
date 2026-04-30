@@ -23,6 +23,7 @@ import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.da
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
+import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
@@ -199,31 +200,33 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButton:
-          FloatingActionButton.extended(
-            onPressed: _openJumpToProfileDialog,
-            icon: const Icon(Icons.person_search),
-            label: const Text('Jump to profile'),
-          ).animateIfAllowed(
-            context,
-            effects: const [
-              FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
-              ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
-            ],
-          ),
-      body: SafeArea(
-        child: BlocBuilder<SearchBloc, SearchState>(
-          builder: (context, state) {
-            return Column(
-              children: [
-                _buildSearchBar(context, state),
-                _buildTabs(context, state),
-                if (state.currentTab == SearchTab.posts && state.hasResults) _buildSortToggle(context, state),
-                Expanded(child: _buildBody(context, state)),
+    return AppScreenEntrance(
+      child: Scaffold(
+        floatingActionButton:
+            FloatingActionButton.extended(
+              onPressed: _openJumpToProfileDialog,
+              icon: const Icon(Icons.person_search),
+              label: const Text('Jump to profile'),
+            ).animateIfAllowed(
+              context,
+              effects: const [
+                FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
+                ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
               ],
-            );
-          },
+            ),
+        body: SafeArea(
+          child: BlocBuilder<SearchBloc, SearchState>(
+            builder: (context, state) {
+              return Column(
+                children: [
+                  _buildSearchBar(context, state),
+                  _buildTabs(context, state),
+                  if (state.currentTab == SearchTab.posts && state.hasResults) _buildSortToggle(context, state),
+                  Expanded(child: _buildBody(context, state)),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

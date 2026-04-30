@@ -15,6 +15,7 @@ import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
+import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
@@ -177,6 +178,7 @@ void main() {
     await tester.pumpWidget(buildSubject('/alerts'));
     await tester.pumpAndSettle();
 
+    expect(find.byType(AppScreenEntrance), findsOneWidget);
     expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('Messages'), findsOneWidget);
     expect(find.text('Requests'), findsOneWidget);

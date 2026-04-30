@@ -387,8 +387,8 @@ Test on both iOS and Android unless noted otherwise.
 
 ### Navigation
 
-- [ ] Bottom nav switches between Home, Search, Alerts, Profile
-- [ ] Back button / swipe-back navigates correctly through stack
+- [x] Bottom nav switches between Home, Search, Alerts, Profile
+- [x] Back button / swipe-back navigates correctly through stack
 - [ ] Deep link to a post URI opens thread view
 
 ### Performance

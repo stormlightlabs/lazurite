@@ -231,6 +231,62 @@ void main() {
     expect(navBar.height, 80);
   });
 
+  testWidgets('Android back pops nested route before tab-root policy', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open menu'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('SETTINGS').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('APPEARANCE'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('No feeds pinned'), findsOneWidget);
+    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(navBar.selectedIndex, 0);
+  });
+
+  testWidgets('Android back at non-Home tab root switches to Home tab', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('PROFILE'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('RIVER TAM'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(navBar.selectedIndex, 0);
+    expect(find.text('No feeds pinned'), findsOneWidget);
+  });
+
+  testWidgets('Android back at Home root follows system-exit path', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    final handled = await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(handled, isFalse);
+  });
+
   testWidgets('drawer contains Messages and Settings entries', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));

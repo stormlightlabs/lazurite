@@ -14,6 +14,7 @@ import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
+import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSearchRepository extends Mock implements SearchRepository {}
@@ -164,6 +165,7 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
+      expect(find.byType(AppScreenEntrance), findsOneWidget);
       final searchField = tester.widget<TextField>(find.byType(TextField).first);
       expect(searchField.decoration?.hintText, 'Search posts');
       expect(find.text('Posts'), findsOneWidget);

@@ -10,8 +10,8 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
+import 'package:lazurite/core/router/app_route_page.dart';
 import 'package:lazurite/core/router/app_shell.dart';
-import 'package:lazurite/core/router/fade_through_page.dart';
 import 'package:lazurite/features/alerts/presentation/alerts_screen.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
@@ -81,9 +81,15 @@ class AppRouter {
   final GlobalKey<NavigatorState> _searchNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'search');
   final GlobalKey<NavigatorState> _notificationsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'notifications');
   final GlobalKey<NavigatorState> _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
+  List<GlobalKey<NavigatorState>> get _branchNavigatorKeys => [
+    _homeNavigatorKey,
+    _searchNavigatorKey,
+    _notificationsNavigatorKey,
+    _profileNavigatorKey,
+  ];
 
   Page<dynamic> _page(BuildContext context, GoRouterState state, Widget child) =>
-      buildFadeThroughPage(context: context, state: state, child: child);
+      buildAppRoutePage(context: context, state: state, child: child);
 
   GoRouter get router => GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -292,7 +298,7 @@ class AppRouter {
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           if (!context.read<AuthBloc>().state.isAuthenticated) {
-            return AppShell(navigationShell: navigationShell);
+            return AppShell(navigationShell: navigationShell, branchNavigatorKeys: _branchNavigatorKeys);
           }
 
           UnreadCountCubit? existingUnreadCubit;
@@ -303,7 +309,7 @@ class AppRouter {
           }
 
           if (existingUnreadCubit != null) {
-            return AppShell(navigationShell: navigationShell);
+            return AppShell(navigationShell: navigationShell, branchNavigatorKeys: _branchNavigatorKeys);
           }
 
           return MultiBlocProvider(
@@ -313,7 +319,7 @@ class AppRouter {
                   create: (_) => UnreadCountCubit(notificationRepository: context.read<NotificationRepository>()),
                 ),
             ],
-            child: AppShell(navigationShell: navigationShell),
+            child: AppShell(navigationShell: navigationShell, branchNavigatorKeys: _branchNavigatorKeys),
           );
         },
         branches: [

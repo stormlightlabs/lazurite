@@ -7,6 +7,7 @@ import 'package:lazurite/features/messages/presentation/widgets/convo_list_pane.
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/presentation/widgets/notifications_pane.dart';
+import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 
 enum AlertsTab { notifications, messages, requests }
 
@@ -24,18 +25,20 @@ class _AlertsScreenState extends State<AlertsScreen> {
   Widget build(BuildContext context) {
     final currentTab = widget.initialTab;
 
-    return Scaffold(
-      appBar: LazuriteAppBar(
-        sectionLabel: 'Alerts',
-        actions: currentTab == AlertsTab.notifications
-            ? [TextButton(onPressed: () => _markAllRead(context), child: const Text('Mark All Read'))]
-            : null,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: _AlertsTabs(currentTab: currentTab),
+    return AppScreenEntrance(
+      child: Scaffold(
+        appBar: LazuriteAppBar(
+          sectionLabel: 'Alerts',
+          actions: currentTab == AlertsTab.notifications
+              ? [TextButton(onPressed: () => _markAllRead(context), child: const Text('Mark All Read'))]
+              : null,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(48),
+            child: _AlertsTabs(currentTab: currentTab),
+          ),
         ),
+        body: KeyedSubtree(key: ValueKey(currentTab), child: _buildTab(currentTab)),
       ),
-      body: KeyedSubtree(key: ValueKey(currentTab), child: _buildTab(currentTab)),
     );
   }
 

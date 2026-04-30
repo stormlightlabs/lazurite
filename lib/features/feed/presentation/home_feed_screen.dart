@@ -17,6 +17,7 @@ import 'package:lazurite/features/feed/presentation/widgets/feed_layout_view.dar
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
+import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 
@@ -54,19 +55,23 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Widget withEntrance(Widget child) => AppScreenEntrance(child: child);
+
     return BlocBuilder<FeedPreferencesCubit, FeedPreferencesState>(
       builder: (context, prefsState) {
         if (prefsState.status == FeedPreferencesStatus.initial || prefsState.status == FeedPreferencesStatus.loading) {
-          return const Scaffold(body: LoadingState());
+          return withEntrance(const Scaffold(body: LoadingState()));
         }
 
         if (prefsState.status == FeedPreferencesStatus.error) {
-          return Scaffold(
-            appBar: const LazuriteAppBar(sectionLabel: 'Home'),
-            body: ErrorState(
-              title: 'Failed to load feeds',
-              message: prefsState.message ?? 'Unknown error',
-              onRetry: () => context.read<FeedPreferencesCubit>().loadPreferences(),
+          return withEntrance(
+            Scaffold(
+              appBar: const LazuriteAppBar(sectionLabel: 'Home'),
+              body: ErrorState(
+                title: 'Failed to load feeds',
+                message: prefsState.message ?? 'Unknown error',
+                onRetry: () => context.read<FeedPreferencesCubit>().loadPreferences(),
+              ),
             ),
           );
         }
@@ -75,13 +80,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
 
         if (pinnedFeeds.isEmpty) {
-          return Scaffold(
-            appBar: const LazuriteAppBar(sectionLabel: 'Home'),
-            body: EmptyState(
-              message: 'No feeds pinned',
-              icon: Icons.rss_feed_outlined,
-              subtitle: 'Pin a timeline or custom feed to build your home tabs.',
-              action: FilledButton(onPressed: () => context.push('/feeds'), child: const Text('Manage Feeds')),
+          return withEntrance(
+            Scaffold(
+              appBar: const LazuriteAppBar(sectionLabel: 'Home'),
+              body: EmptyState(
+                message: 'No feeds pinned',
+                icon: Icons.rss_feed_outlined,
+                subtitle: 'Pin a timeline or custom feed to build your home tabs.',
+                action: FilledButton(onPressed: () => context.push('/feeds'), child: const Text('Manage Feeds')),
+              ),
             ),
           );
         }
@@ -89,56 +96,58 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         final currentTabIndex = _selectedIndexFor(pinnedFeeds);
         _syncSelectedFeed(pinnedFeeds, currentTabIndex);
 
-        return Scaffold(
-          appBar: LazuriteAppBar(
-            sectionLabel: 'Home',
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.trending_up_outlined),
-                tooltip: 'Trending',
-                onPressed: () => context.push('/trending'),
+        return withEntrance(
+          Scaffold(
+            appBar: LazuriteAppBar(
+              sectionLabel: 'Home',
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.trending_up_outlined),
+                  tooltip: 'Trending',
+                  onPressed: () => context.push('/trending'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.rss_feed),
+                  tooltip: 'Manage Feeds',
+                  onPressed: () => context.push('/feeds'),
+                ),
+              ],
+              bottom: _FeedTabBar(
+                feeds: pinnedFeeds,
+                prefsState: prefsState,
+                currentTabIndex: currentTabIndex,
+                onTabTapped: (index) {
+                  _pageController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                  setState(() => _selectedFeedId = pinnedFeeds[index].id);
+                },
               ),
-              IconButton(
-                icon: const Icon(Icons.rss_feed),
-                tooltip: 'Manage Feeds',
-                onPressed: () => context.push('/feeds'),
-              ),
-            ],
-            bottom: _FeedTabBar(
-              feeds: pinnedFeeds,
-              prefsState: prefsState,
-              currentTabIndex: currentTabIndex,
-              onTabTapped: (index) {
-                _pageController.animateToPage(
-                  index,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-                setState(() => _selectedFeedId = pinnedFeeds[index].id);
-              },
             ),
+            body: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) => setState(() => _selectedFeedId = pinnedFeeds[index].id),
+              itemCount: pinnedFeeds.length,
+              itemBuilder: (context, index) =>
+                  _FeedListView(feed: pinnedFeeds[index], key: ValueKey(pinnedFeeds[index].id)),
+            ),
+            floatingActionButton:
+                FloatingActionButton(
+                  heroTag: 'home-compose-fab',
+                  tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
+                  onPressed: isOffline ? null : () => context.push('/compose'),
+                  shape: const CircleBorder(),
+                  child: const Icon(Icons.add),
+                ).animateIfAllowed(
+                  context,
+                  effects: const [
+                    FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
+                    ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
+                  ],
+                ),
           ),
-          body: PageView.builder(
-            controller: _pageController,
-            onPageChanged: (index) => setState(() => _selectedFeedId = pinnedFeeds[index].id),
-            itemCount: pinnedFeeds.length,
-            itemBuilder: (context, index) =>
-                _FeedListView(feed: pinnedFeeds[index], key: ValueKey(pinnedFeeds[index].id)),
-          ),
-          floatingActionButton:
-              FloatingActionButton(
-                heroTag: 'home-compose-fab',
-                tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
-                onPressed: isOffline ? null : () => context.push('/compose'),
-                shape: const CircleBorder(),
-                child: const Icon(Icons.add),
-              ).animateIfAllowed(
-                context,
-                effects: const [
-                  FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
-                  ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
-                ],
-              ),
         );
       },
     );

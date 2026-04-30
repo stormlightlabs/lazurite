@@ -46,6 +46,7 @@ import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pac
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/share_helper.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
+import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -153,120 +154,122 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<ProfileBloc, ProfileState>(
-      listenWhen: (previous, current) {
-        return _shouldShowSuggestedTab(previous.profile) != _shouldShowSuggestedTab(current.profile);
-      },
-      listener: (context, state) => _setSuggestedTabVisibility(_shouldShowSuggestedTab(state.profile)),
-      child: Scaffold(
-        body: BlocBuilder<ProfileBloc, ProfileState>(
-          builder: (context, profileState) {
-            return BlocBuilder<FeedBloc, FeedState>(
-              builder: (context, feedState) {
-                final profile = profileState.profile;
-                final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
-                final isOwnProfile = profile?.did == currentUserDid;
-                final tabChildren = <Widget>[
-                  ..._feedTabs.map((t) => _buildFeedList(feedState, t.filter, profile)),
-                  _buildListsTab(context, profile),
-                  _buildStarterPacksTab(context, profile),
-                  if (_showSuggestedTab) _buildSuggestedFollowsTab(profile),
-                ];
+    return AppScreenEntrance(
+      child: BlocListener<ProfileBloc, ProfileState>(
+        listenWhen: (previous, current) {
+          return _shouldShowSuggestedTab(previous.profile) != _shouldShowSuggestedTab(current.profile);
+        },
+        listener: (context, state) => _setSuggestedTabVisibility(_shouldShowSuggestedTab(state.profile)),
+        child: Scaffold(
+          body: BlocBuilder<ProfileBloc, ProfileState>(
+            builder: (context, profileState) {
+              return BlocBuilder<FeedBloc, FeedState>(
+                builder: (context, feedState) {
+                  final profile = profileState.profile;
+                  final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
+                  final isOwnProfile = profile?.did == currentUserDid;
+                  final tabChildren = <Widget>[
+                    ..._feedTabs.map((t) => _buildFeedList(feedState, t.filter, profile)),
+                    _buildListsTab(context, profile),
+                    _buildStarterPacksTab(context, profile),
+                    if (_showSuggestedTab) _buildSuggestedFollowsTab(profile),
+                  ];
 
-                return NotificationListener<ScrollUpdateNotification>(
-                  onNotification: (notification) {
-                    if (notification.metrics.axis != Axis.vertical) {
+                  return NotificationListener<ScrollUpdateNotification>(
+                    onNotification: (notification) {
+                      if (notification.metrics.axis != Axis.vertical) {
+                        return false;
+                      }
+                      final offset = notification.metrics.pixels;
+                      if ((offset - _coverScrollOffset).abs() >= 1) {
+                        setState(() => _coverScrollOffset = offset);
+                      }
                       return false;
-                    }
-                    final offset = notification.metrics.pixels;
-                    if ((offset - _coverScrollOffset).abs() >= 1) {
-                      setState(() => _coverScrollOffset = offset);
-                    }
-                    return false;
-                  },
-                  child: NestedScrollView(
-                    headerSliverBuilder: (context, innerBoxIsScrolled) {
-                      return [
-                        SliverAppBar(
-                          floating: true,
-                          pinned: true,
-                          snap: true,
-                          title: Text(_appBarTitle(profile)),
-                          leading: widget.showBackButton
-                              ? IconButton(
-                                  icon: const Icon(Icons.arrow_back),
-                                  onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
-                                )
-                              : const AppShellMenuButton(),
-                          actions: [
-                            if (profile != null && isOwnProfile)
+                    },
+                    child: NestedScrollView(
+                      headerSliverBuilder: (context, innerBoxIsScrolled) {
+                        return [
+                          SliverAppBar(
+                            floating: true,
+                            pinned: true,
+                            snap: true,
+                            title: Text(_appBarTitle(profile)),
+                            leading: widget.showBackButton
+                                ? IconButton(
+                                    icon: const Icon(Icons.arrow_back),
+                                    onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
+                                  )
+                                : const AppShellMenuButton(),
+                            actions: [
+                              if (profile != null && isOwnProfile)
+                                IconButton(
+                                  key: const Key('profile_more_button'),
+                                  icon: const Icon(Icons.more_vert),
+                                  onPressed: () => _showOwnProfileMoreOptions(context, profile),
+                                ),
                               IconButton(
-                                key: const Key('profile_more_button'),
-                                icon: const Icon(Icons.more_vert),
-                                onPressed: () => _showOwnProfileMoreOptions(context, profile),
+                                icon: const Icon(Icons.settings_outlined),
+                                onPressed: () => context.go('/settings'),
                               ),
-                            IconButton(
-                              icon: const Icon(Icons.settings_outlined),
-                              onPressed: () => context.go('/settings'),
-                            ),
-                          ],
-                        ),
-                        SliverToBoxAdapter(child: _buildCoverSection(context, profile)),
-                        SliverToBoxAdapter(
-                          child: switch (profileState.status) {
-                            ProfileStatus.loading => const Padding(
-                              padding: AppInsets.allLg,
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                            ProfileStatus.error => _buildProfileError(context, profileState.errorMessage),
-                            _ => _buildProfileSummary(context, profile, isOwnProfile),
-                          },
-                        ),
-                        SliverPersistentHeader(
-                          pinned: true,
-                          delegate: SliverTabBarDelegate(
-                            TabBar(
-                              controller: _tabController,
-                              tabs: [for (final label in _tabLabels) Tab(text: label)],
-                              onTap: (index) {
-                                if (index < _feedTabs.length) {
-                                  _loadProfileAndFeed(filter: _feedTabs[index].filter);
-                                }
-                              },
-                              isScrollable: true,
-                              tabAlignment: TabAlignment.start,
-                              labelStyle: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 2.2,
+                            ],
+                          ),
+                          SliverToBoxAdapter(child: _buildCoverSection(context, profile)),
+                          SliverToBoxAdapter(
+                            child: switch (profileState.status) {
+                              ProfileStatus.loading => const Padding(
+                                padding: AppInsets.allLg,
+                                child: Center(child: CircularProgressIndicator()),
                               ),
-                              unselectedLabelStyle: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 2.2,
+                              ProfileStatus.error => _buildProfileError(context, profileState.errorMessage),
+                              _ => _buildProfileSummary(context, profile, isOwnProfile),
+                            },
+                          ),
+                          SliverPersistentHeader(
+                            pinned: true,
+                            delegate: SliverTabBarDelegate(
+                              TabBar(
+                                controller: _tabController,
+                                tabs: [for (final label in _tabLabels) Tab(text: label)],
+                                onTap: (index) {
+                                  if (index < _feedTabs.length) {
+                                    _loadProfileAndFeed(filter: _feedTabs[index].filter);
+                                  }
+                                },
+                                isScrollable: true,
+                                tabAlignment: TabAlignment.start,
+                                labelStyle: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 2.2,
+                                ),
+                                unselectedLabelStyle: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 2.2,
+                                ),
+                                indicatorWeight: 2,
                               ),
-                              indicatorWeight: 2,
                             ),
                           ),
-                        ),
-                      ];
-                    },
-                    body: TabBarView(controller: _tabController, children: tabChildren),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-        floatingActionButton: AnimatedSwitcher(
-          duration: Anim.feedItem,
-          switchInCurve: Anim.enter,
-          switchOutCurve: Anim.exit,
-          transitionBuilder: (child, animation) => FadeTransition(
-            opacity: animation,
-            child: ScaleTransition(scale: animation, child: child),
+                        ];
+                      },
+                      body: TabBarView(controller: _tabController, children: tabChildren),
+                    ),
+                  );
+                },
+              );
+            },
           ),
-          child: _buildComposeFab(context),
+          floatingActionButton: AnimatedSwitcher(
+            duration: Anim.feedItem,
+            switchInCurve: Anim.enter,
+            switchOutCurve: Anim.exit,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(scale: animation, child: child),
+            ),
+            child: _buildComposeFab(context),
+          ),
         ),
       ),
     );
