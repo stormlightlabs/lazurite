@@ -1,9 +1,13 @@
+import 'dart:convert';
+
+import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_searchposts.dart';
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:bluesky/bluesky.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class SearchRepository {
@@ -22,6 +26,7 @@ class SearchRepository {
   final Bluesky _bluesky;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
+  static const int _maxBlackskyTopicFeedLimit = 25;
 
   Future<SearchPostsResult> searchPosts({
     required String query,
@@ -93,6 +98,97 @@ class SearchRepository {
     return _filterBasicProfiles(response.data.actors);
   }
 
+  Future<TopicPostsResult> searchTopicPosts({
+    required String topic,
+    String sort = 'top',
+    String? cursor,
+    int limit = 25,
+  }) async {
+    final normalizedTopic = topic.trim();
+    if (normalizedTopic.isEmpty) {
+      return TopicPostsResult(posts: const []);
+    }
+
+    final provider = _appViewContext.resolveProviderKey();
+    final isBlackskyNumericTopic = provider == 'blacksky' && RegExp(r'^\d+$').hasMatch(normalizedTopic);
+    if (isBlackskyNumericTopic) {
+      return _searchBlackskyTopicFeed(topicId: normalizedTopic, cursor: cursor, limit: limit);
+    }
+
+    final result = await searchPosts(query: normalizedTopic, sort: sort, cursor: cursor, limit: limit);
+    return TopicPostsResult(posts: result.posts, cursor: result.cursor, topicName: normalizedTopic);
+  }
+
+  Future<TopicPostsResult> _searchBlackskyTopicFeed({
+    required String topicId,
+    String? cursor,
+    required int limit,
+  }) async {
+    final clampedLimit = limit.clamp(1, _maxBlackskyTopicFeedLimit);
+    final params = <String, String>{
+      'topicId': topicId,
+      'limit': clampedLimit.toString(),
+      if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
+    };
+
+    final uri = Uri.https(_appViewContext.publicServiceHost(), '/xrpc/app.bsky.unspecced.getTopicFeed', params);
+    final baseHeaders = await _moderationService?.headersForRequest();
+    final headers = _withoutAppViewProxyHeader(_appViewContext.appBskyHeaders(baseHeaders));
+    final response = await XrpcNetworkInterceptor.wrapGetClient()(uri, headers: headers);
+    if (response.statusCode >= 400) {
+      throw Exception('Failed to fetch Blacksky topic feed (status ${response.statusCode})');
+    }
+
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final rawPostUris = decoded['posts'] as List<dynamic>? ?? const [];
+    final atUris = <AtUri>[];
+    for (final raw in rawPostUris) {
+      final value = raw is String ? raw.trim() : '';
+      if (value.isEmpty) {
+        continue;
+      }
+      try {
+        atUris.add(AtUri.parse(value));
+      } catch (_) {}
+    }
+
+    if (atUris.isEmpty) {
+      return TopicPostsResult(
+        posts: const [],
+        cursor: decoded['cursor'] as String?,
+        topicName: _topicNameFromDecoded(decoded),
+      );
+    }
+
+    final hydrated = await _bluesky.feed.getPosts(
+      uris: atUris,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
+
+    return TopicPostsResult(
+      posts: _filterPosts(hydrated.data.posts),
+      cursor: decoded['cursor'] as String?,
+      topicName: _topicNameFromDecoded(decoded),
+    );
+  }
+
+  String? _topicNameFromDecoded(Map<String, dynamic> decoded) {
+    final topic = decoded['topic'];
+    if (topic is Map<String, dynamic>) {
+      final name = topic['name'];
+      if (name is String && name.trim().isNotEmpty) {
+        return name.trim();
+      }
+    }
+    return null;
+  }
+
+  Map<String, String> _withoutAppViewProxyHeader(Map<String, String> headers) {
+    final copy = Map<String, String>.from(headers);
+    copy.removeWhere((key, _) => key.toLowerCase() == 'atproto-proxy');
+    return copy;
+  }
+
   List<PostView> _filterPosts(List<PostView> posts) {
     final moderationService = _moderationService;
     if (moderationService == null) {
@@ -148,4 +244,12 @@ class SearchFeedsResult {
 
   final List<GeneratorView> feeds;
   final String? cursor;
+}
+
+class TopicPostsResult {
+  TopicPostsResult({required this.posts, this.cursor, this.topicName});
+
+  final List<PostView> posts;
+  final String? cursor;
+  final String? topicName;
 }

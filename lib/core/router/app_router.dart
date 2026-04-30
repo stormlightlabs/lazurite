@@ -7,8 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
-import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/router/fade_through_page.dart';
@@ -19,6 +19,7 @@ import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/compose/presentation/compose_screen.dart';
 import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
+import 'package:lazurite/features/feed/presentation/feed_detail_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
@@ -27,6 +28,7 @@ import 'package:lazurite/features/feed/presentation/media/video_player_route_arg
 import 'package:lazurite/features/feed/presentation/media/video_player_screen.dart';
 import 'package:lazurite/features/feed/presentation/post_thread_screen.dart';
 import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
+import 'package:lazurite/features/feed/presentation/trending_screen.dart';
 import 'package:lazurite/features/lists/bloc/list_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/list_detail_screen.dart';
@@ -50,10 +52,12 @@ import 'package:lazurite/features/profile/presentation/follow_audit_screen.dart'
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
+import 'package:lazurite/features/search/cubit/topic_cubit.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/search/presentation/hashtag_screen.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
+import 'package:lazurite/features/search/presentation/topic_screen.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/cubit/video_upload_limits_cubit.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
@@ -67,59 +71,6 @@ import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dar
 import 'package:lazurite/features/starter_packs/presentation/actor_starter_packs_screen.dart';
 import 'package:lazurite/features/starter_packs/presentation/create_edit_starter_pack_screen.dart';
 import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
-
-ComposeRouteArgs parseComposeRouteExtra(Object? extra) {
-  if (extra is ComposeRouteArgs) {
-    return extra;
-  }
-
-  if (extra is Map) {
-    String? readString(String key) {
-      final value = extra[key];
-      return value is String ? value : null;
-    }
-
-    int? readInt(String key) {
-      final value = extra[key];
-      if (value is int) {
-        return value;
-      }
-      if (value is String) {
-        return int.tryParse(value);
-      }
-      return null;
-    }
-
-    Map<String, dynamic>? readMap(String key) {
-      final value = extra[key];
-      if (value is Map<String, dynamic>) {
-        return value;
-      }
-      if (value is Map) {
-        return Map<String, dynamic>.from(value);
-      }
-      return null;
-    }
-
-    return ComposeRouteArgs(
-      replyParentUri: readString('replyParentUri'),
-      replyParentCid: readString('replyParentCid'),
-      replyRootUri: readString('replyRootUri'),
-      replyRootCid: readString('replyRootCid'),
-      replyAuthorHandle: readString('replyAuthorHandle'),
-      quoteUri: readString('quoteUri'),
-      quoteCid: readString('quoteCid'),
-      quoteAuthorHandle: readString('quoteAuthorHandle'),
-      draftId: readInt('draftId'),
-      initialText: readString('initialText'),
-      editPostUri: readString('editPostUri'),
-      editPostCid: readString('editPostCid'),
-      editRecord: readMap('editRecord'),
-    );
-  }
-
-  return const ComposeRouteArgs();
-}
 
 class AppRouter {
   AppRouter({required this.authBloc, this.navigatorObserver});
@@ -165,7 +116,7 @@ class AppRouter {
         path: '/compose',
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) {
-          final args = parseComposeRouteExtra(state.extra);
+          final args = ComposeRouteArgs.parseExtra(state.extra);
           return _page(
             context,
             state,
@@ -214,6 +165,23 @@ class AppRouter {
               key: ValueKey('hashtag-$normalizedTag'),
               create: (_) => HashtagCubit(searchRepository: context.read<SearchRepository>(), tag: normalizedTag),
               child: HashtagScreen(tag: normalizedTag),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/topic',
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) {
+          final rawTopic = state.uri.queryParameters['topic'] ?? '';
+          final topic = Uri.decodeComponent(rawTopic).trim();
+          return _page(
+            context,
+            state,
+            BlocProvider(
+              key: ValueKey('topic-$topic'),
+              create: (_) => TopicCubit(searchRepository: context.read<SearchRepository>(), topic: topic),
+              child: TopicScreen(topic: topic),
             ),
           );
         },
@@ -359,6 +327,28 @@ class AppRouter {
                   GoRoute(
                     path: 'feeds',
                     pageBuilder: (context, state) => _page(context, state, const FeedManagementScreen()),
+                  ),
+                  GoRoute(
+                    path: 'feed',
+                    pageBuilder: (context, state) {
+                      final encodedUri = state.uri.queryParameters['uri'];
+                      final encodedActor = state.uri.queryParameters['actor'];
+                      final encodedRkey = state.uri.queryParameters['rkey'];
+
+                      AtUri? feedUri;
+                      if (encodedUri != null && encodedUri.trim().isNotEmpty) {
+                        final rawUri = Uri.decodeComponent(encodedUri);
+                        feedUri = AtUri.parse(rawUri);
+                      }
+
+                      final actor = encodedActor == null ? null : Uri.decodeComponent(encodedActor);
+                      final rkey = encodedRkey == null ? null : Uri.decodeComponent(encodedRkey);
+                      return _page(context, state, FeedDetailScreen(feedUri: feedUri, actor: actor, rkey: rkey));
+                    },
+                  ),
+                  GoRoute(
+                    path: 'trending',
+                    pageBuilder: (context, state) => _page(context, state, const TrendingScreen()),
                   ),
                   GoRoute(
                     path: 'settings',

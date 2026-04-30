@@ -44,6 +44,10 @@ bool _isStatefulShellPath(String path) {
 
   return path == '/feeds' ||
       path.startsWith('/feeds/') ||
+      path == '/feed' ||
+      path.startsWith('/feed/') ||
+      path == '/trending' ||
+      path.startsWith('/trending/') ||
       path == '/settings' ||
       path.startsWith('/settings/') ||
       path == '/search' ||

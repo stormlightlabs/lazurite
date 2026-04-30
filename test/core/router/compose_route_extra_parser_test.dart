@@ -1,20 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/core/router/app_router.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 
 void main() {
-  group('parseComposeRouteExtra', () {
+  group('ComposeRouteArgs.parseExtra', () {
     test('returns args unchanged when already ComposeRouteArgs', () {
       const args = ComposeRouteArgs(replyParentUri: 'at://parent', replyParentCid: 'cid-parent');
 
-      final parsed = parseComposeRouteExtra(args);
+      final parsed = ComposeRouteArgs.parseExtra(args);
 
       expect(parsed.replyParentUri, 'at://parent');
       expect(parsed.replyParentCid, 'cid-parent');
     });
 
     test('parses legacy map payload used by reply actions', () {
-      final parsed = parseComposeRouteExtra({
+      final parsed = ComposeRouteArgs.parseExtra({
         'replyParentUri': 'at://parent',
         'replyParentCid': 'cid-parent',
         'replyRootUri': 'at://root',
@@ -30,7 +29,7 @@ void main() {
     });
 
     test('parses edit context fields from map payload', () {
-      final parsed = parseComposeRouteExtra({
+      final parsed = ComposeRouteArgs.parseExtra({
         'initialText': 'updated post',
         'editPostUri': 'at://did:plc:test/app.bsky.feed.post/abc123',
         'editPostCid': 'cid-123',
@@ -45,7 +44,7 @@ void main() {
     });
 
     test('returns empty args for unsupported payload types', () {
-      final parsed = parseComposeRouteExtra(42);
+      final parsed = ComposeRouteArgs.parseExtra(42);
 
       expect(parsed.replyParentUri, isNull);
       expect(parsed.replyParentCid, isNull);

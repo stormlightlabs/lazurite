@@ -320,7 +320,7 @@ void main() {
   });
 
   group('HomeFeedScreen', () {
-    testWidgets('shows feeds action without the messages shortcut in the app bar', (tester) async {
+    testWidgets('shows trending and feeds actions without the messages shortcut in the app bar', (tester) async {
       final feedPreferencesCubit = MockFeedPreferencesCubit();
       final feedRepository = MockFeedRepository();
       final completer = Completer<FeedResult>();
@@ -340,6 +340,7 @@ void main() {
       );
       await tester.pump();
 
+      expect(find.byIcon(Icons.trending_up_outlined), findsOneWidget);
       expect(find.byIcon(Icons.rss_feed), findsOneWidget);
       expect(find.byIcon(Icons.chat_bubble_outline), findsNothing);
     });

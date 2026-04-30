@@ -20,21 +20,21 @@ updated: 2026-04-30
 
 ## M3 - Trending Surface
 
-- [ ] Add Home app bar `Trending` action button
-- [ ] Add `/trending` route and `TrendingScreen`
-- [ ] Implement `getTrendingTopics(limit=10)` fetch path
-- [ ] Implement required `getTrends(limit=10)` enrichment path for richer metadata
-- [ ] Hide `Suggested` section when provider returns empty list
-- [ ] Add loading/empty/error states for trending screen
-- [ ] Add analytics/logging for provider and fallback used on trending requests
+- [x] Add Home app bar `Trending` action button
+- [x] Add `/trending` route and `TrendingScreen`
+- [x] Implement `getTrendingTopics(limit=10)` fetch path
+- [x] Implement required `getTrends(limit=10)` enrichment path for richer metadata
+- [x] Hide `Suggested` section when provider returns empty list
+- [x] Add loading/empty/error states for trending screen
+- [x] Add analytics/logging for provider and fallback used on trending requests
 
 ## M4 - Trend Link Routing
 
-- [ ] Add provider-aware trend link resolver (`resolveWebLink`)
-- [ ] Support `/profile/<actor>/feed/<rkey>` links
-- [ ] Support `/topic/<id>` links
-- [ ] Degrade unknown link formats to safe external open
-- [ ] Add unit tests for link parsing and fallback resolution
+- [x] Add provider-aware trend link resolver (`resolveWebLink`)
+- [x] Support `/profile/<actor>/feed/<rkey>` links
+- [x] Support `/topic/<id>` links
+- [x] Degrade unknown link formats to safe external open
+- [x] Add unit tests for link parsing and fallback resolution
 
 ## M5 - Fallback Engine
 

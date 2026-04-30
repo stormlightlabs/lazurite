@@ -28,5 +28,37 @@ void main() {
       final router = AppViewRouter(provider: AppViewProviders.bluesky);
       expect(router.resolveWebLink('https://example.com/path').toString(), equals('https://example.com/path'));
     });
+
+    test('resolves profile feed trend link to feed-detail route params', () {
+      final router = AppViewRouter(provider: AppViewProviders.bluesky);
+
+      final resolved = router.resolveTrendLink('/profile/alice.bsky.social/feed/aaabbb');
+      expect(resolved.inAppRoute, equals('/feed?actor=alice.bsky.social&rkey=aaabbb'));
+      expect(resolved.externalUri.toString(), equals('https://bsky.app/profile/alice.bsky.social/feed/aaabbb'));
+    });
+
+    test('resolves topic trend links to in-app topic route', () {
+      final router = AppViewRouter(provider: AppViewProviders.blacksky);
+
+      final resolved = router.resolveTrendLink('/topic/dartlang');
+      expect(resolved.inAppRoute, equals('/topic?topic=dartlang'));
+      expect(resolved.externalUri.toString(), equals('https://blacksky.community/topic/dartlang'));
+    });
+
+    test('degrades unknown trend links to external open', () {
+      final router = AppViewRouter(provider: AppViewProviders.bluesky);
+
+      final resolved = router.resolveTrendLink('/weird/path');
+      expect(resolved.inAppRoute, isNull);
+      expect(resolved.externalUri.toString(), equals('https://bsky.app/weird/path'));
+    });
+
+    test('does not deep-link non-provider hosts', () {
+      final router = AppViewRouter(provider: AppViewProviders.bluesky);
+
+      final resolved = router.resolveTrendLink('https://example.com/profile/alice/feed/xyz');
+      expect(resolved.inAppRoute, isNull);
+      expect(resolved.externalUri.toString(), equals('https://example.com/profile/alice/feed/xyz'));
+    });
   });
 }

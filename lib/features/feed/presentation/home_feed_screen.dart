@@ -92,7 +92,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         return Scaffold(
           appBar: LazuriteAppBar(
             sectionLabel: 'Home',
-            actions: [IconButton(icon: const Icon(Icons.rss_feed), onPressed: () => context.push('/feeds'))],
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.trending_up_outlined),
+                tooltip: 'Trending',
+                onPressed: () => context.push('/trending'),
+              ),
+              IconButton(
+                icon: const Icon(Icons.rss_feed),
+                tooltip: 'Manage Feeds',
+                onPressed: () => context.push('/feeds'),
+              ),
+            ],
             bottom: _FeedTabBar(
               feeds: pinnedFeeds,
               prefsState: prefsState,

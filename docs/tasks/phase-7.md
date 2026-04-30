@@ -1,6 +1,6 @@
 ---
 title: Phase 7 Task Breakdown
-updated: 2026-04-09
+updated: 2026-04-29
 ---
 
 # Phase 7 Milestones
@@ -86,17 +86,3 @@ updated: 2026-04-09
 - [x] "Index status" tile - shows indexed post count, "Re-index" button
 - [x] "Max results" slider - 10 to 50, default 20
 - [x] Backfill progress indicator - "Indexing: 142/300 posts..." shown during backfill
-
-### Tests
-
-- [x] Unit tests: `WordPieceTokenizer` - tokenization, padding, truncation, edge cases (empty string, very long text)
-- [x] Unit tests: `EmbeddingService` - initialization, embed returns correct dimensions, L2 normalization, dispose cleanup
-- [x] Unit tests: `PostTextExtractor` - text concatenation from various post shapes (text-only, images with alt, link cards, combinations)
-- [x] Unit tests: `EmbeddingRepository` - upsert, delete, query by account, count
-- [x] Unit tests: `LikedPostsRepository` - sync pagination, dedup on known URI, 1000-cap eviction
-- [x] Unit tests: `SemanticIndexer` - index/remove/backfill, progress stream, integration with save/like hooks
-- [x] Unit tests: `SemanticSearchRepository` - search returns scored results, scope filtering, account isolation
-- [x] Unit tests: `SemanticSearchCubit` - debounce, state transitions, scope changes
-- [x] Unit tests: `SemanticIndexCubit` - backfill progress, reindex trigger
-- [x] Widget tests: search tab renders, query produces results, scope chips filter, relevance badges display, empty/no-results/unavailable states
-- [x] Widget tests: settings section renders, toggle enables/disables, progress indicator during backfill, re-index button triggers reindex

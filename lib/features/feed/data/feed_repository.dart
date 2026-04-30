@@ -4,9 +4,12 @@ import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_getauthorfeed.dart';
+import 'package:bluesky/app_bsky_unspecced_defs.dart';
 import 'package:bluesky/bluesky.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/features/feed/data/trending_join.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class FeedRepository {
@@ -33,6 +36,8 @@ class FeedRepository {
   final AppViewRequestContext _appViewContext;
 
   static const String timelineCacheKey = 'timeline';
+  static const int _minTrendingLimit = 1;
+  static const int _maxTrendingLimit = 25;
 
   static String cacheKeyForSavedFeed(SavedFeed feed) {
     final feedType = feed.type;
@@ -153,6 +158,89 @@ class FeedRepository {
     return response.data.feeds;
   }
 
+  Future<AtUri> resolveFeedGeneratorUri({required String actor, required String rkey}) async {
+    final normalizedActor = actor.trim();
+    final normalizedRkey = rkey.trim();
+    if (normalizedActor.isEmpty || normalizedRkey.isEmpty) {
+      throw ArgumentError('actor and rkey are required to resolve a feed generator URI.');
+    }
+
+    if (normalizedActor.startsWith('did:')) {
+      return AtUri.parse('at://$normalizedActor/app.bsky.feed.generator/$normalizedRkey');
+    }
+
+    final response = await _bluesky.actor.getProfile(
+      actor: normalizedActor,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
+    final did = response.data.did.trim();
+    if (did.isEmpty) {
+      throw StateError('Resolved profile did was empty for actor=$normalizedActor');
+    }
+    return AtUri.parse('at://$did/app.bsky.feed.generator/$normalizedRkey');
+  }
+
+  Future<TrendingScreenData> getTrendingScreenData({int limit = 10}) async {
+    final topicsResult = await getTrendingTopics(limit: limit);
+
+    List<TrendView> trends = const [];
+    var metadataUnavailable = false;
+    try {
+      trends = await getTrends(limit: limit);
+    } catch (error, stackTrace) {
+      metadataUnavailable = true;
+      final provider = _appViewContext.resolveProviderKey();
+      log.w(
+        'trending.getTrends degraded provider=$provider fallback=none reason=$error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return TrendingScreenData(
+      topics: enrichTrendingTopics(topics: topicsResult.topics, trends: trends),
+      suggested: enrichTrendingTopics(topics: topicsResult.suggested, trends: trends),
+      metadataUnavailable: metadataUnavailable,
+    );
+  }
+
+  Future<TrendingTopicsResult> getTrendingTopics({int limit = 10}) async {
+    final clampedLimit = _clampTrendingLimit(limit);
+    final provider = _appViewContext.resolveProviderKey();
+    log.i('trending.getTrendingTopics provider=$provider fallback=none limit=$clampedLimit');
+
+    final response = await _bluesky.unspecced.getTrendingTopics(
+      limit: clampedLimit,
+      $service: _appViewContext.publicServiceHost(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
+
+    return TrendingTopicsResult(topics: response.data.topics, suggested: response.data.suggested);
+  }
+
+  Future<List<TrendView>> getTrends({int limit = 10}) async {
+    final clampedLimit = _clampTrendingLimit(limit);
+    final provider = _appViewContext.resolveProviderKey();
+    log.i('trending.getTrends provider=$provider fallback=none limit=$clampedLimit');
+
+    final response = await _bluesky.unspecced.getTrends(
+      limit: clampedLimit,
+      $service: _appViewContext.publicServiceHost(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
+    return response.data.trends;
+  }
+
+  int _clampTrendingLimit(int limit) {
+    if (limit < _minTrendingLimit) {
+      return _minTrendingLimit;
+    }
+    if (limit > _maxTrendingLimit) {
+      return _maxTrendingLimit;
+    }
+    return limit;
+  }
+
   Future<GeneratorView> getFeedGenerator(AtUri feedUri) async {
     final response = await _bluesky.feed.getFeedGenerator(
       feed: feedUri,
@@ -208,6 +296,23 @@ class FeedResult {
 class PreferencesResult {
   PreferencesResult({required this.preferences});
   final List<UPreferences> preferences;
+}
+
+class TrendingTopicsResult {
+  TrendingTopicsResult({required this.topics, required this.suggested});
+
+  final List<TrendingTopic> topics;
+  final List<TrendingTopic> suggested;
+}
+
+class TrendingScreenData {
+  TrendingScreenData({required this.topics, required this.suggested, required this.metadataUnavailable});
+
+  final List<EnrichedTrendingTopic> topics;
+  final List<EnrichedTrendingTopic> suggested;
+  final bool metadataUnavailable;
+
+  bool get isEmpty => topics.isEmpty && suggested.isEmpty;
 }
 
 enum FeedFilter {
