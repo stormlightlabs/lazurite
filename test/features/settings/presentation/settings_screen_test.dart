@@ -251,6 +251,8 @@ void main() {
     expect(find.text('ADVANCED'), findsOneWidget);
     expect(find.text('Constellation URL'), findsOneWidget);
     expect(find.text('https://constellation.microcosm.blue'), findsOneWidget);
+    expect(find.text('Cross-Provider Fallback'), findsOneWidget);
+    expect(find.text('Slingshot Identity Fallback'), findsOneWidget);
     expect(find.byIcon(Icons.edit_outlined), findsNothing);
   });
 

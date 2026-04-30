@@ -26,7 +26,7 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -34,6 +34,12 @@ class AppDatabase extends _$AppDatabase {
       await migrator.createAll();
       await customStatement("INSERT OR IGNORE INTO settings (key, value) VALUES ('typeahead_provider', 'bluesky')");
       await customStatement("INSERT OR IGNORE INTO settings (key, value) VALUES ('appview_provider', 'bluesky')");
+      await customStatement(
+        "INSERT OR IGNORE INTO settings (key, value) VALUES ('cross_provider_fallback_enabled', 'false')",
+      );
+      await customStatement(
+        "INSERT OR IGNORE INTO settings (key, value) VALUES ('slingshot_identity_fallback_enabled', 'false')",
+      );
     },
     onUpgrade: (migrator, from, to) async {
       if (from < 2) {
@@ -122,6 +128,14 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 18) {
         await customStatement("INSERT OR IGNORE INTO settings (key, value) VALUES ('appview_provider', 'bluesky')");
+      }
+      if (from < 19) {
+        await customStatement(
+          "INSERT OR IGNORE INTO settings (key, value) VALUES ('cross_provider_fallback_enabled', 'false')",
+        );
+        await customStatement(
+          "INSERT OR IGNORE INTO settings (key, value) VALUES ('slingshot_identity_fallback_enabled', 'false')",
+        );
       }
     },
   );

@@ -149,6 +149,8 @@ void main() {
         simulateOffline: true,
         threadAutoCollapseDepth: 3,
         appViewProvider: 'blacksky',
+        crossProviderFallbackEnabled: true,
+        slingshotIdentityFallbackEnabled: true,
       );
 
       expect(updated.themePalette, AppThemePalette.nord);
@@ -159,6 +161,8 @@ void main() {
       expect(updated.simulateOffline, true);
       expect(updated.threadAutoCollapseDepth, 3);
       expect(updated.appViewProvider, 'blacksky');
+      expect(updated.crossProviderFallbackEnabled, isTrue);
+      expect(updated.slingshotIdentityFallbackEnabled, isTrue);
       expect(original.themePalette, AppThemePalette.oxocarbon);
     });
 
@@ -183,6 +187,8 @@ void main() {
       expect(updated.simulateOffline, true);
       expect(updated.threadAutoCollapseDepth, 4);
       expect(updated.appViewProvider, 'bluesky');
+      expect(updated.crossProviderFallbackEnabled, isFalse);
+      expect(updated.slingshotIdentityFallbackEnabled, isFalse);
     });
 
     test('copyWith can clear threadAutoCollapseDepth', () {
@@ -217,6 +223,7 @@ void main() {
       expect(state.props, contains(true));
       expect(state.props, contains(6));
       expect(state.props, contains('bluesky'));
+      expect(state.props, contains(false));
     });
 
     test('defaults feedLayout to card', () {
@@ -262,6 +269,16 @@ void main() {
         useSystemTheme: false,
       );
       expect(state.appViewProvider, 'bluesky');
+    });
+
+    test('defaults fallback toggles to disabled', () {
+      const state = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+      );
+      expect(state.crossProviderFallbackEnabled, isFalse);
+      expect(state.slingshotIdentityFallbackEnabled, isFalse);
     });
   });
 }

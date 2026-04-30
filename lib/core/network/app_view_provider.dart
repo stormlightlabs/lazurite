@@ -50,4 +50,15 @@ abstract final class AppViewProviders {
     final normalizedKey = normalizeSettingKey(rawKey);
     return _builtIns[normalizedKey] ?? bluesky;
   }
+
+  static String? alternateBuiltIn(String? rawKey) {
+    final normalizedKey = normalizeSettingKey(rawKey);
+    if (normalizedKey == blueskyKey) {
+      return blackskyKey;
+    }
+    if (normalizedKey == blackskyKey) {
+      return blueskyKey;
+    }
+    return null;
+  }
 }

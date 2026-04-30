@@ -419,6 +419,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildAdvancedSettings(BuildContext context) {
+    final settingsCubit = context.read<SettingsCubit>();
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
         return Container(
@@ -429,7 +430,31 @@ class SettingsScreen extends StatelessWidget {
             ),
             color: Theme.of(context).cardColor,
           ),
-          child: _ConstellationUrlTile(currentUrl: state.constellationUrl),
+          child: Column(
+            children: [
+              _ConstellationUrlTile(currentUrl: state.constellationUrl),
+              const Divider(height: 1),
+              _SettingsTile(
+                icon: Icons.compare_arrows_outlined,
+                title: 'Cross-Provider Fallback',
+                subtitle: 'Retry public reads on the alternate AppView when transient errors occur',
+                trailing: Switch.adaptive(
+                  value: state.crossProviderFallbackEnabled,
+                  onChanged: settingsCubit.setCrossProviderFallbackEnabled,
+                ),
+              ),
+              const Divider(height: 1),
+              _SettingsTile(
+                icon: Icons.alt_route_outlined,
+                title: 'Slingshot Identity Fallback',
+                subtitle: 'Use Slingshot resolveMiniDoc for degraded handle resolution',
+                trailing: Switch.adaptive(
+                  value: state.slingshotIdentityFallbackEnabled,
+                  onChanged: settingsCubit.setSlingshotIdentityFallbackEnabled,
+                ),
+              ),
+            ],
+          ),
         );
       },
     );

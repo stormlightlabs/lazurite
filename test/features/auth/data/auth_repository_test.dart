@@ -4,6 +4,7 @@ import 'package:atproto_oauth/atproto_oauth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:mocktail/mocktail.dart';
@@ -11,11 +12,14 @@ import 'package:url_launcher/url_launcher.dart';
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
+class MockSlingshotClient extends Mock implements SlingshotClient {}
+
 class FakeAccountsCompanion extends Fake implements AccountsCompanion {}
 
 void main() {
   late AuthRepository authRepository;
   late MockAppDatabase mockDatabase;
+  late MockSlingshotClient mockSlingshotClient;
 
   setUpAll(() {
     registerFallbackValue(FakeAccountsCompanion());
@@ -23,6 +27,7 @@ void main() {
 
   setUp(() {
     mockDatabase = MockAppDatabase();
+    mockSlingshotClient = MockSlingshotClient();
     authRepository = AuthRepository(database: mockDatabase);
   });
 
@@ -268,6 +273,45 @@ void main() {
         );
 
         expect(candidates, equals(['bsky.social']));
+      });
+    });
+
+    group('slingshot identity fallback', () {
+      test('does not use slingshot fallback when disabled', () async {
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          slingshotClient: mockSlingshotClient,
+          slingshotIdentityFallbackEnabledResolver: () => false,
+          resolveHandleDid: (_) async => throw Exception('resolveHandle down'),
+        );
+
+        expect(() => authRepository.resolveServiceForIdentifierForTest('alice.bsky.social'), throwsA(isA<Exception>()));
+        verifyNever(() => mockSlingshotClient.resolveMiniDoc(any()));
+      });
+
+      test('uses slingshot mini doc when handle resolution is degraded and fallback is enabled', () async {
+        when(() => mockSlingshotClient.resolveMiniDoc('alice.bsky.social')).thenAnswer(
+          (_) async => const SlingshotMiniDoc(
+            did: 'did:plc:alice',
+            handle: 'alice.bsky.social',
+            pds: 'https://pds.alice.example',
+          ),
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          slingshotClient: mockSlingshotClient,
+          slingshotIdentityFallbackEnabledResolver: () => true,
+          resolveHandleDid: (_) async => throw Exception('resolveHandle down'),
+          resolveDidDocument: (_) async {
+            throw Exception('DID doc should not be fetched when mini doc includes pds');
+          },
+        );
+
+        final service = await authRepository.resolveServiceForIdentifierForTest('alice.bsky.social');
+
+        expect(service, equals('pds.alice.example'));
+        verify(() => mockSlingshotClient.resolveMiniDoc('alice.bsky.social')).called(1);
       });
     });
 

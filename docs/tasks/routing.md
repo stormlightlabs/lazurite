@@ -38,18 +38,18 @@ updated: 2026-04-30
 
 ## M5 - Fallback Engine
 
-- [ ] Add user setting for cross-provider fallback (default off)
-- [ ] Implement bounded fallback chain for read-only public endpoints
-- [ ] Add circuit-breaker window per provider/endpoint
-- [ ] Add structured logs for provider/fallback decisions
-- [ ] Add tests for timeout/429/5xx transitions with fallback enabled/disabled
+- [x] Add user setting for cross-provider fallback (default off)
+- [x] Implement bounded fallback chain for read-only public endpoints
+- [x] Add circuit-breaker window per provider/endpoint
+- [x] Add structured logs for provider/fallback decisions
+- [x] Add tests for timeout/429/5xx transitions with fallback enabled/disabled
 
 ## M6 - microcosm Fallbacks
 
-- [ ] Keep Constellation fallback paths first-class for backlink enrichments
-- [ ] Add setting-gated Slingshot identity fallback for degraded handle resolution
-- [ ] Add tests for fallback parsing and failure handling
-- [ ] Document opt-in behavior and trust boundaries
+- [x] Keep Constellation fallback paths first-class for backlink enrichments
+- [x] Add setting-gated Slingshot identity fallback for degraded handle resolution
+- [x] Add tests for fallback parsing and failure handling
+- [x] Document opt-in behavior and trust boundaries
 
 ## M7 - Settings and UX
 

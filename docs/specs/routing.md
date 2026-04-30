@@ -189,6 +189,12 @@ Deterministic join contract:
 
 Do not fallback across write operations.
 
+Opt-in/trust boundary notes:
+
+- Cross-provider AppView fallback is OFF by default and only applies to public read endpoints.
+- Slingshot identity fallback is OFF by default and only used when primary handle resolution is degraded.
+- Slingshot fallback data is treated as a recovery hint (DID/PDS seed), not as authority for write routing.
+
 ### Capability gating
 
 Track endpoint support per provider to avoid blind retries:

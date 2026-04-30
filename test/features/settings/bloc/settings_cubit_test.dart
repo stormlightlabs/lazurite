@@ -29,6 +29,8 @@ void main() {
       expect(cubit.state.simulateOffline, false);
       expect(cubit.state.threadAutoCollapseDepth, isNull);
       expect(cubit.state.appViewProvider, 'bluesky');
+      expect(cubit.state.crossProviderFallbackEnabled, isFalse);
+      expect(cubit.state.slingshotIdentityFallbackEnabled, isFalse);
     });
 
     test('accepts initial values via constructor', () {
@@ -90,7 +92,9 @@ void main() {
             .having((s) => s.simulateOffline, 'simulateOffline', false)
             .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', isNull)
             .having((s) => s.typeaheadProvider, 'typeaheadProvider', 'bluesky')
-            .having((s) => s.appViewProvider, 'appViewProvider', 'bluesky'),
+            .having((s) => s.appViewProvider, 'appViewProvider', 'bluesky')
+            .having((s) => s.crossProviderFallbackEnabled, 'crossProviderFallbackEnabled', false)
+            .having((s) => s.slingshotIdentityFallbackEnabled, 'slingshotIdentityFallbackEnabled', false),
       ],
     );
 
@@ -326,6 +330,49 @@ void main() {
       },
       act: (cubit) => cubit.loadSettings(),
       expect: () => [isA<SettingsState>().having((s) => s.appViewProvider, 'appViewProvider', 'bluesky')],
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setCrossProviderFallbackEnabled updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setCrossProviderFallbackEnabled(true),
+      expect: () => [
+        isA<SettingsState>().having((s) => s.crossProviderFallbackEnabled, 'crossProviderFallbackEnabled', true),
+      ],
+      verify: (_) async {
+        expect(await database.getSetting('cross_provider_fallback_enabled'), 'true');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setSlingshotIdentityFallbackEnabled updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setSlingshotIdentityFallbackEnabled(true),
+      expect: () => [
+        isA<SettingsState>().having(
+          (s) => s.slingshotIdentityFallbackEnabled,
+          'slingshotIdentityFallbackEnabled',
+          true,
+        ),
+      ],
+      verify: (_) async {
+        expect(await database.getSetting('slingshot_identity_fallback_enabled'), 'true');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'loadSettings restores persisted fallback toggles',
+      build: () => SettingsCubit(database: database),
+      setUp: () async {
+        await database.setSetting('cross_provider_fallback_enabled', 'true');
+        await database.setSetting('slingshot_identity_fallback_enabled', 'true');
+      },
+      act: (cubit) => cubit.loadSettings(),
+      expect: () => [
+        isA<SettingsState>()
+            .having((s) => s.crossProviderFallbackEnabled, 'crossProviderFallbackEnabled', true)
+            .having((s) => s.slingshotIdentityFallbackEnabled, 'slingshotIdentityFallbackEnabled', true),
+      ],
     );
   });
 }

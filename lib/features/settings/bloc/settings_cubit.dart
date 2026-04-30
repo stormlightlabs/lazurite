@@ -49,6 +49,8 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _defaultTypeaheadProvider = 'bluesky';
   static const Set<String> _supportedTypeaheadProviders = {'bluesky', 'community'};
   static const String _keyAppViewProvider = 'appview_provider';
+  static const String _keyCrossProviderFallbackEnabled = 'cross_provider_fallback_enabled';
+  static const String _keySlingshotIdentityFallbackEnabled = 'slingshot_identity_fallback_enabled';
 
   Future<void> loadSettings() async {
     final paletteStr = await database.getSetting(_keyThemePalette);
@@ -65,6 +67,8 @@ class SettingsCubit extends Cubit<SettingsState> {
     final semanticSearchMaxResultsStr = await database.getSetting(_keySemanticSearchMaxResults);
     final typeaheadProviderStr = await database.getSetting(_keyTypeaheadProvider);
     final appViewProviderStr = await database.getSetting(_keyAppViewProvider);
+    final crossProviderFallbackEnabledStr = await database.getSetting(_keyCrossProviderFallbackEnabled);
+    final slingshotIdentityFallbackEnabledStr = await database.getSetting(_keySlingshotIdentityFallbackEnabled);
     final resolvedTypeaheadProvider = _supportedTypeaheadProviders.contains(typeaheadProviderStr)
         ? typeaheadProviderStr!
         : _defaultTypeaheadProvider;
@@ -85,6 +89,8 @@ class SettingsCubit extends Cubit<SettingsState> {
         semanticSearchMaxResults: int.tryParse(semanticSearchMaxResultsStr ?? '') ?? 20,
         typeaheadProvider: resolvedTypeaheadProvider,
         appViewProvider: resolvedAppViewProvider,
+        crossProviderFallbackEnabled: crossProviderFallbackEnabledStr == 'true',
+        slingshotIdentityFallbackEnabled: slingshotIdentityFallbackEnabledStr == 'true',
       ),
     );
   }
@@ -173,5 +179,15 @@ class SettingsCubit extends Cubit<SettingsState> {
     final normalizedProvider = AppViewProviders.normalizeSettingKey(provider);
     await database.setSetting(_keyAppViewProvider, normalizedProvider);
     emit(state.copyWith(appViewProvider: normalizedProvider));
+  }
+
+  Future<void> setCrossProviderFallbackEnabled(bool enabled) async {
+    await database.setSetting(_keyCrossProviderFallbackEnabled, enabled.toString());
+    emit(state.copyWith(crossProviderFallbackEnabled: enabled));
+  }
+
+  Future<void> setSlingshotIdentityFallbackEnabled(bool enabled) async {
+    await database.setSetting(_keySlingshotIdentityFallbackEnabled, enabled.toString());
+    emit(state.copyWith(slingshotIdentityFallbackEnabled: enabled));
   }
 }

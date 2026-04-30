@@ -12,6 +12,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
@@ -36,13 +37,21 @@ class AuthRepository {
     OAuthRefreshSession oauthRefreshSession = _defaultOAuthRefreshSession,
     Future<OAuthClientMetadata> Function(String clientId) loadClientMetadata = getClientMetadata,
     String Function()? oauthServiceResolver,
+    bool Function()? slingshotIdentityFallbackEnabledResolver,
+    SlingshotClient? slingshotClient,
+    Future<String> Function(String handle)? resolveHandleDid,
+    Future<Map<String, dynamic>> Function(String did)? resolveDidDocument,
   }) : _database = database,
        _launchUrlWithMode = launchUrlWithMode,
        _closeInAppBrowser = closeInAppBrowser,
        _supportsCloseForMode = supportsCloseForMode,
        _oauthRefreshSession = oauthRefreshSession,
        _loadClientMetadata = loadClientMetadata,
-       _oauthServiceResolver = oauthServiceResolver ?? _defaultOAuthServiceResolver;
+       _oauthServiceResolver = oauthServiceResolver ?? _defaultOAuthServiceResolver,
+       _slingshotIdentityFallbackEnabledResolver = slingshotIdentityFallbackEnabledResolver ?? _defaultFalse,
+       _slingshotClient = slingshotClient ?? SlingshotClient(),
+       _resolveHandleDid = resolveHandleDid,
+       _resolveDidDocumentOverride = resolveDidDocument;
 
   static const String kClientId = 'https://lazurite.stormlightlabs.org/client-metadata.json';
   static const String _oauthService = 'bsky.social';
@@ -56,6 +65,10 @@ class AuthRepository {
   final OAuthRefreshSession _oauthRefreshSession;
   final Future<OAuthClientMetadata> Function(String clientId) _loadClientMetadata;
   final String Function() _oauthServiceResolver;
+  final bool Function() _slingshotIdentityFallbackEnabledResolver;
+  final SlingshotClient _slingshotClient;
+  final Future<String> Function(String handle)? _resolveHandleDid;
+  final Future<Map<String, dynamic>> Function(String did)? _resolveDidDocumentOverride;
 
   HttpServer? _callbackServer;
   StreamSubscription<HttpRequest>? _callbackSubscription;
@@ -581,21 +594,73 @@ class AuthRepository {
 
   Future<String> _resolveServiceForIdentifier(String identifier) async {
     log.d('AuthRepository: Resolving AT Protocol service for $identifier');
+    final resolvedIdentity = await _resolveIdentityForIdentifier(identifier);
+    log.d('AuthRepository: Resolved identifier $identifier to DID ${resolvedIdentity.did}');
+
+    final serviceFromMiniDoc = normalizeAtprotoServiceHost(resolvedIdentity.pdsHost);
+    if (serviceFromMiniDoc != null) {
+      log.d('AuthRepository: Using Slingshot-provided PDS host for $identifier: $serviceFromMiniDoc');
+      return serviceFromMiniDoc;
+    }
+
+    final did = resolvedIdentity.did;
+    final didDoc = await _resolveDidDocument(did);
+    final serviceEndpoint = _extractServiceEndpoint(didDoc) ?? _fallbackService;
+    log.d('AuthRepository: Resolved DID $did to service endpoint $serviceEndpoint');
+    return serviceEndpoint;
+  }
+
+  Future<({String did, String? pdsHost})> _resolveIdentityForIdentifier(String identifier) async {
+    final normalizedIdentifier = identifier.trim();
+    if (normalizedIdentifier.startsWith('did:')) {
+      return (did: normalizedIdentifier, pdsHost: null);
+    }
+
+    try {
+      final did = await _resolveHandleDidOrFetch(normalizedIdentifier);
+      return (did: did, pdsHost: null);
+    } catch (error, stackTrace) {
+      final useSlingshotFallback = _slingshotIdentityFallbackEnabledResolver();
+      log.w(
+        'AuthRepository: resolveHandle failed for $normalizedIdentifier '
+        'slingshotFallbackEnabled=$useSlingshotFallback',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (!useSlingshotFallback) {
+        rethrow;
+      }
+
+      try {
+        final miniDoc = await _slingshotClient.resolveMiniDoc(normalizedIdentifier);
+        log.i(
+          'AuthRepository: slingshot resolveMiniDoc succeeded for $normalizedIdentifier '
+          'did=${miniDoc.did} pds=${miniDoc.pds}',
+        );
+        return (did: miniDoc.did, pdsHost: miniDoc.pds);
+      } catch (fallbackError, fallbackStackTrace) {
+        log.w(
+          'AuthRepository: slingshot resolveMiniDoc failed for $normalizedIdentifier',
+          error: fallbackError,
+          stackTrace: fallbackStackTrace,
+        );
+        rethrow;
+      }
+    }
+  }
+
+  Future<String> _resolveHandleDidOrFetch(String handle) async {
+    final override = _resolveHandleDid;
+    if (override != null) {
+      return override(handle);
+    }
+
     final client = atp.ATProto.anonymous(
       service: _fallbackService,
       getClient: XrpcNetworkInterceptor.wrapGetClient(),
       postClient: XrpcNetworkInterceptor.wrapPostClient(),
     );
-
-    final did = identifier.startsWith('did:')
-        ? identifier
-        : (await client.identity.resolveHandle(handle: identifier)).data.did;
-    log.d('AuthRepository: Resolved identifier $identifier to DID $did');
-
-    final didDoc = await _resolveDidDocument(did);
-    final serviceEndpoint = _extractServiceEndpoint(didDoc) ?? _fallbackService;
-    log.d('AuthRepository: Resolved DID $did to service endpoint $serviceEndpoint');
-    return serviceEndpoint;
+    return (await client.identity.resolveHandle(handle: handle)).data.did;
   }
 
   Future<String?> _resolveAuthorizationServiceForPdsHost(String pdsHost) async {
@@ -638,6 +703,11 @@ class AuthRepository {
   }
 
   Future<Map<String, dynamic>> _resolveDidDocument(String did) async {
+    final override = _resolveDidDocumentOverride;
+    if (override != null) {
+      return override(did);
+    }
+
     final uri = _didDocumentUri(did);
     log.d('AuthRepository: Fetching DID document from ${_sanitizeUriForLog(uri)}');
     final response = await http.get(uri);
@@ -822,6 +892,8 @@ class AuthRepository {
     return AppViewProviders.descriptorForSetting(AppViewProviders.defaultKey).entrywayUrl.host;
   }
 
+  static bool _defaultFalse() => false;
+
   String _summarizeOAuthRefreshError(Object error) {
     final message = error.toString().replaceAll('\n', ' ').trim();
 
@@ -909,6 +981,9 @@ class AuthRepository {
 
   @visibleForTesting
   Future<void> stopCallbackServerForTest() => _stopCallbackServer();
+
+  @visibleForTesting
+  Future<String> resolveServiceForIdentifierForTest(String identifier) => _resolveServiceForIdentifier(identifier);
 
   int get callbackPort => _callbackServerPort;
 }

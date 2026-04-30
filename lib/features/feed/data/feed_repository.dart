@@ -5,21 +5,25 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_getauthorfeed.dart';
 import 'package:bluesky/app_bsky_unspecced_defs.dart';
-import 'package:bluesky/bluesky.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/features/feed/data/trending_join.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class FeedRepository {
   FeedRepository({
-    required Bluesky bluesky,
+    required dynamic bluesky,
     required AppDatabase database,
     required String accountDid,
     ModerationService? moderationService,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
+    bool crossProviderFallbackEnabled = false,
+    bool Function()? crossProviderFallbackEnabledResolver,
+    AppViewFallbackService? appViewFallbackService,
   }) : _bluesky = bluesky,
        _database = database,
        _accountDid = accountDid,
@@ -27,13 +31,19 @@ class FeedRepository {
        _appViewContext = AppViewRequestContext(
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
-       );
+       ),
+       _crossProviderFallbackEnabled = crossProviderFallbackEnabled,
+       _crossProviderFallbackEnabledResolver = crossProviderFallbackEnabledResolver,
+       _appViewFallbackService = appViewFallbackService ?? AppViewFallbackService();
 
-  final Bluesky _bluesky;
+  final dynamic _bluesky;
   final AppDatabase _database;
   final String _accountDid;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
+  final bool _crossProviderFallbackEnabled;
+  final bool Function()? _crossProviderFallbackEnabledResolver;
+  final AppViewFallbackService _appViewFallbackService;
 
   static const String timelineCacheKey = 'timeline';
   static const int _minTrendingLimit = 1;
@@ -176,29 +186,32 @@ class FeedRepository {
 
   Future<TrendingTopicsResult> getTrendingTopics({int limit = 10}) async {
     final clampedLimit = _clampTrendingLimit(limit);
-    final provider = _appViewContext.resolveProviderKey();
-    log.i('trending.getTrendingTopics provider=$provider fallback=none limit=$clampedLimit');
-
-    final response = await _bluesky.unspecced.getTrendingTopics(
-      limit: clampedLimit,
-      $service: _appViewContext.publicServiceHost(),
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    return _runPublicReadWithFallback(
+      endpointId: 'app.bsky.unspecced.getTrendingTopics',
+      request: (context, headers, {required fallbackUsed}) async {
+        final response = await _bluesky.unspecced.getTrendingTopics(
+          limit: clampedLimit,
+          $service: context.publicServiceHost(),
+          $headers: headers,
+        );
+        return TrendingTopicsResult(topics: response.data.topics, suggested: response.data.suggested);
+      },
     );
-
-    return TrendingTopicsResult(topics: response.data.topics, suggested: response.data.suggested);
   }
 
   Future<List<TrendView>> getTrends({int limit = 10}) async {
     final clampedLimit = _clampTrendingLimit(limit);
-    final provider = _appViewContext.resolveProviderKey();
-    log.i('trending.getTrends provider=$provider fallback=none limit=$clampedLimit');
-
-    final response = await _bluesky.unspecced.getTrends(
-      limit: clampedLimit,
-      $service: _appViewContext.publicServiceHost(),
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    return _runPublicReadWithFallback(
+      endpointId: 'app.bsky.unspecced.getTrends',
+      request: (context, headers, {required fallbackUsed}) async {
+        final response = await _bluesky.unspecced.getTrends(
+          limit: clampedLimit,
+          $service: context.publicServiceHost(),
+          $headers: headers,
+        );
+        return response.data.trends;
+      },
     );
-    return response.data.trends;
   }
 
   int _clampTrendingLimit(int limit) {
@@ -209,6 +222,37 @@ class FeedRepository {
       return _maxTrendingLimit;
     }
     return limit;
+  }
+
+  Future<T> _runPublicReadWithFallback<T>({
+    required String endpointId,
+    required Future<T> Function(
+      AppViewRequestContext context,
+      Map<String, String> headers, {
+      required bool fallbackUsed,
+    })
+    request,
+  }) async {
+    final fallbackEnabled = _crossProviderFallbackEnabledResolver?.call() ?? _crossProviderFallbackEnabled;
+    final baseHeaders = await _moderationService?.headersForRequest();
+    return _appViewFallbackService.run(
+      endpointId: endpointId,
+      primaryProviderKey: _appViewContext.resolveProviderKey(),
+      fallbackEnabled: fallbackEnabled,
+      baseHeaders: baseHeaders,
+      request: request,
+    );
+  }
+
+  @visibleForTesting
+  Future<T> runPublicReadWithFallbackForTest<T>({
+    required String endpointId,
+    required Future<T> Function(String providerKey) request,
+  }) {
+    return _runPublicReadWithFallback(
+      endpointId: endpointId,
+      request: (context, _, {required fallbackUsed}) => request(context.resolveProviderKey()),
+    );
   }
 
   Future<GeneratorView> getFeedGenerator(AtUri feedUri) async {

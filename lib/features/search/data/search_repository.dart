@@ -5,27 +5,37 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_searchposts.dart';
 import 'package:bluesky/app_bsky_graph_defs.dart';
-import 'package:bluesky/bluesky.dart';
+import 'package:flutter/foundation.dart';
+import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class SearchRepository {
   SearchRepository({
-    required Bluesky bluesky,
+    required dynamic bluesky,
     ModerationService? moderationService,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
+    bool crossProviderFallbackEnabled = false,
+    bool Function()? crossProviderFallbackEnabledResolver,
+    AppViewFallbackService? appViewFallbackService,
   }) : _bluesky = bluesky,
        _moderationService = moderationService,
        _appViewContext = AppViewRequestContext(
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
-       );
+       ),
+       _crossProviderFallbackEnabled = crossProviderFallbackEnabled,
+       _crossProviderFallbackEnabledResolver = crossProviderFallbackEnabledResolver,
+       _appViewFallbackService = appViewFallbackService ?? AppViewFallbackService();
 
-  final Bluesky _bluesky;
+  final dynamic _bluesky;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
+  final bool _crossProviderFallbackEnabled;
+  final bool Function()? _crossProviderFallbackEnabledResolver;
+  final AppViewFallbackService _appViewFallbackService;
   static const int _maxBlackskyTopicFeedLimit = 25;
 
   Future<SearchPostsResult> searchPosts({
@@ -65,24 +75,34 @@ class SearchRepository {
   }
 
   Future<SearchStarterPacksResult> searchStarterPacks({required String query, String? cursor, int limit = 25}) async {
-    final response = await _bluesky.graph.searchStarterPacks(
-      q: query,
-      cursor: cursor,
-      limit: limit,
-      $service: _appViewContext.publicServiceHost(),
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    final response = await _runPublicReadWithFallback(
+      endpointId: 'app.bsky.graph.searchStarterPacks',
+      request: (context, headers, {required fallbackUsed}) {
+        return _bluesky.graph.searchStarterPacks(
+          q: query,
+          cursor: cursor,
+          limit: limit,
+          $service: context.publicServiceHost(),
+          $headers: headers,
+        );
+      },
     );
 
     return SearchStarterPacksResult(starterPacks: response.data.starterPacks, cursor: response.data.cursor);
   }
 
   Future<SearchFeedsResult> searchFeedGenerators({required String query, String? cursor, int limit = 25}) async {
-    final response = await _bluesky.unspecced.getPopularFeedGenerators(
-      query: query,
-      cursor: cursor,
-      limit: limit,
-      $service: _appViewContext.publicServiceHost(),
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    final response = await _runPublicReadWithFallback(
+      endpointId: 'app.bsky.unspecced.getPopularFeedGenerators',
+      request: (context, headers, {required fallbackUsed}) {
+        return _bluesky.unspecced.getPopularFeedGenerators(
+          query: query,
+          cursor: cursor,
+          limit: limit,
+          $service: context.publicServiceHost(),
+          $headers: headers,
+        );
+      },
     );
 
     return SearchFeedsResult(feeds: response.data.feeds, cursor: response.data.cursor);
@@ -187,6 +207,37 @@ class SearchRepository {
     final copy = Map<String, String>.from(headers);
     copy.removeWhere((key, _) => key.toLowerCase() == 'atproto-proxy');
     return copy;
+  }
+
+  Future<T> _runPublicReadWithFallback<T>({
+    required String endpointId,
+    required Future<T> Function(
+      AppViewRequestContext context,
+      Map<String, String> headers, {
+      required bool fallbackUsed,
+    })
+    request,
+  }) async {
+    final fallbackEnabled = _crossProviderFallbackEnabledResolver?.call() ?? _crossProviderFallbackEnabled;
+    final baseHeaders = await _moderationService?.headersForRequest();
+    return _appViewFallbackService.run(
+      endpointId: endpointId,
+      primaryProviderKey: _appViewContext.resolveProviderKey(),
+      fallbackEnabled: fallbackEnabled,
+      baseHeaders: baseHeaders,
+      request: request,
+    );
+  }
+
+  @visibleForTesting
+  Future<T> runPublicReadWithFallbackForTest<T>({
+    required String endpointId,
+    required Future<T> Function(String providerKey) request,
+  }) {
+    return _runPublicReadWithFallback(
+      endpointId: endpointId,
+      request: (context, _, {required fallbackUsed}) => request(context.resolveProviderKey()),
+    );
   }
 
   List<PostView> _filterPosts(List<PostView> posts) {

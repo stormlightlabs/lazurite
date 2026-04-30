@@ -20,6 +20,8 @@ class SettingsState extends Equatable {
     this.semanticSearchMaxResults = 20,
     this.typeaheadProvider = 'bluesky',
     this.appViewProvider = 'bluesky',
+    this.crossProviderFallbackEnabled = false,
+    this.slingshotIdentityFallbackEnabled = false,
   });
 
   final AppThemePalette themePalette;
@@ -46,6 +48,12 @@ class SettingsState extends Equatable {
   /// Configured AppView provider (`bluesky` or `blacksky`).
   final String appViewProvider;
 
+  /// Enables public read fallback from selected AppView to alternate built-in AppView.
+  final bool crossProviderFallbackEnabled;
+
+  /// Enables Slingshot identity fallback for degraded handle resolution.
+  final bool slingshotIdentityFallbackEnabled;
+
   SettingsState copyWith({
     AppThemePalette? themePalette,
     AppThemeVariant? themeVariant,
@@ -60,6 +68,8 @@ class SettingsState extends Equatable {
     int? semanticSearchMaxResults,
     String? typeaheadProvider,
     String? appViewProvider,
+    bool? crossProviderFallbackEnabled,
+    bool? slingshotIdentityFallbackEnabled,
   }) {
     return SettingsState(
       themePalette: themePalette ?? this.themePalette,
@@ -77,6 +87,8 @@ class SettingsState extends Equatable {
       semanticSearchMaxResults: semanticSearchMaxResults ?? this.semanticSearchMaxResults,
       typeaheadProvider: typeaheadProvider ?? this.typeaheadProvider,
       appViewProvider: appViewProvider ?? this.appViewProvider,
+      crossProviderFallbackEnabled: crossProviderFallbackEnabled ?? this.crossProviderFallbackEnabled,
+      slingshotIdentityFallbackEnabled: slingshotIdentityFallbackEnabled ?? this.slingshotIdentityFallbackEnabled,
     );
   }
 
@@ -95,5 +107,7 @@ class SettingsState extends Equatable {
     semanticSearchMaxResults,
     typeaheadProvider,
     appViewProvider,
+    crossProviderFallbackEnabled,
+    slingshotIdentityFallbackEnabled,
   ];
 }

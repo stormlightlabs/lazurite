@@ -11,6 +11,7 @@ import 'package:lazurite/core/embedding/embedding_service.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
 import 'package:lazurite/core/logging/logging_navigator_observer.dart';
+import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_router.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
@@ -62,6 +63,7 @@ Future<void> main() async {
   Bloc.observer = LoggingBlocObserver();
 
   final database = AppDatabase();
+  final appViewFallbackService = AppViewFallbackService();
   final objectBoxStore = await ObjectBoxStore.open();
   final embeddingService = EmbeddingService();
   unawaited(embeddingService.initialize());
@@ -75,6 +77,7 @@ Future<void> main() async {
         final router = AppViewRouter(provider: provider);
         return router.entrywayForAuth().host;
       },
+      slingshotIdentityFallbackEnabledResolver: () => settingsCubit.state.slingshotIdentityFallbackEnabled,
     ),
     restoreSession: (authRepository) => authRepository.restoreSession(),
   );
@@ -97,6 +100,7 @@ Future<void> main() async {
     LazuriteApp.from(
       authBloc,
       database,
+      appViewFallbackService,
       objectBoxStore,
       embeddingService,
       settingsCubit,
@@ -111,6 +115,7 @@ class LazuriteApp extends StatefulWidget {
     super.key,
     required this.authBloc,
     required this.database,
+    required this.appViewFallbackService,
     required this.objectBoxStore,
     required this.embeddingService,
     required this.settingsCubit,
@@ -120,6 +125,7 @@ class LazuriteApp extends StatefulWidget {
 
   final AuthBloc authBloc;
   final AppDatabase database;
+  final AppViewFallbackService appViewFallbackService;
   final ObjectBoxStore objectBoxStore;
   final EmbeddingService embeddingService;
   final SettingsCubit settingsCubit;
@@ -130,6 +136,7 @@ class LazuriteApp extends StatefulWidget {
   static LazuriteApp from(
     AuthBloc authBloc,
     AppDatabase database,
+    AppViewFallbackService appViewFallbackService,
     ObjectBoxStore objectBoxStore,
     EmbeddingService embeddingService,
     SettingsCubit settingsCubit,
@@ -138,6 +145,7 @@ class LazuriteApp extends StatefulWidget {
   ) => LazuriteApp(
     authBloc: authBloc,
     database: database,
+    appViewFallbackService: appViewFallbackService,
     objectBoxStore: objectBoxStore,
     embeddingService: embeddingService,
     settingsCubit: settingsCubit,
@@ -268,6 +276,9 @@ class _LazuriteAppState extends State<LazuriteApp> {
                     accountDid: accountDid,
                     moderationService: context.read<ModerationService>(),
                     appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                    crossProviderFallbackEnabledResolver: () =>
+                        context.read<SettingsCubit>().state.crossProviderFallbackEnabled,
+                    appViewFallbackService: widget.appViewFallbackService,
                   ),
                 ),
                 RepositoryProvider(
@@ -277,6 +288,8 @@ class _LazuriteAppState extends State<LazuriteApp> {
                       bluesky: bluesky,
                       moderationService: context.read<ModerationService>(),
                       appViewProviderResolver: () => settingsCubit.state.appViewProvider,
+                      crossProviderFallbackEnabledResolver: () => settingsCubit.state.crossProviderFallbackEnabled,
+                      appViewFallbackService: widget.appViewFallbackService,
                     );
                   },
                 ),

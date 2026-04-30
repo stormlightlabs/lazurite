@@ -27,5 +27,10 @@ void main() {
       expect(blacksky.entrywayUrl.host, equals('blacksky.community'));
       expect(blacksky.webBaseUrl.host, equals('blacksky.community'));
     });
+
+    test('returns alternate built-in provider key', () {
+      expect(AppViewProviders.alternateBuiltIn('bluesky'), equals('blacksky'));
+      expect(AppViewProviders.alternateBuiltIn('blacksky'), equals('bluesky'));
+    });
   });
 }
