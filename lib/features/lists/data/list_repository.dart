@@ -6,15 +6,25 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:bluesky/app_bsky_graph_getlists.dart';
 import 'package:bluesky/app_bsky_graph_getlistswithmembership.dart';
+import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class ListRepository {
-  ListRepository({required dynamic bluesky, ModerationService? moderationService})
-    : _bluesky = bluesky,
-      _moderationService = moderationService;
+  ListRepository({
+    required dynamic bluesky,
+    ModerationService? moderationService,
+    String? appViewProvider,
+    String Function()? appViewProviderResolver,
+  }) : _bluesky = bluesky,
+       _moderationService = moderationService,
+       _appViewContext = AppViewRequestContext(
+         appViewProvider: appViewProvider,
+         appViewProviderResolver: appViewProviderResolver,
+       );
 
   final dynamic _bluesky;
   final ModerationService? _moderationService;
+  final AppViewRequestContext _appViewContext;
 
   Future<ListsResult> getLists({
     required String actor,
@@ -27,7 +37,7 @@ class ListRepository {
       cursor: cursor,
       limit: limit,
       purposes: includeReference ? null : _listPurposes,
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     return ListsResult(lists: _filterLists(response.data.lists), cursor: response.data.cursor);
@@ -38,7 +48,7 @@ class ListRepository {
       list: listUri,
       cursor: cursor,
       limit: limit,
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     return ListDetailResult(
@@ -53,7 +63,7 @@ class ListRepository {
       list: listUri,
       cursor: cursor,
       limit: limit,
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     return ListFeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
@@ -69,7 +79,7 @@ class ListRepository {
       cursor: cursor,
       limit: limit,
       purposes: _membershipPurposes,
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     return ListsWithMembershipResult(
@@ -82,7 +92,7 @@ class ListRepository {
     final response = await _bluesky.actor.searchActorsTypeahead(
       q: query,
       limit: limit,
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     return _filterProfiles(response.data.actors);
@@ -93,31 +103,48 @@ class ListRepository {
       list: listUri,
       subject: subjectDid,
       createdAt: DateTime.now(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     return response.data.uri.toString();
   }
 
   Future<void> removeListItem({required AtUri listItemUri}) async {
-    await _bluesky.graph.listitem.delete(rkey: listItemUri.rkey);
+    await _bluesky.graph.listitem.delete(
+      rkey: listItemUri.rkey,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
   }
 
   Future<void> muteList({required AtUri listUri}) async {
-    await _bluesky.graph.muteActorList(list: listUri);
+    await _bluesky.graph.muteActorList(
+      list: listUri,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
   }
 
   Future<void> unmuteList({required AtUri listUri}) async {
-    await _bluesky.graph.unmuteActorList(list: listUri);
+    await _bluesky.graph.unmuteActorList(
+      list: listUri,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
   }
 
   Future<String> blockList({required AtUri listUri}) async {
-    final response = await _bluesky.graph.listblock.create(subject: listUri, createdAt: DateTime.now());
+    final response = await _bluesky.graph.listblock.create(
+      subject: listUri,
+      createdAt: DateTime.now(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
 
     return response.data.uri.toString();
   }
 
   Future<void> unblockList({required AtUri blockUri}) async {
-    await _bluesky.graph.listblock.delete(rkey: blockUri.rkey);
+    await _bluesky.graph.listblock.delete(
+      rkey: blockUri.rkey,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
   }
 
   Future<BlobRef?> uploadListAvatar({required List<int> bytes, String mimeType = 'image/jpeg'}) async {

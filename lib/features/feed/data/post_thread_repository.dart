@@ -2,20 +2,30 @@ import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_getpostthread.dart';
 import 'package:bluesky/bluesky.dart';
+import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class PostThreadRepository {
-  PostThreadRepository({required Bluesky bluesky, ModerationService? moderationService})
-    : _bluesky = bluesky,
-      _moderationService = moderationService;
+  PostThreadRepository({
+    required Bluesky bluesky,
+    ModerationService? moderationService,
+    String? appViewProvider,
+    String Function()? appViewProviderResolver,
+  }) : _bluesky = bluesky,
+       _moderationService = moderationService,
+       _appViewContext = AppViewRequestContext(
+         appViewProvider: appViewProvider,
+         appViewProviderResolver: appViewProviderResolver,
+       );
 
   final Bluesky _bluesky;
   final ModerationService? _moderationService;
+  final AppViewRequestContext _appViewContext;
 
   Future<ThreadViewPost> getPostThread(String uri) async {
     final response = await _bluesky.feed.getPostThread(
       uri: AtUri.parse(uri),
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
     final thread = response.data.thread;
 

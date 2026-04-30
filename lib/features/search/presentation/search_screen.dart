@@ -88,6 +88,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onTabChanged(SearchTab tab) {
     context.read<SearchBloc>().add(SearchTabChanged(tab: tab));
+    if (tab == SearchTab.starterPacks) {
+      _focusNode.unfocus();
+    }
   }
 
   void _onSortChanged(String sort) {
@@ -229,6 +232,10 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildSearchBar(BuildContext context, SearchState state) {
     final hasText = _searchController.text.isNotEmpty;
     final theme = Theme.of(context);
+    final isSearchDisabled = state.currentTab == SearchTab.starterPacks;
+    final fieldFillColor = isSearchDisabled
+        ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55)
+        : theme.colorScheme.surfaceContainerHighest;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
@@ -242,16 +249,23 @@ class _SearchScreenState extends State<SearchScreen> {
             child: TextField(
               controller: _searchController,
               focusNode: _focusNode,
+              enabled: !isSearchDisabled,
               onSubmitted: _onSubmit,
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
                 hintText: _searchPlaceholderForTab(state.currentTab),
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: hasText ? _buildSuffixIcon(context, theme) : null,
+                helperText: isSearchDisabled ? 'Starter pack search is not available in the API yet.' : null,
+                helperMaxLines: 1,
+                prefixIcon: Icon(
+                  isSearchDisabled ? Icons.block_outlined : Icons.search,
+                  size: 20,
+                  color: isSearchDisabled ? theme.colorScheme.onSurfaceVariant : null,
+                ),
+                suffixIcon: hasText && !isSearchDisabled ? _buildSuffixIcon(context, theme) : null,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(999)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest,
+                fillColor: fieldFillColor,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(999),
                   borderSide: BorderSide.none,
@@ -259,6 +273,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(999),
                   borderSide: BorderSide(color: theme.colorScheme.primary),
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(999),
+                  borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                 ),
               ),
             ),

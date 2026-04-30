@@ -5,7 +5,6 @@ import 'package:equatable/equatable.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
 
-const profileContextPublicAppViewService = 'public.api.bsky.app';
 const _blockedByPageSize = 16;
 const _listsPageSize = 16;
 

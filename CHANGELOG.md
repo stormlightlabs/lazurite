@@ -70,6 +70,10 @@
   screen (matches bsky.app implementation with Top/Latest sorting)
 - Jump to hashtag action from the hashtag screen with related hashtags & search
 
+#### 2026-04-28
+
+- Animated transitions between screens and micro animations for actions
+
 #### 2026-04-29
 
 - Configurable autocomplete/typeahead for login & profile/actor search

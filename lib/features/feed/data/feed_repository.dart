@@ -6,6 +6,7 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_getauthorfeed.dart';
 import 'package:bluesky/bluesky.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class FeedRepository {
@@ -14,15 +15,22 @@ class FeedRepository {
     required AppDatabase database,
     required String accountDid,
     ModerationService? moderationService,
+    String? appViewProvider,
+    String Function()? appViewProviderResolver,
   }) : _bluesky = bluesky,
        _database = database,
        _accountDid = accountDid,
-       _moderationService = moderationService;
+       _moderationService = moderationService,
+       _appViewContext = AppViewRequestContext(
+         appViewProvider: appViewProvider,
+         appViewProviderResolver: appViewProviderResolver,
+       );
 
   final Bluesky _bluesky;
   final AppDatabase _database;
   final String _accountDid;
   final ModerationService? _moderationService;
+  final AppViewRequestContext _appViewContext;
 
   static const String timelineCacheKey = 'timeline';
 
@@ -41,8 +49,8 @@ class FeedRepository {
     String? cursor,
     int limit = 50,
   }) async {
-    final bskyFilter = _mapToBskyFilter(filter);
-    final headers = await _moderationService?.headersForRequest();
+    final bskyFilter = filter.bskyFilter;
+    final headers = _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest());
 
     final response = await _bluesky.feed.getAuthorFeed(
       actor: actor,
@@ -59,7 +67,7 @@ class FeedRepository {
     final response = await _bluesky.feed.getTimeline(
       cursor: cursor,
       limit: limit,
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
@@ -72,7 +80,7 @@ class FeedRepository {
       feed: feedUri,
       cursor: cursor,
       limit: limit,
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
@@ -96,39 +104,43 @@ class FeedRepository {
   }
 
   Future<PreferencesResult> getPreferences() async {
-    final response = await _bluesky.actor.getPreferences();
+    final response = await _bluesky.actor.getPreferences(
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
     return PreferencesResult(preferences: response.data.preferences);
   }
 
   Future<void> putPreferences({required List<UPreferences> preferences}) async {
-    await _bluesky.actor.putPreferences(preferences: preferences);
+    await _bluesky.actor.putPreferences(
+      preferences: preferences,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
   }
 
   Future<List<GeneratorView>> getSuggestedFeeds({String? cursor, int limit = 50}) async {
-    final response = await _bluesky.feed.getSuggestedFeeds(cursor: cursor, limit: limit);
+    final response = await _bluesky.feed.getSuggestedFeeds(
+      cursor: cursor,
+      limit: limit,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
     return response.data.feeds;
   }
 
   Future<GeneratorView> getFeedGenerator(AtUri feedUri) async {
-    final response = await _bluesky.feed.getFeedGenerator(feed: feedUri);
+    final response = await _bluesky.feed.getFeedGenerator(
+      feed: feedUri,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
     return response.data.view;
   }
 
   Future<List<GeneratorView>> getFeedGenerators(List<AtUri> feedUris) async {
     if (feedUris.isEmpty) return [];
-    final response = await _bluesky.feed.getFeedGenerators(feeds: feedUris);
+    final response = await _bluesky.feed.getFeedGenerators(
+      feeds: feedUris,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
     return response.data.feeds;
-  }
-
-  FeedGetAuthorFeedFilter? _mapToBskyFilter(FeedFilter filter) {
-    switch (filter) {
-      case FeedFilter.postsNoReplies:
-        return const FeedGetAuthorFeedFilter.knownValue(data: KnownFeedGetAuthorFeedFilter.posts_no_replies);
-      case FeedFilter.postsWithMedia:
-        return const FeedGetAuthorFeedFilter.knownValue(data: KnownFeedGetAuthorFeedFilter.posts_with_media);
-      case FeedFilter.postsAndAuthorThreads:
-        return const FeedGetAuthorFeedFilter.knownValue(data: KnownFeedGetAuthorFeedFilter.posts_and_author_threads);
-    }
   }
 
   List<FeedViewPost> _filterFeedPosts(List<FeedViewPost> posts) {
@@ -171,4 +183,30 @@ class PreferencesResult {
   final List<UPreferences> preferences;
 }
 
-enum FeedFilter { postsNoReplies, postsWithMedia, postsAndAuthorThreads }
+enum FeedFilter {
+  postsNoReplies,
+  postsWithMedia,
+  postsAndAuthorThreads;
+
+  String get emptyLabel {
+    switch (this) {
+      case FeedFilter.postsNoReplies:
+        return 'No posts yet';
+      case FeedFilter.postsAndAuthorThreads:
+        return 'No replies or threads yet';
+      case FeedFilter.postsWithMedia:
+        return 'No media posts yet';
+    }
+  }
+
+  FeedGetAuthorFeedFilter get bskyFilter {
+    switch (this) {
+      case FeedFilter.postsNoReplies:
+        return const FeedGetAuthorFeedFilter.knownValue(data: KnownFeedGetAuthorFeedFilter.posts_no_replies);
+      case FeedFilter.postsWithMedia:
+        return const FeedGetAuthorFeedFilter.knownValue(data: KnownFeedGetAuthorFeedFilter.posts_with_media);
+      case FeedFilter.postsAndAuthorThreads:
+        return const FeedGetAuthorFeedFilter.knownValue(data: KnownFeedGetAuthorFeedFilter.posts_and_author_threads);
+    }
+  }
+}

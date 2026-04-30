@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 
@@ -12,13 +13,19 @@ class TypeaheadRepository {
     dynamic bluesky,
     String? provider,
     String Function()? providerResolver,
+    String? appViewProvider,
+    String Function()? appViewProviderResolver,
     ModerationService? moderationService,
     http.Client? httpClient,
   }) : _bluesky = bluesky,
        _provider = provider?.trim().toLowerCase(),
        _providerResolver = providerResolver,
        _moderationService = moderationService,
-       _httpClient = httpClient ?? http.Client() {
+       _httpClient = httpClient ?? http.Client(),
+       _appViewContext = AppViewRequestContext(
+         appViewProvider: appViewProvider,
+         appViewProviderResolver: appViewProviderResolver,
+       ) {
     if (_provider == null && _providerResolver == null) {
       throw ArgumentError('Either a static provider or providerResolver must be supplied.');
     }
@@ -39,6 +46,7 @@ class TypeaheadRepository {
   final String Function()? _providerResolver;
   final ModerationService? _moderationService;
   final http.Client _httpClient;
+  final AppViewRequestContext _appViewContext;
 
   Future<List<TypeaheadResult>> search({required String query, int limit = 10}) async {
     final normalizedQuery = query.trim();
@@ -99,7 +107,7 @@ class TypeaheadRepository {
     final response = await bluesky.actor.searchActorsTypeahead(
       q: query,
       limit: limit,
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     final results = (response.data.actors as List)

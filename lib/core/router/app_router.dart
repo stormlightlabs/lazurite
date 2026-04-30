@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/router/fade_through_page.dart';
 import 'package:lazurite/features/alerts/presentation/alerts_screen.dart';
@@ -297,10 +298,12 @@ class AppRouter {
           final did = state.uri.queryParameters['did'] ?? '';
           final handle = state.uri.queryParameters['handle'] ?? '';
           final isOwnProfile = did == context.read<String>();
-          final constellationUrl = context.read<SettingsCubit>().state.constellationUrl;
+          final settingsState = context.read<SettingsCubit>().state;
+          final constellationUrl = settingsState.constellationUrl;
+          final appViewProvider = AppViewProviders.descriptorForSetting(settingsState.appViewProvider);
           final repository = ProfileContextRepository(
             bluesky: context.read<Bluesky>(),
-            publicBluesky: Bluesky.anonymous(service: profileContextPublicAppViewService),
+            publicBluesky: Bluesky.anonymous(service: appViewProvider.publicBaseUrl.host),
             constellationClient: ConstellationClient(baseUrl: constellationUrl),
           );
           return _page(
@@ -379,7 +382,10 @@ class AppRouter {
                           state,
                           BlocProvider(
                             create: (_) => FollowAuditCubit(
-                              repository: FollowAuditRepository(bluesky: context.read<Bluesky>()),
+                              repository: FollowAuditRepository(
+                                bluesky: context.read<Bluesky>(),
+                                appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                              ),
                               ownDid: context.read<String>(),
                             ),
                             child: const FollowAuditScreen(),

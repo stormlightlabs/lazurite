@@ -248,11 +248,13 @@ class _LazuriteAppState extends State<LazuriteApp> {
               providers: [
                 RepositoryProvider(
                   create: (_) {
+                    final settingsCubit = context.read<SettingsCubit>();
                     final moderationService = ModerationService(
                       bluesky: bluesky,
                       database: widget.database,
                       accountDid: accountDid,
                       userDid: accountDid,
+                      appViewProviderResolver: () => settingsCubit.state.appViewProvider,
                     );
                     unawaited(moderationService.ensureInitialized());
                     return moderationService;
@@ -265,6 +267,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
                     database: widget.database,
                     accountDid: accountDid,
                     moderationService: context.read<ModerationService>(),
+                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
                   ),
                 ),
                 RepositoryProvider(
@@ -283,34 +286,62 @@ class _LazuriteAppState extends State<LazuriteApp> {
                     return TypeaheadRepository(
                       bluesky: bluesky,
                       providerResolver: () => settingsCubit.state.typeaheadProvider,
+                      appViewProviderResolver: () => settingsCubit.state.appViewProvider,
                       moderationService: context.read<ModerationService>(),
                     );
                   },
                 ),
                 RepositoryProvider(
-                  create: (context) =>
-                      ListRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
+                  create: (context) => ListRepository(
+                    bluesky: bluesky,
+                    moderationService: context.read<ModerationService>(),
+                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                  ),
                 ),
                 RepositoryProvider(
                   create: (context) {
                     final service = context.read<ModerationService>();
-                    return ProfileRepository(database: widget.database, bluesky: bluesky, moderationService: service);
+                    return ProfileRepository(
+                      database: widget.database,
+                      bluesky: bluesky,
+                      moderationService: service,
+                      appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                    );
                   },
                 ),
                 RepositoryProvider(
-                  create: (context) =>
-                      NotificationRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
+                  create: (context) => NotificationRepository(
+                    bluesky: bluesky,
+                    moderationService: context.read<ModerationService>(),
+                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                  ),
                 ),
                 RepositoryProvider(
-                  create: (context) =>
-                      PostThreadRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
+                  create: (context) => PostThreadRepository(
+                    bluesky: bluesky,
+                    moderationService: context.read<ModerationService>(),
+                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                  ),
                 ),
                 RepositoryProvider(
-                  create: (context) =>
-                      StarterPackRepository(bluesky: bluesky, moderationService: context.read<ModerationService>()),
+                  create: (context) => StarterPackRepository(
+                    bluesky: bluesky,
+                    moderationService: context.read<ModerationService>(),
+                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                  ),
                 ),
-                RepositoryProvider(create: (_) => PostActionRepository(bluesky: bluesky)),
-                RepositoryProvider(create: (_) => ProfileActionRepository(bluesky: bluesky)),
+                RepositoryProvider(
+                  create: (context) => PostActionRepository(
+                    bluesky: bluesky,
+                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                  ),
+                ),
+                RepositoryProvider(
+                  create: (context) => ProfileActionRepository(
+                    bluesky: bluesky,
+                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                  ),
+                ),
                 RepositoryProvider(create: (_) => ConvoRepository(chat: blueskyChat)),
                 RepositoryProvider(create: (_) => PostActionCache()),
                 RepositoryProvider(create: (_) => VideoRepository(bluesky: bluesky)),
@@ -331,6 +362,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
                     bluesky: bluesky,
                     database: widget.database,
                     semanticIndexer: context.read<SemanticIndexer>(),
+                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
                   ),
                 ),
                 RepositoryProvider(

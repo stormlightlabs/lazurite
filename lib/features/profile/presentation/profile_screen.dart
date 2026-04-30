@@ -731,7 +731,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
 
     if (!feedState.hasPosts) {
-      return Center(child: Text(_emptyLabel(tabFilter)));
+      return Center(child: Text(tabFilter.emptyLabel));
     }
 
     return BlocBuilder<SettingsCubit, SettingsState>(
@@ -853,17 +853,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
 
     return _ProfileStarterPacksPane(actor: actor, starterPackRepository: starterPackRepository);
-  }
-
-  String _emptyLabel(FeedFilter filter) {
-    switch (filter) {
-      case FeedFilter.postsNoReplies:
-        return 'No posts yet';
-      case FeedFilter.postsAndAuthorThreads:
-        return 'No replies or threads yet';
-      case FeedFilter.postsWithMedia:
-        return 'No media posts yet';
-    }
   }
 
   Future<void> _launchWebsite(String website) async {

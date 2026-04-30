@@ -578,6 +578,7 @@ class _FakeFeedService {
     required String actor,
     int? limit,
     String? cursor,
+    Map<String, String>? $headers,
   }) async {
     callCount++;
     if (_callIndex >= pages.length) {

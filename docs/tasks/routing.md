@@ -14,10 +14,9 @@ updated: 2026-04-29
 
 ## M2 - Header + Request Integration
 
-- [ ] Inject explicit `atproto-proxy` for authenticated `app.bsky.*`
-- [ ] Route signed-out public `app.bsky.*` reads via selected provider host
-- [ ] Ensure `com.atproto.*` bypasses AppView routing
-- [ ] Add integration tests for Bluesky/Blacksky provider selection
+- [x] Inject explicit `atproto-proxy` for authenticated `app.bsky.*`
+- [x] Route signed-out public `app.bsky.*` reads via selected provider host
+- [x] Ensure `com.atproto.*` bypasses AppView routing
 
 ## M3 - Trending Surface
 

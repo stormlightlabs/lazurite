@@ -164,7 +164,7 @@ class _FakeGraphService {
   final List<ProfileView> _suggestions;
   final Future<_FakeSuggestedResponse> Function(String actor)? _onGetSuggested;
 
-  Future<_FakeSuggestedResponse> getSuggestedFollowsByActor({required String actor}) {
+  Future<_FakeSuggestedResponse> getSuggestedFollowsByActor({required String actor, Map<String, String>? $headers}) {
     final handler = _onGetSuggested;
     if (handler != null) return handler(actor);
     return Future.value(_FakeSuggestedResponse(_FakeSuggestedData(_suggestions)));

@@ -202,6 +202,14 @@ class _AppMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currentPath = GoRouterState.of(rootContext).uri.path;
+    final isComposeRoute = currentPath == '/compose';
+    final isHomeRoute = currentPath == '/';
+    final isSearchRoute = currentPath == '/search';
+    final isFeedsRoute = currentPath == '/feeds';
+    final isProfileRoute = currentPath == '/profile';
+    final isSettingsRoute = currentPath == '/settings' || currentPath.startsWith('/settings/');
+    final isDevToolsRoute = currentPath == '/settings/devtools';
+    final isCleanFollowsRoute = currentPath == '/settings/clean-follows';
     final isMessagesRoute = currentPath.startsWith('/alerts/messages') || currentPath.startsWith('/alerts/requests');
     final isNotificationsRoute = currentPath.startsWith('/alerts') && !isMessagesRoute;
     final isOffline = rootContext.read<ConnectivityCubit>().state.isOffline;
@@ -254,6 +262,7 @@ class _AppMenu extends StatelessWidget {
                         icon: Icons.add_circle_outline,
                         selectedIcon: Icons.add_circle,
                         label: 'New Post',
+                        isSelected: isComposeRoute,
                         tooltip: isOffline ? offlineActionMessage('compose a post') : null,
                         onTap: isOffline ? null : () => _pushRoute(context, '/compose'),
                       ),
@@ -263,20 +272,21 @@ class _AppMenu extends StatelessWidget {
                         icon: Icons.home_outlined,
                         selectedIcon: Icons.home,
                         label: 'Home',
-                        isSelected: navigationShell.currentIndex == 0,
+                        isSelected: isHomeRoute,
                         onTap: () => _selectBranch(context, 0),
                       ),
                       _MenuTile(
                         icon: Icons.search_outlined,
                         selectedIcon: Icons.search,
                         label: 'Search',
-                        isSelected: navigationShell.currentIndex == 1,
+                        isSelected: isSearchRoute,
                         onTap: () => _selectBranch(context, 1),
                       ),
                       _MenuTile(
                         icon: Icons.rss_feed_outlined,
                         selectedIcon: Icons.rss_feed,
                         label: 'Feeds',
+                        isSelected: isFeedsRoute,
                         onTap: () => _pushRoute(context, '/feeds'),
                       ),
                       _MenuTile(
@@ -298,7 +308,7 @@ class _AppMenu extends StatelessWidget {
                         icon: Icons.person_outline,
                         selectedIcon: Icons.person,
                         label: 'Profile',
-                        isSelected: navigationShell.currentIndex == 3,
+                        isSelected: isProfileRoute,
                         onTap: () => _selectBranch(context, 3),
                       ),
                       const Divider(height: 24),
@@ -307,12 +317,14 @@ class _AppMenu extends StatelessWidget {
                         icon: Icons.explore_outlined,
                         selectedIcon: Icons.explore,
                         label: 'AT Explorer',
+                        isSelected: isDevToolsRoute,
                         onTap: () => _pushRoute(context, '/settings/devtools'),
                       ),
                       _MenuTile(
                         icon: Icons.cleaning_services_outlined,
                         selectedIcon: Icons.cleaning_services,
                         label: 'Audit Follows',
+                        isSelected: isCleanFollowsRoute,
                         onTap: () => _pushRoute(context, '/settings/clean-follows'),
                       ),
                       const Divider(height: 24),
@@ -320,6 +332,7 @@ class _AppMenu extends StatelessWidget {
                         icon: Icons.settings_outlined,
                         selectedIcon: Icons.settings,
                         label: 'Settings',
+                        isSelected: isSettingsRoute,
                         onTap: () => _pushRoute(context, '/settings'),
                       ),
                       _MenuTile(

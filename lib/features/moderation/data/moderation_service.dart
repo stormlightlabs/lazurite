@@ -11,25 +11,39 @@ import 'package:bluesky/bluesky.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/app_view_request_context.dart';
 
 const _officialBlueskyLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
 const _maxCustomLabelers = 20;
 
 class ModerationService {
-  ModerationService({required dynamic bluesky, AppDatabase? database, String? accountDid, String? userDid})
-    : _bluesky = bluesky,
-      _database = database,
-      _accountDid = accountDid,
-      _userDid = userDid;
+  ModerationService({
+    required dynamic bluesky,
+    AppDatabase? database,
+    String? accountDid,
+    String? userDid,
+    String? appViewProvider,
+    String Function()? appViewProviderResolver,
+  }) : _bluesky = bluesky,
+       _database = database,
+       _accountDid = accountDid,
+       _userDid = userDid,
+       _appViewContext = AppViewRequestContext(
+         appViewProvider: appViewProvider,
+         appViewProviderResolver: appViewProviderResolver,
+       ) {
+    _headers = _appViewContext.appBskyHeaders(_buildLabelerHeaders(const []));
+  }
 
   final dynamic _bluesky;
   final AppDatabase? _database;
   final String? _accountDid;
   final String? _userDid;
+  final AppViewRequestContext _appViewContext;
 
   bsky_moderation.ModerationOpts? _opts;
   List<UPreferences> _preferences = const [];
-  Map<String, String> _headers = _buildLabelerHeaders(const []);
+  late Map<String, String> _headers;
   Future<void>? _initializationFuture;
   bool _disposed = false;
   final _optsController = StreamController<bsky_moderation.ModerationOpts>.broadcast();
@@ -530,7 +544,7 @@ class ModerationService {
   }
 
   Map<String, String> _buildHeadersForPrefs(bsky_moderation.ModerationPrefs prefs) {
-    return _buildLabelerHeaders(prefs.labelers.map((labeler) => labeler.did));
+    return _appViewContext.appBskyHeaders(_buildLabelerHeaders(prefs.labelers.map((labeler) => labeler.did)));
   }
 
   String? get _preferencesCacheKey {

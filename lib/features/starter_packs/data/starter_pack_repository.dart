@@ -3,22 +3,32 @@ import 'package:bluesky/app_bsky_feed_defs.dart' show GeneratorView;
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:bluesky/app_bsky_graph_starterpack.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class StarterPackRepository {
-  StarterPackRepository({required dynamic bluesky, ModerationService? moderationService})
-    : _bluesky = bluesky,
-      _moderationService = moderationService;
+  StarterPackRepository({
+    required dynamic bluesky,
+    ModerationService? moderationService,
+    String? appViewProvider,
+    String Function()? appViewProviderResolver,
+  }) : _bluesky = bluesky,
+       _moderationService = moderationService,
+       _appViewContext = AppViewRequestContext(
+         appViewProvider: appViewProvider,
+         appViewProviderResolver: appViewProviderResolver,
+       );
 
   final dynamic _bluesky;
   final ModerationService? _moderationService;
+  final AppViewRequestContext _appViewContext;
 
   Future<ActorStarterPacksResult> getActorStarterPacks({required String actor, String? cursor, int limit = 50}) async {
     final response = await _bluesky.graph.getActorStarterPacks(
       actor: actor,
       cursor: cursor,
       limit: limit,
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     return ActorStarterPacksResult(starterPacks: response.data.starterPacks, cursor: response.data.cursor);
@@ -27,14 +37,17 @@ class StarterPackRepository {
   Future<StarterPackView> getStarterPack({required AtUri starterPackUri}) async {
     final response = await _bluesky.graph.getStarterPack(
       starterPack: starterPackUri,
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     return response.data.starterPack;
   }
 
   Future<List<GeneratorView>> getSuggestedFeeds({int limit = 50}) async {
-    final response = await _bluesky.feed.getSuggestedFeeds(limit: limit);
+    final response = await _bluesky.feed.getSuggestedFeeds(
+      limit: limit,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
     return response.data.feeds as List<GeneratorView>;
   }
 
@@ -63,6 +76,7 @@ class StarterPackRepository {
       list: refListUri,
       feeds: feeds.isEmpty ? null : feeds,
       createdAt: DateTime.now(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     return response.data.uri;
@@ -84,6 +98,7 @@ class StarterPackRepository {
       list: referenceListUri,
       feeds: feeds.isEmpty ? null : feeds,
       createdAt: DateTime.now(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
   }
 
@@ -92,7 +107,10 @@ class StarterPackRepository {
     required AtUri referenceListUri,
     required String userDid,
   }) async {
-    await _bluesky.graph.starterpack.delete(rkey: packUri.rkey);
+    await _bluesky.graph.starterpack.delete(
+      rkey: packUri.rkey,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
     await _bluesky.atproto.repo.deleteRecord(
       repo: userDid,
       collection: 'app.bsky.graph.list',
@@ -105,13 +123,17 @@ class StarterPackRepository {
       list: listUri,
       subject: subjectDid,
       createdAt: DateTime.now(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
 
     return response.data.uri.toString();
   }
 
   Future<void> removeMember({required AtUri listItemUri}) async {
-    await _bluesky.graph.listitem.delete(rkey: listItemUri.rkey);
+    await _bluesky.graph.listitem.delete(
+      rkey: listItemUri.rkey,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
   }
 
   /// Follows every member in the starter pack's backing reference list.
@@ -122,11 +144,20 @@ class StarterPackRepository {
     String? cursor;
 
     do {
-      final response = await _bluesky.graph.getList(list: referenceListUri, cursor: cursor, limit: 100);
+      final response = await _bluesky.graph.getList(
+        list: referenceListUri,
+        cursor: cursor,
+        limit: 100,
+        $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      );
 
       for (final item in response.data.items as List) {
         try {
-          await _bluesky.graph.follow.create(subject: item.subject.did as String, createdAt: DateTime.now());
+          await _bluesky.graph.follow.create(
+            subject: item.subject.did as String,
+            createdAt: DateTime.now(),
+            $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+          );
           count++;
         } catch (_) {
           log.w('Failed to follow ${item.subject.did} (already followed or blocked)');

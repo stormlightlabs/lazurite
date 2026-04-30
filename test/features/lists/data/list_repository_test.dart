@@ -417,13 +417,14 @@ class _FakeListitemAccessor {
     required String subject,
     required AtUri list,
     DateTime? createdAt,
+    Map<String, String>? $headers,
   }) async {
     lastCreatedList = list;
     lastCreatedSubject = subject;
     return _FakeResponse(_FakeUriData(createdUri));
   }
 
-  Future<void> delete({required String rkey}) async {
+  Future<void> delete({required String rkey, Map<String, String>? $headers}) async {
     lastDeletedRkey = rkey;
   }
 }
@@ -433,12 +434,16 @@ class _FakeListblockAccessor {
   AtUri? lastCreatedSubject;
   String? lastDeletedRkey;
 
-  Future<_FakeResponse<_FakeUriData>> create({required AtUri subject, DateTime? createdAt}) async {
+  Future<_FakeResponse<_FakeUriData>> create({
+    required AtUri subject,
+    DateTime? createdAt,
+    Map<String, String>? $headers,
+  }) async {
     lastCreatedSubject = subject;
     return _FakeResponse(_FakeUriData(createdUri));
   }
 
-  Future<void> delete({required String rkey}) async {
+  Future<void> delete({required String rkey, Map<String, String>? $headers}) async {
     lastDeletedRkey = rkey;
   }
 }

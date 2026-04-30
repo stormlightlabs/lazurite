@@ -5,18 +5,29 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/bluesky.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class ProfileRepository {
-  ProfileRepository({required AppDatabase database, required dynamic bluesky, ModerationService? moderationService})
-    : _database = database,
-      _bluesky = bluesky,
-      _moderationService = moderationService;
+  ProfileRepository({
+    required AppDatabase database,
+    required dynamic bluesky,
+    ModerationService? moderationService,
+    String? appViewProvider,
+    String Function()? appViewProviderResolver,
+  }) : _database = database,
+       _bluesky = bluesky,
+       _moderationService = moderationService,
+       _appViewContext = AppViewRequestContext(
+         appViewProvider: appViewProvider,
+         appViewProviderResolver: appViewProviderResolver,
+       );
 
   final AppDatabase _database;
   final dynamic _bluesky;
   final ModerationService? _moderationService;
+  final AppViewRequestContext _appViewContext;
 
   Future<ProfileViewDetailed> getProfile(String actor) async {
     log.d('ProfileRepository: Loading profile for $actor via ${_describeClientContext()}');
@@ -24,7 +35,7 @@ class ProfileRepository {
     try {
       final response = await _bluesky.actor.getProfile(
         actor: actor,
-        $headers: await _moderationService?.headersForRequest(),
+        $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
       );
       final profile = response.data;
       log.i('ProfileRepository: Loaded profile ${profile.did} (${profile.handle})');
@@ -56,7 +67,7 @@ class ProfileRepository {
     log.d('ProfileRepository: Loading ${actors.length} profiles via ${_describeClientContext()}');
     final response = await _bluesky.actor.getProfiles(
       actors: actors,
-      $headers: await _moderationService?.headersForRequest(),
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
     );
     final profiles = response.data.profiles
         .where((profile) => !(_moderationService?.shouldFilterProfileInList(profile) ?? false))
@@ -66,7 +77,10 @@ class ProfileRepository {
   }
 
   Future<List<ProfileView>> getSuggestedFollows(String actor) async {
-    final response = await _bluesky.graph.getSuggestedFollowsByActor(actor: actor);
+    final response = await _bluesky.graph.getSuggestedFollowsByActor(
+      actor: actor,
+      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    );
     final suggestions = response.data.suggestions;
     final moderationService = _moderationService;
     if (moderationService == null) return suggestions;
@@ -79,7 +93,7 @@ class ProfileRepository {
     try {
       final response = await _bluesky.actor.getProfile(
         actor: tokens.did,
-        $headers: await _moderationService?.headersForRequest(),
+        $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
       );
       log.i('ProfileRepository: Loaded current user profile ${response.data.did} (${response.data.handle})');
       return response.data;

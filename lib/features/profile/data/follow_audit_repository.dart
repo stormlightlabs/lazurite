@@ -5,6 +5,7 @@ import 'package:atproto_core/atproto_core.dart' show AtUri;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/app_view_request_context.dart';
 
 enum FollowStatus { deleted, deactivated, suspended, blockedBy, blocking, mutualBlock, hidden, selfFollow }
 
@@ -56,9 +57,15 @@ const _maxRetries = 3;
 const _unfollowBatchSize = 200;
 
 class FollowAuditRepository {
-  FollowAuditRepository({required dynamic bluesky}) : _bluesky = bluesky;
+  FollowAuditRepository({required dynamic bluesky, String? appViewProvider, String Function()? appViewProviderResolver})
+    : _bluesky = bluesky,
+      _appViewContext = AppViewRequestContext(
+        appViewProvider: appViewProvider,
+        appViewProviderResolver: appViewProviderResolver,
+      );
 
   final dynamic _bluesky;
+  final AppViewRequestContext _appViewContext;
 
   Future<List<FollowRecord>> fetchAllFollows(String did, {void Function(int fetched)? onProgress}) async {
     final records = <FollowRecord>[];
@@ -166,7 +173,7 @@ class FollowAuditRepository {
   Future<Map<String, ProfileView>> _fetchBatchWithRetry(List<String> batch) async {
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       try {
-        final response = await _bluesky.actor.getProfiles(actors: batch);
+        final response = await _bluesky.actor.getProfiles(actors: batch, $headers: _appViewContext.appBskyHeaders());
         final result = <String, ProfileView>{};
         for (final profile in response.data.profiles as List<dynamic>) {
           final view = _asProfileView(profile);
@@ -193,7 +200,7 @@ class FollowAuditRepository {
   Future<_SingleResult> _fetchSingleWithRetry(String did) async {
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       try {
-        final response = await _bluesky.actor.getProfile(actor: did);
+        final response = await _bluesky.actor.getProfile(actor: did, $headers: _appViewContext.appBskyHeaders());
         final view = _asProfileView(response.data);
         return _SingleResult(profile: view, status: null, failed: view == null);
       } catch (error, stackTrace) {
