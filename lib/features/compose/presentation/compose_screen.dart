@@ -108,7 +108,12 @@ class _ComposeScreenState extends State<ComposeScreen> {
   }
 
   void _onTextChanged() {
-    context.read<ComposeBloc>().add(TextChanged(_textController.text));
+    final bloc = context.read<ComposeBloc>();
+    final text = _textController.text;
+    if (bloc.state.text == text) {
+      return;
+    }
+    bloc.add(TextChanged(text));
   }
 
   Future<void> _pickImage() async {

@@ -145,6 +145,14 @@ void main() {
       );
 
       blocTest<ComposeBloc, ComposeState>(
+        'does not emit when text is unchanged',
+        build: () => composeBloc,
+        seed: () => const ComposeState.ready(text: 'Hello world', graphemeCount: 11, isEmpty: false),
+        act: (bloc) => bloc.add(const TextChanged('Hello world')),
+        expect: () => <ComposeState>[],
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
         'emits overLimit when text exceeds 300 graphemes',
         build: () => composeBloc,
         act: (bloc) => bloc.add(TextChanged('a' * 301)),
@@ -157,15 +165,10 @@ void main() {
       );
 
       blocTest<ComposeBloc, ComposeState>(
-        'isEmpty is true when text is empty and no media',
+        'does not emit when empty text is unchanged',
         build: () => composeBloc,
         act: (bloc) => bloc.add(const TextChanged('')),
-        expect: () => [
-          isA<ComposeState>()
-              .having((s) => s.text, 'text', '')
-              .having((s) => s.isEmpty, 'isEmpty', true)
-              .having((s) => s.canSubmit, 'canSubmit', false),
-        ],
+        expect: () => <ComposeState>[],
       );
     });
 

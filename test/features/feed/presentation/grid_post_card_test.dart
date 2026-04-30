@@ -82,6 +82,35 @@ void main() {
     expect(tapped, isTrue);
   });
 
+  testWidgets('tapping footer reply does not trigger card onTap', (tester) async {
+    var cardTapped = false;
+    var replyTapped = false;
+    final post = _makePost();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(size: Size(390, 844)),
+          child: Scaffold(
+            body: SingleChildScrollView(
+              child: GridPostCard(
+                feedViewPost: post,
+                onTap: () => cardTapped = true,
+                footer: PostCardFooter(timestamp: '1H', onReply: () => replyTapped = true),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.chat_bubble_outline));
+    await tester.pump();
+
+    expect(replyTapped, isTrue);
+    expect(cardTapped, isFalse);
+  });
+
   testWidgets('text-only posts have no image AspectRatio', (tester) async {
     final post = _makePost(text: 'Text-only post content');
     await tester.pumpWidget(_buildSubject(post));

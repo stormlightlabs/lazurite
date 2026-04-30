@@ -70,67 +70,75 @@ class GridPostCard extends StatelessWidget {
       ),
       child: ModeratedBlurOverlay(
         ui: postUi,
-        child: InkWell(
-          onTap: onTap,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (primaryImageUrl != null)
-                ModeratedBlurOverlay(
-                  ui: mediaUi,
-                  fillWidth: false,
-                  child: AspectRatio(
-                    aspectRatio: 1.0,
-                    child: ColorFiltered(
-                      colorFilter: AppColorFilters.greyscale,
-                      child: Image.network(
-                        primaryImageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, _, _) =>
-                            ColoredBox(color: colorScheme.surfaceContainerHigh, child: const SizedBox.expand()),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              onTap: onTap,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (primaryImageUrl != null)
+                    ModeratedBlurOverlay(
+                      ui: mediaUi,
+                      fillWidth: false,
+                      child: AspectRatio(
+                        aspectRatio: 1.0,
+                        child: ColorFiltered(
+                          colorFilter: AppColorFilters.greyscale,
+                          child: Image.network(
+                            primaryImageUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (_, _, _) =>
+                                ColoredBox(color: colorScheme.surfaceContainerHigh, child: const SizedBox.expand()),
+                          ),
+                        ),
                       ),
                     ),
+                  Padding(
+                    padding: AppInsets.allMd,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildAuthorRow(context, post.author),
+                        if (postUi.alert || postUi.inform) ...[
+                          const SizedBox(height: 10),
+                          ModerationBadgeRow(ui: postUi),
+                        ],
+                        if (bodyText.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          if (primaryImageUrl == null && contentEmbed == null)
+                            FacetText(
+                              text: bodyText,
+                              facets: record?.facets,
+                              style: feedPostBodyTextStyle(context),
+                              maxLines: 6,
+                              overflow: TextOverflow.ellipsis,
+                            )
+                          else if (!isCompactGrid)
+                            FacetText(text: bodyText, facets: record?.facets, style: feedPostBodyTextStyle(context))
+                          else
+                            FacetText(
+                              text: bodyText,
+                              facets: record?.facets,
+                              style: feedPostBodyTextStyle(context, compact: true),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                        if (contentEmbed != null) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          _buildEmbedPreview(contentEmbed, compact: isCompactGrid),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
-              Padding(
-                padding: AppInsets.allMd,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildAuthorRow(context, post.author),
-                    if (postUi.alert || postUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: postUi)],
-                    if (bodyText.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      if (primaryImageUrl == null && contentEmbed == null)
-                        FacetText(
-                          text: bodyText,
-                          facets: record?.facets,
-                          style: feedPostBodyTextStyle(context),
-                          maxLines: 6,
-                          overflow: TextOverflow.ellipsis,
-                        )
-                      else if (!isCompactGrid)
-                        FacetText(text: bodyText, facets: record?.facets, style: feedPostBodyTextStyle(context))
-                      else
-                        FacetText(
-                          text: bodyText,
-                          facets: record?.facets,
-                          style: feedPostBodyTextStyle(context, compact: true),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
-                    if (contentEmbed != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      _buildEmbedPreview(contentEmbed, compact: isCompactGrid),
-                    ],
-                  ],
-                ),
+                ],
               ),
-              resolvedFooter,
-            ],
-          ),
+            ),
+            resolvedFooter,
+          ],
         ),
       ),
     );

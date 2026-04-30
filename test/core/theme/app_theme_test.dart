@@ -23,6 +23,10 @@ void main() {
       test('returns correct name for rosePine', () {
         expect(AppTheme.getPaletteName(AppThemePalette.rosePine), 'Rosé Pine');
       });
+
+      test('returns correct name for purple', () {
+        expect(AppTheme.getPaletteName(AppThemePalette.purple), 'Purple');
+      });
     });
 
     group('getVariantName', () {
@@ -56,6 +60,10 @@ void main() {
         expect(AppTheme.parsePalette('rosePine'), AppThemePalette.rosePine);
       });
 
+      test('parses purple', () {
+        expect(AppTheme.parsePalette('purple'), AppThemePalette.purple);
+      });
+
       test('returns lazurite for null', () {
         expect(AppTheme.parsePalette(null), AppThemePalette.lazurite);
       });
@@ -84,6 +92,10 @@ void main() {
 
       test('converts rosePine to string', () {
         expect(AppTheme.paletteToString(AppThemePalette.rosePine), 'rosePine');
+      });
+
+      test('converts purple to string', () {
+        expect(AppTheme.paletteToString(AppThemePalette.purple), 'purple');
       });
     });
 

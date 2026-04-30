@@ -62,6 +62,9 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
   Future<void> _onTextChanged(TextChanged event, Emitter<ComposeState> emit) async {
     final text = event.text;
+    if (text == state.text) {
+      return;
+    }
     final graphemeCount = text.characters.length;
     final isOverLimit = graphemeCount > kMaxGraphemes;
     final isEmpty = text.trim().isEmpty && state.mediaAttachments.isEmpty && state.videoAttachment == null;

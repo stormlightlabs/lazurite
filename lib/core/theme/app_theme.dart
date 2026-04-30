@@ -3,9 +3,10 @@ import 'package:lazurite/core/theme/catppuccin_theme.dart';
 import 'package:lazurite/core/theme/lazurite_theme.dart';
 import 'package:lazurite/core/theme/nord_theme.dart';
 import 'package:lazurite/core/theme/oxocarbon_theme.dart';
+import 'package:lazurite/core/theme/purple_theme.dart';
 import 'package:lazurite/core/theme/rose_pine_theme.dart';
 
-enum AppThemePalette { lazurite, oxocarbon, catppuccin, nord, rosePine }
+enum AppThemePalette { lazurite, oxocarbon, catppuccin, nord, rosePine, purple }
 
 enum AppThemeVariant { light, dark }
 
@@ -24,6 +25,8 @@ class AppTheme {
         return variant == AppThemeVariant.light ? NordTheme.light() : NordTheme.dark();
       case AppThemePalette.rosePine:
         return variant == AppThemeVariant.light ? RosePineTheme.light() : RosePineTheme.dark();
+      case AppThemePalette.purple:
+        return variant == AppThemeVariant.light ? PurpleTheme.light() : PurpleTheme.dark();
     }
   }
 
@@ -39,6 +42,8 @@ class AppTheme {
         return 'Nord';
       case AppThemePalette.rosePine:
         return 'Rosé Pine';
+      case AppThemePalette.purple:
+        return 'Purple';
     }
   }
 
@@ -63,6 +68,8 @@ class AppTheme {
         return AppThemePalette.nord;
       case 'rosePine':
         return AppThemePalette.rosePine;
+      case 'purple':
+        return AppThemePalette.purple;
       default:
         return AppThemePalette.lazurite;
     }
@@ -80,6 +87,8 @@ class AppTheme {
         return 'nord';
       case AppThemePalette.rosePine:
         return 'rosePine';
+      case AppThemePalette.purple:
+        return 'purple';
     }
   }
 
@@ -115,6 +124,8 @@ class AppTheme {
         return const [Color(0xFF88c0d0), Color(0xFFa3be8c), Color(0xFFebcb8b), Color(0xFFb48ead)];
       case AppThemePalette.rosePine:
         return const [Color(0xFFebbcba), Color(0xFFc4a7e7), Color(0xFF9ccfd8), Color(0xFFf6c177)];
+      case AppThemePalette.purple:
+        return const [Color(0xFFA599E9), Color(0xFFB362FF), Color(0xFF9EFFFF), Color(0xFFFAD000)];
     }
   }
 }
