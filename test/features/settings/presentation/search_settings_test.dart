@@ -94,7 +94,7 @@ void main() {
       await tester.scrollUntilVisible(find.text('Typeahead Provider'), 300);
 
       expect(find.text('Typeahead Provider'), findsOneWidget);
-      expect(find.text('Bluesky official endpoint selected. Requires login.'), findsOneWidget);
+      expect(find.text('Bluesky official endpoint selected.'), findsOneWidget);
       expect(find.text('Bluesky'), findsOneWidget);
       expect(find.text('Community'), findsOneWidget);
     });

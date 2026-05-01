@@ -193,6 +193,46 @@ void main() {
       expect(() => repository.search(query: 'alice', limit: 5), throwsA(isA<SocketException>()));
     });
 
+    test('bluesky provider uses public HTTP endpoint when SDK client is unavailable', () async {
+      Uri? requestedUri;
+      Map<String, String>? requestHeaders;
+
+      final client = _CallbackClient((request) async {
+        requestedUri = request.url;
+        requestHeaders = request.headers;
+        return http.Response(
+          jsonEncode({
+            'actors': [
+              {'did': 'did:plc:public', 'handle': 'public.bsky.social', 'displayName': 'Public'},
+            ],
+          }),
+          200,
+        );
+      });
+
+      final repository = TypeaheadRepository(
+        provider: TypeaheadRepository.blueskyProvider,
+        moderationService: moderationService,
+        httpClient: client,
+      );
+
+      final results = await repository.search(query: 'public', limit: 6);
+
+      expect(results, hasLength(1));
+      expect(results.single.did, 'did:plc:public');
+      expect(results.single.handle, 'public.bsky.social');
+      expect(results.single.displayName, 'Public');
+      expect(requestedUri, isNotNull);
+      expect(requestedUri!.scheme, 'https');
+      expect(requestedUri!.host, 'public.api.bsky.app');
+      expect(requestedUri!.path, '/xrpc/app.bsky.actor.searchActorsTypeahead');
+      expect(requestedUri!.queryParameters['q'], 'public');
+      expect(requestedUri!.queryParameters['limit'], '6');
+      expect(requestHeaders?['X-Client'], 'lazurite');
+      expect(requestHeaders?['x-test'], 'moderation');
+      expect(requestHeaders?['atproto-proxy'], isNull);
+    });
+
     test('search returns empty list for empty/whitespace queries', () async {
       final client = _CallbackClient((_) async => throw StateError('Should not be called'));
 

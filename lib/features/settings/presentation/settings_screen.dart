@@ -1,15 +1,15 @@
 import 'dart:async';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/account/presentation/account_switcher_sheet.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
@@ -181,16 +181,17 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildThemeSelector(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
+    final theme = Theme.of(context);
 
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
         return Container(
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: Theme.of(context).dividerColor),
-              bottom: BorderSide(color: Theme.of(context).dividerColor),
+              top: BorderSide(color: theme.dividerColor),
+              bottom: BorderSide(color: theme.dividerColor),
             ),
-            color: Theme.of(context).cardColor,
+            color: theme.cardColor,
           ),
           child: Column(
             children: [
@@ -199,8 +200,8 @@ class SettingsScreen extends StatelessWidget {
                 child: Center(
                   child: SegmentedButton<_AppearanceMode>(
                     style: SegmentedButton.styleFrom(
-                      selectedBackgroundColor: context.colorScheme.primary,
-                      selectedForegroundColor: context.colorScheme.onPrimary,
+                      selectedBackgroundColor: theme.colorScheme.primary,
+                      selectedForegroundColor: theme.colorScheme.onPrimary,
                     ),
                     segments: const [
                       ButtonSegment(value: _AppearanceMode.system, label: Text('System')),
@@ -251,16 +252,17 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildLayoutSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
+    final theme = Theme.of(context);
 
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
         return Container(
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: Theme.of(context).dividerColor),
-              bottom: BorderSide(color: Theme.of(context).dividerColor),
+              top: BorderSide(color: theme.dividerColor),
+              bottom: BorderSide(color: theme.dividerColor),
             ),
-            color: Theme.of(context).cardColor,
+            color: theme.cardColor,
           ),
           child: Column(
             children: [
@@ -307,13 +309,14 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildSearchSettings(BuildContext context) {
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, settingsState) {
+        final theme = Theme.of(context);
         return Container(
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: Theme.of(context).dividerColor),
-              bottom: BorderSide(color: Theme.of(context).dividerColor),
+              top: BorderSide(color: theme.dividerColor),
+              bottom: BorderSide(color: theme.dividerColor),
             ),
-            color: Theme.of(context).cardColor,
+            color: theme.cardColor,
           ),
           child: Column(
             children: [
@@ -323,7 +326,7 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: Text(
                   settingsState.typeaheadProvider == 'community'
                       ? 'Community (waow.tech) selected. Third-party service, works before login.'
-                      : 'Bluesky official endpoint selected. Requires login.',
+                      : 'Bluesky official endpoint selected.',
                 ),
               ),
               Padding(
@@ -400,13 +403,14 @@ class SettingsScreen extends StatelessWidget {
 
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
+        final theme = Theme.of(context);
         return Container(
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: Theme.of(context).dividerColor),
-              bottom: BorderSide(color: Theme.of(context).dividerColor),
+              top: BorderSide(color: theme.dividerColor),
+              bottom: BorderSide(color: theme.dividerColor),
             ),
-            color: Theme.of(context).cardColor,
+            color: theme.cardColor,
           ),
           child: _SettingsTile(
             icon: Icons.cloud_off_outlined,
@@ -421,15 +425,16 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildAdvancedSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
+    final theme = Theme.of(context);
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
         return Container(
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: Theme.of(context).dividerColor),
-              bottom: BorderSide(color: Theme.of(context).dividerColor),
+              top: BorderSide(color: theme.dividerColor),
+              bottom: BorderSide(color: theme.dividerColor),
             ),
-            color: Theme.of(context).cardColor,
+            color: theme.cardColor,
           ),
           child: Column(
             children: [
@@ -475,7 +480,7 @@ class SettingsScreen extends StatelessWidget {
               _SettingsTile(
                 icon: Icons.alt_route_outlined,
                 title: 'Slingshot Identity Fallback',
-                subtitle: 'Use Slingshot resolveMiniDoc for degraded handle resolution',
+                subtitle: 'If handle lookup fails, use Slingshot to find your DID and PDS so sign-in can continue',
                 trailing: Switch.adaptive(
                   value: state.slingshotIdentityFallbackEnabled,
                   onChanged: settingsCubit.setSlingshotIdentityFallbackEnabled,
@@ -487,7 +492,10 @@ class SettingsScreen extends StatelessWidget {
                 title: 'Provider Diagnostics',
                 subtitle: 'Moderation/ranking can differ by provider. Verify health and recent fallback state.',
               ),
-              _ConnectionDetailRow(label: 'Active Provider', value: _providerDisplayName(state.appViewProvider)),
+              _ConnectionDetailRow(
+                label: 'Active Provider',
+                value: AppViewProviders.providerDisplayName(state.appViewProvider),
+              ),
               const Divider(height: 1),
               _ConnectionDetailRow(label: 'Health', value: state.appViewHealthSummary ?? 'Not checked yet'),
               const Divider(height: 1),
@@ -522,15 +530,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  String _providerDisplayName(String providerKey) {
-    if (providerKey == AppViewProviders.blackskyKey) {
-      return 'Blacksky';
-    }
-    return 'Bluesky';
-  }
-
   String _appViewSubtitle(String providerKey) {
-    final provider = _providerDisplayName(providerKey);
+    final provider = AppViewProviders.providerDisplayName(providerKey);
     return '$provider selected. Switching providers performs a soft restart.';
   }
 
@@ -662,14 +663,14 @@ class _AtProtocolConnectionCard extends StatelessWidget {
         }
 
         final pds = resolvePdsHost(tokens);
-
+        final theme = Theme.of(context);
         return Container(
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: Theme.of(context).dividerColor),
-              bottom: BorderSide(color: Theme.of(context).dividerColor),
+              top: BorderSide(color: theme.dividerColor),
+              bottom: BorderSide(color: theme.dividerColor),
             ),
-            color: Theme.of(context).cardColor,
+            color: theme.cardColor,
           ),
           child: SelectionArea(
             child: Column(

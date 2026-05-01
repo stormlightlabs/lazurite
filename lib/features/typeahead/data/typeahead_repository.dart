@@ -40,6 +40,7 @@ class TypeaheadRepository {
 
   static const String _communityHost = 'typeahead.waow.tech';
   static const String _communityPath = '/xrpc/app.bsky.actor.searchActorsTypeahead';
+  static const String _searchActorsTypeaheadEndpoint = 'app.bsky.actor.searchActorsTypeahead';
 
   final dynamic _bluesky;
   final String? _provider;
@@ -101,14 +102,14 @@ class TypeaheadRepository {
   Future<List<TypeaheadResult>> _searchBluesky({required String query, required int limit}) async {
     final bluesky = _bluesky;
     if (bluesky == null) {
-      throw StateError('Bluesky provider requires an authenticated Bluesky client.');
+      return _searchBlueskyPublicHttp(query: query, limit: limit);
     }
 
     final response = await bluesky.actor.searchActorsTypeahead(
       q: query,
       limit: limit,
       $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.actor.searchActorsTypeahead',
+        _searchActorsTypeaheadEndpoint,
         await _moderationService?.headersForRequest(),
       ),
     );
@@ -117,6 +118,46 @@ class TypeaheadRepository {
         .whereType<ProfileViewBasic>()
         .map(TypeaheadResult.fromProfileViewBasic)
         .toList(growable: false);
+    return _applyModeration(results);
+  }
+
+  Future<List<TypeaheadResult>> _searchBlueskyPublicHttp({required String query, required int limit}) async {
+    final uri = Uri.https(_appViewContext.publicServiceHost(), '/xrpc/$_searchActorsTypeaheadEndpoint', {
+      'q': query,
+      'limit': limit.toString(),
+    });
+    final headers = _appViewContext.appBskyHeadersForEndpoint(_searchActorsTypeaheadEndpoint, {
+      'X-Client': 'lazurite',
+      ...?await _moderationService?.headersForRequest(),
+    });
+    final response = await _httpClient.get(uri, headers: headers);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw HttpException('Bluesky typeahead request failed: HTTP ${response.statusCode}', uri: uri);
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('Bluesky typeahead response was not a JSON object.');
+    }
+
+    final actors = decoded['actors'];
+    if (actors is! List) {
+      return const [];
+    }
+
+    final results = <TypeaheadResult>[];
+    for (final actor in actors) {
+      if (actor is! Map<String, dynamic>) {
+        continue;
+      }
+
+      try {
+        results.add(TypeaheadResult.fromJson(actor));
+      } catch (error, stackTrace) {
+        log.w('TypeaheadRepository: skipped invalid Bluesky actor payload.', error: error, stackTrace: stackTrace);
+      }
+    }
+
     return _applyModeration(results);
   }
 

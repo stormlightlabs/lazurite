@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v0.1.0 (Unreleased)
+## v1.0.0 (Unreleased)
 
 ### Added
 
@@ -66,8 +66,8 @@
 #### 2026-04-14
 
 - Post editing via delete-recreate
-- Added url resolution for in-app links (profiles, posts, hashtags) with dedicated hashtag
-  screen (matches bsky.app implementation with Top/Latest sorting)
+- Added url resolution for in-app links (profiles, posts, hashtags) with dedicated
+  hashtag screen (matches bsky.app implementation with Top/Latest sorting)
 - Jump to hashtag action from the hashtag screen with related hashtags & search
 
 #### 2026-04-28
@@ -81,4 +81,8 @@
 
 #### 2026-04-30
 
-- Added shades of purple/blacksky inspired theme
+- Added [shades of purple](https://github.com/Rigellute/shades-of-purple.vim)/[blacksky](https://blacksky.community)
+  inspired theme
+- AppView (BlueSky or BlackSky) based routing with swappable provider from Login or
+  Settings
+- Trending views and feeds/listings based on AppView.
