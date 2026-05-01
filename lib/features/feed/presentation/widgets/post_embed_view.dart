@@ -6,8 +6,10 @@ import 'package:bluesky/app_bsky_embed_video.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/core/router/in_app_link_resolver.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
@@ -118,10 +120,11 @@ class PostEmbedView extends StatelessWidget {
               onTap: () => _openImageViewer(context, images, initialIndex: index, heroNamespace: heroNamespace),
               child: Hero(
                 tag: heroTag,
-                child: Image.network(
-                  image.thumb,
+                child: CachedNetworkImage(
+                  imageUrl: image.thumb,
+                  cacheManager: LazuriteImageCacheManager.instance,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => ColoredBox(
+                  errorWidget: (_, _, _) => ColoredBox(
                     color: context.colorScheme.surfaceContainerHighest,
                     child: const Center(child: Icon(Icons.image_not_supported_outlined)),
                   ),
@@ -151,12 +154,13 @@ class PostEmbedView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (external.thumb != null)
-              Image.network(
-                external.thumb!,
+              CachedNetworkImage(
+                imageUrl: external.thumb!,
+                cacheManager: LazuriteImageCacheManager.instance,
                 height: compact ? 140 : 180,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox(height: 0),
+                errorWidget: (_, _, _) => const SizedBox(height: 0),
               ),
             Padding(
               padding: const EdgeInsets.all(12),
@@ -211,10 +215,11 @@ class PostEmbedView extends StatelessWidget {
               aspectRatio: video.aspectRatio == null ? 16 / 9 : video.aspectRatio!.width / video.aspectRatio!.height,
               child: video.thumbnail == null
                   ? ColoredBox(color: context.colorScheme.surfaceContainerHighest, child: const SizedBox.expand())
-                  : Image.network(
-                      video.thumbnail!,
+                  : CachedNetworkImage(
+                      imageUrl: video.thumbnail!,
+                      cacheManager: LazuriteImageCacheManager.instance,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => ColoredBox(
+                      errorWidget: (_, _, _) => ColoredBox(
                         color: context.colorScheme.surfaceContainerHighest,
                         child: const SizedBox.expand(),
                       ),

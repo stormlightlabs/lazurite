@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/bootstrap/auth_bootstrap.dart';
+import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/embedding/embedding_service.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -57,6 +58,8 @@ import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  imageCache.maximumSize = OfflineCachePolicy.imageMemoryEntryLimit;
+  imageCache.maximumSizeBytes = OfflineCachePolicy.imageMemoryByteLimit;
 
   await log.initialize();
   await PostScheduler.initialize();
@@ -418,6 +421,8 @@ class _LazuriteAppState extends State<LazuriteApp> {
                 RepositoryProvider(
                   create: (context) => PostThreadRepository(
                     bluesky: bluesky,
+                    database: widget.database,
+                    accountDid: accountDid,
                     moderationService: context.read<ModerationService>(),
                     appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
                   ),

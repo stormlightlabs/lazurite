@@ -1,5 +1,7 @@
 import 'package:bluesky/moderation.dart' as bsky_moderation;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ModeratedAvatar extends StatelessWidget {
@@ -42,7 +44,12 @@ class ModeratedAvatar extends StatelessWidget {
       child: shouldMask
           ? Icon(Icons.shield_outlined, color: colorScheme.onSurfaceVariant, size: size * 0.44)
           : imageUrl != null
-          ? Image.network(imageUrl!, fit: BoxFit.cover, errorBuilder: (_, _, _) => _buildFallback(context))
+          ? CachedNetworkImage(
+              imageUrl: imageUrl!,
+              cacheManager: LazuriteImageCacheManager.instance,
+              fit: BoxFit.cover,
+              errorWidget: (_, _, _) => _buildFallback(context),
+            )
           : _buildFallback(context),
     );
   }

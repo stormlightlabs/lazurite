@@ -1,8 +1,9 @@
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
-import 'package:lazurite/features/feed/data/post_action_repository.dart';
+import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 
 enum InteractionTab { likes, reposts }
@@ -251,7 +252,7 @@ class _PostInteractionsSheetState extends State<PostInteractionsSheet> {
 
         return ListTile(
           leading: CircleAvatar(
-            backgroundImage: profile.avatar != null ? NetworkImage(profile.avatar!) : null,
+            backgroundImage: appCachedImageProvider(profile.avatar),
             backgroundColor: colorScheme.surfaceContainerHighest,
             child: profile.avatar == null ? Text(initials) : null,
           ),

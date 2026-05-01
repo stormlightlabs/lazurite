@@ -3,7 +3,9 @@ import 'package:bluesky/app_bsky_embed_recordwithmedia.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/core/theme/color_filters.dart';
 import 'package:lazurite/core/theme/spacing.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -86,11 +88,12 @@ class GridPostCard extends StatelessWidget {
                         aspectRatio: 1.0,
                         child: ColorFiltered(
                           colorFilter: AppColorFilters.greyscale,
-                          child: Image.network(
-                            primaryImageUrl,
+                          child: CachedNetworkImage(
+                            imageUrl: primaryImageUrl,
+                            cacheManager: LazuriteImageCacheManager.instance,
                             fit: BoxFit.cover,
                             width: double.infinity,
-                            errorBuilder: (_, _, _) =>
+                            errorWidget: (_, _, _) =>
                                 ColoredBox(color: colorScheme.surfaceContainerHigh, child: const SizedBox.expand()),
                           ),
                         ),

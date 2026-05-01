@@ -1,5 +1,7 @@
 import 'package:bluesky/moderation.dart' as bsky_moderation;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
@@ -48,10 +50,11 @@ class ProfileAvatar extends StatelessWidget {
       child: shouldMask
           ? Icon(Icons.shield_outlined, color: colorScheme.onSurfaceVariant, size: size * 0.44)
           : imageUrl != null
-          ? Image.network(
-              imageUrl!,
+          ? CachedNetworkImage(
+              imageUrl: imageUrl!,
+              cacheManager: LazuriteImageCacheManager.instance,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => _buildFallback(context, containerColor),
+              errorWidget: (_, _, _) => _buildFallback(context, containerColor),
             )
           : _buildFallback(context, containerColor),
     );

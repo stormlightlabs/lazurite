@@ -1,7 +1,9 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
@@ -312,10 +314,11 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
       child: avatarUrl != null
           ? ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                avatarUrl,
+              child: CachedNetworkImage(
+                imageUrl: avatarUrl,
+                cacheManager: LazuriteImageCacheManager.instance,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const Icon(Icons.rss_feed, color: Colors.white),
+                errorWidget: (_, _, _) => const Icon(Icons.rss_feed, color: Colors.white),
               ),
             )
           : const Icon(Icons.rss_feed, color: Colors.white),

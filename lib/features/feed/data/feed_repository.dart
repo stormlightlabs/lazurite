@@ -6,6 +6,7 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_getauthorfeed.dart';
 import 'package:bluesky/app_bsky_unspecced_defs.dart';
 import 'package:flutter/foundation.dart';
+import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
@@ -98,7 +99,7 @@ class FeedRepository {
     );
 
     final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
-    await _cacheFirstPageIfNeeded(feedKey: timelineCacheKey, result: result, cursor: cursor);
+    await _cacheFeedWindow(feedKey: timelineCacheKey, result: result, cursor: cursor);
     return result;
   }
 
@@ -114,23 +115,27 @@ class FeedRepository {
     );
 
     final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
-    await _cacheFirstPageIfNeeded(feedKey: 'feed:${feedUri.toString()}', result: result, cursor: cursor);
+    await _cacheFeedWindow(feedKey: 'feed:${feedUri.toString()}', result: result, cursor: cursor);
     return result;
   }
 
   Future<FeedResult?> getCachedFeedPage(String feedKey) async {
-    final cached = await _database.getCachedFeedPage(_accountDid, feedKey);
-    if (cached == null) {
+    final cachedPosts = await _database.getCachedFeedPosts(_accountDid, feedKey);
+    if (cachedPosts.isEmpty) {
       return null;
     }
 
-    final decoded = jsonDecode(cached.payload) as Map<String, dynamic>;
-    final rawPosts = decoded['posts'] as List<dynamic>? ?? const [];
-    final posts = rawPosts
-        .map((entry) => FeedViewPost.fromJson(Map<String, dynamic>.from(entry as Map)))
+    final posts = cachedPosts
+        .map((entry) => FeedViewPost.fromJson(jsonDecode(entry.postJson) as Map<String, dynamic>))
         .toList(growable: false);
+    final pageMeta = await _database.getCachedFeedPage(_accountDid, feedKey);
+    String? cursor;
+    if (pageMeta != null) {
+      final decoded = jsonDecode(pageMeta.payload) as Map<String, dynamic>;
+      cursor = decoded['cursor'] as String?;
+    }
 
-    return FeedResult(posts: posts, cursor: decoded['cursor'] as String?);
+    return FeedResult(posts: posts, cursor: cursor);
   }
 
   Future<PreferencesResult> getPreferences() async {
@@ -310,23 +315,72 @@ class FeedRepository {
     return posts.where((post) => !moderationService.shouldFilterFeedViewPostInList(post)).toList();
   }
 
-  Future<void> _cacheFirstPageIfNeeded({
-    required String feedKey,
-    required FeedResult result,
-    required String? cursor,
-  }) async {
-    if (cursor != null) {
-      return;
+  Future<void> _cacheFeedWindow({required String feedKey, required FeedResult result, required String? cursor}) async {
+    final existingPosts = await _database.getCachedFeedPosts(_accountDid, feedKey);
+
+    final merged = <FeedViewPost>[];
+    final seen = <String>{};
+
+    void addPost(FeedViewPost post) {
+      final uri = post.post.uri.toString();
+      if (seen.add(uri)) {
+        merged.add(post);
+      }
     }
 
-    await _database.cacheFeedPage(
-      accountDid: _accountDid,
-      feedKey: feedKey,
-      payload: jsonEncode({
-        'cursor': result.cursor,
-        'posts': result.posts.map((post) => post.toJson()).toList(growable: false),
-      }),
-    );
+    if (cursor == null) {
+      // Refresh: newest page goes first.
+      for (final post in result.posts) {
+        addPost(post);
+      }
+      for (final cached in existingPosts) {
+        if (seen.contains(cached.postUri)) {
+          continue;
+        }
+        addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
+      }
+    } else {
+      // Pagination: append older page at the end.
+      for (final cached in existingPosts) {
+        addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
+      }
+      for (final post in result.posts) {
+        addPost(post);
+      }
+    }
+
+    final limited = merged.take(OfflineCachePolicy.feedPostLimit).toList(growable: false);
+    final companions = <CachedFeedPostsCompanion>[];
+    for (var i = 0; i < limited.length; i++) {
+      final post = limited[i];
+      final uri = post.post.uri.toString();
+      // Large sort numbers mean newer items come first in DESC sort.
+      final sortOrder = OfflineCachePolicy.feedPostLimit - i;
+      companions.add(
+        CachedFeedPostsCompanion.insert(
+          accountDid: _accountDid,
+          feedKey: feedKey,
+          postUri: uri,
+          postJson: jsonEncode(post.toJson()),
+          sortOrder: sortOrder,
+        ),
+      );
+    }
+
+    await _database.transaction(() async {
+      await _database.deleteCachedFeedPostsForFeed(_accountDid, feedKey);
+      await _database.upsertCachedFeedPosts(accountDid: _accountDid, feedKey: feedKey, posts: companions);
+      await _database.cacheFeedPage(
+        accountDid: _accountDid,
+        feedKey: feedKey,
+        payload: jsonEncode({'cursor': result.cursor, 'lastRequestCursor': cursor}),
+      );
+      await _database.pruneCachedFeedPosts(
+        accountDid: _accountDid,
+        feedKey: feedKey,
+        maxCount: OfflineCachePolicy.feedPostLimit,
+      );
+    });
   }
 }
 

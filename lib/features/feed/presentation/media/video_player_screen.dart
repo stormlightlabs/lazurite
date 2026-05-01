@@ -1,5 +1,7 @@
 import 'package:chewie/chewie.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:video_player/video_player.dart';
@@ -95,10 +97,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       alignment: Alignment.center,
       children: [
         if (widget.args.thumbnailUrl != null)
-          Image.network(
-            widget.args.thumbnailUrl!,
+          CachedNetworkImage(
+            imageUrl: widget.args.thumbnailUrl!,
+            cacheManager: LazuriteImageCacheManager.instance,
             fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black26),
+            errorWidget: (_, _, _) => const ColoredBox(color: Colors.black26),
           )
         else
           const ColoredBox(color: Colors.black26),

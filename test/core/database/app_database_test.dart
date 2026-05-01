@@ -220,6 +220,48 @@ void main() {
         expect(cached, isNotNull);
         expect(cached!.payload, equals('{"cursor":"next","posts":[]}'));
       });
+
+      test('should upsert and prune cached feed posts', () async {
+        final posts = List.generate(
+          3,
+          (index) => CachedFeedPostsCompanion.insert(
+            accountDid: 'did:plc:test',
+            feedKey: 'timeline',
+            postUri: 'at://did:plc:test/app.bsky.feed.post/$index',
+            postJson: '{"uri":"$index"}',
+            sortOrder: 3 - index,
+          ),
+        );
+        await database.upsertCachedFeedPosts(accountDid: 'did:plc:test', feedKey: 'timeline', posts: posts);
+        await database.pruneCachedFeedPosts(accountDid: 'did:plc:test', feedKey: 'timeline', maxCount: 2);
+
+        final cached = await database.getCachedFeedPosts('did:plc:test', 'timeline');
+        expect(cached.length, 2);
+        expect(cached.first.postUri, 'at://did:plc:test/app.bsky.feed.post/0');
+        expect(cached.last.postUri, 'at://did:plc:test/app.bsky.feed.post/1');
+      });
+
+      test('should cache and prune thread roots by recency', () async {
+        await database.cacheThreadRoot(
+          accountDid: 'did:plc:test',
+          rootUri: 'at://did:plc:test/app.bsky.feed.post/old',
+          payload: '{"uri":"old"}',
+          fetchedAt: DateTime.utc(2026, 5, 1, 10),
+        );
+        await database.cacheThreadRoot(
+          accountDid: 'did:plc:test',
+          rootUri: 'at://did:plc:test/app.bsky.feed.post/new',
+          payload: '{"uri":"new"}',
+          fetchedAt: DateTime.utc(2026, 5, 1, 11),
+        );
+
+        await database.pruneCachedThreadRoots('did:plc:test', 1);
+
+        final newest = await database.getCachedThreadRoot('did:plc:test', 'at://did:plc:test/app.bsky.feed.post/new');
+        final oldest = await database.getCachedThreadRoot('did:plc:test', 'at://did:plc:test/app.bsky.feed.post/old');
+        expect(newest, isNotNull);
+        expect(oldest, isNull);
+      });
     });
 
     group('Settings operations', () {

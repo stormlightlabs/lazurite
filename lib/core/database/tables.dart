@@ -79,6 +79,30 @@ class CachedFeedPages extends Table {
   Set<Column> get primaryKey => {accountDid, feedKey};
 }
 
+@DataClassName('CachedFeedPost')
+class CachedFeedPosts extends Table {
+  TextColumn get accountDid => text()();
+  TextColumn get feedKey => text()();
+  TextColumn get postUri => text()();
+  TextColumn get postJson => text()();
+  IntColumn get sortOrder => integer()();
+  DateTimeColumn get fetchedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {accountDid, feedKey, postUri};
+}
+
+@DataClassName('CachedThreadRoot')
+class CachedThreadRoots extends Table {
+  TextColumn get accountDid => text()();
+  TextColumn get rootUri => text()();
+  TextColumn get payload => text()();
+  DateTimeColumn get fetchedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {accountDid, rootUri};
+}
+
 @DataClassName('SearchHistoryEntry')
 class SearchHistory extends Table {
   IntColumn get id => integer().autoIncrement()();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
@@ -115,7 +116,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                 builder: (context, index) {
                   final item = widget.args.images[index];
                   return PhotoViewGalleryPageOptions(
-                    imageProvider: NetworkImage(item.fullsizeUrl),
+                    imageProvider: appCachedImageProvider(item.fullsizeUrl)!,
                     heroAttributes: PhotoViewHeroAttributes(tag: item.heroTag),
                     minScale: PhotoViewComputedScale.contained,
                     maxScale: PhotoViewComputedScale.covered * 2.6,

@@ -1,55 +1,134 @@
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_getpostthread.dart';
-import 'package:bluesky/bluesky.dart';
+import 'package:lazurite/core/cache/offline_cache_policy.dart';
+import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
+import 'dart:convert';
 
 class PostThreadRepository {
   PostThreadRepository({
-    required Bluesky bluesky,
+    required dynamic bluesky,
+    required AppDatabase database,
+    required String accountDid,
     ModerationService? moderationService,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
   }) : _bluesky = bluesky,
+       _database = database,
+       _accountDid = accountDid,
        _moderationService = moderationService,
        _appViewContext = AppViewRequestContext(
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
        );
 
-  final Bluesky _bluesky;
+  final dynamic _bluesky;
+  final AppDatabase _database;
+  final String _accountDid;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
 
   Future<ThreadViewPost> getPostThread(String uri) async {
-    final response = await _bluesky.feed.getPostThread(
-      uri: AtUri.parse(uri),
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.feed.getPostThread',
-        await _moderationService?.headersForRequest(),
-      ),
-    );
-    final thread = response.data.thread;
+    try {
+      final response = await _bluesky.feed.getPostThread(
+        uri: AtUri.parse(uri),
+        $headers: _appViewContext.appBskyHeadersForEndpoint(
+          'app.bsky.feed.getPostThread',
+          await _moderationService?.headersForRequest(),
+        ),
+      );
+      final thread = response.data.thread as UFeedGetPostThreadThread;
 
-    if (thread.isThreadViewPost) {
-      final threadViewPost = thread.threadViewPost!;
-      if (_moderationService?.shouldFilterPostInView(threadViewPost.post) ?? false) {
-        throw Exception('Post hidden by moderation preferences');
+      if (thread.isThreadViewPost) {
+        final threadViewPost = thread.threadViewPost!;
+        if (_moderationService?.shouldFilterPostInView(threadViewPost.post) ?? false) {
+          throw Exception('Post hidden by moderation preferences');
+        }
+
+        final pruned = _pruneThread(threadViewPost);
+        await _cacheThread(pruned);
+        return pruned;
       }
 
-      return _pruneThread(threadViewPost);
-    }
+      if (thread.isNotFoundPost) {
+        throw Exception('Post not found');
+      }
 
-    if (thread.isNotFoundPost) {
-      throw Exception('Post not found');
-    }
-
-    if (thread.isBlockedPost) {
-      throw Exception('Post is from a blocked account');
+      if (thread.isBlockedPost) {
+        throw Exception('Post is from a blocked account');
+      }
+    } catch (error, stackTrace) {
+      final cached = await _loadCachedThread(uri);
+      if (cached != null) {
+        log.w('Using cached thread after request failure: $error', error: error, stackTrace: stackTrace);
+        return cached;
+      }
+      rethrow;
     }
 
     throw Exception('Unable to load thread');
+  }
+
+  Future<void> _cacheThread(ThreadViewPost thread) async {
+    final rootUri = _threadRoot(thread).post.uri.toString();
+    await _database.cacheThreadRoot(accountDid: _accountDid, rootUri: rootUri, payload: jsonEncode(thread.toJson()));
+    await _database.pruneCachedThreadRoots(_accountDid, OfflineCachePolicy.threadRootLimit);
+  }
+
+  Future<ThreadViewPost?> _loadCachedThread(String requestedUri) async {
+    final direct = await _database.getCachedThreadRoot(_accountDid, requestedUri);
+    if (direct != null) {
+      try {
+        return ThreadViewPost.fromJson(jsonDecode(direct.payload) as Map<String, dynamic>);
+      } catch (_) {
+        // Ignore malformed cache rows and continue scanning.
+      }
+    }
+
+    final all = await (_database.select(
+      _database.cachedThreadRoots,
+    )..where((row) => row.accountDid.equals(_accountDid))).get();
+    for (final candidate in all) {
+      try {
+        final decoded = ThreadViewPost.fromJson(jsonDecode(candidate.payload) as Map<String, dynamic>);
+        if (_containsPostUri(decoded, requestedUri)) {
+          return decoded;
+        }
+      } catch (_) {
+        // Ignore malformed cache rows and keep scanning valid snapshots.
+      }
+    }
+    return null;
+  }
+
+  bool _containsPostUri(ThreadViewPost thread, String postUri) {
+    if (thread.post.uri.toString() == postUri) {
+      return true;
+    }
+    final parent = thread.parent;
+    if (parent != null && parent.isThreadViewPost && _containsPostUri(parent.threadViewPost!, postUri)) {
+      return true;
+    }
+    final replies = thread.replies;
+    if (replies != null) {
+      for (final reply in replies) {
+        if (reply.isThreadViewPost && _containsPostUri(reply.threadViewPost!, postUri)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  ThreadViewPost _threadRoot(ThreadViewPost thread) {
+    var current = thread;
+    while (current.parent != null && current.parent!.isThreadViewPost) {
+      current = current.parent!.threadViewPost!;
+    }
+    return current;
   }
 
   ThreadViewPost _pruneThread(ThreadViewPost thread) {

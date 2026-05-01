@@ -13,6 +13,8 @@ part 'app_database.g.dart';
     Settings,
     SavedFeeds,
     CachedFeedPages,
+    CachedFeedPosts,
+    CachedThreadRoots,
     SearchHistory,
     Drafts,
     SavedPosts,
@@ -26,7 +28,7 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -136,6 +138,10 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           "INSERT OR IGNORE INTO settings (key, value) VALUES ('slingshot_identity_fallback_enabled', 'false')",
         );
+      }
+      if (from < 20) {
+        await migrator.createTable(cachedFeedPosts);
+        await migrator.createTable(cachedThreadRoots);
       }
     },
   );
@@ -273,6 +279,107 @@ class AppDatabase extends _$AppDatabase {
     return (delete(
       cachedFeedPages,
     )..where((entry) => entry.accountDid.equals(accountDid) & entry.feedKey.equals(feedKey))).go();
+  }
+
+  Future<void> upsertCachedFeedPosts({
+    required String accountDid,
+    required String feedKey,
+    required Iterable<CachedFeedPostsCompanion> posts,
+  }) async {
+    await batch((batch) {
+      for (final post in posts) {
+        batch.insert(cachedFeedPosts, post, mode: InsertMode.replace);
+      }
+    });
+  }
+
+  Future<List<CachedFeedPost>> getCachedFeedPosts(String accountDid, String feedKey) {
+    return (select(cachedFeedPosts)
+          ..where((entry) => entry.accountDid.equals(accountDid) & entry.feedKey.equals(feedKey))
+          ..orderBy([(entry) => OrderingTerm.desc(entry.sortOrder)]))
+        .get();
+  }
+
+  Future<int> deleteCachedFeedPostsForFeed(String accountDid, String feedKey) {
+    return (delete(
+      cachedFeedPosts,
+    )..where((entry) => entry.accountDid.equals(accountDid) & entry.feedKey.equals(feedKey))).go();
+  }
+
+  Future<void> pruneCachedFeedPosts({
+    required String accountDid,
+    required String feedKey,
+    required int maxCount,
+  }) async {
+    final all =
+        await (select(cachedFeedPosts)
+              ..where((entry) => entry.accountDid.equals(accountDid) & entry.feedKey.equals(feedKey))
+              ..orderBy([(entry) => OrderingTerm.desc(entry.sortOrder)]))
+            .get();
+    if (all.length <= maxCount) {
+      return;
+    }
+
+    final toDelete = all.skip(maxCount);
+    await batch((batch) {
+      for (final entry in toDelete) {
+        batch.deleteWhere(
+          cachedFeedPosts,
+          (tbl) =>
+              tbl.accountDid.equals(entry.accountDid) &
+              tbl.feedKey.equals(entry.feedKey) &
+              tbl.postUri.equals(entry.postUri),
+        );
+      }
+    });
+  }
+
+  Future<int> cacheThreadRoot({
+    required String accountDid,
+    required String rootUri,
+    required String payload,
+    DateTime? fetchedAt,
+  }) => into(cachedThreadRoots).insert(
+    CachedThreadRootsCompanion(
+      accountDid: Value(accountDid),
+      rootUri: Value(rootUri),
+      payload: Value(payload),
+      fetchedAt: Value(fetchedAt ?? DateTime.now()),
+    ),
+    mode: InsertMode.replace,
+  );
+
+  Future<CachedThreadRoot?> getCachedThreadRoot(String accountDid, String rootUri) {
+    return (select(
+      cachedThreadRoots,
+    )..where((entry) => entry.accountDid.equals(accountDid) & entry.rootUri.equals(rootUri))).getSingleOrNull();
+  }
+
+  Future<int> deleteCachedThreadRoot(String accountDid, String rootUri) {
+    return (delete(
+      cachedThreadRoots,
+    )..where((entry) => entry.accountDid.equals(accountDid) & entry.rootUri.equals(rootUri))).go();
+  }
+
+  Future<void> pruneCachedThreadRoots(String accountDid, int maxCount) async {
+    final all =
+        await (select(cachedThreadRoots)
+              ..where((entry) => entry.accountDid.equals(accountDid))
+              ..orderBy([(entry) => OrderingTerm.desc(entry.fetchedAt)]))
+            .get();
+    if (all.length <= maxCount) {
+      return;
+    }
+
+    final toDelete = all.skip(maxCount);
+    await batch((batch) {
+      for (final entry in toDelete) {
+        batch.deleteWhere(
+          cachedThreadRoots,
+          (tbl) => tbl.accountDid.equals(entry.accountDid) & tbl.rootUri.equals(entry.rootUri),
+        );
+      }
+    });
   }
 
   Future<void> replaceSavedFeeds(String accountDid, List<SavedFeedsCompanion> feeds) async {
