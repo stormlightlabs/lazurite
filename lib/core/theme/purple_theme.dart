@@ -3,39 +3,80 @@ import 'package:lazurite/core/theme/typography.dart';
 
 /// Shades of Purple — dark theme by Alexander Keliris (Rigellute).
 /// https://github.com/Rigellute/shades-of-purple.vim
+///
+/// Light mode specific colors are L0-L6
 class PurpleTheme {
   PurpleTheme._();
 
-  // ── Dark palette ──────────────────────────────────────────────────────────
-  static const Color sop0 = Color(0xFF1E1E3F); // darkest bg (ColorColumn, WildMenu)
-  static const Color sop1 = Color(0xFF28284E); // panel bg (LineNr bg, VertSplit bg)
-  static const Color sop2 = Color(0xFF2D2B55); // main bg (Normal bg)
-  static const Color sop3 = Color(0xFFA599E9); // muted lavender (LineNr fg, NonText)
-  static const Color sop4 = Color(0xFFE1EFFF); // main fg (Normal fg)
-  static const Color sop5 = Color(0xFF9EFFFF); // cyan (Special, Title)
-  static const Color sop6 = Color(0xFFFAD000); // yellow (Cursor, WarningMsg)
-  static const Color sop7 = Color(0xFFFF9D00); // orange (Function, Identifier)
-  static const Color sop8 = Color(0xFFB362FF); // vivid purple (Comment)
-  static const Color sop9 = Color(0xFFFF628C); // pink-rose (Constant, SpellBad)
-  static const Color sop10 = Color(0xFFA5FF90); // green (String)
-  static const Color sop11 = Color(0xFFEC3A37); // red (Error, DiffDelete)
-  static const Color sop12 = Color(0xFF80FFBB); // teal (Type)
-  static const Color sop13 = Color(0xFFFB94FF); // light magenta (jsThis, jsFunction)
-  static const Color sop14 = Color(0xFF6943FF); // blue (terminal blue)
+  /// darkest bg (ColorColumn, WildMenu)
+  static const Color sop0 = Color(0xFF1E1E3F);
+
+  /// panel bg (LineNr bg, VertSplit bg)
+  static const Color sop1 = Color(0xFF28284E);
+
+  /// main bg (Normal bg)
+  static const Color sop2 = Color(0xFF2D2B55);
+
+  /// muted lavender (LineNr fg, NonText)
+  static const Color sop3 = Color(0xFFA599E9);
+
+  /// main fg (Normal fg)
+  static const Color sop4 = Color(0xFFE1EFFF);
+
+  /// cyan (Special, Title)
+  static const Color sop5 = Color(0xFF9EFFFF);
+
+  /// yellow (Cursor, WarningMsg)
+  static const Color sop6 = Color(0xFFFAD000);
+
+  /// orange (Function, Identifier)
+  static const Color sop7 = Color(0xFFFF9D00);
+
+  /// vivid purple (Comment)
+  static const Color sop8 = Color(0xFFB362FF);
+
+  /// pink-rose (Constant, SpellBad)
+  static const Color sop9 = Color(0xFFFF628C);
+
+  /// green (String)
+  static const Color sop10 = Color(0xFFA5FF90);
+
+  /// red (Error, DiffDelete)
+  static const Color sop11 = Color(0xFFEC3A37);
+
+  /// teal (Type)
+  static const Color sop12 = Color(0xFF80FFBB);
+
+  /// light magenta (jsThis, jsFunction)
+  static const Color sop13 = Color(0xFFFB94FF);
+
+  /// blue (terminal blue)
+  static const Color sop14 = Color(0xFF6943FF);
 
   // Semi-transparent overlay for subtle dark-mode borders/dividers
   static const Color darkOutlineVariant = Color(0x26A599E9); // lavender ~15% opacity
 
-  // ── Light palette ─────────────────────────────────────────────────────────
-  static const Color sopL0 = Color(0xFFF8F6FF); // lightest bg (scaffold)
-  static const Color sopL1 = Color(0xFFEDE9FF); // panel bg (cards, surfaces)
-  static const Color sopL2 = Color(0xFFD6CEFF); // border / divider
-  static const Color sopL3 = Color(0xFF8B7FD4); // muted purple (secondary text)
-  static const Color sopL4 = Color(0xFF2D2B55); // main fg (body text = sop2)
-  static const Color sopL5 = Color(0xFF6943FF); // primary accent (sop14)
-  static const Color sopL6 = Color(0xFF7B6EC0); // secondary accent
+  /// lightest bg (scaffold)
+  static const Color sopL0 = Color(0xFFF8F6FF);
 
-  // ── Dark theme ────────────────────────────────────────────────────────────
+  /// panel bg (cards, surfaces)
+  static const Color sopL1 = Color(0xFFEDE9FF);
+
+  /// border / divider
+  static const Color sopL2 = Color(0xFFD6CEFF);
+
+  /// muted purple (secondary text)
+  static const Color sopL3 = Color(0xFF8B7FD4);
+
+  /// main fg (body text = sop2)
+  static const Color sopL4 = Color(0xFF2D2B55);
+
+  /// primary accent (sop14)
+  static const Color sopL5 = Color(0xFF6943FF);
+
+  /// secondary accent
+  static const Color sopL6 = Color(0xFF7B6EC0);
+
   static ThemeData dark() {
     return ThemeData(
       useMaterial3: true,
@@ -109,7 +150,6 @@ class PurpleTheme {
     );
   }
 
-  // ── Light theme ───────────────────────────────────────────────────────────
   static ThemeData light() {
     return ThemeData(
       useMaterial3: true,

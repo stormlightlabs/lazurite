@@ -172,7 +172,7 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
         if (context.canPop()) {
           context.pop();
         } else {
-          context.go('/profile');
+          context.go('/profile/me');
         }
       },
       child: BlocBuilder<ListBloc, ListState>(

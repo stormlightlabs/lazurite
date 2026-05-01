@@ -473,32 +473,23 @@ class AppRouter {
             navigatorKey: _profileNavigatorKey,
             routes: [
               GoRoute(
-                path: '/profile',
-                pageBuilder: (context, state) => _page(context, state, const ProfileScreen()),
-                routes: [
-                  GoRoute(
-                    path: ':actor',
-                    pageBuilder: (context, state) => _page(
-                      context,
-                      state,
-                      ProfileScreen(
-                        actor: Uri.decodeComponent(state.pathParameters['actor'] ?? ''),
-                        showBackButton: true,
-                      ),
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'view',
-                    redirect: (_, state) {
-                      final rawActor = state.uri.queryParameters['actor']?.trim() ?? '';
-                      if (rawActor.isEmpty) {
-                        return '/profile';
-                      }
-                      final normalizedActor = rawActor.startsWith('@') ? rawActor.substring(1) : rawActor;
-                      return '/profile/${Uri.encodeComponent(normalizedActor)}';
-                    },
-                  ),
-                ],
+                path: '/profile/me',
+                pageBuilder: (context, state) => _page(context, state, const ProfileScreen(actor: 'me')),
+              ),
+              GoRoute(
+                path: '/profile/:actor',
+                redirect: (_, state) {
+                  final actor = (state.pathParameters['actor'] ?? '').trim().toLowerCase();
+                  if (actor == 'me') {
+                    return '/profile/me';
+                  }
+                  return null;
+                },
+                pageBuilder: (context, state) => _page(
+                  context,
+                  state,
+                  ProfileScreen(actor: Uri.decodeComponent(state.pathParameters['actor'] ?? ''), showBackButton: true),
+                ),
               ),
             ],
           ),

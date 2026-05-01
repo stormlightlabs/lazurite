@@ -13,7 +13,7 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Lazurite'),
         actions: [
-          IconButton(icon: const Icon(Icons.person_outline), onPressed: () => context.push('/profile')),
+          IconButton(icon: const Icon(Icons.person_outline), onPressed: () => context.push('/profile/me')),
           IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => context.push('/settings')),
           IconButton(
             icon: const Icon(Icons.logout),

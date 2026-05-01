@@ -83,6 +83,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   String? _lastScheduledProfileActorLoad;
   String? _lastScheduledFeedLoadKey;
 
+  bool get _isCurrentRoute => ModalRoute.of(context)?.isCurrent ?? true;
+
   @override
   void initState() {
     super.initState();
@@ -118,12 +120,16 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   String? get _resolvedActor {
     final authState = context.read<AuthBloc>().state;
     if (!authState.isAuthenticated) return null;
+    final authDid = authState.tokens?.did;
     final rawActor = widget.actor ?? authState.tokens?.did;
     if (rawActor == null) {
       return null;
     }
 
     final normalizedActor = _normalizeActor(rawActor);
+    if (normalizedActor.toLowerCase() == 'me') {
+      return authDid;
+    }
     return normalizedActor.isEmpty ? null : normalizedActor;
   }
 
@@ -336,7 +342,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   final profileMatchesExpectedActor = expectedActor == null
                       ? true
                       : _profileMatchesExpectedActor(profile, expectedActor);
-                  if (expectedActor != null) {
+                  if (expectedActor != null && _isCurrentRoute) {
                     _scheduleProfileLoadIfNeeded(expectedActor, profileState);
                     _scheduleFeedLoadIfNeeded(expectedActor, _currentFilter, feedState, profile);
                   }
@@ -379,7 +385,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                               leading: widget.showBackButton
                                   ? IconButton(
                                       icon: const Icon(Icons.arrow_back),
-                                      onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
+                                      onPressed: () => context.canPop() ? context.pop() : context.go('/profile/me'),
                                     )
                                   : const AppShellMenuButton(),
                               actions: [

@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/account/presentation/account_switcher_sheet.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
@@ -14,7 +15,6 @@ import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:provider/provider.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class AppShellScope extends InheritedWidget {
   const AppShellScope({super.key, required super.child, required this.openMenu});
@@ -248,7 +248,7 @@ class _AppMenu extends StatelessWidget {
     final isHomeRoute = currentPath == '/';
     final isSearchRoute = currentPath == '/search';
     final isFeedsRoute = currentPath == '/feeds';
-    final isProfileRoute = currentPath == '/profile';
+    final isProfileRoute = currentPath.startsWith('/profile/');
     final isSettingsRoute = currentPath == '/settings' || currentPath.startsWith('/settings/');
     final isDevToolsRoute = currentPath == '/settings/devtools';
     final isCleanFollowsRoute = currentPath == '/settings/clean-follows';

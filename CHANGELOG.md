@@ -78,3 +78,7 @@
 
 - Configurable autocomplete/typeahead for login & profile/actor search
 - Starter Pack search (not implemented upstream) screen
+
+#### 2026-04-30
+
+- Added shades of purple/blacksky inspired theme
