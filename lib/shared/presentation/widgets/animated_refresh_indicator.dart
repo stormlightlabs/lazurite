@@ -36,14 +36,18 @@ class _AnimatedRefreshIndicatorState extends State<AnimatedRefreshIndicator> wit
       return;
     }
 
+    if (!mounted) {
+      return;
+    }
+
     setState(() => _refreshing = true);
     unawaited(_rotationController.repeat());
 
     try {
       await widget.onRefresh();
     } finally {
-      _rotationController.stop();
       if (mounted) {
+        _rotationController.stop();
         setState(() => _refreshing = false);
       }
     }

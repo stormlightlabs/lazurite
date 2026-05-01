@@ -359,12 +359,15 @@ class TrendingScreenData {
 }
 
 enum FeedFilter {
+  postsWithReplies,
   postsNoReplies,
   postsWithMedia,
   postsAndAuthorThreads;
 
   String get emptyLabel {
     switch (this) {
+      case FeedFilter.postsWithReplies:
+        return 'No posts or replies yet';
       case FeedFilter.postsNoReplies:
         return 'No posts yet';
       case FeedFilter.postsAndAuthorThreads:
@@ -376,6 +379,8 @@ enum FeedFilter {
 
   FeedGetAuthorFeedFilter get bskyFilter {
     switch (this) {
+      case FeedFilter.postsWithReplies:
+        return const FeedGetAuthorFeedFilter.knownValue(data: KnownFeedGetAuthorFeedFilter.posts_with_replies);
       case FeedFilter.postsNoReplies:
         return const FeedGetAuthorFeedFilter.knownValue(data: KnownFeedGetAuthorFeedFilter.posts_no_replies);
       case FeedFilter.postsWithMedia:

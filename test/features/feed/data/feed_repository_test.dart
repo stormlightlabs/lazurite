@@ -227,7 +227,8 @@ void main() {
 
   group('FeedFilter', () {
     test('has expected filter values', () {
-      expect(FeedFilter.values.length, 3);
+      expect(FeedFilter.values.length, 4);
+      expect(FeedFilter.values, contains(FeedFilter.postsWithReplies));
       expect(FeedFilter.values, contains(FeedFilter.postsNoReplies));
       expect(FeedFilter.values, contains(FeedFilter.postsWithMedia));
       expect(FeedFilter.values, contains(FeedFilter.postsAndAuthorThreads));

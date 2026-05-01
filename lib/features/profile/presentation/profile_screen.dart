@@ -1,4 +1,5 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
@@ -51,6 +52,22 @@ import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+enum _ProfileFeedSlice { posts, replies, quotes, reposts, media }
+
+class _ProfileFeedTabConfig {
+  const _ProfileFeedTabConfig({
+    required this.label,
+    required this.requestFilter,
+    required this.slice,
+    required this.emptyLabel,
+  });
+
+  final String label;
+  final FeedFilter requestFilter;
+  final _ProfileFeedSlice slice;
+  final String emptyLabel;
+}
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.actor, this.showBackButton = false});
 
@@ -63,12 +80,49 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
   static const _feedTabs = [
-    (label: 'Posts', filter: FeedFilter.postsNoReplies),
-    (label: 'Replies', filter: FeedFilter.postsAndAuthorThreads),
-    (label: 'Media', filter: FeedFilter.postsWithMedia),
+    _ProfileFeedTabConfig(
+      label: 'Posts',
+      requestFilter: FeedFilter.postsNoReplies,
+      slice: _ProfileFeedSlice.posts,
+      emptyLabel: 'No posts yet',
+    ),
+    _ProfileFeedTabConfig(
+      label: 'Replies',
+      requestFilter: FeedFilter.postsWithReplies,
+      slice: _ProfileFeedSlice.replies,
+      emptyLabel: 'No replies yet',
+    ),
+    _ProfileFeedTabConfig(
+      label: 'Quotes',
+      requestFilter: FeedFilter.postsWithReplies,
+      slice: _ProfileFeedSlice.quotes,
+      emptyLabel: 'No quotes yet',
+    ),
+    _ProfileFeedTabConfig(
+      label: 'Reposts',
+      requestFilter: FeedFilter.postsWithReplies,
+      slice: _ProfileFeedSlice.reposts,
+      emptyLabel: 'No reposts yet',
+    ),
+    _ProfileFeedTabConfig(
+      label: 'Media',
+      requestFilter: FeedFilter.postsWithMedia,
+      slice: _ProfileFeedSlice.media,
+      emptyLabel: 'No media posts yet',
+    ),
   ];
 
-  static const _baseTabLabels = ['POSTS', 'REPLIES', 'MEDIA', 'LISTS', 'STARTER PACKS'];
+  static const _baseTabLabelsOwn = ['POSTS', 'REPLIES', 'QUOTES', 'REPOSTS', 'MEDIA', 'LISTS', 'STARTER PACKS'];
+  static const _baseTabLabelsOther = [
+    'POSTS',
+    'REPLIES',
+    'QUOTES',
+    'REPOSTS',
+    'MEDIA',
+    'LIKED',
+    'LISTS',
+    'STARTER PACKS',
+  ];
   static const _suggestedTabLabel = 'SUGGESTED';
   static const _coverRefreshTriggerDistance = 72.0;
 
@@ -82,6 +136,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   bool _headerRefreshInFlight = false;
   String? _lastScheduledProfileActorLoad;
   String? _lastScheduledFeedLoadKey;
+  String? _cachedFeedActor;
+  final Map<FeedFilter, FeedState> _cachedFeedStates = {};
 
   bool get _isCurrentRoute => ModalRoute.of(context)?.isCurrent ?? true;
 
@@ -98,6 +154,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     super.didUpdateWidget(oldWidget);
     if (oldWidget.actor != widget.actor) {
       _tabController.index = 0;
+      _cachedFeedActor = null;
+      _cachedFeedStates.clear();
       _setSuggestedTabVisibility(false);
       _loadProfileAndFeed();
     }
@@ -113,8 +171,22 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   void _loadProfileAndFeed({FeedFilter? filter}) {
     final actor = _resolvedActor;
     if (actor == null) return;
+    _resetFeedCacheIfActorChanged(actor);
     context.read<ProfileBloc>().add(ProfileLoadRequested(actor: actor));
-    context.read<FeedBloc>().add(FeedLoadRequested(actor: actor, filter: filter ?? _currentFilter));
+    context.read<FeedBloc>().add(FeedLoadRequested(actor: actor, filter: filter ?? _currentRequestFilter));
+  }
+
+  void _loadFeedOnly({required FeedFilter filter}) {
+    final actor = _resolvedActor;
+    if (actor == null) return;
+    _resetFeedCacheIfActorChanged(actor);
+    final cached = _cachedFeedStates[filter];
+    if (cached != null && _feedMatchesExpectedActor(cached, actor, context.read<ProfileBloc>().state.profile)) {
+      if (cached.status == FeedStatus.loading || cached.status == FeedStatus.loaded) {
+        return;
+      }
+    }
+    context.read<FeedBloc>().add(FeedLoadRequested(actor: actor, filter: filter));
   }
 
   String? get _resolvedActor {
@@ -196,6 +268,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   void _scheduleFeedLoadIfNeeded(String actor, FeedFilter filter, FeedState feedState, ProfileViewDetailed? profile) {
+    final cachedState = _cachedFeedStates[filter];
+    if (cachedState != null && _feedMatchesExpectedActor(cachedState, actor, profile)) {
+      if (cachedState.status == FeedStatus.loading || cachedState.status == FeedStatus.loaded) {
+        _lastScheduledFeedLoadKey = null;
+        return;
+      }
+    }
+
     if (feedState.status == FeedStatus.loading &&
         feedState.filter == filter &&
         _feedMatchesExpectedActor(feedState, actor, profile)) {
@@ -223,10 +303,41 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     });
   }
 
+  List<String> get _baseTabLabels => _showSuggestedTab ? _baseTabLabelsOther : _baseTabLabelsOwn;
+
   List<String> get _tabLabels =>
       _showSuggestedTab ? [..._baseTabLabels, _suggestedTabLabel] : List<String>.of(_baseTabLabels);
 
-  FeedFilter get _currentFilter => _feedTabs[_tabController.index < _feedTabs.length ? _tabController.index : 0].filter;
+  _ProfileFeedTabConfig get _currentFeedTab =>
+      _feedTabs[_tabController.index < _feedTabs.length ? _tabController.index : 0];
+
+  FeedFilter get _currentRequestFilter => _currentFeedTab.requestFilter;
+
+  _ProfileFeedSlice get _currentFeedSlice => _currentFeedTab.slice;
+
+  void _resetFeedCacheIfActorChanged(String actor) {
+    if (_cachedFeedActor == actor) {
+      return;
+    }
+    _cachedFeedActor = actor;
+    _cachedFeedStates.clear();
+  }
+
+  FeedState _cachedStateForFilter(
+    FeedFilter filter, {
+    required String? expectedActor,
+    required ProfileViewDetailed? profile,
+  }) {
+    final cached = _cachedFeedStates[filter];
+    if (cached == null) {
+      return const FeedState.initial();
+    }
+
+    if (expectedActor == null || _feedMatchesExpectedActor(cached, expectedActor, profile)) {
+      return cached;
+    }
+    return const FeedState.initial();
+  }
 
   bool _shouldShowSuggestedTab(ProfileViewDetailed? profile) {
     if (profile == null) return false;
@@ -242,7 +353,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       return;
     }
 
-    final maxIndex = show ? _baseTabLabels.length : _baseTabLabels.length - 1;
+    final maxIndex = show ? _baseTabLabelsOther.length : _baseTabLabelsOwn.length - 1;
     final nextIndex = _tabController.index.clamp(0, maxIndex);
     final previousController = _tabController;
     _showSuggestedTab = show;
@@ -337,23 +448,66 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             builder: (context, profileState) {
               return BlocBuilder<FeedBloc, FeedState>(
                 builder: (context, feedState) {
-                  final profile = profileState.profile;
                   final expectedActor = _resolvedActor;
+                  final profile = profileState.profile;
                   final profileMatchesExpectedActor = expectedActor == null
                       ? true
                       : _profileMatchesExpectedActor(profile, expectedActor);
+                  final actorScopedProfile = profileMatchesExpectedActor ? profile : null;
+                  if (expectedActor != null) {
+                    _resetFeedCacheIfActorChanged(expectedActor);
+                  }
+                  if (expectedActor == null ||
+                      _feedMatchesExpectedActor(feedState, expectedActor, actorScopedProfile)) {
+                    _cachedFeedStates[feedState.filter] = feedState;
+                  }
                   if (expectedActor != null && _isCurrentRoute) {
                     _scheduleProfileLoadIfNeeded(expectedActor, profileState);
-                    _scheduleFeedLoadIfNeeded(expectedActor, _currentFilter, feedState, profile);
+                    if (_tabController.index < _feedTabs.length) {
+                      _scheduleFeedLoadIfNeeded(expectedActor, _currentRequestFilter, feedState, actorScopedProfile);
+                    }
                   }
 
                   final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
-                  final isOwnProfile = profile?.did == currentUserDid;
+                  final isOwnProfile = actorScopedProfile?.did == currentUserDid;
+                  final feedTabChildren = _feedTabs.map((tab) {
+                    final stateForTab = _cachedStateForFilter(
+                      tab.requestFilter,
+                      expectedActor: expectedActor,
+                      profile: actorScopedProfile,
+                    );
+                    return KeyedSubtree(
+                      key: PageStorageKey<String>('profile-feed-tab-${tab.slice.name}'),
+                      child: _buildFeedList(
+                        sourceState: stateForTab,
+                        requestFilter: tab.requestFilter,
+                        slice: tab.slice,
+                        emptyLabel: tab.emptyLabel,
+                        profile: actorScopedProfile,
+                        expectedActor: expectedActor,
+                      ),
+                    );
+                  });
                   final tabChildren = <Widget>[
-                    ..._feedTabs.map((t) => _buildFeedList(feedState, t.filter, profile, expectedActor)),
-                    _buildListsTab(context, profile),
-                    _buildStarterPacksTab(context, profile),
-                    if (_showSuggestedTab) _buildSuggestedFollowsTab(profile),
+                    ...feedTabChildren,
+                    if (_showSuggestedTab)
+                      KeyedSubtree(
+                        key: const PageStorageKey<String>('profile-liked-tab'),
+                        child: _buildLikedPostsTab(context, actorScopedProfile),
+                      ),
+                    KeyedSubtree(
+                      key: const PageStorageKey<String>('profile-lists-tab'),
+                      child: _buildListsTab(context, actorScopedProfile),
+                    ),
+                    KeyedSubtree(
+                      key: const PageStorageKey<String>('profile-starter-packs-tab'),
+                      child: _buildStarterPacksTab(context, actorScopedProfile),
+                    ),
+                    if (_showSuggestedTab)
+                      KeyedSubtree(
+                        key: const PageStorageKey<String>('profile-suggested-tab'),
+                        child: _buildSuggestedFollowsTab(actorScopedProfile),
+                      ),
                   ];
 
                   return NotificationListener<ScrollUpdateNotification>(
@@ -381,7 +535,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                               floating: true,
                               pinned: true,
                               snap: true,
-                              title: Text(_appBarTitle(profile)),
+                              title: Text(_appBarTitle(actorScopedProfile)),
                               leading: widget.showBackButton
                                   ? IconButton(
                                       icon: const Icon(Icons.arrow_back),
@@ -389,11 +543,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                     )
                                   : const AppShellMenuButton(),
                               actions: [
-                                if (profile != null && isOwnProfile)
+                                if (actorScopedProfile != null && isOwnProfile)
                                   IconButton(
                                     key: const Key('profile_more_button'),
                                     icon: const Icon(Icons.more_vert),
-                                    onPressed: () => _showOwnProfileMoreOptions(context, profile),
+                                    onPressed: () => _showOwnProfileMoreOptions(context, actorScopedProfile),
                                   ),
                                 IconButton(
                                   icon: const Icon(Icons.settings_outlined),
@@ -401,7 +555,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                 ),
                               ],
                             ),
-                            SliverToBoxAdapter(child: _buildCoverSection(context, profile)),
+                            SliverToBoxAdapter(child: _buildCoverSection(context, actorScopedProfile)),
                             SliverToBoxAdapter(
                               child: _buildProfileHeaderRefreshZone(
                                 key: const ValueKey('profile_header_details_refresh_zone'),
@@ -415,7 +569,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                     padding: AppInsets.allLg,
                                     child: Center(child: CircularProgressIndicator()),
                                   ),
-                                  _ => _buildProfileSummary(context, profile, isOwnProfile),
+                                  _ => _buildProfileSummary(context, actorScopedProfile, isOwnProfile),
                                 },
                               ),
                             ),
@@ -427,7 +581,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                   tabs: [for (final label in _tabLabels) Tab(text: label)],
                                   onTap: (index) {
                                     if (index < _feedTabs.length) {
-                                      _loadProfileAndFeed(filter: _feedTabs[index].filter);
+                                      _loadFeedOnly(filter: _feedTabs[index].requestFilter);
                                     }
                                   },
                                   isScrollable: true,
@@ -634,10 +788,21 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           ),
           const SizedBox(height: 16),
           if (isOwnProfile)
-            OutlinedButton.icon(
-              onPressed: () => context.push('/saved'),
-              icon: const Icon(Icons.bookmark_outline),
-              label: const Text('Saved Posts'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/bookmarks'),
+                  icon: const Icon(Icons.bookmark_outline),
+                  label: const Text('Bookmarks'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/liked'),
+                  icon: const Icon(Icons.favorite_outline),
+                  label: const Text('Liked'),
+                ),
+              ],
             ),
           if (!isOwnProfile) _buildProfileActions(context, profile),
           const SizedBox(height: 16),
@@ -932,38 +1097,42 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildFeedList(
-    FeedState feedState,
-    FeedFilter tabFilter,
-    ProfileViewDetailed? profile,
-    String? expectedActor,
-  ) {
-    final isActiveTab = tabFilter == _currentFilter;
+  Widget _buildFeedList({
+    required FeedState sourceState,
+    required FeedFilter requestFilter,
+    required _ProfileFeedSlice slice,
+    required String emptyLabel,
+    required ProfileViewDetailed? profile,
+    required String? expectedActor,
+  }) {
+    final isActiveTab = _currentFeedSlice == slice;
     final feedMatchesExpectedActor = expectedActor == null
         ? true
-        : _feedMatchesExpectedActor(feedState, expectedActor, profile);
+        : _feedMatchesExpectedActor(sourceState, expectedActor, profile);
+    final visiblePosts = _filterPostsForSlice(sourceState.posts, slice);
+    final visibleFeedState = sourceState.copyWith(posts: visiblePosts);
 
     if (expectedActor != null && isActiveTab && !feedMatchesExpectedActor) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (isActiveTab && feedState.status == FeedStatus.initial) {
+    if (isActiveTab && sourceState.status == FeedStatus.initial) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (feedState.isLoading && feedState.filter == tabFilter) {
+    if (sourceState.isLoading && visiblePosts.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (feedState.hasError && feedState.filter == tabFilter && feedMatchesExpectedActor) {
+    if (sourceState.hasError && feedMatchesExpectedActor) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(feedState.errorMessage ?? 'Failed to load posts'),
+            Text(sourceState.errorMessage ?? 'Failed to load posts'),
             const SizedBox(height: 12),
             FilledButton(
-              onPressed: () => _loadProfileAndFeed(filter: tabFilter),
+              onPressed: () => _loadFeedOnly(filter: requestFilter),
               child: const Text('Retry'),
             ),
           ],
@@ -971,27 +1140,91 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       );
     }
 
-    if (feedState.filter != tabFilter) {
-      return const SizedBox.shrink();
+    if (visiblePosts.isEmpty) {
+      return Center(child: Text(emptyLabel));
     }
 
-    if (!feedState.hasPosts) {
-      return Center(child: Text(tabFilter.emptyLabel));
+    if (slice == _ProfileFeedSlice.replies) {
+      return _buildRepliesFeed(context, visibleFeedState, requestFilter: requestFilter);
     }
 
     return BlocBuilder<SettingsCubit, SettingsState>(
       buildWhen: (prev, curr) => prev.feedLayout != curr.feedLayout,
       builder: (context, settingsState) {
         if (settingsState.feedLayout == FeedLayout.card) {
-          return _buildGridFeed(context, feedState);
+          return _buildGridFeed(context, visibleFeedState, requestFilter: requestFilter, slice: slice);
         }
-        return _buildLinearFeed(context, feedState);
+        return _buildLinearFeed(context, visibleFeedState, requestFilter: requestFilter, slice: slice);
       },
     );
   }
 
-  Widget _buildGridFeed(BuildContext context, FeedState feedState) {
-    final accountDid = _resolvedActor ?? '';
+  Widget _buildRepliesFeed(BuildContext context, FeedState feedState, {required FeedFilter requestFilter}) {
+    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 300 &&
+              feedState.hasMore &&
+              !feedState.isLoadingMore &&
+              _currentRequestFilter == requestFilter) {
+            context.read<FeedBloc>().add(const FeedLoadMoreRequested());
+          }
+          return false;
+        },
+        child: ListView.builder(
+          key: const PageStorageKey<String>('profile_replies_thread_list'),
+          padding: EdgeInsets.zero,
+          itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= feedState.posts.length) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return _ProfileReplyThreadItem(feedViewPost: feedState.posts[index], accountDid: accountDid);
+          },
+        ),
+      ),
+    );
+  }
+
+  List<FeedViewPost> _filterPostsForSlice(List<FeedViewPost> posts, _ProfileFeedSlice slice) {
+    switch (slice) {
+      case _ProfileFeedSlice.posts:
+      case _ProfileFeedSlice.media:
+        return posts;
+      case _ProfileFeedSlice.replies:
+        return posts.where((post) => !_isRepost(post) && post.reply != null).toList(growable: false);
+      case _ProfileFeedSlice.quotes:
+        return posts.where((post) => !_isRepost(post) && _isQuote(post)).toList(growable: false);
+      case _ProfileFeedSlice.reposts:
+        return posts.where(_isRepost).toList(growable: false);
+    }
+  }
+
+  bool _isRepost(FeedViewPost post) => post.reason?.isReasonRepost ?? false;
+
+  bool _isQuote(FeedViewPost post) {
+    final embed = post.post.embed;
+    if (embed == null) {
+      return false;
+    }
+    return embed.isEmbedRecordView || embed.isEmbedRecordWithMediaView;
+  }
+
+  Widget _buildGridFeed(
+    BuildContext context,
+    FeedState feedState, {
+    required FeedFilter requestFilter,
+    required _ProfileFeedSlice slice,
+  }) {
+    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+    final scrollKey = slice == _ProfileFeedSlice.posts
+        ? const ValueKey('profile_grid_feed')
+        : PageStorageKey<String>('profile_grid_feed_${slice.name}');
 
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -999,13 +1232,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         onNotification: (notification) {
           if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 300 &&
               feedState.hasMore &&
-              !feedState.isLoadingMore) {
+              !feedState.isLoadingMore &&
+              _currentRequestFilter == requestFilter) {
             context.read<FeedBloc>().add(const FeedLoadMoreRequested());
           }
           return false;
         },
         child: ListView.builder(
-          key: const ValueKey('profile_grid_feed'),
+          key: scrollKey,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
           itemBuilder: (context, index) {
@@ -1038,20 +1272,27 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildLinearFeed(BuildContext context, FeedState feedState) {
-    final accountDid = _resolvedActor ?? '';
+  Widget _buildLinearFeed(
+    BuildContext context,
+    FeedState feedState, {
+    required FeedFilter requestFilter,
+    required _ProfileFeedSlice slice,
+  }) {
+    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
     return RefreshIndicator(
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
           if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 300 &&
               feedState.hasMore &&
-              !feedState.isLoadingMore) {
+              !feedState.isLoadingMore &&
+              _currentRequestFilter == requestFilter) {
             context.read<FeedBloc>().add(const FeedLoadMoreRequested());
           }
           return false;
         },
         child: ListView.builder(
+          key: PageStorageKey<String>('profile_linear_feed_${slice.name}'),
           padding: EdgeInsets.zero,
           itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
           itemBuilder: (context, index) {
@@ -1086,6 +1327,20 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return _ProfileListsPane(actor: actor, listRepository: listRepository);
   }
 
+  Widget _buildLikedPostsTab(BuildContext context, ProfileViewDetailed? profile) {
+    final actor = profile?.did ?? _resolvedActor;
+    if (actor == null) return const SizedBox.shrink();
+
+    ProfileRepository? profileRepository;
+    try {
+      profileRepository = context.read<ProfileRepository>();
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
+
+    return _ProfileLikedPostsPane(actor: actor, profileRepository: profileRepository);
+  }
+
   Widget _buildStarterPacksTab(BuildContext context, ProfileViewDetailed? profile) {
     final actor = profile?.did ?? _resolvedActor;
     if (actor == null) return const SizedBox.shrink();
@@ -1104,6 +1359,59 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     final uri = Uri.tryParse(website.startsWith('http') ? website : 'https://$website');
     if (uri == null) return;
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}
+
+class _ProfileReplyThreadItem extends StatelessWidget {
+  const _ProfileReplyThreadItem({required this.feedViewPost, required this.accountDid});
+
+  final FeedViewPost feedViewPost;
+  final String accountDid;
+
+  @override
+  Widget build(BuildContext context) {
+    final parent = feedViewPost.reply?.parent;
+    final hasParentPost = parent?.isPostView == true;
+
+    if (!hasParentPost) {
+      return PostCardWithActions(
+        feedViewPost: feedViewPost,
+        accountDid: accountDid,
+        moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
+      );
+    }
+
+    final parentFeedViewPost = FeedViewPost(post: parent!.postView!);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        PostCardWithActions(
+          key: ValueKey('profile_reply_parent_${parentFeedViewPost.post.uri}'),
+          feedViewPost: parentFeedViewPost,
+          accountDid: accountDid,
+          moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
+        ),
+        _buildThreadConnector(context),
+        PostCardWithActions(
+          key: ValueKey('profile_reply_child_${feedViewPost.post.uri}'),
+          feedViewPost: feedViewPost,
+          accountDid: accountDid,
+          moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildThreadConnector(BuildContext context) {
+    return SizedBox(
+      height: 16,
+      child: Row(
+        children: [
+          const SizedBox(width: 37),
+          Container(width: 2, color: Theme.of(context).dividerColor),
+        ],
+      ),
+    );
   }
 }
 
@@ -1165,6 +1473,145 @@ class _SuggestedFollowsTabState extends State<_SuggestedFollowsTab> {
         actor: widget.actor,
         padding: const EdgeInsets.symmetric(vertical: 8),
         onProfileTap: widget.onProfileTap,
+      ),
+    );
+  }
+}
+
+class _ProfileLikedPostsPane extends StatefulWidget {
+  const _ProfileLikedPostsPane({required this.actor, required this.profileRepository});
+
+  final String actor;
+  final ProfileRepository profileRepository;
+
+  @override
+  State<_ProfileLikedPostsPane> createState() => _ProfileLikedPostsPaneState();
+}
+
+class _ProfileLikedPostsPaneState extends State<_ProfileLikedPostsPane> {
+  List<FeedViewPost> _posts = const [];
+  String? _cursor;
+  bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitial();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ProfileLikedPostsPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.actor != widget.actor) {
+      _loadInitial();
+    }
+  }
+
+  Future<void> _loadInitial() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+      _posts = const [];
+      _cursor = null;
+      _hasMore = true;
+    });
+
+    try {
+      final page = await widget.profileRepository.getActorLikes(actor: widget.actor, limit: 50);
+      if (!mounted) return;
+      setState(() {
+        _posts = page.posts;
+        _cursor = page.cursor;
+        _hasMore = page.cursor != null;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to load liked posts: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _refresh() async {
+    await _loadInitial();
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore || _cursor == null) {
+      return;
+    }
+    setState(() => _isLoadingMore = true);
+
+    try {
+      final page = await widget.profileRepository.getActorLikes(actor: widget.actor, cursor: _cursor, limit: 50);
+      if (!mounted) return;
+      setState(() {
+        _posts = [..._posts, ...page.posts];
+        _cursor = page.cursor;
+        _hasMore = page.cursor != null;
+        _isLoadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingMore = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_error!),
+            const SizedBox(height: 12),
+            FilledButton(onPressed: _loadInitial, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    if (_posts.isEmpty) {
+      return const Center(child: Text('No liked posts yet'));
+    }
+
+    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 300) {
+            _loadMore();
+          }
+          return false;
+        },
+        child: ListView.builder(
+          key: const PageStorageKey<String>('profile-liked-posts-list'),
+          itemCount: _posts.length + (_isLoadingMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= _posts.length) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return PostCardWithActions(
+              feedViewPost: _posts[index],
+              accountDid: accountDid,
+              moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
+            );
+          },
+        ),
       ),
     );
   }

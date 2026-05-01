@@ -91,9 +91,9 @@ class SettingsScreen extends StatelessWidget {
           ),
           _SettingsTile(
             icon: Icons.bookmark_outline,
-            title: 'Saved Posts',
-            subtitle: 'View your saved posts',
-            onTap: () => context.push('/saved'),
+            title: 'Bookmarks & Likes',
+            subtitle: 'View your bookmarked and liked posts',
+            onTap: () => context.push('/bookmarks'),
           ),
           _SettingsTile(
             icon: Icons.videocam_outlined,

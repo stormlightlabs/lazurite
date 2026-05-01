@@ -167,6 +167,31 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
     }
   }
 
+  /// Clears local bookmark state only.
+  ///
+  /// - local -> deleted
+  /// - both -> downgraded to cloud
+  /// - cloud -> unchanged
+  Future<void> clearLocalSaved() async {
+    try {
+      final posts = await _database.getSavedPosts(_accountDid);
+      for (final post in posts) {
+        if (post.saveType == 'local') {
+          await _database.unsavePostById(post.id);
+          _semanticIndexer?.removePost(post.postUri);
+          continue;
+        }
+        if (post.saveType == 'both') {
+          await _database.updateSaveType(_accountDid, post.postUri, 'cloud');
+        }
+      }
+      await loadSavedPosts();
+    } catch (error) {
+      log.e('Failed to clear local saved posts', error: error);
+      emit(state.copyWith(error: 'Failed to clear local bookmarks'));
+    }
+  }
+
   Stream<bool> watchIsSaved(String postUri) {
     return _database.watchIsPostSaved(_accountDid, postUri);
   }

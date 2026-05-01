@@ -209,8 +209,20 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/saved',
-        pageBuilder: (context, state) => _page(context, state, SavedPostsScreen(accountDid: context.read<String>())),
+        path: '/bookmarks',
+        pageBuilder: (context, state) => _page(
+          context,
+          state,
+          SavedPostsScreen(accountDid: context.read<String>(), initialTab: SavedPostsInitialTab.bookmarks),
+        ),
+      ),
+      GoRoute(
+        path: '/liked',
+        pageBuilder: (context, state) => _page(
+          context,
+          state,
+          SavedPostsScreen(accountDid: context.read<String>(), initialTab: SavedPostsInitialTab.liked),
+        ),
       ),
       GoRoute(path: '/lists', pageBuilder: (context, state) => _page(context, state, const MyListsScreen())),
       GoRoute(

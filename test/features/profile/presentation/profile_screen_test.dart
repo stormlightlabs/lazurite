@@ -4,7 +4,7 @@ import 'package:atproto_core/atproto_core.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_feed_post.dart';
+import 'package:bluesky/app_bsky_feed_post.dart' hide ReplyRef;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -175,14 +175,15 @@ void main() {
     expect(find.text('River Tam'), findsOneWidget);
   });
 
-  testWidgets('shows Saved Posts button on own profile', (tester) async {
+  testWidgets('shows separate Bookmarks and Liked buttons on own profile', (tester) async {
     useLargeScreen(tester);
     await tester.pumpWidget(buildSubject());
 
-    expect(find.text('Saved Posts'), findsOneWidget);
+    expect(find.text('Bookmarks'), findsOneWidget);
+    expect(find.text('Liked'), findsOneWidget);
   });
 
-  testWidgets('does not show Saved Posts button on other profiles', (tester) async {
+  testWidgets('does not show Bookmarks/Liked buttons on other profiles', (tester) async {
     useLargeScreen(tester);
     const otherProfile = ProfileViewDetailed(
       did: 'did:plc:other',
@@ -214,7 +215,8 @@ void main() {
 
     await tester.pumpWidget(widget);
 
-    expect(find.text('Saved Posts'), findsNothing);
+    expect(find.text('Bookmarks'), findsNothing);
+    expect(find.text('Liked'), findsNothing);
   });
 
   testWidgets('maps tabs to the expected server filters', (tester) async {
@@ -225,7 +227,7 @@ void main() {
     await tester.pump();
 
     verify(
-      () => feedBloc.add(const FeedLoadRequested(actor: 'did:plc:me', filter: FeedFilter.postsAndAuthorThreads)),
+      () => feedBloc.add(const FeedLoadRequested(actor: 'did:plc:me', filter: FeedFilter.postsWithReplies)),
     ).called(1);
 
     await tester.tap(find.text('MEDIA'));
@@ -234,6 +236,22 @@ void main() {
     verify(
       () => feedBloc.add(const FeedLoadRequested(actor: 'did:plc:me', filter: FeedFilter.postsWithMedia)),
     ).called(1);
+  });
+
+  testWidgets('switching feed tabs does not trigger an extra profile reload', (tester) async {
+    useLargeScreen(tester);
+    await tester.pumpWidget(buildSubject());
+
+    verify(() => profileBloc.add(const ProfileLoadRequested(actor: 'did:plc:me'))).called(1);
+
+    await tester.tap(find.text('REPLIES'));
+    await tester.pump();
+    await tester.tap(find.text('QUOTES'));
+    await tester.pump();
+    await tester.tap(find.text('REPOSTS'));
+    await tester.pump();
+
+    verifyNever(() => profileBloc.add(const ProfileLoadRequested(actor: 'did:plc:me')));
   });
 
   testWidgets('other profiles show a suggested follows tab with loaded suggestions', (tester) async {
@@ -290,7 +308,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('SUGGESTED'), findsOneWidget);
+    expect(find.text('LIKED'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('SUGGESTED'));
     await tester.tap(find.text('SUGGESTED'));
     await tester.pumpAndSettle();
 
@@ -561,6 +581,47 @@ void main() {
     FeedState feedStateWith(List<FeedViewPost> p) =>
         FeedState.loaded(actor: 'did:plc:me', posts: p, filter: FeedFilter.postsNoReplies, hasMore: false);
 
+    FeedViewPost makeReplyWithParent(String id) {
+      final parentRecord = FeedPostRecord(text: 'Parent $id', createdAt: DateTime.utc(2026, 3, 1));
+      final parentPost = PostView(
+        uri: AtUri('at://did:plc:parent/app.bsky.feed.post/parent-$id'),
+        cid: 'cid-parent-$id',
+        author: const ProfileViewBasic(
+          did: 'did:plc:parent',
+          handle: 'parent.bsky.social',
+          displayName: 'Parent User',
+        ),
+        record: parentRecord.toJson(),
+        indexedAt: DateTime.utc(2026, 3, 1),
+      );
+      final replyRecord = FeedPostRecord(
+        text: 'Reply $id',
+        createdAt: DateTime.utc(2026, 3, 1, 0, 5),
+        reply: null,
+      );
+
+      return FeedViewPost(
+        post: PostView(
+          uri: AtUri('at://did:plc:me/app.bsky.feed.post/reply-$id'),
+          cid: 'cid-reply-$id',
+          author: const ProfileViewBasic(did: 'did:plc:me', handle: 'me.bsky.social', displayName: 'River Tam'),
+          record: {
+            ...replyRecord.toJson(),
+            'reply': {
+              r'$type': 'app.bsky.feed.post#replyRef',
+              'root': {'uri': parentPost.uri.toString(), 'cid': parentPost.cid},
+              'parent': {'uri': parentPost.uri.toString(), 'cid': parentPost.cid},
+            },
+          },
+          indexedAt: DateTime.utc(2026, 3, 1, 0, 5),
+        ),
+        reply: ReplyRef(
+          root: UReplyRefRoot.postView(data: parentPost),
+          parent: UReplyRefParent.postView(data: parentPost),
+        ),
+      );
+    }
+
     /// Builds the profile screen with [posts] in the feed and the given SettingsCubit controlling layout mode.
     Widget buildWithPosts(WidgetTester tester, MockSettingsCubit settCubit) {
       useLargeScreen(tester);
@@ -645,6 +706,58 @@ void main() {
       verifyNever(() => feedBloc.add(const FeedRefreshRequested()));
 
       await streamCtrl.close();
+    });
+
+    testWidgets('replies tab renders parent + reply thread-style pair', (tester) async {
+      final cubit = MockSettingsCubit();
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.compact));
+      whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedLayout.compact));
+
+      final replyPost = makeReplyWithParent('1');
+      final repliesState = FeedState.loaded(
+        actor: 'did:plc:me',
+        posts: [replyPost],
+        filter: FeedFilter.postsWithReplies,
+        hasMore: false,
+      );
+      when(() => feedBloc.state).thenReturn(repliesState);
+      whenListen(feedBloc, const Stream<FeedState>.empty(), initialState: repliesState);
+
+      useLargeScreen(tester);
+      final mockPostActionRepo = MockPostActionRepository();
+      final mockSavedPostsCubit = MockSavedPostsCubit();
+      final mockPostActionCache = MockPostActionCache();
+      when(() => mockSavedPostsCubit.state).thenReturn(const SavedPostsState());
+      whenListen(mockSavedPostsCubit, const Stream<SavedPostsState>.empty());
+
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<PostActionRepository>.value(value: mockPostActionRepo),
+            RepositoryProvider<PostActionCache>.value(value: mockPostActionCache),
+          ],
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: authBloc),
+              BlocProvider<ProfileBloc>.value(value: profileBloc),
+              BlocProvider<FeedBloc>.value(value: feedBloc),
+              BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+              BlocProvider<SettingsCubit>.value(value: cubit),
+              BlocProvider<SavedPostsCubit>.value(value: mockSavedPostsCubit),
+            ],
+            child: const MaterialApp(home: ProfileScreen()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.ensureVisible(find.text('REPLIES'));
+      await tester.tap(find.text('REPLIES'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Parent 1', findRichText: true), findsWidgets);
+      expect(find.text('Reply 1', findRichText: true), findsOneWidget);
     });
   });
 

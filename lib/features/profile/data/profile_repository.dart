@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:atproto_core/atproto_core.dart' as atp_core;
 import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/bluesky.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -101,6 +102,19 @@ class ProfileRepository {
     return suggestions.where((p) => !moderationService.shouldFilterProfileInList(p)).toList();
   }
 
+  Future<ProfileActorLikesResult> getActorLikes({required String actor, String? cursor, int limit = 50}) async {
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.feed.getActorLikes',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _bluesky.feed.getActorLikes(actor: actor, cursor: cursor, limit: limit, $headers: headers);
+    final moderationService = _moderationService;
+    final posts = moderationService == null
+        ? response.data.feed
+        : response.data.feed.where((post) => !moderationService.shouldFilterFeedViewPostInList(post)).toList();
+    return ProfileActorLikesResult(posts: posts, cursor: response.data.cursor);
+  }
+
   Future<ProfileViewDetailed?> getCurrentUserProfile(AuthTokens tokens) async {
     log.d('ProfileRepository: Loading current user profile for ${tokens.did} via ${_describeClientContext()}');
 
@@ -189,4 +203,11 @@ class ProfileRepository {
     }
     return null;
   }
+}
+
+class ProfileActorLikesResult {
+  const ProfileActorLikesResult({required this.posts, this.cursor});
+
+  final List<FeedViewPost> posts;
+  final String? cursor;
 }

@@ -66,7 +66,7 @@ class PostCard extends StatelessWidget {
                   children: [
                     _buildHeader(context, post.author),
                     if (postUi.alert || postUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: postUi)],
-                    if (record?.reply != null) ...[const SizedBox(height: 8), _buildReplyLabel(context)],
+                    if (record?.reply != null) ...[const SizedBox(height: 8), _buildReplyContext(context)],
                     if (record != null && record.text.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       FacetText(text: record.text, facets: record.facets, style: feedPostBodyTextStyle(context)),
@@ -125,20 +125,52 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildReplyLabel(BuildContext context) {
-    return Row(
-      children: [
-        Icon(Icons.reply, size: 14, color: context.colorScheme.onSurfaceVariant),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            'Reply in a thread',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+  Widget _buildReplyContext(BuildContext context) {
+    final parentPost = feedViewPost.reply?.parent.isPostView == true ? feedViewPost.reply!.parent.postView : null;
+    if (parentPost == null) {
+      return Row(
+        children: [
+          Icon(Icons.reply, size: 14, color: context.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              'Reply in a thread',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final parentRecord = _tryParseRecord(parentPost.record);
+    final parentText = parentRecord?.text.trim() ?? '';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: context.colorScheme.outlineVariant),
+        color: context.colorScheme.surfaceContainerLow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Replying to @${parentPost.author.handle}',
             style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
           ),
-        ),
-      ],
+          if (parentText.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              parentText,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: context.textTheme.bodySmall,
+            ),
+          ],
+        ],
+      ),
     );
   }
 

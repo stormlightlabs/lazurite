@@ -100,8 +100,8 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pump();
 
-    expect(find.text('No saved posts'), findsOneWidget);
-    expect(find.text('Posts you save will appear here'), findsOneWidget);
+    expect(find.text('No bookmarks'), findsOneWidget);
+    expect(find.text('Posts you bookmark will appear here'), findsOneWidget);
   });
 
   testWidgets('renders PostCardWithActions for a saved post with valid postJson', (tester) async {
@@ -131,7 +131,7 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pump();
 
-    expect(find.text('Saved Post'), findsOneWidget);
+    expect(find.text('Bookmarked Post'), findsOneWidget);
     expect(find.byType(PostCardWithActions), findsNothing);
   });
 

@@ -86,3 +86,7 @@
 - AppView (BlueSky or BlackSky) based routing with swappable provider from Login or
   Settings
 - Trending views and feeds/listings based on AppView.
+
+#### 2026-05-01
+
+- Separate views for local and protocol-level saved/bookmarked posts.
