@@ -173,7 +173,10 @@ class FollowAuditRepository {
   Future<Map<String, ProfileView>> _fetchBatchWithRetry(List<String> batch) async {
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       try {
-        final response = await _bluesky.actor.getProfiles(actors: batch, $headers: _appViewContext.appBskyHeaders());
+        final response = await _bluesky.actor.getProfiles(
+          actors: batch,
+          $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.getProfiles'),
+        );
         final result = <String, ProfileView>{};
         for (final profile in response.data.profiles as List<dynamic>) {
           final view = _asProfileView(profile);
@@ -200,7 +203,10 @@ class FollowAuditRepository {
   Future<_SingleResult> _fetchSingleWithRetry(String did) async {
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       try {
-        final response = await _bluesky.actor.getProfile(actor: did, $headers: _appViewContext.appBskyHeaders());
+        final response = await _bluesky.actor.getProfile(
+          actor: did,
+          $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.getProfile'),
+        );
         final view = _asProfileView(response.data);
         return _SingleResult(profile: view, status: null, failed: view == null);
       } catch (error, stackTrace) {

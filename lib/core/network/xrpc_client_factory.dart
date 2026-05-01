@@ -3,6 +3,7 @@ import 'package:atproto_core/atproto_core.dart' as atp_core;
 import 'package:atproto_oauth/atproto_oauth.dart' as atp_oauth;
 import 'package:bluesky/bluesky.dart';
 import 'package:bluesky/bluesky_chat.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 
@@ -30,8 +31,8 @@ Bluesky? createBlueskyClient(AuthTokens? tokens) {
 
     return Bluesky.fromOAuthSession(
       oauthSession,
-      getClient: XrpcNetworkInterceptor.wrapGetClient(),
-      postClient: XrpcNetworkInterceptor.wrapPostClient(),
+      getClient: _debugWrappedGetClient(),
+      postClient: _debugWrappedPostClient(),
     );
   }
 
@@ -49,8 +50,8 @@ Bluesky? createBlueskyClient(AuthTokens? tokens) {
   return Bluesky.fromSession(
     session,
     service: tokens.service,
-    getClient: XrpcNetworkInterceptor.wrapGetClient(),
-    postClient: XrpcNetworkInterceptor.wrapPostClient(),
+    getClient: _debugWrappedGetClient(),
+    postClient: _debugWrappedPostClient(),
   );
 }
 
@@ -72,8 +73,8 @@ BlueskyChat? createBlueSkyChatClient(AuthTokens? tokens) {
 
     return BlueskyChat.fromOAuthSession(
       oauthSession,
-      getClient: XrpcNetworkInterceptor.wrapGetClient(),
-      postClient: XrpcNetworkInterceptor.wrapPostClient(),
+      getClient: _debugWrappedGetClient(),
+      postClient: _debugWrappedPostClient(),
     );
   }
 
@@ -89,23 +90,27 @@ BlueskyChat? createBlueSkyChatClient(AuthTokens? tokens) {
   return BlueskyChat.fromSession(
     session,
     service: tokens.service,
-    getClient: XrpcNetworkInterceptor.wrapGetClient(),
-    postClient: XrpcNetworkInterceptor.wrapPostClient(),
+    getClient: _debugWrappedGetClient(),
+    postClient: _debugWrappedPostClient(),
   );
 }
 
-atp.ATProto createAtProtoForOAuthSession(atp_oauth.OAuthSession session) {
-  return atp.ATProto.fromOAuthSession(
-    session,
-    getClient: XrpcNetworkInterceptor.wrapGetClient(),
-    postClient: XrpcNetworkInterceptor.wrapPostClient(),
-  );
+atp.ATProto createAtProtoForOAuthSession(atp_oauth.OAuthSession session) =>
+    atp.ATProto.fromOAuthSession(session, getClient: _debugWrappedGetClient(), postClient: _debugWrappedPostClient());
+
+Bluesky createBlueskyForOAuthSession(atp_oauth.OAuthSession session) =>
+    Bluesky.fromOAuthSession(session, getClient: _debugWrappedGetClient(), postClient: _debugWrappedPostClient());
+
+atp_core.GetClient? _debugWrappedGetClient() {
+  if (!kDebugMode) {
+    return null;
+  }
+  return XrpcNetworkInterceptor.wrapGetClient();
 }
 
-Bluesky createBlueskyForOAuthSession(atp_oauth.OAuthSession session) {
-  return Bluesky.fromOAuthSession(
-    session,
-    getClient: XrpcNetworkInterceptor.wrapGetClient(),
-    postClient: XrpcNetworkInterceptor.wrapPostClient(),
-  );
+atp_core.PostClient? _debugWrappedPostClient() {
+  if (!kDebugMode) {
+    return null;
+  }
+  return XrpcNetworkInterceptor.wrapPostClient();
 }

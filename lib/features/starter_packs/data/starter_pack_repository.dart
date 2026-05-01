@@ -28,7 +28,10 @@ class StarterPackRepository {
       actor: actor,
       cursor: cursor,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.graph.getActorStarterPacks',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return ActorStarterPacksResult(starterPacks: response.data.starterPacks, cursor: response.data.cursor);
@@ -37,7 +40,10 @@ class StarterPackRepository {
   Future<StarterPackView> getStarterPack({required AtUri starterPackUri}) async {
     final response = await _bluesky.graph.getStarterPack(
       starterPack: starterPackUri,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.graph.getStarterPack',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return response.data.starterPack;
@@ -46,7 +52,10 @@ class StarterPackRepository {
   Future<List<GeneratorView>> getSuggestedFeeds({int limit = 50}) async {
     final response = await _bluesky.feed.getSuggestedFeeds(
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.feed.getSuggestedFeeds',
+        await _moderationService?.headersForRequest(),
+      ),
     );
     return response.data.feeds as List<GeneratorView>;
   }
@@ -148,7 +157,10 @@ class StarterPackRepository {
         list: referenceListUri,
         cursor: cursor,
         limit: 100,
-        $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+        $headers: _appViewContext.appBskyHeadersForEndpoint(
+          'app.bsky.graph.getList',
+          await _moderationService?.headersForRequest(),
+        ),
       );
 
       for (final item in response.data.items as List) {

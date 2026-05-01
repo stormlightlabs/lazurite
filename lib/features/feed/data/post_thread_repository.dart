@@ -25,7 +25,10 @@ class PostThreadRepository {
   Future<ThreadViewPost> getPostThread(String uri) async {
     final response = await _bluesky.feed.getPostThread(
       uri: AtUri.parse(uri),
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.feed.getPostThread',
+        await _moderationService?.headersForRequest(),
+      ),
     );
     final thread = response.data.thread;
 

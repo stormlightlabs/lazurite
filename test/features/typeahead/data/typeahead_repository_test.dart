@@ -52,7 +52,7 @@ void main() {
       expect(actorService.lastQuery, 'keep');
       expect(actorService.lastLimit, 5);
       expect(actorService.lastHeaders?['x-test'], 'moderation');
-      expect(actorService.lastHeaders?['atproto-proxy'], 'did:web:api.bsky.app#bsky_appview');
+      expect(actorService.lastHeaders?['atproto-proxy'], isNull);
     });
 
     test('community provider makes HTTP request, parses JSON, and applies local moderation', () async {

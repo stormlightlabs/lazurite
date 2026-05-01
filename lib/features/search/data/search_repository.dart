@@ -59,7 +59,10 @@ class SearchRepository {
       sort: sortValue,
       cursor: cursor,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.feed.searchPosts',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return SearchPostsResult(
@@ -74,7 +77,10 @@ class SearchRepository {
       q: query,
       cursor: cursor,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.actor.searchActors',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return SearchActorsResult(actors: _filterProfiles(response.data.actors), cursor: response.data.cursor);
@@ -118,7 +124,10 @@ class SearchRepository {
     final response = await _bluesky.actor.searchActorsTypeahead(
       q: query,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.actor.searchActorsTypeahead',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return _filterBasicProfiles(response.data.actors);
@@ -159,7 +168,7 @@ class SearchRepository {
 
     final uri = Uri.https(_appViewContext.publicServiceHost(), '/xrpc/app.bsky.unspecced.getTopicFeed', params);
     final baseHeaders = await _moderationService?.headersForRequest();
-    final headers = _withoutAppViewProxyHeader(_appViewContext.appBskyHeaders(baseHeaders));
+    final headers = _appViewContext.appBskyHeadersForEndpoint('app.bsky.unspecced.getTopicFeed', baseHeaders);
     final response = await XrpcNetworkInterceptor.wrapGetClient()(uri, headers: headers);
     if (response.statusCode >= 400) {
       throw Exception('Failed to fetch Blacksky topic feed (status ${response.statusCode})');
@@ -188,7 +197,10 @@ class SearchRepository {
 
     final hydrated = await _bluesky.feed.getPosts(
       uris: atUris,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.feed.getPosts',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return TopicPostsResult(
@@ -207,12 +219,6 @@ class SearchRepository {
       }
     }
     return null;
-  }
-
-  Map<String, String> _withoutAppViewProxyHeader(Map<String, String> headers) {
-    final copy = Map<String, String>.from(headers);
-    copy.removeWhere((key, _) => key.toLowerCase() == 'atproto-proxy');
-    return copy;
   }
 
   Future<T> _runPublicReadWithFallback<T>({

@@ -24,7 +24,10 @@ class NotificationRepository {
     final response = await _bluesky.notification.listNotifications(
       cursor: cursor,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.notification.listNotifications',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return NotificationListResult(
@@ -36,7 +39,10 @@ class NotificationRepository {
 
   Future<int> getUnreadCount() async {
     final response = await _bluesky.notification.getUnreadCount(
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.notification.getUnreadCount',
+        await _moderationService?.headersForRequest(),
+      ),
     );
     return response.data.count;
   }
@@ -44,7 +50,10 @@ class NotificationRepository {
   Future<void> updateSeen() async {
     await _bluesky.notification.updateSeen(
       seenAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.notification.updateSeen',
+        await _moderationService?.headersForRequest(),
+      ),
     );
   }
 

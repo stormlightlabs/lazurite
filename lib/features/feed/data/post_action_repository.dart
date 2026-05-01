@@ -64,7 +64,7 @@ class PostActionRepository {
     final response = await _bluesky.bookmark.getBookmarks(
       limit: limit,
       cursor: cursor,
-      $headers: _appViewContext.appBskyHeaders(),
+      $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.bookmark.getBookmarks'),
     );
     return response.data;
   }
@@ -74,7 +74,7 @@ class PostActionRepository {
       uri: uri,
       limit: 25,
       cursor: cursor,
-      $headers: _appViewContext.appBskyHeaders(),
+      $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.feed.getLikes'),
     );
     return response.data;
   }
@@ -84,7 +84,7 @@ class PostActionRepository {
       uri: uri,
       limit: 25,
       cursor: cursor,
-      $headers: _appViewContext.appBskyHeaders(),
+      $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.feed.getRepostedBy'),
     );
     return response.data;
   }

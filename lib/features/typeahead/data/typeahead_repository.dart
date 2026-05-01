@@ -107,7 +107,10 @@ class TypeaheadRepository {
     final response = await bluesky.actor.searchActorsTypeahead(
       q: query,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.actor.searchActorsTypeahead',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     final results = (response.data.actors as List)

@@ -66,7 +66,7 @@ class AppViewFallbackService {
       }
 
       final context = AppViewRequestContext(appViewProvider: provider);
-      final headers = context.appBskyHeaders(baseHeaders);
+      final headers = context.appBskyHeadersWithoutProxy(baseHeaders);
       log.i(
         'appview.public_read endpoint=$endpointId provider=$provider '
         'fallbackUsed=$fallbackUsed fallbackEnabled=$fallbackEnabled action=attempt',

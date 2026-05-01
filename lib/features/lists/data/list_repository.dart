@@ -37,7 +37,10 @@ class ListRepository {
       cursor: cursor,
       limit: limit,
       purposes: includeReference ? null : _listPurposes,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.graph.getLists',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return ListsResult(lists: _filterLists(response.data.lists), cursor: response.data.cursor);
@@ -48,7 +51,10 @@ class ListRepository {
       list: listUri,
       cursor: cursor,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.graph.getList',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return ListDetailResult(
@@ -63,7 +69,10 @@ class ListRepository {
       list: listUri,
       cursor: cursor,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.feed.getListFeed',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return ListFeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
@@ -79,7 +88,10 @@ class ListRepository {
       cursor: cursor,
       limit: limit,
       purposes: _membershipPurposes,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.graph.getListsWithMembership',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return ListsWithMembershipResult(
@@ -92,7 +104,10 @@ class ListRepository {
     final response = await _bluesky.actor.searchActorsTypeahead(
       q: query,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.actor.searchActorsTypeahead',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     return _filterProfiles(response.data.actors);

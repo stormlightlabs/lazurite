@@ -33,7 +33,10 @@ class ModerationService {
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
        ) {
-    _headers = _appViewContext.appBskyHeaders(_buildLabelerHeaders(const []));
+    _headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.labeler.getServices',
+      _buildLabelerHeaders(const []),
+    );
   }
 
   final dynamic _bluesky;
@@ -605,7 +608,10 @@ class ModerationService {
   }
 
   Map<String, String> _buildHeadersForPrefs(bsky_moderation.ModerationPrefs prefs) {
-    return _appViewContext.appBskyHeaders(_buildLabelerHeaders(prefs.labelers.map((labeler) => labeler.did)));
+    return _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.labeler.getServices',
+      _buildLabelerHeaders(prefs.labelers.map((labeler) => labeler.did)),
+    );
   }
 
   String? get _preferencesCacheKey {

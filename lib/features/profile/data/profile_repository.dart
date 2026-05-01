@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:atproto_core/atproto_core.dart' as atp_core;
@@ -32,27 +33,24 @@ class ProfileRepository {
   Future<ProfileViewDetailed> getProfile(String actor) async {
     log.d('ProfileRepository: Loading profile for $actor via ${_describeClientContext()}');
 
+    ProfileViewDetailed profile;
     try {
-      final response = await _bluesky.actor.getProfile(
-        actor: actor,
-        $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      final headers = _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.actor.getProfile',
+        await _moderationService?.headersForRequest(),
       );
-      final profile = response.data;
+      log.i(
+        'ProfileRepository: getProfile request actor=$actor atproto-proxy=${_headerValue(headers, 'atproto-proxy') ?? 'none'}',
+      );
+      final response = await _bluesky.actor.getProfile(actor: actor, $headers: headers);
+      profile = response.data;
       log.i('ProfileRepository: Loaded profile ${profile.did} (${profile.handle})');
-
-      await _database.cacheProfile(did: profile.did, handle: profile.handle, payload: jsonEncode(profile.toJson()));
-      log.d('ProfileRepository: Cached profile ${profile.did} (${profile.handle})');
-
-      if (_moderationService?.shouldFilterProfileDetailedInView(profile) ?? false) {
-        throw Exception('Profile hidden by moderation preferences');
-      }
-
-      return profile;
     } catch (error, stackTrace) {
-      log.e('ProfileRepository: Failed to load profile for $actor', error: error, stackTrace: stackTrace);
+      log.e('ProfileRepository: Failed to fetch profile from network for $actor', error: error, stackTrace: stackTrace);
       final cachedProfile = await _getCachedProfile(actor);
       if (cachedProfile != null) {
         log.w('ProfileRepository: Using cached profile for $actor after request failure');
+        log.w('ProfileRepository: getProfile cached JSON ${jsonEncode(cachedProfile.toJson())}');
         if (_moderationService?.shouldFilterProfileDetailedInView(cachedProfile) ?? false) {
           throw Exception('Profile hidden by moderation preferences');
         }
@@ -61,14 +59,27 @@ class ProfileRepository {
 
       rethrow;
     }
+
+    // Cache failures should not downgrade a fresh network response into stale fallback data.
+    unawaited(_cacheProfileSafely(profile));
+
+    if (_moderationService?.shouldFilterProfileDetailedInView(profile) ?? false) {
+      throw Exception('Profile hidden by moderation preferences');
+    }
+
+    return profile;
   }
 
   Future<List<ProfileView>> getProfiles(List<String> actors) async {
     log.d('ProfileRepository: Loading ${actors.length} profiles via ${_describeClientContext()}');
-    final response = await _bluesky.actor.getProfiles(
-      actors: actors,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.actor.getProfiles',
+      await _moderationService?.headersForRequest(),
     );
+    log.i(
+      'ProfileRepository: getProfiles request actors=${actors.length} atproto-proxy=${_headerValue(headers, 'atproto-proxy') ?? 'none'}',
+    );
+    final response = await _bluesky.actor.getProfiles(actors: actors, $headers: headers);
     final profiles = response.data.profiles
         .where((profile) => !(_moderationService?.shouldFilterProfileInList(profile) ?? false))
         .toList();
@@ -79,7 +90,10 @@ class ProfileRepository {
   Future<List<ProfileView>> getSuggestedFollows(String actor) async {
     final response = await _bluesky.graph.getSuggestedFollowsByActor(
       actor: actor,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.graph.getSuggestedFollowsByActor',
+        await _moderationService?.headersForRequest(),
+      ),
     );
     final suggestions = response.data.suggestions;
     final moderationService = _moderationService;
@@ -91,10 +105,14 @@ class ProfileRepository {
     log.d('ProfileRepository: Loading current user profile for ${tokens.did} via ${_describeClientContext()}');
 
     try {
-      final response = await _bluesky.actor.getProfile(
-        actor: tokens.did,
-        $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      final headers = _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.actor.getProfile',
+        await _moderationService?.headersForRequest(),
       );
+      log.i(
+        'ProfileRepository: getCurrentUserProfile request did=${tokens.did} atproto-proxy=${_headerValue(headers, 'atproto-proxy') ?? 'none'}',
+      );
+      final response = await _bluesky.actor.getProfile(actor: tokens.did, $headers: headers);
       log.i('ProfileRepository: Loaded current user profile ${response.data.did} (${response.data.handle})');
       return response.data;
     } catch (error, stackTrace) {
@@ -126,6 +144,19 @@ class ProfileRepository {
     return ProfileViewDetailed.fromJson(jsonDecode(cachedProfile.payload) as Map<String, dynamic>);
   }
 
+  Future<void> _cacheProfileSafely(ProfileViewDetailed profile) async {
+    try {
+      await _database.cacheProfile(did: profile.did, handle: profile.handle, payload: jsonEncode(profile.toJson()));
+      log.d('ProfileRepository: Cached profile ${profile.did} (${profile.handle})');
+    } catch (error, stackTrace) {
+      log.w(
+        'ProfileRepository: Failed to cache profile ${profile.did} (${profile.handle})',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
   String _describeClientContext() {
     final bluesky = _bluesky;
     if (bluesky is! Bluesky) {
@@ -145,5 +176,17 @@ class ProfileRepository {
     }
 
     return 'anonymous service=$configuredService';
+  }
+
+  String? _headerValue(Map<String, String>? headers, String key) {
+    if (headers == null) {
+      return null;
+    }
+    for (final entry in headers.entries) {
+      if (entry.key.toLowerCase() == key.toLowerCase()) {
+        return entry.value;
+      }
+    }
+    return null;
   }
 }

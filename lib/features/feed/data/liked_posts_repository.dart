@@ -44,7 +44,7 @@ class LikedPostsRepository {
         actor: accountDid,
         limit: _pageSize,
         cursor: cursor,
-        $headers: _appViewContext.appBskyHeaders(),
+        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.feed.getActorLikes'),
       );
 
       final data = response.data;

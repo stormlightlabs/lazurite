@@ -99,6 +99,21 @@ void main() {
       expect(result.handle, profile.handle);
       expect(result.displayName, profile.displayName);
     });
+
+    test('returns fresh network profile even when cache write fails', () async {
+      final profile = _buildProfile();
+      final repository = ProfileRepository(
+        database: database,
+        bluesky: _FakeBlueskyClient(actor: _FakeActorService(onGetProfile: (_) async => _FakeResponse(profile))),
+      );
+
+      // Force cache operations to fail while keeping network response successful.
+      await database.close();
+
+      final result = await repository.getProfile(profile.did);
+      expect(result.did, profile.did);
+      expect(result.followersCount, profile.followersCount);
+    });
   });
 }
 

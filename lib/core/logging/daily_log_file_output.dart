@@ -11,12 +11,13 @@ class DailyLogFileOutput extends LogOutput {
   final int retentionDays;
 
   String? _lastCleanupDateKey;
+  Future<void> _pendingWrites = Future<void>.value();
 
   @override
   Future<void> init() async {
     final directory = Directory(directoryPath);
-    if (!directory.existsSync()) {
-      directory.createSync(recursive: true);
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
     }
 
     await cleanupOldLogs();
@@ -32,14 +33,13 @@ class DailyLogFileOutput extends LogOutput {
       unawaited(cleanupOldLogs(referenceTime: localTime));
     }
 
-    final file = File(p.join(directoryPath, fileNameFor(localTime)));
-    if (!file.parent.existsSync()) {
-      file.parent.createSync(recursive: true);
-    }
-
     final separator = Platform.isWindows ? '\r\n' : '\n';
     final content = '${event.lines.join(separator)}$separator';
-    file.writeAsStringSync(content, mode: FileMode.writeOnlyAppend, flush: event.level.index >= Level.warning.index);
+    final filePath = p.join(directoryPath, fileNameFor(localTime));
+    final shouldFlush = event.level.index >= Level.warning.index;
+    _pendingWrites = _pendingWrites
+        .then((_) => _appendLine(filePath: filePath, content: content, flush: shouldFlush))
+        .catchError((_) {});
   }
 
   Future<void> clearAllLogs() async {
@@ -77,7 +77,17 @@ class DailyLogFileOutput extends LogOutput {
   }
 
   @override
-  Future<void> destroy() async {}
+  Future<void> destroy() async {
+    await _pendingWrites;
+  }
+
+  Future<void> _appendLine({required String filePath, required String content, required bool flush}) async {
+    final file = File(filePath);
+    if (!await file.parent.exists()) {
+      await file.parent.create(recursive: true);
+    }
+    await file.writeAsString(content, mode: FileMode.writeOnlyAppend, flush: flush);
+  }
 
   static String fileNameFor(DateTime timestamp) {
     return 'lazurite_${_dateKey(timestamp.toLocal())}.log';

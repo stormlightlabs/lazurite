@@ -71,7 +71,10 @@ class FeedRepository {
     int limit = 50,
   }) async {
     final bskyFilter = filter.bskyFilter;
-    final headers = _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest());
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.feed.getAuthorFeed',
+      await _moderationService?.headersForRequest(),
+    );
 
     final response = await _bluesky.feed.getAuthorFeed(
       actor: actor,
@@ -88,7 +91,10 @@ class FeedRepository {
     final response = await _bluesky.feed.getTimeline(
       cursor: cursor,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.feed.getTimeline',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
@@ -101,7 +107,10 @@ class FeedRepository {
       feed: feedUri,
       cursor: cursor,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.feed.getFeed',
+        await _moderationService?.headersForRequest(),
+      ),
     );
 
     final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
@@ -139,7 +148,10 @@ class FeedRepository {
     final response = await _bluesky.feed.getSuggestedFeeds(
       cursor: cursor,
       limit: limit,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.feed.getSuggestedFeeds',
+        await _moderationService?.headersForRequest(),
+      ),
     );
     return response.data.feeds;
   }
@@ -157,7 +169,10 @@ class FeedRepository {
 
     final response = await _bluesky.actor.getProfile(
       actor: normalizedActor,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.actor.getProfile',
+        await _moderationService?.headersForRequest(),
+      ),
     );
     final did = response.data.did.trim();
     if (did.isEmpty) {
@@ -266,7 +281,10 @@ class FeedRepository {
   Future<GeneratorView> getFeedGenerator(AtUri feedUri) async {
     final response = await _bluesky.feed.getFeedGenerator(
       feed: feedUri,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.feed.getFeedGenerator',
+        await _moderationService?.headersForRequest(),
+      ),
     );
     return response.data.view;
   }
@@ -275,7 +293,10 @@ class FeedRepository {
     if (feedUris.isEmpty) return [];
     final response = await _bluesky.feed.getFeedGenerators(
       feeds: feedUris,
-      $headers: _appViewContext.appBskyHeaders(await _moderationService?.headersForRequest()),
+      $headers: _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.feed.getFeedGenerators',
+        await _moderationService?.headersForRequest(),
+      ),
     );
     return response.data.feeds;
   }
