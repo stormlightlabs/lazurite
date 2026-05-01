@@ -24,6 +24,7 @@ import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
 import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
@@ -762,7 +763,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 500),
-              child: Text(profile.description!, style: textTheme.bodyMedium),
+              child: FacetText(text: profile.description!, style: textTheme.bodyMedium),
             ),
           ],
           if (metaChildren.isNotEmpty) ...[

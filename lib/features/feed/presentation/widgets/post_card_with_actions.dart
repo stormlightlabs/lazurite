@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -291,9 +292,15 @@ class _PostCardWithActionsContent extends StatelessWidget {
   void _onQuote(BuildContext context) {
     HapticHelper.selectionClick();
     final post = feedViewPost.post;
+    final quotedText = _recordText(post.record);
     context.push(
       '/compose',
-      extra: ComposeRouteArgs(quoteUri: post.uri.toString(), quoteCid: post.cid, quoteAuthorHandle: post.author.handle),
+      extra: ComposeRouteArgs(
+        quoteUri: post.uri.toString(),
+        quoteCid: post.cid,
+        quoteAuthorHandle: post.author.handle,
+        quoteText: quotedText,
+      ),
     );
   }
 
@@ -339,5 +346,14 @@ class _PostCardWithActionsContent extends StatelessWidget {
       confirmDestructive: true,
       onConfirmed: () => context.read<PostActionCubit>().deletePost(),
     );
+  }
+
+  String _recordText(Map<String, dynamic> record) {
+    try {
+      return FeedPostRecord.fromJson(record).text;
+    } catch (_) {
+      final text = record['text'];
+      return text is String ? text : '';
+    }
   }
 }

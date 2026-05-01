@@ -28,6 +28,20 @@ void main() {
       expect(parsed.replyAuthorHandle, 'alice.bsky.social');
     });
 
+    test('parses quote metadata from map payload', () {
+      final parsed = ComposeRouteArgs.parseExtra({
+        'quoteUri': 'at://did:plc:test/app.bsky.feed.post/quote',
+        'quoteCid': 'cid-quote',
+        'quoteAuthorHandle': 'alice.bsky.social',
+        'quoteText': 'quoted post text',
+      });
+
+      expect(parsed.quoteUri, 'at://did:plc:test/app.bsky.feed.post/quote');
+      expect(parsed.quoteCid, 'cid-quote');
+      expect(parsed.quoteAuthorHandle, 'alice.bsky.social');
+      expect(parsed.quoteText, 'quoted post text');
+    });
+
     test('parses edit context fields from map payload', () {
       final parsed = ComposeRouteArgs.parseExtra({
         'initialText': 'updated post',

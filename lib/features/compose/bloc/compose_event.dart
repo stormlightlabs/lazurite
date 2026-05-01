@@ -108,7 +108,12 @@ class VideoAltTextUpdated extends ComposeEvent {
 }
 
 class PostSubmitted extends ComposeEvent {
-  const PostSubmitted();
+  const PostSubmitted({this.suppressedLinkUri});
+
+  final String? suppressedLinkUri;
+
+  @override
+  List<Object?> get props => [suppressedLinkUri];
 }
 
 class ReplyContextSet extends ComposeEvent {

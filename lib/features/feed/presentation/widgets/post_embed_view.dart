@@ -10,7 +10,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
-import 'package:lazurite/core/router/in_app_link_resolver.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
@@ -19,9 +19,8 @@ import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dar
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
+import 'package:lazurite/shared/presentation/widgets/external_link_preview_card.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 /// Renders the appropriate embed widget for a post embed.
 ///
@@ -137,65 +136,14 @@ class PostEmbedView extends StatelessWidget {
     );
   }
 
-  Widget _buildExternalEmbed(BuildContext context, EmbedExternalViewExternal external) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return InkWell(
-      onTap: () => _openExternalUri(context, external.uri),
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(12),
-          color: colorScheme.surfaceContainerLow,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (external.thumb != null)
-              CachedNetworkImage(
-                imageUrl: external.thumb!,
-                cacheManager: LazuriteImageCacheManager.instance,
-                height: compact ? 140 : 180,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorWidget: (_, _, _) => const SizedBox(height: 0),
-              ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    external.title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  if (external.description.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      external.description,
-                      maxLines: compact ? 3 : null,
-                      overflow: compact ? TextOverflow.ellipsis : TextOverflow.visible,
-                      style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.4),
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  Text(
-                    _displayHost(external.uri),
-                    style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildExternalEmbed(BuildContext context, EmbedExternalViewExternal external) => ExternalLinkPreviewCard(
+    uri: external.uri,
+    title: external.title,
+    description: external.description,
+    thumbUrl: external.thumb,
+    compact: compact,
+    cacheManager: LazuriteImageCacheManager.instance,
+  );
 
   Widget _buildVideoEmbed(BuildContext context, EmbedVideoView video) {
     final moderationService = maybeModerationService(context);
@@ -447,31 +395,6 @@ class PostEmbedView extends StatelessWidget {
     return segment.isEmpty ? 'image.jpg' : segment;
   }
 
-  String _displayHost(String rawUri) {
-    final uri = Uri.tryParse(rawUri);
-    final host = uri?.host.trim();
-    if (host == null || host.isEmpty) {
-      return rawUri;
-    }
-    return host;
-  }
-
-  void _openExternalUri(BuildContext context, String rawUri) {
-    final inAppRoute = InAppLinkResolver.resolveRoute(rawUri);
-    final router = GoRouter.maybeOf(context);
-    if (inAppRoute != null && router != null) {
-      router.push(inAppRoute);
-      return;
-    }
-
-    final uri = Uri.tryParse(rawUri);
-    if (uri == null) {
-      return;
-    }
-
-    _launchExternal(uri);
-  }
-
   FeedPostRecord? _tryParseRecord(Map<String, dynamic> record) {
     try {
       return FeedPostRecord.fromJson(record);
@@ -479,10 +402,6 @@ class PostEmbedView extends StatelessWidget {
       return null;
     }
   }
-}
-
-Future<void> _launchExternal(Uri url) async {
-  await launchUrl(url, mode: LaunchMode.externalApplication);
 }
 
 enum _ImageThumbnailAction { save, share }

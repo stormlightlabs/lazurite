@@ -141,6 +141,7 @@ class AppRouter {
                 quoteUri: args.quoteUri,
                 quoteCid: args.quoteCid,
                 quoteAuthorHandle: args.quoteAuthorHandle,
+                quoteText: args.quoteText,
                 draftId: args.draftId,
                 initialText: args.initialText,
                 editPostUri: args.editPostUri,

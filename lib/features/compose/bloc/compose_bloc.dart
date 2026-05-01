@@ -14,6 +14,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/scheduler/post_scheduler.dart';
+import 'package:lazurite/features/compose/data/link_preview_service.dart';
 
 part 'compose_event.dart';
 part 'compose_state.dart';
@@ -457,7 +458,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         return;
       }
 
-      Map<String, dynamic>? embed;
+      Map<String, dynamic>? mediaEmbed;
 
       if (state.mediaAttachments.isNotEmpty) {
         final uploaded = <_UploadedImage>[];
@@ -496,7 +497,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
           );
         }
 
-        embed = {
+        mediaEmbed = {
           '\$type': 'app.bsky.embed.images',
           'images': uploaded.map((img) {
             final entry = <String, dynamic>{'image': img.blobRef.toJson(), 'alt': img.altText};
@@ -508,22 +509,53 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         };
       } else if (state.videoAttachment?.isReady == true) {
         final blob = state.videoAttachment!.blob!;
-        embed = {r'$type': 'app.bsky.embed.video', 'video': blob.toJson(), 'alt': state.videoAttachment!.altText};
-      } else if (state.quoteUri != null && state.quoteCid != null) {
-        embed = {
-          r'$type': 'app.bsky.embed.record',
-          'record': {'uri': state.quoteUri, 'cid': state.quoteCid},
-        };
+        mediaEmbed = {r'$type': 'app.bsky.embed.video', 'video': blob.toJson(), 'alt': state.videoAttachment!.altText};
+      } else {
+        final firstLink = LinkPreviewService.firstLink(state.text);
+        if (firstLink != null && firstLink != event.suppressedLinkUri) {
+          mediaEmbed = await _composeRepository.buildExternalEmbedFromLink(firstLink);
+        }
+      }
+
+      Map<String, dynamic>? embed;
+      if (state.quoteUri != null && state.quoteCid != null) {
+        if (mediaEmbed != null) {
+          embed = {
+            r'$type': 'app.bsky.embed.recordWithMedia',
+            'record': {
+              r'$type': 'app.bsky.embed.record',
+              'record': {'uri': state.quoteUri, 'cid': state.quoteCid},
+            },
+            'media': mediaEmbed,
+          };
+        } else {
+          embed = {
+            r'$type': 'app.bsky.embed.record',
+            'record': {'uri': state.quoteUri, 'cid': state.quoteCid},
+          };
+        }
+      } else {
+        embed = mediaEmbed;
       }
 
       Map<String, dynamic>? reply;
       if (state.replyParentUri != null && state.replyParentCid != null) {
+        final fallbackRootUri = state.replyRootUri ?? state.replyParentUri!;
+        final fallbackRootCid = state.replyRootCid ?? state.replyParentCid!;
+        final resolvedReplyRefs = await _composeRepository.resolveReplyReferences(
+          parentUri: state.replyParentUri!,
+          parentCid: state.replyParentCid!,
+          fallbackRootUri: fallbackRootUri,
+          fallbackRootCid: fallbackRootCid,
+        );
+
+        final parentCid = resolvedReplyRefs?.parentCid ?? state.replyParentCid!;
+        final rootUri = resolvedReplyRefs?.rootUri ?? fallbackRootUri;
+        final rootCid = resolvedReplyRefs?.rootCid ?? fallbackRootCid;
+
         reply = {
-          'parent': {'uri': state.replyParentUri, 'cid': state.replyParentCid},
-          'root': {
-            'uri': state.replyRootUri ?? state.replyParentUri,
-            'cid': state.replyRootCid ?? state.replyParentCid,
-          },
+          'parent': {'uri': state.replyParentUri, 'cid': parentCid},
+          'root': {'uri': rootUri, 'cid': rootCid},
         };
       }
 
@@ -667,9 +699,12 @@ class EditPostResult {
 }
 
 class ComposeRepository {
-  ComposeRepository({required Bluesky bluesky}) : _bluesky = bluesky;
+  ComposeRepository({required Bluesky bluesky, LinkPreviewService? linkPreviewService})
+    : _bluesky = bluesky,
+      _linkPreviewService = linkPreviewService ?? LinkPreviewService();
 
   final Bluesky _bluesky;
+  final LinkPreviewService _linkPreviewService;
 
   Future<BlobRef?> uploadBlob(List<int> bytes, {String mimeType = 'image/jpeg'}) async {
     try {
@@ -739,6 +774,85 @@ class ComposeRepository {
     } catch (e, stackTrace) {
       log.e('Failed to create post', error: e, stackTrace: stackTrace);
       return false;
+    }
+  }
+
+  Future<LinkPreviewData?> fetchLinkPreview(String rawUrl) async {
+    try {
+      return await _linkPreviewService.fetch(rawUrl);
+    } catch (error, stackTrace) {
+      log.w('Failed to fetch link preview metadata', error: error, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> buildExternalEmbedFromLink(String rawUrl) async {
+    final preview = await fetchLinkPreview(rawUrl);
+    if (preview == null) {
+      return null;
+    }
+
+    final external = <String, dynamic>{'uri': preview.uri, 'title': preview.title, 'description': preview.description};
+
+    final thumbUrl = preview.thumbnailUrl;
+    if (thumbUrl != null && thumbUrl.isNotEmpty) {
+      final thumb = await _uploadExternalThumb(thumbUrl);
+      if (thumb != null) {
+        external['thumb'] = thumb.toJson();
+      }
+    }
+
+    return {r'$type': 'app.bsky.embed.external', 'external': external};
+  }
+
+  Future<({String parentCid, String rootUri, String rootCid})?> resolveReplyReferences({
+    required String parentUri,
+    required String parentCid,
+    required String fallbackRootUri,
+    required String fallbackRootCid,
+  }) async {
+    try {
+      final parentAtUri = AtUri.parse(parentUri);
+      final parent = await _bluesky.atproto.repo.getRecord(
+        repo: parentAtUri.hostname,
+        collection: parentAtUri.collection.toString(),
+        rkey: parentAtUri.rkey,
+      );
+
+      final latestParentCid = parent.data.cid ?? parentCid;
+      final parentReply = parent.data.value['reply'];
+      if (parentReply is! Map) {
+        return (parentCid: latestParentCid, rootUri: parentUri, rootCid: latestParentCid);
+      }
+
+      final rootRef = parentReply['root'];
+      if (rootRef is! Map) {
+        return (parentCid: latestParentCid, rootUri: fallbackRootUri, rootCid: fallbackRootCid);
+      }
+
+      final rootUri = rootRef['uri'];
+      final rootCid = rootRef['cid'];
+      if (rootUri is String && rootCid is String && rootUri.isNotEmpty && rootCid.isNotEmpty) {
+        return (parentCid: latestParentCid, rootUri: rootUri, rootCid: rootCid);
+      }
+
+      return (parentCid: latestParentCid, rootUri: fallbackRootUri, rootCid: fallbackRootCid);
+    } catch (error, stackTrace) {
+      log.w('Failed to resolve reply references; using fallback refs', error: error, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  Future<BlobRef?> _uploadExternalThumb(String thumbUrl) async {
+    try {
+      final thumb = await _linkPreviewService.fetchThumbnail(thumbUrl);
+      if (thumb == null) {
+        return null;
+      }
+      return await uploadBlob(thumb.bytes, mimeType: thumb.mimeType);
+    } catch (error, stackTrace) {
+      log.w('Failed to upload external embed thumbnail blob', error: error, stackTrace: stackTrace);
+      return null;
     }
   }
 

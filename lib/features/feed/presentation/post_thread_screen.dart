@@ -908,7 +908,12 @@ class _FocusedPostContent extends StatelessWidget {
 
     context.push(
       '/compose',
-      extra: ComposeRouteArgs(quoteUri: post.uri.toString(), quoteCid: post.cid, quoteAuthorHandle: post.author.handle),
+      extra: ComposeRouteArgs(
+        quoteUri: post.uri.toString(),
+        quoteCid: post.cid,
+        quoteAuthorHandle: post.author.handle,
+        quoteText: _editableTextFromRecord(post.record),
+      ),
     );
   }
 

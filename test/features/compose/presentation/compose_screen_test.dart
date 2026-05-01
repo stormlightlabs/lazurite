@@ -217,6 +217,51 @@ void main() {
       });
     });
 
+    group('quote preview', () {
+      testWidgets('shows quote preview with author and text when quote context exists', (tester) async {
+        seedState(
+          const ComposeState.ready(quoteUri: 'at://did:plc:test/app.bsky.feed.post/quoted', quoteCid: 'quoted-cid'),
+        );
+
+        await tester.pumpWidget(
+          buildSubject(
+            screen: const ComposeScreen(
+              quoteUri: 'at://did:plc:test/app.bsky.feed.post/quoted',
+              quoteCid: 'quoted-cid',
+              quoteAuthorHandle: 'alice.bsky.social',
+              quoteText: 'Quoted post body',
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('Quoting @alice.bsky.social'), findsOneWidget);
+        expect(find.text('Quoted post body'), findsOneWidget);
+      });
+
+      testWidgets('remove button clears quote context', (tester) async {
+        seedState(
+          const ComposeState.ready(quoteUri: 'at://did:plc:test/app.bsky.feed.post/quoted', quoteCid: 'quoted-cid'),
+        );
+
+        await tester.pumpWidget(
+          buildSubject(
+            screen: const ComposeScreen(
+              quoteUri: 'at://did:plc:test/app.bsky.feed.post/quoted',
+              quoteCid: 'quoted-cid',
+              quoteAuthorHandle: 'alice.bsky.social',
+            ),
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.byTooltip('Remove quoted post'));
+        await tester.pump();
+
+        verify(() => mockBloc.add(const QuoteContextCleared())).called(1);
+      });
+    });
+
     group('inline drafts panel (Bug #3)', () {
       testWidgets('drafts panel is hidden initially', (tester) async {
         seedState(const ComposeState.ready());

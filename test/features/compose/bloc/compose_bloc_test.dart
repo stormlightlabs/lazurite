@@ -44,6 +44,16 @@ void main() {
     setUp(() {
       mockDatabase = MockAppDatabase();
       mockRepository = MockComposeRepository();
+      when(() => mockRepository.fetchLinkPreview(any())).thenAnswer((_) async => null);
+      when(() => mockRepository.buildExternalEmbedFromLink(any())).thenAnswer((_) async => null);
+      when(
+        () => mockRepository.resolveReplyReferences(
+          parentUri: any(named: 'parentUri'),
+          parentCid: any(named: 'parentCid'),
+          fallbackRootUri: any(named: 'fallbackRootUri'),
+          fallbackRootCid: any(named: 'fallbackRootCid'),
+        ),
+      ).thenAnswer((_) async => null);
       composeBloc = ComposeBloc(composeRepository: mockRepository, database: mockDatabase, accountDid: 'did:plc:test');
       registerFallbackValue(FakeDraftsCompanion());
     });
@@ -653,6 +663,201 @@ void main() {
               repo: 'did:plc:test',
             ),
           ).called(1);
+        },
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'builds Bluesky external embed from detected link preview metadata',
+        build: () {
+          when(() => mockRepository.buildExternalEmbedFromLink('https://example.com/article')).thenAnswer(
+            (_) async => {
+              r'$type': 'app.bsky.embed.external',
+              'external': {
+                'uri': 'https://example.com/article',
+                'title': 'Example Article',
+                'description': 'Example description',
+              },
+            },
+          );
+          when(
+            () => mockRepository.createPost(
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              embed: any(named: 'embed'),
+              reply: any(named: 'reply'),
+              repo: any(named: 'repo'),
+            ),
+          ).thenAnswer((_) async => true);
+          return composeBloc;
+        },
+        seed: () =>
+            const ComposeState.ready(text: 'Read this https://example.com/article', graphemeCount: 37, isEmpty: false),
+        act: (bloc) => bloc.add(const PostSubmitted()),
+        verify: (_) {
+          final embed =
+              verify(
+                    () => mockRepository.createPost(
+                      text: any(named: 'text'),
+                      facets: any(named: 'facets'),
+                      embed: captureAny(named: 'embed'),
+                      reply: any(named: 'reply'),
+                      repo: any(named: 'repo'),
+                    ),
+                  ).captured.single
+                  as Map<String, dynamic>?;
+
+          expect(embed, isNotNull);
+          expect(embed![r'$type'], 'app.bsky.embed.external');
+          final external = embed['external'] as Map<String, dynamic>;
+          expect(external['uri'], 'https://example.com/article');
+          expect(external['title'], 'Example Article');
+          expect(external['description'], 'Example description');
+        },
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'does not build external embed when link is explicitly suppressed',
+        build: () {
+          when(
+            () => mockRepository.createPost(
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              embed: any(named: 'embed'),
+              reply: any(named: 'reply'),
+              repo: any(named: 'repo'),
+            ),
+          ).thenAnswer((_) async => true);
+          return composeBloc;
+        },
+        seed: () =>
+            const ComposeState.ready(text: 'Read this https://example.com/article', graphemeCount: 37, isEmpty: false),
+        act: (bloc) => bloc.add(const PostSubmitted(suppressedLinkUri: 'https://example.com/article')),
+        verify: (_) {
+          verifyNever(() => mockRepository.buildExternalEmbedFromLink(any()));
+          final embed = verify(
+            () => mockRepository.createPost(
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              embed: captureAny(named: 'embed'),
+              reply: any(named: 'reply'),
+              repo: any(named: 'repo'),
+            ),
+          ).captured.single;
+          expect(embed, isNull);
+        },
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'builds recordWithMedia when quoting and link preview embed both exist',
+        build: () {
+          when(() => mockRepository.buildExternalEmbedFromLink('https://example.com/article')).thenAnswer(
+            (_) async => {
+              r'$type': 'app.bsky.embed.external',
+              'external': {
+                'uri': 'https://example.com/article',
+                'title': 'Example Article',
+                'description': 'Example description',
+              },
+            },
+          );
+          when(
+            () => mockRepository.createPost(
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              embed: any(named: 'embed'),
+              reply: any(named: 'reply'),
+              repo: any(named: 'repo'),
+            ),
+          ).thenAnswer((_) async => true);
+          return composeBloc;
+        },
+        seed: () => const ComposeState.ready(
+          text: 'Quote this https://example.com/article',
+          graphemeCount: 36,
+          isEmpty: false,
+          quoteUri: 'at://did:plc:test/app.bsky.feed.post/quote',
+          quoteCid: 'cid-quote',
+        ),
+        act: (bloc) => bloc.add(const PostSubmitted()),
+        verify: (_) {
+          final embed =
+              verify(
+                    () => mockRepository.createPost(
+                      text: any(named: 'text'),
+                      facets: any(named: 'facets'),
+                      embed: captureAny(named: 'embed'),
+                      reply: any(named: 'reply'),
+                      repo: any(named: 'repo'),
+                    ),
+                  ).captured.single
+                  as Map<String, dynamic>?;
+
+          expect(embed, isNotNull);
+          expect(embed![r'$type'], 'app.bsky.embed.recordWithMedia');
+          final record = embed['record'] as Map<String, dynamic>;
+          expect(record[r'$type'], 'app.bsky.embed.record');
+          final media = embed['media'] as Map<String, dynamic>;
+          expect(media[r'$type'], 'app.bsky.embed.external');
+        },
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'resolves latest reply parent/root references before posting reply',
+        build: () {
+          when(
+            () => mockRepository.resolveReplyReferences(
+              parentUri: any(named: 'parentUri'),
+              parentCid: any(named: 'parentCid'),
+              fallbackRootUri: any(named: 'fallbackRootUri'),
+              fallbackRootCid: any(named: 'fallbackRootCid'),
+            ),
+          ).thenAnswer(
+            (_) async => (
+              parentCid: 'cid-parent-latest',
+              rootUri: 'at://did:plc:test/app.bsky.feed.post/root-latest',
+              rootCid: 'cid-root-latest',
+            ),
+          );
+          when(
+            () => mockRepository.createPost(
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              embed: any(named: 'embed'),
+              reply: any(named: 'reply'),
+              repo: any(named: 'repo'),
+            ),
+          ).thenAnswer((_) async => true);
+          return composeBloc;
+        },
+        seed: () => const ComposeState.ready(
+          text: 'reply text',
+          graphemeCount: 10,
+          isEmpty: false,
+          replyParentUri: 'at://did:plc:test/app.bsky.feed.post/parent',
+          replyParentCid: 'cid-parent-old',
+          replyRootUri: 'at://did:plc:test/app.bsky.feed.post/root-old',
+          replyRootCid: 'cid-root-old',
+        ),
+        act: (bloc) => bloc.add(const PostSubmitted()),
+        verify: (_) {
+          final reply =
+              verify(
+                    () => mockRepository.createPost(
+                      text: any(named: 'text'),
+                      facets: any(named: 'facets'),
+                      embed: any(named: 'embed'),
+                      reply: captureAny(named: 'reply'),
+                      repo: any(named: 'repo'),
+                    ),
+                  ).captured.single
+                  as Map<String, dynamic>?;
+
+          expect(reply, isNotNull);
+          final parent = reply!['parent'] as Map<String, dynamic>;
+          final root = reply['root'] as Map<String, dynamic>;
+          expect(parent['cid'], 'cid-parent-latest');
+          expect(root['uri'], 'at://did:plc:test/app.bsky.feed.post/root-latest');
+          expect(root['cid'], 'cid-root-latest');
         },
       );
 

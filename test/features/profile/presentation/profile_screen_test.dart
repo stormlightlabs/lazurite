@@ -162,7 +162,12 @@ void main() {
 
     expect(find.text('RIVER TAM'), findsOneWidget);
     expect(find.text('@me.bsky.social'), findsOneWidget);
-    expect(find.text('Signal and signal boost.'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is RichText && widget.text.toPlainText().contains('Signal and signal boost.'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('she/her'), findsOneWidget);
     expect(find.text('river.example'), findsOneWidget);
     expect(find.text('Joined March 2024'), findsOneWidget);
@@ -415,7 +420,12 @@ void main() {
     testWidgets('bio is shown', (tester) async {
       useLargeScreen(tester);
       await tester.pumpWidget(buildSubject());
-      expect(find.text('Signal and signal boost.'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is RichText && widget.text.toPlainText().contains('Signal and signal boost.'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('stats row is rendered in a bordered container', (tester) async {
@@ -586,19 +596,11 @@ void main() {
       final parentPost = PostView(
         uri: AtUri('at://did:plc:parent/app.bsky.feed.post/parent-$id'),
         cid: 'cid-parent-$id',
-        author: const ProfileViewBasic(
-          did: 'did:plc:parent',
-          handle: 'parent.bsky.social',
-          displayName: 'Parent User',
-        ),
+        author: const ProfileViewBasic(did: 'did:plc:parent', handle: 'parent.bsky.social', displayName: 'Parent User'),
         record: parentRecord.toJson(),
         indexedAt: DateTime.utc(2026, 3, 1),
       );
-      final replyRecord = FeedPostRecord(
-        text: 'Reply $id',
-        createdAt: DateTime.utc(2026, 3, 1, 0, 5),
-        reply: null,
-      );
+      final replyRecord = FeedPostRecord(text: 'Reply $id', createdAt: DateTime.utc(2026, 3, 1, 0, 5), reply: null);
 
       return FeedViewPost(
         post: PostView(

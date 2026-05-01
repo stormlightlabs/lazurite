@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -9,10 +10,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
+import 'package:lazurite/features/compose/data/link_preview_service.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
+import 'package:lazurite/shared/presentation/widgets/external_link_preview_card.dart';
 
 class ComposeScreen extends StatefulWidget {
   const ComposeScreen({
@@ -25,11 +30,14 @@ class ComposeScreen extends StatefulWidget {
     this.quoteUri,
     this.quoteCid,
     this.quoteAuthorHandle,
+    this.quoteText,
     this.draftId,
     this.initialText,
     this.editPostUri,
     this.editPostCid,
     this.editRecord,
+    this.typeaheadRepository,
+    this.linkPreviewService,
   });
 
   final String? replyParentUri;
@@ -40,11 +48,14 @@ class ComposeScreen extends StatefulWidget {
   final String? quoteUri;
   final String? quoteCid;
   final String? quoteAuthorHandle;
+  final String? quoteText;
   final int? draftId;
   final String? initialText;
   final String? editPostUri;
   final String? editPostCid;
   final Map<String, dynamic>? editRecord;
+  final TypeaheadRepository? typeaheadRepository;
+  final LinkPreviewService? linkPreviewService;
 
   @override
   State<ComposeScreen> createState() => _ComposeScreenState();
@@ -52,7 +63,21 @@ class ComposeScreen extends StatefulWidget {
 
 class _ComposeScreenState extends State<ComposeScreen> {
   late final _FacetHighlightController _textController;
+  final FocusNode _textFocusNode = FocusNode();
   final ImagePicker _imagePicker = ImagePicker();
+  Timer? _mentionDebounce;
+  Timer? _linkPreviewDebounce;
+  int _mentionQueryStart = -1;
+  int _mentionQueryEnd = -1;
+  int _mentionSearchGeneration = 0;
+  int _linkPreviewGeneration = 0;
+  List<TypeaheadResult> _mentionSuggestions = const [];
+  bool _isSearchingMentions = false;
+  TypeaheadRepository? _typeaheadRepository;
+  late final LinkPreviewService _linkPreviewService;
+  LinkPreviewData? _linkPreview;
+  bool _isLoadingLinkPreview = false;
+  String? _hiddenPreviewUrl;
   bool _showDrafts = false;
 
   @override
@@ -60,6 +85,20 @@ class _ComposeScreenState extends State<ComposeScreen> {
     super.initState();
     final isEditing = widget.editPostUri != null && widget.editPostCid != null && widget.editRecord != null;
     _textController = _FacetHighlightController();
+    _typeaheadRepository = widget.typeaheadRepository;
+    if (_typeaheadRepository == null) {
+      try {
+        _typeaheadRepository = context.read<TypeaheadRepository>();
+      } catch (_) {
+        _typeaheadRepository = null;
+      }
+    }
+    _linkPreviewService = widget.linkPreviewService ?? LinkPreviewService();
+    _textFocusNode.addListener(() {
+      if (!_textFocusNode.hasFocus) {
+        _clearMentionSuggestions();
+      }
+    });
     if (widget.initialText?.isNotEmpty ?? false) {
       _textController.text = widget.initialText!;
     }
@@ -104,16 +143,196 @@ class _ComposeScreenState extends State<ComposeScreen> {
   void dispose() {
     _textController.removeListener(_onTextChanged);
     _textController.dispose();
+    _textFocusNode.dispose();
+    _mentionDebounce?.cancel();
+    _linkPreviewDebounce?.cancel();
     super.dispose();
   }
 
   void _onTextChanged() {
     final bloc = context.read<ComposeBloc>();
     final text = _textController.text;
+    _scheduleMentionLookup(text);
+    _scheduleLinkPreviewLookup(text);
     if (bloc.state.text == text) {
       return;
     }
     bloc.add(TextChanged(text));
+  }
+
+  void _scheduleMentionLookup(String text) {
+    final repository = _typeaheadRepository;
+    if (repository == null || !_textFocusNode.hasFocus) {
+      _clearMentionSuggestions();
+      return;
+    }
+
+    final activeMention = _activeMentionQuery(text, _textController.selection);
+    if (activeMention == null || activeMention.query.length < 2) {
+      _clearMentionSuggestions();
+      return;
+    }
+
+    _mentionQueryStart = activeMention.start;
+    _mentionQueryEnd = activeMention.end;
+    _mentionDebounce?.cancel();
+    _mentionDebounce = Timer(const Duration(milliseconds: 220), () async {
+      final generation = ++_mentionSearchGeneration;
+      if (!mounted) {
+        return;
+      }
+      setState(() => _isSearchingMentions = true);
+      try {
+        final results = await repository.search(query: activeMention.query, limit: 6);
+        if (!mounted || generation != _mentionSearchGeneration) {
+          return;
+        }
+        setState(() {
+          _mentionSuggestions = results;
+          _isSearchingMentions = false;
+        });
+      } catch (_) {
+        if (!mounted || generation != _mentionSearchGeneration) {
+          return;
+        }
+        setState(() {
+          _mentionSuggestions = const [];
+          _isSearchingMentions = false;
+        });
+      }
+    });
+  }
+
+  void _scheduleLinkPreviewLookup(String text) {
+    if (context.read<ComposeBloc>().state.isEditing) {
+      _clearLinkPreview();
+      return;
+    }
+
+    if (_hiddenPreviewUrl != null && !text.contains(_hiddenPreviewUrl!)) {
+      _hiddenPreviewUrl = null;
+    }
+
+    final firstLink = LinkPreviewService.firstLink(text);
+    if (firstLink == null) {
+      _clearLinkPreview();
+      return;
+    }
+
+    if (_hiddenPreviewUrl != null && _hiddenPreviewUrl == firstLink) {
+      _clearLinkPreview();
+      return;
+    }
+
+    if (_linkPreview?.uri == firstLink) {
+      return;
+    }
+
+    _linkPreviewDebounce?.cancel();
+    _linkPreviewDebounce = Timer(const Duration(milliseconds: 320), () async {
+      final generation = ++_linkPreviewGeneration;
+      if (!mounted) {
+        return;
+      }
+      setState(() => _isLoadingLinkPreview = true);
+      try {
+        final preview = await _linkPreviewService.fetch(firstLink);
+        if (!mounted || generation != _linkPreviewGeneration) {
+          return;
+        }
+        setState(() {
+          _linkPreview = preview;
+          _isLoadingLinkPreview = false;
+        });
+      } catch (_) {
+        if (!mounted || generation != _linkPreviewGeneration) {
+          return;
+        }
+        setState(() {
+          _linkPreview = null;
+          _isLoadingLinkPreview = false;
+        });
+      }
+    });
+  }
+
+  void _clearMentionSuggestions() {
+    _mentionDebounce?.cancel();
+    _mentionQueryStart = -1;
+    _mentionQueryEnd = -1;
+    _mentionSearchGeneration++;
+    if (_mentionSuggestions.isNotEmpty || _isSearchingMentions) {
+      setState(() {
+        _mentionSuggestions = const [];
+        _isSearchingMentions = false;
+      });
+    }
+  }
+
+  void _clearLinkPreview() {
+    _linkPreviewDebounce?.cancel();
+    _linkPreviewGeneration++;
+    if (_linkPreview != null || _isLoadingLinkPreview) {
+      setState(() {
+        _linkPreview = null;
+        _isLoadingLinkPreview = false;
+      });
+    }
+  }
+
+  void _applyMention(TypeaheadResult result) {
+    final start = _mentionQueryStart;
+    final end = _mentionQueryEnd;
+    if (start < 0 || end < start || end > _textController.text.length) {
+      return;
+    }
+
+    final currentText = _textController.text;
+    final replacement = '@${result.handle} ';
+    final nextText = '${currentText.substring(0, start)}$replacement${currentText.substring(end)}';
+    final cursorOffset = start + replacement.length;
+    _textController.value = TextEditingValue(
+      text: nextText,
+      selection: TextSelection.collapsed(offset: cursorOffset),
+    );
+    _clearMentionSuggestions();
+  }
+
+  ({int start, int end, String query})? _activeMentionQuery(String text, TextSelection selection) {
+    if (!selection.isValid || !selection.isCollapsed) {
+      return null;
+    }
+
+    final cursor = selection.baseOffset;
+    if (cursor <= 0 || cursor > text.length) {
+      return null;
+    }
+
+    final left = text.substring(0, cursor);
+    final mentionStart = left.lastIndexOf('@');
+    if (mentionStart < 0) {
+      return null;
+    }
+
+    if (mentionStart > 0) {
+      final prefixChar = text[mentionStart - 1];
+      const allowedPrefix = '([{"\'';
+      if (!RegExp(r'\s').hasMatch(prefixChar) && !allowedPrefix.contains(prefixChar)) {
+        return null;
+      }
+    }
+
+    final candidate = text.substring(mentionStart + 1, cursor);
+    if (candidate.isEmpty || candidate.contains(RegExp(r'\s'))) {
+      return null;
+    }
+
+    final suffix = cursor < text.length ? text[cursor] : '';
+    if (suffix.isNotEmpty && RegExp(r'[A-Za-z0-9._-]').hasMatch(suffix)) {
+      return null;
+    }
+
+    return (start: mentionStart, end: cursor, query: candidate);
   }
 
   Future<void> _pickImage() async {
@@ -423,10 +642,135 @@ class _ComposeScreenState extends State<ComposeScreen> {
     );
   }
 
+  Widget _buildMentionAutocompletePanel() {
+    if (!_textFocusNode.hasFocus) {
+      return const SizedBox.shrink();
+    }
+    if (!_isSearchingMentions && _mentionSuggestions.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      constraints: const BoxConstraints(maxHeight: 220),
+      child: _isSearchingMentions
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+            )
+          : ListView.separated(
+              shrinkWrap: true,
+              itemCount: _mentionSuggestions.length,
+              separatorBuilder: (_, _) => Divider(height: 1, color: theme.colorScheme.outlineVariant),
+              itemBuilder: (context, index) {
+                final actor = _mentionSuggestions[index];
+                return ListTile(
+                  dense: true,
+                  leading: CircleAvatar(
+                    radius: 14,
+                    backgroundImage: actor.avatarUrl != null ? NetworkImage(actor.avatarUrl!) : null,
+                    child: actor.avatarUrl == null
+                        ? Text((actor.displayName ?? actor.handle).substring(0, 1).toUpperCase())
+                        : null,
+                  ),
+                  title: Text(
+                    actor.displayName ?? actor.handle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  subtitle: Text('@${actor.handle}', style: theme.textTheme.bodySmall),
+                  onTap: () => _applyMention(actor),
+                );
+              },
+            ),
+    );
+  }
+
+  Widget _buildQuotePreview(ComposeState state) {
+    if (!state.isQuote) {
+      return const SizedBox.shrink();
+    }
+
+    final quotedHandle = widget.quoteAuthorHandle?.trim();
+    final quotedText = widget.quoteText?.trim() ?? '';
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.format_quote, size: 18, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  quotedHandle != null && quotedHandle.isNotEmpty ? 'Quoting @$quotedHandle' : 'Quoting post',
+                  style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                if (quotedText.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    quotedText,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => context.read<ComposeBloc>().add(const QuoteContextCleared()),
+            icon: const Icon(Icons.close),
+            visualDensity: VisualDensity.compact,
+            tooltip: 'Remove quoted post',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComposerLinkPreview(ComposeState state) {
+    if (_linkPreview == null || state.isQuote || state.hasMedia || state.hasVideo || state.isEditing) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: ExternalLinkPreviewCard(
+        uri: _linkPreview!.uri,
+        title: _linkPreview!.title,
+        description: _linkPreview!.description,
+        thumbUrl: _linkPreview!.thumbnailUrl,
+        compact: true,
+        onRemove: () {
+          setState(() {
+            _hiddenPreviewUrl = _linkPreview!.uri;
+            _linkPreview = null;
+          });
+        },
+      ),
+    );
+  }
+
   ThemeData get theme => Theme.of(context);
 
   void _submitPost() {
-    context.read<ComposeBloc>().add(const PostSubmitted());
+    context.read<ComposeBloc>().add(PostSubmitted(suppressedLinkUri: _hiddenPreviewUrl));
   }
 
   void _saveDraft() {
@@ -599,33 +943,38 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     }
 
                     if (!state.isReply || widget.replyAuthorHandle == null) {
-                      return const SizedBox.shrink();
+                      return _buildQuotePreview(state);
                     }
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        border: Border(bottom: BorderSide(color: theme.dividerColor)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.reply, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Replying to ',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    return Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            border: Border(bottom: BorderSide(color: theme.dividerColor)),
                           ),
-                          Text(
-                            '@${widget.replyAuthorHandle}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.reply, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Replying to ',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              ),
+                              Text(
+                                '@${widget.replyAuthorHandle}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        _buildQuotePreview(state),
+                      ],
                     );
                   },
                 ),
@@ -634,6 +983,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     padding: const EdgeInsets.all(16),
                     child: TextField(
                       controller: _textController,
+                      focusNode: _textFocusNode,
                       maxLines: null,
                       expands: true,
                       textAlignVertical: TextAlignVertical.top,
@@ -642,10 +992,17 @@ class _ComposeScreenState extends State<ComposeScreen> {
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
                       ),
-                      style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+                      style: theme.textTheme.bodyLarge?.copyWith(height: 1.5, fontSize: 17),
                     ),
                   ),
                 ),
+                _buildMentionAutocompletePanel(),
+                BlocBuilder<ComposeBloc, ComposeState>(builder: (context, state) => _buildComposerLinkPreview(state)),
+                if (_isLoadingLinkPreview)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                  ),
                 BlocBuilder<ComposeBloc, ComposeState>(
                   builder: (context, state) {
                     if (!state.hasScheduledTime) return const SizedBox.shrink();

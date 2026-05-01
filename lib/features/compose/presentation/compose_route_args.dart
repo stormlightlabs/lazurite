@@ -41,6 +41,7 @@ class ComposeRouteArgs {
         quoteUri: readString('quoteUri'),
         quoteCid: readString('quoteCid'),
         quoteAuthorHandle: readString('quoteAuthorHandle'),
+        quoteText: readString('quoteText'),
         draftId: readInt('draftId'),
         initialText: readString('initialText'),
         editPostUri: readString('editPostUri'),
@@ -60,6 +61,7 @@ class ComposeRouteArgs {
     this.quoteUri,
     this.quoteCid,
     this.quoteAuthorHandle,
+    this.quoteText,
     this.draftId,
     this.initialText,
     this.editPostUri,
@@ -75,6 +77,7 @@ class ComposeRouteArgs {
   final String? quoteUri;
   final String? quoteCid;
   final String? quoteAuthorHandle;
+  final String? quoteText;
   final int? draftId;
   final String? initialText;
   final String? editPostUri;
