@@ -98,6 +98,16 @@ void main() {
       expect(called, isTrue);
     });
 
+    testWidgets('long press repost opens repost and quote sheet options', (tester) async {
+      await tester.pumpWidget(_buildSubject(PostCardFooter(timestamp: '1H', onRepost: () {}, onQuote: () {})));
+
+      await tester.longPress(find.byIcon(Icons.repeat));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Repost'), findsOneWidget);
+      expect(find.text('Quote Post'), findsOneWidget);
+    });
+
     testWidgets('calls onLike when like icon tapped', (tester) async {
       var called = false;
       await tester.pumpWidget(_buildSubject(PostCardFooter(timestamp: '1H', onLike: () => called = true)));
@@ -206,6 +216,11 @@ void main() {
       expect(find.text('42'), findsNothing);
       expect(find.text('5'), findsNothing);
       expect(find.text('1H'), findsOneWidget);
+    });
+
+    testWidgets('shows kebab action when onMore is provided', (tester) async {
+      await tester.pumpWidget(_buildSubject(PostCardFooter(timestamp: '1H', onMore: () {})));
+      expect(find.byIcon(Icons.more_vert), findsOneWidget);
     });
   });
 }

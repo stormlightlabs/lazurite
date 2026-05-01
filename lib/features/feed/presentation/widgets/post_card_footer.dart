@@ -28,11 +28,13 @@ class PostCardFooter extends StatelessWidget {
     this.isLoadingRepost = false,
     this.onReply,
     this.onRepost,
+    this.onQuote,
     this.onLike,
     this.onSave,
     this.onLongPressSave,
     this.onCloudSave,
     this.onCloudUnsave,
+    this.onMore,
     this.showCounts = false,
     this.isOffline = false,
   });
@@ -50,11 +52,13 @@ class PostCardFooter extends StatelessWidget {
   final bool isLoadingRepost;
   final VoidCallback? onReply;
   final VoidCallback? onRepost;
+  final VoidCallback? onQuote;
   final VoidCallback? onLike;
   final VoidCallback? onSave;
   final VoidCallback? onLongPressSave;
   final VoidCallback? onCloudSave;
   final VoidCallback? onCloudUnsave;
+  final VoidCallback? onMore;
   final bool showCounts;
   final bool isOffline;
 
@@ -92,6 +96,7 @@ class PostCardFooter extends StatelessWidget {
             isLoading: isLoadingRepost,
             count: repostCount,
             onTap: isOffline ? null : onRepost,
+            onLongPress: !isOffline && onRepost != null ? () => _showRepostOptions(context) : null,
             color: colorScheme.onSurfaceVariant,
             activeColor: Colors.green,
             iconSize: iconSize,
@@ -127,6 +132,19 @@ class PostCardFooter extends StatelessWidget {
             padding: actionPadding,
             showCount: canShowCounts,
           ),
+          if (onMore != null)
+            _FooterAction(
+              icon: Icons.more_vert,
+              activeIcon: Icons.more_vert,
+              isActive: false,
+              isLoading: false,
+              count: 0,
+              onTap: onMore,
+              color: colorScheme.onSurfaceVariant,
+              iconSize: iconSize,
+              padding: actionPadding,
+              showCount: false,
+            ),
         ];
 
         return Container(
@@ -159,6 +177,28 @@ class PostCardFooter extends StatelessWidget {
                 ),
         );
       },
+    );
+  }
+
+  void _showRepostOptions(BuildContext context) {
+    HapticHelper.mediumImpact();
+    showOptionsSheet<void>(
+      context: context,
+      items: [
+        OptionsSheetItem(
+          leading: Icon(Icons.repeat, color: isReposted ? Colors.green : null),
+          title: isReposted ? 'Unrepost' : 'Repost',
+          subtitle: isReposted ? 'Remove this repost' : 'Share this post',
+          onTap: onRepost,
+        ),
+        if (!isReposted)
+          OptionsSheetItem(
+            leading: const Icon(Icons.format_quote),
+            title: 'Quote Post',
+            subtitle: 'Quote this post with your own text',
+            onTap: onQuote,
+          ),
+      ],
     );
   }
 

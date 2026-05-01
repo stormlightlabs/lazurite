@@ -1,6 +1,7 @@
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
 import 'package:bluesky/app_bsky_feed_getlikes.dart';
+import 'package:bluesky/app_bsky_feed_getquotes.dart';
 import 'package:bluesky/app_bsky_feed_getrepostedby.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
@@ -63,6 +64,11 @@ class MockPostActionRepository implements PostActionRepository {
   @override
   Future<FeedGetRepostedByOutput> getRepostedBy({required dynamic uri, String? cursor}) async {
     return FeedGetRepostedByOutput(uri: AtUri.parse(uri.toString()), repostedBy: []);
+  }
+
+  @override
+  Future<FeedGetQuotesOutput> getQuotes({required dynamic uri, String? cursor}) async {
+    return FeedGetQuotesOutput(uri: AtUri.parse(uri.toString()), posts: []);
   }
 
   bool isLiked(String postUri) => _likes.containsKey(postUri);
@@ -257,6 +263,25 @@ void main() {
         final output = await repository.getRepostedBy(uri: uri, cursor: 'next-page');
 
         expect(output.repostedBy, isEmpty);
+      });
+    });
+
+    group('getQuotes', () {
+      test('should return empty quote list', () async {
+        final uri = _createTestUri('abc123');
+
+        final output = await repository.getQuotes(uri: uri);
+
+        expect(output.posts, isEmpty);
+        expect(output.cursor, isNull);
+      });
+
+      test('should accept cursor param', () async {
+        final uri = _createTestUri('abc123');
+
+        final output = await repository.getQuotes(uri: uri, cursor: 'next-page');
+
+        expect(output.posts, isEmpty);
       });
     });
   });

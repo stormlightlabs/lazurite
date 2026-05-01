@@ -79,6 +79,7 @@ abstract final class AppBskyRoutingPolicy {
     'app.bsky.feed.repost': AppBskyProxyMode.bypassProxy,
     'app.bsky.feed.post': AppBskyProxyMode.bypassProxy,
     'app.bsky.feed.getLikes': AppBskyProxyMode.bypassProxy,
+    'app.bsky.feed.getQuotes': AppBskyProxyMode.bypassProxy,
     'app.bsky.feed.getRepostedBy': AppBskyProxyMode.bypassProxy,
     'app.bsky.feed.getActorLikes': AppBskyProxyMode.bypassProxy,
     'app.bsky.feed.getListFeed': AppBskyProxyMode.bypassProxy,

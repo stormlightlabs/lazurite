@@ -5,12 +5,9 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:lazurite/core/network/app_view_provider.dart';
-import 'package:lazurite/core/network/app_view_web_links.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -24,6 +21,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_action_bar.dart
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_interactions_sheet.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_menu_actions.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
@@ -31,7 +29,6 @@ import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/report_dialog.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
-import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
@@ -924,39 +921,22 @@ class _FocusedPostContent extends StatelessWidget {
   }
 
   void _showMoreOptions(BuildContext context) {
-    HapticHelper.mediumImpact();
     final post = thread.post;
-    final postUri = post.uri.toString();
-    final bskyUrl = AppViewWebLinks.postFromAtUri(postUri, appViewProvider: _resolveAppViewProvider(context));
+    final repository = context.read<PostActionRepository>();
+    final isOffline = context.read<ConnectivityCubit>().state.isOffline;
 
-    showOptionsSheet<void>(
-      context: context,
-      items: [
-        OptionsSheetItem(
-          leading: const Icon(Icons.copy),
-          title: 'Copy Link',
-          onTap: () => _copyToClipboard(context, bskyUrl),
-        ),
-        OptionsSheetItem(
-          leading: const Icon(Icons.person_outline),
-          title: 'View @${post.author.handle}',
-          onTap: () => navigateToProfile(context, post.author.did),
-        ),
-        OptionsSheetItem(
-          leading: const Icon(Icons.report_outlined, color: Colors.orange),
-          title: 'Report Post',
-          onTap: () => _showReportDialog(context),
-        ),
-        if (post.author.did == accountDid)
-          OptionsSheetItem(leading: const Icon(Icons.edit_outlined), title: 'Edit Post', onTap: () => _onEdit(context)),
-        if (post.author.did == accountDid)
-          OptionsSheetItem(
-            leading: Icon(Icons.delete_outline, color: context.colorScheme.error),
-            title: 'Delete Post',
-            isDestructive: true,
-            onTap: () => _confirmDelete(context),
-          ),
-      ],
+    unawaited(
+      showPostOverflowMenu(
+        context: context,
+        post: post,
+        accountDid: accountDid,
+        repository: repository,
+        onQuote: () => _onQuote(context),
+        onShowReport: () => _showReportDialog(context),
+        onEdit: () => _onEdit(context),
+        onDelete: () => _confirmDelete(context),
+        isOffline: isOffline,
+      ),
     );
   }
 
@@ -1059,11 +1039,6 @@ class _FocusedPostContent extends StatelessWidget {
     );
   }
 
-  void _copyToClipboard(BuildContext context, String text) {
-    Clipboard.setData(ClipboardData(text: text));
-    showAppSnackBar(context, 'Link copied to clipboard', behavior: SnackBarBehavior.floating);
-  }
-
   (String, String) _findRoot() {
     var current = thread.parent;
     ThreadViewPost? root;
@@ -1088,13 +1063,5 @@ class _FocusedPostContent extends StatelessWidget {
     }
     final text = record['text'];
     return text is String ? text : '';
-  }
-
-  String _resolveAppViewProvider(BuildContext context) {
-    try {
-      return context.read<SettingsCubit>().state.appViewProvider;
-    } catch (_) {
-      return AppViewProviders.defaultKey;
-    }
   }
 }

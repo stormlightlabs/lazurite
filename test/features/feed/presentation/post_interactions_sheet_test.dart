@@ -2,6 +2,7 @@ import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
 import 'package:bluesky/app_bsky_feed_getlikes.dart';
+import 'package:bluesky/app_bsky_feed_getquotes.dart';
 import 'package:bluesky/app_bsky_feed_getrepostedby.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,6 +22,11 @@ class _FakeRepository implements PostActionRepository {
   @override
   Future<FeedGetRepostedByOutput> getRepostedBy({required AtUri uri, String? cursor}) async {
     return FeedGetRepostedByOutput(uri: uri, repostedBy: reposters);
+  }
+
+  @override
+  Future<FeedGetQuotesOutput> getQuotes({required AtUri uri, String? cursor}) async {
+    return FeedGetQuotesOutput(uri: uri, posts: []);
   }
 
   @override

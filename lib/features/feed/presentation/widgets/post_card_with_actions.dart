@@ -15,8 +15,13 @@ import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/grid_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_menu_actions.dart';
+import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
+import 'package:lazurite/features/profile/data/profile_action_repository.dart';
+import 'package:lazurite/features/profile/presentation/widgets/report_dialog.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
+import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 
 /// Controls which card layout variant is rendered by [PostCardWithActions].
 enum PostCardVariant { linear, grid }
@@ -204,11 +209,13 @@ class _PostCardWithActionsContent extends StatelessWidget {
               isLoadingRepost: postActionState.isLoadingRepost,
               onReply: () => _onReply(context),
               onRepost: () => context.read<PostActionCubit>().toggleRepost(),
+              onQuote: () => _onQuote(context),
               onLike: () => context.read<PostActionCubit>().toggleLike(),
               onSave: () => unawaited(_onToggleSave(context)),
               onLongPressSave: () => unawaited(_onToggleSave(context)),
               onCloudSave: () => unawaited(_onCloudSave(context)),
               onCloudUnsave: () => unawaited(_onCloudUnsave(context)),
+              onMore: () => _showMoreOptions(context),
               showCounts: true,
               isOffline: isOffline,
             );
@@ -279,5 +286,58 @@ class _PostCardWithActionsContent extends StatelessWidget {
     final post = feedViewPost.post;
     await HapticHelper.lightImpact();
     await cubit.cloudUnsave(post.uri.toString());
+  }
+
+  void _onQuote(BuildContext context) {
+    HapticHelper.selectionClick();
+    final post = feedViewPost.post;
+    context.push(
+      '/compose',
+      extra: ComposeRouteArgs(quoteUri: post.uri.toString(), quoteCid: post.cid, quoteAuthorHandle: post.author.handle),
+    );
+  }
+
+  void _showMoreOptions(BuildContext context) {
+    final post = feedViewPost.post;
+    final isOffline = context.read<ConnectivityCubit>().state.isOffline;
+    final repository = context.read<PostActionRepository>();
+
+    unawaited(
+      showPostOverflowMenu(
+        context: context,
+        post: post,
+        accountDid: accountDid,
+        repository: repository,
+        onQuote: () => _onQuote(context),
+        onShowReport: () => _showReportDialog(context),
+        onDelete: () => _confirmDelete(context),
+        isOffline: isOffline,
+      ),
+    );
+  }
+
+  void _showReportDialog(BuildContext context) {
+    final post = feedViewPost.post;
+    showDialog<void>(
+      context: context,
+      builder: (_) => BlocProvider(
+        create: (_) => ProfileActionCubit(
+          profileActionRepository: context.read<ProfileActionRepository>(),
+          actorDid: post.author.did,
+        ),
+        child: ReportDialog.post(postUri: post.uri, cid: post.cid, authorHandle: post.author.handle),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    await showConfirmationDialog(
+      context: context,
+      title: const Text('Delete Post?'),
+      content: const Text('This action cannot be undone.'),
+      confirmLabel: 'Delete',
+      confirmDestructive: true,
+      onConfirmed: () => context.read<PostActionCubit>().deletePost(),
+    );
   }
 }

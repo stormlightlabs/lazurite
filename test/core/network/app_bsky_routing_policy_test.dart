@@ -12,6 +12,7 @@ void main() {
         'app.bsky.graph.getLists',
         'app.bsky.feed.getActorLikes',
         'app.bsky.feed.getPosts',
+        'app.bsky.feed.getQuotes',
         'app.bsky.unspecced.getTopicFeed',
       ];
 

@@ -4,6 +4,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_getlikes.dart';
+import 'package:bluesky/app_bsky_feed_getquotes.dart';
 import 'package:bluesky/app_bsky_feed_getrepostedby.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -53,6 +54,11 @@ class _FakePostActionRepository implements PostActionRepository {
   @override
   Future<FeedGetRepostedByOutput> getRepostedBy({required AtUri uri, String? cursor}) async {
     return FeedGetRepostedByOutput(uri: uri, repostedBy: []);
+  }
+
+  @override
+  Future<FeedGetQuotesOutput> getQuotes({required AtUri uri, String? cursor}) async {
+    return FeedGetQuotesOutput(uri: uri, posts: []);
   }
 
   @override

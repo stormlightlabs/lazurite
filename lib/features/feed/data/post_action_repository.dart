@@ -2,6 +2,7 @@ import 'package:atproto/com_atproto_repo_strongref.dart';
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
 import 'package:bluesky/app_bsky_feed_getlikes.dart';
+import 'package:bluesky/app_bsky_feed_getquotes.dart';
 import 'package:bluesky/app_bsky_feed_getrepostedby.dart';
 import 'package:bluesky/bluesky.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
@@ -85,6 +86,16 @@ class PostActionRepository {
       limit: 25,
       cursor: cursor,
       $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.feed.getRepostedBy'),
+    );
+    return response.data;
+  }
+
+  Future<FeedGetQuotesOutput> getQuotes({required AtUri uri, String? cursor}) async {
+    final response = await _bluesky.feed.getQuotes(
+      uri: uri,
+      limit: 25,
+      cursor: cursor,
+      $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.feed.getQuotes'),
     );
     return response.data;
   }
