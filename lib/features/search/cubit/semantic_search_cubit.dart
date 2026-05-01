@@ -67,7 +67,11 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
          embeddingService.isAvailable
              ? const SemanticSearchState()
              : const SemanticSearchState(status: SemanticSearchStatus.unavailable),
-       );
+       ) {
+    if (!embeddingService.isAvailable) {
+      unawaited(_recoverAvailability());
+    }
+  }
 
   final SemanticSearchRepository _repository;
   final EmbeddingService _embeddingService;
@@ -82,27 +86,27 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
   /// Queue a search for [query], debounced by [_debounceDuration].
   ///
   /// An empty query clears results immediately without waiting for the debounce.
-  /// A no-op when the embedding service is unavailable.
+  /// Attempts to recover service availability before searching.
   void search(String query) {
-    if (!_embeddingService.isAvailable) {
-      emit(const SemanticSearchState(status: SemanticSearchStatus.unavailable));
-      return;
-    }
     _debounce?.cancel();
     if (query.trim().isEmpty) {
       emit(SemanticSearchState(scope: state.scope));
       return;
     }
-    _debounce = Timer(_debounceDuration, () => unawaited(_doSearch(query)));
+    _debounce = Timer(_debounceDuration, () => unawaited(_searchWithAvailability(query)));
   }
 
   /// Change the search scope and immediately re-run the current query.
   Future<void> setScope(SearchScope scope) async {
     if (state.scope == scope) return;
     emit(state.copyWith(scope: scope));
-    if (state.query.trim().isNotEmpty && _embeddingService.isAvailable) {
+    if (state.query.trim().isNotEmpty) {
       _debounce?.cancel();
-      await _doSearch(state.query);
+      if (await _ensureAvailable()) {
+        await _doSearch(state.query);
+      } else if (!isClosed) {
+        emit(state.copyWith(status: SemanticSearchStatus.unavailable));
+      }
     }
   }
 
@@ -110,6 +114,28 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
   void clearResults() {
     _debounce?.cancel();
     emit(SemanticSearchState(scope: state.scope));
+  }
+
+  Future<void> _recoverAvailability() async {
+    if (await _ensureAvailable()) {
+      if (!isClosed && state.status == SemanticSearchStatus.unavailable) {
+        emit(SemanticSearchState(scope: state.scope));
+      }
+    }
+  }
+
+  Future<bool> _ensureAvailable() async {
+    if (_embeddingService.isAvailable) return true;
+    await _embeddingService.initialize();
+    return _embeddingService.isAvailable;
+  }
+
+  Future<void> _searchWithAvailability(String query) async {
+    if (await _ensureAvailable()) {
+      await _doSearch(query);
+    } else if (!isClosed) {
+      emit(state.copyWith(status: SemanticSearchStatus.unavailable));
+    }
   }
 
   Future<void> _doSearch(String query) async {

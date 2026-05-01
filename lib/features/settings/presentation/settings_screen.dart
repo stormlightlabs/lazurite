@@ -15,8 +15,6 @@ import 'package:lazurite/features/account/presentation/account_switcher_sheet.da
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
-import 'package:lazurite/features/search/cubit/semantic_index_cubit.dart';
-import 'package:lazurite/features/search/cubit/semantic_search_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
@@ -346,51 +344,11 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const Divider(height: 1),
-              _SettingsTile(
+              const _SettingsTile(
                 icon: Icons.manage_search_outlined,
                 title: 'Semantic Search',
-                subtitle: settingsState.semanticSearchEnabled
-                    ? 'Search your liked & saved posts by meaning, not just keywords'
-                    : 'Enable this to search your liked & saved posts by meaning',
-                trailing: Switch.adaptive(
-                  value: settingsState.semanticSearchEnabled,
-                  onChanged: (value) async {
-                    await context.read<SettingsCubit>().setSemanticSearchEnabled(value);
-                    if (value && context.mounted) {
-                      unawaited(context.read<SemanticIndexCubit>().reindex());
-                    }
-                  },
-                ),
+                subtitle: 'Manage semantic search from Bookmarks & Likes -> Search',
               ),
-              if (settingsState.semanticSearchEnabled) ...[
-                const Divider(height: 1),
-                _SettingsDropdownTile<SearchScope>(
-                  title: 'Default Scope',
-                  subtitle: 'Which posts to search by default',
-                  value: settingsState.searchScope,
-                  options: SearchScope.values,
-                  labelBuilder: (scope) => switch (scope) {
-                    SearchScope.both => 'Saved + Liked',
-                    SearchScope.saved => 'Saved only',
-                    SearchScope.liked => 'Liked only',
-                  },
-                  onChanged: (scope) {
-                    if (scope != null) context.read<SettingsCubit>().setSearchScope(scope);
-                  },
-                ),
-                const Divider(height: 1),
-                BlocBuilder<SemanticIndexCubit, SemanticIndexState>(
-                  builder: (context, indexState) => _IndexStatusTile(indexState: indexState),
-                ),
-                const Divider(height: 1),
-                _MaxResultsTile(
-                  value: settingsState.semanticSearchMaxResults,
-                  onChanged: (value) {
-                    context.read<SettingsCubit>().setSemanticSearchMaxResults(value);
-                    context.read<SemanticSearchCubit>().setMaxResults(value);
-                  },
-                ),
-              ],
             ],
           ),
         );
@@ -511,12 +469,12 @@ class SettingsScreen extends StatelessWidget {
               _ConnectionDetailRow(label: 'Last Error', value: state.appViewLastError ?? 'None'),
               const Divider(height: 1),
               _SettingsTile(
-                icon: Icons.refresh_outlined,
+                icon: Icons.medical_information_outlined,
                 title: 'Refresh Provider Health',
                 subtitle: 'Probe public AppView endpoints now',
                 trailing: state.appViewHealthRefreshing
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : null,
+                    : const Icon(Icons.refresh_outlined),
                 onTap: state.appViewHealthRefreshing
                     ? null
                     : () {
@@ -866,73 +824,6 @@ class _SettingsTile extends StatelessWidget {
       subtitle: subtitle != null ? Text(subtitle!) : null,
       trailing: trailing ?? (onTap != null ? const Icon(Icons.chevron_right) : null),
       onTap: onTap,
-    );
-  }
-}
-
-class _IndexStatusTile extends StatelessWidget {
-  const _IndexStatusTile({required this.indexState});
-
-  final SemanticIndexState indexState;
-
-  @override
-  Widget build(BuildContext context) {
-    final statusText = indexState.isBackfilling
-        ? 'Indexing: ${indexState.backfillCompleted ?? 0}/${indexState.backfillTotal ?? 0} posts...'
-        : '${indexState.indexedCount} posts indexed';
-
-    return ListTile(
-      leading: indexState.isBackfilling
-          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-          : const Icon(Icons.data_object_outlined),
-      title: const Text('Index Status'),
-      subtitle: Text(statusText),
-      trailing: indexState.isBackfilling
-          ? null
-          : TextButton(onPressed: () => context.read<SemanticIndexCubit>().reindex(), child: const Text('Re-index')),
-    );
-  }
-}
-
-class _MaxResultsTile extends StatelessWidget {
-  const _MaxResultsTile({required this.value, required this.onChanged});
-
-  final int value;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ListTile(
-          leading: const Icon(Icons.format_list_numbered_outlined),
-          title: const Text('Max Results'),
-          subtitle: const Text('Maximum number of search results'),
-          trailing: Text(
-            '$value',
-            style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontFamily: 'JetBrains Mono'),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Row(
-            children: [
-              const Text('10', style: TextStyle(fontSize: 12)),
-              Expanded(
-                child: Slider(
-                  value: value.toDouble(),
-                  min: 10,
-                  max: 50,
-                  divisions: 8,
-                  onChanged: (v) => onChanged(v.round()),
-                ),
-              ),
-              const Text('50', style: TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

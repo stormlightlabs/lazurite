@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/search/cubit/semantic_index_cubit.dart';
@@ -9,6 +10,8 @@ import 'package:lazurite/features/search/cubit/semantic_search_cubit.dart';
 import 'package:lazurite/features/search/data/semantic_search_repository.dart';
 import 'package:lazurite/features/search/data/semantic_search_result.dart';
 import 'package:lazurite/features/search/presentation/semantic_search_tab.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSemanticSearchRepository extends Mock implements SemanticSearchRepository {}
@@ -18,6 +21,8 @@ class MockPostActionRepository extends Mock implements PostActionRepository {}
 class MockSemanticSearchCubit extends MockCubit<SemanticSearchState> implements SemanticSearchCubit {}
 
 class MockSemanticIndexCubit extends MockCubit<SemanticIndexState> implements SemanticIndexCubit {}
+
+class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
 const _accountDid = 'did:plc:testuser';
 
@@ -42,17 +47,44 @@ void main() {
 
   late MockSemanticSearchCubit searchCubit;
   late MockSemanticIndexCubit indexCubit;
+  late MockSettingsCubit settingsCubit;
   late MockPostActionRepository postActionRepository;
 
   setUp(() {
     searchCubit = MockSemanticSearchCubit();
     indexCubit = MockSemanticIndexCubit();
+    settingsCubit = MockSettingsCubit();
     postActionRepository = MockPostActionRepository();
 
     when(() => searchCubit.state).thenReturn(const SemanticSearchState());
     whenListen(searchCubit, const Stream<SemanticSearchState>.empty(), initialState: const SemanticSearchState());
+    when(() => searchCubit.setScope(any())).thenAnswer((_) async {});
+    when(() => searchCubit.setMaxResults(any())).thenReturn(null);
     when(() => indexCubit.state).thenReturn(const SemanticIndexState());
     whenListen(indexCubit, const Stream<SemanticIndexState>.empty(), initialState: const SemanticIndexState());
+    when(() => indexCubit.loadCount()).thenReturn(null);
+    when(() => indexCubit.reindex()).thenAnswer((_) async {});
+    when(() => settingsCubit.state).thenReturn(
+      const SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        semanticSearchEnabled: true,
+      ),
+    );
+    whenListen(
+      settingsCubit,
+      const Stream<SettingsState>.empty(),
+      initialState: const SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        semanticSearchEnabled: true,
+      ),
+    );
+    when(() => settingsCubit.setSemanticSearchEnabled(any())).thenAnswer((_) async {});
+    when(() => settingsCubit.setSemanticSearchMaxResults(any())).thenAnswer((_) async {});
+    when(() => settingsCubit.setSearchScope(any())).thenAnswer((_) async {});
   });
 
   Widget buildSubject() {
@@ -66,6 +98,7 @@ void main() {
         providers: [
           BlocProvider<SemanticSearchCubit>.value(value: searchCubit),
           BlocProvider<SemanticIndexCubit>.value(value: indexCubit),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
         ],
         child: const MaterialApp(home: Scaffold(body: SemanticSearchTab())),
       ),
@@ -176,6 +209,7 @@ void main() {
       await tester.tap(find.text('Saved'));
       await tester.pump();
       verify(() => searchCubit.setScope(SearchScope.saved)).called(1);
+      verify(() => settingsCubit.setSearchScope(SearchScope.saved)).called(1);
     });
 
     testWidgets('entering a query calls search on the cubit', (tester) async {
@@ -202,9 +236,48 @@ void main() {
       expect(find.text('Indexing: 42/100 posts...'), findsOneWidget);
     });
 
-    testWidgets('does not show backfill banner when idle', (tester) async {
+    testWidgets('shows indexed count header when idle', (tester) async {
       await tester.pumpWidget(buildSubject());
-      expect(find.textContaining('Indexing:'), findsNothing);
+      expect(find.text('0 posts indexed'), findsOneWidget);
+    });
+
+    testWidgets('kebab menu refresh action triggers loadCount', (tester) async {
+      await tester.pumpWidget(buildSubject());
+      await tester.tap(find.byTooltip('Search index actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Refresh indexed count'));
+      await tester.pumpAndSettle();
+      verify(() => indexCubit.loadCount()).called(2);
+    });
+
+    testWidgets('kebab menu reindex action triggers reindex', (tester) async {
+      await tester.pumpWidget(buildSubject());
+      await tester.tap(find.byTooltip('Search index actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Re-index posts'));
+      await tester.pump();
+      verify(() => indexCubit.reindex()).called(1);
+    });
+
+    testWidgets('semantic settings sheet opens from kebab menu', (tester) async {
+      await tester.pumpWidget(buildSubject());
+      await tester.tap(find.byTooltip('Search index actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Semantic settings'));
+      await tester.pumpAndSettle();
+      expect(find.text('Semantic settings'), findsOneWidget);
+      expect(find.text('Enable semantic search'), findsOneWidget);
+    });
+
+    testWidgets('sheet toggle updates semantic search enabled setting', (tester) async {
+      await tester.pumpWidget(buildSubject());
+      await tester.tap(find.byTooltip('Search index actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Semantic settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+      verify(() => settingsCubit.setSemanticSearchEnabled(false)).called(1);
     });
   });
 }

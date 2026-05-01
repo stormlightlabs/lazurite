@@ -69,6 +69,19 @@ void main() {
         );
         expect(cubit.state.status, SemanticSearchStatus.unavailable);
       });
+
+      test('recovers from startup race once embedding service initializes', () async {
+        final lateInitService = EmbeddingService.forTesting((_) async => Float32List.fromList(List.filled(384, 0.2)));
+        final cubit = SemanticSearchCubit(
+          repository: mockRepo,
+          embeddingService: lateInitService,
+          accountDid: _accountDid,
+        );
+
+        expect(cubit.state.status, SemanticSearchStatus.unavailable);
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.status, SemanticSearchStatus.initial);
+      });
     });
 
     group('search', () {
@@ -222,12 +235,15 @@ void main() {
       );
 
       blocTest<SemanticSearchCubit, SemanticSearchState>(
-        'emits unavailable when service is not available',
+        'keeps unavailable state when service is not available',
         build: () =>
             SemanticSearchCubit(repository: mockRepo, embeddingService: _unavailableService(), accountDid: _accountDid),
         act: (cubit) => cubit.search('flutter'),
-        expect: () => [predicate<SemanticSearchState>((s) => s.status == SemanticSearchStatus.unavailable)],
-        verify: (_) => verifyNever(() => mockRepo.search(any(), any())),
+        expect: () => [],
+        verify: (cubit) {
+          expect(cubit.state.status, SemanticSearchStatus.unavailable);
+          verifyNever(() => mockRepo.search(any(), any()));
+        },
       );
     });
 
