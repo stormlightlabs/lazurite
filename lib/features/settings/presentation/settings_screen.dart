@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
@@ -435,6 +436,33 @@ class SettingsScreen extends StatelessWidget {
               _ConstellationUrlTile(currentUrl: state.constellationUrl),
               const Divider(height: 1),
               _SettingsTile(
+                icon: Icons.route_outlined,
+                title: 'AppView Provider',
+                subtitle: _appViewSubtitle(state.appViewProvider),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: SegmentedButton<String>(
+                    key: const Key('appview-provider-segmented'),
+                    segments: const [
+                      ButtonSegment<String>(value: AppViewProviders.blueskyKey, label: Text('Bluesky')),
+                      ButtonSegment<String>(value: AppViewProviders.blackskyKey, label: Text('Blacksky')),
+                    ],
+                    selected: {state.appViewProvider},
+                    onSelectionChanged: (selection) async {
+                      final selectedProvider = selection.first;
+                      if (selectedProvider == state.appViewProvider) {
+                        return;
+                      }
+                      await _confirmAndApplyProviderChange(context, selectedProvider);
+                    },
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              _SettingsTile(
                 icon: Icons.compare_arrows_outlined,
                 title: 'Cross-Provider Fallback',
                 subtitle: 'Retry public reads on the alternate AppView when transient errors occur',
@@ -453,11 +481,94 @@ class SettingsScreen extends StatelessWidget {
                   onChanged: settingsCubit.setSlingshotIdentityFallbackEnabled,
                 ),
               ),
+              const Divider(height: 1),
+              const _SettingsTile(
+                icon: Icons.monitor_heart_outlined,
+                title: 'Provider Diagnostics',
+                subtitle: 'Moderation/ranking can differ by provider. Verify health and recent fallback state.',
+              ),
+              _ConnectionDetailRow(label: 'Active Provider', value: _providerDisplayName(state.appViewProvider)),
+              const Divider(height: 1),
+              _ConnectionDetailRow(label: 'Health', value: state.appViewHealthSummary ?? 'Not checked yet'),
+              const Divider(height: 1),
+              _ConnectionDetailRow(
+                label: 'Last Health Check',
+                value: state.appViewHealthCheckedAt == null
+                    ? 'Never'
+                    : _formatTimestamp(state.appViewHealthCheckedAt!.toLocal()),
+              ),
+              const Divider(height: 1),
+              _ConnectionDetailRow(label: 'Last Fallback', value: state.appViewLastFallback ?? 'None'),
+              const Divider(height: 1),
+              _ConnectionDetailRow(label: 'Last Error', value: state.appViewLastError ?? 'None'),
+              const Divider(height: 1),
+              _SettingsTile(
+                icon: Icons.refresh_outlined,
+                title: 'Refresh Provider Health',
+                subtitle: 'Probe public AppView endpoints now',
+                trailing: state.appViewHealthRefreshing
+                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : null,
+                onTap: state.appViewHealthRefreshing
+                    ? null
+                    : () {
+                        unawaited(settingsCubit.refreshAppViewHealth());
+                      },
+              ),
             ],
           ),
         );
       },
     );
+  }
+
+  String _providerDisplayName(String providerKey) {
+    if (providerKey == AppViewProviders.blackskyKey) {
+      return 'Blacksky';
+    }
+    return 'Bluesky';
+  }
+
+  String _appViewSubtitle(String providerKey) {
+    final provider = _providerDisplayName(providerKey);
+    return '$provider selected. Switching providers performs a soft restart.';
+  }
+
+  String _formatTimestamp(DateTime time) {
+    final month = time.month.toString().padLeft(2, '0');
+    final day = time.day.toString().padLeft(2, '0');
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '${time.year}-$month-$day $hour:$minute';
+  }
+
+  Future<void> _confirmAndApplyProviderChange(BuildContext context, String selectedProvider) async {
+    final shouldApply = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Switch AppView provider?'),
+          content: const Text(
+            'Apply and restart now to rebuild network services.\n\n'
+            'You will stay signed in and no local data will be deleted.\n\n'
+            'Moderation labels, ranking, and trending results can differ between providers.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Apply and Restart'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldApply != true || !context.mounted) {
+      return;
+    }
+
+    await context.read<SettingsCubit>().setAppViewProvider(selectedProvider);
   }
 }
 

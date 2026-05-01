@@ -2,6 +2,8 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/network/app_view_fallback_service.dart';
+import 'package:lazurite/core/network/app_view_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
@@ -31,6 +33,7 @@ void main() {
       expect(cubit.state.appViewProvider, 'bluesky');
       expect(cubit.state.crossProviderFallbackEnabled, isFalse);
       expect(cubit.state.slingshotIdentityFallbackEnabled, isFalse);
+      expect(cubit.state.routingEpoch, 0);
     });
 
     test('accepts initial values via constructor', () {
@@ -323,6 +326,13 @@ void main() {
     );
 
     blocTest<SettingsCubit, SettingsState>(
+      'setAppViewProvider no-ops when provider is unchanged',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setAppViewProvider('bluesky'),
+      expect: () => <SettingsState>[],
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
       'loadSettings falls back to default app view provider for invalid persisted value',
       build: () => SettingsCubit(database: database),
       setUp: () async {
@@ -372,6 +382,73 @@ void main() {
         isA<SettingsState>()
             .having((s) => s.crossProviderFallbackEnabled, 'crossProviderFallbackEnabled', true)
             .having((s) => s.slingshotIdentityFallbackEnabled, 'slingshotIdentityFallbackEnabled', true),
+      ],
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'bumpRoutingEpoch increments the in-memory routing epoch',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.bumpRoutingEpoch(),
+      expect: () => [isA<SettingsState>().having((s) => s.routingEpoch, 'routingEpoch', 1)],
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'recordAppViewRoutingEvent stores last fallback and last error diagnostics',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) {
+        cubit.recordAppViewRoutingEvent(
+          AppViewFallbackUsedEvent(
+            endpointId: 'app.bsky.unspecced.getTrends',
+            fromProvider: 'bluesky',
+            toProvider: 'blacksky',
+            occurredAt: DateTime.utc(2026, 4, 30, 15, 0),
+          ),
+        );
+        cubit.recordAppViewRoutingEvent(
+          AppViewProviderErrorEvent(
+            endpointId: 'app.bsky.unspecced.getTrendingTopics',
+            provider: 'blacksky',
+            reason: '5xx',
+            transient: true,
+            occurredAt: DateTime.utc(2026, 4, 30, 15, 1),
+          ),
+        );
+      },
+      expect: () => [
+        isA<SettingsState>().having(
+          (s) => s.appViewLastFallback,
+          'appViewLastFallback',
+          'endpoint=app.bsky.unspecced.getTrends bluesky->blacksky',
+        ),
+        isA<SettingsState>().having(
+          (s) => s.appViewLastError,
+          'appViewLastError',
+          'endpoint=app.bsky.unspecced.getTrendingTopics provider=blacksky reason=5xx',
+        ),
+      ],
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'refreshAppViewHealth updates summary and timestamp when probe succeeds',
+      build: () => SettingsCubit(
+        database: database,
+        appViewHealthProber: (_) async => AppViewHealth(
+          providerKey: 'bluesky',
+          checkedAt: DateTime.utc(2026, 4, 30, 16, 0),
+          checks: const [
+            AppViewCapabilityResult(endpointId: 'a', statusCode: 200, supported: true, critical: true),
+            AppViewCapabilityResult(endpointId: 'b', statusCode: 200, supported: true, critical: true),
+            AppViewCapabilityResult(endpointId: 'c', statusCode: 200, supported: true, critical: false),
+          ],
+        ),
+      ),
+      act: (cubit) => cubit.refreshAppViewHealth(),
+      expect: () => [
+        isA<SettingsState>().having((s) => s.appViewHealthRefreshing, 'appViewHealthRefreshing', true),
+        isA<SettingsState>()
+            .having((s) => s.appViewHealthRefreshing, 'appViewHealthRefreshing', false)
+            .having((s) => s.appViewHealthSummary, 'appViewHealthSummary', 'Healthy (2/2 critical, 3/3 total)')
+            .having((s) => s.appViewHealthCheckedAt, 'appViewHealthCheckedAt', DateTime.utc(2026, 4, 30, 16, 0)),
       ],
     );
   });

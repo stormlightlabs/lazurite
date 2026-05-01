@@ -8,74 +8,107 @@ import 'package:lazurite/core/theme/typography.dart';
 class PurpleTheme {
   PurpleTheme._();
 
-  /// darkest bg (ColorColumn, WildMenu)
+  /// darkest bg
   static const Color sop0 = Color(0xFF1E1E3F);
 
-  /// panel bg (LineNr bg, VertSplit bg)
+  /// panel bg
   static const Color sop1 = Color(0xFF28284E);
 
-  /// main bg (Normal bg)
+  /// main bg
   static const Color sop2 = Color(0xFF2D2B55);
 
-  /// muted lavender (LineNr fg, NonText)
+  /// muted lavender
   static const Color sop3 = Color(0xFFA599E9);
 
-  /// main fg (Normal fg)
+  /// main fg
   static const Color sop4 = Color(0xFFE1EFFF);
 
-  /// cyan (Special, Title)
+  /// cyan
   static const Color sop5 = Color(0xFF9EFFFF);
 
-  /// yellow (Cursor, WarningMsg)
+  /// yellow
   static const Color sop6 = Color(0xFFFAD000);
 
-  /// orange (Function, Identifier)
+  /// orange
   static const Color sop7 = Color(0xFFFF9D00);
 
-  /// vivid purple (Comment)
+  /// vivid purple
   static const Color sop8 = Color(0xFFB362FF);
 
-  /// pink-rose (Constant, SpellBad)
+  /// pink-rose
   static const Color sop9 = Color(0xFFFF628C);
 
-  /// green (String)
+  /// green
   static const Color sop10 = Color(0xFFA5FF90);
 
-  /// red (Error, DiffDelete)
+  /// red
   static const Color sop11 = Color(0xFFEC3A37);
 
-  /// teal (Type)
+  /// teal
   static const Color sop12 = Color(0xFF80FFBB);
 
-  /// light magenta (jsThis, jsFunction)
+  /// light magenta
   static const Color sop13 = Color(0xFFFB94FF);
 
-  /// blue (terminal blue)
+  /// blue
   static const Color sop14 = Color(0xFF6943FF);
 
-  // Semi-transparent overlay for subtle dark-mode borders/dividers
-  static const Color darkOutlineVariant = Color(0x26A599E9); // lavender ~15% opacity
+  /// Surface hierarchy: darkSurface (scaffold) < darkSurfaceContainer (card) < darkSurfaceContainerHigh
+  static const Color darkSurface = sop0;
+  static const Color darkSurfaceContainer = sop1;
+  static const Color darkSurfaceContainerHigh = sop2;
 
-  /// lightest bg (scaffold)
+  /// Text
+  static const Color darkOnSurface = sop4;
+
+  /// secondary text / icons
+  static const Color darkOnSurfaceVariant = sop3;
+
+  /// Interactive accent — vivid purple, distinct from the muted-lavender secondary text
+  static const Color darkPrimary = sop8;
+  static const Color darkOnPrimary = sop0;
+
+  /// Borders — semi-transparent lavender so they sit naturally on any dark surface
+  ///
+  /// ~30% — component borders
+  static const Color darkOutline = Color(0x4DA599E9);
+
+  /// ~15% — dividers
+  static const Color darkOutlineVariant = Color(0x26A599E9);
+
+  /// scaffold bg
   static const Color sopL0 = Color(0xFFF8F6FF);
 
-  /// panel bg (cards, surfaces)
+  /// card / panel bg
   static const Color sopL1 = Color(0xFFEDE9FF);
 
-  /// border / divider
+  /// divider / border
   static const Color sopL2 = Color(0xFFD6CEFF);
 
-  /// muted purple (secondary text)
+  /// secondary text / icons
   static const Color sopL3 = Color(0xFF8B7FD4);
 
-  /// main fg (body text = sop2)
+  /// primary text
   static const Color sopL4 = Color(0xFF2D2B55);
 
-  /// primary accent (sop14)
+  /// interactive accent
   static const Color sopL5 = Color(0xFF6943FF);
 
   /// secondary accent
   static const Color sopL6 = Color(0xFF7B6EC0);
+
+  static const Color lightSurface = sopL0;
+  static const Color lightSurfaceContainer = sopL1;
+  static const Color lightOnSurface = sopL4;
+  static const Color lightOnSurfaceVariant = sopL3;
+  static const Color lightPrimary = sopL5;
+  static const Color lightOnPrimary = sopL0;
+
+  /// ~30% blue-purple
+  static const Color lightOutline = Color(0x4D6943FF);
+
+  /// #D6CEFF — visible in light mode
+  static const Color lightOutlineVariant = sopL2;
 
   static ThemeData dark() {
     return ThemeData(
@@ -83,69 +116,77 @@ class PurpleTheme {
       brightness: Brightness.dark,
       colorScheme: const ColorScheme(
         brightness: Brightness.dark,
-        primary: sop3,
-        onPrimary: sop0,
-        primaryContainer: sop1,
-        onPrimaryContainer: sop4,
+        primary: darkPrimary,
+        onPrimary: darkOnPrimary,
+        primaryContainer: darkSurfaceContainer,
+        onPrimaryContainer: darkOnSurface,
         secondary: sop5,
-        onSecondary: sop0,
-        secondaryContainer: sop1,
-        onSecondaryContainer: sop4,
-        tertiary: sop8,
-        onTertiary: sop0,
+        onSecondary: darkSurface,
+        secondaryContainer: darkSurfaceContainer,
+        onSecondaryContainer: darkOnSurface,
+        tertiary: sop3,
+        onTertiary: darkSurface,
         error: sop11,
-        onError: sop4,
-        errorContainer: sop1,
-        onErrorContainer: sop4,
-        surface: sop1,
-        onSurface: sop4,
-        surfaceContainerHighest: sop2,
-        outline: sop3,
+        onError: darkOnSurface,
+        errorContainer: darkSurfaceContainer,
+        onErrorContainer: darkOnSurface,
+        surface: darkSurfaceContainer,
+        onSurface: darkOnSurface,
+        onSurfaceVariant: darkOnSurfaceVariant,
+        surfaceContainerHighest: darkSurfaceContainerHigh,
+        outline: darkOutline,
         outlineVariant: darkOutlineVariant,
       ),
-      scaffoldBackgroundColor: sop0,
+      scaffoldBackgroundColor: darkSurface,
       appBarTheme: AppBarTheme(
-        backgroundColor: sop0,
-        foregroundColor: sop4,
-        surfaceTintColor: sop3,
-        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: sop4),
+        backgroundColor: darkSurface,
+        foregroundColor: darkOnSurface,
+        surfaceTintColor: darkPrimary,
+        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: darkOnSurface),
       ),
-      cardTheme: const CardThemeData(color: sop1, surfaceTintColor: sop3),
+      cardTheme: const CardThemeData(color: darkSurfaceContainer, surfaceTintColor: darkPrimary),
       dividerTheme: const DividerThemeData(color: darkOutlineVariant),
-      iconTheme: const IconThemeData(color: sop3),
+      iconTheme: const IconThemeData(color: darkOnSurfaceVariant),
       listTileTheme: ListTileThemeData(
-        textColor: sop4,
-        iconColor: sop3,
-        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: sop4),
-        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: sop3),
+        textColor: darkOnSurface,
+        iconColor: darkOnSurfaceVariant,
+        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: darkOnSurface),
+        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: darkOnSurfaceVariant),
       ),
-      textTheme: AppTypography.textTheme(bodyColor: sop4, headlineColor: sop4, captionColor: sop3),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(backgroundColor: sop3, foregroundColor: sop0),
+      textTheme: AppTypography.textTheme(
+        bodyColor: darkOnSurface,
+        headlineColor: darkOnSurface,
+        captionColor: darkOnSurfaceVariant,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: darkPrimary,
+        foregroundColor: darkOnPrimary,
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: sop3,
-          foregroundColor: sop0,
+          backgroundColor: darkPrimary,
+          foregroundColor: darkOnPrimary,
           textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: sop3,
+          foregroundColor: darkPrimary,
           textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: sop1,
-        border: const OutlineInputBorder(borderSide: BorderSide(color: sop1)),
-        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: sop1)),
-        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: sop3)),
-        labelStyle: AppTypography.googleSans(color: sop3),
-        hintStyle: AppTypography.googleSans(color: sop3),
+        fillColor: darkSurfaceContainer,
+        border: const OutlineInputBorder(borderSide: BorderSide(color: darkOutline)),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: darkOutline)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: darkPrimary)),
+        labelStyle: AppTypography.googleSans(color: darkOnSurfaceVariant),
+        hintStyle: AppTypography.googleSans(color: darkOnSurfaceVariant),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: sop1,
-        contentTextStyle: AppTypography.googleSans(color: sop4),
+        backgroundColor: darkSurfaceContainerHigh,
+        contentTextStyle: AppTypography.googleSans(color: darkOnSurface),
       ),
     );
   }
@@ -156,69 +197,77 @@ class PurpleTheme {
       brightness: Brightness.light,
       colorScheme: const ColorScheme(
         brightness: Brightness.light,
-        primary: sopL5,
-        onPrimary: sopL0,
-        primaryContainer: sopL1,
-        onPrimaryContainer: sopL4,
+        primary: lightPrimary,
+        onPrimary: lightOnPrimary,
+        primaryContainer: lightSurfaceContainer,
+        onPrimaryContainer: lightOnSurface,
         secondary: sopL6,
-        onSecondary: sopL0,
-        secondaryContainer: sopL1,
-        onSecondaryContainer: sopL4,
-        tertiary: sop8,
-        onTertiary: sopL0,
+        onSecondary: lightOnPrimary,
+        secondaryContainer: lightSurfaceContainer,
+        onSecondaryContainer: lightOnSurface,
+        tertiary: sop3,
+        onTertiary: lightOnPrimary,
         error: sop11,
-        onError: sopL0,
-        errorContainer: sopL1,
-        onErrorContainer: sopL4,
-        surface: sopL1,
-        onSurface: sopL4,
-        surfaceContainerHighest: sopL2,
-        outline: sopL3,
-        outlineVariant: sopL2,
+        onError: lightOnPrimary,
+        errorContainer: lightSurfaceContainer,
+        onErrorContainer: lightOnSurface,
+        surface: lightSurfaceContainer,
+        onSurface: lightOnSurface,
+        onSurfaceVariant: lightOnSurfaceVariant,
+        surfaceContainerHighest: lightOutlineVariant,
+        outline: lightOutline,
+        outlineVariant: lightOutlineVariant,
       ),
-      scaffoldBackgroundColor: sopL0,
+      scaffoldBackgroundColor: lightSurface,
       appBarTheme: AppBarTheme(
-        backgroundColor: sopL0,
-        foregroundColor: sopL4,
-        surfaceTintColor: sopL5,
-        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: sopL4),
+        backgroundColor: lightSurface,
+        foregroundColor: lightOnSurface,
+        surfaceTintColor: lightPrimary,
+        titleTextStyle: AppTypography.googleSans(fontSize: 18, fontWeight: FontWeight.w600, color: lightOnSurface),
       ),
-      cardTheme: const CardThemeData(color: sopL1, surfaceTintColor: sopL5),
-      dividerTheme: const DividerThemeData(color: sopL2),
-      iconTheme: const IconThemeData(color: sopL3),
+      cardTheme: const CardThemeData(color: lightSurfaceContainer, surfaceTintColor: lightPrimary),
+      dividerTheme: const DividerThemeData(color: lightOutlineVariant),
+      iconTheme: const IconThemeData(color: lightOnSurfaceVariant),
       listTileTheme: ListTileThemeData(
-        textColor: sopL4,
-        iconColor: sopL3,
-        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: sopL4),
-        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: sopL3),
+        textColor: lightOnSurface,
+        iconColor: lightOnSurfaceVariant,
+        titleTextStyle: AppTypography.googleSans(fontSize: 16, fontWeight: FontWeight.w500, color: lightOnSurface),
+        subtitleTextStyle: AppTypography.googleSans(fontSize: 14, color: lightOnSurfaceVariant),
       ),
-      textTheme: AppTypography.textTheme(bodyColor: sopL4, headlineColor: sopL4, captionColor: sopL3),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(backgroundColor: sopL5, foregroundColor: sopL0),
+      textTheme: AppTypography.textTheme(
+        bodyColor: lightOnSurface,
+        headlineColor: lightOnSurface,
+        captionColor: lightOnSurfaceVariant,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: lightPrimary,
+        foregroundColor: lightOnPrimary,
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: sopL5,
-          foregroundColor: sopL0,
+          backgroundColor: lightPrimary,
+          foregroundColor: lightOnPrimary,
           textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: sopL5,
+          foregroundColor: lightPrimary,
           textStyle: AppTypography.googleSans(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: sopL1,
-        border: const OutlineInputBorder(borderSide: BorderSide(color: sopL2)),
-        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: sopL2)),
-        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: sopL5)),
-        labelStyle: AppTypography.googleSans(color: sopL3),
-        hintStyle: AppTypography.googleSans(color: sopL3),
+        fillColor: lightSurfaceContainer,
+        border: const OutlineInputBorder(borderSide: BorderSide(color: lightOutlineVariant)),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: lightOutlineVariant)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: lightPrimary)),
+        labelStyle: AppTypography.googleSans(color: lightOnSurfaceVariant),
+        hintStyle: AppTypography.googleSans(color: lightOnSurfaceVariant),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: sopL1,
-        contentTextStyle: AppTypography.googleSans(color: sopL4),
+        backgroundColor: lightSurfaceContainer,
+        contentTextStyle: AppTypography.googleSans(color: lightOnSurface),
       ),
     );
   }

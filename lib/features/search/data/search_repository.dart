@@ -20,6 +20,8 @@ class SearchRepository {
     bool crossProviderFallbackEnabled = false,
     bool Function()? crossProviderFallbackEnabledResolver,
     AppViewFallbackService? appViewFallbackService,
+    int routingEpoch = 0,
+    int Function()? routingEpochResolver,
   }) : _bluesky = bluesky,
        _moderationService = moderationService,
        _appViewContext = AppViewRequestContext(
@@ -28,7 +30,9 @@ class SearchRepository {
        ),
        _crossProviderFallbackEnabled = crossProviderFallbackEnabled,
        _crossProviderFallbackEnabledResolver = crossProviderFallbackEnabledResolver,
-       _appViewFallbackService = appViewFallbackService ?? AppViewFallbackService();
+       _appViewFallbackService = appViewFallbackService ?? AppViewFallbackService(),
+       _routingEpoch = routingEpoch,
+       _routingEpochResolver = routingEpochResolver;
 
   final dynamic _bluesky;
   final ModerationService? _moderationService;
@@ -36,6 +40,8 @@ class SearchRepository {
   final bool _crossProviderFallbackEnabled;
   final bool Function()? _crossProviderFallbackEnabledResolver;
   final AppViewFallbackService _appViewFallbackService;
+  final int _routingEpoch;
+  final int Function()? _routingEpochResolver;
   static const int _maxBlackskyTopicFeedLimit = 25;
 
   Future<SearchPostsResult> searchPosts({
@@ -224,6 +230,8 @@ class SearchRepository {
       endpointId: endpointId,
       primaryProviderKey: _appViewContext.resolveProviderKey(),
       fallbackEnabled: fallbackEnabled,
+      routingEpoch: _routingEpoch,
+      routingEpochResolver: _routingEpochResolver ?? () => _routingEpoch,
       baseHeaders: baseHeaders,
       request: request,
     );

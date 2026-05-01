@@ -22,6 +22,12 @@ class SettingsState extends Equatable {
     this.appViewProvider = 'bluesky',
     this.crossProviderFallbackEnabled = false,
     this.slingshotIdentityFallbackEnabled = false,
+    this.routingEpoch = 0,
+    this.appViewHealthSummary,
+    this.appViewHealthCheckedAt,
+    this.appViewHealthRefreshing = false,
+    this.appViewLastFallback,
+    this.appViewLastError,
   });
 
   final AppThemePalette themePalette;
@@ -54,6 +60,24 @@ class SettingsState extends Equatable {
   /// Enables Slingshot identity fallback for degraded handle resolution.
   final bool slingshotIdentityFallbackEnabled;
 
+  /// In-memory epoch incremented when routing state is soft-reset.
+  final int routingEpoch;
+
+  /// Last known provider health summary shown in diagnostics.
+  final String? appViewHealthSummary;
+
+  /// UTC timestamp of the most recent provider health check.
+  final DateTime? appViewHealthCheckedAt;
+
+  /// Whether provider health refresh is currently in-flight.
+  final bool appViewHealthRefreshing;
+
+  /// Last fallback event summary.
+  final String? appViewLastFallback;
+
+  /// Last provider error summary.
+  final String? appViewLastError;
+
   SettingsState copyWith({
     AppThemePalette? themePalette,
     AppThemeVariant? themeVariant,
@@ -70,6 +94,12 @@ class SettingsState extends Equatable {
     String? appViewProvider,
     bool? crossProviderFallbackEnabled,
     bool? slingshotIdentityFallbackEnabled,
+    int? routingEpoch,
+    Object? appViewHealthSummary = _threadAutoCollapseDepthUnset,
+    Object? appViewHealthCheckedAt = _threadAutoCollapseDepthUnset,
+    bool? appViewHealthRefreshing,
+    Object? appViewLastFallback = _threadAutoCollapseDepthUnset,
+    Object? appViewLastError = _threadAutoCollapseDepthUnset,
   }) {
     return SettingsState(
       themePalette: themePalette ?? this.themePalette,
@@ -89,6 +119,20 @@ class SettingsState extends Equatable {
       appViewProvider: appViewProvider ?? this.appViewProvider,
       crossProviderFallbackEnabled: crossProviderFallbackEnabled ?? this.crossProviderFallbackEnabled,
       slingshotIdentityFallbackEnabled: slingshotIdentityFallbackEnabled ?? this.slingshotIdentityFallbackEnabled,
+      routingEpoch: routingEpoch ?? this.routingEpoch,
+      appViewHealthSummary: identical(appViewHealthSummary, _threadAutoCollapseDepthUnset)
+          ? this.appViewHealthSummary
+          : appViewHealthSummary as String?,
+      appViewHealthCheckedAt: identical(appViewHealthCheckedAt, _threadAutoCollapseDepthUnset)
+          ? this.appViewHealthCheckedAt
+          : appViewHealthCheckedAt as DateTime?,
+      appViewHealthRefreshing: appViewHealthRefreshing ?? this.appViewHealthRefreshing,
+      appViewLastFallback: identical(appViewLastFallback, _threadAutoCollapseDepthUnset)
+          ? this.appViewLastFallback
+          : appViewLastFallback as String?,
+      appViewLastError: identical(appViewLastError, _threadAutoCollapseDepthUnset)
+          ? this.appViewLastError
+          : appViewLastError as String?,
     );
   }
 
@@ -109,5 +153,11 @@ class SettingsState extends Equatable {
     appViewProvider,
     crossProviderFallbackEnabled,
     slingshotIdentityFallbackEnabled,
+    routingEpoch,
+    appViewHealthSummary,
+    appViewHealthCheckedAt,
+    appViewHealthRefreshing,
+    appViewLastFallback,
+    appViewLastError,
   ];
 }

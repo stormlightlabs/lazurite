@@ -19,11 +19,20 @@ class AppViewFallbackService {
   final Duration _openWindow;
   final int _failureThreshold;
   final Map<String, _CircuitState> _states = {};
+  final StreamController<AppViewRoutingEvent> _events = StreamController<AppViewRoutingEvent>.broadcast();
+
+  Stream<AppViewRoutingEvent> get events => _events.stream;
+
+  void dispose() {
+    _events.close();
+  }
 
   Future<T> run<T>({
     required String endpointId,
     required String primaryProviderKey,
     required bool fallbackEnabled,
+    required int routingEpoch,
+    required int Function() routingEpochResolver,
     Map<String, String>? baseHeaders,
     required Future<T> Function(
       AppViewRequestContext context,
@@ -42,6 +51,9 @@ class AppViewFallbackService {
     StackTrace? lastStackTrace;
 
     for (var index = 0; index < candidates.length; index++) {
+      if (routingEpochResolver() != routingEpoch) {
+        throw StaleRoutingEpochException(expected: routingEpoch, actual: routingEpochResolver());
+      }
       final provider = candidates[index];
       final fallbackUsed = index > 0;
       final now = _nowProvider();
@@ -62,11 +74,36 @@ class AppViewFallbackService {
 
       try {
         final result = await request(context, headers, fallbackUsed: fallbackUsed);
+        if (routingEpochResolver() != routingEpoch) {
+          throw StaleRoutingEpochException(expected: routingEpoch, actual: routingEpochResolver());
+        }
         _recordSuccess(endpointId, provider);
+        if (fallbackUsed) {
+          _events.add(
+            AppViewFallbackUsedEvent(
+              endpointId: endpointId,
+              fromProvider: candidates.first,
+              toProvider: provider,
+              occurredAt: now,
+            ),
+          );
+        }
         log.i('appview.public_read endpoint=$endpointId provider=$provider fallbackUsed=$fallbackUsed action=success');
         return result;
       } catch (error, stackTrace) {
+        if (error is StaleRoutingEpochException) {
+          rethrow;
+        }
         final failure = _PublicReadFailure.classify(error);
+        _events.add(
+          AppViewProviderErrorEvent(
+            endpointId: endpointId,
+            provider: provider,
+            reason: failure.reason,
+            transient: failure.isTransient,
+            occurredAt: now,
+          ),
+        );
         final circuitOpened = _recordFailure(endpointId, provider, now, failure.isTransient);
         log.w(
           'appview.public_read endpoint=$endpointId provider=$provider '
@@ -131,6 +168,49 @@ class AppViewFallbackService {
   }
 
   String _key(String endpointId, String providerKey) => '$endpointId::$providerKey';
+}
+
+sealed class AppViewRoutingEvent {
+  const AppViewRoutingEvent({required this.endpointId, required this.occurredAt});
+
+  final String endpointId;
+  final DateTime occurredAt;
+}
+
+class AppViewFallbackUsedEvent extends AppViewRoutingEvent {
+  const AppViewFallbackUsedEvent({
+    required super.endpointId,
+    required this.fromProvider,
+    required this.toProvider,
+    required super.occurredAt,
+  });
+
+  final String fromProvider;
+  final String toProvider;
+}
+
+class AppViewProviderErrorEvent extends AppViewRoutingEvent {
+  const AppViewProviderErrorEvent({
+    required super.endpointId,
+    required this.provider,
+    required this.reason,
+    required this.transient,
+    required super.occurredAt,
+  });
+
+  final String provider;
+  final String reason;
+  final bool transient;
+}
+
+class StaleRoutingEpochException implements Exception {
+  const StaleRoutingEpochException({required this.expected, required this.actual});
+
+  final int expected;
+  final int actual;
+
+  @override
+  String toString() => 'StaleRoutingEpochException(expected: $expected, actual: $actual)';
 }
 
 class _CircuitState {

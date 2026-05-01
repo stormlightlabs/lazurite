@@ -60,5 +60,20 @@ void main() {
       expect(resolved.inAppRoute, isNull);
       expect(resolved.externalUri.toString(), equals('https://example.com/profile/alice/feed/xyz'));
     });
+
+    test('health summary remains healthy when only non-critical checks fail', () {
+      final health = AppViewHealth(
+        providerKey: AppViewProviders.blueskyKey,
+        checkedAt: DateTime.utc(2026, 5, 1),
+        checks: const [
+          AppViewCapabilityResult(endpointId: 'critical.a', statusCode: 200, supported: true, critical: true),
+          AppViewCapabilityResult(endpointId: 'critical.b', statusCode: 200, supported: true, critical: true),
+          AppViewCapabilityResult(endpointId: 'noncritical', statusCode: 500, supported: false, critical: false),
+        ],
+      );
+
+      expect(health.isHealthy, isTrue);
+      expect(health.summary(), equals('Healthy (2/2 critical, 2/3 total)'));
+    });
   });
 }

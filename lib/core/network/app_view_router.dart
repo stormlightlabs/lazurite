@@ -1,4 +1,5 @@
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 
 class AppViewRouter {
   AppViewRouter({required this.provider});
@@ -13,6 +14,56 @@ class AppViewRouter {
   }
 
   Uri entrywayForAuth() => provider.entrywayUrl;
+
+  Future<AppViewHealth> probeProvider({Duration timeout = const Duration(seconds: 5)}) async {
+    final checks = <AppViewCapabilityCheck>[
+      const AppViewCapabilityCheck(
+        endpointId: 'app.bsky.actor.getProfile',
+        xrpcPath: '/xrpc/app.bsky.actor.getProfile',
+        queryParameters: {'actor': 'bsky.app'},
+        critical: false,
+      ),
+      const AppViewCapabilityCheck(
+        endpointId: 'app.bsky.unspecced.getTrends',
+        xrpcPath: '/xrpc/app.bsky.unspecced.getTrends',
+        queryParameters: {'limit': '1'},
+      ),
+      const AppViewCapabilityCheck(
+        endpointId: 'app.bsky.unspecced.getTrendingTopics',
+        xrpcPath: '/xrpc/app.bsky.unspecced.getTrendingTopics',
+        queryParameters: {'limit': '1'},
+      ),
+    ];
+    final client = XrpcNetworkInterceptor.wrapGetClient();
+    final results = <AppViewCapabilityResult>[];
+
+    for (final check in checks) {
+      final uri = publicEndpoint(check.xrpcPath, check.queryParameters);
+      try {
+        final response = await client(uri).timeout(timeout);
+        results.add(
+          AppViewCapabilityResult(
+            endpointId: check.endpointId,
+            statusCode: response.statusCode,
+            supported: response.statusCode >= 200 && response.statusCode < 300,
+            critical: check.critical,
+          ),
+        );
+      } catch (error) {
+        results.add(
+          AppViewCapabilityResult(
+            endpointId: check.endpointId,
+            statusCode: null,
+            supported: false,
+            critical: check.critical,
+            error: '$error',
+          ),
+        );
+      }
+    }
+
+    return AppViewHealth(providerKey: provider.key, checkedAt: DateTime.now().toUtc(), checks: results);
+  }
 
   Uri resolveWebLink(String relativeOrAbsolute) {
     final trimmed = relativeOrAbsolute.trim();
@@ -58,6 +109,64 @@ class AppViewRouter {
 
     return null;
   }
+}
+
+class AppViewHealth {
+  const AppViewHealth({required this.providerKey, required this.checkedAt, required this.checks});
+
+  final String providerKey;
+  final DateTime checkedAt;
+  final List<AppViewCapabilityResult> checks;
+
+  int get supportedCount => checks.where((check) => check.supported).length;
+  Iterable<AppViewCapabilityResult> get _criticalChecks => checks.where((check) => check.critical);
+  int get criticalCount => _criticalChecks.length;
+  int get criticalSupportedCount => _criticalChecks.where((check) => check.supported).length;
+
+  bool get isHealthy => criticalCount > 0 && criticalSupportedCount == criticalCount;
+  bool get isUnavailable => criticalSupportedCount == 0;
+
+  String summary() {
+    final criticalRatio = '$criticalSupportedCount/$criticalCount';
+    final totalRatio = '$supportedCount/${checks.length}';
+    if (isHealthy) {
+      return 'Healthy ($criticalRatio critical, $totalRatio total)';
+    }
+    if (isUnavailable) {
+      return 'Unavailable ($criticalRatio critical, $totalRatio total)';
+    }
+    return 'Degraded ($criticalRatio critical, $totalRatio total)';
+  }
+}
+
+class AppViewCapabilityCheck {
+  const AppViewCapabilityCheck({
+    required this.endpointId,
+    required this.xrpcPath,
+    required this.queryParameters,
+    this.critical = true,
+  });
+
+  final String endpointId;
+  final String xrpcPath;
+  final Map<String, String> queryParameters;
+  final bool critical;
+}
+
+class AppViewCapabilityResult {
+  const AppViewCapabilityResult({
+    required this.endpointId,
+    required this.statusCode,
+    required this.supported,
+    required this.critical,
+    this.error,
+  });
+
+  final String endpointId;
+  final int? statusCode;
+  final bool supported;
+  final bool critical;
+  final String? error;
 }
 
 class TrendLinkResolution {

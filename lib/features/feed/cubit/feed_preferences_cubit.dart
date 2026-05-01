@@ -27,7 +27,7 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
 
   Future<void> loadPreferences() async {
     log.d('FeedPreferencesCubit: Loading feed preferences for $_accountDid');
-    emit(state.copyWith(status: FeedPreferencesStatus.loading));
+    _safeEmit(state.copyWith(status: FeedPreferencesStatus.loading));
 
     try {
       final cachedFeeds = await _database.getSavedFeeds(_accountDid);
@@ -70,7 +70,7 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
           error: e,
           stackTrace: stackTrace,
         );
-        emit(FeedPreferencesState.error(message: e.toString()));
+        _safeEmit(FeedPreferencesState.error(message: e.toString()));
       }
     }
   }
@@ -143,7 +143,7 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
   Future<bool> _savePreferences(List<SavedFeed> feeds) async {
     final previousState = state;
     log.d('FeedPreferencesCubit: Saving ${feeds.length} feed preferences for $_accountDid');
-    emit(state.copyWith(status: FeedPreferencesStatus.saving));
+    _safeEmit(state.copyWith(status: FeedPreferencesStatus.saving));
 
     try {
       final result = await _feedRepository.getPreferences();
@@ -161,7 +161,7 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
       return true;
     } catch (e, stackTrace) {
       log.e('FeedPreferencesCubit: Failed to save feed preferences for $_accountDid', error: e, stackTrace: stackTrace);
-      emit(
+      _safeEmit(
         FeedPreferencesState.saveError(
           feeds: previousState.feeds,
           generatorViews: previousState.generatorViews,
@@ -175,7 +175,7 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
 
   void clearError() {
     if (state.status == FeedPreferencesStatus.saveError && state.previousState != null) {
-      emit(state.previousState!);
+      _safeEmit(state.previousState!);
     }
   }
 
@@ -207,7 +207,7 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
   String _generateId() => const Uuid().v4();
 
   void _emitLoaded(List<SavedFeed> feeds) {
-    emit(FeedPreferencesState.loaded(feeds: feeds, generatorViews: _retainGeneratorViews(feeds)));
+    _safeEmit(FeedPreferencesState.loaded(feeds: feeds, generatorViews: _retainGeneratorViews(feeds)));
   }
 
   List<SavedFeed> _ensureDefaultFeeds(List<SavedFeed> feeds) {
@@ -245,7 +245,7 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
 
     if (feedUris.isEmpty) {
       if (state.generatorViews.isNotEmpty) {
-        emit(state.copyWith(generatorViews: const [], status: FeedPreferencesStatus.loaded));
+        _safeEmit(state.copyWith(generatorViews: const [], status: FeedPreferencesStatus.loaded));
       }
       return;
     }
@@ -281,16 +281,21 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
       log.d(
         'FeedPreferencesCubit: Hydrated ${generatorViews.length}/${feedUris.length} generator views for $_accountDid',
       );
-      emit(state.copyWith(generatorViews: generatorViews, status: FeedPreferencesStatus.loaded, feeds: feeds));
+      _safeEmit(state.copyWith(generatorViews: generatorViews, status: FeedPreferencesStatus.loaded, feeds: feeds));
     } else if (state.generatorViews.isNotEmpty) {
-      emit(state.copyWith(generatorViews: const [], status: FeedPreferencesStatus.loaded, feeds: feeds));
+      _safeEmit(state.copyWith(generatorViews: const [], status: FeedPreferencesStatus.loaded, feeds: feeds));
     }
   }
 
-  bool _isGeneratorFeed(SavedFeed feed) {
-    final feedType = feed.type;
-    return feedType is SavedFeedTypeKnownValue && feedType.data == KnownSavedFeedType.feed;
+  void _safeEmit(FeedPreferencesState nextState) {
+    if (isClosed) {
+      return;
+    }
+    emit(nextState);
   }
+
+  bool _isGeneratorFeed(SavedFeed feed) =>
+      feed.type is SavedFeedTypeKnownValue && feed.type.data == KnownSavedFeedType.feed;
 
   bool _isSameFeedValue(String lhs, String rhs) {
     if (lhs == rhs) {

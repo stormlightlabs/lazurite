@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
@@ -52,6 +54,22 @@ void main() {
       );
       expect(cubit.state.status, FeedPreferencesStatus.initial);
       expect(cubit.state.feeds, isEmpty);
+    });
+
+    test('loadPreferences does not throw if cubit closes before async completion', () async {
+      final completer = Completer<PreferencesResult>();
+      when(() => mockFeedRepository.getPreferences()).thenAnswer((_) => completer.future);
+      final cubit = FeedPreferencesCubit(
+        feedRepository: mockFeedRepository,
+        database: database,
+        accountDid: 'did:plc:test',
+      );
+
+      final future = cubit.loadPreferences();
+      await cubit.close();
+      completer.complete(PreferencesResult(preferences: []));
+
+      await expectLater(future, completes);
     });
 
     blocTest<FeedPreferencesCubit, FeedPreferencesState>(

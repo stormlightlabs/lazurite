@@ -24,6 +24,8 @@ class FeedRepository {
     bool crossProviderFallbackEnabled = false,
     bool Function()? crossProviderFallbackEnabledResolver,
     AppViewFallbackService? appViewFallbackService,
+    int routingEpoch = 0,
+    int Function()? routingEpochResolver,
   }) : _bluesky = bluesky,
        _database = database,
        _accountDid = accountDid,
@@ -34,7 +36,9 @@ class FeedRepository {
        ),
        _crossProviderFallbackEnabled = crossProviderFallbackEnabled,
        _crossProviderFallbackEnabledResolver = crossProviderFallbackEnabledResolver,
-       _appViewFallbackService = appViewFallbackService ?? AppViewFallbackService();
+       _appViewFallbackService = appViewFallbackService ?? AppViewFallbackService(),
+       _routingEpoch = routingEpoch,
+       _routingEpochResolver = routingEpochResolver;
 
   final dynamic _bluesky;
   final AppDatabase _database;
@@ -44,6 +48,8 @@ class FeedRepository {
   final bool _crossProviderFallbackEnabled;
   final bool Function()? _crossProviderFallbackEnabledResolver;
   final AppViewFallbackService _appViewFallbackService;
+  final int _routingEpoch;
+  final int Function()? _routingEpochResolver;
 
   static const String timelineCacheKey = 'timeline';
   static const int _minTrendingLimit = 1;
@@ -239,6 +245,8 @@ class FeedRepository {
       endpointId: endpointId,
       primaryProviderKey: _appViewContext.resolveProviderKey(),
       fallbackEnabled: fallbackEnabled,
+      routingEpoch: _routingEpoch,
+      routingEpochResolver: _routingEpochResolver ?? () => _routingEpoch,
       baseHeaders: baseHeaders,
       request: request,
     );

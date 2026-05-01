@@ -163,25 +163,55 @@ class _LazuriteAppState extends State<LazuriteApp> {
   late String _routerSessionKey;
   late final StreamSubscription<String> _authSubscription;
   late final StreamSubscription<bool> _simulateOfflineSubscription;
+  late final StreamSubscription<String> _appViewProviderSubscription;
+  late final StreamSubscription<AppViewRoutingEvent> _appViewEventSubscription;
+  late String _observedAppViewProvider;
+  var _routerGeneration = 0;
+  var _isSoftRestarting = false;
 
   @override
   void initState() {
     super.initState();
     _routerSessionKey = _sessionKeyFor(widget.authBloc.state);
+    _observedAppViewProvider = widget.settingsCubit.state.appViewProvider;
     _router = _createRouter();
     _authSubscription = widget.authBloc.stream.map(_sessionKeyFor).distinct().listen(_handleSessionKeyChanged);
     _simulateOfflineSubscription = widget.settingsCubit.stream
         .map((state) => state.simulateOffline)
         .distinct()
         .listen(widget.connectivityCubit.setSimulatedOffline);
+    _appViewProviderSubscription = widget.settingsCubit.stream.map((state) => state.appViewProvider).listen((provider) {
+      if (provider == _observedAppViewProvider) {
+        return;
+      }
+
+      _observedAppViewProvider = provider;
+
+      if (!widget.authBloc.state.isAuthenticated) {
+        return;
+      }
+
+      unawaited(_softRestartForProviderChange());
+    });
+    _appViewEventSubscription = widget.appViewFallbackService.events.listen(
+      widget.settingsCubit.recordAppViewRoutingEvent,
+    );
+
+    unawaited(widget.settingsCubit.refreshAppViewHealth());
   }
 
   @override
   void dispose() {
     _authSubscription.cancel();
     _simulateOfflineSubscription.cancel();
+    _appViewProviderSubscription.cancel();
+    _appViewEventSubscription.cancel();
+
     widget.connectivityCubit.close();
+    widget.appViewFallbackService.dispose();
+
     _router.dispose();
+
     super.dispose();
   }
 
@@ -202,6 +232,35 @@ class _LazuriteAppState extends State<LazuriteApp> {
       _router = _createRouter();
     });
     previousRouter.dispose();
+  }
+
+  Future<void> _softRestartForProviderChange() async {
+    if (!mounted || _isSoftRestarting) {
+      return;
+    }
+
+    setState(() {
+      _isSoftRestarting = true;
+    });
+
+    final previousRouter = _router;
+
+    widget.settingsCubit.bumpRoutingEpoch();
+
+    setState(() {
+      _routerGeneration += 1;
+      _router = _createRouter();
+    });
+
+    previousRouter.dispose();
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+
+    if (mounted) {
+      setState(() {
+        _isSoftRestarting = false;
+      });
+      unawaited(widget.settingsCubit.refreshAppViewHealth());
+    }
   }
 
   Bluesky? _createBluesky(AuthState state) => state.isAuthenticated ? createBlueskyClient(state.tokens) : null;
@@ -232,14 +291,37 @@ class _LazuriteAppState extends State<LazuriteApp> {
               final darkTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.dark);
 
               return MaterialApp.router(
-                key: ValueKey('router-$_routerSessionKey'),
+                key: ValueKey('router-$_routerSessionKey-$_routerGeneration'),
                 title: 'Lazurite',
                 debugShowCheckedModeBanner: false,
                 theme: lightTheme,
                 darkTheme: darkTheme,
                 themeMode: themeMode,
                 routerConfig: _router,
-                builder: (context, child) => ConnectivityBannerHost(child: child ?? const SizedBox.shrink()),
+                builder: (context, child) => Stack(
+                  children: [
+                    ConnectivityBannerHost(child: child ?? const SizedBox.shrink()),
+                    if (_isSoftRestarting)
+                      const ColoredBox(
+                        color: Color(0xC0000000),
+                        child: Center(
+                          child: Card(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.5)),
+                                  SizedBox(width: 12),
+                                  Text('Applying provider change...'),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               );
             },
           );
@@ -251,7 +333,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
           final accountDid = authState.tokens?.did ?? '';
 
           return KeyedSubtree(
-            key: ValueKey('account-$accountDid'),
+            key: ValueKey('account-$accountDid-routing-${context.read<SettingsCubit>().state.routingEpoch}'),
             child: MultiRepositoryProvider(
               providers: [
                 RepositoryProvider(
@@ -279,6 +361,8 @@ class _LazuriteAppState extends State<LazuriteApp> {
                     crossProviderFallbackEnabledResolver: () =>
                         context.read<SettingsCubit>().state.crossProviderFallbackEnabled,
                     appViewFallbackService: widget.appViewFallbackService,
+                    routingEpoch: context.read<SettingsCubit>().state.routingEpoch,
+                    routingEpochResolver: () => context.read<SettingsCubit>().state.routingEpoch,
                   ),
                 ),
                 RepositoryProvider(
@@ -290,6 +374,8 @@ class _LazuriteAppState extends State<LazuriteApp> {
                       appViewProviderResolver: () => settingsCubit.state.appViewProvider,
                       crossProviderFallbackEnabledResolver: () => settingsCubit.state.crossProviderFallbackEnabled,
                       appViewFallbackService: widget.appViewFallbackService,
+                      routingEpoch: settingsCubit.state.routingEpoch,
+                      routingEpochResolver: () => settingsCubit.state.routingEpoch,
                     );
                   },
                 ),

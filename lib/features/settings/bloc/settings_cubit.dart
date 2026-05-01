@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/app_view_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/search/data/search_scope.dart';
@@ -17,7 +19,9 @@ class SettingsCubit extends Cubit<SettingsState> {
     bool? initialSimulateOffline,
     int? initialThreadAutoCollapseDepth,
     String? initialConstellationUrl,
-  }) : super(
+    Future<AppViewHealth> Function(String providerKey)? appViewHealthProber,
+  }) : _appViewHealthProber = appViewHealthProber,
+       super(
          SettingsState(
            themePalette: initialPalette ?? AppThemePalette.lazurite,
            themeVariant: initialVariant ?? AppThemeVariant.dark,
@@ -31,6 +35,7 @@ class SettingsCubit extends Cubit<SettingsState> {
        );
 
   final AppDatabase database;
+  final Future<AppViewHealth> Function(String providerKey)? _appViewHealthProber;
 
   static const String _keyThemePalette = 'theme_palette';
   static const String _keyThemeVariant = 'theme_variant';
@@ -177,8 +182,58 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   Future<void> setAppViewProvider(String provider) async {
     final normalizedProvider = AppViewProviders.normalizeSettingKey(provider);
+    if (normalizedProvider == state.appViewProvider) {
+      return;
+    }
     await database.setSetting(_keyAppViewProvider, normalizedProvider);
     emit(state.copyWith(appViewProvider: normalizedProvider));
+  }
+
+  void bumpRoutingEpoch() {
+    emit(state.copyWith(routingEpoch: state.routingEpoch + 1));
+  }
+
+  Future<void> refreshAppViewHealth() async {
+    emit(state.copyWith(appViewHealthRefreshing: true));
+    try {
+      final healthProber = _appViewHealthProber;
+      final health = healthProber != null
+          ? await healthProber(state.appViewProvider)
+          : await AppViewRouter(provider: AppViewProviders.descriptorForSetting(state.appViewProvider)).probeProvider();
+      emit(
+        state.copyWith(
+          appViewHealthRefreshing: false,
+          appViewHealthSummary: health.summary(),
+          appViewHealthCheckedAt: health.checkedAt,
+          appViewLastError: null,
+        ),
+      );
+    } catch (error) {
+      emit(
+        state.copyWith(
+          appViewHealthRefreshing: false,
+          appViewLastError: 'health probe failed: $error',
+          appViewHealthCheckedAt: DateTime.now().toUtc(),
+        ),
+      );
+    }
+  }
+
+  void recordAppViewRoutingEvent(AppViewRoutingEvent event) {
+    if (event is AppViewFallbackUsedEvent) {
+      emit(
+        state.copyWith(appViewLastFallback: 'endpoint=${event.endpointId} ${event.fromProvider}->${event.toProvider}'),
+      );
+      return;
+    }
+
+    if (event is AppViewProviderErrorEvent) {
+      emit(
+        state.copyWith(
+          appViewLastError: 'endpoint=${event.endpointId} provider=${event.provider} reason=${event.reason}',
+        ),
+      );
+    }
   }
 
   Future<void> setCrossProviderFallbackEnabled(bool enabled) async {

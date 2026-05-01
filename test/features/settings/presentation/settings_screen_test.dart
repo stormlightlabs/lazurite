@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
@@ -59,6 +60,8 @@ void main() {
         feedLayout: FeedLayout.card,
       ),
     );
+    when(() => settingsCubit.setAppViewProvider(any())).thenAnswer((_) async {});
+    when(() => settingsCubit.refreshAppViewHealth()).thenAnswer((_) async {});
   });
 
   Widget buildSubject() {
@@ -255,9 +258,85 @@ void main() {
     expect(find.text('ADVANCED'), findsOneWidget);
     expect(find.text('Constellation URL'), findsOneWidget);
     expect(find.text('https://constellation.microcosm.blue'), findsOneWidget);
+    expect(find.text('AppView Provider'), findsOneWidget);
     expect(find.text('Cross-Provider Fallback'), findsOneWidget);
     expect(find.text('Slingshot Identity Fallback'), findsOneWidget);
+    expect(find.text('Provider Diagnostics'), findsOneWidget);
+    expect(find.text('Refresh Provider Health'), findsOneWidget);
     expect(find.byIcon(Icons.edit_outlined), findsNothing);
+  });
+
+  testWidgets('provider change confirmation can be cancelled', (tester) async {
+    when(() => settingsCubit.state).thenReturn(
+      const SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        feedLayout: FeedLayout.card,
+        appViewProvider: AppViewProviders.blueskyKey,
+      ),
+    );
+    whenListen(
+      settingsCubit,
+      const Stream<SettingsState>.empty(),
+      initialState: const SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        feedLayout: FeedLayout.card,
+        appViewProvider: AppViewProviders.blueskyKey,
+      ),
+    );
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+    final segmented = find.byKey(const Key('appview-provider-segmented'));
+    await tester.scrollUntilVisible(segmented, 300);
+    final segmentedWidget = tester.widget<SegmentedButton<String>>(segmented);
+    segmentedWidget.onSelectionChanged?.call(const {AppViewProviders.blackskyKey});
+    await tester.pumpAndSettle();
+
+    expect(find.text('Switch AppView provider?'), findsOneWidget);
+    expect(find.text('Apply and Restart'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    verifyNever(() => settingsCubit.setAppViewProvider(any()));
+  });
+
+  testWidgets('provider change confirmation applies selection when confirmed', (tester) async {
+    when(() => settingsCubit.state).thenReturn(
+      const SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        feedLayout: FeedLayout.card,
+        appViewProvider: AppViewProviders.blueskyKey,
+      ),
+    );
+    whenListen(
+      settingsCubit,
+      const Stream<SettingsState>.empty(),
+      initialState: const SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        feedLayout: FeedLayout.card,
+        appViewProvider: AppViewProviders.blueskyKey,
+      ),
+    );
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+    final segmented = find.byKey(const Key('appview-provider-segmented'));
+    await tester.scrollUntilVisible(segmented, 300);
+    final segmentedWidget = tester.widget<SegmentedButton<String>>(segmented);
+    segmentedWidget.onSelectionChanged?.call(const {AppViewProviders.blackskyKey});
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Apply and Restart'));
+    await tester.pumpAndSettle();
+
+    verify(() => settingsCubit.setAppViewProvider(AppViewProviders.blackskyKey)).called(1);
   });
 
   testWidgets('shows Video Upload Limits tile in Account section', (tester) async {

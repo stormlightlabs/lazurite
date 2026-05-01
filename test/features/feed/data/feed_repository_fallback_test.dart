@@ -166,4 +166,28 @@ void main() {
     expect(third, equals('ok:bluesky'));
     expect(attempts, equals(['bluesky', 'blacksky', 'blacksky', 'bluesky']));
   });
+
+  test('drops stale response when routing epoch changes mid-request', () async {
+    var currentEpoch = 1;
+    final repo = FeedRepository(
+      bluesky: bluesky,
+      database: database,
+      accountDid: 'did:plc:test',
+      appViewProvider: 'bluesky',
+      crossProviderFallbackEnabled: false,
+      routingEpoch: 1,
+      routingEpochResolver: () => currentEpoch,
+    );
+
+    await expectLater(
+      () => repo.runPublicReadWithFallbackForTest<String>(
+        endpointId: 'app.bsky.unspecced.getTrends',
+        request: (_) async {
+          currentEpoch = 2;
+          return 'stale';
+        },
+      ),
+      throwsA(isA<StaleRoutingEpochException>()),
+    );
+  });
 }

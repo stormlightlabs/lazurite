@@ -53,20 +53,18 @@ updated: 2026-04-30
 
 ## M7 - Settings and UX
 
-- [ ] Add AppView provider controls in Settings (Bluesky/Blacksky)
-- [ ] Add provider-change confirmation that performs app soft restart
-- [ ] Confirm reset copy: stay signed in, no local data deletion
-- [ ] Show concise warning about moderation/ranking/provider differences
-- [ ] Add diagnostics view (active provider, last fallback, last error)
-- [ ] Add manual `Refresh Provider Health` action
+- [x] Add AppView provider controls in Settings (Bluesky/Blacksky)
+- [x] Add provider-change confirmation that performs app soft restart
+- [x] Confirm reset copy: stay signed in, no local data deletion
+- [x] Show concise warning about moderation/ranking/provider differences
+- [x] Add diagnostics view (active provider, last fallback, last error)
+- [x] Add manual `Refresh Provider Health` action
 
 ## M8 - Auth + Reset Safety
 
 - [x] Resolve OAuth entryway from account authority first (PDS `authorization_servers`), with provider/default fallbacks
-- [ ] Ensure app-password and OAuth flows remain backward compatible
-- [ ] Add migration behavior for existing saved sessions/accounts
-- [ ] Ensure provider switch rebuilds DI/blocs/services before new requests
-- [ ] Add routing epoch/version guard to drop stale pre-reset responses
+- [x] Ensure provider switch rebuilds DI/blocs/services before new requests
+- [x] Add routing epoch/version guard to drop stale pre-reset responses
 
 ## M9 - Hardening + Release
 
