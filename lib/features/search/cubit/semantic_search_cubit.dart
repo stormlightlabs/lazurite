@@ -76,14 +76,14 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
   /// Queue a search for [query], debounced by [_debounceDuration].
   ///
   /// An empty query clears results immediately without waiting for the debounce.
-  /// Attempts to recover service availability before searching.
+  /// The repository merges keyword and semantic results.
   void search(String query) {
     _debounce?.cancel();
     if (query.trim().isEmpty) {
       emit(SemanticSearchState(scope: state.scope));
       return;
     }
-    _debounce = Timer(_debounceDuration, () => unawaited(_searchWithAvailability(query)));
+    _debounce = Timer(_debounceDuration, () => unawaited(_doSearch(query)));
   }
 
   /// Change the search scope and immediately re-run the current query.
@@ -92,11 +92,7 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
     emit(state.copyWith(scope: scope));
     if (state.query.trim().isNotEmpty) {
       _debounce?.cancel();
-      if (await _ensureAvailable()) {
-        await _doSearch(state.query);
-      } else if (!isClosed) {
-        emit(state.copyWith(status: SemanticSearchStatus.error, errorMessage: 'Semantic model unavailable.'));
-      }
+      await _doSearch(state.query);
     }
   }
 
@@ -106,23 +102,17 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
     emit(SemanticSearchState(scope: state.scope));
   }
 
-  Future<bool> _ensureAvailable() async {
-    if (_embeddingService.isAvailable) return true;
-    await _embeddingService.initialize();
-    return _embeddingService.isAvailable;
-  }
-
-  Future<void> _searchWithAvailability(String query) async {
-    if (await _ensureAvailable()) {
-      await _doSearch(query);
-    } else if (!isClosed) {
-      emit(state.copyWith(status: SemanticSearchStatus.error, errorMessage: 'Semantic model unavailable.'));
-    }
+  Future<void> _warmSemanticModel() async {
+    if (_embeddingService.isAvailable) return;
+    try {
+      await _embeddingService.initialize();
+    } catch (_) {}
   }
 
   Future<void> _doSearch(String query) async {
     emit(state.copyWith(status: SemanticSearchStatus.searching, query: query));
     try {
+      await _warmSemanticModel();
       final source = switch (state.scope) {
         SearchScope.saved => 'saved',
         SearchScope.liked => 'liked',

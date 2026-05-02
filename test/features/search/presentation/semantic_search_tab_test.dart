@@ -108,8 +108,8 @@ void main() {
   group('SemanticSearchTab', () {
     testWidgets('shows empty query state when no query entered', (tester) async {
       await tester.pumpWidget(buildSubject());
-      expect(find.text('Search by meaning'), findsOneWidget);
-      expect(find.text('Search your saved and liked posts by meaning, not just keywords'), findsOneWidget);
+      expect(find.text('Search your saved & liked posts'), findsOneWidget);
+      expect(find.text('Find posts by handle, text, and semantic similarity'), findsOneWidget);
     });
 
     testWidgets('shows loading indicator while searching', (tester) async {
@@ -222,12 +222,12 @@ void main() {
         ),
       );
       await tester.pumpWidget(buildSubject());
-      expect(find.text('Indexing: 42/100 posts...'), findsOneWidget);
+      expect(find.text('Indexing 42/100'), findsOneWidget);
     });
 
     testWidgets('shows indexed count header when idle', (tester) async {
       await tester.pumpWidget(buildSubject());
-      expect(find.text('0 posts indexed'), findsOneWidget);
+      expect(find.text('0 indexed'), findsOneWidget);
     });
 
     testWidgets('kebab menu refresh action triggers loadCount', (tester) async {

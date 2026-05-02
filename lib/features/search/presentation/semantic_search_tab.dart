@@ -29,6 +29,7 @@ class SemanticSearchTab extends StatefulWidget {
 
 class _SemanticSearchTabState extends State<SemanticSearchTab> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -46,54 +47,121 @@ class _SemanticSearchTabState extends State<SemanticSearchTab> {
   @override
   void dispose() {
     _controller.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<SemanticSearchCubit, SemanticSearchState>(
-      builder: (context, state) {
-        return BlocBuilder<SettingsCubit, SettingsState>(
-          builder: (context, _) {
-            return Column(
-              children: [
-                BlocBuilder<SemanticIndexCubit, SemanticIndexState>(
-                  builder: (context, indexState) {
-                    return _IndexControls(indexState: indexState);
-                  },
-                ),
-                _SearchBar(
-                  controller: _controller,
-                  onChanged: (query) => context.read<SemanticSearchCubit>().search(query),
-                  onClear: () {
-                    _controller.clear();
-                    context.read<SemanticSearchCubit>().clearResults();
-                  },
-                ),
-                _ScopeChips(
-                  selected: state.scope,
-                  onSelected: (scope) async {
-                    await context.read<SemanticSearchCubit>().setScope(scope);
-                    if (context.mounted) {
-                      unawaited(context.read<SettingsCubit>().setSearchScope(scope));
-                    }
-                  },
-                ),
-                const Divider(height: 1),
-                Expanded(child: _ResultsView(state: state)),
-              ],
-            );
-          },
-        );
+    return BlocListener<SettingsCubit, SettingsState>(
+      listenWhen: (previous, current) =>
+          previous.searchScope != current.searchScope ||
+          previous.semanticSearchMaxResults != current.semanticSearchMaxResults,
+      listener: (context, settingsState) {
+        context.read<SemanticSearchCubit>().setMaxResults(settingsState.semanticSearchMaxResults);
+        unawaited(context.read<SemanticSearchCubit>().setScope(settingsState.searchScope));
       },
+      child: Column(
+        children: [
+          BlocBuilder<SemanticIndexCubit, SemanticIndexState>(
+            builder: (context, indexState) {
+              return _SearchInputRow(
+                controller: _controller,
+                focusNode: _searchFocusNode,
+                onChanged: (query) => context.read<SemanticSearchCubit>().search(query),
+                onClear: () {
+                  _controller.clear();
+                  context.read<SemanticSearchCubit>().clearResults();
+                },
+                indexState: indexState,
+              );
+            },
+          ),
+          BlocBuilder<SemanticIndexCubit, SemanticIndexState>(
+            builder: (context, indexState) {
+              return BlocSelector<SemanticSearchCubit, SemanticSearchState, SearchScope>(
+                selector: (state) => state.scope,
+                builder: (context, selectedScope) {
+                  return _ScopeRow(
+                    selected: selectedScope,
+                    indexState: indexState,
+                    onSelected: (scope) async {
+                      await context.read<SemanticSearchCubit>().setScope(scope);
+                      if (context.mounted) {
+                        unawaited(context.read<SettingsCubit>().setSearchScope(scope));
+                      }
+                    },
+                  );
+                },
+              );
+            },
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: BlocBuilder<SemanticSearchCubit, SemanticSearchState>(
+              buildWhen: (previous, current) =>
+                  previous.status != current.status ||
+                  previous.results != current.results ||
+                  previous.errorMessage != current.errorMessage,
+              builder: (context, state) => _ResultsView(state: state),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _IndexControls extends StatelessWidget {
-  const _IndexControls({required this.indexState});
+class _SearchInputRow extends StatelessWidget {
+  const _SearchInputRow({
+    required this.controller,
+    required this.focusNode,
+    required this.onChanged,
+    required this.onClear,
+    required this.indexState,
+  });
 
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
   final SemanticIndexState indexState;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: _SearchBar(controller: controller, focusNode: focusNode, onChanged: onChanged, onClear: onClear),
+          ),
+          const SizedBox(width: 8),
+          PopupMenuButton<_IndexMenuAction>(
+            tooltip: 'Search index actions',
+            icon: const Icon(Icons.more_vert),
+            onSelected: (action) => unawaited(_onMenuSelected(context, action)),
+            itemBuilder: (context) => [
+              const PopupMenuItem<_IndexMenuAction>(
+                value: _IndexMenuAction.semanticSettings,
+                child: Text('Semantic settings'),
+              ),
+              const PopupMenuItem<_IndexMenuAction>(
+                value: _IndexMenuAction.refreshCount,
+                child: Text('Refresh indexed count'),
+              ),
+              PopupMenuItem<_IndexMenuAction>(
+                value: _IndexMenuAction.reindex,
+                enabled: !indexState.isBackfilling,
+                child: const Text('Re-index posts'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _onMenuSelected(BuildContext context, _IndexMenuAction action) async {
     final cubit = context.read<SemanticIndexCubit>();
@@ -114,65 +182,88 @@ class _IndexControls extends StatelessWidget {
         break;
     }
   }
+}
+
+class _ScopeRow extends StatelessWidget {
+  const _ScopeRow({required this.selected, required this.onSelected, required this.indexState});
+
+  final SearchScope selected;
+  final ValueChanged<SearchScope> onSelected;
+  final SemanticIndexState indexState;
 
   @override
   Widget build(BuildContext context) {
     final scheme = context.colorScheme;
-    final completed = indexState.backfillCompleted ?? 0;
-    final total = indexState.backfillTotal ?? 0;
-    final progress = total > 0 ? completed / total : 0.0;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-      color: scheme.surface,
-      child: Column(
+    final scopeOrder = [SearchScope.both, SearchScope.saved, SearchScope.liked];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  indexState.isBackfilling
-                      ? 'Indexing: ${indexState.backfillCompleted ?? 0}/${indexState.backfillTotal ?? 0} posts...'
-                      : '${indexState.indexedCount} posts indexed',
-                  style: context.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                ),
-              ),
-              PopupMenuButton<_IndexMenuAction>(
-                tooltip: 'Search index actions',
-                icon: const Icon(Icons.more_vert),
-                onSelected: (action) => unawaited(_onMenuSelected(context, action)),
-                itemBuilder: (context) => [
-                  const PopupMenuItem<_IndexMenuAction>(
-                    value: _IndexMenuAction.semanticSettings,
-                    child: Text('Semantic settings'),
-                  ),
-                  const PopupMenuItem<_IndexMenuAction>(
-                    value: _IndexMenuAction.refreshCount,
-                    child: Text('Refresh indexed count'),
-                  ),
-                  PopupMenuItem<_IndexMenuAction>(
-                    value: _IndexMenuAction.reindex,
-                    enabled: !indexState.isBackfilling,
-                    child: const Text('Re-index posts'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          if (indexState.isBackfilling) ...[
-            const SizedBox(height: 4),
-            LinearProgressIndicator(value: progress > 0 ? progress : null),
-          ],
-          if (indexState.status == SemanticIndexStatus.error && indexState.errorMessage != null) ...[
-            const SizedBox(height: 6),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(indexState.errorMessage!, style: context.textTheme.bodySmall?.copyWith(color: scheme.error)),
+          for (var index = 0; index < scopeOrder.length; index++) ...[
+            _ScopeChip(
+              label: _ScopeChips.labels[scopeOrder[index]]!,
+              isSelected: selected == scopeOrder[index],
+              onTap: () => onSelected(scopeOrder[index]),
             ),
+            if (index < scopeOrder.length - 1) const SizedBox(width: 8),
           ],
+          const Spacer(),
+          Text(
+            indexState.isBackfilling
+                ? 'Indexing ${indexState.backfillCompleted ?? 0}/${indexState.backfillTotal ?? 0}'
+                : '${indexState.indexedCount} indexed',
+            style: context.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
         ],
       ),
     );
   }
+}
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({required this.controller, required this.focusNode, required this.onChanged, required this.onClear});
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colorScheme;
+    return TextField(
+      focusNode: focusNode,
+      controller: controller,
+      onChanged: onChanged,
+      textInputAction: TextInputAction.search,
+      decoration: InputDecoration(
+        hintText: 'Search saved and liked posts...',
+        prefixIcon: const Icon(Icons.search, size: 20),
+        suffixIcon: controller.text.isNotEmpty
+            ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: onClear, tooltip: 'Clear')
+            : null,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(99),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(99),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(99),
+          borderSide: BorderSide(color: scheme.primary),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        isDense: true,
+      ),
+    );
+  }
+}
+
+class _ScopeChips {
+  static const labels = {SearchScope.both: 'Both', SearchScope.saved: 'Saved', SearchScope.liked: 'Liked'};
 }
 
 enum _IndexMenuAction { semanticSettings, refreshCount, reindex }
@@ -243,72 +334,6 @@ class _SemanticSettingsSheet extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({required this.controller, required this.onChanged, required this.onClear});
-
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = context.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        textInputAction: TextInputAction.search,
-        decoration: InputDecoration(
-          hintText: 'Search your saved posts...',
-          prefixIcon: const Icon(Icons.search, size: 20),
-          suffixIcon: controller.text.isNotEmpty
-              ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: onClear, tooltip: 'Clear')
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(99),
-            borderSide: BorderSide(color: scheme.outlineVariant),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(99),
-            borderSide: BorderSide(color: scheme.outlineVariant),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(99),
-            borderSide: BorderSide(color: scheme.primary),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          isDense: true,
-        ),
-      ),
-    );
-  }
-}
-
-class _ScopeChips extends StatelessWidget {
-  const _ScopeChips({required this.selected, required this.onSelected});
-
-  final SearchScope selected;
-  final ValueChanged<SearchScope> onSelected;
-
-  static const _labels = {SearchScope.both: 'Both', SearchScope.saved: 'Saved', SearchScope.liked: 'Liked'};
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-      child: Row(
-        children: [
-          for (final scope in SearchScope.values) ...[
-            _ScopeChip(label: _labels[scope]!, isSelected: selected == scope, onTap: () => onSelected(scope)),
-            if (scope != SearchScope.liked) const SizedBox(width: 8),
-          ],
-        ],
       ),
     );
   }
@@ -495,25 +520,35 @@ class _EmptyQueryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = context.colorScheme;
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.travel_explore_outlined, size: 64, color: scheme.outline),
-            const SizedBox(height: 16),
-            Text('Search by meaning', style: context.textTheme.headlineSmall?.copyWith(color: scheme.onSurfaceVariant)),
-            const SizedBox(height: 8),
-            Text(
-              'Search your saved and liked posts by meaning, not just keywords',
-              textAlign: TextAlign.center,
-              style: context.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(32),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 64),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.travel_explore_outlined, size: 64, color: scheme.outline),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Search your saved & liked posts',
+                    style: context.textTheme.headlineSmall?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Find posts by handle, text, and semantic similarity',
+                    textAlign: TextAlign.center,
+                    style: context.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

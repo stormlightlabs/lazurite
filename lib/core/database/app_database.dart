@@ -5,6 +5,14 @@ import 'package:path_provider/path_provider.dart';
 
 part 'app_database.g.dart';
 
+class KeywordPostMatch {
+  const KeywordPostMatch({required this.postUri, required this.source, required this.rank});
+
+  final String postUri;
+  final String source;
+  final double rank;
+}
+
 @DriftDatabase(
   tables: [
     Accounts,
@@ -29,12 +37,14 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) async {
       await migrator.createAll();
+      await _createPostSearchFtsSchema();
+      await _rebuildPostSearchFts();
       await customStatement(
         'CREATE INDEX IF NOT EXISTS idx_notification_deliveries_notification_uri '
         'ON notification_deliveries(notification_uri)',
@@ -154,6 +164,10 @@ class AppDatabase extends _$AppDatabase {
           'CREATE INDEX IF NOT EXISTS idx_notification_deliveries_notification_uri '
           'ON notification_deliveries(notification_uri)',
         );
+      }
+      if (from < 22) {
+        await _createPostSearchFtsSchema();
+        await _rebuildPostSearchFts();
       }
     },
   );
@@ -594,6 +608,171 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteAllLikedPosts(String accountDid) =>
       (delete(likedPosts)..where((l) => l.accountDid.equals(accountDid))).go();
+
+  Future<List<KeywordPostMatch>> searchPostsByKeyword({
+    required String accountDid,
+    required String query,
+    String? source,
+    int limit = 20,
+  }) async {
+    final ftsQuery = _buildFtsQuery(query);
+    if (ftsQuery == null || limit <= 0) {
+      return const [];
+    }
+
+    final sourceFilter = source == 'saved' || source == 'liked' ? source : null;
+    final rows = await customSelect(
+      '''
+      SELECT post_uri, source, bm25(post_search_fts, 8.0, 1.0) AS rank
+      FROM post_search_fts
+      WHERE account_did = ?
+        ${sourceFilter == null ? '' : 'AND source = ?'}
+        AND post_search_fts MATCH ?
+      ORDER BY rank ASC
+      LIMIT ?
+      ''',
+      variables: [
+        Variable(accountDid),
+        if (sourceFilter != null) Variable(sourceFilter),
+        Variable(ftsQuery),
+        Variable(limit),
+      ],
+    ).get();
+    return _mapKeywordPostMatches(rows);
+  }
+
+  List<KeywordPostMatch> _mapKeywordPostMatches(List<QueryRow> rows) {
+    return rows
+        .map(
+          (row) => KeywordPostMatch(
+            postUri: row.read<String>('post_uri'),
+            source: row.read<String>('source'),
+            rank: row.read<double>('rank'),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  Future<void> _createPostSearchFtsSchema() async {
+    await customStatement('''
+      CREATE VIRTUAL TABLE IF NOT EXISTS post_search_fts USING fts5(
+        account_did UNINDEXED,
+        source UNINDEXED,
+        post_uri UNINDEXED,
+        handle,
+        content,
+        tokenize = 'unicode61'
+      )
+    ''');
+
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS saved_posts_ai
+      AFTER INSERT ON saved_posts BEGIN
+        INSERT INTO post_search_fts(account_did, source, post_uri, handle, content)
+        VALUES (
+          new.account_did,
+          'saved',
+          new.post_uri,
+          coalesce(json_extract(new.post_json, '\$.author.handle'), ''),
+          coalesce(json_extract(new.post_json, '\$.record.text'), '')
+        );
+      END
+    ''');
+
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS saved_posts_au
+      AFTER UPDATE ON saved_posts BEGIN
+        DELETE FROM post_search_fts
+        WHERE account_did = old.account_did AND source = 'saved' AND post_uri = old.post_uri;
+        INSERT INTO post_search_fts(account_did, source, post_uri, handle, content)
+        VALUES (
+          new.account_did,
+          'saved',
+          new.post_uri,
+          coalesce(json_extract(new.post_json, '\$.author.handle'), ''),
+          coalesce(json_extract(new.post_json, '\$.record.text'), '')
+        );
+      END
+    ''');
+
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS saved_posts_ad
+      AFTER DELETE ON saved_posts BEGIN
+        DELETE FROM post_search_fts
+        WHERE account_did = old.account_did AND source = 'saved' AND post_uri = old.post_uri;
+      END
+    ''');
+
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS liked_posts_ai
+      AFTER INSERT ON liked_posts BEGIN
+        INSERT INTO post_search_fts(account_did, source, post_uri, handle, content)
+        VALUES (
+          new.account_did,
+          'liked',
+          new.post_uri,
+          coalesce(json_extract(new.post_json, '\$.post.author.handle'), coalesce(json_extract(new.post_json, '\$.author.handle'), '')),
+          coalesce(json_extract(new.post_json, '\$.post.record.text'), coalesce(json_extract(new.post_json, '\$.record.text'), ''))
+        );
+      END
+    ''');
+
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS liked_posts_au
+      AFTER UPDATE ON liked_posts BEGIN
+        DELETE FROM post_search_fts
+        WHERE account_did = old.account_did AND source = 'liked' AND post_uri = old.post_uri;
+        INSERT INTO post_search_fts(account_did, source, post_uri, handle, content)
+        VALUES (
+          new.account_did,
+          'liked',
+          new.post_uri,
+          coalesce(json_extract(new.post_json, '\$.post.author.handle'), coalesce(json_extract(new.post_json, '\$.author.handle'), '')),
+          coalesce(json_extract(new.post_json, '\$.post.record.text'), coalesce(json_extract(new.post_json, '\$.record.text'), ''))
+        );
+      END
+    ''');
+
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS liked_posts_ad
+      AFTER DELETE ON liked_posts BEGIN
+        DELETE FROM post_search_fts
+        WHERE account_did = old.account_did AND source = 'liked' AND post_uri = old.post_uri;
+      END
+    ''');
+  }
+
+  Future<void> _rebuildPostSearchFts() async {
+    await customStatement('DELETE FROM post_search_fts');
+    await customStatement('''
+      INSERT INTO post_search_fts(account_did, source, post_uri, handle, content)
+      SELECT
+        account_did,
+        'saved',
+        post_uri,
+        coalesce(json_extract(post_json, '\$.author.handle'), ''),
+        coalesce(json_extract(post_json, '\$.record.text'), '')
+      FROM saved_posts
+    ''');
+    await customStatement('''
+      INSERT INTO post_search_fts(account_did, source, post_uri, handle, content)
+      SELECT
+        account_did,
+        'liked',
+        post_uri,
+        coalesce(json_extract(post_json, '\$.post.author.handle'), coalesce(json_extract(post_json, '\$.author.handle'), '')),
+        coalesce(json_extract(post_json, '\$.post.record.text'), coalesce(json_extract(post_json, '\$.record.text'), ''))
+      FROM liked_posts
+    ''');
+  }
+
+  static String? _buildFtsQuery(String rawQuery) {
+    final tokens = RegExp(r'[A-Za-z0-9_]+').allMatches(rawQuery.toLowerCase()).map((m) => m.group(0)!).toList();
+    if (tokens.isEmpty) {
+      return null;
+    }
+    return tokens.map((token) => '$token*').join(' AND ');
+  }
 
   Future<bool> recordNotificationDelivery({
     required String accountDid,

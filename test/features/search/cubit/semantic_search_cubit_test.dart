@@ -235,25 +235,31 @@ void main() {
       );
 
       blocTest<SemanticSearchCubit, SemanticSearchState>(
-        'emits error when service is not available',
-        build: () =>
-            SemanticSearchCubit(
-              repository: mockRepo,
-              embeddingService: _unavailableService(),
-              accountDid: _accountDid,
-              debounceDuration: Duration.zero,
+        'still searches when service is not available',
+        build: () => SemanticSearchCubit(
+          repository: mockRepo,
+          embeddingService: _unavailableService(),
+          accountDid: _accountDid,
+          debounceDuration: Duration.zero,
+        ),
+        setUp: () {
+          when(
+            () => mockRepo.search(
+              any(),
+              any(),
+              source: any(named: 'source'),
+              maxResults: any(named: 'maxResults'),
             ),
+          ).thenAnswer((_) async => const []);
+        },
         act: (cubit) => cubit.search('flutter'),
         expect: () => [
-          predicate<SemanticSearchState>(
-            (s) =>
-                s.status == SemanticSearchStatus.error &&
-                (s.errorMessage?.contains('Semantic model unavailable') ?? false),
-          ),
+          predicate<SemanticSearchState>((s) => s.status == SemanticSearchStatus.searching),
+          predicate<SemanticSearchState>((s) => s.status == SemanticSearchStatus.loaded && s.results.isEmpty),
         ],
-        verify: (cubit) {
-          verifyNever(() => mockRepo.search(any(), any()));
-        },
+        verify: (_) => verify(
+          () => mockRepo.search('flutter', _accountDid, source: null, maxResults: any(named: 'maxResults')),
+        ).called(1),
       );
     });
 

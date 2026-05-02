@@ -133,13 +133,15 @@ void main() {
 
   group('SemanticSearchRepository', () {
     group('search', () {
-      test('returns empty list when EmbeddingService is unavailable', () async {
+      test('returns keyword results when EmbeddingService is unavailable', () async {
         await insertSavedPost('at://did/post/1', 'did:plc:user');
 
         final repo = makeRepo(service: _unavailableService());
-        final results = await repo.search('hello', 'did:plc:user');
+        final results = await repo.search('post text', 'did:plc:user');
 
-        expect(results, isEmpty);
+        expect(results, hasLength(1));
+        expect(results.first.postUri, equals('at://did/post/1'));
+        expect(results.first.source, equals('saved'));
       });
 
       test('returns empty list when query is empty', () async {
@@ -201,6 +203,28 @@ void main() {
         expect((decoded['post'] as Map<String, dynamic>)['uri'], equals('at://did/post/2'));
       });
 
+      test('matches saved posts by author handle keyword', () async {
+        await insertSavedPost('at://did/post/handle', 'did:plc:user', text: 'no handle text here');
+
+        final repo = makeRepo(service: _unavailableService());
+        final results = await repo.search('author.bsky.social', 'did:plc:user');
+
+        expect(results, hasLength(1));
+        expect(results.first.postUri, equals('at://did/post/handle'));
+        expect(results.first.source, equals('saved'));
+      });
+
+      test('matches liked posts by content keyword', () async {
+        await insertLikedPost('at://did/post/liked-keyword', 'did:plc:user', text: 'Dart keyword search works');
+
+        final repo = makeRepo(service: _unavailableService());
+        final results = await repo.search('keyword search', 'did:plc:user');
+
+        expect(results, hasLength(1));
+        expect(results.first.postUri, equals('at://did/post/liked-keyword'));
+        expect(results.first.source, equals('liked'));
+      });
+
       test('score is in the range [0, 100]', () async {
         await insertSavedPost('at://did/post/1', 'did:plc:user');
 
@@ -245,6 +269,15 @@ void main() {
         expect(results.length, equals(2));
         final sources = results.map((r) => r.source).toSet();
         expect(sources, containsAll(['saved', 'liked']));
+      });
+
+      test('deduplicates combined keyword and semantic hits for the same source and post', () async {
+        await insertSavedPost('at://did/post/dupe', 'did:plc:user', text: 'keyword and semantic');
+
+        final repo = makeRepo();
+        final results = await repo.search('keyword', 'did:plc:user');
+
+        expect(results.where((result) => result.postUri == 'at://did/post/dupe' && result.source == 'saved').length, 1);
       });
 
       test('filters to saved posts when source is "saved"', () async {
