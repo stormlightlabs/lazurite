@@ -264,6 +264,42 @@ void main() {
       });
     });
 
+    group('Notification delivery operations', () {
+      test('should update existing delivery metadata on duplicate insert', () async {
+        final firstInsert = await database.recordNotificationDelivery(
+          accountDid: 'did:plc:test',
+          notificationUri: 'at://did:plc:test/app.bsky.feed.post/1',
+          notificationCid: 'cid-1',
+          reason: 'like',
+          indexedAt: DateTime.utc(2026, 5, 1, 9, 0),
+          source: 'poll',
+        );
+
+        final secondInsert = await database.recordNotificationDelivery(
+          accountDid: 'did:plc:test',
+          notificationUri: 'at://did:plc:test/app.bsky.feed.post/1',
+          notificationCid: 'cid-2',
+          reason: 'repost',
+          indexedAt: DateTime.utc(2026, 5, 1, 10, 0),
+          source: 'push',
+        );
+
+        final delivery = await database.getNotificationDelivery(
+          'did:plc:test',
+          'at://did:plc:test/app.bsky.feed.post/1',
+        );
+
+        expect(firstInsert, isTrue);
+        expect(secondInsert, isFalse);
+        expect(await database.countNotificationDeliveries('did:plc:test'), 1);
+        expect(delivery, isNotNull);
+        expect(delivery!.notificationCid, 'cid-2');
+        expect(delivery.reason, 'repost');
+        expect(delivery.indexedAt.toUtc(), DateTime.utc(2026, 5, 1, 10, 0));
+        expect(delivery.source, 'push');
+      });
+    });
+
     group('Settings operations', () {
       test('should seed default typeahead provider on database creation', () async {
         final value = await database.getSetting('typeahead_provider');

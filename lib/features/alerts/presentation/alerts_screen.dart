@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bluesky/chat_bsky_convo_defs.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
@@ -22,8 +23,19 @@ class AlertsScreen extends StatefulWidget {
 
 class _AlertsScreenState extends State<AlertsScreen> {
   @override
+  void initState() {
+    super.initState();
+    final convoBloc = context.read<ConvoListBloc>();
+    if (convoBloc.state.status == ConvoListStatus.initial) {
+      convoBloc.add(const ConvosRequested());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final currentTab = widget.initialTab;
+    final notificationsUnread = context.select<UnreadCountCubit, int>((cubit) => cubit.state.count);
+    final messagesUnread = context.select<ConvoListBloc, int>((bloc) => _primaryMessagesUnreadCount(bloc.state));
 
     return AppScreenEntrance(
       child: Scaffold(
@@ -34,12 +46,28 @@ class _AlertsScreenState extends State<AlertsScreen> {
               : null,
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(48),
-            child: _AlertsTabs(currentTab: currentTab),
+            child: _AlertsTabs(
+              currentTab: currentTab,
+              notificationsUnreadCount: notificationsUnread,
+              messagesUnreadCount: messagesUnread,
+            ),
           ),
         ),
         body: KeyedSubtree(key: ValueKey(currentTab), child: _buildTab(currentTab)),
       ),
     );
+  }
+
+  int _primaryMessagesUnreadCount(ConvoListState state) {
+    var unread = 0;
+    for (final convo in state.convos) {
+      final status = convo.status;
+      final isRequest = status != null && status.isKnownValue && status.knownValue == KnownConvoViewStatus.request;
+      if (!isRequest) {
+        unread += convo.unreadCount;
+      }
+    }
+    return unread;
   }
 
   Widget _buildTab(AlertsTab tab) {
@@ -60,9 +88,15 @@ class _AlertsScreenState extends State<AlertsScreen> {
 }
 
 class _AlertsTabs extends StatelessWidget {
-  const _AlertsTabs({required this.currentTab});
+  const _AlertsTabs({
+    required this.currentTab,
+    required this.notificationsUnreadCount,
+    required this.messagesUnreadCount,
+  });
 
   final AlertsTab currentTab;
+  final int notificationsUnreadCount;
+  final int messagesUnreadCount;
 
   @override
   Widget build(BuildContext context) {
@@ -72,8 +106,18 @@ class _AlertsTabs extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _AlertsTabButton(tab: AlertsTab.notifications, label: 'Notifications', currentTab: currentTab),
-          _AlertsTabButton(tab: AlertsTab.messages, label: 'Messages', currentTab: currentTab),
+          _AlertsTabButton(
+            tab: AlertsTab.notifications,
+            label: 'Notifications',
+            currentTab: currentTab,
+            unreadCount: notificationsUnreadCount,
+          ),
+          _AlertsTabButton(
+            tab: AlertsTab.messages,
+            label: 'Messages',
+            currentTab: currentTab,
+            unreadCount: messagesUnreadCount,
+          ),
           _AlertsTabButton(tab: AlertsTab.requests, label: 'Requests', currentTab: currentTab),
         ],
       ),
@@ -82,11 +126,12 @@ class _AlertsTabs extends StatelessWidget {
 }
 
 class _AlertsTabButton extends StatelessWidget {
-  const _AlertsTabButton({required this.tab, required this.label, required this.currentTab});
+  const _AlertsTabButton({required this.tab, required this.label, required this.currentTab, this.unreadCount = 0});
 
   final AlertsTab tab;
   final String label;
   final AlertsTab currentTab;
+  final int unreadCount;
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +152,30 @@ class _AlertsTabButton extends StatelessWidget {
               bottom: BorderSide(color: isSelected ? theme.colorScheme.primary : Colors.transparent, width: 2),
             ),
           ),
-          child: Text(label, textAlign: TextAlign.center, style: textStyle),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label, textAlign: TextAlign.center, style: textStyle),
+              if (unreadCount > 0) ...[
+                const SizedBox(width: 6),
+                Container(
+                  key: ValueKey('alerts-tab-unread-${tab.name}'),
+                  constraints: const BoxConstraints(minWidth: 18),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                  child: Text(
+                    unreadCount > 99 ? '99+' : unreadCount.toString(),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

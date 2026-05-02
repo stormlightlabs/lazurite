@@ -185,6 +185,16 @@ void main() {
     expect(find.text('Mark All Read'), findsOneWidget);
   });
 
+  testWidgets('shows unread badges for notifications and messages tabs', (tester) async {
+    await tester.pumpWidget(buildSubject('/alerts'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('alerts-tab-unread-notifications')), findsOneWidget);
+    expect(find.byKey(const ValueKey('alerts-tab-unread-messages')), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+  });
+
   testWidgets('opens messages tab from deep link', (tester) async {
     await tester.pumpWidget(buildSubject('/alerts/messages'));
     await tester.pumpAndSettle();

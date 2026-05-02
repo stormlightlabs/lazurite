@@ -19,6 +19,7 @@ part 'app_database.g.dart';
     Drafts,
     SavedPosts,
     LabelerCache,
+    NotificationDeliveries,
     LikedPosts,
   ],
 )
@@ -28,12 +29,16 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) async {
       await migrator.createAll();
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_notification_deliveries_notification_uri '
+        'ON notification_deliveries(notification_uri)',
+      );
       await customStatement("INSERT OR IGNORE INTO settings (key, value) VALUES ('typeahead_provider', 'bluesky')");
       await customStatement("INSERT OR IGNORE INTO settings (key, value) VALUES ('appview_provider', 'bluesky')");
       await customStatement(
@@ -142,6 +147,13 @@ class AppDatabase extends _$AppDatabase {
       if (from < 20) {
         await migrator.createTable(cachedFeedPosts);
         await migrator.createTable(cachedThreadRoots);
+      }
+      if (from < 21) {
+        await migrator.createTable(notificationDeliveries);
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_notification_deliveries_notification_uri '
+          'ON notification_deliveries(notification_uri)',
+        );
       }
     },
   );
@@ -578,4 +590,54 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteAllLikedPosts(String accountDid) =>
       (delete(likedPosts)..where((l) => l.accountDid.equals(accountDid))).go();
+
+  Future<bool> recordNotificationDelivery({
+    required String accountDid,
+    required String notificationUri,
+    String? notificationCid,
+    required String reason,
+    required DateTime indexedAt,
+    required String source,
+    DateTime? deliveredAt,
+  }) async {
+    final existing = await getNotificationDelivery(accountDid, notificationUri);
+    if (existing == null) {
+      await into(notificationDeliveries).insert(
+        NotificationDeliveriesCompanion.insert(
+          accountDid: accountDid,
+          notificationUri: notificationUri,
+          notificationCid: Value(notificationCid),
+          reason: reason,
+          indexedAt: indexedAt,
+          source: source,
+          deliveredAt: Value(deliveredAt ?? DateTime.now()),
+        ),
+      );
+      return true;
+    }
+
+    await (update(
+      notificationDeliveries,
+    )..where((entry) => entry.accountDid.equals(accountDid) & entry.notificationUri.equals(notificationUri))).write(
+      NotificationDeliveriesCompanion(
+        notificationCid: notificationCid != null ? Value(notificationCid) : const Value.absent(),
+        reason: Value(reason),
+        indexedAt: Value(indexedAt),
+        source: Value(source),
+      ),
+    );
+
+    return false;
+  }
+
+  Future<NotificationDeliveryEntry?> getNotificationDelivery(String accountDid, String notificationUri) {
+    return (select(notificationDeliveries)
+          ..where((entry) => entry.accountDid.equals(accountDid) & entry.notificationUri.equals(notificationUri)))
+        .getSingleOrNull();
+  }
+
+  Future<int> countNotificationDeliveries(String accountDid) async {
+    final rows = await (select(notificationDeliveries)..where((entry) => entry.accountDid.equals(accountDid))).get();
+    return rows.length;
+  }
 }

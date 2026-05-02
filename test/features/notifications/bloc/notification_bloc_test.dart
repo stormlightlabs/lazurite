@@ -192,6 +192,24 @@ void main() {
     );
 
     blocTest<NotificationBloc, NotificationState>(
+      'marks loaded notifications as read after NotificationsMarkedRead succeeds',
+      build: () => NotificationBloc(notificationRepository: mockNotificationRepository),
+      seed: () => NotificationState.loaded(notifications: [sampleNotification], cursor: null, hasMore: false),
+      setUp: () {
+        when(() => mockNotificationRepository.updateSeen()).thenAnswer((_) async {});
+      },
+      act: (bloc) => bloc.add(const NotificationsMarkedRead()),
+      expect: () => [
+        predicate<NotificationState>(
+          (state) =>
+              state.status == NotificationStatus.loaded &&
+              state.notifications.length == 1 &&
+              state.notifications.first.isRead,
+        ),
+      ],
+    );
+
+    blocTest<NotificationBloc, NotificationState>(
       'handles updateSeen failure silently',
       build: () => NotificationBloc(notificationRepository: mockNotificationRepository),
       setUp: () {

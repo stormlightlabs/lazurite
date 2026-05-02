@@ -40,6 +40,11 @@ import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
+import 'package:lazurite/features/notifications/data/flutter_local_notification_adapter.dart';
+import 'package:lazurite/features/notifications/domain/local_notification_adapter.dart';
+import 'package:lazurite/features/notifications/domain/notification_deep_link_navigator.dart';
+import 'package:lazurite/features/notifications/domain/notification_domain_service.dart';
+import 'package:lazurite/features/notifications/domain/notification_local_models.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
@@ -96,6 +101,7 @@ Future<void> main() async {
 
   final accountSwitcherCubit = AccountSwitcherCubit(database: database, authRepository: authRepository);
   await accountSwitcherCubit.loadAccounts();
+  final localNotificationAdapter = FlutterLocalNotificationAdapter();
 
   log.i('AppLogger: App started');
 
@@ -109,6 +115,7 @@ Future<void> main() async {
       settingsCubit,
       connectivityCubit,
       accountSwitcherCubit,
+      localNotificationAdapter,
     ),
   );
 }
@@ -124,6 +131,7 @@ class LazuriteApp extends StatefulWidget {
     required this.settingsCubit,
     required this.connectivityCubit,
     required this.accountSwitcherCubit,
+    required this.localNotificationAdapter,
   });
 
   final AuthBloc authBloc;
@@ -134,6 +142,7 @@ class LazuriteApp extends StatefulWidget {
   final SettingsCubit settingsCubit;
   final ConnectivityCubit connectivityCubit;
   final AccountSwitcherCubit accountSwitcherCubit;
+  final LocalNotificationAdapter localNotificationAdapter;
 
   /// factory constructor with positional params
   static LazuriteApp from(
@@ -145,6 +154,7 @@ class LazuriteApp extends StatefulWidget {
     SettingsCubit settingsCubit,
     ConnectivityCubit connectivityCubit,
     AccountSwitcherCubit accountSwitcherCubit,
+    LocalNotificationAdapter localNotificationAdapter,
   ) => LazuriteApp(
     authBloc: authBloc,
     database: database,
@@ -154,6 +164,7 @@ class LazuriteApp extends StatefulWidget {
     settingsCubit: settingsCubit,
     connectivityCubit: connectivityCubit,
     accountSwitcherCubit: accountSwitcherCubit,
+    localNotificationAdapter: localNotificationAdapter,
   );
 
   @override
@@ -178,6 +189,11 @@ class _LazuriteAppState extends State<LazuriteApp> {
     _routerSessionKey = _sessionKeyFor(widget.authBloc.state);
     _observedAppViewProvider = widget.settingsCubit.state.appViewProvider;
     _router = _createRouter();
+    unawaited(
+      widget.localNotificationAdapter.initialize(onTap: _handleNotificationDeepLink).then((_) {
+        return widget.localNotificationAdapter.requestPermissions();
+      }),
+    );
     _authSubscription = widget.authBloc.stream.map(_sessionKeyFor).distinct().listen(_handleSessionKeyChanged);
     _simulateOfflineSubscription = widget.settingsCubit.stream
         .map((state) => state.simulateOffline)
@@ -264,6 +280,18 @@ class _LazuriteAppState extends State<LazuriteApp> {
       });
       unawaited(widget.settingsCubit.refreshAppViewHealth());
     }
+  }
+
+  void _handleNotificationDeepLink(NotificationDeepLink deepLink) {
+    if (!mounted) {
+      return;
+    }
+    NotificationDeepLinkNavigator.navigate(_router, deepLink);
+  }
+
+  bool _isAlertsRouteActive() {
+    final path = _router.routerDelegate.currentConfiguration.uri.path;
+    return path.startsWith('/alerts');
   }
 
   Bluesky? _createBluesky(AuthState state) => state.isAuthenticated ? createBlueskyClient(state.tokens) : null;
@@ -416,6 +444,15 @@ class _LazuriteAppState extends State<LazuriteApp> {
                     bluesky: bluesky,
                     moderationService: context.read<ModerationService>(),
                     appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                  ),
+                ),
+                RepositoryProvider(
+                  create: (context) => NotificationDomainService(
+                    notificationRepository: context.read<NotificationRepository>(),
+                    database: widget.database,
+                    accountDid: accountDid,
+                    localNotificationAdapter: widget.localNotificationAdapter,
+                    shouldSuppressLocalNotifications: _isAlertsRouteActive,
                   ),
                 ),
                 RepositoryProvider(

@@ -3,16 +3,24 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
+import 'package:lazurite/features/notifications/domain/notification_domain_service.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 
 class UnreadCountCubit extends Cubit<UnreadCountState> {
-  UnreadCountCubit({required NotificationRepository notificationRepository})
-    : _notificationRepository = notificationRepository,
+  UnreadCountCubit({
+    NotificationDomainService? notificationDomainService,
+    NotificationRepository? notificationRepository,
+  }) : _notificationDomainService =
+           notificationDomainService ??
+           NotificationDomainService(
+             notificationRepository: notificationRepository ??
+                 (throw ArgumentError('Either notificationDomainService or notificationRepository is required')),
+           ),
       super(const UnreadCountState(0)) {
     _startPolling();
   }
 
-  final NotificationRepository _notificationRepository;
+  final NotificationDomainService _notificationDomainService;
   Timer? _pollingTimer;
 
   static const _pollingInterval = Duration(seconds: 30);
@@ -24,7 +32,7 @@ class UnreadCountCubit extends Cubit<UnreadCountState> {
 
   Future<void> _pollUnreadCount() async {
     try {
-      final count = await _notificationRepository.getUnreadCount();
+      final count = await _notificationDomainService.getUnreadCount();
       emit(UnreadCountState(count));
     } catch (_) {
       log.w('Failed to poll unread count');

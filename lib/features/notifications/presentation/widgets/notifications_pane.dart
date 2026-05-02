@@ -1,4 +1,6 @@
 import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -23,6 +25,9 @@ class NotificationsPane extends StatefulWidget {
 class _NotificationsPaneState extends State<NotificationsPane> {
   final ScrollController _scrollController = ScrollController();
   final Set<String> _seenNotificationKeys = <String>{};
+  Timer? _pollTimer;
+
+  static const _pollInterval = Duration(seconds: 30);
 
   @override
   void initState() {
@@ -33,6 +38,7 @@ class _NotificationsPaneState extends State<NotificationsPane> {
       context.read<NotificationBloc>().add(const NotificationsMarkedRead());
       context.read<UnreadCountCubit>().refresh();
     }
+    _pollTimer = Timer.periodic(_pollInterval, (_) => _pollForUpdates());
   }
 
   @override
@@ -40,6 +46,7 @@ class _NotificationsPaneState extends State<NotificationsPane> {
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
+    _pollTimer?.cancel();
     super.dispose();
   }
 
@@ -53,6 +60,15 @@ class _NotificationsPaneState extends State<NotificationsPane> {
     context.read<NotificationBloc>().add(const NotificationsRefreshed());
     context.read<NotificationBloc>().add(const NotificationsMarkedRead());
     await context.read<UnreadCountCubit>().refresh();
+  }
+
+  void _pollForUpdates() {
+    if (!mounted) {
+      return;
+    }
+    context.read<NotificationBloc>().add(const NotificationsRefreshed());
+    context.read<NotificationBloc>().add(const NotificationsMarkedRead());
+    context.read<UnreadCountCubit>().refresh();
   }
 
   @override

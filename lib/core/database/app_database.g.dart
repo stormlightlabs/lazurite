@@ -5012,6 +5012,632 @@ class LabelerCacheCompanion extends UpdateCompanion<LabelerCacheEntry> {
   }
 }
 
+class $NotificationDeliveriesTable extends NotificationDeliveries
+    with TableInfo<$NotificationDeliveriesTable, NotificationDeliveryEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NotificationDeliveriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _accountDidMeta = const VerificationMeta(
+    'accountDid',
+  );
+  @override
+  late final GeneratedColumn<String> accountDid = GeneratedColumn<String>(
+    'account_did',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notificationUriMeta = const VerificationMeta(
+    'notificationUri',
+  );
+  @override
+  late final GeneratedColumn<String> notificationUri = GeneratedColumn<String>(
+    'notification_uri',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notificationCidMeta = const VerificationMeta(
+    'notificationCid',
+  );
+  @override
+  late final GeneratedColumn<String> notificationCid = GeneratedColumn<String>(
+    'notification_cid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _indexedAtMeta = const VerificationMeta(
+    'indexedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> indexedAt = GeneratedColumn<DateTime>(
+    'indexed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deliveredAtMeta = const VerificationMeta(
+    'deliveredAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deliveredAt = GeneratedColumn<DateTime>(
+    'delivered_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _openedAtMeta = const VerificationMeta(
+    'openedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> openedAt = GeneratedColumn<DateTime>(
+    'opened_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dismissedAtMeta = const VerificationMeta(
+    'dismissedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dismissedAt = GeneratedColumn<DateTime>(
+    'dismissed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    accountDid,
+    notificationUri,
+    notificationCid,
+    reason,
+    indexedAt,
+    source,
+    deliveredAt,
+    openedAt,
+    dismissedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'notification_deliveries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NotificationDeliveryEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('account_did')) {
+      context.handle(
+        _accountDidMeta,
+        accountDid.isAcceptableOrUnknown(data['account_did']!, _accountDidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountDidMeta);
+    }
+    if (data.containsKey('notification_uri')) {
+      context.handle(
+        _notificationUriMeta,
+        notificationUri.isAcceptableOrUnknown(
+          data['notification_uri']!,
+          _notificationUriMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_notificationUriMeta);
+    }
+    if (data.containsKey('notification_cid')) {
+      context.handle(
+        _notificationCidMeta,
+        notificationCid.isAcceptableOrUnknown(
+          data['notification_cid']!,
+          _notificationCidMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('indexed_at')) {
+      context.handle(
+        _indexedAtMeta,
+        indexedAt.isAcceptableOrUnknown(data['indexed_at']!, _indexedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_indexedAtMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('delivered_at')) {
+      context.handle(
+        _deliveredAtMeta,
+        deliveredAt.isAcceptableOrUnknown(
+          data['delivered_at']!,
+          _deliveredAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('opened_at')) {
+      context.handle(
+        _openedAtMeta,
+        openedAt.isAcceptableOrUnknown(data['opened_at']!, _openedAtMeta),
+      );
+    }
+    if (data.containsKey('dismissed_at')) {
+      context.handle(
+        _dismissedAtMeta,
+        dismissedAt.isAcceptableOrUnknown(
+          data['dismissed_at']!,
+          _dismissedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NotificationDeliveryEntry map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NotificationDeliveryEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      accountDid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_did'],
+      )!,
+      notificationUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notification_uri'],
+      )!,
+      notificationCid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notification_cid'],
+      ),
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      indexedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}indexed_at'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      deliveredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}delivered_at'],
+      )!,
+      openedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}opened_at'],
+      ),
+      dismissedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}dismissed_at'],
+      ),
+    );
+  }
+
+  @override
+  $NotificationDeliveriesTable createAlias(String alias) {
+    return $NotificationDeliveriesTable(attachedDatabase, alias);
+  }
+}
+
+class NotificationDeliveryEntry extends DataClass
+    implements Insertable<NotificationDeliveryEntry> {
+  final int id;
+  final String accountDid;
+  final String notificationUri;
+  final String? notificationCid;
+  final String reason;
+  final DateTime indexedAt;
+  final String source;
+  final DateTime deliveredAt;
+  final DateTime? openedAt;
+  final DateTime? dismissedAt;
+  const NotificationDeliveryEntry({
+    required this.id,
+    required this.accountDid,
+    required this.notificationUri,
+    this.notificationCid,
+    required this.reason,
+    required this.indexedAt,
+    required this.source,
+    required this.deliveredAt,
+    this.openedAt,
+    this.dismissedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['account_did'] = Variable<String>(accountDid);
+    map['notification_uri'] = Variable<String>(notificationUri);
+    if (!nullToAbsent || notificationCid != null) {
+      map['notification_cid'] = Variable<String>(notificationCid);
+    }
+    map['reason'] = Variable<String>(reason);
+    map['indexed_at'] = Variable<DateTime>(indexedAt);
+    map['source'] = Variable<String>(source);
+    map['delivered_at'] = Variable<DateTime>(deliveredAt);
+    if (!nullToAbsent || openedAt != null) {
+      map['opened_at'] = Variable<DateTime>(openedAt);
+    }
+    if (!nullToAbsent || dismissedAt != null) {
+      map['dismissed_at'] = Variable<DateTime>(dismissedAt);
+    }
+    return map;
+  }
+
+  NotificationDeliveriesCompanion toCompanion(bool nullToAbsent) {
+    return NotificationDeliveriesCompanion(
+      id: Value(id),
+      accountDid: Value(accountDid),
+      notificationUri: Value(notificationUri),
+      notificationCid: notificationCid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notificationCid),
+      reason: Value(reason),
+      indexedAt: Value(indexedAt),
+      source: Value(source),
+      deliveredAt: Value(deliveredAt),
+      openedAt: openedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openedAt),
+      dismissedAt: dismissedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dismissedAt),
+    );
+  }
+
+  factory NotificationDeliveryEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NotificationDeliveryEntry(
+      id: serializer.fromJson<int>(json['id']),
+      accountDid: serializer.fromJson<String>(json['accountDid']),
+      notificationUri: serializer.fromJson<String>(json['notificationUri']),
+      notificationCid: serializer.fromJson<String?>(json['notificationCid']),
+      reason: serializer.fromJson<String>(json['reason']),
+      indexedAt: serializer.fromJson<DateTime>(json['indexedAt']),
+      source: serializer.fromJson<String>(json['source']),
+      deliveredAt: serializer.fromJson<DateTime>(json['deliveredAt']),
+      openedAt: serializer.fromJson<DateTime?>(json['openedAt']),
+      dismissedAt: serializer.fromJson<DateTime?>(json['dismissedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'accountDid': serializer.toJson<String>(accountDid),
+      'notificationUri': serializer.toJson<String>(notificationUri),
+      'notificationCid': serializer.toJson<String?>(notificationCid),
+      'reason': serializer.toJson<String>(reason),
+      'indexedAt': serializer.toJson<DateTime>(indexedAt),
+      'source': serializer.toJson<String>(source),
+      'deliveredAt': serializer.toJson<DateTime>(deliveredAt),
+      'openedAt': serializer.toJson<DateTime?>(openedAt),
+      'dismissedAt': serializer.toJson<DateTime?>(dismissedAt),
+    };
+  }
+
+  NotificationDeliveryEntry copyWith({
+    int? id,
+    String? accountDid,
+    String? notificationUri,
+    Value<String?> notificationCid = const Value.absent(),
+    String? reason,
+    DateTime? indexedAt,
+    String? source,
+    DateTime? deliveredAt,
+    Value<DateTime?> openedAt = const Value.absent(),
+    Value<DateTime?> dismissedAt = const Value.absent(),
+  }) => NotificationDeliveryEntry(
+    id: id ?? this.id,
+    accountDid: accountDid ?? this.accountDid,
+    notificationUri: notificationUri ?? this.notificationUri,
+    notificationCid: notificationCid.present
+        ? notificationCid.value
+        : this.notificationCid,
+    reason: reason ?? this.reason,
+    indexedAt: indexedAt ?? this.indexedAt,
+    source: source ?? this.source,
+    deliveredAt: deliveredAt ?? this.deliveredAt,
+    openedAt: openedAt.present ? openedAt.value : this.openedAt,
+    dismissedAt: dismissedAt.present ? dismissedAt.value : this.dismissedAt,
+  );
+  NotificationDeliveryEntry copyWithCompanion(
+    NotificationDeliveriesCompanion data,
+  ) {
+    return NotificationDeliveryEntry(
+      id: data.id.present ? data.id.value : this.id,
+      accountDid: data.accountDid.present
+          ? data.accountDid.value
+          : this.accountDid,
+      notificationUri: data.notificationUri.present
+          ? data.notificationUri.value
+          : this.notificationUri,
+      notificationCid: data.notificationCid.present
+          ? data.notificationCid.value
+          : this.notificationCid,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      indexedAt: data.indexedAt.present ? data.indexedAt.value : this.indexedAt,
+      source: data.source.present ? data.source.value : this.source,
+      deliveredAt: data.deliveredAt.present
+          ? data.deliveredAt.value
+          : this.deliveredAt,
+      openedAt: data.openedAt.present ? data.openedAt.value : this.openedAt,
+      dismissedAt: data.dismissedAt.present
+          ? data.dismissedAt.value
+          : this.dismissedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotificationDeliveryEntry(')
+          ..write('id: $id, ')
+          ..write('accountDid: $accountDid, ')
+          ..write('notificationUri: $notificationUri, ')
+          ..write('notificationCid: $notificationCid, ')
+          ..write('reason: $reason, ')
+          ..write('indexedAt: $indexedAt, ')
+          ..write('source: $source, ')
+          ..write('deliveredAt: $deliveredAt, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('dismissedAt: $dismissedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    accountDid,
+    notificationUri,
+    notificationCid,
+    reason,
+    indexedAt,
+    source,
+    deliveredAt,
+    openedAt,
+    dismissedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NotificationDeliveryEntry &&
+          other.id == this.id &&
+          other.accountDid == this.accountDid &&
+          other.notificationUri == this.notificationUri &&
+          other.notificationCid == this.notificationCid &&
+          other.reason == this.reason &&
+          other.indexedAt == this.indexedAt &&
+          other.source == this.source &&
+          other.deliveredAt == this.deliveredAt &&
+          other.openedAt == this.openedAt &&
+          other.dismissedAt == this.dismissedAt);
+}
+
+class NotificationDeliveriesCompanion
+    extends UpdateCompanion<NotificationDeliveryEntry> {
+  final Value<int> id;
+  final Value<String> accountDid;
+  final Value<String> notificationUri;
+  final Value<String?> notificationCid;
+  final Value<String> reason;
+  final Value<DateTime> indexedAt;
+  final Value<String> source;
+  final Value<DateTime> deliveredAt;
+  final Value<DateTime?> openedAt;
+  final Value<DateTime?> dismissedAt;
+  const NotificationDeliveriesCompanion({
+    this.id = const Value.absent(),
+    this.accountDid = const Value.absent(),
+    this.notificationUri = const Value.absent(),
+    this.notificationCid = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.indexedAt = const Value.absent(),
+    this.source = const Value.absent(),
+    this.deliveredAt = const Value.absent(),
+    this.openedAt = const Value.absent(),
+    this.dismissedAt = const Value.absent(),
+  });
+  NotificationDeliveriesCompanion.insert({
+    this.id = const Value.absent(),
+    required String accountDid,
+    required String notificationUri,
+    this.notificationCid = const Value.absent(),
+    required String reason,
+    required DateTime indexedAt,
+    required String source,
+    this.deliveredAt = const Value.absent(),
+    this.openedAt = const Value.absent(),
+    this.dismissedAt = const Value.absent(),
+  }) : accountDid = Value(accountDid),
+       notificationUri = Value(notificationUri),
+       reason = Value(reason),
+       indexedAt = Value(indexedAt),
+       source = Value(source);
+  static Insertable<NotificationDeliveryEntry> custom({
+    Expression<int>? id,
+    Expression<String>? accountDid,
+    Expression<String>? notificationUri,
+    Expression<String>? notificationCid,
+    Expression<String>? reason,
+    Expression<DateTime>? indexedAt,
+    Expression<String>? source,
+    Expression<DateTime>? deliveredAt,
+    Expression<DateTime>? openedAt,
+    Expression<DateTime>? dismissedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (accountDid != null) 'account_did': accountDid,
+      if (notificationUri != null) 'notification_uri': notificationUri,
+      if (notificationCid != null) 'notification_cid': notificationCid,
+      if (reason != null) 'reason': reason,
+      if (indexedAt != null) 'indexed_at': indexedAt,
+      if (source != null) 'source': source,
+      if (deliveredAt != null) 'delivered_at': deliveredAt,
+      if (openedAt != null) 'opened_at': openedAt,
+      if (dismissedAt != null) 'dismissed_at': dismissedAt,
+    });
+  }
+
+  NotificationDeliveriesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? accountDid,
+    Value<String>? notificationUri,
+    Value<String?>? notificationCid,
+    Value<String>? reason,
+    Value<DateTime>? indexedAt,
+    Value<String>? source,
+    Value<DateTime>? deliveredAt,
+    Value<DateTime?>? openedAt,
+    Value<DateTime?>? dismissedAt,
+  }) {
+    return NotificationDeliveriesCompanion(
+      id: id ?? this.id,
+      accountDid: accountDid ?? this.accountDid,
+      notificationUri: notificationUri ?? this.notificationUri,
+      notificationCid: notificationCid ?? this.notificationCid,
+      reason: reason ?? this.reason,
+      indexedAt: indexedAt ?? this.indexedAt,
+      source: source ?? this.source,
+      deliveredAt: deliveredAt ?? this.deliveredAt,
+      openedAt: openedAt ?? this.openedAt,
+      dismissedAt: dismissedAt ?? this.dismissedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (accountDid.present) {
+      map['account_did'] = Variable<String>(accountDid.value);
+    }
+    if (notificationUri.present) {
+      map['notification_uri'] = Variable<String>(notificationUri.value);
+    }
+    if (notificationCid.present) {
+      map['notification_cid'] = Variable<String>(notificationCid.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (indexedAt.present) {
+      map['indexed_at'] = Variable<DateTime>(indexedAt.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (deliveredAt.present) {
+      map['delivered_at'] = Variable<DateTime>(deliveredAt.value);
+    }
+    if (openedAt.present) {
+      map['opened_at'] = Variable<DateTime>(openedAt.value);
+    }
+    if (dismissedAt.present) {
+      map['dismissed_at'] = Variable<DateTime>(dismissedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotificationDeliveriesCompanion(')
+          ..write('id: $id, ')
+          ..write('accountDid: $accountDid, ')
+          ..write('notificationUri: $notificationUri, ')
+          ..write('notificationCid: $notificationCid, ')
+          ..write('reason: $reason, ')
+          ..write('indexedAt: $indexedAt, ')
+          ..write('source: $source, ')
+          ..write('deliveredAt: $deliveredAt, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('dismissedAt: $dismissedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $LikedPostsTable extends LikedPosts
     with TableInfo<$LikedPostsTable, LikedPostEntry> {
   @override
@@ -5384,6 +6010,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DraftsTable drafts = $DraftsTable(this);
   late final $SavedPostsTable savedPosts = $SavedPostsTable(this);
   late final $LabelerCacheTable labelerCache = $LabelerCacheTable(this);
+  late final $NotificationDeliveriesTable notificationDeliveries =
+      $NotificationDeliveriesTable(this);
   late final $LikedPostsTable likedPosts = $LikedPostsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -5402,6 +6030,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     drafts,
     savedPosts,
     labelerCache,
+    notificationDeliveries,
     likedPosts,
   ];
 }
@@ -8096,6 +8725,324 @@ typedef $$LabelerCacheTableProcessedTableManager =
       LabelerCacheEntry,
       PrefetchHooks Function()
     >;
+typedef $$NotificationDeliveriesTableCreateCompanionBuilder =
+    NotificationDeliveriesCompanion Function({
+      Value<int> id,
+      required String accountDid,
+      required String notificationUri,
+      Value<String?> notificationCid,
+      required String reason,
+      required DateTime indexedAt,
+      required String source,
+      Value<DateTime> deliveredAt,
+      Value<DateTime?> openedAt,
+      Value<DateTime?> dismissedAt,
+    });
+typedef $$NotificationDeliveriesTableUpdateCompanionBuilder =
+    NotificationDeliveriesCompanion Function({
+      Value<int> id,
+      Value<String> accountDid,
+      Value<String> notificationUri,
+      Value<String?> notificationCid,
+      Value<String> reason,
+      Value<DateTime> indexedAt,
+      Value<String> source,
+      Value<DateTime> deliveredAt,
+      Value<DateTime?> openedAt,
+      Value<DateTime?> dismissedAt,
+    });
+
+class $$NotificationDeliveriesTableFilterComposer
+    extends Composer<_$AppDatabase, $NotificationDeliveriesTable> {
+  $$NotificationDeliveriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notificationUri => $composableBuilder(
+    column: $table.notificationUri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notificationCid => $composableBuilder(
+    column: $table.notificationCid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get indexedAt => $composableBuilder(
+    column: $table.indexedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deliveredAt => $composableBuilder(
+    column: $table.deliveredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dismissedAt => $composableBuilder(
+    column: $table.dismissedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$NotificationDeliveriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $NotificationDeliveriesTable> {
+  $$NotificationDeliveriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notificationUri => $composableBuilder(
+    column: $table.notificationUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notificationCid => $composableBuilder(
+    column: $table.notificationCid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get indexedAt => $composableBuilder(
+    column: $table.indexedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deliveredAt => $composableBuilder(
+    column: $table.deliveredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dismissedAt => $composableBuilder(
+    column: $table.dismissedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$NotificationDeliveriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NotificationDeliveriesTable> {
+  $$NotificationDeliveriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get accountDid => $composableBuilder(
+    column: $table.accountDid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notificationUri => $composableBuilder(
+    column: $table.notificationUri,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notificationCid => $composableBuilder(
+    column: $table.notificationCid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get indexedAt =>
+      $composableBuilder(column: $table.indexedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deliveredAt => $composableBuilder(
+    column: $table.deliveredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get openedAt =>
+      $composableBuilder(column: $table.openedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dismissedAt => $composableBuilder(
+    column: $table.dismissedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$NotificationDeliveriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NotificationDeliveriesTable,
+          NotificationDeliveryEntry,
+          $$NotificationDeliveriesTableFilterComposer,
+          $$NotificationDeliveriesTableOrderingComposer,
+          $$NotificationDeliveriesTableAnnotationComposer,
+          $$NotificationDeliveriesTableCreateCompanionBuilder,
+          $$NotificationDeliveriesTableUpdateCompanionBuilder,
+          (
+            NotificationDeliveryEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $NotificationDeliveriesTable,
+              NotificationDeliveryEntry
+            >,
+          ),
+          NotificationDeliveryEntry,
+          PrefetchHooks Function()
+        > {
+  $$NotificationDeliveriesTableTableManager(
+    _$AppDatabase db,
+    $NotificationDeliveriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NotificationDeliveriesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$NotificationDeliveriesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$NotificationDeliveriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> accountDid = const Value.absent(),
+                Value<String> notificationUri = const Value.absent(),
+                Value<String?> notificationCid = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<DateTime> indexedAt = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<DateTime> deliveredAt = const Value.absent(),
+                Value<DateTime?> openedAt = const Value.absent(),
+                Value<DateTime?> dismissedAt = const Value.absent(),
+              }) => NotificationDeliveriesCompanion(
+                id: id,
+                accountDid: accountDid,
+                notificationUri: notificationUri,
+                notificationCid: notificationCid,
+                reason: reason,
+                indexedAt: indexedAt,
+                source: source,
+                deliveredAt: deliveredAt,
+                openedAt: openedAt,
+                dismissedAt: dismissedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String accountDid,
+                required String notificationUri,
+                Value<String?> notificationCid = const Value.absent(),
+                required String reason,
+                required DateTime indexedAt,
+                required String source,
+                Value<DateTime> deliveredAt = const Value.absent(),
+                Value<DateTime?> openedAt = const Value.absent(),
+                Value<DateTime?> dismissedAt = const Value.absent(),
+              }) => NotificationDeliveriesCompanion.insert(
+                id: id,
+                accountDid: accountDid,
+                notificationUri: notificationUri,
+                notificationCid: notificationCid,
+                reason: reason,
+                indexedAt: indexedAt,
+                source: source,
+                deliveredAt: deliveredAt,
+                openedAt: openedAt,
+                dismissedAt: dismissedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$NotificationDeliveriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NotificationDeliveriesTable,
+      NotificationDeliveryEntry,
+      $$NotificationDeliveriesTableFilterComposer,
+      $$NotificationDeliveriesTableOrderingComposer,
+      $$NotificationDeliveriesTableAnnotationComposer,
+      $$NotificationDeliveriesTableCreateCompanionBuilder,
+      $$NotificationDeliveriesTableUpdateCompanionBuilder,
+      (
+        NotificationDeliveryEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $NotificationDeliveriesTable,
+          NotificationDeliveryEntry
+        >,
+      ),
+      NotificationDeliveryEntry,
+      PrefetchHooks Function()
+    >;
 typedef $$LikedPostsTableCreateCompanionBuilder =
     LikedPostsCompanion Function({
       Value<int> id,
@@ -8320,6 +9267,11 @@ class $AppDatabaseManager {
       $$SavedPostsTableTableManager(_db, _db.savedPosts);
   $$LabelerCacheTableTableManager get labelerCache =>
       $$LabelerCacheTableTableManager(_db, _db.labelerCache);
+  $$NotificationDeliveriesTableTableManager get notificationDeliveries =>
+      $$NotificationDeliveriesTableTableManager(
+        _db,
+        _db.notificationDeliveries,
+      );
   $$LikedPostsTableTableManager get likedPosts =>
       $$LikedPostsTableTableManager(_db, _db.likedPosts);
 }

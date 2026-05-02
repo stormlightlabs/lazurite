@@ -44,6 +44,7 @@ import 'package:lazurite/features/moderation/presentation/screens/moderation_set
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
+import 'package:lazurite/features/notifications/domain/notification_domain_service.dart';
 import 'package:lazurite/features/profile/cubit/follow_audit_cubit.dart';
 import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
 import 'package:lazurite/features/profile/data/follow_audit_repository.dart';
@@ -329,7 +330,10 @@ class AppRouter {
             providers: [
               if (existingUnreadCubit == null)
                 BlocProvider(
-                  create: (_) => UnreadCountCubit(notificationRepository: context.read<NotificationRepository>()),
+                  create: (_) => UnreadCountCubit(
+                    notificationDomainService: _readNotificationDomainService(context),
+                    notificationRepository: context.read<NotificationRepository>(),
+                  ),
                 ),
             ],
             child: AppShell(navigationShell: navigationShell, branchNavigatorKeys: _branchNavigatorKeys),
@@ -524,9 +528,20 @@ class AppRouter {
     }
 
     return BlocProvider(
-      create: (_) => NotificationBloc(notificationRepository: context.read<NotificationRepository>()),
+      create: (_) => NotificationBloc(
+        notificationDomainService: _readNotificationDomainService(context),
+        notificationRepository: context.read<NotificationRepository>(),
+      ),
       child: child,
     );
+  }
+
+  NotificationDomainService? _readNotificationDomainService(BuildContext context) {
+    try {
+      return context.read<NotificationDomainService>();
+    } catch (_) {
+      return null;
+    }
   }
 }
 

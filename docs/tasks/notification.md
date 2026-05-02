@@ -5,18 +5,18 @@ updated: 2026-04-29
 
 ## M1 - Foundation Hardening (Polling Baseline)
 
-- [ ] Introduce `NotificationDomainService` orchestration layer
-- [ ] Add Drift `notification_deliveries` table with migration
-- [ ] Route existing polling paths through orchestration layer
-- [ ] Add unit tests for dedupe and state persistence
+- [x] Introduce `NotificationDomainService` orchestration layer
+- [x] Add Drift `notification_deliveries` table with migration
+- [x] Route existing polling paths through orchestration layer
+- [x] Add unit tests for dedupe and state persistence
 
 ## M2 - Local Notifications from Reconcile
 
-- [ ] Add local notification adapter abstraction
-- [ ] Android channels by reason family
-- [ ] iOS category + payload deep-link mapping
-- [ ] Show local notifications for newly discovered unseen items
-- [ ] Add widget/integration tests for tap -> route behavior
+- [x] Add local notification adapter abstraction
+- [x] Android channels by reason family
+- [x] iOS category + payload deep-link mapping
+- [x] Show local notifications for newly discovered unseen items
+- [x] Add widget/integration tests for tap -> route behavior
 
 ## M3 - Push Registration Lifecycle
 

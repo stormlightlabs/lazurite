@@ -151,6 +151,23 @@ class LabelerCache extends Table {
   Set<Column> get primaryKey => {labelerDid};
 }
 
+@DataClassName('NotificationDeliveryEntry')
+class NotificationDeliveries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get accountDid => text()();
+  TextColumn get notificationUri => text()();
+  TextColumn get notificationCid => text().nullable()();
+  TextColumn get reason => text()();
+  DateTimeColumn get indexedAt => dateTime()();
+  TextColumn get source => text()();
+  DateTimeColumn get deliveredAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get openedAt => dateTime().nullable()();
+  DateTimeColumn get dismissedAt => dateTime().nullable()();
+
+  @override
+  List<String> get customConstraints => ['UNIQUE (account_did, notification_uri)'];
+}
+
 @DataClassName('LikedPostEntry')
 class LikedPosts extends Table {
   IntColumn get id => integer().autoIncrement()();

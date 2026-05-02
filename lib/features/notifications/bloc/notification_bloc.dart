@@ -3,13 +3,21 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
+import 'package:lazurite/features/notifications/domain/notification_domain_service.dart';
 
 part 'notification_event.dart';
 part 'notification_state.dart';
 
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
-  NotificationBloc({required NotificationRepository notificationRepository})
-    : _notificationRepository = notificationRepository,
+  NotificationBloc({
+    NotificationDomainService? notificationDomainService,
+    NotificationRepository? notificationRepository,
+  }) : _notificationDomainService =
+           notificationDomainService ??
+           NotificationDomainService(
+             notificationRepository: notificationRepository ??
+                 (throw ArgumentError('Either notificationDomainService or notificationRepository is required')),
+           ),
       super(const NotificationState.initial()) {
     on<NotificationsRequested>(_onNotificationsRequested);
     on<NotificationsRefreshed>(_onNotificationsRefreshed);
@@ -17,13 +25,13 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     on<NotificationsMarkedRead>(_onNotificationsMarkedRead);
   }
 
-  final NotificationRepository _notificationRepository;
+  final NotificationDomainService _notificationDomainService;
 
   Future<void> _onNotificationsRequested(NotificationsRequested event, Emitter<NotificationState> emit) async {
     emit(const NotificationState.loading());
 
     try {
-      final result = await _notificationRepository.listNotifications(limit: event.limit);
+      final result = await _notificationDomainService.listNotifications(limit: event.limit);
 
       emit(
         NotificationState.loaded(
@@ -45,7 +53,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     emit(state.copyWith(isRefreshing: true));
 
     try {
-      final result = await _notificationRepository.listNotifications(limit: 50);
+      final result = await _notificationDomainService.listNotifications(limit: 50);
 
       emit(
         state.copyWith(
@@ -68,7 +76,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     emit(state.copyWith(isLoadingMore: true));
 
     try {
-      final result = await _notificationRepository.listNotifications(cursor: state.cursor, limit: event.limit);
+      final result = await _notificationDomainService.listNotifications(cursor: state.cursor, limit: event.limit);
 
       emit(
         state.copyWith(
@@ -85,7 +93,14 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
 
   Future<void> _onNotificationsMarkedRead(NotificationsMarkedRead event, Emitter<NotificationState> emit) async {
     try {
-      await _notificationRepository.updateSeen();
+      await _notificationDomainService.markSeen();
+      if (state.status == NotificationStatus.loaded && state.notifications.isNotEmpty) {
+        emit(
+          state.copyWith(
+            notifications: state.notifications.map((notification) => notification.copyWith(isRead: true)).toList(),
+          ),
+        );
+      }
     } catch (_) {
       log.w('Failed to mark notifications as read/seen');
     }
