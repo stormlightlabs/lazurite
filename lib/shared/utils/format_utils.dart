@@ -50,3 +50,11 @@ String formatRelativeTime(
 
   return uppercase ? formatted.toUpperCase() : formatted;
 }
+
+String formatTimestamp(DateTime time) {
+  final month = time.month.toString().padLeft(2, '0');
+  final day = time.day.toString().padLeft(2, '0');
+  final hour = time.hour.toString().padLeft(2, '0');
+  final minute = time.minute.toString().padLeft(2, '0');
+  return '${time.year}-$month-$day $hour:$minute';
+}

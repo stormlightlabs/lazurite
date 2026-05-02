@@ -23,8 +23,8 @@ import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
-import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
 import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
@@ -38,13 +38,13 @@ import 'package:lazurite/features/profile/cubit/suggested_follows_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/profile_action_buttons.dart';
+import 'package:lazurite/features/profile/presentation/widgets/profile_liked_posts_pane.dart';
+import 'package:lazurite/features/profile/presentation/widgets/profile_starter_packs_pane.dart';
 import 'package:lazurite/features/profile/presentation/widgets/suggested_follows_list.dart';
 import 'package:lazurite/features/profile/presentation/widgets/suggested_follows_sheet.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
-import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
-import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/share_helper.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
@@ -371,6 +371,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return profile?.displayName ?? profile?.handle ?? widget.actor ?? authState.tokens?.handle ?? 'Profile';
   }
 
+  void _openProfilePostSearch(BuildContext context, ProfileViewDetailed profile) {
+    final actor = profile.handle.trim().isNotEmpty ? profile.handle.trim() : profile.did;
+    final location = '/profile/${Uri.encodeComponent(actor)}/search-posts';
+    context.push(location);
+  }
+
   Future<void> _refresh() async {
     context.read<ProfileBloc>().add(const ProfileRefreshRequested());
     context.read<FeedBloc>().add(const FeedRefreshRequested());
@@ -549,6 +555,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                     key: const Key('profile_more_button'),
                                     icon: const Icon(Icons.more_vert),
                                     onPressed: () => _showOwnProfileMoreOptions(context, actorScopedProfile),
+                                  ),
+                                if (actorScopedProfile != null)
+                                  IconButton(
+                                    key: const Key('profile_search_posts_button'),
+                                    icon: const Icon(Icons.search),
+                                    tooltip: 'Search this profile\'s posts',
+                                    onPressed: () => _openProfilePostSearch(context, actorScopedProfile),
                                   ),
                                 IconButton(
                                   icon: const Icon(Icons.settings_outlined),
@@ -1339,7 +1352,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       return const SizedBox.shrink();
     }
 
-    return _ProfileLikedPostsPane(actor: actor, profileRepository: profileRepository);
+    return ProfileLikedPostsPane(actor: actor, profileRepository: profileRepository);
   }
 
   Widget _buildStarterPacksTab(BuildContext context, ProfileViewDetailed? profile) {
@@ -1353,7 +1366,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       return const SizedBox.shrink();
     }
 
-    return _ProfileStarterPacksPane(actor: actor, starterPackRepository: starterPackRepository);
+    return ProfileStarterPacksPane(actor: actor, starterPackRepository: starterPackRepository);
   }
 
   Future<void> _launchWebsite(String website) async {
@@ -1475,261 +1488,6 @@ class _SuggestedFollowsTabState extends State<_SuggestedFollowsTab> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         onProfileTap: widget.onProfileTap,
       ),
-    );
-  }
-}
-
-class _ProfileLikedPostsPane extends StatefulWidget {
-  const _ProfileLikedPostsPane({required this.actor, required this.profileRepository});
-
-  final String actor;
-  final ProfileRepository profileRepository;
-
-  @override
-  State<_ProfileLikedPostsPane> createState() => _ProfileLikedPostsPaneState();
-}
-
-class _ProfileLikedPostsPaneState extends State<_ProfileLikedPostsPane> {
-  List<ProfileActorLikeEntry> _entries = const [];
-  String? _cursor;
-  bool _isLoading = true;
-  bool _isLoadingMore = false;
-  bool _hasMore = true;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadInitial();
-  }
-
-  @override
-  void didUpdateWidget(covariant _ProfileLikedPostsPane oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.actor != widget.actor) {
-      _loadInitial();
-    }
-  }
-
-  Future<void> _loadInitial() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-      _entries = const [];
-      _cursor = null;
-      _hasMore = true;
-    });
-
-    try {
-      final page = await widget.profileRepository.getActorLikes(actor: widget.actor, limit: 50);
-      if (!mounted) return;
-      setState(() {
-        _entries = page.entries;
-        _cursor = page.cursor;
-        _hasMore = page.cursor != null;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = 'Failed to load liked posts: $e';
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _refresh() async {
-    await _loadInitial();
-  }
-
-  Future<void> _loadMore() async {
-    if (_isLoadingMore || !_hasMore || _cursor == null) {
-      return;
-    }
-    setState(() => _isLoadingMore = true);
-
-    try {
-      final page = await widget.profileRepository.getActorLikes(actor: widget.actor, cursor: _cursor, limit: 50);
-      if (!mounted) return;
-      setState(() {
-        _entries = [..._entries, ...page.entries];
-        _cursor = page.cursor;
-        _hasMore = page.cursor != null;
-        _isLoadingMore = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _isLoadingMore = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_error!),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: _loadInitial, child: const Text('Retry')),
-          ],
-        ),
-      );
-    }
-
-    if (_entries.isEmpty) {
-      return const Center(child: Text('No liked posts yet'));
-    }
-
-    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
-    return RefreshIndicator(
-      onRefresh: _refresh,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 300) {
-            _loadMore();
-          }
-          return false;
-        },
-        child: ListView.builder(
-          key: const PageStorageKey<String>('profile-liked-posts-list'),
-          itemCount: _entries.length + (_isLoadingMore ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index >= _entries.length) {
-              return const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-            final entry = _entries[index];
-            if (entry.feedViewPost != null) {
-              return PostCardWithActions(
-                feedViewPost: entry.feedViewPost!,
-                accountDid: accountDid,
-                moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
-              );
-            }
-
-            return _UnavailableLikedPostCard(
-              subjectUri: entry.subjectUri ?? '',
-              reason: entry.unavailableReason ?? 'Post unavailable',
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _UnavailableLikedPostCard extends StatelessWidget {
-  const _UnavailableLikedPostCard({required this.subjectUri, required this.reason});
-
-  final String subjectUri;
-  final String reason;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ListTile(
-        leading: const Icon(Icons.hide_source_outlined),
-        title: const Text('Unavailable liked post'),
-        subtitle: Text(reason),
-        trailing: IconButton(
-          icon: const Icon(Icons.open_in_new),
-          onPressed: () => context.push('/post?uri=${Uri.encodeQueryComponent(subjectUri)}'),
-          tooltip: 'Open',
-        ),
-      ),
-    );
-  }
-}
-
-/// Pane that loads and displays starter packs for a given [actor] within the profile screen.
-class _ProfileStarterPacksPane extends StatefulWidget {
-  const _ProfileStarterPacksPane({required this.actor, required this.starterPackRepository});
-
-  final String actor;
-  final StarterPackRepository starterPackRepository;
-
-  @override
-  State<_ProfileStarterPacksPane> createState() => _ProfileStarterPacksPaneState();
-}
-
-class _ProfileStarterPacksPaneState extends State<_ProfileStarterPacksPane> {
-  late final ActorStarterPacksCubit _cubit;
-
-  @override
-  void initState() {
-    super.initState();
-    _cubit = ActorStarterPacksCubit(starterPackRepository: widget.starterPackRepository)..load(actor: widget.actor);
-  }
-
-  @override
-  void didUpdateWidget(_ProfileStarterPacksPane oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.actor != widget.actor) {
-      _cubit.load(actor: widget.actor);
-    }
-  }
-
-  @override
-  void dispose() {
-    _cubit.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<ActorStarterPacksCubit, ActorStarterPacksState>(
-      bloc: _cubit,
-      builder: (context, state) {
-        if (state.status == ActorStarterPacksStatus.loading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (state.status == ActorStarterPacksStatus.error) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(state.errorMessage ?? 'Failed to load starter packs'),
-                const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: () => _cubit.load(actor: widget.actor),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        if (state.starterPacks.isEmpty) {
-          return const Center(child: Text('No starter packs yet'));
-        }
-
-        return RefreshIndicator(
-          onRefresh: _cubit.refresh,
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: state.starterPacks.length,
-            itemBuilder: (context, index) => StarterPackCard(
-              key: ValueKey(state.starterPacks[index].uri),
-              pack: state.starterPacks[index],
-              onTap: () {
-                final component = Uri.encodeComponent(state.starterPacks[index].uri.toString());
-                final uri = '/starter-pack?uri=$component';
-                context.push(uri);
-              },
-            ),
-          ),
-        );
-      },
     );
   }
 }

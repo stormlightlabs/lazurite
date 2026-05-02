@@ -9,6 +9,13 @@ extension SearchTabLabel on SearchTab {
     SearchTab.feeds => 'Feeds',
     SearchTab.starterPacks => 'Starter Packs',
   };
+
+  String get placeholder => switch (this) {
+    SearchTab.posts => 'Search posts',
+    SearchTab.actors => 'Search people',
+    SearchTab.feeds => 'Search feeds',
+    SearchTab.starterPacks => 'Starter pack search unavailable',
+  };
 }
 
 enum SearchSort {
@@ -36,6 +43,7 @@ class SearchState extends Equatable {
     this.query = '',
     this.currentTab = SearchTab.posts,
     this.currentSort = 'top',
+    this.postFilters = const PostSearchFilters(),
     this.posts = const [],
     this.actors = const [],
     this.feeds = const [],
@@ -51,8 +59,11 @@ class SearchState extends Equatable {
 
   const SearchState.initial() : this._(status: SearchStatus.initial);
 
-  const SearchState.loadingPosts({required String query, required String sort})
-    : this._(status: SearchStatus.loading, query: query, currentSort: sort);
+  const SearchState.loadingPosts({
+    required String query,
+    required String sort,
+    PostSearchFilters postFilters = const PostSearchFilters(),
+  }) : this._(status: SearchStatus.loading, query: query, currentSort: sort, postFilters: postFilters);
 
   const SearchState.loadingActors({required String query})
     : this._(status: SearchStatus.loading, query: query, currentTab: SearchTab.actors);
@@ -66,6 +77,7 @@ class SearchState extends Equatable {
   const SearchState.loadedPosts({
     required String query,
     required String sort,
+    PostSearchFilters postFilters = const PostSearchFilters(),
     required List<PostView> posts,
     String? cursor,
     int? hitsTotal,
@@ -73,6 +85,7 @@ class SearchState extends Equatable {
          status: SearchStatus.loaded,
          query: query,
          currentSort: sort,
+         postFilters: postFilters,
          posts: posts,
          cursor: cursor,
          hitsTotal: hitsTotal,
@@ -96,8 +109,20 @@ class SearchState extends Equatable {
          starterPacksCursor: starterPacksCursor,
        );
 
-  const SearchState.error({required String query, required String message, required SearchTab tab, String sort = 'top'})
-    : this._(status: SearchStatus.error, query: query, currentTab: tab, currentSort: sort, errorMessage: message);
+  const SearchState.error({
+    required String query,
+    required String message,
+    required SearchTab tab,
+    String sort = 'top',
+    PostSearchFilters postFilters = const PostSearchFilters(),
+  }) : this._(
+         status: SearchStatus.error,
+         query: query,
+         currentTab: tab,
+         currentSort: sort,
+         postFilters: postFilters,
+         errorMessage: message,
+       );
 
   static const Object _unset = Object();
 
@@ -105,6 +130,7 @@ class SearchState extends Equatable {
   final String query;
   final SearchTab currentTab;
   final String currentSort;
+  final PostSearchFilters postFilters;
   final List<PostView> posts;
   final List<ProfileView> actors;
   final List<GeneratorView> feeds;
@@ -127,6 +153,7 @@ class SearchState extends Equatable {
     String? query,
     SearchTab? currentTab,
     String? currentSort,
+    PostSearchFilters? postFilters,
     List<PostView>? posts,
     List<ProfileView>? actors,
     List<GeneratorView>? feeds,
@@ -143,6 +170,7 @@ class SearchState extends Equatable {
     query: query ?? this.query,
     currentTab: currentTab ?? this.currentTab,
     currentSort: currentSort ?? this.currentSort,
+    postFilters: postFilters ?? this.postFilters,
     posts: posts ?? this.posts,
     actors: actors ?? this.actors,
     feeds: feeds ?? this.feeds,
@@ -162,6 +190,7 @@ class SearchState extends Equatable {
     query,
     currentTab,
     currentSort,
+    postFilters,
     posts,
     actors,
     feeds,

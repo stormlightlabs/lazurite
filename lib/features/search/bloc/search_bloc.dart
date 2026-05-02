@@ -6,10 +6,33 @@ import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/search/data/post_search_filters.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 
 part 'search_state.dart';
+
+class SearchBlocConfig extends Equatable {
+  const SearchBlocConfig.global({this.initialTab = SearchTab.posts, this.initialSort = 'top'})
+    : postsOnly = false,
+      fixedPostAuthor = null,
+      enableHistory = true;
+
+  const SearchBlocConfig.profileScoped({required this.fixedPostAuthor})
+    : postsOnly = true,
+      enableHistory = false,
+      initialTab = SearchTab.posts,
+      initialSort = 'latest';
+
+  final bool postsOnly;
+  final String? fixedPostAuthor;
+  final bool enableHistory;
+  final SearchTab initialTab;
+  final String initialSort;
+
+  @override
+  List<Object?> get props => [postsOnly, fixedPostAuthor, enableHistory, initialTab, initialSort];
+}
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   SearchBloc({
@@ -17,14 +40,25 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     required TypeaheadRepository typeaheadRepository,
     required AppDatabase database,
     required String accountDid,
+    SearchBlocConfig config = const SearchBlocConfig.global(),
   }) : _searchRepository = searchRepository,
        _typeaheadRepository = typeaheadRepository,
        _database = database,
        _accountDid = accountDid,
-       super(const SearchState.initial()) {
+       _config = config,
+       super(
+         const SearchState.initial().copyWith(
+           currentTab: config.initialTab,
+           currentSort: config.initialSort == 'latest' ? 'latest' : 'top',
+           postFilters: config.fixedPostAuthor == null
+               ? const PostSearchFilters()
+               : PostSearchFilters(author: config.fixedPostAuthor),
+         ),
+       ) {
     on<QuerySubmitted>(_onQuerySubmitted);
     on<SearchTabChanged>(_onSearchTabChanged);
     on<SearchSortChanged>(_onSearchSortChanged);
+    on<PostFiltersChanged>(_onPostFiltersChanged);
     on<LoadMoreRequested>(_onLoadMoreRequested);
     on<TypeaheadRequested>(_onTypeaheadRequested);
     on<TypeaheadResultsLoaded>(_onTypeaheadResultsLoaded);
@@ -33,67 +67,73 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     on<HistoryCleared>(_onHistoryCleared);
     on<QueryCleared>(_onQueryCleared);
 
-    add(const HistoryLoaded());
+    if (_config.enableHistory) {
+      add(const HistoryLoaded());
+    }
+
+    if (_shouldAutoLoadProfileScopedPosts) {
+      add(const QuerySubmitted(query: ''));
+    }
   }
 
   final SearchRepository _searchRepository;
   final TypeaheadRepository _typeaheadRepository;
   final AppDatabase _database;
   final String _accountDid;
+  final SearchBlocConfig _config;
   Timer? _debounceTimer;
+
+  bool get _shouldAutoLoadProfileScopedPosts =>
+      _config.postsOnly && (_config.fixedPostAuthor?.trim().isNotEmpty ?? false);
+
+  SearchState _freshInitialState() {
+    return const SearchState.initial().copyWith(
+      currentTab: _config.initialTab,
+      currentSort: _config.initialSort == 'latest' ? 'latest' : 'top',
+      postFilters: _config.fixedPostAuthor == null
+          ? const PostSearchFilters()
+          : PostSearchFilters(author: _config.fixedPostAuthor),
+      searchHistory: _config.enableHistory ? state.searchHistory : const <SearchHistoryEntry>[],
+    );
+  }
 
   Future<void> _onQuerySubmitted(QuerySubmitted event, Emitter<SearchState> emit) async {
     final query = event.query.trim();
-    if (query.isEmpty) {
-      emit(const SearchState.initial());
-      add(const HistoryLoaded());
+    final currentTab = state.currentTab;
+
+    if (currentTab == SearchTab.posts) {
+      await _executePostSearch(query: query, emit: emit);
       return;
     }
 
-    final currentTab = state.currentTab;
+    if (query.isEmpty) {
+      emit(_freshInitialState());
+      if (_config.enableHistory) {
+        add(const HistoryLoaded());
+      }
+      return;
+    }
+
     final currentSort = state.currentSort;
 
-    if (currentTab == SearchTab.posts) {
-      emit(SearchState.loadingPosts(query: query, sort: currentSort));
-
-      try {
-        final result = await _searchRepository.searchPosts(query: query, sort: currentSort, limit: 50);
-        await _database.addSearchHistoryEntry(query: query, type: 'posts', accountDid: _accountDid);
-        final history = await _database.getSearchHistory(_accountDid, limit: 50);
-
-        emit(
-          SearchState.loadedPosts(
-            query: query,
-            sort: currentSort,
-            posts: result.posts,
-            cursor: result.cursor,
-            hitsTotal: result.hitsTotal,
-          ).copyWith(searchHistory: history),
-        );
-      } catch (error) {
-        emit(
-          SearchState.error(
-            query: query,
-            message: 'Failed to search posts: $error',
-            tab: currentTab,
-            sort: currentSort,
-          ),
-        );
-      }
-    } else if (currentTab == SearchTab.actors) {
-      emit(SearchState.loadingActors(query: query));
+    if (currentTab == SearchTab.actors) {
+      emit(SearchState.loadingActors(query: query).copyWith(postFilters: state.postFilters));
 
       try {
         final result = await _searchRepository.searchActors(query: query, limit: 50);
-        await _database.addSearchHistoryEntry(query: query, type: 'actors', accountDid: _accountDid);
-        final history = await _database.getSearchHistory(_accountDid, limit: 50);
+        if (_config.enableHistory) {
+          await _database.addSearchHistoryEntry(query: query, type: 'actors', accountDid: _accountDid);
+        }
+        final history = _config.enableHistory
+            ? await _database.getSearchHistory(_accountDid, limit: 50)
+            : const <SearchHistoryEntry>[];
 
         emit(
           SearchState.loadedActors(
             query: query,
             actors: result.actors,
             cursor: result.cursor,
-          ).copyWith(searchHistory: history),
+          ).copyWith(searchHistory: history, postFilters: state.postFilters),
         );
       } catch (error) {
         emit(
@@ -102,23 +142,31 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
             message: 'Failed to search actors: $error',
             tab: currentTab,
             sort: currentSort,
+            postFilters: state.postFilters,
           ),
         );
       }
-    } else if (currentTab == SearchTab.feeds) {
-      emit(SearchState.loadingFeeds(query: query));
+      return;
+    }
+
+    if (currentTab == SearchTab.feeds) {
+      emit(SearchState.loadingFeeds(query: query).copyWith(postFilters: state.postFilters));
 
       try {
         final result = await _searchRepository.searchFeedGenerators(query: query, limit: 25);
-        await _database.addSearchHistoryEntry(query: query, type: 'feeds', accountDid: _accountDid);
-        final history = await _database.getSearchHistory(_accountDid, limit: 50);
+        if (_config.enableHistory) {
+          await _database.addSearchHistoryEntry(query: query, type: 'feeds', accountDid: _accountDid);
+        }
+        final history = _config.enableHistory
+            ? await _database.getSearchHistory(_accountDid, limit: 50)
+            : const <SearchHistoryEntry>[];
 
         emit(
           SearchState.loadedFeeds(
             query: query,
             feeds: result.feeds,
             cursor: result.cursor,
-          ).copyWith(searchHistory: history),
+          ).copyWith(searchHistory: history, postFilters: state.postFilters),
         );
       } catch (error) {
         emit(
@@ -127,26 +175,119 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
             message: 'Failed to search feeds: $error',
             tab: currentTab,
             sort: currentSort,
+            postFilters: state.postFilters,
           ),
         );
       }
-    } else {
+      return;
+    }
+
+    emit(
+      SearchState.loadedStarterPacks(query: query, starterPacks: const [], starterPacksCursor: null).copyWith(
+        searchHistory: state.searchHistory,
+        typeaheadActors: state.typeaheadActors,
+        postFilters: state.postFilters,
+      ),
+    );
+  }
+
+  Future<void> _executePostSearch({
+    required String query,
+    required Emitter<SearchState> emit,
+    bool loadMore = false,
+  }) async {
+    final currentSort = state.currentSort;
+    final cursor = loadMore ? state.cursor : null;
+
+    try {
+      final request = PostSearchRequest(
+        query: query,
+        sort: currentSort,
+        filters: state.postFilters,
+        cursor: cursor,
+        limit: 50,
+      ).normalized(fixedAuthor: _config.fixedPostAuthor);
+
+      if (loadMore) {
+        if (state.cursor == null || state.isLoadingMore) {
+          return;
+        }
+        emit(state.copyWith(isLoadingMore: true, errorMessage: null));
+      } else {
+        emit(
+          SearchState.loadingPosts(query: query, sort: currentSort, postFilters: request.filters).copyWith(
+            currentTab: SearchTab.posts,
+            searchHistory: state.searchHistory,
+            typeaheadActors: state.typeaheadActors,
+          ),
+        );
+      }
+
+      final result = await _searchRepository.searchPosts(
+        query: request.query,
+        sort: request.sort,
+        filters: request.filters,
+        cursor: request.cursor,
+        limit: request.limit,
+      );
+
+      final posts = loadMore ? [...state.posts, ...result.posts] : result.posts;
+
+      List<SearchHistoryEntry> history = state.searchHistory;
+      if (!loadMore && _config.enableHistory && request.query.isNotEmpty) {
+        await _database.addSearchHistoryEntry(query: request.query, type: 'posts', accountDid: _accountDid);
+        history = await _database.getSearchHistory(_accountDid, limit: 50);
+      }
+
       emit(
-        SearchState.loadedStarterPacks(
+        SearchState.loadedPosts(
+          query: request.query,
+          sort: request.sort,
+          postFilters: request.filters,
+          posts: posts,
+          cursor: result.cursor,
+          hitsTotal: result.hitsTotal,
+        ).copyWith(searchHistory: history, typeaheadActors: state.typeaheadActors, isLoadingMore: false),
+      );
+    } on PostSearchValidationException catch (error) {
+      if (loadMore) {
+        emit(state.copyWith(isLoadingMore: false));
+        return;
+      }
+      emit(
+        SearchState.error(
           query: query,
-          starterPacks: const [],
-          starterPacksCursor: null,
+          message: error.message,
+          tab: SearchTab.posts,
+          sort: currentSort,
+          postFilters: state.postFilters,
+        ).copyWith(searchHistory: state.searchHistory, typeaheadActors: state.typeaheadActors),
+      );
+    } catch (error) {
+      if (loadMore) {
+        emit(state.copyWith(isLoadingMore: false));
+        return;
+      }
+      emit(
+        SearchState.error(
+          query: query,
+          message: 'Failed to search posts: $error',
+          tab: SearchTab.posts,
+          sort: currentSort,
+          postFilters: state.postFilters,
         ).copyWith(searchHistory: state.searchHistory, typeaheadActors: state.typeaheadActors),
       );
     }
   }
 
   Future<void> _onSearchTabChanged(SearchTabChanged event, Emitter<SearchState> emit) async {
-    if (state.currentTab == event.tab) return;
+    if (_config.postsOnly || state.currentTab == event.tab) {
+      return;
+    }
 
     emit(state.copyWith(currentTab: event.tab));
 
-    if (state.query.isNotEmpty) {
+    if (state.query.isNotEmpty || (event.tab == SearchTab.posts && !state.postFilters.isEmpty)) {
       add(QuerySubmitted(query: state.query));
     }
   }
@@ -156,8 +297,29 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
     emit(state.copyWith(currentSort: event.sort));
 
-    if (state.query.isNotEmpty && state.currentTab == SearchTab.posts) {
+    if (state.currentTab == SearchTab.posts && (state.query.isNotEmpty || !state.postFilters.isEmpty)) {
       add(QuerySubmitted(query: state.query));
+    }
+  }
+
+  Future<void> _onPostFiltersChanged(PostFiltersChanged event, Emitter<SearchState> emit) async {
+    try {
+      final resolved = event.filters.normalized(fixedAuthor: _config.fixedPostAuthor);
+      emit(state.copyWith(postFilters: resolved));
+
+      if (state.currentTab == SearchTab.posts && (state.query.isNotEmpty || !resolved.isEmpty)) {
+        add(QuerySubmitted(query: state.query));
+      }
+    } on PostSearchValidationException catch (error) {
+      emit(
+        SearchState.error(
+          query: state.query,
+          message: error.message,
+          tab: SearchTab.posts,
+          sort: state.currentSort,
+          postFilters: state.postFilters,
+        ).copyWith(searchHistory: state.searchHistory, typeaheadActors: state.typeaheadActors),
+      );
     }
   }
 
@@ -184,11 +346,20 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
             query: state.query,
             feeds: [...state.feeds, ...result.feeds],
             cursor: result.cursor,
-          ).copyWith(searchHistory: state.searchHistory, typeaheadActors: state.typeaheadActors),
+          ).copyWith(
+            searchHistory: state.searchHistory,
+            typeaheadActors: state.typeaheadActors,
+            postFilters: state.postFilters,
+          ),
         );
       } catch (error) {
         emit(state.copyWith(isLoadingMore: false));
       }
+      return;
+    }
+
+    if (state.currentTab == SearchTab.posts) {
+      await _executePostSearch(query: state.query, emit: emit, loadMore: true);
       return;
     }
 
@@ -197,20 +368,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     emit(state.copyWith(isLoadingMore: true));
 
     try {
-      if (state.currentTab == SearchTab.posts) {
-        final result = await _searchRepository.searchPosts(
-          query: state.query,
-          sort: state.currentSort,
-          cursor: state.cursor,
-          limit: 50,
-        );
-
-        emit(state.copyWith(posts: [...state.posts, ...result.posts], cursor: result.cursor, isLoadingMore: false));
-      } else {
-        final result = await _searchRepository.searchActors(query: state.query, cursor: state.cursor, limit: 50);
-
-        emit(state.copyWith(actors: [...state.actors, ...result.actors], cursor: result.cursor, isLoadingMore: false));
-      }
+      final result = await _searchRepository.searchActors(query: state.query, cursor: state.cursor, limit: 50);
+      emit(state.copyWith(actors: [...state.actors, ...result.actors], cursor: result.cursor, isLoadingMore: false));
     } catch (error) {
       emit(state.copyWith(isLoadingMore: false));
     }
@@ -248,24 +407,40 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   }
 
   Future<void> _onHistoryLoaded(HistoryLoaded event, Emitter<SearchState> emit) async {
+    if (!_config.enableHistory) {
+      emit(state.copyWith(searchHistory: []));
+      return;
+    }
     final entries = await _database.getSearchHistory(_accountDid, limit: 50);
     emit(state.copyWith(searchHistory: entries));
   }
 
   Future<void> _onHistoryEntryDeleted(HistoryEntryDeleted event, Emitter<SearchState> emit) async {
+    if (!_config.enableHistory) {
+      return;
+    }
     await _database.deleteSearchHistoryEntry(event.id);
     final entries = await _database.getSearchHistory(_accountDid, limit: 50);
     emit(state.copyWith(searchHistory: entries));
   }
 
   Future<void> _onHistoryCleared(HistoryCleared event, Emitter<SearchState> emit) async {
+    if (!_config.enableHistory) {
+      return;
+    }
     await _database.clearSearchHistory(_accountDid);
     emit(state.copyWith(searchHistory: []));
   }
 
   void _onQueryCleared(QueryCleared event, Emitter<SearchState> emit) {
-    emit(const SearchState.initial());
-    add(const HistoryLoaded());
+    emit(_freshInitialState());
+    if (_shouldAutoLoadProfileScopedPosts) {
+      add(const QuerySubmitted(query: ''));
+      return;
+    }
+    if (_config.enableHistory) {
+      add(const HistoryLoaded());
+    }
   }
 
   @override
@@ -307,6 +482,15 @@ class SearchSortChanged extends SearchEvent {
 
   @override
   List<Object?> get props => [sort];
+}
+
+class PostFiltersChanged extends SearchEvent {
+  const PostFiltersChanged({required this.filters});
+
+  final PostSearchFilters filters;
+
+  @override
+  List<Object?> get props => [filters];
 }
 
 class LoadMoreRequested extends SearchEvent {

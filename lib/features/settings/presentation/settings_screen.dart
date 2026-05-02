@@ -19,6 +19,7 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -461,7 +462,7 @@ class SettingsScreen extends StatelessWidget {
                 label: 'Last Health Check',
                 value: state.appViewHealthCheckedAt == null
                     ? 'Never'
-                    : _formatTimestamp(state.appViewHealthCheckedAt!.toLocal()),
+                    : formatTimestamp(state.appViewHealthCheckedAt!.toLocal()),
               ),
               const Divider(height: 1),
               _ConnectionDetailRow(label: 'Last Fallback', value: state.appViewLastFallback ?? 'None'),
@@ -491,14 +492,6 @@ class SettingsScreen extends StatelessWidget {
   String _appViewSubtitle(String providerKey) {
     final provider = AppViewProviders.providerDisplayName(providerKey);
     return '$provider selected. Switching providers performs a soft restart.';
-  }
-
-  String _formatTimestamp(DateTime time) {
-    final month = time.month.toString().padLeft(2, '0');
-    final day = time.day.toString().padLeft(2, '0');
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '${time.year}-$month-$day $hour:$minute';
   }
 
   Future<void> _confirmAndApplyProviderChange(BuildContext context, String selectedProvider) async {

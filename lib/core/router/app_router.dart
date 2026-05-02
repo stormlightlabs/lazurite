@@ -54,6 +54,7 @@ import 'package:lazurite/features/profile/presentation/profile_context_screen.da
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
 import 'package:lazurite/features/search/cubit/topic_cubit.dart';
+import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/search/presentation/hashtag_screen.dart';
@@ -72,6 +73,7 @@ import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dar
 import 'package:lazurite/features/starter_packs/presentation/actor_starter_packs_screen.dart';
 import 'package:lazurite/features/starter_packs/presentation/create_edit_starter_pack_screen.dart';
 import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 
 class AppRouter {
   AppRouter({required this.authBloc, this.navigatorObserver});
@@ -507,6 +509,34 @@ class AppRouter {
                   state,
                   ProfileScreen(actor: Uri.decodeComponent(state.pathParameters['actor'] ?? ''), showBackButton: true),
                 ),
+                routes: [
+                  GoRoute(
+                    path: 'search-posts',
+                    pageBuilder: (context, state) {
+                      final actor = Uri.decodeComponent(state.pathParameters['actor'] ?? '');
+                      return _page(
+                        context,
+                        state,
+                        BlocProvider(
+                          create: (_) => SearchBloc(
+                            searchRepository: context.read<SearchRepository>(),
+                            typeaheadRepository: context.read<TypeaheadRepository>(),
+                            database: context.read<AppDatabase>(),
+                            accountDid: context.read<String>(),
+                            config: SearchBlocConfig.profileScoped(fixedPostAuthor: actor),
+                          ),
+                          child: SearchScreen(
+                            postsOnlyMode: true,
+                            fixedPostAuthor: actor,
+                            showBackButton: true,
+                            title: 'Search @${actor.startsWith('did:') ? actor : actor}',
+                            showJumpToProfileAction: false,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),

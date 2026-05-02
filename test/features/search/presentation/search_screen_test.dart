@@ -10,6 +10,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
+import 'package:lazurite/features/search/data/post_search_filters.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
@@ -30,6 +31,7 @@ class MockFeedPreferencesCubit extends MockCubit<FeedPreferencesState> implement
 void main() {
   setUpAll(() {
     registerFallbackValue(const SavedFeedType.knownValue(data: KnownSavedFeedType.feed));
+    registerFallbackValue(const PostSearchFilters());
   });
 
   group('SearchScreen', () {
@@ -69,6 +71,7 @@ void main() {
         () => mockSearchRepository.searchPosts(
           query: any(named: 'query'),
           sort: any(named: 'sort'),
+          filters: any(named: 'filters'),
           cursor: any(named: 'cursor'),
           limit: any(named: 'limit'),
         ),
@@ -171,8 +174,8 @@ void main() {
       expect(find.text('Posts'), findsOneWidget);
       expect(find.text('People'), findsOneWidget);
       expect(find.text('Feeds'), findsOneWidget);
-      expect(find.text('Top'), findsNothing);
-      expect(find.text('Latest'), findsNothing);
+      expect(find.text('Top'), findsOneWidget);
+      expect(find.text('Latest'), findsOneWidget);
     });
 
     testWidgets('tabs are horizontally scrollable and starter packs label stays single-line', (tester) async {
@@ -249,6 +252,7 @@ void main() {
         () => mockSearchRepository.searchPosts(
           query: any(named: 'query'),
           sort: any(named: 'sort'),
+          filters: any(named: 'filters'),
           cursor: any(named: 'cursor'),
           limit: any(named: 'limit'),
         ),
@@ -309,6 +313,33 @@ void main() {
 
       expect(find.text('Top'), findsOneWidget);
       expect(find.text('Latest'), findsOneWidget);
+    });
+
+    testWidgets('post filters sheet applies filters and triggers filtered search', (tester) async {
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Filters'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.widgetWithText(TextField, 'Domain'), 'example.com');
+      await tester.ensureVisible(find.text('Apply'));
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      final captured = verify(
+        () => mockSearchRepository.searchPosts(
+          query: any(named: 'query'),
+          sort: any(named: 'sort'),
+          filters: captureAny(named: 'filters'),
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).captured;
+
+      expect(captured, isNotEmpty);
+      final PostSearchFilters filters = captured.last as PostSearchFilters;
+      expect(filters.domain, 'example.com');
     });
 
     testWidgets('shows search history when available', (tester) async {

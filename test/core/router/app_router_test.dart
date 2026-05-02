@@ -5,6 +5,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/router/app_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
@@ -17,8 +18,10 @@ import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
+import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
@@ -41,6 +44,12 @@ class MockConvoListBloc extends MockBloc<ConvoListEvent, ConvoListState> impleme
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 
+class MockSearchRepository extends Mock implements SearchRepository {}
+
+class MockTypeaheadRepository extends Mock implements TypeaheadRepository {}
+
+class MockAppDatabase extends Mock implements AppDatabase {}
+
 void main() {
   late MockAuthBloc authBloc;
   late MockFeedPreferencesCubit feedPreferencesCubit;
@@ -52,6 +61,9 @@ void main() {
   late MockUnreadCountCubit unreadCountCubit;
   late MockConvoListBloc convoListBloc;
   late MockNotificationRepository notificationRepository;
+  late MockSearchRepository searchRepository;
+  late MockTypeaheadRepository typeaheadRepository;
+  late MockAppDatabase database;
   late StreamController<AuthState> authController;
   late AuthState currentAuthState;
 
@@ -84,6 +96,9 @@ void main() {
     unreadCountCubit = MockUnreadCountCubit();
     convoListBloc = MockConvoListBloc();
     notificationRepository = MockNotificationRepository();
+    searchRepository = MockSearchRepository();
+    typeaheadRepository = MockTypeaheadRepository();
+    database = MockAppDatabase();
     authController = StreamController<AuthState>.broadcast();
     currentAuthState = const AuthState.authenticated(tokens);
 
@@ -168,7 +183,15 @@ void main() {
     ],
     child: RepositoryProvider<NotificationRepository>(
       create: (_) => notificationRepository,
-      child: MaterialApp.router(routerConfig: AppRouter(authBloc: authBloc).router),
+      child: MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<SearchRepository>.value(value: searchRepository),
+          RepositoryProvider<TypeaheadRepository>.value(value: typeaheadRepository),
+          RepositoryProvider<AppDatabase>.value(value: database),
+          RepositoryProvider<String>.value(value: tokens.did),
+        ],
+        child: MaterialApp.router(routerConfig: AppRouter(authBloc: authBloc).router),
+      ),
     ),
   );
 
@@ -252,6 +275,22 @@ void main() {
     expect(find.text('No feeds pinned'), findsOneWidget);
     final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBar.selectedIndex, 0);
+  });
+
+  testWidgets('profile search action opens profile-scoped post search route', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('PROFILE').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('profile_search_posts_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Search @me.bsky.social'), findsOneWidget);
   });
 
   testWidgets('Android back at non-Home tab root switches to Home tab', (tester) async {

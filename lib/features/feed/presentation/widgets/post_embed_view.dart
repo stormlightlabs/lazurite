@@ -4,7 +4,6 @@ import 'package:bluesky/app_bsky_embed_record.dart';
 import 'package:bluesky/app_bsky_embed_recordwithmedia.dart';
 import 'package:bluesky/app_bsky_embed_video.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +20,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur
 import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
 import 'package:lazurite/shared/presentation/widgets/external_link_preview_card.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
+import 'package:lazurite/shared/utils/parse_utils.dart';
 
 /// Renders the appropriate embed widget for a post embed.
 ///
@@ -204,7 +204,7 @@ class PostEmbedView extends StatelessWidget {
 
     if (record.isEmbedRecordViewRecord) {
       final quoted = record.embedRecordViewRecord!;
-      final quotedRecord = _tryParseRecord(quoted.value);
+      final quotedRecord = tryParseRecord(quoted.value);
       final nestedHeroNamespace = '$heroNamespace/quote:${quoted.uri}';
       final nestedEmbed = _buildQuotedEmbeds(context, quoted.embeds, heroNamespace: '$nestedHeroNamespace/embeds');
 
@@ -393,14 +393,6 @@ class PostEmbedView extends StatelessWidget {
     final uri = Uri.tryParse(url);
     final segment = uri?.pathSegments.isNotEmpty == true ? uri!.pathSegments.last : 'image.jpg';
     return segment.isEmpty ? 'image.jpg' : segment;
-  }
-
-  FeedPostRecord? _tryParseRecord(Map<String, dynamic> record) {
-    try {
-      return FeedPostRecord.fromJson(record);
-    } catch (_) {
-      return null;
-    }
   }
 }
 

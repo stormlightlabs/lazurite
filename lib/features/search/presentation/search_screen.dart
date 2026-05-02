@@ -1,6 +1,5 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
@@ -17,21 +17,36 @@ import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
+import 'package:lazurite/features/search/data/post_search_filters.dart';
+import 'package:lazurite/features/search/presentation/widgets/search_result_states.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
-import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
+import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/shared/utils/parse_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({
+    super.key,
+    this.postsOnlyMode = false,
+    this.fixedPostAuthor,
+    this.showBackButton = false,
+    this.title,
+    this.showJumpToProfileAction = true,
+  });
+
+  final bool postsOnlyMode;
+  final String? fixedPostAuthor;
+  final bool showBackButton;
+  final String? title;
+  final bool showJumpToProfileAction;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -72,8 +87,11 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onSubmit(String query) {
-    if (query.trim().isEmpty) return;
-    if (context.read<SearchBloc>().state.currentTab == SearchTab.starterPacks) {
+    final state = context.read<SearchBloc>().state;
+    if (query.trim().isEmpty && state.currentTab != SearchTab.posts) {
+      return;
+    }
+    if (state.currentTab == SearchTab.starterPacks) {
       _focusNode.unfocus();
       return;
     }
@@ -88,6 +106,9 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onTabChanged(SearchTab tab) {
+    if (widget.postsOnlyMode) {
+      return;
+    }
     context.read<SearchBloc>().add(SearchTabChanged(tab: tab));
     if (tab == SearchTab.starterPacks) {
       _focusNode.unfocus();
@@ -200,28 +221,43 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final shouldShowFab = widget.showJumpToProfileAction && !widget.postsOnlyMode;
     return AppScreenEntrance(
       child: Scaffold(
-        floatingActionButton:
-            FloatingActionButton.extended(
-              onPressed: _openJumpToProfileDialog,
-              icon: const Icon(Icons.person_search),
-              label: const Text('Jump to profile'),
-            ).animateIfAllowed(
-              context,
-              effects: const [
-                FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
-                ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
-              ],
-            ),
+        appBar: widget.postsOnlyMode
+            ? AppBar(
+                title: Text(widget.title ?? 'Search Posts'),
+                leading: widget.showBackButton
+                    ? IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () => context.canPop() ? context.pop() : context.go('/search'),
+                      )
+                    : null,
+              )
+            : null,
+        floatingActionButton: shouldShowFab
+            ? FloatingActionButton.extended(
+                onPressed: _openJumpToProfileDialog,
+                icon: const Icon(Icons.person_search),
+                label: const Text('Jump to profile'),
+              ).animateIfAllowed(
+                context,
+                effects: const [
+                  FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
+                  ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
+                ],
+              )
+            : null,
         body: SafeArea(
           child: BlocBuilder<SearchBloc, SearchState>(
             builder: (context, state) {
               return Column(
                 children: [
                   _buildSearchBar(context, state),
-                  _buildTabs(context, state),
-                  if (state.currentTab == SearchTab.posts && state.hasResults) _buildSortToggle(context, state),
+                  if (!widget.postsOnlyMode) _buildTabs(context, state),
+                  if (state.currentTab == SearchTab.posts || widget.postsOnlyMode) _buildSortToggle(context, state),
+                  if (state.currentTab == SearchTab.posts || widget.postsOnlyMode)
+                    _buildPostFilterChips(context, state),
                   Expanded(child: _buildBody(context, state)),
                 ],
               );
@@ -246,13 +282,17 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       child: Row(
         children: [
-          const AppShellMenuButton(),
+          if (!widget.postsOnlyMode) const AppShellMenuButton() else const SizedBox(width: 0),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: _searchController,
               focusNode: _focusNode,
               enabled: !isSearchDisabled,
+              autocorrect: false,
+              enableSuggestions: false,
+              smartDashesType: SmartDashesType.disabled,
+              smartQuotesType: SmartQuotesType.disabled,
               onSubmitted: _onSubmit,
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
@@ -365,10 +405,12 @@ class _SearchScreenState extends State<SearchScreen> {
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: theme.dividerColor)),
       ),
-      child: Row(
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Text('Sort by', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          const SizedBox(width: 8),
           Container(
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerHighest,
@@ -381,6 +423,11 @@ class _SearchScreenState extends State<SearchScreen> {
                 _buildSortOption(context, SearchSort.latest, state),
               ],
             ),
+          ),
+          OutlinedButton.icon(
+            onPressed: () => _openPostFiltersSheet(state.postFilters),
+            icon: const Icon(Icons.tune, size: 16),
+            label: const Text('Filters'),
           ),
         ],
       ),
@@ -408,12 +455,308 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  Widget _buildPostFilterChips(BuildContext context, SearchState state) {
+    final filters = state.postFilters;
+    final chips = <Widget>[];
+
+    void addChip(String label, {required VoidCallback onDeleted}) {
+      chips.add(
+        InputChip(
+          label: Text(label),
+          onDeleted: onDeleted,
+          deleteIcon: const Icon(Icons.close, size: 16),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      );
+    }
+
+    if (filters.mentions?.isNotEmpty == true) {
+      addChip('Mentions: ${filters.mentions}', onDeleted: () => _updatePostFilters(filters.copyWith(mentions: null)));
+    }
+    if (widget.fixedPostAuthor == null && filters.author?.isNotEmpty == true) {
+      addChip('Author: ${filters.author}', onDeleted: () => _updatePostFilters(filters.copyWith(author: null)));
+    }
+    if (filters.lang?.isNotEmpty == true) {
+      addChip('Lang: ${filters.lang}', onDeleted: () => _updatePostFilters(filters.copyWith(lang: null)));
+    }
+    if (filters.domain?.isNotEmpty == true) {
+      addChip('Domain: ${filters.domain}', onDeleted: () => _updatePostFilters(filters.copyWith(domain: null)));
+    }
+    if (filters.url?.isNotEmpty == true) {
+      addChip('URL: ${filters.url}', onDeleted: () => _updatePostFilters(filters.copyWith(url: null)));
+    }
+    if (filters.since != null) {
+      addChip(
+        'Since: ${formatTimestamp(filters.since!)}',
+        onDeleted: () => _updatePostFilters(filters.copyWith(since: null)),
+      );
+    }
+    if (filters.until != null) {
+      addChip(
+        'Until: ${formatTimestamp(filters.until!)}',
+        onDeleted: () => _updatePostFilters(filters.copyWith(until: null)),
+      );
+    }
+    for (final tag in filters.tags) {
+      addChip('#$tag', onDeleted: () => _removeTag(filters, tag));
+    }
+
+    if (chips.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(spacing: 8, runSpacing: 6, children: chips),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => _updatePostFilters(
+                widget.fixedPostAuthor == null
+                    ? const PostSearchFilters()
+                    : PostSearchFilters(author: widget.fixedPostAuthor),
+              ),
+              child: const Text('Clear all'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _removeTag(PostSearchFilters filters, String tag) {
+    final updatedTags = filters.tags.where((entry) => entry.toLowerCase() != tag.toLowerCase()).toList(growable: false);
+    _updatePostFilters(filters.copyWith(tags: updatedTags));
+  }
+
+  Future<void> _openPostFiltersSheet(PostSearchFilters currentFilters) async {
+    final mentionsController = TextEditingController(text: currentFilters.mentions ?? '');
+    final authorController = TextEditingController(text: currentFilters.author ?? '');
+    final langController = TextEditingController(text: currentFilters.lang ?? '');
+    final domainController = TextEditingController(text: currentFilters.domain ?? '');
+    final urlController = TextEditingController(text: currentFilters.url ?? '');
+    final tagsController = TextEditingController(text: currentFilters.tags.join(', '));
+    DateTime? since = currentFilters.since;
+    DateTime? until = currentFilters.until;
+
+    Future<DateTime?> pickDateTime(DateTime? initial, {required bool isUntil}) async {
+      final now = DateTime.now();
+      final initialDate = initial ?? now;
+      final date = await showDatePicker(
+        context: context,
+        initialDate: initialDate,
+        firstDate: DateTime(2000),
+        lastDate: DateTime(now.year + 5),
+      );
+      if (date == null || !mounted) {
+        return initial;
+      }
+
+      final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(initialDate));
+      if (time == null) {
+        final boundary = DateTime(date.year, date.month, date.day);
+        return (isUntil ? boundary.add(const Duration(days: 1)) : boundary).toUtc();
+      }
+
+      return DateTime(date.year, date.month, date.day, time.hour, time.minute).toUtc();
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Post filters', style: context.textTheme.titleMedium),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: mentionsController,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      smartDashesType: SmartDashesType.disabled,
+                      smartQuotesType: SmartQuotesType.disabled,
+                      decoration: const InputDecoration(labelText: 'Mentions', hintText: 'did:plc:... or handle'),
+                    ),
+                    const SizedBox(height: 10),
+                    if (widget.fixedPostAuthor == null) ...[
+                      TextField(
+                        controller: authorController,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        smartDashesType: SmartDashesType.disabled,
+                        smartQuotesType: SmartQuotesType.disabled,
+                        decoration: const InputDecoration(labelText: 'Author', hintText: 'did:plc:... or handle'),
+                      ),
+                      const SizedBox(height: 10),
+                    ] else ...[
+                      InputDecorator(
+                        decoration: const InputDecoration(labelText: 'Author (fixed)'),
+                        child: Text(widget.fixedPostAuthor!),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    TextField(
+                      controller: langController,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      smartDashesType: SmartDashesType.disabled,
+                      smartQuotesType: SmartQuotesType.disabled,
+                      decoration: const InputDecoration(labelText: 'Language', hintText: 'en'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: domainController,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      smartDashesType: SmartDashesType.disabled,
+                      smartQuotesType: SmartQuotesType.disabled,
+                      decoration: const InputDecoration(labelText: 'Domain', hintText: 'example.com'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: urlController,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      smartDashesType: SmartDashesType.disabled,
+                      smartQuotesType: SmartQuotesType.disabled,
+                      decoration: const InputDecoration(labelText: 'URL', hintText: 'https://example.com/path'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: tagsController,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      smartDashesType: SmartDashesType.disabled,
+                      smartQuotesType: SmartQuotesType.disabled,
+                      decoration: const InputDecoration(labelText: 'Tags', hintText: '#dart, flutter'),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              FocusScope.of(sheetContext).unfocus();
+                              final selected = await pickDateTime(since, isUntil: false);
+                              if (selected == null) {
+                                return;
+                              }
+                              setState(() => since = selected);
+                            },
+                            icon: const Icon(Icons.calendar_today, size: 16),
+                            label: Text(since == null ? 'Since' : formatTimestamp(since!)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              FocusScope.of(sheetContext).unfocus();
+                              final selected = await pickDateTime(until, isUntil: true);
+                              if (selected == null) {
+                                return;
+                              }
+                              setState(() => until = selected);
+                            },
+                            icon: const Icon(Icons.calendar_today, size: 16),
+                            label: Text(until == null ? 'Until' : formatTimestamp(until!)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        TextButton(onPressed: () => setState(() => since = null), child: const Text('Clear since')),
+                        TextButton(onPressed: () => setState(() => until = null), child: const Text('Clear until')),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(onPressed: () => Navigator.of(sheetContext).pop(), child: const Text('Cancel')),
+                        TextButton(
+                          onPressed: () {
+                            FocusScope.of(sheetContext).unfocus();
+                            _updatePostFilters(
+                              widget.fixedPostAuthor == null
+                                  ? const PostSearchFilters()
+                                  : PostSearchFilters(author: widget.fixedPostAuthor),
+                            );
+                            Navigator.of(sheetContext).pop();
+                          },
+                          child: const Text('Clear all'),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton(
+                          onPressed: () {
+                            FocusScope.of(sheetContext).unfocus();
+                            final tags = tagsController.text
+                                .split(',')
+                                .map((value) => value.trim())
+                                .where((value) => value.isNotEmpty)
+                                .toList(growable: false);
+                            final nextFilters = PostSearchFilters(
+                              mentions: mentionsController.text,
+                              author: widget.fixedPostAuthor ?? authorController.text,
+                              lang: langController.text,
+                              domain: domainController.text,
+                              url: urlController.text,
+                              tags: tags,
+                              since: since,
+                              until: until,
+                            );
+                            _updatePostFilters(nextFilters);
+                            Navigator.of(sheetContext).pop();
+                          },
+                          child: const Text('Apply'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _updatePostFilters(PostSearchFilters filters) {
+    try {
+      context.read<SearchBloc>().add(PostFiltersChanged(filters: filters));
+    } on PostSearchValidationException catch (error) {
+      showAppSnackBar(context, error.message);
+    }
+  }
+
   Widget _buildBody(BuildContext context, SearchState state) {
     if (state.currentTab == SearchTab.starterPacks) {
       return _buildStarterPacksUnavailableState(context);
     }
 
-    if (state.query.isEmpty) {
+    if (state.query.isEmpty && (state.currentTab != SearchTab.posts || state.postFilters.isEmpty)) {
       return _buildSearchHistory(context, state);
     }
 
@@ -457,7 +800,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildSearchHistory(BuildContext context, SearchState state) {
     final history = state.searchHistory;
     if (history.isEmpty) {
-      return _SearchEmptyState(tab: state.currentTab);
+      return SearchEmptyState(tab: state.currentTab);
     }
 
     return Column(
@@ -496,7 +839,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: ListTile(
                   leading: const Icon(Icons.history),
                   title: Text(entry.query),
-                  subtitle: Text('$label · ${_formatHistoryTime(entry.searchedAt)}'),
+                  subtitle: Text(
+                    '$label · ${formatRelativeTime(entry.searchedAt, nowLabel: 'Just now', includeAgo: true)}',
+                  ),
                   onTap: () => _onHistoryTap(entry.query, entry.type),
                 ),
               );
@@ -510,7 +855,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildPostResults(BuildContext context, SearchState state) {
     final posts = state.posts;
     if (posts.isEmpty) {
-      return _SearchNoResultsState(tab: SearchTab.posts, query: state.query);
+      return SearchNoResultsState(tab: SearchTab.posts, query: state.query);
     }
 
     return ListView.builder(
@@ -536,7 +881,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildActorResults(BuildContext context, SearchState state) {
     final actors = state.actors;
     if (actors.isEmpty) {
-      return _SearchNoResultsState(tab: SearchTab.actors, query: state.query);
+      return SearchNoResultsState(tab: SearchTab.actors, query: state.query);
     }
 
     return ListView.builder(
@@ -562,7 +907,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildFeedResults(BuildContext context, SearchState state) {
     final feeds = state.feeds;
     if (feeds.isEmpty) {
-      return _SearchNoResultsState(tab: SearchTab.feeds, query: state.query);
+      return SearchNoResultsState(tab: SearchTab.feeds, query: state.query);
     }
 
     return ListView.builder(
@@ -599,7 +944,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildStarterPackResults(BuildContext context, SearchState state) {
     final packs = state.starterPacks;
     if (packs.isEmpty) {
-      return _SearchNoResultsState(tab: SearchTab.starterPacks, query: state.query);
+      return SearchNoResultsState(tab: SearchTab.starterPacks, query: state.query);
     }
 
     return ListView.builder(
@@ -630,48 +975,36 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  String _formatHistoryTime(DateTime time) {
-    return formatRelativeTime(time, nowLabel: 'Just now', includeAgo: true);
-  }
-
   String _searchPlaceholderForTab(SearchTab tab) => switch (tab) {
-    SearchTab.posts => 'Search posts',
-    SearchTab.actors => 'Search people',
-    SearchTab.feeds => 'Search feeds',
-    SearchTab.starterPacks => 'Starter pack search unavailable',
+    SearchTab.posts => widget.postsOnlyMode ? 'Search this profile\'s posts' : 'Search posts',
+    _ => tab.placeholder,
   };
 
-  Widget _buildStarterPacksUnavailableState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.info_outline, size: 52, color: context.colorScheme.outline),
-            const SizedBox(height: 16),
-            Text(
-              'Starter Pack Search Is Unavailable',
-              style: context.textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '(Starter Pack Search is not yet implemented in the BlueSky API)',
-              style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 14),
-            TextButton.icon(
-              onPressed: _openStarterPackIssue,
-              icon: const Icon(Icons.open_in_new),
-              label: const Text('Track API progress'),
-            ),
-          ],
-        ),
+  Widget _buildStarterPacksUnavailableState(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.info_outline, size: 52, color: context.colorScheme.outline),
+          const SizedBox(height: 16),
+          Text('Starter Pack Search Is Unavailable', style: context.textTheme.titleMedium, textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          Text(
+            '(Starter Pack Search is not yet implemented in the BlueSky API)',
+            style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 14),
+          TextButton.icon(
+            onPressed: _openStarterPackIssue,
+            icon: const Icon(Icons.open_in_new),
+            label: const Text('Track API progress'),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 
   Future<void> _openStarterPackIssue() async {
     final launched = await launchUrl(_starterPackSearchIssueUri, mode: LaunchMode.externalApplication);
@@ -688,7 +1021,7 @@ class _PostViewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final record = _tryParseRecord(post.record);
+    final record = tryParseRecord(post.record);
     final createdAt = record?.createdAt ?? post.indexedAt;
     final moderationService = maybeModerationService(context);
     final postUi =
@@ -727,7 +1060,7 @@ class _PostViewCard extends StatelessWidget {
         moderationService?.profileBasicUi(author, bsky_moderation.ModerationBehaviorContext.avatar) ??
         const bsky_moderation.ModerationUI();
     return InkWell(
-      onTap: () => _navigateToProfile(context, author.did),
+      onTap: () => navigateToProfile(context, author.did),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -794,18 +1127,6 @@ class _PostViewCard extends StatelessWidget {
       ),
     );
   }
-
-  void _navigateToProfile(BuildContext context, String did) {
-    navigateToProfile(context, did);
-  }
-
-  FeedPostRecord? _tryParseRecord(Map<String, dynamic> record) {
-    try {
-      return FeedPostRecord.fromJson(record);
-    } catch (_) {
-      return null;
-    }
-  }
 }
 
 class _ActorResultTile extends StatelessWidget {
@@ -824,7 +1145,7 @@ class _ActorResultTile extends StatelessWidget {
         const bsky_moderation.ModerationUI();
 
     return InkWell(
-      onTap: () => _navigateToProfile(context, actor.did),
+      onTap: () => navigateToProfile(context, actor.did),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -876,10 +1197,6 @@ class _ActorResultTile extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _navigateToProfile(BuildContext context, String did) {
-    navigateToProfile(context, did);
   }
 }
 
@@ -1027,97 +1344,5 @@ class _FollowButtonState extends State<_FollowButton> {
 
   void _toggleFollow() {
     setState(() => _isFollowing = !_isFollowing);
-  }
-}
-
-class _SearchEmptyState extends StatelessWidget {
-  const _SearchEmptyState({required this.tab});
-
-  final SearchTab tab;
-
-  @override
-  Widget build(BuildContext context) {
-    final (title, message) = switch (tab) {
-      SearchTab.posts => (
-        'Search posts',
-        'Find conversations and keywords across posts.\nUse Jump to profile to quickly open a user.',
-      ),
-      SearchTab.actors => (
-        'Search people',
-        'Look up accounts by handle or name.\nUse Jump to profile when you know the exact handle.',
-      ),
-      SearchTab.feeds => ('Search feeds', 'Discover custom feeds by topic, creator, or keyword.'),
-      SearchTab.starterPacks => ('Search starter packs', 'Find curated starter packs to discover accounts and feeds.'),
-    };
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.search, size: 64, color: context.colorScheme.outline),
-            const SizedBox(height: 16),
-            Text(title, style: context.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.outline),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SearchNoResultsState extends StatelessWidget {
-  const _SearchNoResultsState({required this.tab, required this.query});
-
-  final SearchTab tab;
-  final String query;
-
-  @override
-  Widget build(BuildContext context) {
-    final safeQuery = query.trim();
-    final (title, message) = switch (tab) {
-      SearchTab.posts => (
-        'No posts found',
-        'Try broader keywords or a shorter phrase${safeQuery.isEmpty ? '' : ' for "$safeQuery"'}.',
-      ),
-      SearchTab.actors => (
-        'No people found',
-        'Try a handle, display name, or fewer terms${safeQuery.isEmpty ? '' : ' for "$safeQuery"'}.',
-      ),
-      SearchTab.feeds => (
-        'No feeds found',
-        'Try searching by topic or feed creator${safeQuery.isEmpty ? '' : ' for "$safeQuery"'}.',
-      ),
-      SearchTab.starterPacks => (
-        'No starter packs found',
-        'Try another topic or broader keyword${safeQuery.isEmpty ? '' : ' for "$safeQuery"'}.',
-      ),
-    };
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.search_off_rounded, size: 44, color: context.colorScheme.outline),
-            const SizedBox(height: 12),
-            Text(title, style: context.textTheme.bodyLarge),
-            const SizedBox(height: 6),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

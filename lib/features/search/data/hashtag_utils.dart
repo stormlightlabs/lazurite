@@ -2,6 +2,7 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/app_bsky_richtext_facet.dart';
 import 'package:bluesky_text/bluesky_text.dart';
+import 'package:lazurite/shared/utils/parse_utils.dart';
 
 String normalizeHashtag(String input) {
   final trimmed = input.trim();
@@ -24,7 +25,7 @@ List<String> extractRelatedHashtags(List<PostView> posts, {required String curre
   final canonical = <String, String>{};
 
   for (final post in posts) {
-    final record = _tryParseRecord(post.record);
+    final record = tryParseRecord(post.record);
     if (record == null) {
       continue;
     }
@@ -53,14 +54,6 @@ List<String> extractRelatedHashtags(List<PostView> posts, {required String curre
     });
 
   return entries.take(limit).map((entry) => canonical[entry.key] ?? entry.key).toList(growable: false);
-}
-
-FeedPostRecord? _tryParseRecord(Map<String, dynamic> rawRecord) {
-  try {
-    return FeedPostRecord.fromJson(rawRecord);
-  } catch (_) {
-    return null;
-  }
 }
 
 Iterable<String> _extractTags(FeedPostRecord record) sync* {

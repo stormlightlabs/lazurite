@@ -1,6 +1,5 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -14,6 +13,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderation_bad
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
+import 'package:lazurite/shared/utils/parse_utils.dart';
 
 class PostCard extends StatelessWidget {
   const PostCard({
@@ -39,7 +39,7 @@ class PostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final post = feedViewPost.post;
-    final record = _tryParseRecord(post.record);
+    final record = tryParseRecord(post.record);
     final colorScheme = context.colorScheme;
     final moderationService = maybeModerationService(context);
     final postUi = moderationService?.postUi(post, moderationContext) ?? const bsky_moderation.ModerationUI();
@@ -144,7 +144,7 @@ class PostCard extends StatelessWidget {
       );
     }
 
-    final parentRecord = _tryParseRecord(parentPost.record);
+    final parentRecord = tryParseRecord(parentPost.record);
     final parentText = parentRecord?.text.trim() ?? '';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -162,23 +162,10 @@ class PostCard extends StatelessWidget {
           ),
           if (parentText.isNotEmpty) ...[
             const SizedBox(height: 4),
-            Text(
-              parentText,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: context.textTheme.bodySmall,
-            ),
+            Text(parentText, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.textTheme.bodySmall),
           ],
         ],
       ),
     );
-  }
-
-  FeedPostRecord? _tryParseRecord(Map<String, dynamic> record) {
-    try {
-      return FeedPostRecord.fromJson(record);
-    } catch (_) {
-      return null;
-    }
   }
 }

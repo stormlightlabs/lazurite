@@ -6,6 +6,7 @@ import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
+import 'package:lazurite/features/search/data/post_search_filters.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
@@ -62,6 +63,10 @@ void main() {
     indexedAt: DateTime.utc(2026, 1, 1),
   );
 
+  setUpAll(() {
+    registerFallbackValue(const PostSearchFilters());
+  });
+
   setUp(() {
     mockRepository = MockSearchRepository();
     mockTypeaheadRepository = MockTypeaheadRepository();
@@ -79,6 +84,7 @@ void main() {
       () => mockRepository.searchPosts(
         query: any(named: 'query'),
         sort: any(named: 'sort'),
+        filters: any(named: 'filters'),
         cursor: any(named: 'cursor'),
         limit: any(named: 'limit'),
       ),
@@ -117,6 +123,14 @@ void main() {
     typeaheadRepository: mockTypeaheadRepository,
     database: mockDatabase,
     accountDid: 'did:plc:test',
+  );
+
+  SearchBloc buildScopedBloc() => SearchBloc(
+    searchRepository: mockRepository,
+    typeaheadRepository: mockTypeaheadRepository,
+    database: mockDatabase,
+    accountDid: 'did:plc:test',
+    config: const SearchBlocConfig.profileScoped(fixedPostAuthor: 'did:plc:scoped'),
   );
 
   group('SearchTab enum', () {
@@ -326,6 +340,7 @@ void main() {
           () => mockRepository.searchPosts(
             query: 'flutter',
             sort: any(named: 'sort'),
+            filters: any(named: 'filters'),
             cursor: any(named: 'cursor'),
             limit: any(named: 'limit'),
           ),
@@ -458,6 +473,166 @@ void main() {
     );
   });
 
+  group('Post filters behavior', () {
+    blocTest<SearchBloc, SearchState>(
+      'filter change triggers post search with active filters',
+      build: buildBloc,
+      act: (bloc) => bloc.add(const PostFiltersChanged(filters: PostSearchFilters(domain: 'example.com'))),
+      verify: (_) {
+        final captured = verify(
+          () => mockRepository.searchPosts(
+            query: any(named: 'query'),
+            sort: any(named: 'sort'),
+            filters: captureAny(named: 'filters'),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+          ),
+        ).captured;
+        final filters = captured.last as PostSearchFilters;
+        expect(filters.domain, 'example.com');
+      },
+    );
+
+    blocTest<SearchBloc, SearchState>(
+      'invalid since/until emits error state',
+      build: buildBloc,
+      act: (bloc) => bloc.add(
+        PostFiltersChanged(
+          filters: PostSearchFilters(since: DateTime.utc(2026, 1, 2), until: DateTime.utc(2026, 1, 1)),
+        ),
+      ),
+      expect: () => [
+        predicate<SearchState>((s) => s.status == SearchStatus.error && (s.errorMessage?.contains('Since') ?? false)),
+      ],
+    );
+
+    blocTest<SearchBloc, SearchState>(
+      'load more reuses active filters',
+      build: buildBloc,
+      seed: () => SearchState.loadedPosts(
+        query: 'flutter',
+        sort: 'top',
+        postFilters: const PostSearchFilters(domain: 'example.com'),
+        posts: [samplePost],
+        cursor: 'next-page',
+      ),
+      act: (bloc) => bloc.add(const LoadMoreRequested()),
+      verify: (_) {
+        final captured = verify(
+          () => mockRepository.searchPosts(
+            query: 'flutter',
+            sort: 'top',
+            filters: captureAny(named: 'filters'),
+            cursor: 'next-page',
+            limit: 50,
+          ),
+        ).captured;
+        final filters = captured.last as PostSearchFilters;
+        expect(filters.domain, 'example.com');
+      },
+    );
+
+    blocTest<SearchBloc, SearchState>(
+      'profile-scoped mode enforces fixed author',
+      build: buildScopedBloc,
+      act: (bloc) => bloc.add(const PostFiltersChanged(filters: PostSearchFilters(author: 'did:plc:other'))),
+      verify: (_) {
+        final captured = verify(
+          () => mockRepository.searchPosts(
+            query: any(named: 'query'),
+            sort: any(named: 'sort'),
+            filters: captureAny(named: 'filters'),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+          ),
+        ).captured;
+        final filters = captured.last as PostSearchFilters;
+        expect(filters.author, 'did:plc:scoped');
+      },
+    );
+  });
+
+  group('Profile-scoped post search bootstrap', () {
+    blocTest<SearchBloc, SearchState>(
+      'auto-loads profile posts on initialization using latest sort and fixed author',
+      build: buildScopedBloc,
+      wait: const Duration(milliseconds: 10),
+      expect: () => [
+        predicate<SearchState>(
+          (s) =>
+              s.status == SearchStatus.loading &&
+              s.currentTab == SearchTab.posts &&
+              s.currentSort == 'latest' &&
+              s.query.isEmpty,
+        ),
+        predicate<SearchState>(
+          (s) =>
+              s.status == SearchStatus.loaded &&
+              s.currentTab == SearchTab.posts &&
+              s.currentSort == 'latest' &&
+              s.query.isEmpty,
+        ),
+      ],
+      verify: (_) {
+        final captured = verify(
+          () => mockRepository.searchPosts(
+            query: captureAny(named: 'query'),
+            sort: captureAny(named: 'sort'),
+            filters: captureAny(named: 'filters'),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+          ),
+        ).captured;
+        expect(captured[0], '');
+        expect(captured[1], 'latest');
+        final filters = captured[2] as PostSearchFilters;
+        expect(filters.author, 'did:plc:scoped');
+      },
+    );
+
+    blocTest<SearchBloc, SearchState>(
+      'query cleared re-loads profile posts in scoped mode',
+      build: buildScopedBloc,
+      wait: const Duration(milliseconds: 10),
+      skip: 2,
+      act: (bloc) => bloc.add(const QueryCleared()),
+      expect: () => [
+        predicate<SearchState>(
+          (s) =>
+              s.status == SearchStatus.initial &&
+              s.currentTab == SearchTab.posts &&
+              s.currentSort == 'latest' &&
+              s.postFilters.author == 'did:plc:scoped',
+        ),
+        predicate<SearchState>(
+          (s) =>
+              s.status == SearchStatus.loading &&
+              s.currentTab == SearchTab.posts &&
+              s.currentSort == 'latest' &&
+              s.query.isEmpty,
+        ),
+        predicate<SearchState>(
+          (s) =>
+              s.status == SearchStatus.loaded &&
+              s.currentTab == SearchTab.posts &&
+              s.currentSort == 'latest' &&
+              s.query.isEmpty,
+        ),
+      ],
+      verify: (_) {
+        verify(
+          () => mockRepository.searchPosts(
+            query: '',
+            sort: 'latest',
+            filters: any(named: 'filters'),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+          ),
+        ).called(2);
+      },
+    );
+  });
+
   group('Existing tab behavior unaffected', () {
     blocTest<SearchBloc, SearchState>(
       'searches posts when posts tab is active',
@@ -467,6 +642,7 @@ void main() {
           () => mockRepository.searchPosts(
             query: 'hello',
             sort: any(named: 'sort'),
+            filters: any(named: 'filters'),
             cursor: any(named: 'cursor'),
             limit: any(named: 'limit'),
           ),

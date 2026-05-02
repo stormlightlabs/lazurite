@@ -976,4 +976,69 @@ void main() {
       router.dispose();
     });
   });
+
+  group('Profile post search action', () {
+    testWidgets('search icon navigates to profile-scoped post search route', (tester) async {
+      useLargeScreen(tester);
+      const otherProfile = ProfileViewDetailed(
+        did: 'did:plc:other',
+        handle: 'other.bsky.social',
+        displayName: 'Other User',
+      );
+      when(() => profileBloc.state).thenReturn(const ProfileState.loaded(profile: otherProfile));
+      whenListen(
+        profileBloc,
+        const Stream<ProfileState>.empty(),
+        initialState: const ProfileState.loaded(profile: otherProfile),
+      );
+      when(() => feedBloc.state).thenReturn(
+        const FeedState.loaded(actor: 'did:plc:other', posts: [], filter: FeedFilter.postsNoReplies, hasMore: false),
+      );
+      whenListen(
+        feedBloc,
+        const Stream<FeedState>.empty(),
+        initialState: const FeedState.loaded(
+          actor: 'did:plc:other',
+          posts: [],
+          filter: FeedFilter.postsNoReplies,
+          hasMore: false,
+        ),
+      );
+
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => MultiRepositoryProvider(
+              providers: [RepositoryProvider<ProfileActionRepository>.value(value: MockProfileActionRepository())],
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider<AuthBloc>.value(value: authBloc),
+                  BlocProvider<ProfileBloc>.value(value: profileBloc),
+                  BlocProvider<FeedBloc>.value(value: feedBloc),
+                  BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+                  BlocProvider<SettingsCubit>.value(value: settingsCubit),
+                ],
+                child: const ProfileScreen(actor: 'did:plc:other', showBackButton: true),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/profile/:actor/search-posts',
+            builder: (context, state) => Text('search:${state.pathParameters['actor']}'),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('profile_search_posts_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('search:other.bsky.social'), findsOneWidget);
+
+      router.dispose();
+    });
+  });
 }

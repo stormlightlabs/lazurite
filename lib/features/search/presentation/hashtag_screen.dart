@@ -1,6 +1,5 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
@@ -15,12 +15,12 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderation_bad
 import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
+import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
-import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/shared/utils/parse_utils.dart';
 
 class HashtagScreen extends StatefulWidget {
   const HashtagScreen({super.key, required this.tag});
@@ -284,7 +284,7 @@ class _HashtagPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final record = _tryParseRecord(post.record);
+    final record = tryParseRecord(post.record);
     final createdAt = record?.createdAt ?? post.indexedAt;
     final moderationService = maybeModerationService(context);
     final postUi =
@@ -324,7 +324,7 @@ class _HashtagPostCard extends StatelessWidget {
         const bsky_moderation.ModerationUI();
 
     return InkWell(
-      onTap: () => _navigateToProfile(context, author.did),
+      onTap: () => navigateToProfile(context, author.did),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -390,17 +390,5 @@ class _HashtagPostCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _navigateToProfile(BuildContext context, String did) {
-    navigateToProfile(context, did);
-  }
-
-  FeedPostRecord? _tryParseRecord(Map<String, dynamic> record) {
-    try {
-      return FeedPostRecord.fromJson(record);
-    } catch (_) {
-      return null;
-    }
   }
 }

@@ -10,6 +10,7 @@ import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
+import 'package:lazurite/features/search/data/post_search_filters.dart';
 
 class SearchRepository {
   SearchRepository({
@@ -47,18 +48,35 @@ class SearchRepository {
   Future<SearchPostsResult> searchPosts({
     required String query,
     String sort = 'top',
+    PostSearchFilters filters = const PostSearchFilters(),
     String? cursor,
     int limit = 50,
   }) async {
-    final sortValue = sort == 'latest'
+    final normalized = PostSearchRequest(
+      query: query,
+      sort: sort,
+      filters: filters,
+      cursor: cursor,
+      limit: limit,
+    ).normalized();
+
+    final sortValue = normalized.sort == 'latest'
         ? const FeedSearchPostsSort.knownValue(data: KnownFeedSearchPostsSort.latest)
         : const FeedSearchPostsSort.knownValue(data: KnownFeedSearchPostsSort.top);
 
     final response = await _bluesky.feed.searchPosts(
-      q: query,
+      q: normalized.query.isEmpty ? '*' : normalized.query,
       sort: sortValue,
-      cursor: cursor,
-      limit: limit,
+      since: normalized.filters.sinceIso,
+      until: normalized.filters.untilIso,
+      mentions: normalized.filters.mentions,
+      author: normalized.filters.author,
+      lang: normalized.filters.lang,
+      domain: normalized.filters.domain,
+      url: normalized.filters.url,
+      tag: normalized.filters.tags.isEmpty ? null : normalized.filters.tags,
+      cursor: normalized.cursor,
+      limit: normalized.limit,
       $headers: _appViewContext.appBskyHeadersForEndpoint(
         'app.bsky.feed.searchPosts',
         await _moderationService?.headersForRequest(),

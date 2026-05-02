@@ -1,7 +1,6 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_embed_recordwithmedia.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +18,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderation_bad
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
+import 'package:lazurite/shared/utils/parse_utils.dart';
 
 const double _gridEmbedPreviewMaxHeight = 240;
 
@@ -48,7 +48,7 @@ class GridPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final post = feedViewPost.post;
-    final record = _tryParseRecord(post.record);
+    final record = tryParseRecord(post.record);
     final primaryImageUrl = _extractPrimaryImageUrl(post.embed);
     final bodyText = record?.text ?? '';
     final colorScheme = context.colorScheme;
@@ -227,14 +227,6 @@ class GridPostCard extends StatelessWidget {
     return null;
   }
 
-  FeedPostRecord? _tryParseRecord(Map<String, dynamic> record) {
-    try {
-      return FeedPostRecord.fromJson(record);
-    } catch (_) {
-      return null;
-    }
-  }
-
   Widget _buildReplyContext(BuildContext context) {
     final parentPost = feedViewPost.reply?.parent.isPostView == true ? feedViewPost.reply!.parent.postView : null;
     if (parentPost == null) {
@@ -254,7 +246,7 @@ class GridPostCard extends StatelessWidget {
       );
     }
 
-    final parentRecord = _tryParseRecord(parentPost.record);
+    final parentRecord = tryParseRecord(parentPost.record);
     final parentText = parentRecord?.text.trim() ?? '';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
