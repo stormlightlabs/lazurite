@@ -1,5 +1,9 @@
+import 'dart:async';
+
+import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_notification_listnotifications.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/notifications/domain/local_notification_adapter.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_mappers.dart';
@@ -61,6 +65,84 @@ class NotificationDomainService {
 
   Future<void> markSeen() => _notificationRepository.updateSeen();
 
+  Future<NotificationPushProcessingOutcome> onPushPayload(
+    Map<String, String> payload, {
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    final timedResult = await _onPushPayloadInternal(payload).timeout(
+      timeout,
+      onTimeout: () async {
+        await _recordPushDrop('timeout');
+        return NotificationPushProcessingOutcome.droppedTimeout;
+      },
+    );
+
+    if (timedResult == NotificationPushProcessingOutcome.processed) {
+      await _incrementCounter(_pushProcessedCountKey);
+    }
+
+    return timedResult;
+  }
+
+  Future<NotificationPushProcessingOutcome> _onPushPayloadInternal(Map<String, String> payload) async {
+    final parsedPayload = NotificationPushPayload.tryParse(payload);
+    if (parsedPayload == null) {
+      await _recordPushDrop('invalid_payload');
+      return NotificationPushProcessingOutcome.droppedInvalidPayload;
+    }
+
+    final accountDid = _accountDid;
+    if (accountDid != null && parsedPayload.targetDid != accountDid) {
+      await _recordPushDrop('target_mismatch');
+      return NotificationPushProcessingOutcome.droppedTargetMismatch;
+    }
+
+    final canonical = await _notificationRepository.findNotificationByRecordUri(
+      recordUri: parsedPayload.recordUri,
+      senderDid: parsedPayload.senderDid,
+      reason: parsedPayload.reason,
+    );
+    if (canonical == null) {
+      await _recordPushDrop('not_found');
+      return NotificationPushProcessingOutcome.droppedNotFound;
+    }
+
+    if (canonical.isRead) {
+      await _recordPushDrop('already_read');
+      return NotificationPushProcessingOutcome.droppedAlreadyRead;
+    }
+
+    final insertedCount = await persistNotificationDeliveries([canonical], source: NotificationDeliverySource.push);
+    if (insertedCount == 0) {
+      await _recordPushDrop('duplicate');
+      return NotificationPushProcessingOutcome.droppedDuplicate;
+    }
+
+    if (_shouldSuppressLocalNotifications?.call() ?? false) {
+      return NotificationPushProcessingOutcome.processed;
+    }
+
+    final request = NotificationLocalMapper.requestFromNotification(canonical);
+    if (request == null) {
+      await _recordPushDrop('unmappable');
+      return NotificationPushProcessingOutcome.droppedUnmappable;
+    }
+
+    try {
+      await _localNotificationAdapter?.show(request);
+      return NotificationPushProcessingOutcome.processed;
+    } catch (error, stackTrace) {
+      log.w('Failed to display local notification for push payload', error: error, stackTrace: stackTrace);
+      await _recordPushDrop('display_error');
+      return NotificationPushProcessingOutcome.droppedDisplayError;
+    }
+  }
+
+  Future<int> onBackgroundTick({int limit = 50}) async {
+    final result = await listNotifications(limit: limit, source: NotificationDeliverySource.poll);
+    return result.notifications.length;
+  }
+
   Future<int> persistNotificationDeliveries(
     Iterable<Notification> notifications, {
     NotificationDeliverySource source = NotificationDeliverySource.poll,
@@ -98,6 +180,21 @@ class NotificationDomainService {
     }
     return 'unknown';
   }
+
+  Future<void> _recordPushDrop(String reason) async {
+    await _incrementCounter(_pushDroppedCountKey);
+    await _incrementCounter('$_pushDroppedReasonPrefix$reason');
+  }
+
+  Future<void> _incrementCounter(String key) async {
+    final database = _database;
+    if (database == null) {
+      return;
+    }
+
+    final currentValue = int.tryParse(await database.getSetting(key) ?? '') ?? 0;
+    await database.setSetting(key, '${currentValue + 1}');
+  }
 }
 
 enum NotificationDeliverySource {
@@ -108,3 +205,64 @@ enum NotificationDeliverySource {
 
   final String value;
 }
+
+enum NotificationPushProcessingOutcome {
+  processed,
+  droppedInvalidPayload,
+  droppedTargetMismatch,
+  droppedNotFound,
+  droppedAlreadyRead,
+  droppedDuplicate,
+  droppedUnmappable,
+  droppedDisplayError,
+  droppedTimeout,
+}
+
+class NotificationPushPayload {
+  NotificationPushPayload({
+    required this.senderDid,
+    required this.targetDid,
+    required this.recordUri,
+    required this.reason,
+  });
+
+  final String senderDid;
+  final String targetDid;
+  final String recordUri;
+  final String reason;
+
+  static NotificationPushPayload? tryParse(Map<String, String> payload) {
+    final senderDid = payload['senderDid']?.trim();
+    final targetDid = payload['targetDid']?.trim();
+    final recordUri = payload['recordUri']?.trim();
+    final reason = payload['reason']?.trim();
+
+    if (senderDid == null || senderDid.isEmpty || !senderDid.startsWith('did:')) {
+      return null;
+    }
+    if (targetDid == null || targetDid.isEmpty || !targetDid.startsWith('did:')) {
+      return null;
+    }
+    if (recordUri == null || recordUri.isEmpty || !_isAtUri(recordUri)) {
+      return null;
+    }
+    if (reason == null || reason.isEmpty) {
+      return null;
+    }
+
+    return NotificationPushPayload(senderDid: senderDid, targetDid: targetDid, recordUri: recordUri, reason: reason);
+  }
+
+  static bool _isAtUri(String value) {
+    try {
+      final atUri = AtUri.parse(value);
+      return atUri.toString().isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+}
+
+const _pushProcessedCountKey = 'notification_push_processed_count';
+const _pushDroppedCountKey = 'notification_push_dropped_count';
+const _pushDroppedReasonPrefix = 'notification_push_dropped_reason_';

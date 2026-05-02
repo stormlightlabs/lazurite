@@ -11,6 +11,7 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
+import 'package:lazurite/features/notifications/background/notification_background_worker.dart';
 import 'package:workmanager/workmanager.dart';
 
 const _kTaskName = 'lazurite.scheduled_post';
@@ -23,18 +24,25 @@ const _kVideoPollTimeout = Duration(minutes: 5);
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
-    if (taskName != _kTaskName) return Future.value(true);
+    if (taskName == _kTaskName) {
+      final draftId = inputData?['draftId'] as int?;
+      if (draftId == null) return Future.value(false);
 
-    final draftId = inputData?['draftId'] as int?;
-    if (draftId == null) return Future.value(false);
-
-    try {
-      await _submitScheduledDraft(draftId);
-      return Future.value(true);
-    } catch (e, stackTrace) {
-      log.e('Scheduled post failed for draft $draftId', error: e, stackTrace: stackTrace);
-      return Future.value(false);
+      try {
+        await _submitScheduledDraft(draftId);
+        return Future.value(true);
+      } catch (e, stackTrace) {
+        log.e('Scheduled post failed for draft $draftId', error: e, stackTrace: stackTrace);
+        return Future.value(false);
+      }
     }
+
+    final notificationTaskResult = await handleNotificationWorkmanagerTask(taskName, inputData);
+    if (notificationTaskResult != null) {
+      return Future.value(notificationTaskResult);
+    }
+
+    return Future.value(true);
   });
 }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bluesky/bluesky.dart';
 import 'package:bluesky/bluesky_chat.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +24,7 @@ import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/connectivity/presentation/connectivity_banner_host.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
@@ -41,10 +43,13 @@ import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/notifications/data/flutter_local_notification_adapter.dart';
+import 'package:lazurite/features/notifications/data/firebase_push_token_provider.dart';
 import 'package:lazurite/features/notifications/domain/local_notification_adapter.dart';
 import 'package:lazurite/features/notifications/domain/notification_deep_link_navigator.dart';
 import 'package:lazurite/features/notifications/domain/notification_domain_service.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_models.dart';
+import 'package:lazurite/features/notifications/domain/push_registration_service.dart';
+import 'package:lazurite/features/notifications/background/notification_background_worker.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
@@ -68,6 +73,8 @@ Future<void> main() async {
 
   await log.initialize();
   await PostScheduler.initialize();
+  FirebaseMessaging.onBackgroundMessage(notificationFirebaseMessagingBackgroundHandler);
+  await NotificationBackgroundScheduler.ensureScheduled();
   Bloc.observer = LoggingBlocObserver();
 
   final database = AppDatabase();
@@ -102,6 +109,20 @@ Future<void> main() async {
   final accountSwitcherCubit = AccountSwitcherCubit(database: database, authRepository: authRepository);
   await accountSwitcherCubit.loadAccounts();
   final localNotificationAdapter = FlutterLocalNotificationAdapter();
+  final pushTokenProvider = FirebasePushTokenProvider();
+  final pushRegistrationService = PushRegistrationService(
+    tokenProvider: pushTokenProvider,
+    notificationRepositoryFactory: (tokens) {
+      final bluesky = createBlueskyClient(tokens);
+      if (bluesky == null) {
+        throw StateError('Unable to create Bluesky client for push registration');
+      }
+      return NotificationRepository(
+        bluesky: bluesky,
+        appViewProviderResolver: () => settingsCubit.state.appViewProvider,
+      );
+    },
+  );
 
   log.i('AppLogger: App started');
 
@@ -116,6 +137,7 @@ Future<void> main() async {
       connectivityCubit,
       accountSwitcherCubit,
       localNotificationAdapter,
+      pushRegistrationService,
     ),
   );
 }
@@ -132,6 +154,7 @@ class LazuriteApp extends StatefulWidget {
     required this.connectivityCubit,
     required this.accountSwitcherCubit,
     required this.localNotificationAdapter,
+    required this.pushRegistrationService,
   });
 
   final AuthBloc authBloc;
@@ -143,6 +166,7 @@ class LazuriteApp extends StatefulWidget {
   final ConnectivityCubit connectivityCubit;
   final AccountSwitcherCubit accountSwitcherCubit;
   final LocalNotificationAdapter localNotificationAdapter;
+  final PushRegistrationService pushRegistrationService;
 
   /// factory constructor with positional params
   static LazuriteApp from(
@@ -155,6 +179,7 @@ class LazuriteApp extends StatefulWidget {
     ConnectivityCubit connectivityCubit,
     AccountSwitcherCubit accountSwitcherCubit,
     LocalNotificationAdapter localNotificationAdapter,
+    PushRegistrationService pushRegistrationService,
   ) => LazuriteApp(
     authBloc: authBloc,
     database: database,
@@ -165,6 +190,7 @@ class LazuriteApp extends StatefulWidget {
     connectivityCubit: connectivityCubit,
     accountSwitcherCubit: accountSwitcherCubit,
     localNotificationAdapter: localNotificationAdapter,
+    pushRegistrationService: pushRegistrationService,
   );
 
   @override
@@ -176,6 +202,8 @@ class _LazuriteAppState extends State<LazuriteApp> {
   late GoRouter _router;
   late String _routerSessionKey;
   late final StreamSubscription<String> _authSubscription;
+  late final StreamSubscription<AuthTokens?> _pushRegistrationSubscription;
+  StreamSubscription<RemoteMessage>? _pushForegroundMessageSubscription;
   late final StreamSubscription<bool> _simulateOfflineSubscription;
   late final StreamSubscription<String> _appViewProviderSubscription;
   late final StreamSubscription<AppViewRoutingEvent> _appViewEventSubscription;
@@ -194,6 +222,13 @@ class _LazuriteAppState extends State<LazuriteApp> {
         return widget.localNotificationAdapter.requestPermissions();
       }),
     );
+    unawaited(widget.pushRegistrationService.start(initialTokens: widget.authBloc.state.tokens));
+    _pushRegistrationSubscription = widget.authBloc.stream.map((state) => state.tokens).listen((tokens) {
+      unawaited(widget.pushRegistrationService.updateSession(tokens));
+    });
+    _pushForegroundMessageSubscription = FirebaseMessaging.onMessage.listen((message) {
+      unawaited(notificationPushPayloadEntrypoint(message.data));
+    });
     _authSubscription = widget.authBloc.stream.map(_sessionKeyFor).distinct().listen(_handleSessionKeyChanged);
     _simulateOfflineSubscription = widget.settingsCubit.stream
         .map((state) => state.simulateOffline)
@@ -222,9 +257,12 @@ class _LazuriteAppState extends State<LazuriteApp> {
   @override
   void dispose() {
     _authSubscription.cancel();
+    _pushRegistrationSubscription.cancel();
+    _pushForegroundMessageSubscription?.cancel();
     _simulateOfflineSubscription.cancel();
     _appViewProviderSubscription.cancel();
     _appViewEventSubscription.cancel();
+    unawaited(widget.pushRegistrationService.dispose());
 
     widget.connectivityCubit.close();
     widget.appViewFallbackService.dispose();

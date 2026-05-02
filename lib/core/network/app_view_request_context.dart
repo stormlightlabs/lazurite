@@ -12,6 +12,10 @@ class AppViewRequestContext {
 
   String publicServiceHost() => _routerForCurrentProvider().provider.publicBaseUrl.host;
 
+  String notificationServiceDid() => _routerForCurrentProvider().provider.serviceDid.split('#').first;
+
+  String notificationProxyServiceDid() => '${notificationServiceDid()}#bsky_notif';
+
   Map<String, String> appBskyHeaders([Map<String, String>? baseHeaders]) {
     final merged = <String, String>{...?baseHeaders};
     merged.addAll(_routerForCurrentProvider().appBskyProxyHeaders());

@@ -1,6 +1,6 @@
 ---
 title: To-Do/Parking Lot
-updated: 2026-04-26
+updated: 2026-05-02
 ---
 
 ## Tests
@@ -18,6 +18,12 @@ updated: 2026-04-26
 - Saved posts should be a tabbed view for local & ATProto/BSky saved posts.
 
 ## UX
+
+### Notifications
+
+- Foreground push messages are processed through the standalone background notification
+  context (same path as background payload handling), to keep behavior consistent across
+  app states.
 
 ### Posts
 

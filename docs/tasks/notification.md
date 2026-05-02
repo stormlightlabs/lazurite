@@ -1,6 +1,6 @@
 ---
 title: Notification Milestones
-updated: 2026-04-29
+updated: 2026-05-01
 ---
 
 ## M1 - Foundation Hardening (Polling Baseline)
@@ -20,26 +20,26 @@ updated: 2026-04-29
 
 ## M3 - Push Registration Lifecycle
 
-- [ ] Add token acquisition and refresh listeners
-- [ ] Implement `registerPush` and `unregisterPush`
-- [ ] Wire account login/switch/logout paths
-- [ ] Add retries/backoff for registration failures
-- [ ] Add unit tests for lifecycle transitions
+- [x] Add token acquisition and refresh listeners
+- [x] Implement `registerPush` and `unregisterPush`
+- [x] Wire account login/switch/logout paths
+- [x] Add retries/backoff for registration failures
+- [x] Add unit tests for lifecycle transitions
 
 ## M4 - Push Payload Processing
 
-- [ ] Add background payload entrypoint (`@pragma('vm:entry-point')`)
-- [ ] Parse defensively: `senderDid`, `targetDid`, `recordUri`, `reason`
-- [ ] Fetch canonical notification payload before display
-- [ ] Apply moderation + preference filtering before display
-- [ ] Add timeout-bound processing and drop accounting
+- [x] Add background payload entrypoint (`@pragma('vm:entry-point')`)
+- [x] Parse defensively: `senderDid`, `targetDid`, `recordUri`, `reason`
+- [x] Fetch canonical notification payload before display
+- [x] Apply moderation + preference filtering before display
+- [x] Add timeout-bound processing and drop accounting
 
 ## M5 - Background Reconciliation
 
-- [ ] Add periodic background reconcile task (Android 15m+)
-- [ ] Add iOS background fetch/BGTaskScheduler integration
-- [ ] Ensure tasks are idempotent and dedupe-safe
-- [ ] Add test harness for worker entrypoints
+- [x] Add periodic background reconcile task (Android 15m+)
+- [x] Add iOS background fetch/BGTaskScheduler integration
+- [x] Ensure tasks are idempotent and dedupe-safe
+- [x] Add test harness for worker entrypoints
 
 ## M6 - Preferences and UX
 
@@ -54,3 +54,11 @@ updated: 2026-04-29
 - [ ] Add smoke checklist for Android/iOS permission and delivery scenarios
 - [ ] Validate multi-account behavior and token cleanup
 - [ ] Run full `flutter analyze` and full test suite
+
+## M8 - Firebase/APNs Production Push Setup
+
+- [ ] Create/configure Firebase project apps for iOS + Android
+- [ ] Add `GoogleService-Info.plist` to iOS target and `google-services.json` to `android/app`
+- [ ] Configure Apple Push Notifications capability/provisioning in Apple Developer
+- [ ] Upload APNs auth key/certificate to Firebase Cloud Messaging settings
+- [ ] Validate end-to-end remote push delivery (foreground, background, terminated) on iOS + Android
