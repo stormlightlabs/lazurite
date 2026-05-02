@@ -65,6 +65,7 @@ import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/shared/presentation/widgets/global_tap_outside_unfocus.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -367,29 +368,31 @@ class _LazuriteAppState extends State<LazuriteApp> {
                 darkTheme: darkTheme,
                 themeMode: themeMode,
                 routerConfig: _router,
-                builder: (context, child) => Stack(
-                  children: [
-                    ConnectivityBannerHost(child: child ?? const SizedBox.shrink()),
-                    if (_isSoftRestarting)
-                      const ColoredBox(
-                        color: Color(0xC0000000),
-                        child: Center(
-                          child: Card(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.5)),
-                                  SizedBox(width: 12),
-                                  Text('Applying provider change...'),
-                                ],
+                builder: (context, child) => GlobalTapOutsideUnfocus(
+                  child: Stack(
+                    children: [
+                      ConnectivityBannerHost(child: child ?? const SizedBox.shrink()),
+                      if (_isSoftRestarting)
+                        const ColoredBox(
+                          color: Color(0xC0000000),
+                          child: Center(
+                            child: Card(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.5)),
+                                    SizedBox(width: 12),
+                                    Text('Applying provider change...'),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },

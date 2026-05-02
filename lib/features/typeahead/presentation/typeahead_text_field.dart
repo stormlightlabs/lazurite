@@ -188,6 +188,7 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
 
   void _onTapOutside(PointerDownEvent _) {
     _dismissSuggestions();
+    _focusNode.unfocus();
   }
 
   void _dismissSuggestions() {

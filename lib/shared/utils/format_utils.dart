@@ -1,3 +1,4 @@
+import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:intl/intl.dart';
 
 /// Returns up to two initials from a display value.
@@ -57,4 +58,12 @@ String formatTimestamp(DateTime time) {
   final hour = time.hour.toString().padLeft(2, '0');
   final minute = time.minute.toString().padLeft(2, '0');
   return '${time.year}-$month-$day $hour:$minute';
+}
+
+String feedDisplayName(GeneratorView value) {
+  final displayName = value.displayName.trim();
+  if (displayName.isNotEmpty) {
+    return displayName;
+  }
+  return value.uri.rkey;
 }

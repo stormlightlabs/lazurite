@@ -57,24 +57,30 @@ void main() {
 
     testWidgets('tap outside dismisses overlay', (tester) async {
       final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
       final repository = _FakeTypeaheadRepository(
         searchHandler: ({required String query, int limit = 10}) async {
           return const [TypeaheadResult(did: 'did:plc:alice', handle: 'alice.bsky.social', displayName: 'Alice')];
         },
       );
 
-      await tester.pumpWidget(_buildSubject(controller: controller, repository: repository, onSelected: (_) {}));
+      await tester.pumpWidget(
+        _buildSubject(controller: controller, repository: repository, focusNode: focusNode, onSelected: (_) {}),
+      );
 
       await tester.enterText(find.byType(TextFormField), 'alice');
       await tester.pump(const Duration(milliseconds: 20));
       await tester.pumpAndSettle();
 
       expect(find.text('Alice'), findsOneWidget);
+      expect(focusNode.hasFocus, isTrue);
 
       await tester.tapAt(const Offset(10, 500));
       await tester.pumpAndSettle();
 
       expect(find.text('Alice'), findsNothing);
+      expect(focusNode.hasFocus, isFalse);
     });
 
     testWidgets('does not query when input is shorter than minChars', (tester) async {
@@ -123,6 +129,7 @@ Widget _buildSubject({
   required TextEditingController controller,
   required TypeaheadRepository repository,
   required ValueChanged<TypeaheadResult> onSelected,
+  FocusNode? focusNode,
 }) {
   return MaterialApp(
     home: Scaffold(
@@ -132,6 +139,7 @@ Widget _buildSubject({
           children: [
             TypeaheadTextField(
               controller: controller,
+              focusNode: focusNode,
               repository: repository,
               onSelected: onSelected,
               debounceMs: 1,

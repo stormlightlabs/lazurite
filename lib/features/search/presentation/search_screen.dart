@@ -9,8 +9,6 @@ import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
-import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
-import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
@@ -18,6 +16,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/post_search_filters.dart';
+import 'package:lazurite/features/search/presentation/widgets/follow_button.dart';
 import 'package:lazurite/features/search/presentation/widgets/search_result_states.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
@@ -1192,7 +1191,7 @@ class _ActorResultTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            _FollowButton(actor: actor),
+            FollowButton(actor: actor),
           ],
         ),
       ),
@@ -1208,7 +1207,7 @@ class _FeedResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = _feedDisplayName(feed);
+    final displayName = feedDisplayName(feed);
     final avatarUrl = feed.avatar ?? feed.creator.avatar;
     final isAdded = context.select<FeedPreferencesCubit, bool>(
       (cubit) => cubit.state.containsFeedValue(feed.uri.toString()),
@@ -1285,64 +1284,5 @@ class _FeedResultTile extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _feedDisplayName(GeneratorView value) {
-    final displayName = value.displayName.trim();
-    if (displayName.isNotEmpty) {
-      return displayName;
-    }
-    return value.uri.rkey;
-  }
-}
-
-class _FollowButton extends StatefulWidget {
-  const _FollowButton({required this.actor});
-
-  final ProfileView actor;
-
-  @override
-  State<_FollowButton> createState() => _FollowButtonState();
-}
-
-class _FollowButtonState extends State<_FollowButton> {
-  late bool _isFollowing;
-
-  @override
-  void initState() {
-    super.initState();
-    _isFollowing = widget.actor.viewer?.following != null;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
-    if (_isFollowing) {
-      final button = OutlinedButton(
-        onPressed: isOffline ? null : _toggleFollow,
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-        ),
-        child: const Text('Following'),
-      );
-
-      return isOffline ? Tooltip(message: offlineActionMessage('change your follow state'), child: button) : button;
-    }
-
-    final button = FilledButton.tonal(
-      onPressed: isOffline ? null : _toggleFollow,
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-      ),
-      child: const Text('Follow'),
-    );
-
-    return isOffline ? Tooltip(message: offlineActionMessage('follow this account'), child: button) : button;
-  }
-
-  void _toggleFollow() {
-    setState(() => _isFollowing = !_isFollowing);
   }
 }

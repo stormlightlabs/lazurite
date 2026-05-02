@@ -1,0 +1,34 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/shared/presentation/widgets/global_tap_outside_unfocus.dart';
+
+void main() {
+  testWidgets('tapping outside focused text input dismisses focus', (tester) async {
+    final focusNode = FocusNode(debugLabel: 'global-focus-test');
+    addTearDown(focusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GlobalTapOutsideUnfocus(
+          child: Scaffold(
+            body: Column(
+              children: [
+                TextField(focusNode: focusNode),
+                const SizedBox(height: 200),
+                const SizedBox(width: 120, height: 40, child: ColoredBox(color: Colors.red)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isTrue);
+
+    await tester.tapAt(const Offset(20, 260));
+    await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isFalse);
+  });
+}

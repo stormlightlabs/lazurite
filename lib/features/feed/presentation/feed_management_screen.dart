@@ -4,13 +4,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class FeedManagementScreen extends StatefulWidget {
   const FeedManagementScreen({super.key});
@@ -227,7 +228,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _feedDisplayName(feed),
+                    feedDisplayName(feed),
                     style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                   ),
                   Text(
@@ -323,14 +324,6 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
             )
           : const Icon(Icons.rss_feed, color: Colors.white),
     );
-  }
-
-  String _feedDisplayName(GeneratorView feed) {
-    final displayName = feed.displayName.trim();
-    if (displayName.isNotEmpty) {
-      return displayName;
-    }
-    return feed.uri.rkey;
   }
 
   Future<void> _confirmRemoveFeed(BuildContext context, String feedId) async {
