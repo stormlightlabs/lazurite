@@ -44,6 +44,7 @@ class DevToolsState extends Equatable {
   const DevToolsState({
     this.status = DevToolsStatus.initial,
     this.did,
+    this.repoServiceHost,
     this.handle,
     this.repoHandle,
     this.typeaheadActors = const [],
@@ -61,6 +62,7 @@ class DevToolsState extends Equatable {
 
   final DevToolsStatus status;
   final String? did;
+  final String? repoServiceHost;
   final String? handle;
   final String? repoHandle;
   final List<ProfileViewBasic> typeaheadActors;
@@ -93,6 +95,7 @@ class DevToolsState extends Equatable {
   DevToolsState copyWith({
     DevToolsStatus? status,
     Object? did = _devToolsStateNoChange,
+    Object? repoServiceHost = _devToolsStateNoChange,
     Object? handle = _devToolsStateNoChange,
     Object? repoHandle = _devToolsStateNoChange,
     List<ProfileViewBasic>? typeaheadActors,
@@ -110,6 +113,9 @@ class DevToolsState extends Equatable {
     return DevToolsState(
       status: status ?? this.status,
       did: identical(did, _devToolsStateNoChange) ? this.did : did as String?,
+      repoServiceHost: identical(repoServiceHost, _devToolsStateNoChange)
+          ? this.repoServiceHost
+          : repoServiceHost as String?,
       handle: identical(handle, _devToolsStateNoChange) ? this.handle : handle as String?,
       repoHandle: identical(repoHandle, _devToolsStateNoChange) ? this.repoHandle : repoHandle as String?,
       typeaheadActors: typeaheadActors ?? this.typeaheadActors,
@@ -134,6 +140,7 @@ class DevToolsState extends Equatable {
   List<Object?> get props => [
     status,
     did,
+    repoServiceHost,
     handle,
     repoHandle,
     typeaheadActors,

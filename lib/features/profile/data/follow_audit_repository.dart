@@ -68,6 +68,7 @@ class FollowAuditRepository {
   final AppViewRequestContext _appViewContext;
 
   Future<List<FollowRecord>> fetchAllFollows(String did, {void Function(int fetched)? onProgress}) async {
+    _assertCurrentSessionRepoAccess(did: did, operation: 'fetchAllFollows');
     final records = <FollowRecord>[];
     String? cursor;
 
@@ -229,6 +230,7 @@ class FollowAuditRepository {
   }
 
   Future<int> batchUnfollow(List<ClassifiedFollow> selected, String ownDid) async {
+    _assertCurrentSessionRepoAccess(did: ownDid, operation: 'batchUnfollow');
     if (selected.isEmpty) return 0;
 
     final rkeys = selected.map((f) => f.record.rkey).toList();
@@ -339,6 +341,43 @@ class FollowAuditRepository {
       case FollowStatus.selfFollow:
         return 'Self-follow';
     }
+  }
+
+  void _assertCurrentSessionRepoAccess({required String did, required String operation}) {
+    final normalizedDid = did.trim().toLowerCase();
+    if (normalizedDid.isEmpty) {
+      throw ArgumentError.value(did, 'did', 'DID must not be empty');
+    }
+
+    final sessionDid = _currentSessionDid();
+    if (sessionDid == null) {
+      // Test doubles and unauthenticated contexts may not expose session shape.
+      return;
+    }
+
+    if (normalizedDid != sessionDid) {
+      throw StateError(
+        'FollowAuditRepository.$operation supports only current-session repo access: did=$normalizedDid sessionDid=$sessionDid',
+      );
+    }
+  }
+
+  String? _currentSessionDid() {
+    try {
+      final sessionDid = (_bluesky.session?.did as String?)?.trim().toLowerCase();
+      if (sessionDid != null && sessionDid.isNotEmpty) {
+        return sessionDid;
+      }
+    } catch (_) {}
+
+    try {
+      final oauthDid = (_bluesky.oAuthSession?.sub as String?)?.trim().toLowerCase();
+      if (oauthDid != null && oauthDid.isNotEmpty) {
+        return oauthDid;
+      }
+    } catch (_) {}
+
+    return null;
   }
 }
 

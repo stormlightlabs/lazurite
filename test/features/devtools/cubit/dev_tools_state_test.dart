@@ -212,7 +212,7 @@ void main() {
         errorMessage: 'error',
       );
 
-      expect(state.props.length, 15);
+      expect(state.props.length, 16);
       expect(state.props, contains(DevToolsStatus.repoLoaded));
       expect(state.props, contains(true));
       expect(state.props, contains('did:plc:test'));

@@ -556,7 +556,7 @@ class AppDatabase extends _$AppDatabase {
   Future<List<LikedPostEntry>> getLikedPosts(String accountDid, {int limit = 50, int offset = 0}) =>
       (select(likedPosts)
             ..where((l) => l.accountDid.equals(accountDid))
-            ..orderBy([(l) => OrderingTerm.desc(l.likedAt)])
+            ..orderBy([(l) => OrderingTerm.desc(l.likedAt), (l) => OrderingTerm.desc(l.postUri)])
             ..limit(limit, offset: offset))
           .get();
 
@@ -565,6 +565,10 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> upsertLikedPost(LikedPostsCompanion post) =>
       into(likedPosts).insert(post, mode: InsertMode.insertOrIgnore);
+
+  Future<int> updateLikedPost(int id, {required String postJson, required DateTime likedAt}) => (update(
+    likedPosts,
+  )..where((l) => l.id.equals(id))).write(LikedPostsCompanion(postJson: Value(postJson), likedAt: Value(likedAt)));
 
   Future<int> removeLikedPost(String accountDid, String postUri) =>
       (delete(likedPosts)..where((l) => l.accountDid.equals(accountDid) & l.postUri.equals(postUri))).go();

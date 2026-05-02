@@ -97,6 +97,7 @@ class ProfileContextRepository {
 
   /// Returns the total number of accounts that [did] is blocking.
   Future<int> getBlockingCount(String did) async {
+    _assertCurrentSessionRepoAccess(did: did, operation: 'getBlockingCount');
     var total = 0;
     String? cursor;
 
@@ -120,6 +121,7 @@ class ProfileContextRepository {
   /// [total] reflects the number of profiles hydrated in this page.
   Future<({List<ProfileView> profiles, List<UnavailableProfileRef> unavailable, String? cursor, int total})>
   getBlockingProfiles(String did, {String? cursor}) async {
+    _assertCurrentSessionRepoAccess(did: did, operation: 'getBlockingProfiles');
     final response = await _bluesky.atproto.repo.listRecords(
       repo: did,
       collection: 'app.bsky.graph.block',
@@ -329,6 +331,43 @@ class ProfileContextRepository {
     final trimmed = did.trim();
     if (trimmed.isEmpty) return null;
     return trimmed;
+  }
+
+  void _assertCurrentSessionRepoAccess({required String did, required String operation}) {
+    final normalizedDid = _normalizeDid(did)?.toLowerCase();
+    if (normalizedDid == null) {
+      throw ArgumentError.value(did, 'did', 'DID must not be empty');
+    }
+
+    final sessionDid = _currentSessionDid();
+    if (sessionDid == null) {
+      // Test doubles and unauthenticated contexts may not expose session shape.
+      return;
+    }
+
+    if (normalizedDid != sessionDid) {
+      throw StateError(
+        'ProfileContextRepository.$operation supports only current-session repo reads: did=$normalizedDid sessionDid=$sessionDid',
+      );
+    }
+  }
+
+  String? _currentSessionDid() {
+    try {
+      final sessionDid = (_bluesky.session?.did as String?)?.trim().toLowerCase();
+      if (sessionDid != null && sessionDid.isNotEmpty) {
+        return sessionDid;
+      }
+    } catch (_) {}
+
+    try {
+      final oauthDid = (_bluesky.oAuthSession?.sub as String?)?.trim().toLowerCase();
+      if (oauthDid != null && oauthDid.isNotEmpty) {
+        return oauthDid;
+      }
+    } catch (_) {}
+
+    return null;
   }
 
   String _publicProfileFailureReason(Object error) {

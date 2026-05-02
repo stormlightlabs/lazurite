@@ -1490,7 +1490,7 @@ class _ProfileLikedPostsPane extends StatefulWidget {
 }
 
 class _ProfileLikedPostsPaneState extends State<_ProfileLikedPostsPane> {
-  List<FeedViewPost> _posts = const [];
+  List<ProfileActorLikeEntry> _entries = const [];
   String? _cursor;
   bool _isLoading = true;
   bool _isLoadingMore = false;
@@ -1515,7 +1515,7 @@ class _ProfileLikedPostsPaneState extends State<_ProfileLikedPostsPane> {
     setState(() {
       _isLoading = true;
       _error = null;
-      _posts = const [];
+      _entries = const [];
       _cursor = null;
       _hasMore = true;
     });
@@ -1524,7 +1524,7 @@ class _ProfileLikedPostsPaneState extends State<_ProfileLikedPostsPane> {
       final page = await widget.profileRepository.getActorLikes(actor: widget.actor, limit: 50);
       if (!mounted) return;
       setState(() {
-        _posts = page.posts;
+        _entries = page.entries;
         _cursor = page.cursor;
         _hasMore = page.cursor != null;
         _isLoading = false;
@@ -1552,7 +1552,7 @@ class _ProfileLikedPostsPaneState extends State<_ProfileLikedPostsPane> {
       final page = await widget.profileRepository.getActorLikes(actor: widget.actor, cursor: _cursor, limit: 50);
       if (!mounted) return;
       setState(() {
-        _posts = [..._posts, ...page.posts];
+        _entries = [..._entries, ...page.entries];
         _cursor = page.cursor;
         _hasMore = page.cursor != null;
         _isLoadingMore = false;
@@ -1582,7 +1582,7 @@ class _ProfileLikedPostsPaneState extends State<_ProfileLikedPostsPane> {
       );
     }
 
-    if (_posts.isEmpty) {
+    if (_entries.isEmpty) {
       return const Center(child: Text('No liked posts yet'));
     }
 
@@ -1598,20 +1598,52 @@ class _ProfileLikedPostsPaneState extends State<_ProfileLikedPostsPane> {
         },
         child: ListView.builder(
           key: const PageStorageKey<String>('profile-liked-posts-list'),
-          itemCount: _posts.length + (_isLoadingMore ? 1 : 0),
+          itemCount: _entries.length + (_isLoadingMore ? 1 : 0),
           itemBuilder: (context, index) {
-            if (index >= _posts.length) {
+            if (index >= _entries.length) {
               return const Padding(
                 padding: EdgeInsets.all(16),
                 child: Center(child: CircularProgressIndicator()),
               );
             }
-            return PostCardWithActions(
-              feedViewPost: _posts[index],
-              accountDid: accountDid,
-              moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
+            final entry = _entries[index];
+            if (entry.feedViewPost != null) {
+              return PostCardWithActions(
+                feedViewPost: entry.feedViewPost!,
+                accountDid: accountDid,
+                moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
+              );
+            }
+
+            return _UnavailableLikedPostCard(
+              subjectUri: entry.subjectUri ?? '',
+              reason: entry.unavailableReason ?? 'Post unavailable',
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _UnavailableLikedPostCard extends StatelessWidget {
+  const _UnavailableLikedPostCard({required this.subjectUri, required this.reason});
+
+  final String subjectUri;
+  final String reason;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ListTile(
+        leading: const Icon(Icons.hide_source_outlined),
+        title: const Text('Unavailable liked post'),
+        subtitle: Text(reason),
+        trailing: IconButton(
+          icon: const Icon(Icons.open_in_new),
+          onPressed: () => context.push('/post?uri=${Uri.encodeQueryComponent(subjectUri)}'),
+          tooltip: 'Open',
         ),
       ),
     );

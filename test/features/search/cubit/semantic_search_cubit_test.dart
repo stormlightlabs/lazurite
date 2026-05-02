@@ -61,16 +61,16 @@ void main() {
         expect(cubit.state.errorMessage, isNull);
       });
 
-      test('is unavailable when embedding service is not available', () {
+      test('starts in initial state when embedding service is not available', () {
         final cubit = SemanticSearchCubit(
           repository: mockRepo,
           embeddingService: _unavailableService(),
           accountDid: _accountDid,
         );
-        expect(cubit.state.status, SemanticSearchStatus.unavailable);
+        expect(cubit.state.status, SemanticSearchStatus.initial);
       });
 
-      test('recovers from startup race once embedding service initializes', () async {
+      test('remains initial after startup race recovery attempt', () async {
         final lateInitService = EmbeddingService.forTesting((_) async => Float32List.fromList(List.filled(384, 0.2)));
         final cubit = SemanticSearchCubit(
           repository: mockRepo,
@@ -78,7 +78,7 @@ void main() {
           accountDid: _accountDid,
         );
 
-        expect(cubit.state.status, SemanticSearchStatus.unavailable);
+        expect(cubit.state.status, SemanticSearchStatus.initial);
         await Future<void>.delayed(Duration.zero);
         expect(cubit.state.status, SemanticSearchStatus.initial);
       });
@@ -235,13 +235,23 @@ void main() {
       );
 
       blocTest<SemanticSearchCubit, SemanticSearchState>(
-        'keeps unavailable state when service is not available',
+        'emits error when service is not available',
         build: () =>
-            SemanticSearchCubit(repository: mockRepo, embeddingService: _unavailableService(), accountDid: _accountDid),
+            SemanticSearchCubit(
+              repository: mockRepo,
+              embeddingService: _unavailableService(),
+              accountDid: _accountDid,
+              debounceDuration: Duration.zero,
+            ),
         act: (cubit) => cubit.search('flutter'),
-        expect: () => [],
+        expect: () => [
+          predicate<SemanticSearchState>(
+            (s) =>
+                s.status == SemanticSearchStatus.error &&
+                (s.errorMessage?.contains('Semantic model unavailable') ?? false),
+          ),
+        ],
         verify: (cubit) {
-          expect(cubit.state.status, SemanticSearchStatus.unavailable);
           verifyNever(() => mockRepo.search(any(), any()));
         },
       );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:bluesky/app_bsky_feed_defs.dart';
@@ -278,6 +279,7 @@ class _LikedPostsTabState extends State<_LikedPostsTab> {
   bool _isLoading = true;
   bool _isSyncing = false;
   String? _error;
+  String? _syncWarning;
   LikedPostsRepository? _repository;
 
   @override
@@ -297,10 +299,38 @@ class _LikedPostsTabState extends State<_LikedPostsTab> {
       return;
     }
 
-    await _syncAndReload(initial: true);
+    await _loadCachedLikes();
+    unawaited(_syncAndReload());
   }
 
-  Future<void> _syncAndReload({bool initial = false}) async {
+  Future<void> _loadCachedLikes() async {
+    final repository = _repository;
+    if (repository == null) {
+      return;
+    }
+    final accountDid = context.read<String>();
+    try {
+      final likedPosts = await repository.getLikedPosts(accountDid, limit: 200);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _likedPosts = likedPosts;
+        _isLoading = false;
+        _error = null;
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoading = false;
+        _error = 'Failed to load liked posts: $e';
+      });
+    }
+  }
+
+  Future<void> _syncAndReload() async {
     final repository = _repository;
     if (repository == null) {
       return;
@@ -309,9 +339,11 @@ class _LikedPostsTabState extends State<_LikedPostsTab> {
 
     if (mounted) {
       setState(() {
-        _isLoading = initial;
-        _isSyncing = !initial;
-        _error = null;
+        _isSyncing = true;
+        _syncWarning = null;
+        if (_likedPosts.isEmpty) {
+          _error = null;
+        }
       });
     }
 
@@ -325,9 +357,19 @@ class _LikedPostsTabState extends State<_LikedPostsTab> {
         _likedPosts = likedPosts;
         _isLoading = false;
         _isSyncing = false;
+        _error = null;
+        _syncWarning = null;
       });
     } catch (e) {
       if (!mounted) {
+        return;
+      }
+      if (_likedPosts.isNotEmpty) {
+        setState(() {
+          _isLoading = false;
+          _isSyncing = false;
+          _syncWarning = 'Failed to refresh liked posts: $e';
+        });
         return;
       }
       setState(() {
@@ -345,6 +387,7 @@ class _LikedPostsTabState extends State<_LikedPostsTab> {
     }
     final accountDid = context.read<String>();
     await repository.removeLike(accountDid, entry.postUri);
+    await _loadCachedLikes();
     await _syncAndReload();
   }
 
@@ -354,7 +397,7 @@ class _LikedPostsTabState extends State<_LikedPostsTab> {
       return const LoadingState();
     }
 
-    if (_error != null) {
+    if (_error != null && _likedPosts.isEmpty) {
       return ErrorState(title: 'Failed to load liked posts', message: _error!, onRetry: () => _syncAndReload());
     }
 
@@ -379,12 +422,30 @@ class _LikedPostsTabState extends State<_LikedPostsTab> {
         AnimatedRefreshIndicator(
           onRefresh: _syncAndReload,
           child: ListView.builder(
-            itemCount: _likedPosts.length,
+            itemCount: _likedPosts.length + (_syncWarning == null ? 0 : 1),
             itemBuilder: (context, index) {
-              final likedPost = _likedPosts[index];
+              if (_syncWarning != null && index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                  child: Material(
+                    color: context.colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Text(
+                        _syncWarning!,
+                        style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onErrorContainer),
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              final likedPost = _likedPosts[_syncWarning == null ? index : index - 1];
+              final listIndex = _syncWarning == null ? index : index - 1;
               return StaggeredEntrance(
                 itemKey: likedPost.postUri,
-                index: index,
+                index: listIndex,
                 seenKeys: _seenPostUris,
                 child: _LikedPostCard(likedPost: likedPost, onRemove: () => _removeLike(likedPost)),
               );

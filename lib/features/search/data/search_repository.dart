@@ -197,6 +197,7 @@ class SearchRepository {
 
     final hydrated = await _bluesky.feed.getPosts(
       uris: atUris,
+      $service: _appViewContext.publicServiceHost(),
       $headers: _appViewContext.appBskyHeadersForEndpoint(
         'app.bsky.feed.getPosts',
         await _moderationService?.headersForRequest(),

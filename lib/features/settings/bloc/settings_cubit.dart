@@ -89,7 +89,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         simulateOffline: simulateOfflineStr == 'true',
         threadAutoCollapseDepth: int.tryParse(threadAutoCollapseDepthStr ?? ''),
         constellationUrl: constellationUrlStr ?? _defaultConstellationUrl,
-        semanticSearchEnabled: semanticSearchEnabledStr == 'true',
+        semanticSearchEnabled: semanticSearchEnabledStr != 'false',
         searchScope: SearchScope.values.firstWhere((s) => s.name == searchScopeStr, orElse: () => SearchScope.both),
         semanticSearchMaxResults: int.tryParse(semanticSearchMaxResultsStr ?? '') ?? 20,
         typeaheadProvider: resolvedTypeaheadProvider,
@@ -152,8 +152,8 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
 
   Future<void> setSemanticSearchEnabled(bool value) async {
-    await database.setSetting(_keySemanticSearchEnabled, value.toString());
-    emit(state.copyWith(semanticSearchEnabled: value));
+    await database.setSetting(_keySemanticSearchEnabled, 'true');
+    emit(state.copyWith(semanticSearchEnabled: true));
   }
 
   Future<void> setSearchScope(SearchScope scope) async {

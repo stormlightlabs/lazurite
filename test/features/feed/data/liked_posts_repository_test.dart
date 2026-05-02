@@ -174,6 +174,65 @@ void main() {
         expect(result, hasLength(2));
       });
 
+      test('continues pagination when a page has no inserts', () async {
+        const knownUri = 'at://did:plc:author/app.bsky.feed.post/known';
+        const newUri = 'at://did:plc:author/app.bsky.feed.post/new';
+        await database.upsertLikedPost(
+          LikedPostsCompanion(
+            accountDid: const Value(_accountDid),
+            postUri: const Value(knownUri),
+            postJson: const Value('{}'),
+            likedAt: Value(DateTime.utc(2026, 1, 1)),
+          ),
+        );
+
+        final feed = _FakeFeedService(
+          pages: [
+            FeedGetActorLikesOutput(feed: [_makeFeedViewPost(knownUri)], cursor: 'page-2'),
+            FeedGetActorLikesOutput(feed: [_makeFeedViewPost(newUri)]),
+          ],
+        );
+        final repo = LikedPostsRepository(
+          bluesky: _FakeBluesky(feed: feed),
+          database: database,
+        );
+
+        await repo.syncLikes(_accountDid);
+
+        expect(feed.callCount, 2);
+        final likedPosts = await database.getLikedPosts(_accountDid, limit: 10);
+        expect(likedPosts.map((e) => e.postUri), contains(newUri));
+      });
+
+      test('continues scanning page when known post appears before new post', () async {
+        const knownPostUri = 'at://did:plc:author/app.bsky.feed.post/known';
+        const newPostUri = 'at://did:plc:author/app.bsky.feed.post/new';
+        await database.upsertLikedPost(
+          LikedPostsCompanion(
+            accountDid: const Value(_accountDid),
+            postUri: const Value(knownPostUri),
+            postJson: const Value('{}'),
+            likedAt: Value(DateTime.now()),
+          ),
+        );
+
+        final repo = LikedPostsRepository(
+          bluesky: _FakeBluesky(
+            feed: _FakeFeedService(
+              pages: [
+                FeedGetActorLikesOutput(feed: [_makeFeedViewPost(knownPostUri), _makeFeedViewPost(newPostUri)]),
+              ],
+            ),
+          ),
+          database: database,
+        );
+
+        await repo.syncLikes(_accountDid);
+
+        final likedPosts = await database.getLikedPosts(_accountDid, limit: 10);
+        expect(likedPosts.map((e) => e.postUri), contains(newPostUri));
+      });
+
       test('stores postJson as valid JSON', () async {
         final post = _makeFeedViewPost('at://did:plc:author/app.bsky.feed.post/post1');
         final repo = LikedPostsRepository(
@@ -211,6 +270,41 @@ void main() {
 
         final otherResult = await database.getLikedPosts(_otherAccountDid);
         expect(otherResult, isEmpty);
+      });
+
+      test('updates existing liked row when incoming likedAt is newer', () async {
+        const postUri = 'at://did:plc:author/app.bsky.feed.post/post1';
+        final firstRepo = LikedPostsRepository(
+          bluesky: _FakeBluesky(
+            feed: _FakeFeedService(
+              pages: [
+                FeedGetActorLikesOutput(
+                  feed: [_makeFeedViewPost(postUri, indexedAt: DateTime.utc(2026, 1, 1, 0, 0, 0))],
+                ),
+              ],
+            ),
+          ),
+          database: database,
+        );
+        await firstRepo.syncLikes(_accountDid);
+
+        final secondRepo = LikedPostsRepository(
+          bluesky: _FakeBluesky(
+            feed: _FakeFeedService(
+              pages: [
+                FeedGetActorLikesOutput(
+                  feed: [_makeFeedViewPost(postUri, indexedAt: DateTime.utc(2026, 1, 2, 0, 0, 0))],
+                ),
+              ],
+            ),
+          ),
+          database: database,
+        );
+        await secondRepo.syncLikes(_accountDid);
+
+        final stored = await database.getLikedPost(_accountDid, postUri);
+        expect(stored, isNotNull);
+        expect(stored!.likedAt.toUtc(), DateTime.utc(2026, 1, 2, 0, 0, 0));
       });
     });
 
@@ -549,14 +643,19 @@ void main() {
   });
 }
 
-FeedViewPost _makeFeedViewPost(String uriStr) {
+FeedViewPost _makeFeedViewPost(String uriStr, {DateTime? indexedAt, DateTime? createdAt}) {
+  final resolvedCreatedAt = createdAt ?? DateTime.utc(2026, 1, 1);
   return FeedViewPost(
     post: PostView(
       uri: AtUri.parse(uriStr),
       cid: 'cid-${uriStr.hashCode}',
       author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-      record: const {r'$type': 'app.bsky.feed.post', 'text': 'Test post', 'createdAt': '2026-01-01T00:00:00.000Z'},
-      indexedAt: DateTime.utc(2026, 1, 1),
+      record: {
+        r'$type': 'app.bsky.feed.post',
+        'text': 'Test post',
+        'createdAt': resolvedCreatedAt.toUtc().toIso8601String(),
+      },
+      indexedAt: indexedAt ?? DateTime.utc(2026, 1, 1),
     ),
   );
 }
@@ -578,6 +677,7 @@ class _FakeFeedService {
     required String actor,
     int? limit,
     String? cursor,
+    String? $service,
     Map<String, String>? $headers,
   }) async {
     callCount++;

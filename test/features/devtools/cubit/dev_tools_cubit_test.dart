@@ -26,9 +26,15 @@ class FakeDevToolsRepository implements DevToolsRepository {
     int? limit,
     String? cursor,
     bool? reverse,
+    String? serviceHost,
   })?
   listRecordsHandler;
-  Future<RepoGetRecordOutput> Function({required String repo, required String collection, required String rkey})?
+  Future<RepoGetRecordOutput> Function({
+    required String repo,
+    required String collection,
+    required String rkey,
+    String? serviceHost,
+  })?
   getRecordHandler;
 
   @override
@@ -46,8 +52,13 @@ class FakeDevToolsRepository implements DevToolsRepository {
   }
 
   @override
-  Future<RepoGetRecordOutput> getRecord({required String repo, required String collection, required String rkey}) {
-    return getRecordHandler!.call(repo: repo, collection: collection, rkey: rkey);
+  Future<RepoGetRecordOutput> getRecord({
+    required String repo,
+    required String collection,
+    required String rkey,
+    String? serviceHost,
+  }) {
+    return getRecordHandler!.call(repo: repo, collection: collection, rkey: rkey, serviceHost: serviceHost);
   }
 
   @override
@@ -57,8 +68,16 @@ class FakeDevToolsRepository implements DevToolsRepository {
     int? limit,
     String? cursor,
     bool? reverse,
+    String? serviceHost,
   }) {
-    return listRecordsHandler!.call(repo: repo, collection: collection, limit: limit, cursor: cursor, reverse: reverse);
+    return listRecordsHandler!.call(
+      repo: repo,
+      collection: collection,
+      limit: limit,
+      cursor: cursor,
+      reverse: reverse,
+      serviceHost: serviceHost,
+    );
   }
 
   @override
@@ -132,14 +151,26 @@ void main() {
           describeRepoHandler: ({required String repo}) async => const RepoDescribeRepoOutput(
             handle: 'alice.bsky.social',
             did: 'did:plc:alice',
-            didDoc: {},
+            didDoc: {
+              'service': [
+                {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://alice.host'},
+              ],
+            },
             collections: ['app.bsky.feed.post'],
             handleIsCorrect: true,
           ),
           listRecordsHandler:
-              ({required String repo, required String collection, int? limit, String? cursor, bool? reverse}) async {
+              ({
+                required String repo,
+                required String collection,
+                int? limit,
+                String? cursor,
+                bool? reverse,
+                String? serviceHost,
+              }) async {
                 expect(repo, 'did:plc:alice');
                 expect(collection, 'app.bsky.feed.post');
+                expect(serviceHost, 'alice.host');
                 return RepoListRecordsOutput(
                   cursor: cursor == null ? 'next' : null,
                   records: [
@@ -182,12 +213,24 @@ void main() {
           describeRepoHandler: ({required String repo}) async => const RepoDescribeRepoOutput(
             handle: 'alice.bsky.social',
             did: 'did:plc:alice',
-            didDoc: {},
+            didDoc: {
+              'service': [
+                {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://alice.host'},
+              ],
+            },
             collections: ['app.bsky.feed.post'],
             handleIsCorrect: true,
           ),
           listRecordsHandler:
-              ({required String repo, required String collection, int? limit, String? cursor, bool? reverse}) async {
+              ({
+                required String repo,
+                required String collection,
+                int? limit,
+                String? cursor,
+                bool? reverse,
+                String? serviceHost,
+              }) async {
+                expect(serviceHost, 'alice.host');
                 if (limit == 100) {
                   return const RepoListRecordsOutput(
                     records: [
@@ -210,19 +253,21 @@ void main() {
                   ],
                 );
               },
-          getRecordHandler: ({required String repo, required String collection, required String rkey}) async {
-            expect(repo, 'did:plc:alice');
-            expect(collection, 'app.bsky.feed.post');
-            expect(rkey, '3kz');
-            return const RepoGetRecordOutput(
-              uri: AtUri('at://did:plc:alice/app.bsky.feed.post/3kz'),
-              cid: 'cid-full',
-              value: {
-                'text': 'full record',
-                'nested': {'ok': true},
+          getRecordHandler:
+              ({required String repo, required String collection, required String rkey, String? serviceHost}) async {
+                expect(repo, 'did:plc:alice');
+                expect(collection, 'app.bsky.feed.post');
+                expect(rkey, '3kz');
+                expect(serviceHost, 'alice.host');
+                return const RepoGetRecordOutput(
+                  uri: AtUri('at://did:plc:alice/app.bsky.feed.post/3kz'),
+                  cid: 'cid-full',
+                  value: {
+                    'text': 'full record',
+                    'nested': {'ok': true},
+                  },
+                );
               },
-            );
-          },
         );
 
         return DevToolsCubit(repository: repository);
@@ -248,16 +293,17 @@ void main() {
       'loadRecord replaces list preview with getRecord response',
       build: () {
         final repository = FakeDevToolsRepository(
-          getRecordHandler: ({required String repo, required String collection, required String rkey}) async {
-            return const RepoGetRecordOutput(
-              uri: AtUri('at://did:plc:test/app.bsky.feed.post/123'),
-              cid: 'cid123',
-              value: {
-                'text': 'Expanded',
-                'reply': {'root': 'abc'},
+          getRecordHandler:
+              ({required String repo, required String collection, required String rkey, String? serviceHost}) async {
+                return const RepoGetRecordOutput(
+                  uri: AtUri('at://did:plc:test/app.bsky.feed.post/123'),
+                  cid: 'cid123',
+                  value: {
+                    'text': 'Expanded',
+                    'reply': {'root': 'abc'},
+                  },
+                );
               },
-            );
-          },
         );
 
         return DevToolsCubit(repository: repository);
@@ -299,7 +345,14 @@ void main() {
       build: () {
         final repository = FakeDevToolsRepository(
           listRecordsHandler:
-              ({required String repo, required String collection, int? limit, String? cursor, bool? reverse}) async {
+              ({
+                required String repo,
+                required String collection,
+                int? limit,
+                String? cursor,
+                bool? reverse,
+                String? serviceHost,
+              }) async {
                 return const RepoListRecordsOutput(
                   records: [
                     RepoListRecordsRecord(

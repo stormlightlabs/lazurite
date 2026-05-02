@@ -29,6 +29,27 @@ String? normalizeAtprotoServiceHost(String? value) {
   return trimmed;
 }
 
+String? extractAtprotoPdsHostFromDidDoc(Map<String, dynamic> didDoc) {
+  final services = didDoc['service'];
+  if (services is! List) {
+    return null;
+  }
+
+  for (final service in services) {
+    if (service is! Map<String, dynamic>) {
+      continue;
+    }
+
+    if (service['id'] == '#atproto_pds' &&
+        service['type'] == 'AtprotoPersonalDataServer' &&
+        service['serviceEndpoint'] is String) {
+      return normalizeAtprotoServiceHost(service['serviceEndpoint'] as String);
+    }
+  }
+
+  return null;
+}
+
 String? _resolveOAuthPdsHost(AuthTokens tokens) {
   if (!tokens.usesOAuth ||
       tokens.refreshToken == null ||

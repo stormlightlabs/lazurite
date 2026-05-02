@@ -114,6 +114,34 @@ void main() {
       expect(result.did, profile.did);
       expect(result.followersCount, profile.followersCount);
     });
+
+    test('paginates getProfiles requests in batches of 25 actors', () async {
+      final requestedBatches = <List<String>>[];
+      final actors = List<String>.generate(26, (index) => 'did:plc:actor$index');
+      final repository = ProfileRepository(
+        database: database,
+        bluesky: _FakeBlueskyClient(
+          actor: _FakeActorService(
+            onGetProfile: (_) async => throw UnimplementedError(),
+            onGetProfiles: (batch) async {
+              requestedBatches.add(List<String>.from(batch));
+              final profiles = batch
+                  .map((did) => ProfileView(did: did, handle: '$did.bsky.social', indexedAt: DateTime.utc(2026)))
+                  .toList(growable: false);
+              return _FakeProfilesResponse(_FakeProfilesData(profiles));
+            },
+          ),
+        ),
+      );
+
+      final profiles = await repository.getProfiles(actors);
+
+      expect(requestedBatches.length, 2);
+      expect(requestedBatches[0].length, 25);
+      expect(requestedBatches[1].length, 1);
+      expect(profiles.length, 26);
+      expect(profiles.map((p) => p.did), orderedEquals(actors));
+    });
   });
 }
 
@@ -138,15 +166,20 @@ class _FakeBlueskyClient {
 }
 
 class _FakeActorService {
-  _FakeActorService({required this.onGetProfile});
+  _FakeActorService({required this.onGetProfile, this.onGetProfiles});
 
   final Future<_FakeResponse<ProfileViewDetailed>> Function(String actor) onGetProfile;
+  final Future<_FakeProfilesResponse> Function(List<String> actors)? onGetProfiles;
 
   Future<_FakeResponse<ProfileViewDetailed>> getProfile({required String actor, Map<String, String>? $headers}) {
     return onGetProfile(actor);
   }
 
   Future<_FakeProfilesResponse> getProfiles({required List<String> actors, Map<String, String>? $headers}) async {
+    final handler = onGetProfiles;
+    if (handler != null) {
+      return handler(actors);
+    }
     return _FakeProfilesResponse(const _FakeProfilesData([]));
   }
 }

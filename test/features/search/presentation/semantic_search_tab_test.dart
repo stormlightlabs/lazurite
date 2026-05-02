@@ -112,17 +112,6 @@ void main() {
       expect(find.text('Search your saved and liked posts by meaning, not just keywords'), findsOneWidget);
     });
 
-    testWidgets('shows unavailable state when embedding service is unavailable', (tester) async {
-      when(() => searchCubit.state).thenReturn(const SemanticSearchState(status: SemanticSearchStatus.unavailable));
-      whenListen(
-        searchCubit,
-        const Stream<SemanticSearchState>.empty(),
-        initialState: const SemanticSearchState(status: SemanticSearchStatus.unavailable),
-      );
-      await tester.pumpWidget(buildSubject());
-      expect(find.text('Semantic search unavailable'), findsOneWidget);
-    });
-
     testWidgets('shows loading indicator while searching', (tester) async {
       when(() => searchCubit.state).thenReturn(const SemanticSearchState(status: SemanticSearchStatus.searching));
       whenListen(
@@ -266,18 +255,18 @@ void main() {
       await tester.tap(find.text('Semantic settings'));
       await tester.pumpAndSettle();
       expect(find.text('Semantic settings'), findsOneWidget);
-      expect(find.text('Enable semantic search'), findsOneWidget);
+      expect(find.text('Semantic search is always enabled for saved and liked posts.'), findsOneWidget);
     });
 
-    testWidgets('sheet toggle updates semantic search enabled setting', (tester) async {
+    testWidgets('semantic settings sheet does not show enable toggle', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.tap(find.byTooltip('Search index actions'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Semantic settings'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(Switch));
-      await tester.pumpAndSettle();
-      verify(() => settingsCubit.setSemanticSearchEnabled(false)).called(1);
+      expect(find.byType(Switch), findsNothing);
+      expect(find.text('Default scope'), findsOneWidget);
+      expect(find.text('Max results'), findsOneWidget);
     });
   });
 }

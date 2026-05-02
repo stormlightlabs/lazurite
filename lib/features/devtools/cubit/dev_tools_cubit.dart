@@ -11,6 +11,8 @@ import 'package:bluesky/app_bsky_actor_searchactorstypeahead.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/actor_repository_service_resolver.dart';
+import 'package:lazurite/core/network/atproto_host_resolver.dart';
 
 part 'dev_tools_state.dart';
 
@@ -27,9 +29,15 @@ abstract interface class DevToolsRepository {
     int? limit,
     String? cursor,
     bool? reverse,
+    String? serviceHost,
   });
 
-  Future<RepoGetRecordOutput> getRecord({required String repo, required String collection, required String rkey});
+  Future<RepoGetRecordOutput> getRecord({
+    required String repo,
+    required String collection,
+    required String rkey,
+    String? serviceHost,
+  });
 }
 
 final class AtprotoDevToolsRepository implements DevToolsRepository {
@@ -73,6 +81,7 @@ final class AtprotoDevToolsRepository implements DevToolsRepository {
     int? limit,
     String? cursor,
     bool? reverse,
+    String? serviceHost,
   }) async {
     final response = await _atproto.repo.listRecords(
       repo: repo,
@@ -80,6 +89,7 @@ final class AtprotoDevToolsRepository implements DevToolsRepository {
       limit: limit,
       cursor: cursor,
       reverse: reverse,
+      $service: serviceHost,
     );
     return response.data;
   }
@@ -89,22 +99,30 @@ final class AtprotoDevToolsRepository implements DevToolsRepository {
     required String repo,
     required String collection,
     required String rkey,
+    String? serviceHost,
   }) async {
-    final response = await _atproto.repo.getRecord(repo: repo, collection: collection, rkey: rkey);
+    final response = await _atproto.repo.getRecord(
+      repo: repo,
+      collection: collection,
+      rkey: rkey,
+      $service: serviceHost,
+    );
     return response.data;
   }
 }
 
 class DevToolsCubit extends Cubit<DevToolsState> {
-  DevToolsCubit({ATProto? atproto, DevToolsRepository? repository})
+  DevToolsCubit({ATProto? atproto, DevToolsRepository? repository, ActorRepositoryServiceResolver? actorRepoResolver})
     : assert(atproto != null || repository != null, 'Provide either atproto or repository'),
       _repository = repository ?? AtprotoDevToolsRepository(atproto: atproto!),
+      _actorRepoResolver = actorRepoResolver ?? (atproto == null ? null : ActorRepositoryServiceResolver()),
       super(const DevToolsState());
 
   static const _pageSize = 50;
   static const _countPageSize = 100;
 
   final DevToolsRepository _repository;
+  final ActorRepositoryServiceResolver? _actorRepoResolver;
   int _resolveRequestId = 0;
   int _collectionRequestId = 0;
   int _recordRequestId = 0;
@@ -136,8 +154,18 @@ class DevToolsCubit extends Cubit<DevToolsState> {
         return;
       }
 
-      emit(_buildRepoState(repo: repo, did: identity.did, handle: identity.handle, status: DevToolsStatus.repoLoaded));
-      unawaited(_loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did));
+      emit(
+        _buildRepoState(
+          repo: repo,
+          did: identity.did,
+          handle: identity.handle,
+          repoServiceHost: identity.pdsHost,
+          status: DevToolsStatus.repoLoaded,
+        ),
+      );
+      unawaited(
+        _loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did, repoServiceHost: identity.pdsHost),
+      );
     } catch (error, stackTrace) {
       log.e('DevToolsCubit: Failed to resolve repo', error: error, stackTrace: stackTrace);
       if (_isActiveResolveRequest(resolveRequestId)) {
@@ -193,7 +221,12 @@ class DevToolsCubit extends Cubit<DevToolsState> {
     emit(state.copyWith(isCollectionLoading: true, isRecordLoading: false, errorMessage: null));
 
     try {
-      final response = await _repository.listRecords(repo: state.did!, collection: collection, limit: _pageSize);
+      final response = await _repository.listRecords(
+        repo: state.did!,
+        collection: collection,
+        limit: _pageSize,
+        serviceHost: state.repoServiceHost,
+      );
       if (!_isActiveCollectionRequest(collectionRequestId)) {
         return;
       }
@@ -230,6 +263,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
         collection: state.selectedCollection!,
         cursor: state.recordsCursor,
         limit: _pageSize,
+        serviceHost: state.repoServiceHost,
       );
       if (!_isActiveCollectionRequest(activeCollectionRequestId)) {
         return;
@@ -269,6 +303,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
         repo: state.did!,
         collection: record.uri.collection.toString(),
         rkey: record.uri.rkey,
+        serviceHost: state.repoServiceHost,
       );
       if (!_isActiveRecordRequest(recordRequestId)) {
         return;
@@ -389,12 +424,27 @@ class DevToolsCubit extends Cubit<DevToolsState> {
     final rkey = _rkeyFromAtUri(atUri);
 
     if (collection == null) {
-      emit(_buildRepoState(repo: repo, did: identity.did, handle: identity.handle, status: DevToolsStatus.repoLoaded));
-      unawaited(_loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did));
+      emit(
+        _buildRepoState(
+          repo: repo,
+          did: identity.did,
+          handle: identity.handle,
+          repoServiceHost: identity.pdsHost,
+          status: DevToolsStatus.repoLoaded,
+        ),
+      );
+      unawaited(
+        _loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did, repoServiceHost: identity.pdsHost),
+      );
       return;
     }
 
-    final records = await _repository.listRecords(repo: identity.did, collection: collection, limit: _pageSize);
+    final records = await _repository.listRecords(
+      repo: identity.did,
+      collection: collection,
+      limit: _pageSize,
+      serviceHost: identity.pdsHost,
+    );
     if (!_isActiveResolveRequest(resolveRequestId)) {
       return;
     }
@@ -405,17 +455,25 @@ class DevToolsCubit extends Cubit<DevToolsState> {
           repo: repo,
           did: identity.did,
           handle: identity.handle,
+          repoServiceHost: identity.pdsHost,
           status: DevToolsStatus.collectionLoaded,
           selectedCollection: collection,
           records: records.records,
           recordsCursor: records.cursor,
         ),
       );
-      unawaited(_loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did));
+      unawaited(
+        _loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did, repoServiceHost: identity.pdsHost),
+      );
       return;
     }
 
-    final record = await _repository.getRecord(repo: identity.did, collection: collection, rkey: rkey);
+    final record = await _repository.getRecord(
+      repo: identity.did,
+      collection: collection,
+      rkey: rkey,
+      serviceHost: identity.pdsHost,
+    );
     if (!_isActiveResolveRequest(resolveRequestId)) {
       return;
     }
@@ -425,6 +483,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
         repo: repo,
         did: identity.did,
         handle: identity.handle,
+        repoServiceHost: identity.pdsHost,
         status: DevToolsStatus.recordLoaded,
         selectedCollection: collection,
         records: records.records,
@@ -432,17 +491,32 @@ class DevToolsCubit extends Cubit<DevToolsState> {
         selectedRecord: RecordInfo(uri: record.uri.toString(), cid: record.cid, value: record.value),
       ),
     );
-    unawaited(_loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did));
+    unawaited(
+      _loadCollectionCounts(resolveRequestId: resolveRequestId, did: identity.did, repoServiceHost: identity.pdsHost),
+    );
   }
 
-  Future<({String did, String? handle})> _resolveIdentity(String input) async {
+  Future<({String did, String? handle, String pdsHost})> _resolveIdentity(String input) async {
     final normalizedInput = _normalizeInputForResolve(input);
-    if (normalizedInput.startsWith('did:')) {
-      return (did: normalizedInput, handle: null);
+    final resolver = _actorRepoResolver;
+    if (resolver != null) {
+      final resolution = await resolver.resolve(normalizedInput);
+      return (
+        did: resolution.did,
+        handle: normalizedInput.startsWith('did:') ? null : normalizedInput,
+        pdsHost: resolution.pdsHost,
+      );
     }
 
-    final response = await _repository.resolveHandle(handle: normalizedInput);
-    return (did: response.did, handle: normalizedInput);
+    final did = normalizedInput.startsWith('did:')
+        ? normalizedInput
+        : (await _repository.resolveHandle(handle: normalizedInput)).did;
+    final repo = await _repository.describeRepo(repo: did);
+    final pdsHost = extractAtprotoPdsHostFromDidDoc(repo.didDoc);
+    if (pdsHost == null || pdsHost.isEmpty) {
+      throw StateError('Unable to resolve PDS host for repo: $did');
+    }
+    return (did: did, handle: normalizedInput.startsWith('did:') ? null : normalizedInput, pdsHost: pdsHost);
   }
 
   AtUri _parseAtUri(String input) {
@@ -475,6 +549,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
     required RepoDescribeRepoOutput repo,
     required String did,
     required String? handle,
+    required String repoServiceHost,
     required DevToolsStatus status,
     String? selectedCollection,
     List<RepoListRecordsRecord>? records,
@@ -485,6 +560,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
       status: status,
       did: did,
       handle: handle ?? repo.handle,
+      repoServiceHost: repoServiceHost,
       repoHandle: repo.handle,
       collections: repo.collections.map(CollectionSummary.new).toList(growable: false),
       isCollectionCountsLoading: repo.collections.isNotEmpty,
@@ -497,7 +573,11 @@ class DevToolsCubit extends Cubit<DevToolsState> {
     );
   }
 
-  Future<void> _loadCollectionCounts({required int resolveRequestId, required String did}) async {
+  Future<void> _loadCollectionCounts({
+    required int resolveRequestId,
+    required String did,
+    required String repoServiceHost,
+  }) async {
     if (state.collections.isEmpty) {
       if (_isActiveResolveRequest(resolveRequestId)) {
         emit(state.copyWith(isCollectionCountsLoading: false));
@@ -511,7 +591,11 @@ class DevToolsCubit extends Cubit<DevToolsState> {
         return;
       }
 
-      countsByCollection[collection.name] = await _countRecords(did: did, collection: collection.name);
+      countsByCollection[collection.name] = await _countRecords(
+        did: did,
+        collection: collection.name,
+        repoServiceHost: repoServiceHost,
+      );
       if (!_isActiveResolveRequest(resolveRequestId)) {
         return;
       }
@@ -525,7 +609,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
     }
   }
 
-  Future<int> _countRecords({required String did, required String collection}) async {
+  Future<int> _countRecords({required String did, required String collection, required String repoServiceHost}) async {
     var total = 0;
     String? cursor;
 
@@ -535,6 +619,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
         collection: collection,
         limit: _countPageSize,
         cursor: cursor,
+        serviceHost: repoServiceHost,
       );
       total += response.records.length;
       cursor = response.cursor;

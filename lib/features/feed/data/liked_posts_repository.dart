@@ -31,41 +31,40 @@ class LikedPostsRepository {
 
   /// Syncs liked posts for [accountDid].
   ///
-  /// Paginates through [bluesky.feed.getActorLikes] until it encounters an
-  /// already-known URI or has fetched [_maxLikes] posts, whichever comes first.
-  /// Upserts new entries and evicts oldest entries when count exceeds [_maxLikes].
+  /// Uses `app.bsky.feed.getActorLikes` for the signed-in account.
+  /// Stops when the cursor is exhausted or [_maxLikes] posts are scanned.
   Future<void> syncLikes(String accountDid) async {
     String? cursor;
-    var fetched = 0;
-    var hitKnown = false;
+    var scanned = 0;
 
-    while (!hitKnown && fetched < _maxLikes) {
+    while (scanned < _maxLikes) {
       final response = await _bluesky.feed.getActorLikes(
         actor: accountDid,
         limit: _pageSize,
         cursor: cursor,
-        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.feed.getActorLikes'),
+        $headers: _appViewContext.appBskyHeadersWithoutProxy(),
       );
 
       final data = response.data;
-      final posts = data.feed;
+      final posts = (data.feed as List<dynamic>).whereType<FeedViewPost>().toList(growable: false);
 
       if (posts.isEmpty) break;
+      scanned += posts.length;
 
       for (final FeedViewPost feedViewPost in posts) {
         final postUri = feedViewPost.post.uri.toString();
+        final likedAt = _resolveLikedAt(feedViewPost);
+        final postJson = jsonEncode(feedViewPost.toJson());
 
         final existing = await _database.getLikedPost(accountDid, postUri);
         if (existing != null) {
-          hitKnown = true;
-          break;
+          if (likedAt.isAfter(existing.likedAt)) {
+            await _database.updateLikedPost(existing.id, postJson: postJson, likedAt: likedAt);
+            _semanticIndexer?.queueIndexPost(postUri, postJson, accountDid, 'liked');
+          }
+          continue;
         }
 
-        final likedAt = feedViewPost.reason == null
-            ? DateTime.now()
-            : _extractLikedAt(feedViewPost.reason!, DateTime.now());
-
-        final postJson = jsonEncode(feedViewPost.toJson());
         await _database.upsertLikedPost(
           LikedPostsCompanion(
             accountDid: Value(accountDid),
@@ -75,10 +74,9 @@ class LikedPostsRepository {
           ),
         );
         _semanticIndexer?.queueIndexPost(postUri, postJson, accountDid, 'liked');
-        fetched++;
       }
 
-      if (hitKnown || data.cursor == null) break;
+      if (data.cursor == null) break;
       cursor = data.cursor;
     }
 
@@ -96,14 +94,40 @@ class LikedPostsRepository {
     return result;
   }
 
-  DateTime _extractLikedAt(dynamic reason, DateTime fallback) {
+  DateTime _resolveLikedAt(FeedViewPost feedViewPost) {
+    final fromReason = _extractReasonIndexedAt(feedViewPost.reason);
+    if (fromReason != null) {
+      return fromReason;
+    }
+
+    final indexedAt = (feedViewPost.post as dynamic).indexedAt;
+    if (indexedAt is DateTime) {
+      return indexedAt.toUtc();
+    }
+
+    final createdAtRaw = feedViewPost.post.record['createdAt'];
+    if (createdAtRaw is String) {
+      final parsed = DateTime.tryParse(createdAtRaw);
+      if (parsed != null) {
+        return parsed.toUtc();
+      }
+    }
+
+    // Deterministic fallback for malformed/missing timestamps.
+    return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+  }
+
+  DateTime? _extractReasonIndexedAt(dynamic reason) {
+    if (reason == null) {
+      return null;
+    }
     try {
       final map = reason is Map ? reason : (reason as dynamic).toJson();
       final indexedAt = map['indexedAt'] as String?;
       if (indexedAt != null) {
-        return DateTime.parse(indexedAt);
+        return DateTime.parse(indexedAt).toUtc();
       }
     } catch (_) {}
-    return fallback;
+    return null;
   }
 }

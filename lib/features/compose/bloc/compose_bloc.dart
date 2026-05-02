@@ -13,6 +13,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/actor_repository_service_resolver.dart';
 import 'package:lazurite/core/scheduler/post_scheduler.dart';
 import 'package:lazurite/features/compose/data/link_preview_service.dart';
 
@@ -699,12 +700,17 @@ class EditPostResult {
 }
 
 class ComposeRepository {
-  ComposeRepository({required Bluesky bluesky, LinkPreviewService? linkPreviewService})
-    : _bluesky = bluesky,
-      _linkPreviewService = linkPreviewService ?? LinkPreviewService();
+  ComposeRepository({
+    required Bluesky bluesky,
+    LinkPreviewService? linkPreviewService,
+    ActorRepositoryServiceResolver? actorRepositoryServiceResolver,
+  }) : _actorRepoResolver = actorRepositoryServiceResolver ?? ActorRepositoryServiceResolver(),
+       _bluesky = bluesky,
+       _linkPreviewService = linkPreviewService ?? LinkPreviewService();
 
   final Bluesky _bluesky;
   final LinkPreviewService _linkPreviewService;
+  final ActorRepositoryServiceResolver _actorRepoResolver;
 
   Future<BlobRef?> uploadBlob(List<int> bytes, {String mimeType = 'image/jpeg'}) async {
     try {
@@ -813,14 +819,22 @@ class ComposeRepository {
   }) async {
     try {
       final parentAtUri = AtUri.parse(parentUri);
-      final parent = await _bluesky.atproto.repo.getRecord(
+      final parent = await _getRecordFromRepo(
         repo: parentAtUri.hostname,
         collection: parentAtUri.collection.toString(),
         rkey: parentAtUri.rkey,
       );
 
-      final latestParentCid = parent.data.cid ?? parentCid;
-      final parentReply = parent.data.value['reply'];
+      final latestParentCidRaw = parent.data.cid;
+      final latestParentCid = latestParentCidRaw is String && latestParentCidRaw.isNotEmpty
+          ? latestParentCidRaw
+          : parentCid;
+      final parentValue = parent.data.value;
+      if (parentValue is! Map<String, dynamic>) {
+        return (parentCid: latestParentCid, rootUri: parentUri, rootCid: latestParentCid);
+      }
+
+      final parentReply = parentValue['reply'];
       if (parentReply is! Map) {
         return (parentCid: latestParentCid, rootUri: parentUri, rootCid: latestParentCid);
       }
@@ -869,10 +883,13 @@ class ComposeRepository {
       final targetRepo = atUri.hostname.isNotEmpty ? atUri.hostname : repo;
       final collection = atUri.collection.toString();
       final rkey = atUri.rkey;
-      final latest = await _bluesky.atproto.repo.getRecord(repo: targetRepo, collection: collection, rkey: rkey);
+      final latest = await _getRecordFromRepo(repo: targetRepo, collection: collection, rkey: rkey);
 
-      final baseRecord = latest.data.value.isNotEmpty ? latest.data.value : originalRecord;
-      final swapCid = latest.data.cid ?? currentCid;
+      final latestValue = latest.data.value;
+      final latestRecord = latestValue is Map ? Map<String, dynamic>.from(latestValue) : <String, dynamic>{};
+      final baseRecord = latestRecord.isNotEmpty ? latestRecord : originalRecord;
+      final latestCid = latest.data.cid;
+      final swapCid = latestCid is String && latestCid.isNotEmpty ? latestCid : currentCid;
       final updatedRecord = Map<String, dynamic>.from(baseRecord);
       updatedRecord['text'] = text;
       if (facets.isNotEmpty) {
@@ -932,9 +949,9 @@ class ComposeRepository {
         );
       }
 
-      final verified = await _bluesky.atproto.repo.getRecord(repo: targetRepo, collection: collection, rkey: rkey);
-
-      final persistedText = verified.data.value['text'];
+      final verified = await _getRecordFromRepo(repo: targetRepo, collection: collection, rkey: rkey);
+      final verifiedValue = verified.data.value;
+      final persistedText = verifiedValue is Map ? verifiedValue['text'] : null;
       if (persistedText is! String || persistedText != text) {
         return const EditPostResult.failure(
           'Edit was submitted but could not be confirmed yet. Please reopen the post and verify.',
@@ -970,8 +987,13 @@ class ComposeRepository {
     required String rkey,
   }) async {
     try {
-      final response = await _bluesky.atproto.repo.getRecord(repo: repo, collection: collection, rkey: rkey);
-      return (value: response.data.value, cid: response.data.cid);
+      final response = await _getRecordFromRepo(repo: repo, collection: collection, rkey: rkey);
+      final value = response.data.value;
+      if (value is! Map) {
+        return null;
+      }
+      final cid = response.data.cid;
+      return (value: Map<String, dynamic>.from(value), cid: cid is String ? cid : null);
     } on XRPCException catch (e, stackTrace) {
       final errorCode = e.response.data.error;
       if (errorCode == 'RecordNotFound' || errorCode == 'NotFound') {
@@ -1005,6 +1027,44 @@ class ComposeRepository {
       log.e('Failed to restore original record after edit failure', error: e, stackTrace: stackTrace);
       return false;
     }
+  }
+
+  Future<dynamic> _getRecordFromRepo({required String repo, required String collection, required String rkey}) async {
+    final serviceHost = await _resolveRepoServiceHost(repo);
+    return _bluesky.atproto.repo.getRecord(repo: repo, collection: collection, rkey: rkey, $service: serviceHost);
+  }
+
+  Future<String?> _resolveRepoServiceHost(String repo) async {
+    if (_isCurrentSessionRepo(repo)) {
+      return null;
+    }
+
+    try {
+      final resolved = await _actorRepoResolver.resolve(repo);
+      return resolved.pdsHost;
+    } catch (error, stackTrace) {
+      log.w(
+        'ComposeRepository: Failed to resolve non-self repo host for $repo; aborting foreign repo read',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  bool _isCurrentSessionRepo(String repo) {
+    final normalizedRepo = repo.trim().toLowerCase();
+    if (normalizedRepo.isEmpty) {
+      return false;
+    }
+
+    final sessionDid = _bluesky.session?.did.trim().toLowerCase();
+    if (sessionDid != null && sessionDid.isNotEmpty && normalizedRepo == sessionDid) {
+      return true;
+    }
+
+    final oauthDid = _bluesky.oAuthSession?.sub.trim().toLowerCase();
+    return oauthDid != null && oauthDid.isNotEmpty && normalizedRepo == oauthDid;
   }
 }
 

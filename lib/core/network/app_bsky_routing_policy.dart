@@ -48,7 +48,6 @@ abstract final class AppBskyRoutingPolicy {
     'app.bsky.feed.searchPosts': AppBskyProxyMode.useProxy,
     'app.bsky.feed.getPostThread': AppBskyProxyMode.useProxy,
     'app.bsky.feed.getAuthorFeed': AppBskyProxyMode.useProxy,
-    'app.bsky.feed.getActorLikes': AppBskyProxyMode.useProxy,
 
     /// Actor/profile endpoints (public or account-context reads).
     'app.bsky.actor.getProfile': AppBskyProxyMode.bypassProxy,
@@ -82,6 +81,7 @@ abstract final class AppBskyRoutingPolicy {
     'app.bsky.feed.getLikes': AppBskyProxyMode.bypassProxy,
     'app.bsky.feed.getQuotes': AppBskyProxyMode.bypassProxy,
     'app.bsky.feed.getRepostedBy': AppBskyProxyMode.bypassProxy,
+    'app.bsky.feed.getActorLikes': AppBskyProxyMode.bypassProxy,
     'app.bsky.feed.getListFeed': AppBskyProxyMode.bypassProxy,
     'app.bsky.feed.getPosts': AppBskyProxyMode.bypassProxy,
     'app.bsky.bookmark.createBookmark': AppBskyProxyMode.bypassProxy,

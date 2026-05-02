@@ -9,7 +9,7 @@ import 'package:lazurite/features/search/data/semantic_search_result.dart';
 
 export 'package:lazurite/features/search/data/search_scope.dart';
 
-enum SemanticSearchStatus { initial, searching, loaded, error, unavailable }
+enum SemanticSearchStatus { initial, searching, loaded, error }
 
 class SemanticSearchState extends Equatable {
   const SemanticSearchState({
@@ -49,8 +49,6 @@ class SemanticSearchState extends Equatable {
 /// Exposes a [search] method with a 500 ms debounce, a [setScope] method to
 /// filter results by source, and a [clearResults] method to reset state.
 ///
-/// The initial state is [SemanticSearchStatus.unavailable] when the
-/// [EmbeddingService] is not available (e.g. model failed to load).
 class SemanticSearchCubit extends Cubit<SemanticSearchState> {
   SemanticSearchCubit({
     required SemanticSearchRepository repository,
@@ -63,15 +61,7 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
        _accountDid = accountDid,
        _maxResults = maxResults,
        _debounceDuration = debounceDuration,
-       super(
-         embeddingService.isAvailable
-             ? const SemanticSearchState()
-             : const SemanticSearchState(status: SemanticSearchStatus.unavailable),
-       ) {
-    if (!embeddingService.isAvailable) {
-      unawaited(_recoverAvailability());
-    }
-  }
+       super(const SemanticSearchState());
 
   final SemanticSearchRepository _repository;
   final EmbeddingService _embeddingService;
@@ -105,7 +95,7 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
       if (await _ensureAvailable()) {
         await _doSearch(state.query);
       } else if (!isClosed) {
-        emit(state.copyWith(status: SemanticSearchStatus.unavailable));
+        emit(state.copyWith(status: SemanticSearchStatus.error, errorMessage: 'Semantic model unavailable.'));
       }
     }
   }
@@ -114,14 +104,6 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
   void clearResults() {
     _debounce?.cancel();
     emit(SemanticSearchState(scope: state.scope));
-  }
-
-  Future<void> _recoverAvailability() async {
-    if (await _ensureAvailable()) {
-      if (!isClosed && state.status == SemanticSearchStatus.unavailable) {
-        emit(SemanticSearchState(scope: state.scope));
-      }
-    }
   }
 
   Future<bool> _ensureAvailable() async {
@@ -134,7 +116,7 @@ class SemanticSearchCubit extends Cubit<SemanticSearchState> {
     if (await _ensureAvailable()) {
       await _doSearch(query);
     } else if (!isClosed) {
-      emit(state.copyWith(status: SemanticSearchStatus.unavailable));
+      emit(state.copyWith(status: SemanticSearchStatus.error, errorMessage: 'Semantic model unavailable.'));
     }
   }
 

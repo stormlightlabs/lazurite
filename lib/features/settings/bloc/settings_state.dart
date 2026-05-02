@@ -15,7 +15,7 @@ class SettingsState extends Equatable {
     this.simulateOffline = false,
     this.threadAutoCollapseDepth,
     this.constellationUrl = 'https://constellation.microcosm.blue',
-    this.semanticSearchEnabled = false,
+    this.semanticSearchEnabled = true,
     this.searchScope = SearchScope.both,
     this.semanticSearchMaxResults = 20,
     this.typeaheadProvider = 'bluesky',

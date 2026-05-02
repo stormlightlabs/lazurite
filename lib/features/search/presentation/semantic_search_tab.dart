@@ -53,12 +53,8 @@ class _SemanticSearchTabState extends State<SemanticSearchTab> {
   Widget build(BuildContext context) {
     return BlocBuilder<SemanticSearchCubit, SemanticSearchState>(
       builder: (context, state) {
-        if (state.status == SemanticSearchStatus.unavailable) {
-          return const _UnavailableView();
-        }
-
         return BlocBuilder<SettingsCubit, SettingsState>(
-          builder: (context, settingsState) {
+          builder: (context, _) {
             return Column(
               children: [
                 BlocBuilder<SemanticIndexCubit, SemanticIndexState>(
@@ -66,30 +62,25 @@ class _SemanticSearchTabState extends State<SemanticSearchTab> {
                     return _IndexControls(indexState: indexState);
                   },
                 ),
-                if (!settingsState.semanticSearchEnabled) ...[
-                  const Divider(height: 1),
-                  const Expanded(child: _DisabledView()),
-                ] else ...[
-                  _SearchBar(
-                    controller: _controller,
-                    onChanged: (query) => context.read<SemanticSearchCubit>().search(query),
-                    onClear: () {
-                      _controller.clear();
-                      context.read<SemanticSearchCubit>().clearResults();
-                    },
-                  ),
-                  _ScopeChips(
-                    selected: state.scope,
-                    onSelected: (scope) async {
-                      await context.read<SemanticSearchCubit>().setScope(scope);
-                      if (context.mounted) {
-                        unawaited(context.read<SettingsCubit>().setSearchScope(scope));
-                      }
-                    },
-                  ),
-                  const Divider(height: 1),
-                  Expanded(child: _ResultsView(state: state)),
-                ],
+                _SearchBar(
+                  controller: _controller,
+                  onChanged: (query) => context.read<SemanticSearchCubit>().search(query),
+                  onClear: () {
+                    _controller.clear();
+                    context.read<SemanticSearchCubit>().clearResults();
+                  },
+                ),
+                _ScopeChips(
+                  selected: state.scope,
+                  onSelected: (scope) async {
+                    await context.read<SemanticSearchCubit>().setScope(scope);
+                    if (context.mounted) {
+                      unawaited(context.read<SettingsCubit>().setSearchScope(scope));
+                    }
+                  },
+                ),
+                const Divider(height: 1),
+                Expanded(child: _ResultsView(state: state)),
               ],
             );
           },
@@ -203,56 +194,51 @@ class _SemanticSettingsSheet extends StatelessWidget {
               children: [
                 Text('Semantic settings', style: context.textTheme.titleLarge),
                 const SizedBox(height: 12),
-                SwitchListTile.adaptive(
-                  value: settingsState.semanticSearchEnabled,
-                  onChanged: (value) => unawaited(context.read<SettingsCubit>().setSemanticSearchEnabled(value)),
-                  title: const Text('Enable semantic search'),
-                  subtitle: const Text('Search this account\'s saved and liked posts by meaning'),
-                  contentPadding: EdgeInsets.zero,
+                Text(
+                  'Semantic search is always enabled for saved and liked posts.',
+                  style: context.textTheme.bodyMedium,
                 ),
-                if (settingsState.semanticSearchEnabled) ...[
-                  const SizedBox(height: 8),
-                  Text('Default scope', style: context.textTheme.titleSmall),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<SearchScope>(
-                    initialValue: settingsState.searchScope,
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
-                    items: const [
-                      DropdownMenuItem(value: SearchScope.both, child: Text('Saved + Liked')),
-                      DropdownMenuItem(value: SearchScope.saved, child: Text('Saved only')),
-                      DropdownMenuItem(value: SearchScope.liked, child: Text('Liked only')),
-                    ],
-                    onChanged: (scope) async {
-                      if (scope == null) return;
-                      await context.read<SettingsCubit>().setSearchScope(scope);
-                      if (context.mounted) {
-                        await context.read<SemanticSearchCubit>().setScope(scope);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Max results', style: context.textTheme.titleSmall),
-                      const Spacer(),
-                      Text(
-                        '${settingsState.semanticSearchMaxResults}',
-                        style: context.textTheme.titleSmall?.copyWith(fontFamily: 'JetBrains Mono'),
-                      ),
-                    ],
-                  ),
-                  Slider(
-                    value: settingsState.semanticSearchMaxResults.toDouble(),
-                    min: 10,
-                    max: 50,
-                    divisions: 8,
-                    onChanged: (v) {
-                      final value = v.round();
-                      context.read<SettingsCubit>().setSemanticSearchMaxResults(value);
-                      context.read<SemanticSearchCubit>().setMaxResults(value);
-                    },
-                  ),
-                ],
+                const SizedBox(height: 12),
+                Text('Default scope', style: context.textTheme.titleSmall),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<SearchScope>(
+                  initialValue: settingsState.searchScope,
+                  decoration: const InputDecoration(border: OutlineInputBorder()),
+                  items: const [
+                    DropdownMenuItem(value: SearchScope.both, child: Text('Saved + Liked')),
+                    DropdownMenuItem(value: SearchScope.saved, child: Text('Saved only')),
+                    DropdownMenuItem(value: SearchScope.liked, child: Text('Liked only')),
+                  ],
+                  onChanged: (scope) async {
+                    if (scope == null) return;
+                    await context.read<SettingsCubit>().setSearchScope(scope);
+                    if (context.mounted) {
+                      await context.read<SemanticSearchCubit>().setScope(scope);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Text('Max results', style: context.textTheme.titleSmall),
+                    const Spacer(),
+                    Text(
+                      '${settingsState.semanticSearchMaxResults}',
+                      style: context.textTheme.titleSmall?.copyWith(fontFamily: 'JetBrains Mono'),
+                    ),
+                  ],
+                ),
+                Slider(
+                  value: settingsState.semanticSearchMaxResults.toDouble(),
+                  min: 10,
+                  max: 50,
+                  divisions: 8,
+                  onChanged: (v) {
+                    final value = v.round();
+                    context.read<SettingsCubit>().setSemanticSearchMaxResults(value);
+                    context.read<SemanticSearchCubit>().setMaxResults(value);
+                  },
+                ),
               ],
             ),
           );
@@ -372,7 +358,6 @@ class _ResultsView extends StatelessWidget {
     SemanticSearchStatus.loaded when state.results.isEmpty => const _NoResultsView(),
     SemanticSearchStatus.loaded => _ResultsList(results: state.results),
     SemanticSearchStatus.error => _ErrorView(message: state.errorMessage),
-    SemanticSearchStatus.unavailable => const _UnavailableView(),
   };
 }
 
@@ -564,38 +549,6 @@ class _NoResultsView extends StatelessWidget {
   }
 }
 
-class _DisabledView extends StatelessWidget {
-  const _DisabledView();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = context.colorScheme;
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off_outlined, size: 64, color: scheme.outline),
-            const SizedBox(height: 16),
-            Text(
-              'Semantic search is off',
-              style: context.textTheme.headlineSmall?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Turn it on above to search your saved and liked posts by meaning.',
-              textAlign: TextAlign.center,
-              style: context.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.message});
 
@@ -614,35 +567,4 @@ class _ErrorView extends StatelessWidget {
       ],
     ),
   );
-}
-
-class _UnavailableView extends StatelessWidget {
-  const _UnavailableView();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = context.colorScheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.model_training_outlined, size: 64, color: scheme.outline),
-            const SizedBox(height: 16),
-            Text(
-              'Semantic search unavailable',
-              style: context.textTheme.headlineSmall?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'The on-device language model could not be loaded on this device.',
-              textAlign: TextAlign.center,
-              style: context.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
