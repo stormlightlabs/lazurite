@@ -10,9 +10,9 @@ import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
-import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
+import 'package:lazurite/features/feed/presentation/widgets/compact_post_card.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
-import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/post_search_filters.dart';
@@ -28,7 +28,6 @@ import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:lazurite/shared/utils/parse_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -871,7 +870,17 @@ class _SearchScreenState extends State<SearchScreen> {
           itemKey: post.uri.toString(),
           index: index,
           seenKeys: _seenResultKeys,
-          child: _PostViewCard(post: post),
+          child: CompactPostCard(
+            feedViewPost: FeedViewPost(post: post),
+            onTap: () => context.push('/post?uri=${Uri.encodeQueryComponent(post.uri.toString())}'),
+            footer: PostCardFooter(
+              timestamp: formatPostTime(post.indexedAt),
+              replyCount: post.replyCount ?? 0,
+              repostCount: post.repostCount ?? 0,
+              likeCount: post.likeCount ?? 0,
+              showCounts: true,
+            ),
+          ),
         );
       },
     );
@@ -1010,121 +1019,6 @@ class _SearchScreenState extends State<SearchScreen> {
     if (!launched && mounted) {
       showAppSnackBar(context, 'Could not open issue link.');
     }
-  }
-}
-
-class _PostViewCard extends StatelessWidget {
-  const _PostViewCard({required this.post});
-
-  final PostView post;
-
-  @override
-  Widget build(BuildContext context) {
-    final record = tryParseRecord(post.record);
-    final createdAt = record?.createdAt ?? post.indexedAt;
-    final moderationService = maybeModerationService(context);
-    final postUi =
-        moderationService?.postUi(post, bsky_moderation.ModerationBehaviorContext.contentList) ??
-        const bsky_moderation.ModerationUI();
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 1),
-      elevation: 0,
-      shape: const RoundedRectangleBorder(),
-      child: ModeratedBlurOverlay(
-        ui: postUi,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context, post.author, createdAt),
-              if (postUi.alert || postUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: postUi)],
-              if (record != null && record.text.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                FacetText(text: record.text, facets: record.facets, style: context.textTheme.bodyLarge),
-              ],
-              const SizedBox(height: 12),
-              _buildActions(context),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, ProfileViewBasic author, DateTime createdAt) {
-    final moderationService = maybeModerationService(context);
-    final avatarUi =
-        moderationService?.profileBasicUi(author, bsky_moderation.ModerationBehaviorContext.avatar) ??
-        const bsky_moderation.ModerationUI();
-    return InkWell(
-      onTap: () => navigateToProfile(context, author.did),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ProfileAvatar(
-            size: 44,
-            moderationUi: avatarUi,
-            imageUrl: author.avatar,
-            fallbackText: author.displayName ?? author.handle,
-            shape: BoxShape.circle,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  author.displayName ?? author.handle,
-                  style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '@${author.handle} · ${formatRelativeTime(createdAt)}',
-                  style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActions(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _buildActionButton(context, Icons.chat_bubble_outline, '${post.replyCount ?? 0}'),
-        _buildActionButton(context, Icons.repeat, '${post.repostCount ?? 0}'),
-        _buildActionButton(context, Icons.favorite_border, '${post.likeCount ?? 0}'),
-        _buildActionButton(context, Icons.share_outlined, ''),
-      ],
-    );
-  }
-
-  Widget _buildActionButton(BuildContext context, IconData icon, String count) {
-    final iconColor = context.colorScheme.onSurfaceVariant;
-
-    return InkWell(
-      onTap: () {},
-      borderRadius: BorderRadius.circular(999),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: iconColor),
-            if (count.isNotEmpty) ...[
-              const SizedBox(width: 4),
-              Text(count, style: context.textTheme.bodySmall?.copyWith(color: iconColor)),
-            ],
-          ],
-        ),
-      ),
-    );
   }
 }
 

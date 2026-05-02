@@ -238,8 +238,8 @@ class _FeedDetailScreenState extends State<FeedDetailScreen> {
       scrollController: _scrollController,
       isLoadingMore: _isLoadingMore,
       onRefresh: _loadInitial,
-      gridItemBuilder: (context, index) => buildCard(index, PostCardVariant.grid),
-      linearItemBuilder: (context, index) => buildCard(index, PostCardVariant.linear),
+      gridItemBuilder: (context, index) => buildCard(index, PostCardVariant.compact),
+      linearItemBuilder: (context, index) => buildCard(index, PostCardVariant.card),
     );
   }
 }

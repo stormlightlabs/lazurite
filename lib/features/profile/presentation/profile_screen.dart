@@ -1165,10 +1165,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return BlocBuilder<SettingsCubit, SettingsState>(
       buildWhen: (prev, curr) => prev.feedLayout != curr.feedLayout,
       builder: (context, settingsState) {
-        if (settingsState.feedLayout == FeedLayout.card) {
-          return _buildGridFeed(context, visibleFeedState, requestFilter: requestFilter, slice: slice);
+        if (settingsState.feedLayout == FeedLayout.compact) {
+          return _buildCompactFeed(context, visibleFeedState, requestFilter: requestFilter, slice: slice);
         }
-        return _buildLinearFeed(context, visibleFeedState, requestFilter: requestFilter, slice: slice);
+        return _buildCardFeed(context, visibleFeedState, requestFilter: requestFilter, slice: slice);
       },
     );
   }
@@ -1229,7 +1229,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return embed.isEmbedRecordView || embed.isEmbedRecordWithMediaView;
   }
 
-  Widget _buildGridFeed(
+  Widget _buildCompactFeed(
     BuildContext context,
     FeedState feedState, {
     required FeedFilter requestFilter,
@@ -1237,8 +1237,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }) {
     final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
     final scrollKey = slice == _ProfileFeedSlice.posts
-        ? const ValueKey('profile_grid_feed')
-        : PageStorageKey<String>('profile_grid_feed_${slice.name}');
+        ? const ValueKey('profile_compact_feed')
+        : PageStorageKey<String>('profile_compact_feed_${slice.name}');
 
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -1254,7 +1254,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         },
         child: ListView.builder(
           key: scrollKey,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
           itemBuilder: (context, index) {
             if (index >= feedState.posts.length) {
@@ -1266,18 +1266,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             final post = feedState.posts[index];
 
             return Padding(
-              padding: EdgeInsets.only(bottom: index == feedState.posts.length - 1 ? 0 : 16),
-              child: Center(
-                child: ConstrainedBox(
-                  key: ValueKey('profile_large_card_$index'),
-                  constraints: const BoxConstraints(maxWidth: 720),
-                  child: PostCardWithActions(
-                    feedViewPost: post,
-                    accountDid: accountDid,
-                    variant: PostCardVariant.grid,
-                    moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
-                  ),
-                ),
+              key: ValueKey('profile_compact_card_$index'),
+              padding: EdgeInsets.only(bottom: index == feedState.posts.length - 1 ? 0 : 2),
+              child: PostCardWithActions(
+                feedViewPost: post,
+                accountDid: accountDid,
+                variant: PostCardVariant.compact,
+                moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
               ),
             );
           },
@@ -1286,7 +1281,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildLinearFeed(
+  Widget _buildCardFeed(
     BuildContext context,
     FeedState feedState, {
     required FeedFilter requestFilter,
@@ -1319,6 +1314,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             return PostCardWithActions(
               feedViewPost: feedState.posts[index],
               accountDid: accountDid,
+              variant: PostCardVariant.card,
               moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
             );
           },

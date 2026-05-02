@@ -132,87 +132,46 @@ void main() {
     });
   });
 
-  group('FeedLayoutView — grid architecture', () {
-    testWidgets('shows SliverGrid when architecture is grid', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 720));
-      expect(find.byType(SliverGrid), findsOneWidget);
+  group('FeedLayoutView — compact architecture', () {
+    testWidgets('shows compact sliver list when layout is compact', (tester) async {
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.compact, screenWidth: 720));
+      expect(find.byType(SliverGrid), findsNothing);
+      expect(find.byType(SliverList), findsOneWidget);
       expect(find.byType(CustomScrollView), findsOneWidget);
     });
 
-    testWidgets('uses gridItemBuilder in grid mode', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card));
+    testWidgets('uses compact item builder in compact mode', (tester) async {
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.compact));
       expect(find.text('grid 0'), findsOneWidget);
       expect(find.text('linear 0'), findsNothing);
     });
 
-    testWidgets('uses 1 column at width < 600', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 400));
-
-      expect(find.byType(SliverGrid), findsNothing);
-      expect(find.byType(SliverList), findsOneWidget);
-    });
-
-    testWidgets('uses tighter single-column padding at phone widths', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 400));
+    testWidgets('uses compact padding in compact mode', (tester) async {
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.compact, screenWidth: 400));
 
       final padding = tester.widget<SliverPadding>(find.byType(SliverPadding));
-      expect(padding.padding, const EdgeInsets.fromLTRB(12, 8, 12, 12));
-    });
-
-    testWidgets('uses 2 columns at width 600–839', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 720));
-
-      final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
-      final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-      expect(delegate.crossAxisCount, 2);
-    });
-
-    testWidgets('uses 3 columns at width 840–1199', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 1000));
-
-      final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
-      final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-      expect(delegate.crossAxisCount, 3);
-    });
-
-    testWidgets('uses 4 columns at width >= 1200', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 1400));
-
-      final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
-      final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-      expect(delegate.crossAxisCount, 4);
-    });
-
-    testWidgets('allocates extra height beyond the square media region', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card, screenWidth: 720));
-
-      final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
-      final delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-      const tileWidth = (720.0 - 1.0) / 2;
-
-      expect(delegate.mainAxisExtent, isNotNull);
-      expect(delegate.mainAxisExtent!, greaterThan(tileWidth + 100));
+      expect(padding.padding, const EdgeInsets.fromLTRB(8, 4, 8, 8));
     });
   });
 
-  group('FeedLayoutView — linear architecture', () {
-    testWidgets('shows ListView when architecture is linear', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.compact));
+  group('FeedLayoutView — card architecture', () {
+    testWidgets('shows ListView when layout is card', (tester) async {
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card));
 
       expect(find.byType(ListView), findsOneWidget);
       expect(find.byType(SliverGrid), findsNothing);
     });
 
-    testWidgets('uses linearItemBuilder in linear mode', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.compact));
+    testWidgets('uses card item builder in card mode', (tester) async {
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card));
 
       expect(find.text('linear 0'), findsOneWidget);
       expect(find.text('linear 1'), findsOneWidget);
       expect(find.text('linear 2'), findsOneWidget);
     });
 
-    testWidgets('uses tighter vertical spacing in linear mode', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.compact));
+    testWidgets('uses tighter vertical spacing in card mode', (tester) async {
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card));
 
       final listView = tester.widget<ListView>(find.byType(ListView));
       expect(listView.padding, const EdgeInsets.symmetric(vertical: 4));
@@ -220,11 +179,11 @@ void main() {
   });
 
   group('FeedLayoutView — architecture switching', () {
-    testWidgets('switches from grid to linear without re-fetch', (tester) async {
+    testWidgets('switches from compact to card without re-fetch', (tester) async {
       final cubit = MockSettingsCubit();
       final streamController = StreamController<SettingsState>.broadcast();
 
-      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.card));
+      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.compact));
       when(() => cubit.stream).thenAnswer((_) => streamController.stream);
 
       var buildCount = 0;
@@ -250,22 +209,22 @@ void main() {
         ),
       );
 
-      expect(find.byType(SliverGrid), findsOneWidget);
+      expect(find.byType(SliverList), findsOneWidget);
 
-      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.compact));
-      streamController.add(_settingsState(FeedLayout.compact));
+      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.card));
+      streamController.add(_settingsState(FeedLayout.card));
       await tester.pump();
 
-      expect(find.byType(SliverGrid), findsNothing);
+      expect(find.byType(CustomScrollView), findsNothing);
       expect(find.byType(ListView), findsOneWidget);
       expect(buildCount, 0);
 
       await streamController.close();
     });
 
-    testWidgets('loading indicator appears when isLoadingMore is true in grid mode', (tester) async {
+    testWidgets('loading indicator appears when isLoadingMore is true in compact mode', (tester) async {
       final cubit = MockSettingsCubit();
-      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.card));
+      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.compact));
 
       await tester.pumpWidget(
         MediaQuery(
@@ -291,9 +250,9 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
-    testWidgets('loading indicator appears when isLoadingMore is true in linear mode', (tester) async {
+    testWidgets('loading indicator appears when isLoadingMore is true in card mode', (tester) async {
       final cubit = MockSettingsCubit();
-      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.compact));
+      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.card));
 
       await tester.pumpWidget(
         MediaQuery(

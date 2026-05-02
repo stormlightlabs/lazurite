@@ -657,22 +657,7 @@ void main() {
       );
     }
 
-    testWidgets('grid mode shows centered large grid cards without the metadata info card', (tester) async {
-      final cubit = MockSettingsCubit();
-      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.card));
-      whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedLayout.card));
-
-      await tester.pumpWidget(buildWithPosts(tester, cubit));
-      await tester.pump();
-
-      expect(find.byKey(const ValueKey('profile_grid_feed')), findsOneWidget);
-      expect(find.byKey(const ValueKey('profile_info_card')), findsNothing);
-      expect(find.byKey(const ValueKey('profile_large_card_0')), findsOneWidget);
-      expect(find.byKey(const ValueKey('profile_large_card_1')), findsOneWidget);
-      expect(find.byKey(const ValueKey('profile_large_card_2')), findsOneWidget);
-    });
-
-    testWidgets('linear mode does not show the large grid card feed or metadata info card', (tester) async {
+    testWidgets('compact mode shows compact feed cards without metadata info card', (tester) async {
       final cubit = MockSettingsCubit();
       when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.compact));
       whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedLayout.compact));
@@ -680,29 +665,44 @@ void main() {
       await tester.pumpWidget(buildWithPosts(tester, cubit));
       await tester.pump();
 
-      expect(find.byKey(const ValueKey('profile_grid_feed')), findsNothing);
+      expect(find.byKey(const ValueKey('profile_compact_feed')), findsOneWidget);
       expect(find.byKey(const ValueKey('profile_info_card')), findsNothing);
-      expect(find.byKey(const ValueKey('profile_large_card_0')), findsNothing);
+      expect(find.byKey(const ValueKey('profile_compact_card_0')), findsOneWidget);
+      expect(find.byKey(const ValueKey('profile_compact_card_1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('profile_compact_card_2')), findsOneWidget);
     });
 
-    testWidgets('switching from grid to linear removes the large grid feed without re-fetch', (tester) async {
+    testWidgets('card mode does not show compact feed keys or metadata info card', (tester) async {
+      final cubit = MockSettingsCubit();
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.card));
+      whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedLayout.card));
+
+      await tester.pumpWidget(buildWithPosts(tester, cubit));
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('profile_compact_feed')), findsNothing);
+      expect(find.byKey(const ValueKey('profile_info_card')), findsNothing);
+      expect(find.byKey(const ValueKey('profile_compact_card_0')), findsNothing);
+    });
+
+    testWidgets('switching from compact to card removes compact feed without re-fetch', (tester) async {
       final cubit = MockSettingsCubit();
       final streamCtrl = StreamController<SettingsState>.broadcast();
 
-      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.card));
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.compact));
       when(() => cubit.stream).thenAnswer((_) => streamCtrl.stream);
 
       await tester.pumpWidget(buildWithPosts(tester, cubit));
       await tester.pump();
 
-      expect(find.byKey(const ValueKey('profile_grid_feed')), findsOneWidget);
+      expect(find.byKey(const ValueKey('profile_compact_feed')), findsOneWidget);
       expect(find.byKey(const ValueKey('profile_info_card')), findsNothing);
 
-      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.compact));
-      streamCtrl.add(settingsStateWith(FeedLayout.compact));
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.card));
+      streamCtrl.add(settingsStateWith(FeedLayout.card));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const ValueKey('profile_grid_feed')), findsNothing);
+      expect(find.byKey(const ValueKey('profile_compact_feed')), findsNothing);
       expect(find.byKey(const ValueKey('profile_info_card')), findsNothing);
 
       verifyNever(() => feedBloc.add(const FeedRefreshRequested()));

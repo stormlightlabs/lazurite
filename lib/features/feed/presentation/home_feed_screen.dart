@@ -446,8 +446,8 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
       scrollController: _scrollController,
       isLoadingMore: _isLoadingMore,
       onRefresh: _loadFeed,
-      gridItemBuilder: (context, index) => buildCard(index, PostCardVariant.grid),
-      linearItemBuilder: (context, index) => buildCard(index, PostCardVariant.linear),
+      gridItemBuilder: (context, index) => buildCard(index, PostCardVariant.compact),
+      linearItemBuilder: (context, index) => buildCard(index, PostCardVariant.card),
     );
   }
 }

@@ -66,14 +66,16 @@ class PostCardFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
     final saveActiveColor = (saveType == 'cloud' || saveType == 'both') ? colorScheme.primary : Colors.amber;
-    const horizontalPadding = 12.0;
+    const horizontalPadding = 8.0;
+    const topPadding = 6.0;
+    const bottomPadding = 4.0;
     const iconSize = 18.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final compactLayout = constraints.maxWidth < 220;
         final actionSpacing = compactLayout ? 4.0 : 8.0;
-        final actionPadding = compactLayout ? 2.0 : 4.0;
+        final actionPadding = compactLayout ? 1.5 : 3.0;
         final canShowCounts = showCounts && constraints.maxWidth >= 240;
         final actions = [
           _FooterAction(
@@ -151,7 +153,7 @@ class PostCardFooter extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(horizontalPadding, topPadding, horizontalPadding, bottomPadding),
           child: compactLayout
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +164,7 @@ class PostCardFooter extends StatelessWidget {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: actions,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Align(alignment: Alignment.centerRight, child: _buildTimestamp(context, colorScheme)),
                   ],
                 )

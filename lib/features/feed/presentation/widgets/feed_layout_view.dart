@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
-import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 
-const double _gridSpacing = 1;
-const double _gridCardChromeHeight = 160;
-
-/// Renders a scrollable list of items in either a responsive [SliverGrid]
-/// (card layout) or a padded [ListView] (compact layout), driven
+/// Renders a scrollable list of items in either a padded [ListView]
+/// (card layout) or a compact-styled [ListView] (compact layout), driven
 /// by [SettingsCubit.feedLayout].
 ///
-/// [gridItemBuilder] is used when the card layout is active.
-/// [linearItemBuilder] is used when the compact layout is active.
+/// [linearItemBuilder] is used when the card layout is active.
+/// [gridItemBuilder] is used when the compact layout is active.
 /// This allows the caller to render the appropriate card variant for each mode.
 class FeedLayoutView extends StatelessWidget {
   const FeedLayoutView({
@@ -39,59 +35,26 @@ class FeedLayoutView extends StatelessWidget {
     return BlocBuilder<SettingsCubit, SettingsState>(
       buildWhen: (prev, curr) => prev.feedLayout != curr.feedLayout,
       builder: (context, settingsState) {
-        if (settingsState.feedLayout == FeedLayout.card) {
-          return _buildGrid(context);
+        if (settingsState.feedLayout == FeedLayout.compact) {
+          return _buildCompact(context);
         }
-        return _buildLinear(context);
+        return _buildCard(context);
       },
     );
   }
 
-  Widget _buildGrid(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final columns = feedColumnCount(width);
-    if (columns == 1) {
-      return _buildSingleColumnGrid(context);
-    }
-    final tileWidth = (width - ((columns - 1) * _gridSpacing)) / columns;
-
-    return AnimatedRefreshIndicator(
-      onRefresh: onRefresh,
-      child: CustomScrollView(
-        controller: scrollController,
-        slivers: [
-          SliverGrid(
-            delegate: SliverChildBuilderDelegate(gridItemBuilder, childCount: itemCount),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              crossAxisSpacing: _gridSpacing,
-              mainAxisSpacing: _gridSpacing,
-              mainAxisExtent: tileWidth + _gridCardChromeHeight,
-            ),
-          ),
-          if (isLoadingMore)
-            const SliverToBoxAdapter(
-              child: Center(
-                child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSingleColumnGrid(BuildContext context) {
+  Widget _buildCompact(BuildContext context) {
     return AnimatedRefreshIndicator(
       onRefresh: onRefresh,
       child: CustomScrollView(
         controller: scrollController,
         slivers: [
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
             sliver: SliverList.separated(
               itemCount: itemCount,
               itemBuilder: gridItemBuilder,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 2),
             ),
           ),
           if (isLoadingMore)
@@ -105,7 +68,7 @@ class FeedLayoutView extends StatelessWidget {
     );
   }
 
-  Widget _buildLinear(BuildContext context) {
+  Widget _buildCard(BuildContext context) {
     return AnimatedRefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.builder(

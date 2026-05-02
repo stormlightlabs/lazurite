@@ -7,12 +7,14 @@ import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cubit.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
+import 'package:lazurite/features/feed/presentation/widgets/compact_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/grid_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
@@ -20,19 +22,20 @@ import 'package:lazurite/features/feed/presentation/widgets/post_menu_actions.da
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/report_dialog.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 
 /// Controls which card layout variant is rendered by [PostCardWithActions].
-enum PostCardVariant { linear, grid }
+enum PostCardVariant { adaptive, card, compact, grid }
 
 class PostCardWithActions extends StatefulWidget {
   const PostCardWithActions({
     super.key,
     required this.feedViewPost,
     required this.accountDid,
-    this.variant = PostCardVariant.linear,
+    this.variant = PostCardVariant.adaptive,
     this.onDeleted,
     this.onReplySubmitted,
     this.moderationContext = bsky_moderation.ModerationBehaviorContext.contentList,
@@ -172,9 +175,18 @@ class _PostCardWithActionsContent extends StatelessWidget {
   }
 
   Widget _buildCard(BuildContext context) {
+    final resolvedVariant = _resolveVariant(context);
     Future<Object?> onTap() => context.push('/post?uri=${Uri.encodeQueryComponent(feedViewPost.post.uri.toString())}');
-    if (variant == PostCardVariant.grid) {
+    if (resolvedVariant == PostCardVariant.grid) {
       return GridPostCard(
+        feedViewPost: feedViewPost,
+        footer: _buildFooter(context),
+        onTap: onTap,
+        moderationContext: moderationContext,
+      );
+    }
+    if (resolvedVariant == PostCardVariant.compact) {
+      return CompactPostCard(
         feedViewPost: feedViewPost,
         footer: _buildFooter(context),
         onTap: onTap,
@@ -187,6 +199,19 @@ class _PostCardWithActionsContent extends StatelessWidget {
       onTap: onTap,
       moderationContext: moderationContext,
     );
+  }
+
+  PostCardVariant _resolveVariant(BuildContext context) {
+    if (variant != PostCardVariant.adaptive) {
+      return variant;
+    }
+
+    try {
+      final layout = context.select<SettingsCubit, FeedLayout>((cubit) => cubit.state.feedLayout);
+      return layout == FeedLayout.compact ? PostCardVariant.compact : PostCardVariant.card;
+    } catch (_) {
+      return PostCardVariant.card;
+    }
   }
 
   Widget _buildFooter(BuildContext context) {
