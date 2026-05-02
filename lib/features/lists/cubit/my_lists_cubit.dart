@@ -12,13 +12,18 @@ class MyListsCubit extends Cubit<MyListsState> {
       super(const MyListsState.initial());
 
   final ListRepository _listRepository;
+  int _requestId = 0;
 
   Future<void> load({required String actor, int limit = 50}) async {
-    emit(MyListsState.loading(actor: actor, limit: limit));
+    final requestId = _beginRequest();
+    _emitIfOpen(MyListsState.loading(actor: actor, limit: limit));
 
     try {
       final result = await _listRepository.getLists(actor: actor, limit: limit);
-      emit(
+      if (!_isCurrentRequest(requestId)) {
+        return;
+      }
+      _emitIfOpen(
         MyListsState.loaded(
           actor: actor,
           lists: result.lists,
@@ -28,30 +33,42 @@ class MyListsCubit extends Cubit<MyListsState> {
         ),
       );
     } catch (error) {
-      emit(MyListsState.error(message: 'Failed to load lists: $error', actor: actor, limit: limit));
+      if (!_isCurrentRequest(requestId)) {
+        return;
+      }
+      _emitIfOpen(MyListsState.error(message: 'Failed to load lists: $error', actor: actor, limit: limit));
     }
   }
 
   Future<void> refresh() async {
-    if (state.actor == null) {
+    final actor = state.actor;
+    if (actor == null) {
       return;
     }
+    final limit = state.limit;
+    final requestId = _beginRequest();
 
-    emit(state.copyWith(isRefreshing: true, errorMessage: null));
+    _emitIfOpen(state.copyWith(isRefreshing: true, errorMessage: null));
 
     try {
-      final result = await _listRepository.getLists(actor: state.actor!, limit: state.limit);
-      emit(
+      final result = await _listRepository.getLists(actor: actor, limit: limit);
+      if (!_isCurrentRequest(requestId)) {
+        return;
+      }
+      _emitIfOpen(
         MyListsState.loaded(
-          actor: state.actor!,
+          actor: actor,
           lists: result.lists,
           cursor: result.cursor,
           hasMore: result.cursor != null,
-          limit: state.limit,
+          limit: limit,
         ),
       );
     } catch (error) {
-      emit(state.copyWith(isRefreshing: false, errorMessage: 'Failed to refresh lists: $error'));
+      if (!_isCurrentRequest(requestId)) {
+        return;
+      }
+      _emitIfOpen(state.copyWith(isRefreshing: false, errorMessage: 'Failed to refresh lists: $error'));
     }
   }
 
@@ -92,21 +109,47 @@ class MyListsCubit extends Cubit<MyListsState> {
       return;
     }
 
-    emit(state.copyWith(isLoadingMore: true));
+    final actor = state.actor!;
+    final cursor = state.cursor;
+    final limit = state.limit;
+    final lists = state.lists;
+    final requestId = _beginRequest();
+
+    _emitIfOpen(state.copyWith(isLoadingMore: true));
 
     try {
-      final result = await _listRepository.getLists(actor: state.actor!, cursor: state.cursor, limit: state.limit);
+      final result = await _listRepository.getLists(actor: actor, cursor: cursor, limit: limit);
+      if (!_isCurrentRequest(requestId)) {
+        return;
+      }
 
-      emit(
+      _emitIfOpen(
         state.copyWith(
-          lists: [...state.lists, ...result.lists],
+          lists: [...lists, ...result.lists],
           cursor: result.cursor,
           hasMore: result.cursor != null,
           isLoadingMore: false,
         ),
       );
     } catch (_) {
-      emit(state.copyWith(isLoadingMore: false, hasMore: false));
+      if (!_isCurrentRequest(requestId)) {
+        return;
+      }
+      _emitIfOpen(state.copyWith(isLoadingMore: false, hasMore: false));
     }
+  }
+
+  int _beginRequest() {
+    _requestId += 1;
+    return _requestId;
+  }
+
+  bool _isCurrentRequest(int requestId) => !isClosed && requestId == _requestId;
+
+  void _emitIfOpen(MyListsState nextState) {
+    if (isClosed) {
+      return;
+    }
+    emit(nextState);
   }
 }

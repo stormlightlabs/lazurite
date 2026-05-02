@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:atproto_core/atproto_core.dart' show AtUri, BlobRef;
 import 'package:bluesky/app_bsky_actor_defs.dart';
@@ -211,6 +213,70 @@ void main() {
         ),
       ],
     );
+
+    test('ignores completed load responses after the cubit is closed', () async {
+      final cubit = MyListsCubit(listRepository: mockListRepository);
+      final pendingResult = Completer<ListsResult>();
+
+      when(
+        () => mockListRepository.getLists(
+          actor: actor,
+          cursor: any(named: 'cursor'),
+          limit: 50,
+          includeReference: any(named: 'includeReference'),
+        ),
+      ).thenAnswer((_) => pendingResult.future);
+
+      final loadFuture = cubit.load(actor: actor);
+      await Future<void>.delayed(Duration.zero);
+      await cubit.close();
+      pendingResult.complete(ListsResult(lists: [curationList], cursor: null));
+      await loadFuture;
+
+      expect(cubit.isClosed, isTrue);
+    });
+
+    test('keeps the newest load result when responses arrive out of order', () async {
+      final cubit = MyListsCubit(listRepository: mockListRepository);
+      const newerActor = 'did:plc:newer';
+      final newerList = _buildList(
+        uri: AtUri.parse('at://did:plc:newer/app.bsky.graph.list/newer'),
+        purpose: KnownListPurpose.appBskyGraphDefsCuratelist,
+        name: 'Newest',
+      );
+
+      final firstResult = Completer<ListsResult>();
+      final secondResult = Completer<ListsResult>();
+
+      when(
+        () => mockListRepository.getLists(
+          actor: actor,
+          cursor: any(named: 'cursor'),
+          limit: 50,
+          includeReference: any(named: 'includeReference'),
+        ),
+      ).thenAnswer((_) => firstResult.future);
+      when(
+        () => mockListRepository.getLists(
+          actor: newerActor,
+          cursor: any(named: 'cursor'),
+          limit: 50,
+          includeReference: any(named: 'includeReference'),
+        ),
+      ).thenAnswer((_) => secondResult.future);
+
+      final olderLoad = cubit.load(actor: actor);
+      final newerLoad = cubit.load(actor: newerActor);
+
+      secondResult.complete(ListsResult(lists: [newerList], cursor: null));
+      await newerLoad;
+      firstResult.complete(ListsResult(lists: [curationList], cursor: null));
+      await olderLoad;
+
+      expect(cubit.state.status, MyListsStatus.loaded);
+      expect(cubit.state.actor, newerActor);
+      expect(cubit.state.lists, [newerList]);
+    });
   });
 }
 
