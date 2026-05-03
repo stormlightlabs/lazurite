@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:chewie/chewie.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
+import 'package:lazurite/features/feed/presentation/media/video_layout.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:video_player/video_player.dart';
 
@@ -23,7 +26,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   bool _isDownloading = false;
   double _downloadProgress = 0;
 
-  double get _aspectRatio => widget.args.aspectRatio ?? 16 / 9;
+  double get _aspectRatio => normalizeVideoAspectRatio(widget.args.aspectRatio);
 
   @override
   void initState() {
@@ -42,6 +45,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final progressValue = _downloadProgress > 0 && _downloadProgress < 1 ? _downloadProgress : null;
+    final altText = widget.args.altText?.trim();
+    final hasAltText = altText?.isNotEmpty ?? false;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -62,31 +67,53 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
-        children: [
-          AspectRatio(
-            aspectRatio: _aspectRatio,
-            child: switch ((_isInitializing, _initializationError, _chewieController)) {
-              (true, _, _) => _buildPlaceholder(showSpinner: true),
-              (_, final Object error, _) => _buildErrorState(theme, error),
-              (_, _, final ChewieController controller) => Chewie(controller: controller),
-              _ => _buildPlaceholder(),
-            },
-          ),
-          if (widget.args.altText?.trim().isNotEmpty ?? false)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(16),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
+          child: Column(
+            children: [
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final videoSize = containedVideoSize(
+                      availableSize: Size(constraints.maxWidth, constraints.maxHeight),
+                      aspectRatio: _aspectRatio,
+                    );
+                    return Center(
+                      child: SizedBox(
+                        width: videoSize.width,
+                        height: videoSize.height,
+                        child: switch ((_isInitializing, _initializationError, _chewieController)) {
+                          (true, _, _) => _buildPlaceholder(showSpinner: true),
+                          (_, final Object error, _) => _buildErrorState(theme, error),
+                          (_, _, final ChewieController controller) => Chewie(controller: controller),
+                          _ => _buildPlaceholder(),
+                        },
+                      ),
+                    );
+                  },
                 ),
-                child: Text(widget.args.altText!, style: theme.textTheme.bodyMedium),
               ),
-            ),
-        ],
+              if (hasAltText)
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(altText!, style: theme.textTheme.bodyMedium),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -133,8 +160,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   Future<void> _initializePlayer() async {
     try {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.args.playlistUrl));
+      final sourceUri = Uri.parse(widget.args.playlistUrl);
+      final controller = VideoPlayerController.networkUrl(sourceUri, formatHint: _inferVideoFormat(sourceUri));
       await controller.initialize();
+      await controller.setLooping(widget.args.isGif);
 
       if (widget.args.isGif) {
         await controller.setVolume(0);
@@ -143,12 +172,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       final chewieController = ChewieController(
         videoPlayerController: controller,
         aspectRatio: _aspectRatio,
-        autoInitialize: true,
+        autoInitialize: false,
         autoPlay: widget.args.isGif,
         looping: widget.args.isGif,
         showControls: !widget.args.isGif,
         allowMuting: !widget.args.isGif,
         allowPlaybackSpeedChanging: !widget.args.isGif,
+        progressIndicatorDelay: Platform.isAndroid ? const Duration(days: 1) : null,
         placeholder: _buildPlaceholder(),
       );
 
@@ -172,6 +202,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         _isInitializing = false;
       });
     }
+  }
+
+  VideoFormat? _inferVideoFormat(Uri uri) {
+    final path = uri.path.toLowerCase();
+    if (path.endsWith('.m3u8')) {
+      return VideoFormat.hls;
+    }
+    if (path.endsWith('.mpd')) {
+      return VideoFormat.dash;
+    }
+    return null;
   }
 
   Future<void> _downloadVideo() async {

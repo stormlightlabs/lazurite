@@ -12,6 +12,7 @@ import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
+import 'package:lazurite/features/feed/presentation/media/video_layout.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
@@ -151,6 +152,8 @@ class PostEmbedView extends StatelessWidget {
         moderationService?.postUi(feedViewPost.post, bsky_moderation.ModerationBehaviorContext.contentMedia) ??
         const bsky_moderation.ModerationUI();
 
+    final aspectRatio = normalizeVideoAspectRatio(_rawAspectRatio(video));
+
     return ModeratedBlurOverlay(
       ui: mediaUi,
       borderRadius: BorderRadius.circular(12),
@@ -160,7 +163,7 @@ class PostEmbedView extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             AspectRatio(
-              aspectRatio: video.aspectRatio == null ? 16 / 9 : video.aspectRatio!.width / video.aspectRatio!.height,
+              aspectRatio: aspectRatio,
               child: video.thumbnail == null
                   ? ColoredBox(color: context.colorScheme.surfaceContainerHighest, child: const SizedBox.expand())
                   : CachedNetworkImage(
@@ -373,7 +376,7 @@ class PostEmbedView extends StatelessWidget {
   }
 
   void _openVideoViewer(BuildContext context, EmbedVideoView video) {
-    final ratio = video.aspectRatio == null ? null : video.aspectRatio!.width / video.aspectRatio!.height;
+    final ratio = normalizeVideoAspectRatio(_rawAspectRatio(video));
     final isGif = video.presentation?.knownValue == KnownEmbedVideoViewPresentation.gif;
     GoRouter.maybeOf(context)?.push(
       '/video',
@@ -385,6 +388,14 @@ class PostEmbedView extends StatelessWidget {
         isGif: isGif,
       ),
     );
+  }
+
+  double? _rawAspectRatio(EmbedVideoView video) {
+    final ratio = video.aspectRatio;
+    if (ratio == null || ratio.height == 0) {
+      return null;
+    }
+    return ratio.width / ratio.height;
   }
 
   String _imageHeroTag(String heroNamespace, int index) => 'post-image-$heroNamespace-$index';
