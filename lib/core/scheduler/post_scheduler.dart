@@ -253,7 +253,7 @@ class PostScheduler {
 
   /// Initialises WorkManager. Call once from main() before runApp().
   static Future<void> initialize() async {
-    await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+    await Workmanager().initialize(callbackDispatcher);
   }
 
   /// Registers a one-off background task to fire at [scheduledAt].

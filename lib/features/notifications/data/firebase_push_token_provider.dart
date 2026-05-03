@@ -30,6 +30,14 @@ class FirebasePushTokenProvider implements PushTokenProvider {
       _messaging ??= FirebaseMessaging.instance;
       final messaging = _messaging!;
 
+      final notificationSettings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
+      log.i('Notification permission status: ${notificationSettings.authorizationStatus.name}');
+
       await messaging.setAutoInitEnabled(true);
 
       _refreshSubscription = messaging.onTokenRefresh.listen(

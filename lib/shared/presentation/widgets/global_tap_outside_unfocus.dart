@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 /// Ensures tapping outside a focused [EditableText] dismisses keyboard focus
@@ -12,7 +14,19 @@ class GlobalTapOutsideUnfocus extends StatelessWidget {
     actions: <Type, Action<Intent>>{
       EditableTextTapOutsideIntent: CallbackAction<EditableTextTapOutsideIntent>(
         onInvoke: (intent) {
-          intent.focusNode.unfocus();
+          // Preserve Flutter's default down-event behavior on touch so overlay
+          // interactions (like typeahead suggestion taps) are not interrupted.
+          if (intent.pointerDownEvent.kind != ui.PointerDeviceKind.touch) {
+            intent.focusNode.unfocus();
+          }
+          return null;
+        },
+      ),
+      EditableTextTapUpOutsideIntent: CallbackAction<EditableTextTapUpOutsideIntent>(
+        onInvoke: (intent) {
+          if (intent.pointerUpEvent.kind == ui.PointerDeviceKind.touch) {
+            intent.focusNode.unfocus();
+          }
           return null;
         },
       ),

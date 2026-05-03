@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "251668382991",
+    "project_id": "lazurite-push",
+    "storage_bucket": "lazurite-push.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:251668382991:android:621a1c3c3e6afc1f66ea7a",
+        "android_client_info": {
+          "package_name": "org.stormlightlabs.lazurite"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0AcVccAcTyBAFqhfahqiPS8CvUHKI7Kg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

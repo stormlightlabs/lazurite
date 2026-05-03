@@ -72,7 +72,7 @@ class NotificationBackgroundScheduler {
         notificationReconcileUniqueName,
         notificationReconcileTaskName,
         frequency: const Duration(minutes: 15),
-        existingWorkPolicy: ExistingWorkPolicy.keep,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
         constraints: Constraints(networkType: NetworkType.connected),
       );
       return;

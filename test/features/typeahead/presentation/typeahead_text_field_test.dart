@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.dart';
+import 'package:lazurite/shared/presentation/widgets/global_tap_outside_unfocus.dart';
 
 void main() {
   group('TypeaheadTextField', () {
@@ -53,6 +54,46 @@ void main() {
       expect(selected, isNotNull);
       expect(selected!.did, 'did:plc:alice');
       expect(find.text('Alice'), findsNothing);
+    });
+
+    testWidgets('tap result still selects when wrapped in GlobalTapOutsideUnfocus', (tester) async {
+      final controller = TextEditingController();
+      TypeaheadResult? selected;
+
+      final repository = _FakeTypeaheadRepository(
+        searchHandler: ({required String query, int limit = 10}) async {
+          return const [TypeaheadResult(did: 'did:plc:alice', handle: 'alice.bsky.social', displayName: 'Alice')];
+        },
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GlobalTapOutsideUnfocus(
+            child: Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.all(16),
+                child: TypeaheadTextField(
+                  controller: controller,
+                  repository: repository,
+                  onSelected: (result) => selected = result,
+                  debounceMs: 1,
+                  minChars: 2,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextFormField), 'alice');
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Alice'));
+      await tester.pumpAndSettle();
+
+      expect(selected, isNotNull);
+      expect(selected!.did, 'did:plc:alice');
     });
 
     testWidgets('tap outside dismisses overlay', (tester) async {
