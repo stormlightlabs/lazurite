@@ -29,7 +29,7 @@ class MediaActions {
     try {
       final granted = await _requestMediaPermission(MediaAssetType.image);
       if (!granted) {
-        messenger.showSnackBar(const SnackBar(content: Text('Photo access is required to save images.')));
+        _showPermissionDeniedSnackBar(messenger, label: 'images');
         return;
       }
 
@@ -52,6 +52,7 @@ class MediaActions {
   static Future<void> downloadVideo(
     BuildContext context,
     String playlistUrl, {
+    String? preferredDownloadUrl,
     String? suggestedName,
     ValueChanged<double>? onProgress,
   }) async {
@@ -60,25 +61,59 @@ class MediaActions {
     try {
       final granted = await _requestMediaPermission(MediaAssetType.video);
       if (!granted) {
-        messenger.showSnackBar(const SnackBar(content: Text('Media access is required to save videos.')));
+        _showPermissionDeniedSnackBar(messenger, label: 'videos');
         return;
       }
 
-      final downloadUrl = await _resolveBestVideoDownloadUrl(playlistUrl);
-      final filePath = await _downloadFile(
-        downloadUrl,
-        suggestedName: suggestedName,
-        fallbackExtension: '.mp4',
-        onProgress: onProgress,
+      final candidateUrls = await _resolveVideoDownloadCandidates(
+        playlistUrl,
+        preferredDownloadUrl: preferredDownloadUrl,
       );
-      await Gal.putVideo(filePath);
-      await _deleteTempFile(filePath);
-      messenger.showSnackBar(const SnackBar(content: Text('Video saved to your gallery.')));
+
+      if (candidateUrls.isEmpty) {
+        throw StateError('No downloadable video URL was available for this post.');
+      }
+
+      Object? lastError;
+      for (final downloadUrl in candidateUrls) {
+        String? filePath;
+        try {
+          filePath = await _downloadFile(
+            downloadUrl,
+            suggestedName: suggestedName,
+            fallbackExtension: '.mp4',
+            onProgress: onProgress,
+          );
+          await Gal.putVideo(filePath);
+          messenger.showSnackBar(const SnackBar(content: Text('Video saved to your gallery.')));
+          return;
+        } catch (error, stackTrace) {
+          lastError = error;
+          log.w('Failed to save video using candidate URL: $downloadUrl', error: error, stackTrace: stackTrace);
+        } finally {
+          if (filePath != null) {
+            await _deleteTempFile(filePath);
+          }
+        }
+      }
+
+      throw lastError ?? StateError('Video download failed.');
     } catch (error) {
       messenger.showSnackBar(SnackBar(content: Text('Failed to save video: $error')));
     } finally {
       onProgress?.call(0);
     }
+  }
+
+  static String? buildBlueskyBlobDownloadUrl({required String playlistUrl}) {
+    final parsed = _extractDidAndCidFromPlaylistUrl(playlistUrl);
+    if (parsed == null) {
+      return null;
+    }
+    return Uri.https('bsky.social', '/xrpc/com.atproto.sync.getBlob', {
+      'did': parsed.did,
+      'cid': parsed.cid,
+    }).toString();
   }
 
   static Future<String> _downloadFile(
@@ -107,9 +142,19 @@ class MediaActions {
   }
 
   static Future<bool> _requestMediaPermission(MediaAssetType type) async {
+    final hasAccess = await Gal.hasAccess();
+    if (hasAccess) {
+      return true;
+    }
+
+    final grantedByGal = await Gal.requestAccess();
+    if (grantedByGal) {
+      return true;
+    }
+
     if (Platform.isIOS) {
       final status = await Permission.photosAddOnly.request();
-      return status.isGranted || status.isLimited;
+      return status.isGranted;
     }
 
     if (Platform.isAndroid) {
@@ -124,7 +169,87 @@ class MediaActions {
     return true;
   }
 
-  static Future<String> _resolveBestVideoDownloadUrl(String playlistUrl) async {
+  static Future<List<String>> _resolveVideoDownloadCandidates(
+    String playlistUrl, {
+    String? preferredDownloadUrl,
+  }) async {
+    final candidates = <String>{};
+
+    if (preferredDownloadUrl?.trim().isNotEmpty ?? false) {
+      candidates.add(preferredDownloadUrl!.trim());
+    }
+
+    final blobUrls = await _resolveBlobDownloadUrls(playlistUrl);
+    for (final blobUrl in blobUrls) {
+      candidates.add(blobUrl);
+    }
+
+    final resolvedFromManifest = await _resolveBestVideoDownloadUrl(playlistUrl);
+    if (resolvedFromManifest != null) {
+      candidates.add(resolvedFromManifest);
+    }
+
+    return candidates.toList(growable: false);
+  }
+
+  static Future<List<String>> _resolveBlobDownloadUrls(String playlistUrl) async {
+    final parsed = _extractDidAndCidFromPlaylistUrl(playlistUrl);
+    if (parsed == null) {
+      return const [];
+    }
+
+    final urls = <String>[
+      Uri.https('bsky.social', '/xrpc/com.atproto.sync.getBlob', {'did': parsed.did, 'cid': parsed.cid}).toString(),
+    ];
+
+    final pdsUrl = await _buildPdsBlobDownloadUrl(did: parsed.did, cid: parsed.cid);
+    if (pdsUrl != null) {
+      urls.add(pdsUrl);
+    }
+
+    return urls;
+  }
+
+  static Future<String?> _buildPdsBlobDownloadUrl({required String did, required String cid}) async {
+    try {
+      final response = await Dio().get<Map<String, dynamic>>(
+        'https://plc.directory/$did',
+        options: Options(responseType: ResponseType.json),
+      );
+      final body = response.data;
+      if (body == null) {
+        return null;
+      }
+
+      final services = body['service'];
+      if (services is! List) {
+        return null;
+      }
+
+      for (final entry in services) {
+        if (entry is! Map) {
+          continue;
+        }
+        final type = entry['type'];
+        final endpoint = entry['serviceEndpoint'];
+        if (type == 'AtprotoPersonalDataServer' && endpoint is String && endpoint.isNotEmpty) {
+          final endpointUri = Uri.tryParse(endpoint);
+          if (endpointUri == null || endpointUri.scheme.isEmpty || endpointUri.host.isEmpty) {
+            continue;
+          }
+          return endpointUri
+              .replace(path: '/xrpc/com.atproto.sync.getBlob', queryParameters: {'did': did, 'cid': cid})
+              .toString();
+        }
+      }
+    } catch (error, stackTrace) {
+      log.w('Failed to resolve PDS endpoint from PLC directory', error: error, stackTrace: stackTrace);
+    }
+
+    return null;
+  }
+
+  static Future<String?> _resolveBestVideoDownloadUrl(String playlistUrl) async {
     final dio = Dio();
     final playlistUri = Uri.parse(playlistUrl);
     final manifest = await dio.get<String>(playlistUrl, options: Options(responseType: ResponseType.plain));
@@ -138,13 +263,17 @@ class MediaActions {
           options: Options(responseType: ResponseType.plain),
         );
         final mediaUri = _parseDirectMediaUri(variantUri, nestedManifest.data ?? '');
-        return (mediaUri ?? variantUri).toString();
+        return mediaUri?.toString();
       }
-      return variantUri.toString();
+      final extension = p.extension(variantUri.path).toLowerCase();
+      if (extension == '.mp4' || extension == '.mov' || extension == '.m4v') {
+        return variantUri.toString();
+      }
+      return null;
     }
 
     final directMediaUri = _parseDirectMediaUri(playlistUri, body);
-    return (directMediaUri ?? playlistUri).toString();
+    return directMediaUri?.toString();
   }
 
   static Uri? _parseHighestBandwidthVariantUri(Uri baseUri, String manifestBody) {
@@ -203,6 +332,48 @@ class MediaActions {
   }
 
   static bool _isPlaylistUri(Uri uri) => p.extension(uri.path).toLowerCase() == '.m3u8';
+
+  static ({String did, String cid})? _extractDidAndCidFromPlaylistUrl(String playlistUrl) {
+    final uri = Uri.tryParse(playlistUrl);
+    if (uri == null) {
+      return null;
+    }
+
+    final segments = uri.pathSegments;
+    final watchIndex = segments.indexOf('watch');
+    if (watchIndex != -1 && segments.length > watchIndex + 2) {
+      final did = segments[watchIndex + 1];
+      final cid = segments[watchIndex + 2];
+      if (did.startsWith('did:') && cid.isNotEmpty) {
+        return (did: did, cid: cid);
+      }
+    }
+
+    final hlsIndex = segments.indexOf('hls');
+    if (hlsIndex != -1 && segments.length > hlsIndex + 2) {
+      final did = segments[hlsIndex + 1];
+      final cid = segments[hlsIndex + 2];
+      if (did.startsWith('did:') && cid.isNotEmpty) {
+        return (did: did, cid: cid);
+      }
+    }
+
+    return null;
+  }
+
+  static void _showPermissionDeniedSnackBar(ScaffoldMessengerState messenger, {required String label}) {
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('Photo access is required to save $label.'),
+        action: SnackBarAction(
+          label: 'Settings',
+          onPressed: () {
+            openAppSettings();
+          },
+        ),
+      ),
+    );
+  }
 
   static String _normalizedFileName(String url, {String? suggestedName, String fallbackExtension = ''}) {
     final uri = Uri.tryParse(url);

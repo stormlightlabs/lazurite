@@ -1,6 +1,7 @@
 class VideoPlayerRouteArgs {
   const VideoPlayerRouteArgs({
     required this.playlistUrl,
+    this.downloadUrl,
     this.thumbnailUrl,
     this.altText,
     this.aspectRatio,
@@ -8,6 +9,7 @@ class VideoPlayerRouteArgs {
   });
 
   final String playlistUrl;
+  final String? downloadUrl;
   final String? thumbnailUrl;
   final String? altText;
   final double? aspectRatio;

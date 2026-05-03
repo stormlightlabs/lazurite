@@ -378,10 +378,12 @@ class PostEmbedView extends StatelessWidget {
   void _openVideoViewer(BuildContext context, EmbedVideoView video) {
     final ratio = normalizeVideoAspectRatio(_rawAspectRatio(video));
     final isGif = video.presentation?.knownValue == KnownEmbedVideoViewPresentation.gif;
+    final downloadUrl = MediaActions.buildBlueskyBlobDownloadUrl(playlistUrl: video.playlist);
     GoRouter.maybeOf(context)?.push(
       '/video',
       extra: VideoPlayerRouteArgs(
         playlistUrl: video.playlist,
+        downloadUrl: downloadUrl,
         thumbnailUrl: video.thumbnail,
         altText: video.alt,
         aspectRatio: ratio,

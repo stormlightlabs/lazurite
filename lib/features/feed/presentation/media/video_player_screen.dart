@@ -224,6 +224,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     await MediaActions.downloadVideo(
       context,
       widget.args.playlistUrl,
+      preferredDownloadUrl: widget.args.downloadUrl,
       suggestedName: 'lazurite-video.mp4',
       onProgress: (value) {
         if (!mounted) {
