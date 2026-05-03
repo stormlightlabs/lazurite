@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Lazurite Child Safety Standards and CSAE Policy - effective May 3, 2026." />
+    <meta name="author" content="Stormlight Labs" />
+    <title>Lazurite CSAE Policy</title>
+    <link rel="icon" type="image/svg+xml" href="static/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+      rel="stylesheet" />
+    <style>
+      :root {
+        --bg-dark: #000000;
+        --surface-dark: #191919;
+        --surface-variant: #1f1f1f;
+        --outline: rgba(255, 255, 255, 0.1);
+        --text-primary: #f4f6fb;
+        --text-secondary: #ababab;
+        --text-tertiary: #6f6f6f;
+        --primary: #7dafff;
+        --secondary: #0073de;
+        --tertiary: #33b1ff;
+        --danger: #ff8080;
+        --font-title: "Lora", serif;
+        --font-display: "Google Sans", sans-serif;
+        --font-body: "Inter", sans-serif;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: var(--font-body);
+        background-color: var(--bg-dark);
+        color: var(--text-primary);
+        line-height: 1.6;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .container {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 2rem;
+        flex: 1;
+      }
+
+      .top-nav {
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 2rem;
+      }
+
+      .top-nav a {
+        color: var(--primary);
+        text-decoration: none;
+        font-size: 0.875rem;
+      }
+
+      .top-nav a:hover {
+        color: var(--secondary);
+      }
+
+      .logo {
+        font-family: var(--font-title);
+        font-size: 2.4rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--tertiary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.02em;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .logo-icon {
+        width: 2rem;
+        height: 2rem;
+        mask-image: url("./static/logo.svg");
+        background-color: var(--primary);
+        mask-repeat: no-repeat;
+        mask-size: contain;
+        mask-position: center;
+        -webkit-mask-image: url("./static/logo.svg");
+        -webkit-mask-repeat: no-repeat;
+        -webkit-mask-size: contain;
+        -webkit-mask-position: center;
+      }
+
+      .legal-card {
+        margin-top: 1.25rem;
+        background: var(--surface-dark);
+        border: 1px solid var(--outline);
+        border-radius: 1rem;
+        padding: 2rem;
+      }
+
+      h1 {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        line-height: 1.2;
+        margin-bottom: 0.4rem;
+      }
+
+      .meta {
+        font-size: 0.875rem;
+        color: var(--text-tertiary);
+        margin-bottom: 1.5rem;
+      }
+
+      .lead {
+        color: var(--text-secondary);
+        margin-bottom: 1.25rem;
+      }
+
+      .alert {
+        margin-bottom: 1.5rem;
+        background: rgba(255, 128, 128, 0.12);
+        border: 1px solid rgba(255, 128, 128, 0.35);
+        border-radius: 0.75rem;
+        padding: 0.85rem 1rem;
+        color: #ffd4d4;
+        font-size: 0.95rem;
+      }
+
+      section {
+        margin-bottom: 1.25rem;
+      }
+
+      section:last-of-type {
+        margin-bottom: 0;
+      }
+
+      h2 {
+        font-family: var(--font-display);
+        font-size: 1.0625rem;
+        color: var(--primary);
+        margin-bottom: 0.45rem;
+      }
+
+      p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+      }
+
+      ul {
+        margin: 0.25rem 0 0.75rem 1.2rem;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+      }
+
+      li {
+        margin-bottom: 0.35rem;
+      }
+
+      a {
+        color: var(--primary);
+        text-decoration: none;
+      }
+
+      a:hover {
+        color: var(--secondary);
+      }
+
+      .links {
+        margin-top: 1.25rem;
+        background: var(--surface-variant);
+        border: 1px solid var(--outline);
+        border-radius: 0.75rem;
+        padding: 1rem 1.2rem;
+      }
+
+      .links p {
+        margin-bottom: 0.35rem;
+      }
+
+      .links p:last-child {
+        margin-bottom: 0;
+      }
+
+      footer {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-tertiary);
+        font-size: 0.875rem;
+        border-top: 1px solid var(--outline);
+        margin-top: 2rem;
+      }
+
+      footer a {
+        color: var(--primary);
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        color: var(--secondary);
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 1.25rem;
+        }
+
+        .legal-card {
+          padding: 1.25rem;
+        }
+
+        h1 {
+          font-size: 1.6rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <nav class="top-nav"><a href="./index.html">Back to home</a></nav>
+      <div class="logo"><span class="logo-icon"></span>Lazurite</div>
+      <main class="legal-card">
+        <h1>Child Safety Standards (CSAE)</h1>
+        <p class="meta">Effective May 3, 2026</p>
+        <p class="lead">
+          This page describes the child safety standards for Lazurite by Stormlight Labs, including
+          our policies against child sexual abuse and exploitation (CSAE), child sexual abuse
+          material (CSAM), and related harmful behavior.
+        </p>
+        <p class="alert">
+          Zero tolerance: content or behavior involving child sexual abuse, exploitation, or
+          endangerment is prohibited.
+        </p>
+
+        <section>
+          <h2>1) Prohibited content and conduct</h2>
+          <p>Lazurite standards prohibit, at minimum:</p>
+          <ul>
+            <li>Creation, sharing, solicitation, or promotion of CSAM.</li>
+            <li>Grooming behavior targeting minors.</li>
+            <li>Sextortion involving minors.</li>
+            <li>Trafficking, solicitation, or sexual exploitation of children.</li>
+            <li>Any use of Lazurite to endanger children.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>2) In-app reporting and user feedback</h2>
+          <p>
+            Lazurite provides in-app pathways for users to report content, accounts, and behavior
+            that may violate safety standards, including CSAE concerns.
+          </p>
+          <p>
+            Reports are reviewed as a priority category and escalated when they indicate possible
+            child endangerment or CSAM.
+          </p>
+        </section>
+
+        <section>
+          <h2>3) Response to potential CSAM</h2>
+          <p>
+            Upon obtaining actual knowledge of potential CSAM, we take appropriate action under our
+            policies and applicable law. Actions may include:
+          </p>
+          <ul>
+            <li>Removing or restricting access to violative content.</li>
+            <li>Restricting or suspending access to violating accounts and features.</li>
+            <li>Preserving records necessary for legal reporting and safety investigations.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>4) Legal compliance and external reporting</h2>
+          <p>
+            We maintain procedures to comply with applicable child safety laws and regulations,
+            including reporting confirmed CSAM to the National Center for Missing and Exploited
+            Children (NCMEC) or the relevant regional authority as required by law.
+          </p>
+          <p>
+            If you believe a child is in immediate danger, contact local law enforcement
+            immediately.
+          </p>
+        </section>
+
+        <section>
+          <h2>5) Child safety point of contact</h2>
+          <p>
+            Child safety contact for Lazurite / Stormlight Labs:
+            <a href="mailto:info@stormlightlabs.org">info@stormlightlabs.org</a>
+          </p>
+          <p>
+            This contact is designated to receive and coordinate potential notifications related to
+            CSAE and CSAM concerns.
+          </p>
+        </section>
+
+        <section>
+          <h2>6) Policy updates</h2>
+          <p>
+            We may update these standards as laws, platform requirements, and enforcement practices
+            evolve. Material updates will be reflected by an updated effective date.
+          </p>
+        </section>
+
+        <div class="links">
+          <p>
+            Related pages: <a href="./terms.html">Terms of Service</a> and
+            <a href="./privacy.html">Privacy Policy</a>.
+          </p>
+          <p>
+            Contact:
+            <a href="https://stormlightlabs.org" target="_blank" rel="noopener noreferrer">stormlightlabs.org</a>
+            or <a href="mailto:info@stormlightlabs.org">info@stormlightlabs.org</a>
+          </p>
+        </div>
+      </main>
+    </div>
+    <footer>
+      <p>
+        Built by <a href="https://stormlightlabs.org" target="_blank" rel="noopener noreferrer">Stormlight Labs</a>
+        &middot; <a href="./privacy.html">Privacy Policy</a>
+        &middot; <a href="./terms.html">Terms of Service</a>
+      </p>
+    </footer>
+  </body>
+</html>

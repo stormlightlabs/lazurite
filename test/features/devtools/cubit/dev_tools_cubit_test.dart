@@ -18,7 +18,7 @@ class FakeDevToolsRepository implements DevToolsRepository {
   });
 
   Future<IdentityResolveHandleOutput> Function({required String handle})? resolveHandleHandler;
-  Future<RepoDescribeRepoOutput> Function({required String repo})? describeRepoHandler;
+  Future<RepoDescribeRepoOutput> Function({required String repo, String? serviceHost})? describeRepoHandler;
   Future<List<ProfileViewBasic>> Function({required String query, int limit})? searchActorsTypeaheadHandler;
   Future<RepoListRecordsOutput> Function({
     required String repo,
@@ -38,8 +38,8 @@ class FakeDevToolsRepository implements DevToolsRepository {
   getRecordHandler;
 
   @override
-  Future<RepoDescribeRepoOutput> describeRepo({required String repo}) {
-    return describeRepoHandler!.call(repo: repo);
+  Future<RepoDescribeRepoOutput> describeRepo({required String repo, String? serviceHost}) {
+    return describeRepoHandler!.call(repo: repo, serviceHost: serviceHost);
   }
 
   @override
@@ -148,17 +148,20 @@ void main() {
             expect(handle, 'alice.bsky.social');
             return const IdentityResolveHandleOutput(did: 'did:plc:alice');
           },
-          describeRepoHandler: ({required String repo}) async => const RepoDescribeRepoOutput(
-            handle: 'alice.bsky.social',
-            did: 'did:plc:alice',
-            didDoc: {
-              'service': [
-                {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://alice.host'},
-              ],
-            },
-            collections: ['app.bsky.feed.post'],
-            handleIsCorrect: true,
-          ),
+          describeRepoHandler: ({required String repo, String? serviceHost}) async {
+            expect(serviceHost, 'alice.host');
+            return const RepoDescribeRepoOutput(
+              handle: 'alice.bsky.social',
+              did: 'did:plc:alice',
+              didDoc: {
+                'service': [
+                  {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://alice.host'},
+                ],
+              },
+              collections: ['app.bsky.feed.post'],
+              handleIsCorrect: true,
+            );
+          },
           listRecordsHandler:
               ({
                 required String repo,
@@ -210,17 +213,20 @@ void main() {
         final repository = FakeDevToolsRepository(
           resolveHandleHandler: ({required String handle}) async =>
               const IdentityResolveHandleOutput(did: 'did:plc:alice'),
-          describeRepoHandler: ({required String repo}) async => const RepoDescribeRepoOutput(
-            handle: 'alice.bsky.social',
-            did: 'did:plc:alice',
-            didDoc: {
-              'service': [
-                {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://alice.host'},
-              ],
-            },
-            collections: ['app.bsky.feed.post'],
-            handleIsCorrect: true,
-          ),
+          describeRepoHandler: ({required String repo, String? serviceHost}) async {
+            expect(serviceHost, 'alice.host');
+            return const RepoDescribeRepoOutput(
+              handle: 'alice.bsky.social',
+              did: 'did:plc:alice',
+              didDoc: {
+                'service': [
+                  {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://alice.host'},
+                ],
+              },
+              collections: ['app.bsky.feed.post'],
+              handleIsCorrect: true,
+            );
+          },
           listRecordsHandler:
               ({
                 required String repo,

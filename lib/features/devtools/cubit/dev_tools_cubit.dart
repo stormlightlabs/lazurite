@@ -19,7 +19,7 @@ part 'dev_tools_state.dart';
 abstract interface class DevToolsRepository {
   Future<IdentityResolveHandleOutput> resolveHandle({required String handle});
 
-  Future<RepoDescribeRepoOutput> describeRepo({required String repo});
+  Future<RepoDescribeRepoOutput> describeRepo({required String repo, String? serviceHost});
 
   Future<List<ProfileViewBasic>> searchActorsTypeahead({required String query, int limit = 8});
 
@@ -54,8 +54,8 @@ final class AtprotoDevToolsRepository implements DevToolsRepository {
   }
 
   @override
-  Future<RepoDescribeRepoOutput> describeRepo({required String repo}) async {
-    final response = await _atproto.repo.describeRepo(repo: repo);
+  Future<RepoDescribeRepoOutput> describeRepo({required String repo, String? serviceHost}) async {
+    final response = await _atproto.repo.describeRepo(repo: repo, $service: serviceHost);
     return response.data;
   }
 
@@ -149,7 +149,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
         return;
       }
 
-      final repo = await _repository.describeRepo(repo: identity.did);
+      final repo = await _repository.describeRepo(repo: identity.did, serviceHost: identity.pdsHost);
       if (!_isActiveResolveRequest(resolveRequestId)) {
         return;
       }
@@ -415,7 +415,7 @@ class DevToolsCubit extends Cubit<DevToolsState> {
       return;
     }
 
-    final repo = await _repository.describeRepo(repo: identity.did);
+    final repo = await _repository.describeRepo(repo: identity.did, serviceHost: identity.pdsHost);
     if (!_isActiveResolveRequest(resolveRequestId)) {
       return;
     }
