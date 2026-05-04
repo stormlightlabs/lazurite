@@ -8,6 +8,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 
 class _FakeThreadResponse {
@@ -131,6 +132,44 @@ void main() {
       final newestEntry = await database.getCachedThreadRoot('did:plc:test', newest.post.uri.toString());
       expect(newestEntry, isNotNull);
     });
+
+    test('retries thread request once after unauthorized recovery', () async {
+      var primaryCalls = 0;
+      var fallbackCalls = 0;
+      var refreshCalls = 0;
+      final thread = _thread(uri: 'at://did:plc:retry/app.bsky.feed.post/retry', cid: 'cid-retry', text: 'Retry');
+      final primaryFeedApi = _FakeThreadFeedApi(
+        getPostThreadHandler: ({required uri}) async {
+          primaryCalls += 1;
+          throw _unauthorizedException('app.bsky.feed.getPostThread');
+        },
+      );
+      final fallbackFeedApi = _FakeThreadFeedApi(
+        getPostThreadHandler: ({required uri}) async {
+          fallbackCalls += 1;
+          return _FakeThreadResponse(
+            FeedGetPostThreadOutput(thread: UFeedGetPostThreadThread.threadViewPost(data: thread)),
+          );
+        },
+      );
+      final repository = PostThreadRepository(
+        bluesky: _FakeBluesky(primaryFeedApi),
+        database: database,
+        accountDid: 'did:plc:test',
+        onUnauthorized: () async {
+          refreshCalls += 1;
+          return _testTokens();
+        },
+        blueskyClientFactory: (_) => _FakeBluesky(fallbackFeedApi),
+      );
+
+      final resolved = await repository.getPostThread(thread.post.uri.toString());
+
+      expect(refreshCalls, 1);
+      expect(primaryCalls, 1);
+      expect(fallbackCalls, 1);
+      expect(resolved.post.uri.toString(), thread.post.uri.toString());
+    });
   });
 }
 
@@ -149,5 +188,29 @@ PostView _post({required String uri, required String cid, required String text})
     author: ProfileViewBasic(did: did, handle: '$did.bsky.social'),
     record: {r'$type': 'app.bsky.feed.post', 'text': text, 'createdAt': timestamp.toIso8601String()},
     indexedAt: timestamp,
+  );
+}
+
+AuthTokens _testTokens() {
+  final now = DateTime.now().toUtc();
+  return AuthTokens(
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+    expiresAt: now.add(const Duration(hours: 1)),
+    did: 'did:plc:test',
+    handle: 'test.bsky.social',
+    service: 'bsky.social',
+  );
+}
+
+UnauthorizedException _unauthorizedException(String methodId) {
+  return UnauthorizedException(
+    XRPCResponse(
+      headers: const {},
+      status: HttpStatus.unauthorized,
+      request: XRPCRequest(method: HttpMethod.get, url: Uri.https('bsky.social', '/xrpc/$methodId')),
+      rateLimit: RateLimit.unlimited(),
+      data: const XRPCError(error: 'Unauthorized', message: 'exp claim timestamp check failed'),
+    ),
   );
 }

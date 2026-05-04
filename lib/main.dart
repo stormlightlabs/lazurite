@@ -163,6 +163,7 @@ Future<void> main() async {
       runApp(
         LazuriteApp.from(
           authBloc,
+          authRepository,
           database,
           appViewFallbackService,
           objectBoxStore,
@@ -187,6 +188,7 @@ class LazuriteApp extends StatefulWidget {
   const LazuriteApp({
     super.key,
     required this.authBloc,
+    required this.authRepository,
     required this.database,
     required this.appViewFallbackService,
     required this.objectBoxStore,
@@ -201,6 +203,7 @@ class LazuriteApp extends StatefulWidget {
   });
 
   final AuthBloc authBloc;
+  final AuthRepository authRepository;
   final AppDatabase database;
   final AppViewFallbackService appViewFallbackService;
   final ObjectBoxStore objectBoxStore;
@@ -216,6 +219,7 @@ class LazuriteApp extends StatefulWidget {
   /// factory constructor with positional params
   static LazuriteApp from(
     AuthBloc authBloc,
+    AuthRepository authRepository,
     AppDatabase database,
     AppViewFallbackService appViewFallbackService,
     ObjectBoxStore objectBoxStore,
@@ -229,6 +233,7 @@ class LazuriteApp extends StatefulWidget {
     bool firebaseAvailable,
   ) => LazuriteApp(
     authBloc: authBloc,
+    authRepository: authRepository,
     database: database,
     appViewFallbackService: appViewFallbackService,
     objectBoxStore: objectBoxStore,
@@ -246,7 +251,7 @@ class LazuriteApp extends StatefulWidget {
   State<LazuriteApp> createState() => _LazuriteAppState();
 }
 
-class _LazuriteAppState extends State<LazuriteApp> {
+class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
   static final _navigatorObserver = LoggingNavigatorObserver();
   late GoRouter _router;
   late String _routerSessionKey;
@@ -259,10 +264,12 @@ class _LazuriteAppState extends State<LazuriteApp> {
   late String _observedAppViewProvider;
   var _routerGeneration = 0;
   var _isSoftRestarting = false;
+  Completer<AuthTokens?>? _authRecoveryCompleter;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _routerSessionKey = _sessionKeyFor(widget.authBloc.state);
     _observedAppViewProvider = widget.settingsCubit.state.appViewProvider;
     _router = _createRouter();
@@ -307,6 +314,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _authSubscription.cancel();
     _pushRegistrationSubscription.cancel();
     _pushForegroundMessageSubscription?.cancel();
@@ -321,6 +329,57 @@ class _LazuriteAppState extends State<LazuriteApp> {
     _router.dispose();
 
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshExpiredSessionOnResume());
+    }
+  }
+
+  Future<void> _refreshExpiredSessionOnResume() async {
+    final authState = widget.authBloc.state;
+    final tokens = authState.tokens;
+    if (!authState.isAuthenticated || tokens == null || !tokens.isExpired) {
+      return;
+    }
+    await _recoverAuthSession();
+  }
+
+  Future<AuthTokens?> _recoverAuthSession() async {
+    final inFlight = _authRecoveryCompleter;
+    if (inFlight != null) {
+      return inFlight.future;
+    }
+
+    final completer = Completer<AuthTokens?>();
+    _authRecoveryCompleter = completer;
+    try {
+      final authState = widget.authBloc.state;
+      final tokens = authState.tokens;
+      if (!authState.isAuthenticated || tokens == null || tokens.refreshToken == null) {
+        completer.complete(null);
+        return null;
+      }
+
+      final refreshed = await widget.authRepository.refreshSession(tokens);
+      if (refreshed != null) {
+        widget.authBloc.add(SessionRestored(tokens: refreshed));
+      }
+      completer.complete(refreshed);
+      return refreshed;
+    } catch (error, stackTrace) {
+      log.w('Auth recovery failed after unauthorized response', error: error, stackTrace: stackTrace);
+      widget.authBloc.add(const CheckSessionRequested());
+      completer.complete(null);
+      return null;
+    } finally {
+      if (identical(_authRecoveryCompleter, completer)) {
+        _authRecoveryCompleter = null;
+      }
+    }
   }
 
   GoRouter _createRouter() {
@@ -491,6 +550,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
                       appViewFallbackService: widget.appViewFallbackService,
                       routingEpoch: context.read<SettingsCubit>().state.routingEpoch,
                       routingEpochResolver: () => context.read<SettingsCubit>().state.routingEpoch,
+                      onUnauthorized: _recoverAuthSession,
                     ),
                   ),
                   RepositoryProvider(
@@ -559,6 +619,7 @@ class _LazuriteAppState extends State<LazuriteApp> {
                       accountDid: accountDid,
                       moderationService: context.read<ModerationService>(),
                       appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                      onUnauthorized: _recoverAuthSession,
                     ),
                   ),
                   RepositoryProvider(
@@ -580,7 +641,9 @@ class _LazuriteAppState extends State<LazuriteApp> {
                       appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
                     ),
                   ),
-                  RepositoryProvider(create: (_) => ConvoRepository(chat: blueskyChat)),
+                  RepositoryProvider(
+                    create: (_) => ConvoRepository(chat: blueskyChat, onUnauthorized: _recoverAuthSession),
+                  ),
                   RepositoryProvider(create: (_) => PostActionCache()),
                   RepositoryProvider(create: (_) => VideoRepository(bluesky: bluesky)),
                   RepositoryProvider.value(value: bluesky),

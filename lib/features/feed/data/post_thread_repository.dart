@@ -1,12 +1,15 @@
-import 'package:atproto_core/atproto_core.dart';
+import 'dart:convert';
+
+import 'package:atproto_core/atproto_core.dart' as atcore;
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_getpostthread.dart';
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
-import 'dart:convert';
 
 class PostThreadRepository {
   PostThreadRepository({
@@ -16,6 +19,8 @@ class PostThreadRepository {
     ModerationService? moderationService,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
+    Future<AuthTokens?> Function()? onUnauthorized,
+    dynamic Function(AuthTokens tokens)? blueskyClientFactory,
   }) : _bluesky = bluesky,
        _database = database,
        _accountDid = accountDid,
@@ -23,22 +28,26 @@ class PostThreadRepository {
        _appViewContext = AppViewRequestContext(
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
-       );
+       ),
+       _onUnauthorized = onUnauthorized,
+       _blueskyClientFactory = blueskyClientFactory ?? createBlueskyClient;
 
-  final dynamic _bluesky;
+  dynamic _bluesky;
   final AppDatabase _database;
   final String _accountDid;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
+  final Future<AuthTokens?> Function()? _onUnauthorized;
+  final dynamic Function(AuthTokens tokens) _blueskyClientFactory;
 
   Future<ThreadViewPost> getPostThread(String uri) async {
     try {
-      final response = await _bluesky.feed.getPostThread(
-        uri: AtUri.parse(uri),
-        $headers: _appViewContext.appBskyHeadersForEndpoint(
-          'app.bsky.feed.getPostThread',
-          await _moderationService?.headersForRequest(),
-        ),
+      final headers = _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.feed.getPostThread',
+        await _moderationService?.headersForRequest(),
+      );
+      final response = await _runWithAuthRecovery(
+        () => _bluesky.feed.getPostThread(uri: atcore.AtUri.parse(uri), $headers: headers),
       );
       final thread = response.data.thread as UFeedGetPostThreadThread;
 
@@ -70,6 +79,39 @@ class PostThreadRepository {
     }
 
     throw Exception('Unable to load thread');
+  }
+
+  Future<T> _runWithAuthRecovery<T>(Future<T> Function() request) async {
+    try {
+      return await request();
+    } on atcore.UnauthorizedException catch (error, stackTrace) {
+      log.w('thread.auth unauthorized; attempting session recovery', error: error, stackTrace: stackTrace);
+      final recovered = await _recoverAuthSession();
+      if (!recovered) {
+        rethrow;
+      }
+      return request();
+    }
+  }
+
+  Future<bool> _recoverAuthSession() async {
+    final callback = _onUnauthorized;
+    if (callback == null) {
+      return false;
+    }
+
+    final refreshedTokens = await callback();
+    if (refreshedTokens == null) {
+      return false;
+    }
+
+    final refreshedClient = _blueskyClientFactory(refreshedTokens);
+    if (refreshedClient == null) {
+      return false;
+    }
+
+    _bluesky = refreshedClient;
+    return true;
   }
 
   Future<void> _cacheThread(ThreadViewPost thread) async {
