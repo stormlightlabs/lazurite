@@ -15,6 +15,7 @@ import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
+import 'package:lazurite/features/auth/data/atproto_identifier.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -68,9 +69,6 @@ class AuthRepository {
   static const String _mobileOAuthRedirectScheme = 'org.stormlightlabs.lazurite';
   static const String _mobileOAuthRedirectPath = '/oauth/callback';
   static final Uri _mobileOAuthRedirectUri = Uri.parse('$_mobileOAuthRedirectScheme:$_mobileOAuthRedirectPath');
-  static final RegExp _atprotoHandlePattern = RegExp(
-    r'^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$',
-  );
 
   final AppDatabase _database;
   final LaunchUrlWithMode _launchUrlWithMode;
@@ -176,8 +174,11 @@ class AuthRepository {
   Future<AuthTokens?> loginWithOAuth(String handle) async {
     try {
       _oauthCompleter = Completer<AuthTokens?>();
-      _pendingHandle = _normalizeIdentifierForAuth(handle);
-      _validateAtprotoIdentifier(_pendingHandle!);
+      _pendingHandle = normalizeAtProtoIdentifierForAuth(handle);
+      final validationError = validateAtProtoIdentifierForAuth(_pendingHandle!);
+      if (validationError != null) {
+        throw AuthIdentifierResolutionException(_identifierValidationMessage(validationError));
+      }
       final preferredOauthService = normalizeAtprotoServiceHost(_oauthServiceResolver()) ?? _oauthService;
       late final String resolvedPdsHost;
       String? resolvedAuthService;
@@ -570,7 +571,7 @@ class AuthRepository {
   }
 
   Future<({String did, String? pdsHost})> _resolveIdentityForIdentifier(String identifier) async {
-    final normalizedIdentifier = _normalizeIdentifierForAuth(identifier);
+    final normalizedIdentifier = normalizeAtProtoIdentifierForAuth(identifier);
     if (normalizedIdentifier.startsWith('did:')) {
       return (did: normalizedIdentifier, pdsHost: null);
     }
@@ -622,36 +623,14 @@ class AuthRepository {
     return (await client.identity.resolveHandle(handle: handle)).data.did;
   }
 
-  String _normalizeIdentifierForAuth(String identifier) {
-    final trimmed = identifier.trim();
-    if (trimmed.startsWith('did:')) {
-      return trimmed;
-    }
-
-    final withoutAt = trimmed.replaceFirst(RegExp(r'^@+'), '');
-    return withoutAt.toLowerCase();
-  }
-
-  void _validateAtprotoIdentifier(String identifier) {
-    if (identifier.isEmpty) {
-      throw const AuthIdentifierResolutionException('Enter a Bluesky handle or DID.');
-    }
-
-    if (identifier.startsWith('did:')) {
-      if (identifier.startsWith('did:plc:') || identifier.startsWith('did:web:')) {
-        return;
-      }
-
-      throw const AuthIdentifierResolutionException(
+  String _identifierValidationMessage(AtProtoIdentifierValidationError validationError) {
+    return switch (validationError.code) {
+      AtProtoIdentifierValidationErrorCode.empty => 'Enter a Bluesky handle or DID.',
+      AtProtoIdentifierValidationErrorCode.unsupportedDid =>
         'Unsupported DID format. Use a did:plc:... or did:web:... identifier.',
-      );
-    }
-
-    if (!_atprotoHandlePattern.hasMatch(identifier)) {
-      throw const AuthIdentifierResolutionException(
+      AtProtoIdentifierValidationErrorCode.invalidHandle =>
         'Invalid handle format. Enter a full handle like username.bsky.social.',
-      );
-    }
+    };
   }
 
   AuthIdentifierResolutionException _handleResolutionFailureForIdentifier(

@@ -5,6 +5,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/router/app_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
@@ -175,7 +176,7 @@ void main() {
     await authController.close();
   });
 
-  Widget buildSubject() => MultiBlocProvider(
+  Widget buildSubjectWithRouter(GoRouter router) => MultiBlocProvider(
     providers: [
       BlocProvider<AuthBloc>.value(value: authBloc),
       BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
@@ -196,10 +197,12 @@ void main() {
           RepositoryProvider<AppDatabase>.value(value: database),
           RepositoryProvider<String>.value(value: tokens.did),
         ],
-        child: MaterialApp.router(routerConfig: AppRouter(authBloc: authBloc).router),
+        child: MaterialApp.router(routerConfig: router),
       ),
     ),
   );
+
+  Widget buildSubject() => buildSubjectWithRouter(AppRouter(authBloc: authBloc).router);
 
   testWidgets('opens the side menu and switches authenticated branches', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
@@ -490,17 +493,8 @@ void main() {
     final pendingCallback = Completer<bool>();
     when(() => authBloc.handleOAuthRedirectUri(any())).thenAnswer((_) => pendingCallback.future);
 
+    await tester.pumpWidget(buildSubjectWithRouter(router));
     router.go('/oauth/callback?code=abc&state=xyz');
-
-    await tester.pumpWidget(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider<AuthBloc>.value(value: authBloc),
-          BlocProvider<SettingsCubit>.value(value: settingsCubit),
-        ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -509,6 +503,13 @@ void main() {
         any(that: predicate<Uri>((uri) => uri.path == OAuthCallbackScreen.routePath)),
       ),
     ).called(1);
+    expect(router.routeInformationProvider.value.uri.path, equals(OAuthCallbackScreen.routePath));
+
+    pendingCallback.complete(true);
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, isNot(equals(OAuthCallbackScreen.routePath)));
+    expect(find.text('No feeds pinned'), findsOneWidget);
 
     router.dispose();
   });

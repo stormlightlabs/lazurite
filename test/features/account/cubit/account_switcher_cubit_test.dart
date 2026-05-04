@@ -388,6 +388,17 @@ void main() {
         expect(cubit.lastAddAccountErrorMessage, equals('Unable to resolve "bad.handle".'));
         verifyNever(() => mockDatabase.insertAccount(any()));
       });
+
+      test('returns curated message when loginWithOAuth fails unexpectedly', () async {
+        when(() => mockAuthRepository.loginWithOAuth(any())).thenThrow(Exception('network stack exploded'));
+
+        final cubit = buildCubit();
+        final result = await cubit.addAccountWithOAuth('new.bsky.social');
+
+        expect(result, isNull);
+        expect(cubit.lastAddAccountErrorMessage, equals('Unable to add account right now. Please try again.'));
+        verifyNever(() => mockDatabase.insertAccount(any()));
+      });
     });
   });
 }

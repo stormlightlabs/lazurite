@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/data/atproto_identifier.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.dart';
@@ -10,51 +11,45 @@ import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 
-final RegExp _atprotoHandlePattern = RegExp(
-  r'^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$',
-);
-
 String? validateAtProtoIdentifierInput(String? value) {
-  final input = value?.trim() ?? '';
-  if (input.isEmpty) {
-    return 'Enter a Bluesky handle or DID';
+  final normalized = normalizeAtProtoIdentifierForAuth(value ?? '');
+  final validationError = validateAtProtoIdentifierForAuth(normalized);
+  if (validationError == null) {
+    return null;
   }
 
-  final normalized = input.replaceFirst(RegExp(r'^@+'), '');
-  if (normalized.toLowerCase().startsWith('did:')) {
-    final did = normalized.toLowerCase();
-    if (did.startsWith('did:plc:') || did.startsWith('did:web:')) {
-      return null;
-    }
-    return 'Use a did:plc:... or did:web:... identifier';
-  }
-
-  if (!_atprotoHandlePattern.hasMatch(normalized)) {
-    return 'Enter a full handle like username.bsky.social';
-  }
-
-  return null;
+  return switch (validationError.code) {
+    AtProtoIdentifierValidationErrorCode.empty => 'Enter a Bluesky handle or DID',
+    AtProtoIdentifierValidationErrorCode.unsupportedDid => 'Use a did:plc:... or did:web:... identifier',
+    AtProtoIdentifierValidationErrorCode.invalidHandle => 'Enter a full handle like username.bsky.social',
+  };
 }
 
 void showAccountSwitcherSheet(BuildContext context) {
   final cubit = context.read<AccountSwitcherCubit>();
   final authBloc = context.read<AuthBloc>();
+  final typeaheadRepository = context.read<TypeaheadRepository>();
   final parentContext = context;
 
   showAppBottomSheet<void>(
     context: context,
     builder: (sheetContext) => BlocProvider.value(
       value: cubit,
-      child: _AccountSwitcherSheet(authBloc: authBloc, parentContext: parentContext),
+      child: _AccountSwitcherSheet(
+        authBloc: authBloc,
+        parentContext: parentContext,
+        typeaheadRepository: typeaheadRepository,
+      ),
     ),
   );
 }
 
 class _AccountSwitcherSheet extends StatelessWidget {
-  const _AccountSwitcherSheet({required this.authBloc, required this.parentContext});
+  const _AccountSwitcherSheet({required this.authBloc, required this.parentContext, required this.typeaheadRepository});
 
   final AuthBloc authBloc;
   final BuildContext parentContext;
+  final TypeaheadRepository typeaheadRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +147,6 @@ class _AccountSwitcherSheet extends StatelessWidget {
     final controller = TextEditingController();
     final formKey = GlobalKey<FormState>();
     final focusNode = FocusNode();
-    final typeaheadRepository = TypeaheadRepository(provider: TypeaheadRepository.communityProvider);
     final handle = await showDialog<String>(
       context: parentContext,
       builder: (dialogContext) => StatefulBuilder(

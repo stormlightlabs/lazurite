@@ -7,15 +7,19 @@ import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/account/presentation/account_switcher_sheet.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
+class MockTypeaheadRepository extends Mock implements TypeaheadRepository {}
+
 void main() {
   late MockAccountSwitcherCubit cubit;
   late MockAuthBloc authBloc;
+  late MockTypeaheadRepository typeaheadRepository;
 
   const tokens = AuthTokens(accessToken: 'token', did: 'did:plc:me', handle: 'me.bsky.social');
 
@@ -27,6 +31,7 @@ void main() {
   setUp(() {
     cubit = MockAccountSwitcherCubit();
     authBloc = MockAuthBloc();
+    typeaheadRepository = MockTypeaheadRepository();
     when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
   });
@@ -54,11 +59,14 @@ void main() {
         BlocProvider<AuthBloc>.value(value: authBloc),
         BlocProvider<AccountSwitcherCubit>.value(value: cubit),
       ],
-      child: MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) =>
-                TextButton(onPressed: () => showAccountSwitcherSheet(context), child: const Text('Open')),
+      child: RepositoryProvider<TypeaheadRepository>.value(
+        value: typeaheadRepository,
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  TextButton(onPressed: () => showAccountSwitcherSheet(context), child: const Text('Open')),
+            ),
           ),
         ),
       ),
@@ -218,6 +226,5 @@ void main() {
       await tester.pump();
       verifyNever(() => cubit.addAccountWithOAuth(any()));
     });
-
   });
 }

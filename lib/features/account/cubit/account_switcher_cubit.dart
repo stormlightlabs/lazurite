@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -91,10 +93,17 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
     } on AuthIdentifierResolutionException catch (error) {
       _lastAddAccountErrorMessage = error.message;
       return null;
-    } catch (error) {
-      _lastAddAccountErrorMessage = error.toString();
+    } catch (error, _) {
+      _lastAddAccountErrorMessage = _userFacingAddAccountErrorMessage(error);
       return null;
     }
+  }
+
+  String _userFacingAddAccountErrorMessage(Object error) {
+    if (error is TimeoutException) {
+      return 'Sign-in timed out before completion. Please try again.';
+    }
+    return 'Unable to add account right now. Please try again.';
   }
 
   Future<void> addAccountCompleted(AuthTokens tokens) async {
