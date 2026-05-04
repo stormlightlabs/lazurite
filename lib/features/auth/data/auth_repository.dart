@@ -815,7 +815,10 @@ class AuthRepository {
     }
 
     return switch (platform) {
-      TargetPlatform.android || TargetPlatform.iOS => LaunchMode.inAppBrowserView,
+      // Keep Android OAuth in-process so the temporary loopback callback listener
+      // is not vulnerable to background process reclamation during auth redirects.
+      TargetPlatform.android => LaunchMode.inAppWebView,
+      TargetPlatform.iOS => LaunchMode.inAppBrowserView,
       _ => LaunchMode.externalApplication,
     };
   }

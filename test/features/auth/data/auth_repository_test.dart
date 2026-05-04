@@ -367,14 +367,17 @@ void main() {
     });
 
     group('oauth browser launch mode', () {
-      test('uses in-app browser view on mobile', () {
+      test('uses in-app browser view on iOS', () {
         expect(
           AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.iOS),
           equals(LaunchMode.inAppBrowserView),
         );
+      });
+
+      test('uses in-app web view on Android', () {
         expect(
           AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.android),
-          equals(LaunchMode.inAppBrowserView),
+          equals(LaunchMode.inAppWebView),
         );
       });
 
