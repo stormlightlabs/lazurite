@@ -5,12 +5,14 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/router/app_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/auth/presentation/oauth_callback_screen.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
@@ -85,6 +87,10 @@ void main() {
     createdAt: DateTime.utc(2024, 3, 1),
   );
 
+  setUpAll(() {
+    registerFallbackValue(Uri.parse('https://example.com/oauth/callback'));
+  });
+
   setUp(() {
     authBloc = MockAuthBloc();
     feedPreferencesCubit = MockFeedPreferencesCubit();
@@ -103,6 +109,7 @@ void main() {
     currentAuthState = const AuthState.authenticated(tokens);
 
     when(() => authBloc.state).thenAnswer((_) => currentAuthState);
+    when(() => authBloc.handleOAuthRedirectUri(any())).thenAnswer((_) async => false);
     when(() => feedPreferencesCubit.state).thenReturn(const FeedPreferencesState.loaded(feeds: []));
     when(() => profileBloc.state).thenReturn(ProfileState.loaded(profile: profile));
     when(() => feedBloc.state).thenReturn(
@@ -117,6 +124,7 @@ void main() {
     );
     when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
     when(() => accountSwitcherCubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
+    when(() => accountSwitcherCubit.loadAccounts()).thenAnswer((_) async {});
     when(() => unreadCountCubit.state).thenReturn(const UnreadCountState(0));
     when(() => convoListBloc.state).thenReturn(const ConvoListState.loaded(convos: [], cursor: null, hasMore: false));
     when(() => notificationRepository.getUnreadCount()).thenAnswer((_) async => 0);
@@ -169,7 +177,7 @@ void main() {
     await authController.close();
   });
 
-  Widget buildSubject() => MultiBlocProvider(
+  Widget buildSubjectWithRouter(GoRouter router) => MultiBlocProvider(
     providers: [
       BlocProvider<AuthBloc>.value(value: authBloc),
       BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
@@ -190,10 +198,12 @@ void main() {
           RepositoryProvider<AppDatabase>.value(value: database),
           RepositoryProvider<String>.value(value: tokens.did),
         ],
-        child: MaterialApp.router(routerConfig: AppRouter(authBloc: authBloc).router),
+        child: MaterialApp.router(routerConfig: router),
       ),
     ),
   );
+
+  Widget buildSubject() => buildSubjectWithRouter(AppRouter(authBloc: authBloc).router);
 
   testWidgets('opens the side menu and switches authenticated branches', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
@@ -475,6 +485,46 @@ void main() {
     router.go('/terms');
     await tester.pumpAndSettle();
     expect(find.text('Terms of Service'), findsWidgets);
+
+    router.dispose();
+  });
+
+  testWidgets('allows authenticated access to login route when reauth query is present', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    await tester.pumpAndSettle();
+
+    router.go('/login?reauth=1');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Continue'), findsOneWidget);
+
+    router.dispose();
+  });
+
+  testWidgets('processes oauth callback route while authenticated', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+    final pendingCallback = Completer<bool>();
+    when(() => authBloc.handleOAuthRedirectUri(any())).thenAnswer((_) => pendingCallback.future);
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/oauth/callback?code=abc&state=xyz');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    verify(
+      () => authBloc.handleOAuthRedirectUri(
+        any(that: predicate<Uri>((uri) => uri.path == OAuthCallbackScreen.routePath)),
+      ),
+    ).called(1);
+    expect(router.routeInformationProvider.value.uri.path, equals(OAuthCallbackScreen.routePath));
+
+    pendingCallback.complete(true);
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, isNot(equals(OAuthCallbackScreen.routePath)));
+    expect(find.text('No feeds pinned'), findsOneWidget);
 
     router.dispose();
   });

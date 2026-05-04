@@ -10,11 +10,12 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
-import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
+import 'package:lazurite/features/auth/data/atproto_identifier.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -27,6 +28,15 @@ typedef OAuthRefreshSession =
       required String service,
       required OAuthSession session,
     });
+
+final class AuthIdentifierResolutionException implements Exception {
+  const AuthIdentifierResolutionException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
 
 class AuthRepository {
   AuthRepository({
@@ -164,16 +174,31 @@ class AuthRepository {
   Future<AuthTokens?> loginWithOAuth(String handle) async {
     try {
       _oauthCompleter = Completer<AuthTokens?>();
-      _pendingHandle = handle.trim();
+      _pendingHandle = normalizeAtProtoIdentifierForAuth(handle);
+      final validationError = validateAtProtoIdentifierForAuth(_pendingHandle!);
+      if (validationError != null) {
+        throw AuthIdentifierResolutionException(_identifierValidationMessage(validationError));
+      }
       final preferredOauthService = normalizeAtprotoServiceHost(_oauthServiceResolver()) ?? _oauthService;
-      String? resolvedPdsHost;
+      late final String resolvedPdsHost;
       String? resolvedAuthService;
       try {
         resolvedPdsHost = await _resolveServiceForIdentifier(_pendingHandle!);
+      } on atcore.InvalidRequestException catch (error, stackTrace) {
+        final failure = _handleResolutionFailureForIdentifier(_pendingHandle!, error);
+        log.w(
+          'AuthRepository: Identifier resolution failed for ${_pendingHandle!}',
+          error: failure,
+          stackTrace: stackTrace,
+        );
+        throw failure;
+      }
+
+      try {
         resolvedAuthService = await _resolveAuthorizationServiceForPdsHost(resolvedPdsHost);
       } catch (error, stackTrace) {
         log.w(
-          'AuthRepository: Failed to pre-resolve OAuth account authority for ${_pendingHandle!}; '
+          'AuthRepository: Failed to resolve OAuth authorization server metadata for ${_pendingHandle!}; '
           'continuing with fallback auth service chain.',
           error: error,
           stackTrace: stackTrace,
@@ -212,9 +237,7 @@ class AuthRepository {
 
           return await _oauthCompleter!.future.timeout(
             const Duration(minutes: 3),
-            onTimeout: () => throw TimeoutException(
-              'Timed out waiting for OAuth callback on custom scheme redirect',
-            ),
+            onTimeout: () => throw TimeoutException('Timed out waiting for OAuth callback on custom scheme redirect'),
           );
         } catch (error, stackTrace) {
           lastAttemptError = error;
@@ -236,6 +259,8 @@ class AuthRepository {
         ),
         lastAttemptStackTrace ?? StackTrace.current,
       );
+    } on AuthIdentifierResolutionException {
+      rethrow;
     } catch (error, stackTrace) {
       log.e('AuthRepository: OAuth login failed', error: error, stackTrace: stackTrace);
       _resetPendingOAuthState();
@@ -438,7 +463,10 @@ class AuthRepository {
 
   Future<bool> completeOAuthCallbackFromUri(Uri callbackUri) async {
     final pendingOAuthFlow =
-        _pendingOAuthClient != null && _pendingOAuthContext != null && _pendingHandle != null && _pendingService != null;
+        _pendingOAuthClient != null &&
+        _pendingOAuthContext != null &&
+        _pendingHandle != null &&
+        _pendingService != null;
     if (!pendingOAuthFlow) {
       log.w(
         'AuthRepository: Ignoring OAuth callback without active flow '
@@ -467,7 +495,7 @@ class AuthRepository {
       }
       return false;
     } finally {
-      _resetPendingOAuthState();
+      _resetPendingOAuthState(clearLaunchMode: false);
     }
   }
 
@@ -543,8 +571,8 @@ class AuthRepository {
   }
 
   Future<({String did, String? pdsHost})> _resolveIdentityForIdentifier(String identifier) async {
-    final normalizedIdentifier = identifier.trim();
-    if (normalizedIdentifier.startsWith('did:')) {
+    final normalizedIdentifier = normalizeAtProtoIdentifierForAuth(identifier);
+    if (normalizedIdentifier.toLowerCase().startsWith('did:')) {
       return (did: normalizedIdentifier, pdsHost: null);
     }
 
@@ -593,6 +621,29 @@ class AuthRepository {
       postClient: XrpcNetworkInterceptor.wrapPostClient(),
     );
     return (await client.identity.resolveHandle(handle: handle)).data.did;
+  }
+
+  String _identifierValidationMessage(AtProtoIdentifierValidationError validationError) {
+    return switch (validationError.code) {
+      AtProtoIdentifierValidationErrorCode.empty => 'Enter a Bluesky handle or DID.',
+      AtProtoIdentifierValidationErrorCode.unsupportedDid =>
+        'Unsupported DID format. Use a did:plc:... or did:web:... identifier.',
+      AtProtoIdentifierValidationErrorCode.invalidDid =>
+        'Invalid DID format. Enter a complete did:plc:... or did:web:... identifier.',
+      AtProtoIdentifierValidationErrorCode.invalidHandle =>
+        'Invalid handle format. Enter a full handle like username.bsky.social.',
+    };
+  }
+
+  AuthIdentifierResolutionException _handleResolutionFailureForIdentifier(
+    String identifier,
+    atcore.InvalidRequestException error,
+  ) {
+    final primaryMessage = error.response.data.message?.trim() ?? '';
+    final fallbackMessage = error.response.data.error.trim();
+    final responseMessage = primaryMessage.isNotEmpty ? primaryMessage : fallbackMessage;
+    final sanitizedMessage = responseMessage.trim().isEmpty ? 'Unable to resolve identifier.' : responseMessage.trim();
+    return AuthIdentifierResolutionException('Unable to resolve "$identifier". $sanitizedMessage');
   }
 
   Future<String?> _resolveAuthorizationServiceForPdsHost(String pdsHost) async {
@@ -657,11 +708,12 @@ class AuthRepository {
   }
 
   Uri _didDocumentUri(String did) {
-    if (did.startsWith('did:plc:')) {
+    final didLower = did.toLowerCase();
+    if (didLower.startsWith('did:plc:')) {
       return Uri.https('plc.directory', '/$did');
     }
 
-    if (did.startsWith('did:web:')) {
+    if (didLower.startsWith('did:web:')) {
       final encodedSegments = did.substring('did:web:'.length).split(':');
       if (encodedSegments.isEmpty || encodedSegments.first.isEmpty) {
         throw Exception('Invalid did:web identifier: $did');
@@ -811,13 +863,15 @@ class AuthRepository {
     }
   }
 
-  void _resetPendingOAuthState() {
+  void _resetPendingOAuthState({bool clearLaunchMode = true}) {
     _oauthCompleter = null;
     _pendingOAuthClient = null;
     _pendingOAuthContext = null;
     _pendingHandle = null;
     _pendingService = null;
-    _oauthLaunchMode = null;
+    if (clearLaunchMode) {
+      _oauthLaunchMode = null;
+    }
   }
 
   OAuthSession _restoreOAuthSession({

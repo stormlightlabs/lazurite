@@ -7,15 +7,20 @@ import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/account/presentation/account_switcher_sheet.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
+class MockTypeaheadRepository extends Mock implements TypeaheadRepository {}
+
 void main() {
   late MockAccountSwitcherCubit cubit;
   late MockAuthBloc authBloc;
+  late MockTypeaheadRepository typeaheadRepository;
 
   const tokens = AuthTokens(accessToken: 'token', did: 'did:plc:me', handle: 'me.bsky.social');
 
@@ -27,8 +32,16 @@ void main() {
   setUp(() {
     cubit = MockAccountSwitcherCubit();
     authBloc = MockAuthBloc();
+    typeaheadRepository = MockTypeaheadRepository();
     when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
+    when(() => cubit.loadAccounts()).thenAnswer((_) async {});
+    when(
+      () => typeaheadRepository.search(
+        query: any(named: 'query'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => const <TypeaheadResult>[]);
   });
 
   Account makeAccount({required String did, String handle = 'user.bsky.social', String? displayName}) {
@@ -54,11 +67,14 @@ void main() {
         BlocProvider<AuthBloc>.value(value: authBloc),
         BlocProvider<AccountSwitcherCubit>.value(value: cubit),
       ],
-      child: MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) =>
-                TextButton(onPressed: () => showAccountSwitcherSheet(context), child: const Text('Open')),
+      child: RepositoryProvider<TypeaheadRepository>.value(
+        value: typeaheadRepository,
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) =>
+                  TextButton(onPressed: () => showAccountSwitcherSheet(context), child: const Text('Open')),
+            ),
           ),
         ),
       ),
@@ -73,11 +89,31 @@ void main() {
   }
 
   group('AccountSwitcherSheet', () {
+    group('identifier validation', () {
+      test('accepts valid handle', () {
+        expect(validateAtProtoIdentifierInput('alice.bsky.social'), isNull);
+      });
+
+      test('rejects malformed handle', () {
+        expect(validateAtProtoIdentifierInput('not-a-handle'), equals('Enter a full handle like username.bsky.social'));
+      });
+
+      test('accepts supported did methods', () {
+        expect(validateAtProtoIdentifierInput('did:plc:ewvi7nxzyoun6zhxrhs64oiz'), isNull);
+        expect(validateAtProtoIdentifierInput('did:web:example.com'), isNull);
+      });
+
+      test('rejects unsupported did methods', () {
+        expect(validateAtProtoIdentifierInput('did:key:z6Mk'), equals('Use a did:plc:... or did:web:... identifier'));
+      });
+    });
+
     testWidgets('shows CircularProgressIndicator during loading state', (tester) async {
       when(() => cubit.state).thenReturn(const AccountSwitcherState.loading());
 
       await openSheet(tester);
 
+      verify(() => cubit.loadAccounts()).called(1);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
@@ -168,7 +204,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       verifyNever(() => authBloc.add(any(that: isA<LogoutRequested>())));
-      expect(find.text('Unable to switch accounts. Sign in again for that account.'), findsOneWidget);
+      verify(() => cubit.switchAccount('did:plc:user2')).called(1);
     });
 
     testWidgets('tapping active account does nothing', (tester) async {
@@ -184,6 +220,56 @@ void main() {
       await tester.pump();
 
       verifyNever(() => cubit.switchAccount(any()));
+    });
+
+    testWidgets('invalid add-account handle is blocked with inline validation', (tester) async {
+      when(() => cubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
+
+      await openSheet(tester);
+      await tester.tap(find.text('Add Account'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.enterText(find.byType(TextFormField), 'not-a-handle');
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+      verifyNever(() => cubit.addAccountWithOAuth(any()));
+    });
+
+    testWidgets('add-account Continue button stays disabled for invalid identifier', (tester) async {
+      when(() => cubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
+
+      await openSheet(tester);
+      await tester.tap(find.text('Add Account'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextFormField), 'not-a-handle');
+      await tester.pump();
+
+      final continueButton = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Continue'));
+      expect(continueButton.onPressed, isNull);
+      verifyNever(() => cubit.addAccountWithOAuth(any()));
+    });
+
+    testWidgets('remove account action removes account from sheet flow', (tester) async {
+      when(() => cubit.state).thenReturn(
+        AccountSwitcherState.ready(
+          accounts: [
+            makeAccount(did: 'did:plc:user1', handle: 'alice.bsky.social'),
+            makeAccount(did: 'did:plc:user2', handle: 'bob.bsky.social'),
+          ],
+          activeDid: 'did:plc:user1',
+        ),
+      );
+      when(() => cubit.removeAccount('did:plc:user2')).thenAnswer((_) async => const AccountRemovalResult.removed());
+
+      await openSheet(tester);
+      await tester.tap(find.byTooltip('Remove account').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove'));
+      await tester.pumpAndSettle();
+
+      verify(() => cubit.removeAccount('did:plc:user2')).called(1);
     });
   });
 }

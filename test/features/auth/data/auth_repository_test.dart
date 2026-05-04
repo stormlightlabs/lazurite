@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:atproto_core/atproto_core.dart' as atcore;
 import 'package:atproto_oauth/atproto_oauth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -315,6 +316,70 @@ void main() {
       });
     });
 
+    group('oauth identifier validation', () {
+      test('fails fast for malformed handle input', () async {
+        await expectLater(
+          authRepository.loginWithOAuth('not-a-handle'),
+          throwsA(
+            isA<AuthIdentifierResolutionException>().having(
+              (error) => error.toString(),
+              'message',
+              contains('Invalid handle format'),
+            ),
+          ),
+        );
+      });
+
+      test('throws identifier resolution error for unresolvable handle', () async {
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          resolveHandleDid: (_) async => throw _invalidResolveHandleRequestException(),
+        );
+
+        await expectLater(
+          authRepository.loginWithOAuth('nobody.bsky.social'),
+          throwsA(
+            isA<AuthIdentifierResolutionException>().having(
+              (error) => error.toString(),
+              'message',
+              allOf(contains('Unable to resolve'), contains('nobody.bsky.social')),
+            ),
+          ),
+        );
+      });
+
+      test('normalizes uppercase did input before identity handling', () async {
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          resolveDidDocument: (_) async => {
+            'service': [
+              {
+                'id': '#atproto_pds',
+                'type': 'AtprotoPersonalDataServer',
+                'serviceEndpoint': 'https://pds.example',
+              },
+            ],
+          },
+        );
+
+        final service = await authRepository.resolveServiceForIdentifierForTest('DID:PLC:ABC123');
+        expect(service, equals('pds.example'));
+      });
+
+      test('fails fast for incomplete did identifiers', () async {
+        await expectLater(
+          authRepository.loginWithOAuth('did:web:'),
+          throwsA(
+            isA<AuthIdentifierResolutionException>().having(
+              (error) => error.toString(),
+              'message',
+              contains('Invalid DID format'),
+            ),
+          ),
+        );
+      });
+    });
+
     group('clearSession', () {
       test('should delete all accounts', () async {
         when(() => mockDatabase.deleteAllAccounts()).thenAnswer((_) async => 1);
@@ -419,6 +484,21 @@ void main() {
       });
     });
   });
+}
+
+atcore.InvalidRequestException _invalidResolveHandleRequestException() {
+  return atcore.InvalidRequestException(
+    atcore.XRPCResponse(
+      headers: const {},
+      status: atcore.HttpStatus.badRequest,
+      request: atcore.XRPCRequest(
+        method: atcore.HttpMethod.get,
+        url: Uri.https('bsky.social', '/xrpc/com.atproto.identity.resolveHandle'),
+      ),
+      rateLimit: atcore.RateLimit.unlimited(),
+      data: const atcore.XRPCError(error: 'InvalidRequest', message: 'Could not resolve handle'),
+    ),
+  );
 }
 
 OAuthClientMetadata _testClientMetadata() {

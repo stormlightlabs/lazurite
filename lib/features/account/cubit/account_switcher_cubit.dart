@@ -1,11 +1,31 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 
 part 'account_switcher_state.dart';
+
+class AccountRemovalResult {
+  const AccountRemovalResult._({required this.removed, required this.requiresSignIn, this.switchedTokens});
+
+  const AccountRemovalResult.removed() : this._(removed: true, requiresSignIn: false);
+
+  const AccountRemovalResult.switched(AuthTokens tokens)
+    : this._(removed: true, requiresSignIn: false, switchedTokens: tokens);
+
+  const AccountRemovalResult.requiresSignIn() : this._(removed: true, requiresSignIn: true);
+
+  const AccountRemovalResult.failed() : this._(removed: false, requiresSignIn: false);
+
+  final bool removed;
+  final bool requiresSignIn;
+  final AuthTokens? switchedTokens;
+}
 
 class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
   AccountSwitcherCubit({required AppDatabase database, required AuthRepository authRepository})
@@ -15,6 +35,9 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
 
   final AppDatabase _database;
   final AuthRepository _authRepository;
+  String? _lastAddAccountErrorMessage;
+
+  String? get lastAddAccountErrorMessage => _lastAddAccountErrorMessage;
 
   Future<void> loadAccounts() async {
     emit(const AccountSwitcherState.loading());
@@ -42,6 +65,33 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
     final account = await _database.getAccount(did);
     if (account == null) return null;
 
+    return _switchToAccount(account, allowRefresh: true);
+  }
+
+  Future<AuthTokens?> _switchToAccount(Account account, {required bool allowRefresh}) async {
+    final did = account.did;
+    final tokens = _tokensFromAccount(account);
+
+    try {
+      final nextTokens = tokens.isExpired
+          ? !allowRefresh || tokens.refreshToken == null
+                ? null
+                : await _authRepository.refreshSession(tokens)
+          : tokens;
+
+      if (nextTokens == null) {
+        return null;
+      }
+
+      await _database.setSetting(AppDatabase.activeAccountDidSettingKey, did);
+      emit(state.copyWith(activeDid: did));
+      return nextTokens;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  AuthTokens _tokensFromAccount(Account account) {
     final tokens = AuthTokens(
       accessToken: account.accessToken,
       refreshToken: account.refreshToken,
@@ -59,34 +109,30 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
           : AuthMethod.appPassword,
     );
 
-    try {
-      final nextTokens = tokens.isExpired
-          ? tokens.refreshToken == null
-                ? null
-                : await _authRepository.refreshSession(tokens)
-          : tokens;
-
-      if (nextTokens == null) {
-        return null;
-      }
-
-      await _database.setSetting(AppDatabase.activeAccountDidSettingKey, did);
-      emit(state.copyWith(activeDid: did));
-      return nextTokens;
-    } catch (_) {
-      return null;
-    }
+    return tokens;
   }
 
   Future<AuthTokens?> addAccountWithOAuth(String handle) async {
+    _lastAddAccountErrorMessage = null;
     try {
       final tokens = await _authRepository.loginWithOAuth(handle);
       if (tokens == null) return null;
       await addAccountCompleted(tokens);
       return tokens;
-    } catch (_) {
+    } on AuthIdentifierResolutionException catch (error) {
+      _lastAddAccountErrorMessage = error.message;
+      return null;
+    } catch (error, _) {
+      _lastAddAccountErrorMessage = _userFacingAddAccountErrorMessage(error);
       return null;
     }
+  }
+
+  String _userFacingAddAccountErrorMessage(Object error) {
+    if (error is TimeoutException) {
+      return 'Sign-in timed out before completion. Please try again.';
+    }
+    return 'Unable to add account right now. Please try again.';
   }
 
   Future<void> addAccountCompleted(AuthTokens tokens) async {
@@ -108,5 +154,48 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
 
     await loadAccounts();
     await switchAccount(tokens.did);
+  }
+
+  Future<AccountRemovalResult> removeAccount(String did) async {
+    try {
+      if (state.status != AccountSwitcherStatus.ready) {
+        return const AccountRemovalResult.failed();
+      }
+
+      final account = await _database.getAccount(did);
+      if (account == null) {
+        return const AccountRemovalResult.failed();
+      }
+
+      final wasActive = state.activeDid == did;
+      await _database.deleteAccount(did);
+
+      if (!wasActive) {
+        await loadAccounts();
+        return const AccountRemovalResult.removed();
+      }
+
+      final remainingAccounts = await _database.getAllAccounts();
+      if (remainingAccounts.isEmpty) {
+        await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
+        await loadAccounts();
+        return const AccountRemovalResult.requiresSignIn();
+      }
+
+      for (final remaining in remainingAccounts) {
+        final switchedTokens = await _switchToAccount(remaining, allowRefresh: false);
+        if (switchedTokens != null) {
+          await loadAccounts();
+          return AccountRemovalResult.switched(switchedTokens);
+        }
+      }
+
+      await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
+      await loadAccounts();
+      return const AccountRemovalResult.requiresSignIn();
+    } catch (error, stackTrace) {
+      log.w('AccountSwitcherCubit: Failed to remove account $did', error: error, stackTrace: stackTrace);
+      return const AccountRemovalResult.failed();
+    }
   }
 }
