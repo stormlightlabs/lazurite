@@ -258,6 +258,8 @@ class AuthRepository {
         ),
         lastAttemptStackTrace ?? StackTrace.current,
       );
+    } on AuthIdentifierResolutionException {
+      rethrow;
     } catch (error, stackTrace) {
       log.e('AuthRepository: OAuth login failed', error: error, stackTrace: stackTrace);
       _resetPendingOAuthState();
@@ -492,7 +494,7 @@ class AuthRepository {
       }
       return false;
     } finally {
-      _resetPendingOAuthState();
+      _resetPendingOAuthState(clearLaunchMode: false);
     }
   }
 
@@ -656,7 +658,9 @@ class AuthRepository {
     String identifier,
     atcore.InvalidRequestException error,
   ) {
-    final responseMessage = error.response.data.message ?? error.response.data.error;
+    final primaryMessage = error.response.data.message?.trim() ?? '';
+    final fallbackMessage = error.response.data.error.trim();
+    final responseMessage = primaryMessage.isNotEmpty ? primaryMessage : fallbackMessage;
     final sanitizedMessage = responseMessage.trim().isEmpty ? 'Unable to resolve identifier.' : responseMessage.trim();
     return AuthIdentifierResolutionException('Unable to resolve "$identifier". $sanitizedMessage');
   }
@@ -877,13 +881,15 @@ class AuthRepository {
     }
   }
 
-  void _resetPendingOAuthState() {
+  void _resetPendingOAuthState({bool clearLaunchMode = true}) {
     _oauthCompleter = null;
     _pendingOAuthClient = null;
     _pendingOAuthContext = null;
     _pendingHandle = null;
     _pendingService = null;
-    _oauthLaunchMode = null;
+    if (clearLaunchMode) {
+      _oauthLaunchMode = null;
+    }
   }
 
   OAuthSession _restoreOAuthSession({

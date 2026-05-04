@@ -320,7 +320,13 @@ void main() {
       test('fails fast for malformed handle input', () async {
         await expectLater(
           authRepository.loginWithOAuth('not-a-handle'),
-          throwsA(isA<Exception>().having((error) => error.toString(), 'message', contains('Invalid handle format'))),
+          throwsA(
+            isA<AuthIdentifierResolutionException>().having(
+              (error) => error.toString(),
+              'message',
+              contains('Invalid handle format'),
+            ),
+          ),
         );
       });
 
@@ -333,7 +339,7 @@ void main() {
         await expectLater(
           authRepository.loginWithOAuth('nobody.bsky.social'),
           throwsA(
-            isA<Exception>().having(
+            isA<AuthIdentifierResolutionException>().having(
               (error) => error.toString(),
               'message',
               allOf(contains('Unable to resolve'), contains('nobody.bsky.social')),
