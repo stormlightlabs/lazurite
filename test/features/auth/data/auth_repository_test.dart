@@ -374,10 +374,10 @@ void main() {
         );
       });
 
-      test('uses in-app web view on Android', () {
+      test('uses in-app browser view on Android', () {
         expect(
           AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.android),
-          equals(LaunchMode.inAppWebView),
+          equals(LaunchMode.inAppBrowserView),
         );
       });
 

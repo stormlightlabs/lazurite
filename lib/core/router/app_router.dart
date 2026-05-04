@@ -15,6 +15,7 @@ import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/alerts/presentation/alerts_screen.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
+import 'package:lazurite/features/auth/presentation/oauth_callback_screen.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/compose/presentation/compose_screen.dart';
@@ -101,15 +102,16 @@ class AppRouter {
     redirect: (context, state) {
       final isAuthenticated = authBloc.state.isAuthenticated;
       final path = state.uri.path;
-      final publicPaths = {'/login', '/terms', '/privacy'};
+      final publicPaths = {'/login', '/terms', '/privacy', OAuthCallbackScreen.routePath};
       final isLoggingIn = path == '/login';
+      final isOAuthCallback = path == OAuthCallbackScreen.routePath;
       final isPublicPath = publicPaths.contains(path);
 
       if (!isAuthenticated && !isPublicPath) {
         return '/login';
       }
 
-      if (isAuthenticated && isLoggingIn) {
+      if (isAuthenticated && (isLoggingIn || isOAuthCallback)) {
         return '/';
       }
 
@@ -117,6 +119,15 @@ class AppRouter {
     },
     routes: [
       GoRoute(path: '/login', pageBuilder: (context, state) => _page(context, state, const LoginScreen())),
+      GoRoute(
+        path: OAuthCallbackScreen.routePath,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => _page(
+          context,
+          state,
+          OAuthCallbackScreen(callbackUri: state.uri),
+        ),
+      ),
       GoRoute(path: '/terms', pageBuilder: (context, state) => _page(context, state, const TermsOfServiceScreen())),
       GoRoute(path: '/privacy', pageBuilder: (context, state) => _page(context, state, const PrivacyPolicyScreen())),
       GoRoute(path: '/notifications', redirect: (_, _) => '/alerts'),

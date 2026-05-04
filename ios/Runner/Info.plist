@@ -29,6 +29,7 @@
 				<key>CFBundleURLSchemes</key>
 				<array>
 					<string>lazurite</string>
+					<string>org.stormlightlabs.lazurite</string>
 				</array>
 			</dict>
 		</array>

@@ -56,6 +56,9 @@ class AuthRepository {
   static const String kClientId = 'https://lazurite.stormlightlabs.org/client-metadata.json';
   static const String _oauthService = 'bsky.social';
   static const String _fallbackService = 'bsky.social';
+  static const String _mobileOAuthRedirectScheme = 'org.stormlightlabs.lazurite';
+  static const String _mobileOAuthRedirectPath = '/oauth/callback';
+  static final Uri _mobileOAuthRedirectUri = Uri.parse('$_mobileOAuthRedirectScheme:$_mobileOAuthRedirectPath');
   static final Uri _appReopenUri = Uri.parse('lazurite://auth-complete');
 
   final AppDatabase _database;
@@ -190,8 +193,13 @@ class AuthRepository {
 
       final metadata = await _loadClientMetadata(kClientId);
       log.d('AuthRepository: Loaded client metadata with redirect URIs: ${metadata.redirectUris.join(', ')}');
-      final redirectUriTemplate = Uri.parse(metadata.redirectUris.first);
-      final redirectUri = await _startCallbackServer(redirectUriTemplate);
+      final redirectUriTemplate = _selectOAuthRedirectUriTemplate(metadata.redirectUris);
+      final usesLoopbackRedirect = _isSupportedLoopbackRedirect(redirectUriTemplate);
+      final redirectUri =
+          usesLoopbackRedirect ? await _startCallbackServer(redirectUriTemplate) : redirectUriTemplate;
+      if (!usesLoopbackRedirect) {
+        log.i('AuthRepository: Using custom-scheme OAuth callback redirect ${_sanitizeUriForLog(redirectUri)}');
+      }
 
       Object? lastAttemptError;
       StackTrace? lastAttemptStackTrace;
@@ -211,7 +219,13 @@ class AuthRepository {
           log.i('AuthRepository: OAuth PAR completed, launching browser to ${_sanitizeUriForLog(authorizationUrl)}');
           await _launchUrl(authorizationUrl);
 
-          return await _oauthCompleter!.future;
+          return await _oauthCompleter!.future.timeout(
+            const Duration(minutes: 3),
+            onTimeout: () => throw TimeoutException(
+              'Timed out waiting for OAuth callback on '
+              '${usesLoopbackRedirect ? 'local loopback listener' : 'custom scheme redirect'}',
+            ),
+          );
         } catch (error, stackTrace) {
           lastAttemptError = error;
           lastAttemptStackTrace = stackTrace;
@@ -470,21 +484,7 @@ class AuthRepository {
 
     final callbackUrl = uri.replace(scheme: redirectUri.scheme, host: redirectUri.host, port: redirectUri.port);
 
-    try {
-      log.i('AuthRepository: Processing OAuth callback');
-      final tokens = await _handleOAuthCallback(callbackUrl.toString());
-      if (_oauthCompleter?.isCompleted == false) {
-        _oauthCompleter?.complete(tokens);
-      }
-    } catch (error, stackTrace) {
-      log.e('AuthRepository: OAuth callback handling failed', error: error, stackTrace: stackTrace);
-      if (_oauthCompleter?.isCompleted == false) {
-        _oauthCompleter?.completeError(error, stackTrace);
-      }
-    } finally {
-      await _stopCallbackServer();
-      _resetPendingOAuthState();
-    }
+    await completeOAuthCallbackFromUri(callbackUrl);
   }
 
   Future<AuthTokens> _handleOAuthCallback(String callbackUrl) async {
@@ -513,6 +513,42 @@ class AuthRepository {
     await saveSession(tokens, makeActive: true);
     log.i('AuthRepository: OAuth login completed for ${tokens.handle}');
     return tokens;
+  }
+
+  Future<bool> completeOAuthCallbackFromUri(Uri callbackUri) async {
+    final pendingOAuthFlow =
+        _pendingOAuthClient != null && _pendingOAuthContext != null && _pendingHandle != null && _pendingService != null;
+    if (!pendingOAuthFlow) {
+      log.w(
+        'AuthRepository: Ignoring OAuth callback without active flow '
+        '(${_sanitizeUriForLog(callbackUri)})',
+      );
+      return false;
+    }
+
+    final normalizedCallbackUri = _normalizeOAuthCallbackUri(callbackUri);
+    if (normalizedCallbackUri == null) {
+      log.w('AuthRepository: Ignoring unsupported OAuth callback URI ${_sanitizeUriForLog(callbackUri)}');
+      return false;
+    }
+
+    try {
+      log.i('AuthRepository: Processing OAuth callback URI ${_sanitizeUriForLog(normalizedCallbackUri)}');
+      final tokens = await _handleOAuthCallback(normalizedCallbackUri.toString());
+      if (_oauthCompleter?.isCompleted == false) {
+        _oauthCompleter?.complete(tokens);
+      }
+      return true;
+    } catch (error, stackTrace) {
+      log.e('AuthRepository: OAuth callback URI handling failed', error: error, stackTrace: stackTrace);
+      if (_oauthCompleter?.isCompleted == false) {
+        _oauthCompleter?.completeError(error, stackTrace);
+      }
+      return false;
+    } finally {
+      await _stopCallbackServer();
+      _resetPendingOAuthState();
+    }
   }
 
   Future<AuthTokens> _buildOAuthTokens(
@@ -815,9 +851,9 @@ class AuthRepository {
     }
 
     return switch (platform) {
-      // Keep Android OAuth in-process so the temporary loopback callback listener
-      // is not vulnerable to background process reclamation during auth redirects.
-      TargetPlatform.android => LaunchMode.inAppWebView,
+      // ATProto OAuth providers can enforce browser-like fetch metadata semantics
+      // that are not always met by embedded WebViews. Prefer browser tab UX.
+      TargetPlatform.android => LaunchMode.inAppBrowserView,
       TargetPlatform.iOS => LaunchMode.inAppBrowserView,
       _ => LaunchMode.externalApplication,
     };
@@ -831,6 +867,61 @@ class AuthRepository {
 
   bool _isSupportedLoopbackRedirect(Uri redirectUri) {
     return redirectUri.scheme == 'http' && _isLoopbackHost(redirectUri.host);
+  }
+
+  bool _isSupportedCustomSchemeRedirect(Uri redirectUri) {
+    return redirectUri.scheme == _mobileOAuthRedirectScheme && redirectUri.path == _mobileOAuthRedirectPath;
+  }
+
+  Uri? _normalizeOAuthCallbackUri(Uri callbackUri) {
+    if (_isSupportedLoopbackRedirect(callbackUri) || _isSupportedCustomSchemeRedirect(callbackUri)) {
+      return callbackUri;
+    }
+
+    if (!callbackUri.hasScheme && callbackUri.path == _mobileOAuthRedirectPath) {
+      return Uri(
+        scheme: _mobileOAuthRedirectScheme,
+        path: callbackUri.path,
+        query: callbackUri.hasQuery ? callbackUri.query : null,
+        fragment: callbackUri.hasFragment ? callbackUri.fragment : null,
+      );
+    }
+
+    return null;
+  }
+
+  Uri _selectOAuthRedirectUriTemplate(List<String> redirectUris) {
+    final candidates = redirectUris.map(Uri.parse).toList(growable: false);
+    if (candidates.isEmpty) {
+      throw UnsupportedError('OAuth client metadata does not declare any redirect URIs.');
+    }
+
+    final prefersCustomScheme =
+        !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
+    if (prefersCustomScheme) {
+      for (final candidate in candidates) {
+        if (_isSupportedCustomSchemeRedirect(candidate)) {
+          return candidate;
+        }
+      }
+    }
+
+    for (final candidate in candidates) {
+      if (_isSupportedLoopbackRedirect(candidate)) {
+        return candidate;
+      }
+    }
+
+    if (prefersCustomScheme) {
+      throw UnsupportedError(
+        'No supported OAuth redirect URI found. Mobile builds require '
+        '${_mobileOAuthRedirectUri.toString()} or an HTTP loopback redirect.',
+      );
+    }
+
+    throw UnsupportedError(
+      'No supported OAuth redirect URI found. Supported redirects are HTTP loopback callbacks.',
+    );
   }
 
   bool _isLoopbackHost(String host) {

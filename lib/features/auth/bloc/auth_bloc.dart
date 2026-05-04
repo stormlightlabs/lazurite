@@ -19,6 +19,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   final AuthRepository _authRepository;
 
+  Future<bool> handleOAuthRedirectUri(Uri uri) => _authRepository.completeOAuthCallbackFromUri(uri);
+
   Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
     emit(const AuthState.authenticating());
 
