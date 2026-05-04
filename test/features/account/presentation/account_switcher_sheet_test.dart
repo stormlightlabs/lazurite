@@ -73,6 +73,25 @@ void main() {
   }
 
   group('AccountSwitcherSheet', () {
+    group('identifier validation', () {
+      test('accepts valid handle', () {
+        expect(validateAtProtoIdentifierInput('alice.bsky.social'), isNull);
+      });
+
+      test('rejects malformed handle', () {
+        expect(validateAtProtoIdentifierInput('not-a-handle'), equals('Enter a full handle like username.bsky.social'));
+      });
+
+      test('accepts supported did methods', () {
+        expect(validateAtProtoIdentifierInput('did:plc:abc123'), isNull);
+        expect(validateAtProtoIdentifierInput('did:web:example.com'), isNull);
+      });
+
+      test('rejects unsupported did methods', () {
+        expect(validateAtProtoIdentifierInput('did:key:z6Mk'), equals('Use a did:plc:... or did:web:... identifier'));
+      });
+    });
+
     testWidgets('shows CircularProgressIndicator during loading state', (tester) async {
       when(() => cubit.state).thenReturn(const AccountSwitcherState.loading());
 
@@ -185,5 +204,20 @@ void main() {
 
       verifyNever(() => cubit.switchAccount(any()));
     });
+
+    testWidgets('invalid add-account handle is blocked with inline validation', (tester) async {
+      when(() => cubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
+
+      await openSheet(tester);
+      await tester.tap(find.text('Add Account'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.enterText(find.byType(TextFormField), 'not-a-handle');
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+      verifyNever(() => cubit.addAccountWithOAuth(any()));
+    });
+
   });
 }

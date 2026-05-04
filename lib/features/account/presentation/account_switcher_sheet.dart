@@ -10,23 +10,51 @@ import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 
+final RegExp _atprotoHandlePattern = RegExp(
+  r'^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$',
+);
+
+String? validateAtProtoIdentifierInput(String? value) {
+  final input = value?.trim() ?? '';
+  if (input.isEmpty) {
+    return 'Enter a Bluesky handle or DID';
+  }
+
+  final normalized = input.replaceFirst(RegExp(r'^@+'), '');
+  if (normalized.toLowerCase().startsWith('did:')) {
+    final did = normalized.toLowerCase();
+    if (did.startsWith('did:plc:') || did.startsWith('did:web:')) {
+      return null;
+    }
+    return 'Use a did:plc:... or did:web:... identifier';
+  }
+
+  if (!_atprotoHandlePattern.hasMatch(normalized)) {
+    return 'Enter a full handle like username.bsky.social';
+  }
+
+  return null;
+}
+
 void showAccountSwitcherSheet(BuildContext context) {
   final cubit = context.read<AccountSwitcherCubit>();
   final authBloc = context.read<AuthBloc>();
+  final parentContext = context;
 
   showAppBottomSheet<void>(
     context: context,
     builder: (sheetContext) => BlocProvider.value(
       value: cubit,
-      child: _AccountSwitcherSheet(authBloc: authBloc),
+      child: _AccountSwitcherSheet(authBloc: authBloc, parentContext: parentContext),
     ),
   );
 }
 
 class _AccountSwitcherSheet extends StatelessWidget {
-  const _AccountSwitcherSheet({required this.authBloc});
+  const _AccountSwitcherSheet({required this.authBloc, required this.parentContext});
 
   final AuthBloc authBloc;
+  final BuildContext parentContext;
 
   @override
   Widget build(BuildContext context) {
@@ -112,8 +140,8 @@ class _AccountSwitcherSheet extends StatelessWidget {
       return;
     }
 
-    if (context.mounted) {
-      showAppSnackBar(context, 'Unable to switch accounts. Sign in again for that account.');
+    if (parentContext.mounted) {
+      showAppSnackBar(parentContext, 'Unable to switch accounts. Sign in again for that account.');
     }
   }
 
@@ -126,7 +154,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
     final focusNode = FocusNode();
     final typeaheadRepository = TypeaheadRepository(provider: TypeaheadRepository.communityProvider);
     final handle = await showDialog<String>(
-      context: context,
+      context: parentContext,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => ConfirmationDialog(
           title: const Text('Add Account'),
@@ -138,18 +166,16 @@ class _AccountSwitcherSheet extends StatelessWidget {
                 controller: controller,
                 focusNode: focusNode,
                 repository: typeaheadRepository,
-                onSelected: (TypeaheadResult result) => controller.text = result.handle,
+                onSelected: (TypeaheadResult result) {
+                  controller.text = result.handle;
+                  setDialogState(() {});
+                },
                 minChars: 2,
                 debounceMs: 300,
                 limit: 8,
                 decoration: const InputDecoration(labelText: 'Handle or DID', hintText: 'username.bsky.social'),
                 textInputAction: TextInputAction.done,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Enter a Bluesky handle or DID';
-                  }
-                  return null;
-                },
+                validator: validateAtProtoIdentifierInput,
                 onChanged: (_) => setDialogState(() {}),
                 onFieldSubmitted: (_) {
                   if ((formKey.currentState?.validate() ?? false)) {
@@ -179,8 +205,8 @@ class _AccountSwitcherSheet extends StatelessWidget {
     final tokens = await cubit.addAccountWithOAuth(handle);
     if (tokens != null) {
       authBloc.add(SessionRestored(tokens: tokens));
-    } else if (context.mounted) {
-      showAppSnackBar(context, cubit.lastAddAccountErrorMessage ?? 'Failed to add account', isError: true);
+    } else if (parentContext.mounted) {
+      showAppSnackBar(parentContext, cubit.lastAddAccountErrorMessage ?? 'Failed to add account', isError: true);
     }
   }
 }
