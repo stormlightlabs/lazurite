@@ -204,6 +204,7 @@
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				D83A47AAE1B8A38105D97A73 /* [CP] Embed Pods Frameworks */,
 				46A625365BA943162BC0528F /* [CP] Copy Pods Resources */,
+				B17F4F7F2E8AA3D100C41D55 /* Generate objective_c.framework dSYM */,
 				F71C51392C4AA10000B33C11 /* [firebase_crashlytics] Crashlytics Upload Symbols */,
 			);
 			buildRules = (
@@ -323,13 +324,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -350,6 +347,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
+		};
+		B17F4F7F2E8AA3D100C41D55 /* Generate objective_c.framework dSYM */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/objective_c.framework/objective_c",
+			);
+			name = "Generate objective_c.framework dSYM";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/objective_c.framework.dSYM",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CONFIGURATION}\" != \"Release\" ] && [ \"${CONFIGURATION}\" != \"Profile\" ]; then\n  exit 0\nfi\n\nframework_binary=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/objective_c.framework/objective_c\"\nframework_dsym=\"${DWARF_DSYM_FOLDER_PATH}/objective_c.framework.dSYM\"\n\nif [ ! -f \"${framework_binary}\" ]; then\n  echo \"warning: objective_c.framework binary not found at ${framework_binary}; skipping dSYM generation.\"\n  exit 0\nfi\n\nif ! command -v dsymutil >/dev/null 2>&1; then\n  echo \"error: dsymutil is not available; cannot generate objective_c.framework.dSYM\"\n  exit 1\nfi\n\nrm -rf \"${framework_dsym}\"\nif ! dsymutil \"${framework_binary}\" -o \"${framework_dsym}\"; then\n  echo \"error: Failed to generate dSYM for objective_c.framework\"\n  exit 1\nfi\n\necho \"Generated objective_c.framework dSYM: ${framework_dsym}\"\n";
+			showEnvVarsInLog = 0;
 		};
 		C67D8A4AC1F1BC2EE3E67CCE /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -381,13 +399,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

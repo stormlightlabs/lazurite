@@ -82,6 +82,8 @@
 		<string>Main</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>Lazurite saves images and videos to your photo library when you download media.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Lazurite accesses your photo library so you can choose images and videos to upload and share.</string>
 		<key>UISupportedInterfaceOrientations</key>
 		<array>
 			<string>UIInterfaceOrientationPortrait</string>
