@@ -124,6 +124,7 @@ void main() {
     );
     when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
     when(() => accountSwitcherCubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
+    when(() => accountSwitcherCubit.loadAccounts()).thenAnswer((_) async {});
     when(() => unreadCountCubit.state).thenReturn(const UnreadCountState(0));
     when(() => convoListBloc.state).thenReturn(const ConvoListState.loaded(convos: [], cursor: null, hasMore: false));
     when(() => notificationRepository.getUnreadCount()).thenAnswer((_) async => 0);

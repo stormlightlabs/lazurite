@@ -1,4 +1,4 @@
-enum AtProtoIdentifierValidationErrorCode { empty, unsupportedDid, invalidHandle }
+enum AtProtoIdentifierValidationErrorCode { empty, unsupportedDid, invalidDid, invalidHandle }
 
 class AtProtoIdentifierValidationError {
   const AtProtoIdentifierValidationError(this.code);
@@ -13,7 +13,7 @@ final RegExp _atprotoHandlePattern = RegExp(
 String normalizeAtProtoIdentifierForAuth(String identifier) {
   final trimmed = identifier.trim();
   if (trimmed.toLowerCase().startsWith('did:')) {
-    return trimmed;
+    return trimmed.toLowerCase();
   }
 
   final withoutAt = trimmed.replaceFirst(RegExp(r'^@+'), '');
@@ -27,7 +27,19 @@ AtProtoIdentifierValidationError? validateAtProtoIdentifierForAuth(String identi
 
   final normalizedLower = identifier.toLowerCase();
   if (normalizedLower.startsWith('did:')) {
-    if (normalizedLower.startsWith('did:plc:') || normalizedLower.startsWith('did:web:')) {
+    if (normalizedLower.startsWith('did:plc:')) {
+      final suffix = identifier.substring('did:plc:'.length).trim();
+      if (suffix.isEmpty) {
+        return const AtProtoIdentifierValidationError(AtProtoIdentifierValidationErrorCode.invalidDid);
+      }
+      return null;
+    }
+
+    if (normalizedLower.startsWith('did:web:')) {
+      final suffix = identifier.substring('did:web:'.length).trim();
+      if (suffix.isEmpty) {
+        return const AtProtoIdentifierValidationError(AtProtoIdentifierValidationErrorCode.invalidDid);
+      }
       return null;
     }
 

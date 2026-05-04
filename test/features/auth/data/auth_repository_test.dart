@@ -347,6 +347,37 @@ void main() {
           ),
         );
       });
+
+      test('normalizes uppercase did input before identity handling', () async {
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          resolveDidDocument: (_) async => {
+            'service': [
+              {
+                'id': '#atproto_pds',
+                'type': 'AtprotoPersonalDataServer',
+                'serviceEndpoint': 'https://pds.example',
+              },
+            ],
+          },
+        );
+
+        final service = await authRepository.resolveServiceForIdentifierForTest('DID:PLC:ABC123');
+        expect(service, equals('pds.example'));
+      });
+
+      test('fails fast for incomplete did identifiers', () async {
+        await expectLater(
+          authRepository.loginWithOAuth('did:web:'),
+          throwsA(
+            isA<AuthIdentifierResolutionException>().having(
+              (error) => error.toString(),
+              'message',
+              contains('Invalid DID format'),
+            ),
+          ),
+        );
+      });
     });
 
     group('clearSession', () {

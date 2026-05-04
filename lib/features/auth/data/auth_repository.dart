@@ -10,8 +10,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
-import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
@@ -628,6 +628,8 @@ class AuthRepository {
       AtProtoIdentifierValidationErrorCode.empty => 'Enter a Bluesky handle or DID.',
       AtProtoIdentifierValidationErrorCode.unsupportedDid =>
         'Unsupported DID format. Use a did:plc:... or did:web:... identifier.',
+      AtProtoIdentifierValidationErrorCode.invalidDid =>
+        'Invalid DID format. Enter a complete did:plc:... or did:web:... identifier.',
       AtProtoIdentifierValidationErrorCode.invalidHandle =>
         'Invalid handle format. Enter a full handle like username.bsky.social.',
     };

@@ -10,9 +10,9 @@ import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
-import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
 String? validateAtProtoIdentifierInput(String? value) {
   final normalized = normalizeAtProtoIdentifierForAuth(value ?? '');
@@ -24,6 +24,7 @@ String? validateAtProtoIdentifierInput(String? value) {
   return switch (validationError.code) {
     AtProtoIdentifierValidationErrorCode.empty => 'Enter a Bluesky handle or DID',
     AtProtoIdentifierValidationErrorCode.unsupportedDid => 'Use a did:plc:... or did:web:... identifier',
+    AtProtoIdentifierValidationErrorCode.invalidDid => 'Enter a complete DID like did:plc:... or did:web:...',
     AtProtoIdentifierValidationErrorCode.invalidHandle => 'Enter a full handle like username.bsky.social',
   };
 }
@@ -122,23 +123,21 @@ class _AccountSwitcherSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(ColorScheme colorScheme, TextTheme textTheme) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-      child: Row(
-        children: [
-          Icon(Icons.swap_horiz_outlined, color: colorScheme.onSurfaceVariant),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'No other signed-in accounts yet. Add an account to switch between profiles.',
-              style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-            ),
+  Widget _buildEmptyState(ColorScheme colorScheme, TextTheme textTheme) => Padding(
+    padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+    child: Row(
+      children: [
+        Icon(Icons.swap_horiz_outlined, color: colorScheme.onSurfaceVariant),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'No other signed-in accounts yet. Add an account to switch between profiles.',
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 
   Future<void> _onSwitchAccount(BuildContext context, String did) async {
     final cubit = context.read<AccountSwitcherCubit>();
@@ -253,6 +252,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
     }
 
     if (result.requiresSignIn && parentContext.mounted) {
+      authBloc.add(const SessionCleared());
       Navigator.pop(context);
       final router = GoRouter.maybeOf(parentContext);
       if (router != null) {

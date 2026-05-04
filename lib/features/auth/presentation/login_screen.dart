@@ -128,6 +128,10 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: BlocListener<AuthBloc, AuthState>(
             listener: (context, state) {
+              if (state.isAuthenticated) {
+                context.go('/');
+                return;
+              }
               if (state.hasError && state.errorMessage != null) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
               }

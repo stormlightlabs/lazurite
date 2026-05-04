@@ -39,3 +39,7 @@ class SessionRestored extends AuthEvent {
 class CheckSessionRequested extends AuthEvent {
   const CheckSessionRequested();
 }
+
+class SessionCleared extends AuthEvent {
+  const SessionCleared();
+}

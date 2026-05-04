@@ -15,6 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutRequested>(_onLogoutRequested);
     on<SessionRestored>(_onSessionRestored);
     on<CheckSessionRequested>(_onCheckSessionRequested);
+    on<SessionCleared>(_onSessionCleared);
   }
 
   final AuthRepository _authRepository;
@@ -82,5 +83,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } catch (_) {
       emit(const AuthState.unauthenticated());
     }
+  }
+
+  Future<void> _onSessionCleared(SessionCleared event, Emitter<AuthState> emit) async {
+    emit(const AuthState.unauthenticated());
   }
 }
