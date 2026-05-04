@@ -16,6 +16,7 @@ import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/feed/presentation/widgets/feed_layout_view.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
+import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -78,9 +79,12 @@ void main() {
     ConnectivityState connectivityState = const ConnectivityState.online(),
   }) {
     final connectivityCubit = MockConnectivityCubit();
+    final settingsCubit = MockSettingsCubit();
     final authBloc = MockAuthBloc();
     when(() => connectivityCubit.state).thenReturn(connectivityState);
     whenListen(connectivityCubit, const Stream<ConnectivityState>.empty(), initialState: connectivityState);
+    when(() => settingsCubit.state).thenReturn(_settingsState(FeedLayout.card));
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: _settingsState(FeedLayout.card));
     when(() => authBloc.state).thenReturn(
       const AuthState.authenticated(AuthTokens(accessToken: 'access', did: 'did:plc:test', handle: 'test.bsky.social')),
     );
@@ -98,6 +102,7 @@ void main() {
         child: MultiBlocProvider(
           providers: [
             BlocProvider<AuthBloc>.value(value: authBloc),
+            BlocProvider<SettingsCubit>.value(value: settingsCubit),
             BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
             BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
           ],
@@ -138,6 +143,8 @@ void main() {
       expect(find.byType(SliverGrid), findsNothing);
       expect(find.byType(SliverList), findsOneWidget);
       expect(find.byType(CustomScrollView), findsOneWidget);
+      final refresh = tester.widget<AnimatedRefreshIndicator>(find.byType(AnimatedRefreshIndicator));
+      expect(refresh.showCornerSpinner, isFalse);
     });
 
     testWidgets('uses compact item builder in compact mode', (tester) async {
@@ -160,6 +167,8 @@ void main() {
 
       expect(find.byType(ListView), findsOneWidget);
       expect(find.byType(SliverGrid), findsNothing);
+      final refresh = tester.widget<AnimatedRefreshIndicator>(find.byType(AnimatedRefreshIndicator));
+      expect(refresh.showCornerSpinner, isFalse);
     });
 
     testWidgets('uses card item builder in card mode', (tester) async {
@@ -326,8 +335,64 @@ void main() {
       );
       await tester.pump();
 
-      final fab = tester.widget<FloatingActionButton>(find.byType(FloatingActionButton));
+      final fab = tester
+          .widgetList<FloatingActionButton>(find.byType(FloatingActionButton))
+          .firstWhere((candidate) => candidate.heroTag == 'home-compose-fab');
       expect(fab.heroTag, 'home-compose-fab');
+    });
+
+    testWidgets('shows a left jump-to-top FAB', (tester) async {
+      final feedPreferencesCubit = MockFeedPreferencesCubit();
+      final feedRepository = MockFeedRepository();
+
+      when(() => feedPreferencesCubit.state).thenReturn(_homeFeedState);
+      whenListen(feedPreferencesCubit, const Stream<FeedPreferencesState>.empty(), initialState: _homeFeedState);
+      when(() => feedRepository.getCachedFeedPage(any())).thenAnswer((_) async => null);
+      when(
+        () => feedRepository.getTimeline(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => FeedResult(posts: const []));
+
+      await tester.pumpWidget(
+        buildHomeSubject(feedPreferencesCubit: feedPreferencesCubit, feedRepository: feedRepository),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Jump to top'), findsOneWidget);
+      expect(find.byType(FloatingActionButton), findsNWidgets(2));
+    });
+
+    testWidgets('re-tapping selected feed tab reloads the feed', (tester) async {
+      final feedPreferencesCubit = MockFeedPreferencesCubit();
+      final feedRepository = MockFeedRepository();
+
+      when(() => feedPreferencesCubit.state).thenReturn(_homeFeedState);
+      whenListen(feedPreferencesCubit, const Stream<FeedPreferencesState>.empty(), initialState: _homeFeedState);
+      when(() => feedRepository.getCachedFeedPage(any())).thenAnswer((_) async => null);
+      when(
+        () => feedRepository.getTimeline(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => FeedResult(posts: const [], cursor: 'cursor-1'));
+
+      await tester.pumpWidget(
+        buildHomeSubject(feedPreferencesCubit: feedPreferencesCubit, feedRepository: feedRepository),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('FOLLOWING'), findsOneWidget);
+      await tester.tap(find.text('FOLLOWING'));
+      await tester.pump();
+
+      verify(
+        () => feedRepository.getTimeline(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).called(2);
     });
 
     testWidgets('does not call setState after dispose when feed loading completes', (tester) async {

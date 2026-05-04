@@ -125,14 +125,35 @@ class FeedRepository {
       return null;
     }
 
-    final posts = cachedPosts
-        .map((entry) => FeedViewPost.fromJson(jsonDecode(entry.postJson) as Map<String, dynamic>))
-        .toList(growable: false);
+    final posts = <FeedViewPost>[];
+    for (final entry in cachedPosts) {
+      try {
+        posts.add(FeedViewPost.fromJson(jsonDecode(entry.postJson) as Map<String, dynamic>));
+      } catch (error, stackTrace) {
+        log.w(
+          'feed.getCachedFeedPage decode failed account=$_accountDid feedKey=$feedKey postUri=${entry.postUri}',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+    if (posts.isEmpty) {
+      return null;
+    }
+
     final pageMeta = await _database.getCachedFeedPage(_accountDid, feedKey);
     String? cursor;
     if (pageMeta != null) {
-      final decoded = jsonDecode(pageMeta.payload) as Map<String, dynamic>;
-      cursor = decoded['cursor'] as String?;
+      try {
+        final decoded = jsonDecode(pageMeta.payload) as Map<String, dynamic>;
+        cursor = decoded['cursor'] as String?;
+      } catch (error, stackTrace) {
+        log.w(
+          'feed.getCachedFeedPage pageMeta decode failed account=$_accountDid feedKey=$feedKey',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
     }
 
     return FeedResult(posts: posts, cursor: cursor);
@@ -340,11 +361,27 @@ class FeedRepository {
           if (seen.contains(cached.postUri)) {
             continue;
           }
-          addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
+          try {
+            addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
+          } catch (error, stackTrace) {
+            log.w(
+              'feed.cacheWindow decode failed account=$_accountDid feedKey=$feedKey postUri=${cached.postUri}',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }
         }
       } else {
         for (final cached in existingPosts) {
-          addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
+          try {
+            addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
+          } catch (error, stackTrace) {
+            log.w(
+              'feed.cacheWindow decode failed account=$_accountDid feedKey=$feedKey postUri=${cached.postUri}',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }
         }
         for (final post in result.posts) {
           addPost(post);

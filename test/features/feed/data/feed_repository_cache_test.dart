@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
@@ -105,6 +106,38 @@ void main() {
 
       final rows = await database.getCachedFeedPosts('did:plc:test', FeedRepository.timelineCacheKey);
       expect(rows.length, OfflineCachePolicy.feedPostLimit);
+    });
+
+    test('getCachedFeedPage tolerates malformed cached posts and returns valid entries', () async {
+      final feedApi = _QueuedFeedApi();
+      final repository = FeedRepository(bluesky: _FakeBluesky(feedApi), database: database, accountDid: 'did:plc:test');
+      final validPost = _post(2);
+
+      await database.upsertCachedFeedPosts(
+        accountDid: 'did:plc:test',
+        feedKey: FeedRepository.timelineCacheKey,
+        posts: [
+          CachedFeedPostsCompanion.insert(
+            accountDid: 'did:plc:test',
+            feedKey: FeedRepository.timelineCacheKey,
+            postUri: _post(1).post.uri.toString(),
+            postJson: '{',
+            sortOrder: 2,
+          ),
+          CachedFeedPostsCompanion.insert(
+            accountDid: 'did:plc:test',
+            feedKey: FeedRepository.timelineCacheKey,
+            postUri: validPost.post.uri.toString(),
+            postJson: jsonEncode(validPost.toJson()),
+            sortOrder: 1,
+          ),
+        ],
+      );
+
+      final cached = await repository.getCachedFeedPage(FeedRepository.timelineCacheKey);
+      expect(cached, isNotNull);
+      expect(cached!.posts.length, 1);
+      expect(cached.posts.single.post.uri.toString(), validPost.post.uri.toString());
     });
   });
 }

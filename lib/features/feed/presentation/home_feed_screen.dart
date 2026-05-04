@@ -39,6 +39,8 @@ class HomeFeedScreen extends StatefulWidget {
 
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
   late final PageController _pageController;
+  final Map<String, int> _reloadCommandByFeed = <String, int>{};
+  final Map<String, int> _jumpToTopCommandByFeed = <String, int>{};
   String? _selectedFeedId;
 
   @override
@@ -117,12 +119,20 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 prefsState: prefsState,
                 currentTabIndex: currentTabIndex,
                 onTabTapped: (index) {
+                  final tappedFeed = pinnedFeeds[index];
+                  final isRetap = currentTabIndex == index;
+                  if (isRetap) {
+                    setState(() {
+                      _reloadCommandByFeed[tappedFeed.id] = (_reloadCommandByFeed[tappedFeed.id] ?? 0) + 1;
+                    });
+                    return;
+                  }
                   _pageController.animateToPage(
                     index,
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
                   );
-                  setState(() => _selectedFeedId = pinnedFeeds[index].id);
+                  setState(() => _selectedFeedId = tappedFeed.id);
                 },
               ),
             ),
@@ -130,26 +140,56 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               controller: _pageController,
               onPageChanged: (index) => setState(() => _selectedFeedId = pinnedFeeds[index].id),
               itemCount: pinnedFeeds.length,
-              itemBuilder: (context, index) =>
-                  _FeedListView(feed: pinnedFeeds[index], key: ValueKey(pinnedFeeds[index].id)),
+              itemBuilder: (context, index) => _FeedListView(
+                feed: pinnedFeeds[index],
+                reloadCommand: _reloadCommandByFeed[pinnedFeeds[index].id] ?? 0,
+                jumpToTopCommand: _jumpToTopCommandByFeed[pinnedFeeds[index].id] ?? 0,
+                key: ValueKey('feed-list-${pinnedFeeds[index].id}'),
+              ),
             ),
-            floatingActionButton:
-                FloatingActionButton(
-                  heroTag: 'home-compose-fab',
-                  tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
-                  onPressed: isOffline ? null : () => context.push('/compose'),
-                  shape: const CircleBorder(),
-                  child: const Icon(Icons.add),
-                ).animateIfAllowed(
-                  context,
-                  effects: const [
-                    FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
-                    ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
-                  ],
-                ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: _buildFloatingButtons(context, pinnedFeeds, currentTabIndex, isOffline),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildFloatingButtons(BuildContext context, List<SavedFeed> pinnedFeeds, int currentTabIndex, bool isOffline) {
+    final currentFeedId = pinnedFeeds[currentTabIndex].id;
+
+    final jumpToTopButton = FloatingActionButton.small(
+      heroTag: 'home-jump-top-fab',
+      tooltip: 'Jump to top',
+      onPressed: () {
+        setState(() {
+          _jumpToTopCommandByFeed[currentFeedId] = (_jumpToTopCommandByFeed[currentFeedId] ?? 0) + 1;
+        });
+      },
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
+      foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      elevation: 1.5,
+      child: const Icon(Icons.arrow_upward, size: 18),
+    );
+
+    final composeButton =
+        FloatingActionButton(
+          heroTag: 'home-compose-fab',
+          tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
+          onPressed: isOffline ? null : () => context.push('/compose'),
+          shape: const CircleBorder(),
+          child: const Icon(Icons.add),
+        ).animateIfAllowed(
+          context,
+          effects: const [
+            FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
+            ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
+          ],
+        );
+
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      children: [const SizedBox(width: 24), jumpToTopButton, const Spacer(), composeButton],
     );
   }
 
@@ -238,9 +278,11 @@ class _FeedTabBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class _FeedListView extends StatefulWidget {
-  const _FeedListView({required this.feed, super.key});
+  const _FeedListView({required this.feed, required this.reloadCommand, required this.jumpToTopCommand, super.key});
 
   final SavedFeed feed;
+  final int reloadCommand;
+  final int jumpToTopCommand;
 
   @override
   State<_FeedListView> createState() => _FeedListViewState();
@@ -256,6 +298,8 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   String? _errorMessage;
   final ScrollController _scrollController = ScrollController();
   final Set<String> _seenPostUris = <String>{};
+  late int _lastReloadCommand;
+  late int _lastJumpToTopCommand;
 
   @override
   bool get wantKeepAlive => true;
@@ -263,8 +307,39 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   @override
   void initState() {
     super.initState();
+    _lastReloadCommand = widget.reloadCommand;
+    _lastJumpToTopCommand = widget.jumpToTopCommand;
     _scrollController.addListener(_onScroll);
     _primeFeed();
+  }
+
+  @override
+  void didUpdateWidget(covariant _FeedListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.reloadCommand != _lastReloadCommand) {
+      _lastReloadCommand = widget.reloadCommand;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _setStateIfMounted(() {
+          _hasError = false;
+          _errorMessage = null;
+        });
+        _loadFeed();
+      });
+    }
+
+    if (widget.jumpToTopCommand != _lastJumpToTopCommand) {
+      _lastJumpToTopCommand = widget.jumpToTopCommand;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        jumpToTop();
+      });
+    }
   }
 
   @override
@@ -291,20 +366,32 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   }
 
   Future<void> _primeFeed() async {
-    final cachedResult = await _loadCachedFeed();
-    if (cachedResult != null) {
+    try {
+      final cachedResult = await _loadCachedFeed();
+      if (cachedResult != null) {
+        _setStateIfMounted(() {
+          _posts
+            ..clear()
+            ..addAll(cachedResult.posts);
+          _cursor = cachedResult.cursor;
+          _hasError = false;
+          _errorMessage = null;
+          _showInitialLoading = false;
+        });
+      }
+
+      await _loadFeedInternal(showLoading: cachedResult == null, showOfflineFeedback: false);
+    } catch (e) {
       _setStateIfMounted(() {
-        _posts
-          ..clear()
-          ..addAll(cachedResult.posts);
-        _cursor = cachedResult.cursor;
-        _hasError = false;
-        _errorMessage = null;
+        _isLoading = false;
+        _isLoadingMore = false;
         _showInitialLoading = false;
+        if (_posts.isEmpty) {
+          _hasError = true;
+          _errorMessage = e.toString();
+        }
       });
     }
-
-    await _loadFeedInternal(showLoading: cachedResult == null, showOfflineFeedback: false);
   }
 
   Future<void> _loadFeedInternal({required bool showLoading, required bool showOfflineFeedback}) async {
@@ -387,6 +474,19 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
     } catch (e) {
       _setStateIfMounted(() => _isLoadingMore = false);
     }
+  }
+
+  Future<void> jumpToTop() async {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    final currentOffset = _scrollController.offset;
+    if (currentOffset <= 0) {
+      return;
+    }
+
+    await _scrollController.animateTo(0, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic);
   }
 
   void _setStateIfMounted(VoidCallback fn) {

@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## v1.0.0 (Alpha 3) (Unreleased)
+
+### Added
+
+#### 2026-05-04
+
+- Jump to top action in feed & profile screens.
+
+### Fixed
+
+- Removed dual loading/refresh spinner/indicator in feeds
+- Feed Generator refresh & feed content reload race condition is fixed
+
 ## v1.0.0 (Alpha 2)
 
 ### Changed

@@ -382,10 +382,14 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
 
-    expect(find.byType(FloatingActionButton), findsOneWidget);
-    expect(tester.widget<FloatingActionButton>(find.byType(FloatingActionButton)).heroTag, 'profile-compose-fab');
+    expect(find.byKey(const ValueKey('profile-jump-top-fab')), findsOneWidget);
+    expect(find.byKey(const ValueKey('profile-compose-fab')), findsOneWidget);
+    expect(
+      tester.widget<FloatingActionButton>(find.byKey(const ValueKey('profile-compose-fab'))).heroTag,
+      'profile-compose-fab',
+    );
 
-    await tester.tap(find.byType(FloatingActionButton));
+    await tester.tap(find.byKey(const ValueKey('profile-compose-fab')));
     await tester.pumpAndSettle();
 
     expect(find.text('@other.bsky.social '), findsOneWidget);

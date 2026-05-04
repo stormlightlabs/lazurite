@@ -5,11 +5,18 @@ import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
 
 class AnimatedRefreshIndicator extends StatefulWidget {
-  const AnimatedRefreshIndicator({super.key, required this.onRefresh, required this.child, this.displacement = 40});
+  const AnimatedRefreshIndicator({
+    super.key,
+    required this.onRefresh,
+    required this.child,
+    this.displacement = 40,
+    this.showCornerSpinner = true,
+  });
 
   final RefreshCallback onRefresh;
   final Widget child;
   final double displacement;
+  final bool showCornerSpinner;
 
   @override
   State<AnimatedRefreshIndicator> createState() => _AnimatedRefreshIndicatorState();
@@ -57,7 +64,7 @@ class _AnimatedRefreshIndicatorState extends State<AnimatedRefreshIndicator> wit
   Widget build(BuildContext context) => Stack(
     children: [
       RefreshIndicator(onRefresh: _handleRefresh, displacement: widget.displacement, child: widget.child),
-      if (animationsAllowed(context))
+      if (widget.showCornerSpinner && animationsAllowed(context))
         Positioned(
           top: 12,
           right: 16,

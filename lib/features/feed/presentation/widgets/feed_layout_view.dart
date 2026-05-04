@@ -46,6 +46,7 @@ class FeedLayoutView extends StatelessWidget {
   Widget _buildCompact(BuildContext context) {
     return AnimatedRefreshIndicator(
       onRefresh: onRefresh,
+      showCornerSpinner: false,
       child: CustomScrollView(
         controller: scrollController,
         slivers: [
@@ -71,6 +72,7 @@ class FeedLayoutView extends StatelessWidget {
   Widget _buildCard(BuildContext context) {
     return AnimatedRefreshIndicator(
       onRefresh: onRefresh,
+      showCornerSpinner: false,
       child: ListView.builder(
         controller: scrollController,
         padding: const EdgeInsets.symmetric(vertical: 4),

@@ -129,6 +129,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   late TabController _tabController;
   final ScrollController _profileScrollController = ScrollController();
+  final Map<_ProfileFeedSlice, ScrollController> _feedScrollControllers = {
+    for (final tab in _feedTabs) tab.slice: ScrollController(),
+  };
   final GlobalKey<RefreshIndicatorState> _profileRefreshKey = GlobalKey<RefreshIndicatorState>();
   late bool _showSuggestedTab;
   double _coverScrollOffset = 0;
@@ -166,6 +169,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   void dispose() {
     _tabController.dispose();
     _profileScrollController.dispose();
+    for (final controller in _feedScrollControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -381,6 +387,29 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     context.read<ProfileBloc>().add(const ProfileRefreshRequested());
     context.read<FeedBloc>().add(const FeedRefreshRequested());
     await Future<void>.delayed(const Duration(milliseconds: 250));
+  }
+
+  Future<void> _jumpToTop() async {
+    final futures = <Future<void>>[];
+    final currentSlice = _tabController.index < _feedTabs.length ? _feedTabs[_tabController.index].slice : null;
+    final feedController = currentSlice == null ? null : _feedScrollControllers[currentSlice];
+    if (feedController != null && feedController.hasClients && feedController.offset > 0) {
+      futures.add(feedController.animateTo(0, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic));
+    }
+
+    if (_profileScrollController.hasClients && _profileScrollController.offset > 0) {
+      futures.add(
+        _profileScrollController.animateTo(0, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic),
+      );
+    }
+
+    if (futures.isEmpty) {
+      return;
+    }
+
+    try {
+      await Future.wait(futures);
+    } catch (_) {}
   }
 
   bool get _isAtTop => !_profileScrollController.hasClients || _profileScrollController.position.pixels <= 0.5;
@@ -624,18 +653,28 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               );
             },
           ),
-          floatingActionButton: AnimatedSwitcher(
-            duration: Anim.feedItem,
-            switchInCurve: Anim.enter,
-            switchOutCurve: Anim.exit,
-            transitionBuilder: (child, animation) => FadeTransition(
-              opacity: animation,
-              child: ScaleTransition(scale: animation, child: child),
-            ),
-            child: _buildComposeFab(context),
-          ),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+          floatingActionButton: _buildProfileFabs(context),
         ),
       ),
+    );
+  }
+
+  Widget _buildProfileFabs(BuildContext context) {
+    final jumpToTopButton = FloatingActionButton.small(
+      key: const ValueKey('profile-jump-top-fab'),
+      heroTag: 'profile-jump-top-fab',
+      tooltip: 'Jump to top',
+      onPressed: _jumpToTop,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
+      foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      elevation: 1.5,
+      child: const Icon(Icons.arrow_upward, size: 18),
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      children: [const SizedBox(width: 24), jumpToTopButton, const Spacer(), _buildComposeFab(context)],
     );
   }
 
@@ -1188,6 +1227,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           return false;
         },
         child: ListView.builder(
+          controller: _feedScrollControllers[_ProfileFeedSlice.replies],
           key: const PageStorageKey<String>('profile_replies_thread_list'),
           padding: EdgeInsets.zero,
           itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
@@ -1253,6 +1293,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           return false;
         },
         child: ListView.builder(
+          controller: _feedScrollControllers[slice],
           key: scrollKey,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
@@ -1301,6 +1342,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           return false;
         },
         child: ListView.builder(
+          controller: _feedScrollControllers[slice],
           key: PageStorageKey<String>('profile_linear_feed_${slice.name}'),
           padding: EdgeInsets.zero,
           itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
