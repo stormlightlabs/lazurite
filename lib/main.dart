@@ -76,11 +76,21 @@ Future<void> main() async {
   imageCache.maximumSizeBytes = OfflineCachePolicy.imageMemoryByteLimit;
 
   await log.initialize();
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp();
+  var firebaseAvailable = false;
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+    firebaseAvailable = Firebase.apps.isNotEmpty;
+  } catch (error, stackTrace) {
+    log.w(
+      'Firebase initialization failed; continuing with Firebase-dependent features disabled',
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
-  final crashReportingService = FirebaseCrashReportingService();
+  final crashReportingService = firebaseAvailable ? FirebaseCrashReportingService() : NoopCrashReportingService();
   final previousFlutterErrorHandler = FlutterError.onError;
   FlutterError.onError = (details) {
     previousFlutterErrorHandler?.call(details);
@@ -92,7 +102,9 @@ Future<void> main() async {
   };
 
   await PostScheduler.initialize();
-  FirebaseMessaging.onBackgroundMessage(notificationFirebaseMessagingBackgroundHandler);
+  if (firebaseAvailable) {
+    FirebaseMessaging.onBackgroundMessage(notificationFirebaseMessagingBackgroundHandler);
+  }
   await NotificationBackgroundScheduler.ensureScheduled();
   Bloc.observer = LoggingBlocObserver();
 
@@ -161,6 +173,7 @@ Future<void> main() async {
           localNotificationAdapter,
           pushRegistrationService,
           crashReportingService,
+          firebaseAvailable,
         ),
       );
     },
@@ -184,6 +197,7 @@ class LazuriteApp extends StatefulWidget {
     required this.localNotificationAdapter,
     required this.pushRegistrationService,
     required this.crashReportingService,
+    required this.firebaseAvailable,
   });
 
   final AuthBloc authBloc;
@@ -197,6 +211,7 @@ class LazuriteApp extends StatefulWidget {
   final LocalNotificationAdapter localNotificationAdapter;
   final PushRegistrationService pushRegistrationService;
   final CrashReportingService crashReportingService;
+  final bool firebaseAvailable;
 
   /// factory constructor with positional params
   static LazuriteApp from(
@@ -211,6 +226,7 @@ class LazuriteApp extends StatefulWidget {
     LocalNotificationAdapter localNotificationAdapter,
     PushRegistrationService pushRegistrationService,
     CrashReportingService crashReportingService,
+    bool firebaseAvailable,
   ) => LazuriteApp(
     authBloc: authBloc,
     database: database,
@@ -223,6 +239,7 @@ class LazuriteApp extends StatefulWidget {
     localNotificationAdapter: localNotificationAdapter,
     pushRegistrationService: pushRegistrationService,
     crashReportingService: crashReportingService,
+    firebaseAvailable: firebaseAvailable,
   );
 
   @override
@@ -258,9 +275,11 @@ class _LazuriteAppState extends State<LazuriteApp> {
     _pushRegistrationSubscription = widget.authBloc.stream.map((state) => state.tokens).listen((tokens) {
       unawaited(widget.pushRegistrationService.updateSession(tokens));
     });
-    _pushForegroundMessageSubscription = FirebaseMessaging.onMessage.listen((message) {
-      unawaited(notificationPushPayloadEntrypoint(message.data));
-    });
+    if (widget.firebaseAvailable) {
+      _pushForegroundMessageSubscription = FirebaseMessaging.onMessage.listen((message) {
+        unawaited(notificationPushPayloadEntrypoint(message.data));
+      });
+    }
     _authSubscription = widget.authBloc.stream.map(_sessionKeyFor).distinct().listen(_handleSessionKeyChanged);
     _simulateOfflineSubscription = widget.settingsCubit.stream
         .map((state) => state.simulateOffline)

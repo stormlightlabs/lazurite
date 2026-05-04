@@ -18,6 +18,28 @@ abstract class CrashReportingService {
   void crash();
 }
 
+class NoopCrashReportingService implements CrashReportingService {
+  @override
+  void recordFlutterFatalError(FlutterErrorDetails details) {}
+
+  @override
+  Future<void> recordError(Object error, StackTrace stackTrace, {bool fatal = false}) async {}
+
+  @override
+  Future<void> setCollectionEnabled(bool enabled) async {}
+
+  @override
+  Future<void> sendUnsentReports() async {}
+
+  @override
+  Future<void> deleteUnsentReports() async {}
+
+  @override
+  void crash() {
+    log.w('Crashlytics test crash unavailable because Firebase is not initialized.');
+  }
+}
+
 class FirebaseCrashReportingService implements CrashReportingService {
   FirebaseCrashReportingService({FirebaseCrashlytics? crashlytics})
     : _crashlytics = crashlytics ?? FirebaseCrashlytics.instance;
@@ -75,6 +97,10 @@ class FirebaseCrashReportingService implements CrashReportingService {
 
   @override
   void crash() {
-    _crashlytics.crash();
+    try {
+      _crashlytics.crash();
+    } catch (error, stackTrace) {
+      log.w('Unable to trigger Crashlytics test crash', error: error, stackTrace: stackTrace);
+    }
   }
 }
