@@ -1,6 +1,14 @@
 # CHANGELOG
 
-## v1.0.0 (Unreleased)
+## v1.0.0 (Alpha 2)
+
+### Changed
+
+#### 2026-05-04
+
+- Removed localhost loopback for OAuth, instead relying on custom scheme.
+
+## v1.0.0 (Alpha 1)
 
 ### Added
 
