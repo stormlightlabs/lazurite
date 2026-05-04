@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:bluesky/app_bsky_notification_listnotifications.dart';
 import 'package:crypto/crypto.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_models.dart';
+import 'package:lazurite/features/notifications/domain/notification_reason_utils.dart';
 
 class NotificationPayloadCodec {
   static String encode(NotificationDeepLink deepLink) {
@@ -43,7 +44,7 @@ class NotificationLocalMapper {
       return null;
     }
 
-    final deepLink = _deepLinkForNotification(notification);
+    final deepLink = NotificationReasonUtils.deepLinkForNotification(notification);
     if (deepLink == null) {
       return null;
     }
@@ -51,55 +52,9 @@ class NotificationLocalMapper {
     return LocalNotificationRequest(
       notificationId: _stableNotificationId(notification.uri.toString()),
       title: _titleForNotification(notification),
-      body: _bodyForReason(notification.reason),
-      reasonFamily: _reasonFamilyForReason(notification.reason),
+      body: NotificationReasonUtils.localNotificationBodyForReason(notification.reason),
+      reasonFamily: NotificationReasonUtils.reasonFamilyForReason(notification.reason),
       deepLink: deepLink,
-    );
-  }
-
-  static NotificationReasonFamily _reasonFamilyForReason(NotificationReason reason) {
-    final known = reason.knownValue;
-    if (known == null) {
-      return NotificationReasonFamily.misc;
-    }
-
-    switch (known) {
-      case KnownNotificationReason.mention:
-        return NotificationReasonFamily.mentions;
-      case KnownNotificationReason.reply:
-      case KnownNotificationReason.quote:
-        return NotificationReasonFamily.replies;
-      case KnownNotificationReason.follow:
-        return NotificationReasonFamily.follows;
-      case KnownNotificationReason.like:
-      case KnownNotificationReason.repost:
-        return NotificationReasonFamily.likes;
-      default:
-        return NotificationReasonFamily.misc;
-    }
-  }
-
-  static NotificationDeepLink? _deepLinkForNotification(Notification notification) {
-    final knownReason = notification.reason.knownValue;
-
-    if (knownReason == KnownNotificationReason.follow) {
-      final actor = notification.author.did.trim();
-      if (actor.isEmpty) {
-        return null;
-      }
-      return NotificationDeepLink(
-        route: '/profile/${Uri.encodeComponent(actor)}',
-        navigationMode: NotificationTapNavigationMode.go,
-      );
-    }
-
-    final useReasonSubject =
-        knownReason == KnownNotificationReason.like || knownReason == KnownNotificationReason.repost;
-    final targetUri = (useReasonSubject ? notification.reasonSubject : null) ?? notification.uri;
-
-    return NotificationDeepLink(
-      route: '/post?uri=${Uri.encodeQueryComponent(targetUri.toString())}',
-      navigationMode: NotificationTapNavigationMode.push,
     );
   }
 
@@ -110,26 +65,6 @@ class NotificationLocalMapper {
     }
     final handle = notification.author.handle.trim();
     return handle.isEmpty ? 'New notification' : handle;
-  }
-
-  static String _bodyForReason(NotificationReason reason) {
-    final known = reason.knownValue;
-    switch (known) {
-      case KnownNotificationReason.like:
-        return 'liked your post';
-      case KnownNotificationReason.repost:
-        return 'reposted your post';
-      case KnownNotificationReason.reply:
-        return 'replied to your post';
-      case KnownNotificationReason.follow:
-        return 'followed you';
-      case KnownNotificationReason.mention:
-        return 'mentioned you';
-      case KnownNotificationReason.quote:
-        return 'quoted your post';
-      default:
-        return 'sent a notification';
-    }
   }
 
   static int _stableNotificationId(String value) {

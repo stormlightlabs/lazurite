@@ -123,7 +123,7 @@ class NotificationRepository {
         if (senderDid != null && senderDid.trim().isNotEmpty && notification.author.did != senderDid) {
           continue;
         }
-        if (reason != null && reason.trim().isNotEmpty && _reasonName(notification) != reason) {
+        if (reason != null && reason.trim().isNotEmpty && !_reasonMatches(notification, reason)) {
           continue;
         }
         return notification;
@@ -203,6 +203,26 @@ class NotificationRepository {
       return unknown;
     }
     return 'unknown';
+  }
+
+  bool _reasonMatches(Notification notification, String reason) {
+    final normalizedPayloadReason = reason.trim();
+    if (normalizedPayloadReason.isEmpty) {
+      return true;
+    }
+
+    final notificationReason = _reasonName(notification);
+    if (notificationReason == normalizedPayloadReason) {
+      return true;
+    }
+
+    final familyReason = switch (notificationReason) {
+      'like-via-repost' => 'like',
+      'repost-via-repost' => 'repost',
+      _ => notificationReason,
+    };
+
+    return familyReason == normalizedPayloadReason;
   }
 }
 

@@ -21,24 +21,34 @@ abstract final class NotificationIconMapper {
 
     switch (reason.knownValue) {
       case bsky.KnownNotificationReason.like:
+      case bsky.KnownNotificationReason.likeViaRepost:
         return NotificationIconStyle(
           backgroundColor: colorScheme.error.withValues(alpha: 0.1),
           iconColor: colorScheme.error,
           icon: Icons.favorite,
         );
       case bsky.KnownNotificationReason.repost:
+      case bsky.KnownNotificationReason.repostViaRepost:
         return NotificationIconStyle(
           backgroundColor: Colors.green.withValues(alpha: 0.1),
           iconColor: Colors.green,
           icon: Icons.repeat,
         );
       case bsky.KnownNotificationReason.follow:
+      case bsky.KnownNotificationReason.contactMatch:
         return NotificationIconStyle(
           backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
           iconColor: colorScheme.primary,
           icon: Icons.person_add,
         );
+      case bsky.KnownNotificationReason.starterpackJoined:
+        return NotificationIconStyle(
+          backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+          iconColor: colorScheme.primary,
+          icon: Icons.group_add,
+        );
       case bsky.KnownNotificationReason.reply:
+      case bsky.KnownNotificationReason.subscribedPost:
         return NotificationIconStyle(
           backgroundColor: colorScheme.secondary.withValues(alpha: 0.1),
           iconColor: colorScheme.secondary,
@@ -55,6 +65,18 @@ abstract final class NotificationIconMapper {
           backgroundColor: Colors.purple.withValues(alpha: 0.1),
           iconColor: Colors.purple,
           icon: Icons.format_quote,
+        );
+      case bsky.KnownNotificationReason.verified:
+        return NotificationIconStyle(
+          backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+          iconColor: colorScheme.primary,
+          icon: Icons.verified,
+        );
+      case bsky.KnownNotificationReason.unverified:
+        return NotificationIconStyle(
+          backgroundColor: colorScheme.error.withValues(alpha: 0.1),
+          iconColor: colorScheme.error,
+          icon: Icons.gpp_bad,
         );
       default:
         return NotificationIconStyle(

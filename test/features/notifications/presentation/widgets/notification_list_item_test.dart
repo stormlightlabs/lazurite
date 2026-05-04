@@ -123,6 +123,77 @@ void main() {
       expect(Uri.decodeComponent(Uri.parse(pushedRoute!).queryParameters['uri']!), postUri.toString());
     });
 
+    testWidgets('like-via-repost notification uses reasonSubject to navigate to post', (tester) async {
+      final postUri = AtUri.parse('at://did:plc:owner/app.bsky.feed.post/post789');
+      final notification = _makeNotification(
+        reason: bsky.KnownNotificationReason.likeViaRepost,
+        uri: AtUri.parse('at://did:plc:liker/app.bsky.feed.like/like-via-repost'),
+        reasonSubject: postUri,
+      );
+      String? pushedRoute;
+
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(body: NotificationListItem(notification: notification)),
+          ),
+          GoRoute(
+            path: '/post',
+            builder: (context, state) {
+              pushedRoute = state.uri.toString();
+              return const Scaffold(body: Text('post thread'));
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(NotificationListItem));
+      await tester.pumpAndSettle();
+
+      expect(pushedRoute, isNotNull);
+      expect(Uri.parse(pushedRoute!).path, '/post');
+      expect(Uri.decodeComponent(Uri.parse(pushedRoute!).queryParameters['uri']!), postUri.toString());
+    });
+
+    testWidgets('starterpack-joined notification navigates to starter pack detail route', (tester) async {
+      final starterPackUri = AtUri.parse('at://did:plc:author/app.bsky.graph.starterpack/sp1');
+      final notification = _makeNotification(
+        reason: bsky.KnownNotificationReason.starterpackJoined,
+        reasonSubject: starterPackUri,
+      );
+      String? pushedRoute;
+
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(body: NotificationListItem(notification: notification)),
+          ),
+          GoRoute(
+            path: '/starter-pack',
+            builder: (context, state) {
+              pushedRoute = state.uri.toString();
+              return const Scaffold(body: Text('starter pack detail'));
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(NotificationListItem));
+      await tester.pumpAndSettle();
+
+      expect(pushedRoute, isNotNull);
+      expect(Uri.parse(pushedRoute!).path, '/starter-pack');
+      expect(Uri.decodeComponent(Uri.parse(pushedRoute!).queryParameters['uri']!), starterPackUri.toString());
+    });
+
     testWidgets('like notification falls back to uri when reasonSubject is null', (tester) async {
       final likeUri = AtUri.parse('at://did:plc:liker/app.bsky.feed.like/fallback');
       final notification = _makeNotification(

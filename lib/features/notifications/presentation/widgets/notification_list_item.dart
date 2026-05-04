@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
-import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
+import 'package:lazurite/features/notifications/domain/notification_deep_link_navigator.dart';
+import 'package:lazurite/features/notifications/domain/notification_reason_utils.dart';
 import 'package:lazurite/shared/presentation/helpers/notification_icon_mapper.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
@@ -119,28 +120,7 @@ class NotificationListItem extends StatelessWidget {
   }
 
   String _getReasonText() {
-    final reason = notification.reason;
-
-    if (reason.isKnownValue) {
-      switch (reason.knownValue) {
-        case bsky.KnownNotificationReason.like:
-          return 'liked your post';
-        case bsky.KnownNotificationReason.repost:
-          return 'reposted your post';
-        case bsky.KnownNotificationReason.follow:
-          return 'followed you';
-        case bsky.KnownNotificationReason.mention:
-          return 'mentioned you';
-        case bsky.KnownNotificationReason.reply:
-          return 'replied to your post';
-        case bsky.KnownNotificationReason.quote:
-          return 'quoted your post';
-        default:
-          return 'interacted with you';
-      }
-    }
-
-    return 'interacted with you';
+    return NotificationReasonUtils.summaryTextForReason(notification.reason);
   }
 
   Widget _buildTime(ThemeData theme) {
@@ -151,11 +131,7 @@ class NotificationListItem extends StatelessWidget {
   }
 
   bool get _shouldShowPreview {
-    final reason = notification.reason;
-    if (reason.isKnownValue) {
-      return reason.knownValue != bsky.KnownNotificationReason.follow;
-    }
-    return false;
+    return !NotificationReasonUtils.isProfileNavigationReason(notification.reason);
   }
 
   Widget _buildPreview(BuildContext context, ThemeData theme) {
@@ -191,17 +167,10 @@ class NotificationListItem extends StatelessWidget {
   }
 
   void _onTap(BuildContext context) {
-    final reason = notification.reason;
-
-    if (reason.isKnownValue && reason.knownValue == bsky.KnownNotificationReason.follow) {
-      navigateToProfile(context, notification.author.did);
-    } else {
-      final isLikeOrRepost =
-          reason.isKnownValue &&
-          (reason.knownValue == bsky.KnownNotificationReason.like ||
-              reason.knownValue == bsky.KnownNotificationReason.repost);
-      final uri = isLikeOrRepost ? (notification.reasonSubject ?? notification.uri) : notification.uri;
-      context.push('/post?uri=${Uri.encodeComponent(uri.toString())}');
+    final deepLink = NotificationReasonUtils.deepLinkForNotification(notification);
+    if (deepLink == null) {
+      return;
     }
+    NotificationDeepLinkNavigator.navigate(GoRouter.of(context), deepLink);
   }
 }
