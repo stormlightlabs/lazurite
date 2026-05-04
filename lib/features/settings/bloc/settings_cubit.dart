@@ -56,6 +56,8 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _keyAppViewProvider = 'appview_provider';
   static const String _keyCrossProviderFallbackEnabled = 'cross_provider_fallback_enabled';
   static const String _keySlingshotIdentityFallbackEnabled = 'slingshot_identity_fallback_enabled';
+  static const String _keyCrashReportingEnabled = 'crash_reporting_enabled';
+  static const String _keyCrashReportingConsentPrompted = 'crash_reporting_consent_prompted';
 
   Future<void> loadSettings() async {
     final paletteStr = await database.getSetting(_keyThemePalette);
@@ -74,6 +76,8 @@ class SettingsCubit extends Cubit<SettingsState> {
     final appViewProviderStr = await database.getSetting(_keyAppViewProvider);
     final crossProviderFallbackEnabledStr = await database.getSetting(_keyCrossProviderFallbackEnabled);
     final slingshotIdentityFallbackEnabledStr = await database.getSetting(_keySlingshotIdentityFallbackEnabled);
+    final crashReportingEnabledStr = await database.getSetting(_keyCrashReportingEnabled);
+    final crashReportingConsentPromptedStr = await database.getSetting(_keyCrashReportingConsentPrompted);
     final resolvedTypeaheadProvider = _supportedTypeaheadProviders.contains(typeaheadProviderStr)
         ? typeaheadProviderStr!
         : _defaultTypeaheadProvider;
@@ -96,6 +100,8 @@ class SettingsCubit extends Cubit<SettingsState> {
         appViewProvider: resolvedAppViewProvider,
         crossProviderFallbackEnabled: crossProviderFallbackEnabledStr == 'true',
         slingshotIdentityFallbackEnabled: slingshotIdentityFallbackEnabledStr == 'true',
+        crashReportingEnabled: crashReportingEnabledStr == 'true',
+        crashReportingConsentPrompted: crashReportingConsentPromptedStr == 'true',
       ),
     );
   }
@@ -244,5 +250,15 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setSlingshotIdentityFallbackEnabled(bool enabled) async {
     await database.setSetting(_keySlingshotIdentityFallbackEnabled, enabled.toString());
     emit(state.copyWith(slingshotIdentityFallbackEnabled: enabled));
+  }
+
+  Future<void> setCrashReportingEnabled(bool enabled) async {
+    await database.setSetting(_keyCrashReportingEnabled, enabled.toString());
+    emit(state.copyWith(crashReportingEnabled: enabled));
+  }
+
+  Future<void> setCrashReportingConsentPrompted(bool prompted) async {
+    await database.setSetting(_keyCrashReportingConsentPrompted, prompted.toString());
+    emit(state.copyWith(crashReportingConsentPrompted: prompted));
   }
 }

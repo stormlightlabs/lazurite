@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/crash_reporting/crash_reporting_consent_gate.dart';
+import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -92,6 +94,12 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    CrashReportingService? crashReportingService;
+    try {
+      crashReportingService = context.read<CrashReportingService>();
+    } catch (_) {
+      crashReportingService = null;
+    }
     return AppShellScope(
       openMenu: _openMenu,
       child: PopScope(
@@ -105,7 +113,9 @@ class _AppShellState extends State<AppShell> {
         child: Scaffold(
           key: AppShell.scaffoldKey,
           drawer: _AppMenu(navigationShell: widget.navigationShell, rootContext: context),
-          body: widget.navigationShell,
+          body: crashReportingService == null
+              ? widget.navigationShell
+              : CrashReportingConsentGate(crashReportingService: crashReportingService, child: widget.navigationShell),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
               color: theme.colorScheme.surface.withValues(alpha: 0.92),
@@ -496,20 +506,17 @@ class _MenuSectionLabel extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      child: Text(
-        label.toUpperCase(),
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
-        ),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+    child: Text(
+      label.toUpperCase(),
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _MenuProfileAvatar extends StatefulWidget {

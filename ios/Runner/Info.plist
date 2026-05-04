@@ -41,10 +41,12 @@
 		<string>$(FLUTTER_BUILD_NAME)</string>
 		<key>CFBundleSignature</key>
 		<string>????</string>
-		<key>CFBundleVersion</key>
-		<string>$(FLUTTER_BUILD_NUMBER)</string>
-		<key>LSRequiresIPhoneOS</key>
-		<true/>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>FirebaseCrashlyticsCollectionEnabled</key>
+	<false/>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>

@@ -33,6 +33,8 @@ void main() {
       expect(cubit.state.appViewProvider, 'bluesky');
       expect(cubit.state.crossProviderFallbackEnabled, isFalse);
       expect(cubit.state.slingshotIdentityFallbackEnabled, isFalse);
+      expect(cubit.state.crashReportingEnabled, isFalse);
+      expect(cubit.state.crashReportingConsentPrompted, isFalse);
       expect(cubit.state.routingEpoch, 0);
     });
 
@@ -97,7 +99,9 @@ void main() {
             .having((s) => s.typeaheadProvider, 'typeaheadProvider', 'bluesky')
             .having((s) => s.appViewProvider, 'appViewProvider', 'bluesky')
             .having((s) => s.crossProviderFallbackEnabled, 'crossProviderFallbackEnabled', false)
-            .having((s) => s.slingshotIdentityFallbackEnabled, 'slingshotIdentityFallbackEnabled', false),
+            .having((s) => s.slingshotIdentityFallbackEnabled, 'slingshotIdentityFallbackEnabled', false)
+            .having((s) => s.crashReportingEnabled, 'crashReportingEnabled', false)
+            .having((s) => s.crashReportingConsentPrompted, 'crashReportingConsentPrompted', false),
       ],
     );
 
@@ -382,6 +386,43 @@ void main() {
         isA<SettingsState>()
             .having((s) => s.crossProviderFallbackEnabled, 'crossProviderFallbackEnabled', true)
             .having((s) => s.slingshotIdentityFallbackEnabled, 'slingshotIdentityFallbackEnabled', true),
+      ],
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setCrashReportingEnabled updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setCrashReportingEnabled(true),
+      expect: () => [isA<SettingsState>().having((s) => s.crashReportingEnabled, 'crashReportingEnabled', true)],
+      verify: (_) async {
+        expect(await database.getSetting('crash_reporting_enabled'), 'true');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setCrashReportingConsentPrompted updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setCrashReportingConsentPrompted(true),
+      expect: () => [
+        isA<SettingsState>().having((s) => s.crashReportingConsentPrompted, 'crashReportingConsentPrompted', true),
+      ],
+      verify: (_) async {
+        expect(await database.getSetting('crash_reporting_consent_prompted'), 'true');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'loadSettings restores crash reporting settings',
+      build: () => SettingsCubit(database: database),
+      setUp: () async {
+        await database.setSetting('crash_reporting_enabled', 'true');
+        await database.setSetting('crash_reporting_consent_prompted', 'true');
+      },
+      act: (cubit) => cubit.loadSettings(),
+      expect: () => [
+        isA<SettingsState>()
+            .having((s) => s.crashReportingEnabled, 'crashReportingEnabled', true)
+            .having((s) => s.crashReportingConsentPrompted, 'crashReportingConsentPrompted', true),
       ],
     );
 

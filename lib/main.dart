@@ -1,13 +1,16 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:bluesky/bluesky.dart';
 import 'package:bluesky/bluesky_chat.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/bootstrap/auth_bootstrap.dart';
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
+import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/embedding/embedding_service.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -73,6 +76,21 @@ Future<void> main() async {
   imageCache.maximumSizeBytes = OfflineCachePolicy.imageMemoryByteLimit;
 
   await log.initialize();
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp();
+  }
+
+  final crashReportingService = FirebaseCrashReportingService();
+  final previousFlutterErrorHandler = FlutterError.onError;
+  FlutterError.onError = (details) {
+    previousFlutterErrorHandler?.call(details);
+    crashReportingService.recordFlutterFatalError(details);
+  };
+  PlatformDispatcher.instance.onError = (error, stackTrace) {
+    unawaited(crashReportingService.recordError(error, stackTrace, fatal: true));
+    return true;
+  };
+
   await PostScheduler.initialize();
   FirebaseMessaging.onBackgroundMessage(notificationFirebaseMessagingBackgroundHandler);
   await NotificationBackgroundScheduler.ensureScheduled();
@@ -99,6 +117,7 @@ Future<void> main() async {
   );
   final authRepository = authBootstrap.authRepository;
   final restoredSession = authBootstrap.restoredSession;
+  await crashReportingService.setCollectionEnabled(settingsCubit.state.crashReportingEnabled);
   final authBloc = AuthBloc(
     authRepository: authRepository,
     initialState: restoredSession != null
@@ -127,19 +146,27 @@ Future<void> main() async {
 
   log.i('AppLogger: App started');
 
-  runApp(
-    LazuriteApp.from(
-      authBloc,
-      database,
-      appViewFallbackService,
-      objectBoxStore,
-      embeddingService,
-      settingsCubit,
-      connectivityCubit,
-      accountSwitcherCubit,
-      localNotificationAdapter,
-      pushRegistrationService,
-    ),
+  runZonedGuarded(
+    () {
+      runApp(
+        LazuriteApp.from(
+          authBloc,
+          database,
+          appViewFallbackService,
+          objectBoxStore,
+          embeddingService,
+          settingsCubit,
+          connectivityCubit,
+          accountSwitcherCubit,
+          localNotificationAdapter,
+          pushRegistrationService,
+          crashReportingService,
+        ),
+      );
+    },
+    (error, stackTrace) {
+      unawaited(crashReportingService.recordError(error, stackTrace, fatal: true));
+    },
   );
 }
 
@@ -156,6 +183,7 @@ class LazuriteApp extends StatefulWidget {
     required this.accountSwitcherCubit,
     required this.localNotificationAdapter,
     required this.pushRegistrationService,
+    required this.crashReportingService,
   });
 
   final AuthBloc authBloc;
@@ -168,6 +196,7 @@ class LazuriteApp extends StatefulWidget {
   final AccountSwitcherCubit accountSwitcherCubit;
   final LocalNotificationAdapter localNotificationAdapter;
   final PushRegistrationService pushRegistrationService;
+  final CrashReportingService crashReportingService;
 
   /// factory constructor with positional params
   static LazuriteApp from(
@@ -181,6 +210,7 @@ class LazuriteApp extends StatefulWidget {
     AccountSwitcherCubit accountSwitcherCubit,
     LocalNotificationAdapter localNotificationAdapter,
     PushRegistrationService pushRegistrationService,
+    CrashReportingService crashReportingService,
   ) => LazuriteApp(
     authBloc: authBloc,
     database: database,
@@ -192,6 +222,7 @@ class LazuriteApp extends StatefulWidget {
     accountSwitcherCubit: accountSwitcherCubit,
     localNotificationAdapter: localNotificationAdapter,
     pushRegistrationService: pushRegistrationService,
+    crashReportingService: crashReportingService,
   );
 
   @override
@@ -340,279 +371,288 @@ class _LazuriteAppState extends State<LazuriteApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: widget.authBloc),
-        BlocProvider.value(value: widget.settingsCubit),
-        BlocProvider.value(value: widget.connectivityCubit),
-        BlocProvider.value(value: widget.accountSwitcherCubit),
-      ],
-      child: BlocBuilder<AuthBloc, AuthState>(
-        builder: (context, authState) {
-          final bluesky = _createBluesky(authState);
-          final blueskyChat = _createBlueskyChat(authState);
-          final appShell = BlocBuilder<SettingsCubit, SettingsState>(
-            builder: (context, settingsState) {
-              final themeMode = settingsState.useSystemTheme
-                  ? ThemeMode.system
-                  : (settingsState.themeVariant == AppThemeVariant.light ? ThemeMode.light : ThemeMode.dark);
+    return RepositoryProvider<CrashReportingService>.value(
+      value: widget.crashReportingService,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: widget.authBloc),
+          BlocProvider.value(value: widget.settingsCubit),
+          BlocProvider.value(value: widget.connectivityCubit),
+          BlocProvider.value(value: widget.accountSwitcherCubit),
+        ],
+        child: BlocBuilder<AuthBloc, AuthState>(
+          builder: (context, authState) {
+            final bluesky = _createBluesky(authState);
+            final blueskyChat = _createBlueskyChat(authState);
+            final appShell = BlocBuilder<SettingsCubit, SettingsState>(
+              builder: (context, settingsState) {
+                final themeMode = settingsState.useSystemTheme
+                    ? ThemeMode.system
+                    : (settingsState.themeVariant == AppThemeVariant.light ? ThemeMode.light : ThemeMode.dark);
 
-              final lightTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.light);
-              final darkTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.dark);
+                final lightTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.light);
+                final darkTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.dark);
 
-              return MaterialApp.router(
-                key: ValueKey('router-$_routerSessionKey-$_routerGeneration'),
-                title: 'Lazurite',
-                debugShowCheckedModeBanner: false,
-                theme: lightTheme,
-                darkTheme: darkTheme,
-                themeMode: themeMode,
-                routerConfig: _router,
-                builder: (context, child) => GlobalTapOutsideUnfocus(
-                  child: Stack(
-                    children: [
-                      ConnectivityBannerHost(child: child ?? const SizedBox.shrink()),
-                      if (_isSoftRestarting)
-                        const ColoredBox(
-                          color: Color(0xC0000000),
-                          child: Center(
-                            child: Card(
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.5)),
-                                    SizedBox(width: 12),
-                                    Text('Applying provider change...'),
-                                  ],
+                return MaterialApp.router(
+                  key: ValueKey('router-$_routerSessionKey-$_routerGeneration'),
+                  title: 'Lazurite',
+                  debugShowCheckedModeBanner: false,
+                  theme: lightTheme,
+                  darkTheme: darkTheme,
+                  themeMode: themeMode,
+                  routerConfig: _router,
+                  builder: (context, child) => GlobalTapOutsideUnfocus(
+                    child: Stack(
+                      children: [
+                        ConnectivityBannerHost(child: child ?? const SizedBox.shrink()),
+                        if (_isSoftRestarting)
+                          const ColoredBox(
+                            color: Color(0xC0000000),
+                            child: Center(
+                              child: Card(
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text('Applying provider change...'),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
-          );
+                );
+              },
+            );
 
-          if (bluesky == null || blueskyChat == null) {
-            return appShell;
-          }
+            if (bluesky == null || blueskyChat == null) {
+              return appShell;
+            }
 
-          final accountDid = authState.tokens?.did ?? '';
+            final accountDid = authState.tokens?.did ?? '';
 
-          return KeyedSubtree(
-            key: ValueKey('account-$accountDid-routing-${context.read<SettingsCubit>().state.routingEpoch}'),
-            child: MultiRepositoryProvider(
-              providers: [
-                RepositoryProvider(
-                  create: (_) {
-                    final settingsCubit = context.read<SettingsCubit>();
-                    final moderationService = ModerationService(
-                      bluesky: bluesky,
-                      database: widget.database,
-                      accountDid: accountDid,
-                      userDid: accountDid,
-                      appViewProviderResolver: () => settingsCubit.state.appViewProvider,
-                    );
-                    unawaited(moderationService.ensureInitialized());
-                    return moderationService;
-                  },
-                  dispose: (moderationService) => moderationService.dispose(),
-                ),
-                RepositoryProvider(
-                  create: (context) => FeedRepository(
-                    bluesky: bluesky,
-                    database: widget.database,
-                    accountDid: accountDid,
-                    moderationService: context.read<ModerationService>(),
-                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                    crossProviderFallbackEnabledResolver: () =>
-                        context.read<SettingsCubit>().state.crossProviderFallbackEnabled,
-                    appViewFallbackService: widget.appViewFallbackService,
-                    routingEpoch: context.read<SettingsCubit>().state.routingEpoch,
-                    routingEpochResolver: () => context.read<SettingsCubit>().state.routingEpoch,
-                  ),
-                ),
-                RepositoryProvider(
-                  create: (context) {
-                    final settingsCubit = context.read<SettingsCubit>();
-                    return SearchRepository(
-                      bluesky: bluesky,
-                      moderationService: context.read<ModerationService>(),
-                      appViewProviderResolver: () => settingsCubit.state.appViewProvider,
-                      crossProviderFallbackEnabledResolver: () => settingsCubit.state.crossProviderFallbackEnabled,
-                      appViewFallbackService: widget.appViewFallbackService,
-                      routingEpoch: settingsCubit.state.routingEpoch,
-                      routingEpochResolver: () => settingsCubit.state.routingEpoch,
-                    );
-                  },
-                ),
-                RepositoryProvider(
-                  create: (context) {
-                    final settingsCubit = context.read<SettingsCubit>();
-                    return TypeaheadRepository(
-                      bluesky: bluesky,
-                      providerResolver: () => settingsCubit.state.typeaheadProvider,
-                      appViewProviderResolver: () => settingsCubit.state.appViewProvider,
-                      moderationService: context.read<ModerationService>(),
-                    );
-                  },
-                ),
-                RepositoryProvider(
-                  create: (context) => ListRepository(
-                    bluesky: bluesky,
-                    moderationService: context.read<ModerationService>(),
-                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                  ),
-                ),
-                RepositoryProvider(
-                  create: (context) {
-                    final service = context.read<ModerationService>();
-                    return ProfileRepository(
-                      database: widget.database,
-                      bluesky: bluesky,
-                      moderationService: service,
-                      appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                    );
-                  },
-                ),
-                RepositoryProvider(
-                  create: (context) => NotificationRepository(
-                    bluesky: bluesky,
-                    moderationService: context.read<ModerationService>(),
-                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                  ),
-                ),
-                RepositoryProvider(
-                  create: (context) => NotificationDomainService(
-                    notificationRepository: context.read<NotificationRepository>(),
-                    database: widget.database,
-                    accountDid: accountDid,
-                    localNotificationAdapter: widget.localNotificationAdapter,
-                    shouldSuppressLocalNotifications: _isAlertsRouteActive,
-                  ),
-                ),
-                RepositoryProvider(
-                  create: (context) => PostThreadRepository(
-                    bluesky: bluesky,
-                    database: widget.database,
-                    accountDid: accountDid,
-                    moderationService: context.read<ModerationService>(),
-                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                  ),
-                ),
-                RepositoryProvider(
-                  create: (context) => StarterPackRepository(
-                    bluesky: bluesky,
-                    moderationService: context.read<ModerationService>(),
-                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                  ),
-                ),
-                RepositoryProvider(
-                  create: (context) => PostActionRepository(
-                    bluesky: bluesky,
-                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                  ),
-                ),
-                RepositoryProvider(
-                  create: (context) => ProfileActionRepository(
-                    bluesky: bluesky,
-                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                  ),
-                ),
-                RepositoryProvider(create: (_) => ConvoRepository(chat: blueskyChat)),
-                RepositoryProvider(create: (_) => PostActionCache()),
-                RepositoryProvider(create: (_) => VideoRepository(bluesky: bluesky)),
-                RepositoryProvider.value(value: bluesky),
-                RepositoryProvider.value(value: widget.database),
-                RepositoryProvider.value(value: widget.objectBoxStore),
-                RepositoryProvider.value(value: widget.embeddingService),
-                RepositoryProvider(create: (context) => EmbeddingRepository(context.read<ObjectBoxStore>())),
-                RepositoryProvider(
-                  create: (context) => SemanticIndexer(
-                    embeddingService: context.read<EmbeddingService>(),
-                    embeddingRepository: context.read<EmbeddingRepository>(),
-                    database: widget.database,
-                  ),
-                ),
-                RepositoryProvider(
-                  create: (context) => LikedPostsRepository(
-                    bluesky: bluesky,
-                    database: widget.database,
-                    semanticIndexer: context.read<SemanticIndexer>(),
-                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                  ),
-                ),
-                RepositoryProvider(
-                  create: (context) => SemanticSearchRepository(
-                    embeddingService: context.read<EmbeddingService>(),
-                    embeddingRepository: context.read<EmbeddingRepository>(),
-                    database: widget.database,
-                  ),
-                ),
-                RepositoryProvider.value(value: accountDid),
-              ],
-              child: MultiBlocProvider(
+            return KeyedSubtree(
+              key: ValueKey('account-$accountDid-routing-${context.read<SettingsCubit>().state.routingEpoch}'),
+              child: MultiRepositoryProvider(
                 providers: [
-                  BlocProvider(create: (context) => ProfileBloc(profileRepository: context.read<ProfileRepository>())),
-                  BlocProvider(create: (context) => FeedBloc(feedRepository: context.read<FeedRepository>())),
-                  BlocProvider(
-                    create: (context) => FeedPreferencesCubit(
-                      feedRepository: context.read<FeedRepository>(),
-                      database: widget.database,
-                      accountDid: accountDid,
-                    )..loadPreferences(),
+                  RepositoryProvider(
+                    create: (_) {
+                      final settingsCubit = context.read<SettingsCubit>();
+                      final moderationService = ModerationService(
+                        bluesky: bluesky,
+                        database: widget.database,
+                        accountDid: accountDid,
+                        userDid: accountDid,
+                        appViewProviderResolver: () => settingsCubit.state.appViewProvider,
+                      );
+                      unawaited(moderationService.ensureInitialized());
+                      return moderationService;
+                    },
+                    dispose: (moderationService) => moderationService.dispose(),
                   ),
-                  BlocProvider(create: (_) => DevToolsCubit(atproto: bluesky.atproto)),
-                  BlocProvider(
-                    create: (context) => SearchBloc(
-                      searchRepository: context.read<SearchRepository>(),
-                      typeaheadRepository: context.read<TypeaheadRepository>(),
+                  RepositoryProvider(
+                    create: (context) => FeedRepository(
+                      bluesky: bluesky,
                       database: widget.database,
                       accountDid: accountDid,
+                      moderationService: context.read<ModerationService>(),
+                      appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                      crossProviderFallbackEnabledResolver: () =>
+                          context.read<SettingsCubit>().state.crossProviderFallbackEnabled,
+                      appViewFallbackService: widget.appViewFallbackService,
+                      routingEpoch: context.read<SettingsCubit>().state.routingEpoch,
+                      routingEpochResolver: () => context.read<SettingsCubit>().state.routingEpoch,
                     ),
                   ),
-                  BlocProvider(
-                    create: (context) =>
-                        ConvoListBloc(convoRepository: context.read<ConvoRepository>())
-                          ..add(const ConvosRequested(limit: 100)),
+                  RepositoryProvider(
+                    create: (context) {
+                      final settingsCubit = context.read<SettingsCubit>();
+                      return SearchRepository(
+                        bluesky: bluesky,
+                        moderationService: context.read<ModerationService>(),
+                        appViewProviderResolver: () => settingsCubit.state.appViewProvider,
+                        crossProviderFallbackEnabledResolver: () => settingsCubit.state.crossProviderFallbackEnabled,
+                        appViewFallbackService: widget.appViewFallbackService,
+                        routingEpoch: settingsCubit.state.routingEpoch,
+                        routingEpochResolver: () => settingsCubit.state.routingEpoch,
+                      );
+                    },
                   ),
-                  BlocProvider(
-                    create: (context) => SavedPostsCubit(
-                      database: widget.database,
-                      accountDid: accountDid,
-                      postActionRepository: context.read<PostActionRepository>(),
-                      semanticIndexer: context.read<SemanticIndexer>(),
+                  RepositoryProvider(
+                    create: (context) {
+                      final settingsCubit = context.read<SettingsCubit>();
+                      return TypeaheadRepository(
+                        bluesky: bluesky,
+                        providerResolver: () => settingsCubit.state.typeaheadProvider,
+                        appViewProviderResolver: () => settingsCubit.state.appViewProvider,
+                        moderationService: context.read<ModerationService>(),
+                      );
+                    },
+                  ),
+                  RepositoryProvider(
+                    create: (context) => ListRepository(
+                      bluesky: bluesky,
+                      moderationService: context.read<ModerationService>(),
+                      appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
                     ),
                   ),
-                  BlocProvider(
-                    create: (context) => SemanticSearchCubit(
-                      repository: context.read<SemanticSearchRepository>(),
+                  RepositoryProvider(
+                    create: (context) {
+                      final service = context.read<ModerationService>();
+                      return ProfileRepository(
+                        database: widget.database,
+                        bluesky: bluesky,
+                        moderationService: service,
+                        appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                      );
+                    },
+                  ),
+                  RepositoryProvider(
+                    create: (context) => NotificationRepository(
+                      bluesky: bluesky,
+                      moderationService: context.read<ModerationService>(),
+                      appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                    ),
+                  ),
+                  RepositoryProvider(
+                    create: (context) => NotificationDomainService(
+                      notificationRepository: context.read<NotificationRepository>(),
+                      database: widget.database,
+                      accountDid: accountDid,
+                      localNotificationAdapter: widget.localNotificationAdapter,
+                      shouldSuppressLocalNotifications: _isAlertsRouteActive,
+                    ),
+                  ),
+                  RepositoryProvider(
+                    create: (context) => PostThreadRepository(
+                      bluesky: bluesky,
+                      database: widget.database,
+                      accountDid: accountDid,
+                      moderationService: context.read<ModerationService>(),
+                      appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                    ),
+                  ),
+                  RepositoryProvider(
+                    create: (context) => StarterPackRepository(
+                      bluesky: bluesky,
+                      moderationService: context.read<ModerationService>(),
+                      appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                    ),
+                  ),
+                  RepositoryProvider(
+                    create: (context) => PostActionRepository(
+                      bluesky: bluesky,
+                      appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                    ),
+                  ),
+                  RepositoryProvider(
+                    create: (context) => ProfileActionRepository(
+                      bluesky: bluesky,
+                      appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                    ),
+                  ),
+                  RepositoryProvider(create: (_) => ConvoRepository(chat: blueskyChat)),
+                  RepositoryProvider(create: (_) => PostActionCache()),
+                  RepositoryProvider(create: (_) => VideoRepository(bluesky: bluesky)),
+                  RepositoryProvider.value(value: bluesky),
+                  RepositoryProvider.value(value: widget.database),
+                  RepositoryProvider.value(value: widget.objectBoxStore),
+                  RepositoryProvider.value(value: widget.embeddingService),
+                  RepositoryProvider(create: (context) => EmbeddingRepository(context.read<ObjectBoxStore>())),
+                  RepositoryProvider(
+                    create: (context) => SemanticIndexer(
                       embeddingService: context.read<EmbeddingService>(),
-                      accountDid: accountDid,
-                    ),
-                  ),
-                  BlocProvider(
-                    create: (context) => SemanticIndexCubit(
-                      indexer: context.read<SemanticIndexer>(),
                       embeddingRepository: context.read<EmbeddingRepository>(),
-                      accountDid: accountDid,
+                      database: widget.database,
                     ),
                   ),
-                  BlocProvider(
-                    create: (context) =>
-                        LikedPostsSyncCubit(repository: context.read<LikedPostsRepository>(), accountDid: accountDid),
+                  RepositoryProvider(
+                    create: (context) => LikedPostsRepository(
+                      bluesky: bluesky,
+                      database: widget.database,
+                      semanticIndexer: context.read<SemanticIndexer>(),
+                      appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                    ),
                   ),
+                  RepositoryProvider(
+                    create: (context) => SemanticSearchRepository(
+                      embeddingService: context.read<EmbeddingService>(),
+                      embeddingRepository: context.read<EmbeddingRepository>(),
+                      database: widget.database,
+                    ),
+                  ),
+                  RepositoryProvider.value(value: accountDid),
                 ],
-                child: appShell,
+                child: MultiBlocProvider(
+                  providers: [
+                    BlocProvider(
+                      create: (context) => ProfileBloc(profileRepository: context.read<ProfileRepository>()),
+                    ),
+                    BlocProvider(create: (context) => FeedBloc(feedRepository: context.read<FeedRepository>())),
+                    BlocProvider(
+                      create: (context) => FeedPreferencesCubit(
+                        feedRepository: context.read<FeedRepository>(),
+                        database: widget.database,
+                        accountDid: accountDid,
+                      )..loadPreferences(),
+                    ),
+                    BlocProvider(create: (_) => DevToolsCubit(atproto: bluesky.atproto)),
+                    BlocProvider(
+                      create: (context) => SearchBloc(
+                        searchRepository: context.read<SearchRepository>(),
+                        typeaheadRepository: context.read<TypeaheadRepository>(),
+                        database: widget.database,
+                        accountDid: accountDid,
+                      ),
+                    ),
+                    BlocProvider(
+                      create: (context) =>
+                          ConvoListBloc(convoRepository: context.read<ConvoRepository>())
+                            ..add(const ConvosRequested(limit: 100)),
+                    ),
+                    BlocProvider(
+                      create: (context) => SavedPostsCubit(
+                        database: widget.database,
+                        accountDid: accountDid,
+                        postActionRepository: context.read<PostActionRepository>(),
+                        semanticIndexer: context.read<SemanticIndexer>(),
+                      ),
+                    ),
+                    BlocProvider(
+                      create: (context) => SemanticSearchCubit(
+                        repository: context.read<SemanticSearchRepository>(),
+                        embeddingService: context.read<EmbeddingService>(),
+                        accountDid: accountDid,
+                      ),
+                    ),
+                    BlocProvider(
+                      create: (context) => SemanticIndexCubit(
+                        indexer: context.read<SemanticIndexer>(),
+                        embeddingRepository: context.read<EmbeddingRepository>(),
+                        accountDid: accountDid,
+                      ),
+                    ),
+                    BlocProvider(
+                      create: (context) =>
+                          LikedPostsSyncCubit(repository: context.read<LikedPostsRepository>(), accountDid: accountDid),
+                    ),
+                  ],
+                  child: appShell,
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@
 #### 2026-05-04
 
 - Jump to top action in feed & profile screens.
+- Firebase Crashlytics integration for crash reporting and analytics.
 
 ### Fixed
 

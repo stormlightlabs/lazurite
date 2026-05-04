@@ -151,6 +151,8 @@ void main() {
         appViewProvider: 'blacksky',
         crossProviderFallbackEnabled: true,
         slingshotIdentityFallbackEnabled: true,
+        crashReportingEnabled: true,
+        crashReportingConsentPrompted: true,
       );
 
       expect(updated.themePalette, AppThemePalette.nord);
@@ -163,6 +165,8 @@ void main() {
       expect(updated.appViewProvider, 'blacksky');
       expect(updated.crossProviderFallbackEnabled, isTrue);
       expect(updated.slingshotIdentityFallbackEnabled, isTrue);
+      expect(updated.crashReportingEnabled, isTrue);
+      expect(updated.crashReportingConsentPrompted, isTrue);
       expect(original.themePalette, AppThemePalette.oxocarbon);
     });
 
@@ -189,6 +193,8 @@ void main() {
       expect(updated.appViewProvider, 'bluesky');
       expect(updated.crossProviderFallbackEnabled, isFalse);
       expect(updated.slingshotIdentityFallbackEnabled, isFalse);
+      expect(updated.crashReportingEnabled, isFalse);
+      expect(updated.crashReportingConsentPrompted, isFalse);
     });
 
     test('copyWith can clear threadAutoCollapseDepth', () {
@@ -223,6 +229,7 @@ void main() {
       expect(state.props, contains(true));
       expect(state.props, contains(6));
       expect(state.props, contains('bluesky'));
+      expect(state.props, contains(false));
       expect(state.props, contains(false));
     });
 
@@ -279,6 +286,8 @@ void main() {
       );
       expect(state.crossProviderFallbackEnabled, isFalse);
       expect(state.slingshotIdentityFallbackEnabled, isFalse);
+      expect(state.crashReportingEnabled, isFalse);
+      expect(state.crashReportingConsentPrompted, isFalse);
     });
   });
 }

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/router/app_shell.dart';
@@ -112,7 +113,7 @@ class SettingsScreen extends StatelessWidget {
           _buildSectionHeader(context, 'Advanced'),
           _buildAdvancedSettings(context),
           const SizedBox(height: 24),
-          if (!kReleaseMode) ...[
+          if (!kReleaseMode || kDebugMode) ...[
             _buildSectionHeader(context, 'Developer'),
             _buildDeveloperSettings(context),
             const SizedBox(height: 24),
@@ -359,6 +360,7 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildDeveloperSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
+    final crashReportingService = _readCrashReportingServiceOrNull(context);
 
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
@@ -371,15 +373,35 @@ class SettingsScreen extends StatelessWidget {
             ),
             color: theme.cardColor,
           ),
-          child: _SettingsTile(
-            icon: Icons.cloud_off_outlined,
-            title: 'Go Offline',
-            subtitle: 'Turn off online connectivity',
-            trailing: Switch.adaptive(value: state.simulateOffline, onChanged: settingsCubit.setSimulateOffline),
+          child: Column(
+            children: [
+              _SettingsTile(
+                icon: Icons.cloud_off_outlined,
+                title: 'Go Offline',
+                subtitle: 'Turn off online connectivity',
+                trailing: Switch.adaptive(value: state.simulateOffline, onChanged: settingsCubit.setSimulateOffline),
+              ),
+              const Divider(height: 1),
+              _SettingsTile(
+                icon: Icons.bug_report_outlined,
+                title: 'Crashlytics Test Crash',
+                subtitle: 'Intentionally crash to validate Crashlytics reports',
+                trailing: const Icon(Icons.warning_amber_rounded),
+                onTap: crashReportingService?.crash,
+              ),
+            ],
           ),
         );
       },
     );
+  }
+
+  CrashReportingService? _readCrashReportingServiceOrNull(BuildContext context) {
+    try {
+      return context.read<CrashReportingService>();
+    } on ProviderNotFoundException {
+      return null;
+    }
   }
 
   Widget _buildAdvancedSettings(BuildContext context) {
@@ -443,6 +465,18 @@ class SettingsScreen extends StatelessWidget {
                 trailing: Switch.adaptive(
                   value: state.slingshotIdentityFallbackEnabled,
                   onChanged: settingsCubit.setSlingshotIdentityFallbackEnabled,
+                ),
+              ),
+              const Divider(height: 1),
+              _SettingsTile(
+                icon: Icons.bug_report_outlined,
+                title: 'Crash Reporting',
+                subtitle: state.crashReportingEnabled
+                    ? 'Enabled. Crash and error reports are sent to improve stability.'
+                    : 'Disabled. Crash and error reports are not sent.',
+                trailing: Switch.adaptive(
+                  value: state.crashReportingEnabled,
+                  onChanged: (enabled) => unawaited(_handleCrashReportingToggle(context, enabled)),
                 ),
               ),
               const Divider(height: 1),
@@ -521,6 +555,19 @@ class SettingsScreen extends StatelessWidget {
     }
 
     await context.read<SettingsCubit>().setAppViewProvider(selectedProvider);
+  }
+
+  Future<void> _handleCrashReportingToggle(BuildContext context, bool enabled) async {
+    final settingsCubit = context.read<SettingsCubit>();
+    final crashReportingService = context.read<CrashReportingService>();
+    await settingsCubit.setCrashReportingEnabled(enabled);
+    await settingsCubit.setCrashReportingConsentPrompted(true);
+    await crashReportingService.setCollectionEnabled(enabled);
+    if (enabled) {
+      await crashReportingService.sendUnsentReports();
+      return;
+    }
+    await crashReportingService.deleteUnsentReports();
   }
 }
 

@@ -22,6 +22,8 @@ class SettingsState extends Equatable {
     this.appViewProvider = 'bluesky',
     this.crossProviderFallbackEnabled = false,
     this.slingshotIdentityFallbackEnabled = false,
+    this.crashReportingEnabled = false,
+    this.crashReportingConsentPrompted = false,
     this.routingEpoch = 0,
     this.appViewHealthSummary,
     this.appViewHealthCheckedAt,
@@ -60,6 +62,12 @@ class SettingsState extends Equatable {
   /// Enables Slingshot identity fallback for degraded handle resolution.
   final bool slingshotIdentityFallbackEnabled;
 
+  /// Whether crash/error reports can be sent to Crashlytics.
+  final bool crashReportingEnabled;
+
+  /// Whether the one-time crash reporting consent prompt has already been shown.
+  final bool crashReportingConsentPrompted;
+
   /// In-memory epoch incremented when routing state is soft-reset.
   final int routingEpoch;
 
@@ -94,6 +102,8 @@ class SettingsState extends Equatable {
     String? appViewProvider,
     bool? crossProviderFallbackEnabled,
     bool? slingshotIdentityFallbackEnabled,
+    bool? crashReportingEnabled,
+    bool? crashReportingConsentPrompted,
     int? routingEpoch,
     Object? appViewHealthSummary = _threadAutoCollapseDepthUnset,
     Object? appViewHealthCheckedAt = _threadAutoCollapseDepthUnset,
@@ -119,6 +129,8 @@ class SettingsState extends Equatable {
       appViewProvider: appViewProvider ?? this.appViewProvider,
       crossProviderFallbackEnabled: crossProviderFallbackEnabled ?? this.crossProviderFallbackEnabled,
       slingshotIdentityFallbackEnabled: slingshotIdentityFallbackEnabled ?? this.slingshotIdentityFallbackEnabled,
+      crashReportingEnabled: crashReportingEnabled ?? this.crashReportingEnabled,
+      crashReportingConsentPrompted: crashReportingConsentPrompted ?? this.crashReportingConsentPrompted,
       routingEpoch: routingEpoch ?? this.routingEpoch,
       appViewHealthSummary: identical(appViewHealthSummary, _threadAutoCollapseDepthUnset)
           ? this.appViewHealthSummary
@@ -153,6 +165,8 @@ class SettingsState extends Equatable {
     appViewProvider,
     crossProviderFallbackEnabled,
     slingshotIdentityFallbackEnabled,
+    crashReportingEnabled,
+    crashReportingConsentPrompted,
     routingEpoch,
     appViewHealthSummary,
     appViewHealthCheckedAt,

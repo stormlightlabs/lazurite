@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
@@ -23,15 +24,41 @@ class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
+class FakeCrashReportingService implements CrashReportingService {
+  var crashCalls = 0;
+
+  @override
+  void crash() {
+    crashCalls += 1;
+  }
+
+  @override
+  Future<void> deleteUnsentReports() async {}
+
+  @override
+  Future<void> recordError(Object error, StackTrace stackTrace, {bool fatal = false}) async {}
+
+  @override
+  void recordFlutterFatalError(FlutterErrorDetails details) {}
+
+  @override
+  Future<void> sendUnsentReports() async {}
+
+  @override
+  Future<void> setCollectionEnabled(bool enabled) async {}
+}
+
 void main() {
   late MockAccountSwitcherCubit accountSwitcherCubit;
   late MockAuthBloc authBloc;
   late MockSettingsCubit settingsCubit;
+  late FakeCrashReportingService crashReportingService;
 
   setUp(() {
     accountSwitcherCubit = MockAccountSwitcherCubit();
     authBloc = MockAuthBloc();
     settingsCubit = MockSettingsCubit();
+    crashReportingService = FakeCrashReportingService();
 
     when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.unauthenticated());
@@ -62,16 +89,21 @@ void main() {
     );
     when(() => settingsCubit.setAppViewProvider(any())).thenAnswer((_) async {});
     when(() => settingsCubit.refreshAppViewHealth()).thenAnswer((_) async {});
+    when(() => settingsCubit.setCrashReportingEnabled(any())).thenAnswer((_) async {});
+    when(() => settingsCubit.setCrashReportingConsentPrompted(any())).thenAnswer((_) async {});
   });
 
   Widget buildSubject() {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthBloc>.value(value: authBloc),
-        BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
-        BlocProvider<SettingsCubit>.value(value: settingsCubit),
-      ],
-      child: const MaterialApp(home: SettingsScreen()),
+    return RepositoryProvider<CrashReportingService>.value(
+      value: crashReportingService,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        ],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
     );
   }
 
@@ -80,13 +112,16 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthBloc>.value(value: authBloc),
-              BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
-              BlocProvider<SettingsCubit>.value(value: settingsCubit),
-            ],
-            child: const SettingsScreen(),
+          builder: (context, state) => RepositoryProvider<CrashReportingService>.value(
+            value: crashReportingService,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: authBloc),
+                BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
+                BlocProvider<SettingsCubit>.value(value: settingsCubit),
+              ],
+              child: const SettingsScreen(),
+            ),
           ),
         ),
         GoRoute(
@@ -261,9 +296,41 @@ void main() {
     expect(find.text('AppView Provider'), findsOneWidget);
     expect(find.text('Cross-Provider Fallback'), findsOneWidget);
     expect(find.text('Slingshot Identity Fallback'), findsOneWidget);
+    expect(find.text('Crash Reporting'), findsOneWidget);
     expect(find.text('Provider Diagnostics'), findsOneWidget);
     expect(find.text('Refresh Provider Health'), findsOneWidget);
     expect(find.byIcon(Icons.edit_outlined), findsNothing);
+  });
+
+  testWidgets('crash reporting toggle persists consent and reporting state', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Crash Reporting'), 300);
+    await tester.pumpAndSettle();
+
+    final crashTile = find.ancestor(of: find.text('Crash Reporting'), matching: find.byType(ListTile));
+    await tester.ensureVisible(crashTile);
+    final crashSwitch = find.descendant(of: crashTile, matching: find.byType(Switch));
+    expect(crashSwitch, findsOneWidget);
+    await tester.tap(crashSwitch);
+    await tester.pumpAndSettle();
+
+    verify(() => settingsCubit.setCrashReportingEnabled(true)).called(1);
+    verify(() => settingsCubit.setCrashReportingConsentPrompted(true)).called(1);
+  });
+
+  testWidgets('developer crash row triggers crash reporting test crash', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Crashlytics Test Crash'), 300);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Crashlytics Test Crash'));
+    await tester.pumpAndSettle();
+
+    expect(crashReportingService.crashCalls, 1);
   });
 
   testWidgets('provider change confirmation can be cancelled', (tester) async {
