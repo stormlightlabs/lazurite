@@ -143,13 +143,20 @@ void main() {
     blocTest<DevToolsCubit, DevToolsState>(
       'resolve handle loads repo and progressive collection counts',
       build: () {
+        var describeRepoCalls = 0;
         final repository = FakeDevToolsRepository(
           resolveHandleHandler: ({required String handle}) async {
             expect(handle, 'alice.bsky.social');
             return const IdentityResolveHandleOutput(did: 'did:plc:alice');
           },
           describeRepoHandler: ({required String repo, String? serviceHost}) async {
-            expect(serviceHost, 'alice.host');
+            expect(repo, 'did:plc:alice');
+            if (describeRepoCalls == 0) {
+              expect(serviceHost, isNull);
+            } else {
+              expect(serviceHost, 'alice.host');
+            }
+            describeRepoCalls++;
             return const RepoDescribeRepoOutput(
               handle: 'alice.bsky.social',
               did: 'did:plc:alice',
@@ -210,11 +217,18 @@ void main() {
     blocTest<DevToolsCubit, DevToolsState>(
       'resolve AT-URI loads collection and full record JSON',
       build: () {
+        var describeRepoCalls = 0;
         final repository = FakeDevToolsRepository(
           resolveHandleHandler: ({required String handle}) async =>
               const IdentityResolveHandleOutput(did: 'did:plc:alice'),
           describeRepoHandler: ({required String repo, String? serviceHost}) async {
-            expect(serviceHost, 'alice.host');
+            expect(repo, 'did:plc:alice');
+            if (describeRepoCalls == 0) {
+              expect(serviceHost, isNull);
+            } else {
+              expect(serviceHost, 'alice.host');
+            }
+            describeRepoCalls++;
             return const RepoDescribeRepoOutput(
               handle: 'alice.bsky.social',
               did: 'did:plc:alice',

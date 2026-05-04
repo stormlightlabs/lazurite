@@ -4,6 +4,8 @@
 
 Lazurite is a cross-platform Bluesky client that *rocks*[^1] built with Flutter and Dart using Material You (M3) design.
 
+Download it on our [releases page](https://github.com/stormlightlabs/lazurite/releases/).
+
 ## Features
 
 ### Home Feed & Composer
