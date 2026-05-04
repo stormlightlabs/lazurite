@@ -28,6 +28,15 @@ typedef OAuthRefreshSession =
       required OAuthSession session,
     });
 
+final class AuthIdentifierResolutionException implements Exception {
+  const AuthIdentifierResolutionException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 class AuthRepository {
   AuthRepository({
     required AppDatabase database,
@@ -59,6 +68,9 @@ class AuthRepository {
   static const String _mobileOAuthRedirectScheme = 'org.stormlightlabs.lazurite';
   static const String _mobileOAuthRedirectPath = '/oauth/callback';
   static final Uri _mobileOAuthRedirectUri = Uri.parse('$_mobileOAuthRedirectScheme:$_mobileOAuthRedirectPath');
+  static final RegExp _atprotoHandlePattern = RegExp(
+    r'^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$',
+  );
 
   final AppDatabase _database;
   final LaunchUrlWithMode _launchUrlWithMode;
@@ -164,16 +176,28 @@ class AuthRepository {
   Future<AuthTokens?> loginWithOAuth(String handle) async {
     try {
       _oauthCompleter = Completer<AuthTokens?>();
-      _pendingHandle = handle.trim();
+      _pendingHandle = _normalizeIdentifierForAuth(handle);
+      _validateAtprotoIdentifier(_pendingHandle!);
       final preferredOauthService = normalizeAtprotoServiceHost(_oauthServiceResolver()) ?? _oauthService;
-      String? resolvedPdsHost;
+      late final String resolvedPdsHost;
       String? resolvedAuthService;
       try {
         resolvedPdsHost = await _resolveServiceForIdentifier(_pendingHandle!);
+      } on atcore.InvalidRequestException catch (error, stackTrace) {
+        final failure = _handleResolutionFailureForIdentifier(_pendingHandle!, error);
+        log.w(
+          'AuthRepository: Identifier resolution failed for ${_pendingHandle!}',
+          error: failure,
+          stackTrace: stackTrace,
+        );
+        throw failure;
+      }
+
+      try {
         resolvedAuthService = await _resolveAuthorizationServiceForPdsHost(resolvedPdsHost);
       } catch (error, stackTrace) {
         log.w(
-          'AuthRepository: Failed to pre-resolve OAuth account authority for ${_pendingHandle!}; '
+          'AuthRepository: Failed to resolve OAuth authorization server metadata for ${_pendingHandle!}; '
           'continuing with fallback auth service chain.',
           error: error,
           stackTrace: stackTrace,
@@ -212,9 +236,7 @@ class AuthRepository {
 
           return await _oauthCompleter!.future.timeout(
             const Duration(minutes: 3),
-            onTimeout: () => throw TimeoutException(
-              'Timed out waiting for OAuth callback on custom scheme redirect',
-            ),
+            onTimeout: () => throw TimeoutException('Timed out waiting for OAuth callback on custom scheme redirect'),
           );
         } catch (error, stackTrace) {
           lastAttemptError = error;
@@ -438,7 +460,10 @@ class AuthRepository {
 
   Future<bool> completeOAuthCallbackFromUri(Uri callbackUri) async {
     final pendingOAuthFlow =
-        _pendingOAuthClient != null && _pendingOAuthContext != null && _pendingHandle != null && _pendingService != null;
+        _pendingOAuthClient != null &&
+        _pendingOAuthContext != null &&
+        _pendingHandle != null &&
+        _pendingService != null;
     if (!pendingOAuthFlow) {
       log.w(
         'AuthRepository: Ignoring OAuth callback without active flow '
@@ -543,7 +568,7 @@ class AuthRepository {
   }
 
   Future<({String did, String? pdsHost})> _resolveIdentityForIdentifier(String identifier) async {
-    final normalizedIdentifier = identifier.trim();
+    final normalizedIdentifier = _normalizeIdentifierForAuth(identifier);
     if (normalizedIdentifier.startsWith('did:')) {
       return (did: normalizedIdentifier, pdsHost: null);
     }
@@ -593,6 +618,47 @@ class AuthRepository {
       postClient: XrpcNetworkInterceptor.wrapPostClient(),
     );
     return (await client.identity.resolveHandle(handle: handle)).data.did;
+  }
+
+  String _normalizeIdentifierForAuth(String identifier) {
+    final trimmed = identifier.trim();
+    if (trimmed.startsWith('did:')) {
+      return trimmed;
+    }
+
+    final withoutAt = trimmed.replaceFirst(RegExp(r'^@+'), '');
+    return withoutAt.toLowerCase();
+  }
+
+  void _validateAtprotoIdentifier(String identifier) {
+    if (identifier.isEmpty) {
+      throw const AuthIdentifierResolutionException('Enter a Bluesky handle or DID.');
+    }
+
+    if (identifier.startsWith('did:')) {
+      if (identifier.startsWith('did:plc:') || identifier.startsWith('did:web:')) {
+        return;
+      }
+
+      throw const AuthIdentifierResolutionException(
+        'Unsupported DID format. Use a did:plc:... or did:web:... identifier.',
+      );
+    }
+
+    if (!_atprotoHandlePattern.hasMatch(identifier)) {
+      throw const AuthIdentifierResolutionException(
+        'Invalid handle format. Enter a full handle like username.bsky.social.',
+      );
+    }
+  }
+
+  AuthIdentifierResolutionException _handleResolutionFailureForIdentifier(
+    String identifier,
+    atcore.InvalidRequestException error,
+  ) {
+    final responseMessage = error.response.data.message ?? error.response.data.error;
+    final sanitizedMessage = responseMessage.trim().isEmpty ? 'Unable to resolve identifier.' : responseMessage.trim();
+    return AuthIdentifierResolutionException('Unable to resolve "$identifier". $sanitizedMessage');
   }
 
   Future<String?> _resolveAuthorizationServiceForPdsHost(String pdsHost) async {

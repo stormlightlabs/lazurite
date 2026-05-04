@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
+import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
@@ -119,21 +122,57 @@ class _AccountSwitcherSheet extends StatelessWidget {
     Navigator.pop(context);
 
     final controller = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final focusNode = FocusNode();
+    final typeaheadRepository = TypeaheadRepository(provider: TypeaheadRepository.communityProvider);
     final handle = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => ConfirmationDialog(
-        title: const Text('Add Account'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: 'Handle or DID'),
-          autofocus: true,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => ConfirmationDialog(
+          title: const Text('Add Account'),
+          content: SizedBox(
+            width: 420,
+            child: Form(
+              key: formKey,
+              child: TypeaheadTextField(
+                controller: controller,
+                focusNode: focusNode,
+                repository: typeaheadRepository,
+                onSelected: (TypeaheadResult result) => controller.text = result.handle,
+                minChars: 2,
+                debounceMs: 300,
+                limit: 8,
+                decoration: const InputDecoration(labelText: 'Handle or DID', hintText: 'username.bsky.social'),
+                textInputAction: TextInputAction.done,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Enter a Bluesky handle or DID';
+                  }
+                  return null;
+                },
+                onChanged: (_) => setDialogState(() {}),
+                onFieldSubmitted: (_) {
+                  if ((formKey.currentState?.validate() ?? false)) {
+                    Navigator.pop(dialogContext, controller.text.trim());
+                  }
+                },
+              ),
+            ),
+          ),
+          confirmEnabled: controller.text.trim().isNotEmpty,
+          confirmLabel: 'Continue',
+          onCancel: () => Navigator.pop(dialogContext),
+          onConfirm: () {
+            if (!(formKey.currentState?.validate() ?? false)) {
+              return;
+            }
+            Navigator.pop(dialogContext, controller.text.trim());
+          },
         ),
-        confirmLabel: 'Continue',
-        onCancel: () => Navigator.pop(dialogContext),
-        onConfirm: () => Navigator.pop(dialogContext, controller.text.trim()),
       ),
     );
     controller.dispose();
+    focusNode.dispose();
 
     if (handle == null || handle.isEmpty) return;
 
@@ -141,7 +180,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
     if (tokens != null) {
       authBloc.add(SessionRestored(tokens: tokens));
     } else if (context.mounted) {
-      showAppSnackBar(context, 'Failed to add account', isError: true);
+      showAppSnackBar(context, cubit.lastAddAccountErrorMessage ?? 'Failed to add account', isError: true);
     }
   }
 }

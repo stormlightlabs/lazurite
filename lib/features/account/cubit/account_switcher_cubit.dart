@@ -15,6 +15,9 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
 
   final AppDatabase _database;
   final AuthRepository _authRepository;
+  String? _lastAddAccountErrorMessage;
+
+  String? get lastAddAccountErrorMessage => _lastAddAccountErrorMessage;
 
   Future<void> loadAccounts() async {
     emit(const AccountSwitcherState.loading());
@@ -79,12 +82,17 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
   }
 
   Future<AuthTokens?> addAccountWithOAuth(String handle) async {
+    _lastAddAccountErrorMessage = null;
     try {
       final tokens = await _authRepository.loginWithOAuth(handle);
       if (tokens == null) return null;
       await addAccountCompleted(tokens);
       return tokens;
-    } catch (_) {
+    } on AuthIdentifierResolutionException catch (error) {
+      _lastAddAccountErrorMessage = error.message;
+      return null;
+    } catch (error) {
+      _lastAddAccountErrorMessage = error.toString();
       return null;
     }
   }

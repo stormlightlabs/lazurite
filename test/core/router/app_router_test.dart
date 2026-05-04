@@ -11,6 +11,7 @@ import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/auth/presentation/oauth_callback_screen.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
@@ -85,6 +86,10 @@ void main() {
     createdAt: DateTime.utc(2024, 3, 1),
   );
 
+  setUpAll(() {
+    registerFallbackValue(Uri.parse('https://example.com/oauth/callback'));
+  });
+
   setUp(() {
     authBloc = MockAuthBloc();
     feedPreferencesCubit = MockFeedPreferencesCubit();
@@ -103,6 +108,7 @@ void main() {
     currentAuthState = const AuthState.authenticated(tokens);
 
     when(() => authBloc.state).thenAnswer((_) => currentAuthState);
+    when(() => authBloc.handleOAuthRedirectUri(any())).thenAnswer((_) async => false);
     when(() => feedPreferencesCubit.state).thenReturn(const FeedPreferencesState.loaded(feeds: []));
     when(() => profileBloc.state).thenReturn(ProfileState.loaded(profile: profile));
     when(() => feedBloc.state).thenReturn(
@@ -475,6 +481,34 @@ void main() {
     router.go('/terms');
     await tester.pumpAndSettle();
     expect(find.text('Terms of Service'), findsWidgets);
+
+    router.dispose();
+  });
+
+  testWidgets('processes oauth callback route while authenticated', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+    final pendingCallback = Completer<bool>();
+    when(() => authBloc.handleOAuthRedirectUri(any())).thenAnswer((_) => pendingCallback.future);
+
+    router.go('/oauth/callback?code=abc&state=xyz');
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    verify(
+      () => authBloc.handleOAuthRedirectUri(
+        any(that: predicate<Uri>((uri) => uri.path == OAuthCallbackScreen.routePath)),
+      ),
+    ).called(1);
 
     router.dispose();
   });

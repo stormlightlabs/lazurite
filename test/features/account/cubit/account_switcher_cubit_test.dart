@@ -377,12 +377,15 @@ void main() {
       });
 
       test('returns null when loginWithOAuth throws', () async {
-        when(() => mockAuthRepository.loginWithOAuth(any())).thenThrow(Exception('OAuth failed'));
+        when(
+          () => mockAuthRepository.loginWithOAuth(any()),
+        ).thenThrow(const AuthIdentifierResolutionException('Unable to resolve "bad.handle".'));
 
         final cubit = buildCubit();
         final result = await cubit.addAccountWithOAuth('bad.handle');
 
         expect(result, isNull);
+        expect(cubit.lastAddAccountErrorMessage, equals('Unable to resolve "bad.handle".'));
         verifyNever(() => mockDatabase.insertAccount(any()));
       });
     });

@@ -104,14 +104,13 @@ class AppRouter {
       final path = state.uri.path;
       final publicPaths = {'/login', '/terms', '/privacy', OAuthCallbackScreen.routePath};
       final isLoggingIn = path == '/login';
-      final isOAuthCallback = path == OAuthCallbackScreen.routePath;
       final isPublicPath = publicPaths.contains(path);
 
       if (!isAuthenticated && !isPublicPath) {
         return '/login';
       }
 
-      if (isAuthenticated && (isLoggingIn || isOAuthCallback)) {
+      if (isAuthenticated && isLoggingIn) {
         return '/';
       }
 
@@ -122,11 +121,7 @@ class AppRouter {
       GoRoute(
         path: OAuthCallbackScreen.routePath,
         parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) => _page(
-          context,
-          state,
-          OAuthCallbackScreen(callbackUri: state.uri),
-        ),
+        pageBuilder: (context, state) => _page(context, state, OAuthCallbackScreen(callbackUri: state.uri)),
       ),
       GoRoute(path: '/terms', pageBuilder: (context, state) => _page(context, state, const TermsOfServiceScreen())),
       GoRoute(path: '/privacy', pageBuilder: (context, state) => _page(context, state, const PrivacyPolicyScreen())),
