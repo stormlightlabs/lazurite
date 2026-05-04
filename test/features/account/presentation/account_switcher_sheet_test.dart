@@ -8,6 +8,7 @@ import 'package:lazurite/features/account/presentation/account_switcher_sheet.da
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
+import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
@@ -34,6 +35,13 @@ void main() {
     typeaheadRepository = MockTypeaheadRepository();
     when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
+    when(() => cubit.loadAccounts()).thenAnswer((_) async {});
+    when(
+      () => typeaheadRepository.search(
+        query: any(named: 'query'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => const <TypeaheadResult>[]);
   });
 
   Account makeAccount({required String did, String handle = 'user.bsky.social', String? displayName}) {
@@ -105,6 +113,7 @@ void main() {
 
       await openSheet(tester);
 
+      verify(() => cubit.loadAccounts()).called(1);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
@@ -195,7 +204,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       verifyNever(() => authBloc.add(any(that: isA<LogoutRequested>())));
-      expect(find.text('Unable to switch accounts. Sign in again for that account.'), findsOneWidget);
+      verify(() => cubit.switchAccount('did:plc:user2')).called(1);
     });
 
     testWidgets('tapping active account does nothing', (tester) async {
@@ -225,6 +234,27 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pump();
       verifyNever(() => cubit.addAccountWithOAuth(any()));
+    });
+
+    testWidgets('remove account action removes account from sheet flow', (tester) async {
+      when(() => cubit.state).thenReturn(
+        AccountSwitcherState.ready(
+          accounts: [
+            makeAccount(did: 'did:plc:user1', handle: 'alice.bsky.social'),
+            makeAccount(did: 'did:plc:user2', handle: 'bob.bsky.social'),
+          ],
+          activeDid: 'did:plc:user1',
+        ),
+      );
+      when(() => cubit.removeAccount('did:plc:user2')).thenAnswer((_) async => const AccountRemovalResult.removed());
+
+      await openSheet(tester);
+      await tester.tap(find.byTooltip('Remove account').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove'));
+      await tester.pumpAndSettle();
+
+      verify(() => cubit.removeAccount('did:plc:user2')).called(1);
     });
   });
 }

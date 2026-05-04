@@ -9,6 +9,23 @@ import 'package:lazurite/features/auth/data/models/auth_models.dart';
 
 part 'account_switcher_state.dart';
 
+class AccountRemovalResult {
+  const AccountRemovalResult._({required this.removed, required this.requiresSignIn, this.switchedTokens});
+
+  const AccountRemovalResult.removed() : this._(removed: true, requiresSignIn: false);
+
+  const AccountRemovalResult.switched(AuthTokens tokens)
+    : this._(removed: true, requiresSignIn: false, switchedTokens: tokens);
+
+  const AccountRemovalResult.requiresSignIn() : this._(removed: true, requiresSignIn: true);
+
+  const AccountRemovalResult.failed() : this._(removed: false, requiresSignIn: false);
+
+  final bool removed;
+  final bool requiresSignIn;
+  final AuthTokens? switchedTokens;
+}
+
 class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
   AccountSwitcherCubit({required AppDatabase database, required AuthRepository authRepository})
     : _database = database,
@@ -125,5 +142,43 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
 
     await loadAccounts();
     await switchAccount(tokens.did);
+  }
+
+  Future<AccountRemovalResult> removeAccount(String did) async {
+    if (state.status != AccountSwitcherStatus.ready) {
+      return const AccountRemovalResult.failed();
+    }
+
+    final account = await _database.getAccount(did);
+    if (account == null) {
+      return const AccountRemovalResult.failed();
+    }
+
+    final wasActive = state.activeDid == did;
+    await _database.deleteAccount(did);
+
+    if (!wasActive) {
+      await loadAccounts();
+      return const AccountRemovalResult.removed();
+    }
+
+    final remainingAccounts = await _database.getAllAccounts();
+    if (remainingAccounts.isEmpty) {
+      await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
+      await loadAccounts();
+      return const AccountRemovalResult.requiresSignIn();
+    }
+
+    for (final remaining in remainingAccounts) {
+      final switchedTokens = await switchAccount(remaining.did);
+      if (switchedTokens != null) {
+        await loadAccounts();
+        return AccountRemovalResult.switched(switchedTokens);
+      }
+    }
+
+    await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
+    await loadAccounts();
+    return const AccountRemovalResult.requiresSignIn();
   }
 }

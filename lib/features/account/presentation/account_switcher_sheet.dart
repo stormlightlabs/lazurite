@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/atproto_identifier.dart';
@@ -30,6 +33,7 @@ void showAccountSwitcherSheet(BuildContext context) {
   final authBloc = context.read<AuthBloc>();
   final typeaheadRepository = context.read<TypeaheadRepository>();
   final parentContext = context;
+  unawaited(cubit.loadAccounts());
 
   showAppBottomSheet<void>(
     context: context,
@@ -90,7 +94,17 @@ class _AccountSwitcherSheet extends StatelessWidget {
                     leading: ProfileAvatar(size: 40, fallbackText: label),
                     title: Text(label),
                     subtitle: Text('@${account.handle}'),
-                    trailing: isActive ? const Icon(Icons.check) : null,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isActive) const Icon(Icons.check),
+                        IconButton(
+                          tooltip: 'Remove account',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _onRemoveAccount(context, account.did, account.handle),
+                        ),
+                      ],
+                    ),
                     onTap: isActive ? null : () => _onSwitchAccount(context, account.did),
                   );
                 },
@@ -136,7 +150,11 @@ class _AccountSwitcherSheet extends StatelessWidget {
     }
 
     if (parentContext.mounted) {
-      showAppSnackBar(parentContext, 'Unable to switch accounts. Sign in again for that account.');
+      showAppSnackBar(parentContext, 'Please sign in again for that account.');
+      final router = GoRouter.maybeOf(parentContext);
+      if (router != null) {
+        unawaited(Future<void>.delayed(Duration.zero, () => router.go('/login?reauth=1')));
+      }
     }
   }
 
@@ -201,6 +219,45 @@ class _AccountSwitcherSheet extends StatelessWidget {
       authBloc.add(SessionRestored(tokens: tokens));
     } else if (parentContext.mounted) {
       showAppSnackBar(parentContext, cubit.lastAddAccountErrorMessage ?? 'Failed to add account', isError: true);
+    }
+  }
+
+  Future<void> _onRemoveAccount(BuildContext context, String did, String handle) async {
+    final cubit = context.read<AccountSwitcherCubit>();
+    final remove = await showDialog<bool>(
+      context: parentContext,
+      builder: (dialogContext) => ConfirmationDialog(
+        title: const Text('Remove Account'),
+        content: Text('Remove @$handle from this device?'),
+        confirmLabel: 'Remove',
+        onCancel: () => Navigator.pop(dialogContext, false),
+        onConfirm: () => Navigator.pop(dialogContext, true),
+      ),
+    );
+
+    if (remove != true) {
+      return;
+    }
+
+    final result = await cubit.removeAccount(did);
+    if (!result.removed) {
+      if (parentContext.mounted) {
+        showAppSnackBar(parentContext, 'Unable to remove account right now.', isError: true);
+      }
+      return;
+    }
+
+    final switchedTokens = result.switchedTokens;
+    if (switchedTokens != null) {
+      authBloc.add(SessionRestored(tokens: switchedTokens));
+    }
+
+    if (result.requiresSignIn && parentContext.mounted) {
+      Navigator.pop(context);
+      final router = GoRouter.maybeOf(parentContext);
+      if (router != null) {
+        router.go('/login?reauth=1');
+      }
     }
   }
 }

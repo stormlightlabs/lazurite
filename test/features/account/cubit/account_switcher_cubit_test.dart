@@ -400,5 +400,82 @@ void main() {
         verifyNever(() => mockDatabase.insertAccount(any()));
       });
     });
+
+    group('removeAccount', () {
+      test('removes inactive account and reloads accounts', () async {
+        when(() => mockDatabase.getAccount('did:plc:user2')).thenAnswer((_) async => makeAccount(did: 'did:plc:user2'));
+        when(() => mockDatabase.deleteAccount('did:plc:user2')).thenAnswer((_) async => 1);
+        when(
+          () => mockDatabase.getAllAccounts(),
+        ).thenAnswer((_) async => [makeAccount(did: 'did:plc:user1'), makeAccount(did: 'did:plc:user3')]);
+        when(() => mockDatabase.getSetting(any())).thenAnswer((_) async => 'did:plc:user1');
+
+        final cubit = buildCubit();
+        cubit.emit(
+          AccountSwitcherState.ready(
+            accounts: [
+              makeAccount(did: 'did:plc:user1'),
+              makeAccount(did: 'did:plc:user2'),
+            ],
+            activeDid: 'did:plc:user1',
+          ),
+        );
+
+        final result = await cubit.removeAccount('did:plc:user2');
+
+        expect(result.removed, isTrue);
+        expect(result.requiresSignIn, isFalse);
+        expect(result.switchedTokens, isNull);
+        verify(() => mockDatabase.deleteAccount('did:plc:user2')).called(1);
+      });
+
+      test('removing active account switches to remaining account', () async {
+        when(() => mockDatabase.getAccount('did:plc:user1')).thenAnswer((_) async => makeAccount(did: 'did:plc:user1'));
+        when(() => mockDatabase.deleteAccount('did:plc:user1')).thenAnswer((_) async => 1);
+        when(() => mockDatabase.getAllAccounts()).thenAnswer((_) async => [makeAccount(did: 'did:plc:user2')]);
+        when(() => mockDatabase.getAccount('did:plc:user2')).thenAnswer((_) async => makeAccount(did: 'did:plc:user2'));
+        when(() => mockDatabase.setSetting(any(), any())).thenAnswer((_) async => 1);
+        when(() => mockDatabase.getSetting(any())).thenAnswer((_) async => 'did:plc:user2');
+
+        final cubit = buildCubit();
+        cubit.emit(
+          AccountSwitcherState.ready(
+            accounts: [
+              makeAccount(did: 'did:plc:user1'),
+              makeAccount(did: 'did:plc:user2'),
+            ],
+            activeDid: 'did:plc:user1',
+          ),
+        );
+
+        final result = await cubit.removeAccount('did:plc:user1');
+
+        expect(result.removed, isTrue);
+        expect(result.requiresSignIn, isFalse);
+        expect(result.switchedTokens?.did, equals('did:plc:user2'));
+      });
+
+      test('removing last account requires sign-in', () async {
+        when(() => mockDatabase.getAccount('did:plc:user1')).thenAnswer((_) async => makeAccount(did: 'did:plc:user1'));
+        when(() => mockDatabase.deleteAccount('did:plc:user1')).thenAnswer((_) async => 1);
+        when(() => mockDatabase.getAllAccounts()).thenAnswer((_) async => []);
+        when(() => mockDatabase.deleteSetting(any())).thenAnswer((_) async => 1);
+        when(() => mockDatabase.getSetting(any())).thenAnswer((_) async => null);
+
+        final cubit = buildCubit();
+        cubit.emit(
+          AccountSwitcherState.ready(
+            accounts: [makeAccount(did: 'did:plc:user1')],
+            activeDid: 'did:plc:user1',
+          ),
+        );
+
+        final result = await cubit.removeAccount('did:plc:user1');
+
+        expect(result.removed, isTrue);
+        expect(result.requiresSignIn, isTrue);
+        expect(result.switchedTokens, isNull);
+      });
+    });
   });
 }

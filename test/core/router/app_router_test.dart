@@ -488,6 +488,20 @@ void main() {
     router.dispose();
   });
 
+  testWidgets('allows authenticated access to login route when reauth query is present', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    await tester.pumpAndSettle();
+
+    router.go('/login?reauth=1');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Continue'), findsOneWidget);
+
+    router.dispose();
+  });
+
   testWidgets('processes oauth callback route while authenticated', (tester) async {
     final router = AppRouter(authBloc: authBloc).router;
     final pendingCallback = Completer<bool>();

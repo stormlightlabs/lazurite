@@ -104,13 +104,14 @@ class AppRouter {
       final path = state.uri.path;
       final publicPaths = {'/login', '/terms', '/privacy', OAuthCallbackScreen.routePath};
       final isLoggingIn = path == '/login';
+      final isReauthLogin = state.uri.queryParameters['reauth'] == '1';
       final isPublicPath = publicPaths.contains(path);
 
       if (!isAuthenticated && !isPublicPath) {
         return '/login';
       }
 
-      if (isAuthenticated && isLoggingIn) {
+      if (isAuthenticated && isLoggingIn && !isReauthLogin) {
         return '/';
       }
 
