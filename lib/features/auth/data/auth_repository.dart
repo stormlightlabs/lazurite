@@ -572,7 +572,7 @@ class AuthRepository {
 
   Future<({String did, String? pdsHost})> _resolveIdentityForIdentifier(String identifier) async {
     final normalizedIdentifier = normalizeAtProtoIdentifierForAuth(identifier);
-    if (normalizedIdentifier.startsWith('did:')) {
+    if (normalizedIdentifier.toLowerCase().startsWith('did:')) {
       return (did: normalizedIdentifier, pdsHost: null);
     }
 
@@ -708,11 +708,12 @@ class AuthRepository {
   }
 
   Uri _didDocumentUri(String did) {
-    if (did.startsWith('did:plc:')) {
+    final didLower = did.toLowerCase();
+    if (didLower.startsWith('did:plc:')) {
       return Uri.https('plc.directory', '/$did');
     }
 
-    if (did.startsWith('did:web:')) {
+    if (didLower.startsWith('did:web:')) {
       final encodedSegments = did.substring('did:web:'.length).split(':');
       if (encodedSegments.isEmpty || encodedSegments.first.isEmpty) {
         throw Exception('Invalid did:web identifier: $did');

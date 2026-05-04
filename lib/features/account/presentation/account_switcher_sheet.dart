@@ -56,6 +56,8 @@ class _AccountSwitcherSheet extends StatelessWidget {
   final BuildContext parentContext;
   final TypeaheadRepository typeaheadRepository;
 
+  static bool _isIdentifierInputValid(String value) => validateAtProtoIdentifierInput(value) == null;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -196,7 +198,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
               ),
             ),
           ),
-          confirmEnabled: controller.text.trim().isNotEmpty,
+          confirmEnabled: _isIdentifierInputValid(controller.text.trim()),
           confirmLabel: 'Continue',
           onCancel: () => Navigator.pop(dialogContext),
           onConfirm: () {

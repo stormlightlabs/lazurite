@@ -455,6 +455,34 @@ void main() {
         expect(result.switchedTokens?.did, equals('did:plc:user2'));
       });
 
+      test('removing active account does not refresh/invalidate remaining expired accounts', () async {
+        final expiredAt = DateTime.now().subtract(const Duration(hours: 1));
+        when(() => mockDatabase.getAccount('did:plc:user1')).thenAnswer((_) async => makeAccount(did: 'did:plc:user1'));
+        when(() => mockDatabase.deleteAccount('did:plc:user1')).thenAnswer((_) async => 1);
+        when(
+          () => mockDatabase.getAllAccounts(),
+        ).thenAnswer((_) async => [makeAccount(did: 'did:plc:user2', expiresAt: expiredAt, refreshToken: 'refresh')]);
+        when(() => mockDatabase.deleteSetting(any())).thenAnswer((_) async => 1);
+        when(() => mockDatabase.getSetting(any())).thenAnswer((_) async => null);
+
+        final cubit = buildCubit();
+        cubit.emit(
+          AccountSwitcherState.ready(
+            accounts: [
+              makeAccount(did: 'did:plc:user1'),
+              makeAccount(did: 'did:plc:user2'),
+            ],
+            activeDid: 'did:plc:user1',
+          ),
+        );
+
+        final result = await cubit.removeAccount('did:plc:user1');
+
+        expect(result.removed, isTrue);
+        expect(result.requiresSignIn, isTrue);
+        verifyNever(() => mockAuthRepository.refreshSession(any()));
+      });
+
       test('removing last account requires sign-in', () async {
         when(() => mockDatabase.getAccount('did:plc:user1')).thenAnswer((_) async => makeAccount(did: 'did:plc:user1'));
         when(() => mockDatabase.deleteAccount('did:plc:user1')).thenAnswer((_) async => 1);
@@ -475,6 +503,24 @@ void main() {
         expect(result.removed, isTrue);
         expect(result.requiresSignIn, isTrue);
         expect(result.switchedTokens, isNull);
+      });
+
+      test('returns failed when removeAccount hits database exception', () async {
+        when(() => mockDatabase.getAccount('did:plc:user1')).thenAnswer((_) async => makeAccount(did: 'did:plc:user1'));
+        when(() => mockDatabase.deleteAccount('did:plc:user1')).thenThrow(Exception('db write failed'));
+
+        final cubit = buildCubit();
+        cubit.emit(
+          AccountSwitcherState.ready(
+            accounts: [makeAccount(did: 'did:plc:user1')],
+            activeDid: 'did:plc:user1',
+          ),
+        );
+
+        final result = await cubit.removeAccount('did:plc:user1');
+
+        expect(result.removed, isFalse);
+        expect(result.requiresSignIn, isFalse);
       });
     });
   });

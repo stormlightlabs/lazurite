@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 
@@ -64,6 +65,33 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
     final account = await _database.getAccount(did);
     if (account == null) return null;
 
+    return _switchToAccount(account, allowRefresh: true);
+  }
+
+  Future<AuthTokens?> _switchToAccount(Account account, {required bool allowRefresh}) async {
+    final did = account.did;
+    final tokens = _tokensFromAccount(account);
+
+    try {
+      final nextTokens = tokens.isExpired
+          ? !allowRefresh || tokens.refreshToken == null
+                ? null
+                : await _authRepository.refreshSession(tokens)
+          : tokens;
+
+      if (nextTokens == null) {
+        return null;
+      }
+
+      await _database.setSetting(AppDatabase.activeAccountDidSettingKey, did);
+      emit(state.copyWith(activeDid: did));
+      return nextTokens;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  AuthTokens _tokensFromAccount(Account account) {
     final tokens = AuthTokens(
       accessToken: account.accessToken,
       refreshToken: account.refreshToken,
@@ -81,23 +109,7 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
           : AuthMethod.appPassword,
     );
 
-    try {
-      final nextTokens = tokens.isExpired
-          ? tokens.refreshToken == null
-                ? null
-                : await _authRepository.refreshSession(tokens)
-          : tokens;
-
-      if (nextTokens == null) {
-        return null;
-      }
-
-      await _database.setSetting(AppDatabase.activeAccountDidSettingKey, did);
-      emit(state.copyWith(activeDid: did));
-      return nextTokens;
-    } catch (_) {
-      return null;
-    }
+    return tokens;
   }
 
   Future<AuthTokens?> addAccountWithOAuth(String handle) async {
@@ -145,40 +157,45 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
   }
 
   Future<AccountRemovalResult> removeAccount(String did) async {
-    if (state.status != AccountSwitcherStatus.ready) {
-      return const AccountRemovalResult.failed();
-    }
+    try {
+      if (state.status != AccountSwitcherStatus.ready) {
+        return const AccountRemovalResult.failed();
+      }
 
-    final account = await _database.getAccount(did);
-    if (account == null) {
-      return const AccountRemovalResult.failed();
-    }
+      final account = await _database.getAccount(did);
+      if (account == null) {
+        return const AccountRemovalResult.failed();
+      }
 
-    final wasActive = state.activeDid == did;
-    await _database.deleteAccount(did);
+      final wasActive = state.activeDid == did;
+      await _database.deleteAccount(did);
 
-    if (!wasActive) {
-      await loadAccounts();
-      return const AccountRemovalResult.removed();
-    }
+      if (!wasActive) {
+        await loadAccounts();
+        return const AccountRemovalResult.removed();
+      }
 
-    final remainingAccounts = await _database.getAllAccounts();
-    if (remainingAccounts.isEmpty) {
+      final remainingAccounts = await _database.getAllAccounts();
+      if (remainingAccounts.isEmpty) {
+        await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
+        await loadAccounts();
+        return const AccountRemovalResult.requiresSignIn();
+      }
+
+      for (final remaining in remainingAccounts) {
+        final switchedTokens = await _switchToAccount(remaining, allowRefresh: false);
+        if (switchedTokens != null) {
+          await loadAccounts();
+          return AccountRemovalResult.switched(switchedTokens);
+        }
+      }
+
       await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
       await loadAccounts();
       return const AccountRemovalResult.requiresSignIn();
+    } catch (error, stackTrace) {
+      log.w('AccountSwitcherCubit: Failed to remove account $did', error: error, stackTrace: stackTrace);
+      return const AccountRemovalResult.failed();
     }
-
-    for (final remaining in remainingAccounts) {
-      final switchedTokens = await switchAccount(remaining.did);
-      if (switchedTokens != null) {
-        await loadAccounts();
-        return AccountRemovalResult.switched(switchedTokens);
-      }
-    }
-
-    await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
-    await loadAccounts();
-    return const AccountRemovalResult.requiresSignIn();
   }
 }

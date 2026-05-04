@@ -99,7 +99,7 @@ void main() {
       });
 
       test('accepts supported did methods', () {
-        expect(validateAtProtoIdentifierInput('did:plc:abc123'), isNull);
+        expect(validateAtProtoIdentifierInput('did:plc:ewvi7nxzyoun6zhxrhs64oiz'), isNull);
         expect(validateAtProtoIdentifierInput('did:web:example.com'), isNull);
       });
 
@@ -233,6 +233,21 @@ void main() {
       await tester.enterText(find.byType(TextFormField), 'not-a-handle');
       await tester.tap(find.text('Continue'));
       await tester.pump();
+      verifyNever(() => cubit.addAccountWithOAuth(any()));
+    });
+
+    testWidgets('add-account Continue button stays disabled for invalid identifier', (tester) async {
+      when(() => cubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
+
+      await openSheet(tester);
+      await tester.tap(find.text('Add Account'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextFormField), 'not-a-handle');
+      await tester.pump();
+
+      final continueButton = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Continue'));
+      expect(continueButton.onPressed, isNull);
       verifyNever(() => cubit.addAccountWithOAuth(any()));
     });
 

@@ -102,5 +102,13 @@ void main() {
       act: (bloc) => bloc.add(const CheckSessionRequested()),
       expect: () => [const AuthState.authenticating(), const AuthState.authenticated(tokens)],
     );
+
+    blocTest<AuthBloc, AuthState>(
+      'emits [unauthenticated] when SessionCleared is added',
+      build: () => AuthBloc(authRepository: mockAuthRepository),
+      seed: () => const AuthState.authenticated(tokens),
+      act: (bloc) => bloc.add(const SessionCleared()),
+      expect: () => [const AuthState.unauthenticated()],
+    );
   });
 }
