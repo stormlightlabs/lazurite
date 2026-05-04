@@ -69,15 +69,17 @@ class PostCardFooter extends StatelessWidget {
     const horizontalPadding = 8.0;
     const topPadding = 6.0;
     const bottomPadding = 4.0;
-    const iconSize = 18.0;
+    const iconSize = 20.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compactLayout = constraints.maxWidth < 220;
+        final compactLayout = constraints.maxWidth < 240;
         final actionSpacing = compactLayout ? 4.0 : 8.0;
-        final actionPadding = compactLayout ? 1.5 : 3.0;
+        final actionHorizontalPadding = compactLayout ? 6.0 : 8.0;
+        final actionVerticalPadding = compactLayout ? 6.0 : 8.0;
+        final minimumTapTarget = compactLayout ? 40.0 : 44.0;
         final canShowCounts = showCounts && constraints.maxWidth >= 240;
-        final actions = [
+        final actions = <Widget>[
           _FooterAction(
             icon: Icons.chat_bubble_outline,
             activeIcon: Icons.chat_bubble,
@@ -87,7 +89,9 @@ class PostCardFooter extends StatelessWidget {
             onTap: isOffline ? null : onReply,
             color: colorScheme.onSurfaceVariant,
             iconSize: iconSize,
-            padding: actionPadding,
+            horizontalPadding: actionHorizontalPadding,
+            verticalPadding: actionVerticalPadding,
+            minTapTarget: minimumTapTarget,
             showCount: canShowCounts,
             tooltip: isOffline ? offlineActionMessage('reply to this post') : null,
           ),
@@ -102,7 +106,9 @@ class PostCardFooter extends StatelessWidget {
             color: colorScheme.onSurfaceVariant,
             activeColor: Colors.green,
             iconSize: iconSize,
-            padding: actionPadding,
+            horizontalPadding: actionHorizontalPadding,
+            verticalPadding: actionVerticalPadding,
+            minTapTarget: minimumTapTarget,
             showCount: canShowCounts,
             tooltip: isOffline ? offlineActionMessage('repost this post') : null,
           ),
@@ -116,7 +122,9 @@ class PostCardFooter extends StatelessWidget {
             color: colorScheme.onSurfaceVariant,
             activeColor: Colors.pink,
             iconSize: iconSize,
-            padding: actionPadding,
+            horizontalPadding: actionHorizontalPadding,
+            verticalPadding: actionVerticalPadding,
+            minTapTarget: minimumTapTarget,
             showCount: canShowCounts,
             tooltip: isOffline ? offlineActionMessage('like this post') : null,
           ),
@@ -131,23 +139,20 @@ class PostCardFooter extends StatelessWidget {
             color: colorScheme.onSurfaceVariant,
             activeColor: saveActiveColor,
             iconSize: iconSize,
-            padding: actionPadding,
+            horizontalPadding: actionHorizontalPadding,
+            verticalPadding: actionVerticalPadding,
+            minTapTarget: minimumTapTarget,
             showCount: canShowCounts,
           ),
-          if (onMore != null)
-            _FooterAction(
-              icon: Icons.more_vert,
-              activeIcon: Icons.more_vert,
-              isActive: false,
-              isLoading: false,
-              count: 0,
-              onTap: onMore,
-              color: colorScheme.onSurfaceVariant,
-              iconSize: iconSize,
-              padding: actionPadding,
-              showCount: false,
-            ),
         ];
+        final trailingMeta = _buildTrailingMeta(
+          context: context,
+          colorScheme: colorScheme,
+          iconSize: iconSize,
+          actionHorizontalPadding: actionHorizontalPadding,
+          actionVerticalPadding: actionVerticalPadding,
+          minimumTapTarget: minimumTapTarget,
+        );
 
         return Container(
           decoration: BoxDecoration(
@@ -165,7 +170,7 @@ class PostCardFooter extends StatelessWidget {
                       children: actions,
                     ),
                     const SizedBox(height: 4),
-                    Align(alignment: Alignment.centerRight, child: _buildTimestamp(context, colorScheme)),
+                    Align(alignment: Alignment.centerRight, child: trailingMeta),
                   ],
                 )
               : Row(
@@ -173,7 +178,7 @@ class PostCardFooter extends StatelessWidget {
                     for (int i = 0; i < actions.length; i++) ...[if (i > 0) SizedBox(width: actionSpacing), actions[i]],
                     SizedBox(width: actionSpacing),
                     Expanded(
-                      child: Align(alignment: Alignment.centerRight, child: _buildTimestamp(context, colorScheme)),
+                      child: Align(alignment: Alignment.centerRight, child: trailingMeta),
                     ),
                   ],
                 ),
@@ -218,6 +223,40 @@ class PostCardFooter extends StatelessWidget {
     );
   }
 
+  Widget _buildTrailingMeta({
+    required BuildContext context,
+    required ColorScheme colorScheme,
+    required double iconSize,
+    required double actionHorizontalPadding,
+    required double actionVerticalPadding,
+    required double minimumTapTarget,
+  }) {
+    return Row(
+      key: const ValueKey('post_footer_trailing_meta'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildTimestamp(context, colorScheme),
+        if (onMore != null) ...[
+          const SizedBox(width: 2),
+          _FooterAction(
+            icon: Icons.more_vert,
+            activeIcon: Icons.more_vert,
+            isActive: false,
+            isLoading: false,
+            count: 0,
+            onTap: onMore,
+            color: colorScheme.onSurfaceVariant,
+            iconSize: iconSize,
+            horizontalPadding: actionHorizontalPadding,
+            verticalPadding: actionVerticalPadding,
+            minTapTarget: minimumTapTarget,
+            showCount: false,
+          ),
+        ],
+      ],
+    );
+  }
+
   void _showSaveOptions(BuildContext context) {
     HapticHelper.mediumImpact();
     final isLocalSaved = isSaved && (saveType == 'local' || saveType == 'both');
@@ -254,7 +293,9 @@ class _FooterAction extends StatelessWidget {
     required this.isActive,
     required this.isLoading,
     required this.iconSize,
-    required this.padding,
+    required this.horizontalPadding,
+    required this.verticalPadding,
+    required this.minTapTarget,
     required this.count,
     required this.showCount,
     this.onTap,
@@ -269,7 +310,9 @@ class _FooterAction extends StatelessWidget {
   final bool isActive;
   final bool isLoading;
   final double iconSize;
-  final double padding;
+  final double horizontalPadding;
+  final double verticalPadding;
+  final double minTapTarget;
   final int count;
   final bool showCount;
   final VoidCallback? onTap;
@@ -286,25 +329,28 @@ class _FooterAction extends StatelessWidget {
     Widget button = InkWell(
       onTap: isLoading ? null : onTap,
       onLongPress: onLongPress,
-      borderRadius: BorderRadius.zero,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isLoading)
-              SizedBox(
-                width: iconSize,
-                height: iconSize,
-                child: CircularProgressIndicator(strokeWidth: 2, color: iconColor),
-              )
-            else
-              Icon(isActive ? activeIcon : icon, size: iconSize, color: iconColor),
-            if (showCount && count > 0) ...[
-              const SizedBox(width: 4),
-              Text(formatCount(count), style: context.textTheme.bodySmall?.copyWith(color: iconColor)),
+      borderRadius: BorderRadius.circular(8),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minWidth: minTapTarget, minHeight: minTapTarget),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoading)
+                SizedBox(
+                  width: iconSize,
+                  height: iconSize,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: iconColor),
+                )
+              else
+                Icon(isActive ? activeIcon : icon, size: iconSize, color: iconColor),
+              if (showCount && count > 0) ...[
+                const SizedBox(width: 4),
+                Text(formatCount(count), style: context.textTheme.bodySmall?.copyWith(color: iconColor)),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

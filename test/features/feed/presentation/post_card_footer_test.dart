@@ -133,9 +133,14 @@ void main() {
     testWidgets('has a top border via BoxDecoration', (tester) async {
       await tester.pumpWidget(_buildSubject(const PostCardFooter(timestamp: '1H')));
 
-      final container = tester.widget<Container>(
-        find.ancestor(of: find.byType(Row), matching: find.byType(Container)).first,
+      final containerFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is Container &&
+            widget.decoration is BoxDecoration &&
+            ((widget.decoration as BoxDecoration).border?.top.width ?? 0) > 0,
       );
+      expect(containerFinder, findsOneWidget);
+      final container = tester.widget<Container>(containerFinder);
       final decoration = container.decoration as BoxDecoration?;
       expect(decoration?.border, isNotNull);
     });
@@ -221,6 +226,51 @@ void main() {
     testWidgets('shows kebab action when onMore is provided', (tester) async {
       await tester.pumpWidget(_buildSubject(PostCardFooter(timestamp: '1H', onMore: () {})));
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
+    });
+
+    testWidgets('keeps kebab to the right of timestamp in trailing meta area', (tester) async {
+      await tester.pumpWidget(_buildSubject(PostCardFooter(timestamp: '1H', onMore: () {})));
+
+      final timestampRight = tester.getTopRight(find.text('1H')).dx;
+      final kebabLeft = tester.getTopLeft(find.byIcon(Icons.more_vert)).dx;
+      expect(kebabLeft, greaterThan(timestampRight));
+    });
+
+    testWidgets('uses larger tap target for post actions', (tester) async {
+      await tester.pumpWidget(_buildSubject(const PostCardFooter(timestamp: '1H')));
+
+      final replyTapTargetFinder = find.ancestor(
+        of: find.byIcon(Icons.chat_bubble_outline),
+        matching: find.byType(InkWell),
+      );
+      final tapTargetSize = tester.getSize(replyTapTargetFinder.first);
+      expect(tapTargetSize.width, greaterThanOrEqualTo(40));
+      expect(tapTargetSize.height, greaterThanOrEqualTo(40));
+    });
+
+    testWidgets('keeps action tap callbacks isolated', (tester) async {
+      var replyTaps = 0;
+      var repostTaps = 0;
+      var likeTaps = 0;
+
+      await tester.pumpWidget(
+        _buildSubject(
+          PostCardFooter(
+            timestamp: '1H',
+            onReply: () => replyTaps++,
+            onRepost: () => repostTaps++,
+            onLike: () => likeTaps++,
+          ),
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.chat_bubble_outline));
+      await tester.tap(find.byIcon(Icons.repeat));
+      await tester.tap(find.byIcon(Icons.favorite_outline));
+
+      expect(replyTaps, 1);
+      expect(repostTaps, 1);
+      expect(likeTaps, 1);
     });
   });
 }
