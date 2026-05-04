@@ -59,7 +59,6 @@ class AuthRepository {
   static const String _mobileOAuthRedirectScheme = 'org.stormlightlabs.lazurite';
   static const String _mobileOAuthRedirectPath = '/oauth/callback';
   static final Uri _mobileOAuthRedirectUri = Uri.parse('$_mobileOAuthRedirectScheme:$_mobileOAuthRedirectPath');
-  static final Uri _appReopenUri = Uri.parse('lazurite://auth-complete');
 
   final AppDatabase _database;
   final LaunchUrlWithMode _launchUrlWithMode;
@@ -73,9 +72,6 @@ class AuthRepository {
   final Future<String> Function(String handle)? _resolveHandleDid;
   final Future<Map<String, dynamic>> Function(String did)? _resolveDidDocumentOverride;
 
-  HttpServer? _callbackServer;
-  StreamSubscription<HttpRequest>? _callbackSubscription;
-  int _callbackServerPort = 0;
   Completer<AuthTokens?>? _oauthCompleter;
   OAuthClient? _pendingOAuthClient;
   OAuthContext? _pendingOAuthContext;
@@ -193,13 +189,8 @@ class AuthRepository {
 
       final metadata = await _loadClientMetadata(kClientId);
       log.d('AuthRepository: Loaded client metadata with redirect URIs: ${metadata.redirectUris.join(', ')}');
-      final redirectUriTemplate = _selectOAuthRedirectUriTemplate(metadata.redirectUris);
-      final usesLoopbackRedirect = _isSupportedLoopbackRedirect(redirectUriTemplate);
-      final redirectUri =
-          usesLoopbackRedirect ? await _startCallbackServer(redirectUriTemplate) : redirectUriTemplate;
-      if (!usesLoopbackRedirect) {
-        log.i('AuthRepository: Using custom-scheme OAuth callback redirect ${_sanitizeUriForLog(redirectUri)}');
-      }
+      final redirectUri = _selectOAuthRedirectUriTemplate(metadata.redirectUris);
+      log.i('AuthRepository: Using custom-scheme OAuth callback redirect ${_sanitizeUriForLog(redirectUri)}');
 
       Object? lastAttemptError;
       StackTrace? lastAttemptStackTrace;
@@ -222,8 +213,7 @@ class AuthRepository {
           return await _oauthCompleter!.future.timeout(
             const Duration(minutes: 3),
             onTimeout: () => throw TimeoutException(
-              'Timed out waiting for OAuth callback on '
-              '${usesLoopbackRedirect ? 'local loopback listener' : 'custom scheme redirect'}',
+              'Timed out waiting for OAuth callback on custom scheme redirect',
             ),
           );
         } catch (error, stackTrace) {
@@ -248,7 +238,6 @@ class AuthRepository {
       );
     } catch (error, stackTrace) {
       log.e('AuthRepository: OAuth login failed', error: error, stackTrace: stackTrace);
-      await _stopCallbackServer();
       _resetPendingOAuthState();
       throw Exception('Failed to login with OAuth: $error');
     } finally {
@@ -419,74 +408,6 @@ class AuthRepository {
     }
   }
 
-  Future<Uri> _startCallbackServer(Uri redirectUriTemplate) async {
-    if (!_isSupportedLoopbackRedirect(redirectUriTemplate)) {
-      throw UnsupportedError(
-        'Unsupported OAuth redirect URI: $redirectUriTemplate. '
-        'Lazurite currently supports only loopback HTTP redirects.',
-      );
-    }
-
-    await _stopCallbackServer();
-
-    final requestedPort = _requestedCallbackPort(redirectUriTemplate);
-    log.d(
-      'AuthRepository: Binding OAuth callback server to '
-      '${InternetAddress.loopbackIPv4.address}:${requestedPort == 0 ? 'ephemeral' : requestedPort} '
-      'for ${redirectUriTemplate.path}',
-    );
-
-    final callbackServer = await HttpServer.bind(InternetAddress.loopbackIPv4, requestedPort);
-    _callbackServer = callbackServer;
-    _callbackServerPort = callbackServer.port;
-    final redirectUri = redirectUriTemplate.replace(
-      host: InternetAddress.loopbackIPv4.address,
-      port: callbackServer.port,
-    );
-    log.i('AuthRepository: OAuth callback server listening on ${_sanitizeUriForLog(redirectUri)}');
-
-    _callbackSubscription = callbackServer.listen(
-      (request) {
-        unawaited(_handleCallbackRequest(request, redirectUri));
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        log.e('AuthRepository: OAuth callback server stream failed', error: error, stackTrace: stackTrace);
-      },
-    );
-
-    return redirectUri;
-  }
-
-  Future<void> _handleCallbackRequest(HttpRequest request, Uri redirectUri) async {
-    final uri = request.requestedUri;
-    log.d(
-      'AuthRepository: OAuth callback request received at '
-      '${uri.path} with query keys: ${uri.queryParameters.keys.join(', ')}',
-    );
-
-    if (uri.path != redirectUri.path) {
-      request.response.statusCode = HttpStatus.notFound;
-      await request.response.close();
-      return;
-    }
-
-    await _callbackSubscription?.cancel();
-    _callbackSubscription = null;
-
-    final callbackPageHtml = buildCallbackPageHtmlForTest();
-    final callbackBody = utf8.encode(callbackPageHtml);
-    request.response
-      ..statusCode = HttpStatus.ok
-      ..headers.contentType = ContentType.html
-      ..headers.contentLength = callbackBody.length
-      ..write(callbackPageHtml);
-    await request.response.close();
-
-    final callbackUrl = uri.replace(scheme: redirectUri.scheme, host: redirectUri.host, port: redirectUri.port);
-
-    await completeOAuthCallbackFromUri(callbackUrl);
-  }
-
   Future<AuthTokens> _handleOAuthCallback(String callbackUrl) async {
     final oauthClient = _pendingOAuthClient;
     final oauthContext = _pendingOAuthContext;
@@ -546,7 +467,6 @@ class AuthRepository {
       }
       return false;
     } finally {
-      await _stopCallbackServer();
       _resetPendingOAuthState();
     }
   }
@@ -602,30 +522,6 @@ class AuthRepository {
       dpopPrivateKey: session.$privateKey,
       authMethod: AuthMethod.oauth,
     );
-  }
-
-  Future<void> _stopCallbackServer() async {
-    final callbackSubscription = _callbackSubscription;
-    final callbackServer = _callbackServer;
-    final callbackServerPort = _callbackServerPort;
-
-    _callbackSubscription = null;
-    _callbackServer = null;
-    _callbackServerPort = 0;
-
-    if (callbackServerPort > 0) {
-      log.d('AuthRepository: Stopping OAuth callback server on port $callbackServerPort');
-    }
-    await callbackSubscription?.cancel();
-    if (callbackServer == null) {
-      return;
-    }
-
-    try {
-      await callbackServer.close(force: true);
-    } on HttpException catch (error, stackTrace) {
-      log.w('AuthRepository: OAuth callback server was already closed', error: error, stackTrace: stackTrace);
-    }
   }
 
   Future<String> _resolveServiceForIdentifier(String identifier) async {
@@ -865,16 +761,12 @@ class AuthRepository {
     await _dismissOAuthBrowserIfNeeded();
   }
 
-  bool _isSupportedLoopbackRedirect(Uri redirectUri) {
-    return redirectUri.scheme == 'http' && _isLoopbackHost(redirectUri.host);
-  }
-
   bool _isSupportedCustomSchemeRedirect(Uri redirectUri) {
     return redirectUri.scheme == _mobileOAuthRedirectScheme && redirectUri.path == _mobileOAuthRedirectPath;
   }
 
   Uri? _normalizeOAuthCallbackUri(Uri callbackUri) {
-    if (_isSupportedLoopbackRedirect(callbackUri) || _isSupportedCustomSchemeRedirect(callbackUri)) {
+    if (_isSupportedCustomSchemeRedirect(callbackUri)) {
       return callbackUri;
     }
 
@@ -896,44 +788,16 @@ class AuthRepository {
       throw UnsupportedError('OAuth client metadata does not declare any redirect URIs.');
     }
 
-    final prefersCustomScheme =
-        !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
-    if (prefersCustomScheme) {
-      for (final candidate in candidates) {
-        if (_isSupportedCustomSchemeRedirect(candidate)) {
-          return candidate;
-        }
-      }
-    }
-
     for (final candidate in candidates) {
-      if (_isSupportedLoopbackRedirect(candidate)) {
+      if (_isSupportedCustomSchemeRedirect(candidate)) {
         return candidate;
       }
     }
 
-    if (prefersCustomScheme) {
-      throw UnsupportedError(
-        'No supported OAuth redirect URI found. Mobile builds require '
-        '${_mobileOAuthRedirectUri.toString()} or an HTTP loopback redirect.',
-      );
-    }
-
     throw UnsupportedError(
-      'No supported OAuth redirect URI found. Supported redirects are HTTP loopback callbacks.',
+      'No supported OAuth redirect URI found. Lazurite currently requires '
+      '${_mobileOAuthRedirectUri.toString()}.',
     );
-  }
-
-  bool _isLoopbackHost(String host) {
-    return host == '127.0.0.1' || host == 'localhost';
-  }
-
-  int _requestedCallbackPort(Uri redirectUri) {
-    if (!redirectUri.hasPort) {
-      return 0;
-    }
-
-    return redirectUri.port < 1024 ? 0 : redirectUri.port;
   }
 
   String _sanitizeUriForLog(Uri uri) {
@@ -955,9 +819,6 @@ class AuthRepository {
     _pendingService = null;
     _oauthLaunchMode = null;
   }
-
-  @visibleForTesting
-  String buildCallbackPageHtmlForTest() => _buildCallbackPageHtml(_appReopenUri);
 
   OAuthSession _restoreOAuthSession({
     required AuthTokens currentSession,
@@ -1071,122 +932,5 @@ class AuthRepository {
   }
 
   @visibleForTesting
-  Future<Uri> startCallbackServerForTest(Uri redirectUriTemplate) => _startCallbackServer(redirectUriTemplate);
-
-  @visibleForTesting
-  Future<void> stopCallbackServerForTest() => _stopCallbackServer();
-
-  @visibleForTesting
   Future<String> resolveServiceForIdentifierForTest(String identifier) => _resolveServiceForIdentifier(identifier);
-
-  int get callbackPort => _callbackServerPort;
-}
-
-String _buildCallbackPageHtml(Uri reopenUri) {
-  final escapedReopenUrl = const HtmlEscape(HtmlEscapeMode.element).convert(reopenUri.toString());
-  return '''
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lazurite Authentication Complete</title>
-    <style>
-      body {
-        align-items: center;
-        background: #161616;
-        color: #f2f4f8;
-        display: flex;
-        font-family: system-ui, sans-serif;
-        justify-content: center;
-        margin: 0;
-        min-height: 100vh;
-        padding: 24px;
-        text-align: center;
-      }
-
-      main {
-        max-width: 420px;
-      }
-
-      h1 {
-        font-size: 28px;
-        margin-bottom: 12px;
-      }
-
-      p {
-        color: #dde1e6;
-        line-height: 1.5;
-        margin: 0 0 12px;
-      }
-
-      .button-link {
-        appearance: none;
-        background: #0f62fe;
-        border: 0;
-        border-radius: 999px;
-        color: white;
-        cursor: pointer;
-        display: inline-block;
-        font: inherit;
-        font-weight: 600;
-        padding: 12px 20px;
-      }
-
-      a { text-decoration: none; }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>Authentication Complete</h1>
-      <p>Lazurite is finishing sign-in. If it does not reopen automatically, tap the button below.</p>
-      <a id="reopen-link" class="button-link" href="$escapedReopenUrl">Return to Lazurite</a>
-    </main>
-    <iframe
-      id="reopen-frame"
-      title="Return to Lazurite"
-      style="display: none; width: 0; height: 0; border: 0"
-    ></iframe>
-    <script>
-      const reopenUrl = '$escapedReopenUrl';
-      let reopenAttempts = 0;
-
-      function attemptReopen() {
-        reopenAttempts += 1;
-
-        const frame = document.getElementById('reopen-frame');
-        if (frame) {
-          frame.src = reopenUrl;
-        }
-
-        const link = document.getElementById('reopen-link');
-        if (link && reopenAttempts === 1) {
-          link.click();
-        }
-
-        if (reopenAttempts === 1) {
-          window.location.assign(reopenUrl);
-          return;
-        }
-
-        window.location.href = reopenUrl;
-      }
-
-      window.addEventListener('load', function () {
-        window.setTimeout(attemptReopen, 120);
-        window.setTimeout(attemptReopen, 480);
-        window.setTimeout(attemptReopen, 1000);
-      });
-
-      document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'hidden') {
-          window.setTimeout(function () {
-            window.close();
-          }, 300);
-        }
-      });
-    </script>
-  </body>
-</html>
-''';
 }

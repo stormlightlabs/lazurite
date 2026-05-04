@@ -341,31 +341,6 @@ void main() {
       });
     });
 
-    group('callback server', () {
-      test('builds a callback page that can return to the app', () {
-        final html = authRepository.buildCallbackPageHtmlForTest();
-
-        expect(html, contains('lazurite://auth-complete'));
-        expect(html, contains('Return to Lazurite'));
-        expect(html, contains('id="reopen-link"'));
-        expect(html, contains('window.location.assign'));
-        expect(html, contains('visibilitychange'));
-      });
-
-      test('can stop the callback server twice without throwing', () async {
-        final redirectUri = await authRepository.startCallbackServerForTest(Uri.parse('http://127.0.0.1/callback'));
-
-        expect(redirectUri.host, equals('127.0.0.1'));
-        expect(authRepository.callbackPort, greaterThan(0));
-
-        await authRepository.stopCallbackServerForTest();
-        expect(authRepository.callbackPort, equals(0));
-
-        await authRepository.stopCallbackServerForTest();
-        expect(authRepository.callbackPort, equals(0));
-      });
-    });
-
     group('oauth browser launch mode', () {
       test('uses in-app browser view on iOS', () {
         expect(
@@ -452,7 +427,7 @@ OAuthClientMetadata _testClientMetadata() {
     applicationType: 'native',
     clientName: 'Lazurite Test',
     clientUri: 'https://lazurite.stormlightlabs.org',
-    redirectUris: ['http://127.0.0.1/callback'],
+    redirectUris: ['org.stormlightlabs.lazurite:/oauth/callback'],
     responseTypes: ['code'],
     grantTypes: ['authorization_code', 'refresh_token'],
     scope: 'atproto',

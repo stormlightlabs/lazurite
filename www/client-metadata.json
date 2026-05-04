@@ -2,7 +2,7 @@
     "client_id": "https://lazurite.stormlightlabs.org/client-metadata.json",
     "client_name": "Lazurite",
     "client_uri": "https://lazurite.stormlightlabs.org",
-    "redirect_uris": ["org.stormlightlabs.lazurite:/oauth/callback", "http://127.0.0.1/callback"],
+    "redirect_uris": ["org.stormlightlabs.lazurite:/oauth/callback"],
     "scope": "atproto transition:generic transition:chat.bsky",
     "grant_types": ["authorization_code", "refresh_token"],
     "response_types": ["code"],
