@@ -275,6 +275,12 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   }
 
   void _onScroll() {
+    if (!_scrollController.hasClients || !_scrollController.position.hasContentDimensions) {
+      return;
+    }
+    if (_isLoading || _showInitialLoading) {
+      return;
+    }
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
       _loadMore();
     }
@@ -319,6 +325,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
 
     _setStateIfMounted(() {
       _isLoading = true;
+      _isLoadingMore = false;
       _showInitialLoading = showLoading;
       _hasError = false;
       _errorMessage = null;
@@ -340,6 +347,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
       if (_posts.isNotEmpty) {
         _setStateIfMounted(() {
           _isLoading = false;
+          _isLoadingMore = false;
           _showInitialLoading = false;
         });
         return;
@@ -347,6 +355,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
 
       _setStateIfMounted(() {
         _isLoading = false;
+        _isLoadingMore = false;
         _showInitialLoading = false;
         _hasError = true;
         _errorMessage = e.toString();
@@ -359,7 +368,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   }
 
   Future<void> _loadMore() async {
-    if (_isLoadingMore || _cursor == null) return;
+    if (_isLoading || _showInitialLoading || _isLoadingMore || _cursor == null) return;
     if (context.read<ConnectivityCubit>().state.isOffline) {
       return;
     }

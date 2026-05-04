@@ -1,5 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:atproto_core/atproto_core.dart';
+import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
 void main() {
@@ -64,6 +67,34 @@ void main() {
 
     test('clamps future timestamps to now label', () {
       expect(formatRelativeTime(now.add(const Duration(minutes: 5)), now: now), 'now');
+    });
+  });
+
+  group('feedDisplayName', () {
+    test('prefers generator displayName when available', () {
+      final feed = GeneratorView(
+        uri: const AtUri('at://did:plc:test/app.bsky.feed.generator/test'),
+        cid: 'cid-1',
+        creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+        did: 'did:plc:test',
+        displayName: 'What\'s Hot',
+        indexedAt: DateTime.utc(2026, 3, 16),
+      );
+
+      expect(feedDisplayName(feed), 'What\'s Hot');
+    });
+
+    test('falls back to URI rkey when displayName is empty', () {
+      final feed = GeneratorView(
+        uri: const AtUri('at://did:plc:test/app.bsky.feed.generator/test'),
+        cid: 'cid-1',
+        creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+        did: 'did:plc:test',
+        displayName: '   ',
+        indexedAt: DateTime.utc(2026, 3, 16),
+      );
+
+      expect(feedDisplayName(feed), 'test');
     });
   });
 }

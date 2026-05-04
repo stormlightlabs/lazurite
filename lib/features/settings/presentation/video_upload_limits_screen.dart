@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/settings/cubit/video_upload_limits_cubit.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 class VideoUploadLimitsScreen extends StatefulWidget {
   const VideoUploadLimitsScreen({super.key});
@@ -65,15 +66,6 @@ class _VideoUploadLimitsBody extends StatelessWidget {
 
   final VideoUploadLimits limits;
 
-  String _formatBytes(int bytes) {
-    if (bytes >= 1024 * 1024 * 1024) {
-      final gb = bytes / (1024 * 1024 * 1024);
-      return '${gb.toStringAsFixed(2)} GB';
-    }
-    final mb = bytes / (1024 * 1024);
-    return '${mb.toStringAsFixed(2)} MB';
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -97,7 +89,7 @@ class _VideoUploadLimitsBody extends StatelessWidget {
           const Divider(),
         ],
         if (limits.remainingDailyBytes != null) ...[
-          _LimitRow(label: 'Remaining storage today', value: _formatBytes(limits.remainingDailyBytes!)),
+          _LimitRow(label: 'Remaining storage today', value: formatBytes(limits.remainingDailyBytes!)),
           const Divider(),
         ],
         if (limits.message != null) ...[
@@ -130,16 +122,14 @@ class _LimitRow extends StatelessWidget {
   final String value;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: context.textTheme.bodyLarge),
-          Text(value, style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: context.textTheme.bodyLarge),
+        Text(value, style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+      ],
+    ),
+  );
 }

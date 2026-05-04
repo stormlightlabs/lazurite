@@ -315,72 +315,75 @@ class FeedRepository {
     return posts.where((post) => !moderationService.shouldFilterFeedViewPostInList(post)).toList();
   }
 
+  /// When refreshing, the newest page goes first
+  ///
+  /// Cache writes are best-effort and must never break feed rendering.
   Future<void> _cacheFeedWindow({required String feedKey, required FeedResult result, required String? cursor}) async {
-    final existingPosts = await _database.getCachedFeedPosts(_accountDid, feedKey);
+    try {
+      final existingPosts = await _database.getCachedFeedPosts(_accountDid, feedKey);
 
-    final merged = <FeedViewPost>[];
-    final seen = <String>{};
+      final merged = <FeedViewPost>[];
+      final seen = <String>{};
 
-    void addPost(FeedViewPost post) {
-      final uri = post.post.uri.toString();
-      if (seen.add(uri)) {
-        merged.add(post);
-      }
-    }
-
-    if (cursor == null) {
-      // Refresh: newest page goes first.
-      for (final post in result.posts) {
-        addPost(post);
-      }
-      for (final cached in existingPosts) {
-        if (seen.contains(cached.postUri)) {
-          continue;
+      void addPost(FeedViewPost post) {
+        final uri = post.post.uri.toString();
+        if (seen.add(uri)) {
+          merged.add(post);
         }
-        addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
       }
-    } else {
-      // Pagination: append older page at the end.
-      for (final cached in existingPosts) {
-        addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
-      }
-      for (final post in result.posts) {
-        addPost(post);
-      }
-    }
 
-    final limited = merged.take(OfflineCachePolicy.feedPostLimit).toList(growable: false);
-    final companions = <CachedFeedPostsCompanion>[];
-    for (var i = 0; i < limited.length; i++) {
-      final post = limited[i];
-      final uri = post.post.uri.toString();
-      // Large sort numbers mean newer items come first in DESC sort.
-      final sortOrder = OfflineCachePolicy.feedPostLimit - i;
-      companions.add(
-        CachedFeedPostsCompanion.insert(
+      if (cursor == null) {
+        for (final post in result.posts) {
+          addPost(post);
+        }
+        for (final cached in existingPosts) {
+          if (seen.contains(cached.postUri)) {
+            continue;
+          }
+          addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
+        }
+      } else {
+        for (final cached in existingPosts) {
+          addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
+        }
+        for (final post in result.posts) {
+          addPost(post);
+        }
+      }
+
+      final limited = merged.take(OfflineCachePolicy.feedPostLimit).toList(growable: false);
+      final companions = <CachedFeedPostsCompanion>[];
+      for (var i = 0; i < limited.length; i++) {
+        final post = limited[i];
+        final uri = post.post.uri.toString();
+        final sortOrder = OfflineCachePolicy.feedPostLimit - i;
+        companions.add(
+          CachedFeedPostsCompanion.insert(
+            accountDid: _accountDid,
+            feedKey: feedKey,
+            postUri: uri,
+            postJson: jsonEncode(post.toJson()),
+            sortOrder: sortOrder,
+          ),
+        );
+      }
+
+      await _database.transaction(() async {
+        await _database.deleteCachedFeedPostsForFeed(_accountDid, feedKey);
+        await _database.upsertCachedFeedPosts(accountDid: _accountDid, feedKey: feedKey, posts: companions);
+        await _database.cacheFeedPage(
           accountDid: _accountDid,
           feedKey: feedKey,
-          postUri: uri,
-          postJson: jsonEncode(post.toJson()),
-          sortOrder: sortOrder,
-        ),
+          payload: jsonEncode({'cursor': result.cursor, 'lastRequestCursor': cursor}),
+        );
+      });
+    } catch (error, stackTrace) {
+      log.w(
+        'feed.cacheWindow failed account=$_accountDid feedKey=$feedKey cursor=$cursor reason=$error',
+        error: error,
+        stackTrace: stackTrace,
       );
     }
-
-    await _database.transaction(() async {
-      await _database.deleteCachedFeedPostsForFeed(_accountDid, feedKey);
-      await _database.upsertCachedFeedPosts(accountDid: _accountDid, feedKey: feedKey, posts: companions);
-      await _database.cacheFeedPage(
-        accountDid: _accountDid,
-        feedKey: feedKey,
-        payload: jsonEncode({'cursor': result.cursor, 'lastRequestCursor': cursor}),
-      );
-      await _database.pruneCachedFeedPosts(
-        accountDid: _accountDid,
-        feedKey: feedKey,
-        maxCount: OfflineCachePolicy.feedPostLimit,
-      );
-    });
   }
 }
 

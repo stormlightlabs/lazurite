@@ -67,3 +67,12 @@ String feedDisplayName(GeneratorView value) {
   }
   return value.uri.rkey;
 }
+
+String formatBytes(int bytes) {
+  if (bytes >= 1024 * 1024 * 1024) {
+    final gb = bytes / (1024 * 1024 * 1024);
+    return '${gb.toStringAsFixed(2)} GB';
+  }
+  final mb = bytes / (1024 * 1024);
+  return '${mb.toStringAsFixed(2)} MB';
+}
