@@ -20,37 +20,29 @@
         <p class="meta oauth-callback-hint">If this still fails, use your browser menu and choose “Open in app”.</p>
       </main>
     </div>
-    <iframe
-      id="reopen-frame"
-      title="Return to Lazurite"
-      style="display: none; width: 0; height: 0; border: 0"
-    ></iframe>
     <script>
       const query = window.location.search || '';
       const fragment = window.location.hash || '';
       const reopenUrl = `org.stormlightlabs.lazurite:/oauth/callback${query}${fragment}`;
       const reopenLink = document.getElementById('reopen-link');
-      const reopenFrame = document.getElementById('reopen-frame');
+      const autoOpenKey = `lazurite.oauth.reopen.${query}${fragment}`;
 
       reopenLink.setAttribute('href', reopenUrl);
 
-      let attemptCount = 0;
       function attemptReopen() {
-        attemptCount += 1;
-        if (reopenFrame) {
-          reopenFrame.src = reopenUrl;
+        try {
+          if (window.sessionStorage.getItem(autoOpenKey) === '1') {
+            return;
+          }
+          window.sessionStorage.setItem(autoOpenKey, '1');
+        } catch (err) {
+          console.debug("Storage unavailable; trying a single best-effort reopen.", err);
         }
-        if (attemptCount === 1) {
-          window.location.assign(reopenUrl);
-          return;
-        }
-        window.location.href = reopenUrl;
+        window.location.assign(reopenUrl);
       }
 
       window.addEventListener('load', function () {
-        window.setTimeout(attemptReopen, 120);
-        window.setTimeout(attemptReopen, 480);
-        window.setTimeout(attemptReopen, 1000);
+        window.setTimeout(attemptReopen, 250);
       });
     </script>
   </body>

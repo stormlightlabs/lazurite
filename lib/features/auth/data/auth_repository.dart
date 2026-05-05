@@ -96,6 +96,7 @@ class AuthRepository {
   Completer<AuthTokens?>? _oauthCompleter;
   OAuthClient? _pendingOAuthClient;
   OAuthContext? _pendingOAuthContext;
+  Future<AuthTokens>? _pendingOAuthCallbackExchange;
   String? _pendingHandle;
   String? _pendingService;
   LaunchMode? _oauthLaunchMode;
@@ -248,6 +249,7 @@ class AuthRepository {
       final failedAttemptSummaries = <String>[];
 
       for (final oauthService in oauthServices) {
+        Completer<AuthTokens?>? callbackCompleter;
         try {
           final oauthClient = OAuthClient(
             metadata.copyWith(redirectUris: [redirectUri.toString()]),
@@ -258,14 +260,11 @@ class AuthRepository {
           _pendingService = oauthService;
           _pendingOAuthClient = oauthClient;
           _pendingOAuthContext = context;
+          callbackCompleter = _oauthCompleter!;
           log.i('AuthRepository: OAuth PAR completed, launching browser to ${_sanitizeUriForLog(authorizationUrl)}');
           await _launchUrl(authorizationUrl);
-
-          return await _oauthCompleter!.future.timeout(
-            const Duration(minutes: 3),
-            onTimeout: () => throw TimeoutException('Timed out waiting for OAuth callback redirect'),
-          );
         } catch (error, stackTrace) {
+          _resetPendingOAuthAttemptState(clearHandle: false);
           lastAttemptError = error;
           lastAttemptStackTrace = stackTrace;
           final summary = _summarizeOAuthRefreshError(error);
@@ -275,7 +274,13 @@ class AuthRepository {
             error: error,
             stackTrace: stackTrace,
           );
+          continue;
         }
+
+        return await callbackCompleter.future.timeout(
+          const Duration(minutes: 3),
+          onTimeout: () => throw TimeoutException('Timed out waiting for OAuth callback redirect'),
+        );
       }
 
       Error.throwWithStackTrace(
@@ -507,9 +512,10 @@ class AuthRepository {
       return false;
     }
 
+    final joiningInFlightExchange = _pendingOAuthCallbackExchange != null;
     try {
       log.i('AuthRepository: Processing OAuth callback URI ${_sanitizeUriForLog(normalizedCallbackUri)}');
-      final tokens = await _handleOAuthCallback(normalizedCallbackUri.toString());
+      final tokens = await _runOAuthCallbackExchangeOnce(normalizedCallbackUri, _handleOAuthCallback);
       if (_oauthCompleter?.isCompleted == false) {
         _oauthCompleter?.complete(tokens);
       }
@@ -521,8 +527,28 @@ class AuthRepository {
       }
       return false;
     } finally {
-      _resetPendingOAuthState(clearLaunchMode: false);
+      if (!joiningInFlightExchange) {
+        _resetPendingOAuthState(clearLaunchMode: false);
+      }
     }
+  }
+
+  Future<AuthTokens> _runOAuthCallbackExchangeOnce(
+    Uri normalizedCallbackUri,
+    Future<AuthTokens> Function(String callbackUrl) exchangeCallback,
+  ) async {
+    final inFlightExchange = _pendingOAuthCallbackExchange;
+    if (inFlightExchange != null) {
+      log.w(
+        'AuthRepository: OAuth callback already being exchanged; '
+        'joining existing exchange for ${_sanitizeUriForLog(normalizedCallbackUri)}',
+      );
+      return inFlightExchange;
+    }
+
+    final exchange = exchangeCallback(normalizedCallbackUri.toString());
+    _pendingOAuthCallbackExchange = exchange;
+    return exchange;
   }
 
   Future<AuthTokens> _buildOAuthTokens(
@@ -854,20 +880,40 @@ class AuthRepository {
       return callbackUri;
     }
 
+    if (callbackUri.scheme == _mobileOAuthRedirectScheme &&
+        callbackUri.host == 'oauth' &&
+        callbackUri.path == '/callback' &&
+        _hasOAuthCallbackParameters(callbackUri)) {
+      return Uri(
+        scheme: _mobileOAuthRedirectScheme,
+        path: _mobileOAuthRedirectPath,
+        query: callbackUri.hasQuery ? callbackUri.query : null,
+        fragment: callbackUri.hasFragment ? callbackUri.fragment : null,
+      );
+    }
+
     if (_isSupportedHttpsRedirect(callbackUri)) {
       return callbackUri;
     }
 
-    if (!callbackUri.hasScheme && callbackUri.path == _mobileOAuthRedirectPath) {
+    if (!callbackUri.hasScheme &&
+        (callbackUri.path == _mobileOAuthRedirectPath || callbackUri.path == '/callback') &&
+        _hasOAuthCallbackParameters(callbackUri)) {
       return Uri(
         scheme: _mobileOAuthRedirectScheme,
-        path: callbackUri.path,
+        path: _mobileOAuthRedirectPath,
         query: callbackUri.hasQuery ? callbackUri.query : null,
         fragment: callbackUri.hasFragment ? callbackUri.fragment : null,
       );
     }
 
     return null;
+  }
+
+  bool _hasOAuthCallbackParameters(Uri callbackUri) {
+    final queryParameters = callbackUri.queryParameters;
+    return queryParameters.containsKey('state') &&
+        (queryParameters.containsKey('code') || queryParameters.containsKey('error'));
   }
 
   Uri _selectOAuthRedirectUriTemplate(
@@ -916,6 +962,14 @@ class AuthRepository {
   Uri? normalizeOAuthCallbackUriForTest(Uri callbackUri) => _normalizeOAuthCallbackUri(callbackUri);
 
   @visibleForTesting
+  Future<AuthTokens> runOAuthCallbackExchangeOnceForTest(
+    Uri normalizedCallbackUri,
+    Future<AuthTokens> Function(String callbackUrl) exchangeCallback,
+  ) {
+    return _runOAuthCallbackExchangeOnce(normalizedCallbackUri, exchangeCallback);
+  }
+
+  @visibleForTesting
   Uri selectOAuthRedirectUriTemplateForTest(
     List<String> redirectUris, {
     required bool isAndroid,
@@ -945,12 +999,19 @@ class AuthRepository {
 
   void _resetPendingOAuthState({bool clearLaunchMode = true}) {
     _oauthCompleter = null;
-    _pendingOAuthClient = null;
-    _pendingOAuthContext = null;
-    _pendingHandle = null;
-    _pendingService = null;
+    _resetPendingOAuthAttemptState();
     if (clearLaunchMode) {
       _oauthLaunchMode = null;
+    }
+  }
+
+  void _resetPendingOAuthAttemptState({bool clearHandle = true}) {
+    _pendingOAuthClient = null;
+    _pendingOAuthContext = null;
+    _pendingOAuthCallbackExchange = null;
+    _pendingService = null;
+    if (clearHandle) {
+      _pendingHandle = null;
     }
   }
 

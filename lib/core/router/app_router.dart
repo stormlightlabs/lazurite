@@ -53,9 +53,9 @@ import 'package:lazurite/features/profile/data/profile_context_repository.dart';
 import 'package:lazurite/features/profile/presentation/follow_audit_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
+import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
 import 'package:lazurite/features/search/cubit/topic_cubit.dart';
-import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/search/presentation/hashtag_screen.dart';
@@ -102,7 +102,13 @@ class AppRouter {
     redirect: (context, state) {
       final isAuthenticated = authBloc.state.isAuthenticated;
       final path = state.uri.path;
-      final publicPaths = {'/login', '/terms', '/privacy', OAuthCallbackScreen.routePath};
+      final publicPaths = {
+        '/login',
+        '/terms',
+        '/privacy',
+        OAuthCallbackScreen.routePath,
+        OAuthCallbackScreen.compatibilityRoutePath,
+      };
       final isLoggingIn = path == '/login';
       final isReauthLogin = state.uri.queryParameters['reauth'] == '1';
       final isPublicPath = publicPaths.contains(path);
@@ -121,6 +127,11 @@ class AppRouter {
       GoRoute(path: '/login', pageBuilder: (context, state) => _page(context, state, const LoginScreen())),
       GoRoute(
         path: OAuthCallbackScreen.routePath,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => _page(context, state, OAuthCallbackScreen(callbackUri: state.uri)),
+      ),
+      GoRoute(
+        path: OAuthCallbackScreen.compatibilityRoutePath,
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) => _page(context, state, OAuthCallbackScreen(callbackUri: state.uri)),
       ),
