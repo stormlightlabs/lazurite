@@ -5,16 +5,22 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/logging/log_redactor.dart';
 import 'package:lazurite/features/logs/data/log_entry.dart';
 
 part 'log_viewer_state.dart';
 
 class LogViewerCubit extends Cubit<LogViewerState> {
-  LogViewerCubit({Duration refreshInterval = const Duration(seconds: 1)}) : super(LogViewerState.initial()) {
+  LogViewerCubit({
+    Duration refreshInterval = const Duration(seconds: 1),
+    Future<File?> Function()? todaysLogFileProvider,
+  }) : _todaysLogFileProvider = todaysLogFileProvider ?? log.getTodaysLogFile,
+       super(LogViewerState.initial()) {
     unawaited(loadLogs());
     _refreshTimer = Timer.periodic(refreshInterval, (_) => unawaited(loadLogs(showLoading: false)));
   }
 
+  final Future<File?> Function() _todaysLogFileProvider;
   Timer? _refreshTimer;
   bool _isLoading = false;
 
@@ -110,7 +116,19 @@ class LogViewerCubit extends Cubit<LogViewerState> {
     return filtered;
   }
 
-  Future<File?> getTodaysLogFile() => log.getTodaysLogFile();
+  Future<File?> getTodaysLogFile() async {
+    final rawFile = await _todaysLogFileProvider();
+    if (rawFile == null || !await rawFile.exists()) {
+      return null;
+    }
+
+    final content = await rawFile.readAsString();
+    final redactedLines = content.split('\n').map(LogRedactor.redact).join('\n');
+    final tempDirectory = await Directory.systemTemp.createTemp('lazurite_logs_share_');
+    final redactedFile = File('${tempDirectory.path}/${rawFile.uri.pathSegments.last}');
+    await redactedFile.writeAsString(redactedLines, flush: true);
+    return redactedFile;
+  }
 
   Future<void> clearAllLogs() async {
     await log.clearAllLogs();

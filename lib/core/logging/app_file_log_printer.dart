@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:logger/logger.dart';
+import 'package:lazurite/core/logging/log_redactor.dart';
 
 class AppFileLogPrinter extends LogPrinter {
   AppFileLogPrinter();
@@ -58,7 +59,8 @@ class AppFileLogPrinter extends LogPrinter {
   }
 
   String _sanitize(String value) {
-    return value.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).join(' | ');
+    final collapsed = value.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).join(' | ');
+    return LogRedactor.redact(collapsed);
   }
 
   String? _sanitizeStackTrace(StackTrace? stackTrace) {

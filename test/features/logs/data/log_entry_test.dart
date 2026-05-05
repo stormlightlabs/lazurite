@@ -70,6 +70,19 @@ void main() {
         expect(entry!.level, Level.debug);
         expect(entry.message, 'Some random log message');
       });
+
+      test('redacts secret values while preserving handle and DID context', () {
+        final entry = LogEntry.tryParse(
+          '[I] AuthRepository: Login for did:plc:ewvi7nxzyoun6zhxrhs64oiz user.bsky.social '
+          '/oauth/callback?code=abc123&state=xyz',
+        );
+
+        expect(entry, isNotNull);
+        expect(entry!.message, contains('did:plc:ewvi7nxzyoun6zhxrhs64oiz'));
+        expect(entry.message, contains('user.bsky.social'));
+        expect(entry.message, contains('code=[REDACTED]'));
+        expect(entry.message, contains('state=[REDACTED]'));
+      });
     });
 
     group('levelPrefix', () {
