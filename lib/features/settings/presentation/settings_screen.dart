@@ -140,12 +140,6 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => context.push('/settings/devtools'),
             ),
           _SettingsTile(
-            icon: Icons.description_outlined,
-            title: 'Logs',
-            subtitle: 'View app log files',
-            onTap: () => context.push(isPublic ? '/login/settings/logs' : '/settings/logs'),
-          ),
-          _SettingsTile(
             icon: Icons.info_outline,
             title: 'About',
             subtitle: 'Stormlight Labs',
@@ -444,6 +438,13 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
+              _SettingsTile(
+                icon: Icons.description_outlined,
+                title: 'Logs',
+                subtitle: 'View app log files',
+                onTap: () => context.push(isPublic ? '/login/settings/logs' : '/settings/logs'),
+              ),
+              const Divider(height: 1),
               _ConstellationUrlTile(currentUrl: state.constellationUrl),
               const Divider(height: 1),
               _SettingsTile(

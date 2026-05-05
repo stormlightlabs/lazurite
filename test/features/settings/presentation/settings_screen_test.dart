@@ -334,6 +334,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('ADVANCED'), findsOneWidget);
+    expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Constellation URL'), findsOneWidget);
     expect(find.text('https://constellation.microcosm.blue'), findsOneWidget);
     expect(find.text('AppView Provider'), findsOneWidget);
