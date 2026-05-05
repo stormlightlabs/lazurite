@@ -341,7 +341,6 @@ class ProfileContextRepository {
 
     final sessionDid = _currentSessionDid();
     if (sessionDid == null) {
-      // Test doubles and unauthenticated contexts may not expose session shape.
       return;
     }
 

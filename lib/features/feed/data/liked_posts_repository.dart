@@ -113,7 +113,6 @@ class LikedPostsRepository {
       }
     }
 
-    // Deterministic fallback for malformed/missing timestamps.
     return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
   }
 

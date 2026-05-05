@@ -68,7 +68,18 @@ class AuthRepository {
   static const String _fallbackService = 'bsky.social';
   static const String _mobileOAuthRedirectScheme = 'org.stormlightlabs.lazurite';
   static const String _mobileOAuthRedirectPath = '/oauth/callback';
+  static const String _httpsOAuthRedirectHost = 'lazurite.stormlightlabs.org';
+  static const String _httpsOAuthRedirectPath = '/oauth/callback';
+  static const bool _androidHttpsCallbackEnabled = bool.fromEnvironment(
+    'OAUTH_ANDROID_HTTPS_CALLBACK_ENABLED',
+    defaultValue: true,
+  );
+  static const bool _iosHttpsCallbackEnabled = bool.fromEnvironment(
+    'OAUTH_IOS_HTTPS_CALLBACK_ENABLED',
+    defaultValue: true,
+  );
   static final Uri _mobileOAuthRedirectUri = Uri.parse('$_mobileOAuthRedirectScheme:$_mobileOAuthRedirectPath');
+  static final Uri _httpsOAuthRedirectUri = Uri.https(_httpsOAuthRedirectHost, _httpsOAuthRedirectPath);
 
   final AppDatabase _database;
   final LaunchUrlWithMode _launchUrlWithMode;
@@ -214,8 +225,23 @@ class AuthRepository {
 
       final metadata = await _loadClientMetadata(kClientId);
       log.d('AuthRepository: Loaded client metadata with redirect URIs: ${metadata.redirectUris.join(', ')}');
-      final redirectUri = _selectOAuthRedirectUriTemplate(metadata.redirectUris);
-      log.i('AuthRepository: Using custom-scheme OAuth callback redirect ${_sanitizeUriForLog(redirectUri)}');
+      final isAndroidNative = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      final isIosNative = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+      final redirectUri = _selectOAuthRedirectUriTemplate(
+        metadata.redirectUris,
+        isAndroid: isAndroidNative,
+        httpsAndroidCallbackEnabled: _androidHttpsCallbackEnabled,
+        isIos: isIosNative,
+        httpsIosCallbackEnabled: _iosHttpsCallbackEnabled,
+      );
+      log.d(
+        'AuthRepository: OAuth callback strategy '
+        'androidNative=$isAndroidNative '
+        'androidHttpsCallbackEnabled=$_androidHttpsCallbackEnabled '
+        'iosNative=$isIosNative '
+        'iosHttpsCallbackEnabled=$_iosHttpsCallbackEnabled',
+      );
+      log.i('AuthRepository: Using OAuth callback redirect ${_sanitizeUriForLog(redirectUri)}');
 
       Object? lastAttemptError;
       StackTrace? lastAttemptStackTrace;
@@ -237,7 +263,7 @@ class AuthRepository {
 
           return await _oauthCompleter!.future.timeout(
             const Duration(minutes: 3),
-            onTimeout: () => throw TimeoutException('Timed out waiting for OAuth callback on custom scheme redirect'),
+            onTimeout: () => throw TimeoutException('Timed out waiting for OAuth callback redirect'),
           );
         } catch (error, stackTrace) {
           lastAttemptError = error;
@@ -793,16 +819,16 @@ class AuthRepository {
     return _oauthLaunchModeForPlatform(isWeb: isWeb, platform: platform);
   }
 
+  /// ATProto OAuth providers can enforce browser-like fetch metadata semantics.
+  /// Prefer the system browser app on mobile for consistent behavior.
   static LaunchMode _oauthLaunchModeForPlatform({required bool isWeb, required TargetPlatform platform}) {
     if (isWeb) {
       return LaunchMode.platformDefault;
     }
 
     return switch (platform) {
-      // ATProto OAuth providers can enforce browser-like fetch metadata semantics
-      // that are not always met by embedded WebViews. Prefer browser tab UX.
-      TargetPlatform.android => LaunchMode.inAppBrowserView,
-      TargetPlatform.iOS => LaunchMode.inAppBrowserView,
+      TargetPlatform.android => LaunchMode.externalApplication,
+      TargetPlatform.iOS => LaunchMode.externalApplication,
       _ => LaunchMode.externalApplication,
     };
   }
@@ -817,8 +843,18 @@ class AuthRepository {
     return redirectUri.scheme == _mobileOAuthRedirectScheme && redirectUri.path == _mobileOAuthRedirectPath;
   }
 
+  bool _isSupportedHttpsRedirect(Uri redirectUri) {
+    return redirectUri.scheme == 'https' &&
+        redirectUri.host == _httpsOAuthRedirectHost &&
+        redirectUri.path == _httpsOAuthRedirectPath;
+  }
+
   Uri? _normalizeOAuthCallbackUri(Uri callbackUri) {
     if (_isSupportedCustomSchemeRedirect(callbackUri)) {
+      return callbackUri;
+    }
+
+    if (_isSupportedHttpsRedirect(callbackUri)) {
       return callbackUri;
     }
 
@@ -834,21 +870,65 @@ class AuthRepository {
     return null;
   }
 
-  Uri _selectOAuthRedirectUriTemplate(List<String> redirectUris) {
+  Uri _selectOAuthRedirectUriTemplate(
+    List<String> redirectUris, {
+    required bool isAndroid,
+    required bool httpsAndroidCallbackEnabled,
+    required bool isIos,
+    required bool httpsIosCallbackEnabled,
+  }) {
     final candidates = redirectUris.map(Uri.parse).toList(growable: false);
     if (candidates.isEmpty) {
       throw UnsupportedError('OAuth client metadata does not declare any redirect URIs.');
     }
 
+    Uri? customSchemeRedirect;
+    Uri? httpsRedirect;
     for (final candidate in candidates) {
       if (_isSupportedCustomSchemeRedirect(candidate)) {
-        return candidate;
+        customSchemeRedirect ??= candidate;
+      }
+      if (_isSupportedHttpsRedirect(candidate)) {
+        httpsRedirect ??= candidate;
       }
     }
 
+    if (isAndroid && httpsAndroidCallbackEnabled && httpsRedirect != null) {
+      return httpsRedirect;
+    }
+    if (isIos && httpsIosCallbackEnabled && httpsRedirect != null) {
+      return httpsRedirect;
+    }
+    if (customSchemeRedirect != null) {
+      return customSchemeRedirect;
+    }
+    if (httpsRedirect != null) {
+      return httpsRedirect;
+    }
+
     throw UnsupportedError(
-      'No supported OAuth redirect URI found. Lazurite currently requires '
-      '${_mobileOAuthRedirectUri.toString()}.',
+      'No supported OAuth redirect URI found. Lazurite currently supports '
+      '${_mobileOAuthRedirectUri.toString()} and ${_httpsOAuthRedirectUri.toString()}.',
+    );
+  }
+
+  @visibleForTesting
+  Uri? normalizeOAuthCallbackUriForTest(Uri callbackUri) => _normalizeOAuthCallbackUri(callbackUri);
+
+  @visibleForTesting
+  Uri selectOAuthRedirectUriTemplateForTest(
+    List<String> redirectUris, {
+    required bool isAndroid,
+    required bool httpsAndroidCallbackEnabled,
+    required bool isIos,
+    required bool httpsIosCallbackEnabled,
+  }) {
+    return _selectOAuthRedirectUriTemplate(
+      redirectUris,
+      isAndroid: isAndroid,
+      httpsAndroidCallbackEnabled: httpsAndroidCallbackEnabled,
+      isIos: isIos,
+      httpsIosCallbackEnabled: httpsIosCallbackEnabled,
     );
   }
 

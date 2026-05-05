@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:drift/native.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
@@ -107,7 +107,6 @@ void main() {
         bluesky: _FakeBlueskyClient(actor: _FakeActorService(onGetProfile: (_) async => _FakeResponse(profile))),
       );
 
-      // Force cache operations to fail while keeping network response successful.
       await database.close();
 
       final result = await repository.getProfile(profile.did);

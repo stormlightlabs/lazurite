@@ -114,7 +114,6 @@ abstract final class NotificationReasonUtils {
           navigationMode: NotificationTapNavigationMode.push,
         );
       }
-      // Fallback to actor profile if the payload is missing starter pack context.
     }
 
     if (isProfileNavigationReason(notification.reason)) {

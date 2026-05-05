@@ -528,4 +528,38 @@ void main() {
 
     router.dispose();
   });
+
+  testWidgets('processes absolute HTTPS oauth callback route while authenticated', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+    final pendingCallback = Completer<bool>();
+    when(() => authBloc.handleOAuthRedirectUri(any())).thenAnswer((_) => pendingCallback.future);
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('https://lazurite.stormlightlabs.org/oauth/callback?code=abc&state=xyz');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    verify(
+      () => authBloc.handleOAuthRedirectUri(
+        any(
+          that: predicate<Uri>(
+            (uri) =>
+                uri.scheme == 'https' &&
+                uri.host == 'lazurite.stormlightlabs.org' &&
+                uri.path == OAuthCallbackScreen.routePath &&
+                uri.queryParameters['code'] == 'abc' &&
+                uri.queryParameters['state'] == 'xyz',
+          ),
+        ),
+      ),
+    ).called(1);
+
+    pendingCallback.complete(true);
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, isNot(equals(OAuthCallbackScreen.routePath)));
+    expect(find.text('No feeds pinned'), findsOneWidget);
+
+    router.dispose();
+  });
 }
