@@ -6,6 +6,9 @@ Lazurite is a cross-platform Bluesky client that *rocks*[^1] built with Flutter 
 
 Download it on our [releases page](https://github.com/stormlightlabs/lazurite/releases/).
 
+<!-- markdownlint-disable MD033 -->
+[<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get Lazurite on Obtainium" height="48">](http://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/stormlightlabs/lazurite/releases)
+
 ## Features
 
 ### Home Feed & Composer
