@@ -29,16 +29,6 @@ test *paths='':
     just objectbox-check
     flutter test {{ paths }} --fail-fast --timeout=120s
 
-# Run end-to-end style integration tests from integration_test/
-e2e:
-    just objectbox-check
-    flutter test integration_test --reporter=failures-only --fail-fast --timeout=180s
-
-# Run one specific end-to-end test file
-e2e-file path:
-    just objectbox-check
-    flutter test {{ path }} --reporter=failures-only --fail-fast --timeout=180s
-
 generate:
     flutter pub run build_runner build --delete-conflicting-outputs
 
