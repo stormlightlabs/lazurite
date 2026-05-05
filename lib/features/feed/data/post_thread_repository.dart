@@ -7,6 +7,7 @@ import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
@@ -21,24 +22,28 @@ class PostThreadRepository {
     String Function()? appViewProviderResolver,
     Future<AuthTokens?> Function()? onUnauthorized,
     dynamic Function(AuthTokens tokens)? blueskyClientFactory,
-  }) : _bluesky = bluesky,
-       _database = database,
+  }) : _database = database,
        _accountDid = accountDid,
        _moderationService = moderationService,
        _appViewContext = AppViewRequestContext(
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
-       ),
-       _onUnauthorized = onUnauthorized,
-       _blueskyClientFactory = blueskyClientFactory ?? createBlueskyClient;
+       ) {
+    _authRecovery = UnauthorizedRecoveryRunner<dynamic>(
+      initialClient: bluesky,
+      onUnauthorized: onUnauthorized,
+      clientFactory: blueskyClientFactory ?? createBlueskyClient,
+      onUnauthorizedException: (error, stackTrace) {
+        log.w('thread.auth unauthorized; attempting session recovery', error: error, stackTrace: stackTrace);
+      },
+    );
+  }
 
-  dynamic _bluesky;
+  late final UnauthorizedRecoveryRunner<dynamic> _authRecovery;
   final AppDatabase _database;
   final String _accountDid;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
-  final Future<AuthTokens?> Function()? _onUnauthorized;
-  final dynamic Function(AuthTokens tokens) _blueskyClientFactory;
 
   Future<ThreadViewPost> getPostThread(String uri) async {
     try {
@@ -46,8 +51,8 @@ class PostThreadRepository {
         'app.bsky.feed.getPostThread',
         await _moderationService?.headersForRequest(),
       );
-      final response = await _runWithAuthRecovery(
-        () => _bluesky.feed.getPostThread(uri: atcore.AtUri.parse(uri), $headers: headers),
+      final response = await _authRecovery.run(
+        (client) => client.feed.getPostThread(uri: atcore.AtUri.parse(uri), $headers: headers),
       );
       final thread = response.data.thread as UFeedGetPostThreadThread;
 
@@ -81,39 +86,6 @@ class PostThreadRepository {
     throw Exception('Unable to load thread');
   }
 
-  Future<T> _runWithAuthRecovery<T>(Future<T> Function() request) async {
-    try {
-      return await request();
-    } on atcore.UnauthorizedException catch (error, stackTrace) {
-      log.w('thread.auth unauthorized; attempting session recovery', error: error, stackTrace: stackTrace);
-      final recovered = await _recoverAuthSession();
-      if (!recovered) {
-        rethrow;
-      }
-      return request();
-    }
-  }
-
-  Future<bool> _recoverAuthSession() async {
-    final callback = _onUnauthorized;
-    if (callback == null) {
-      return false;
-    }
-
-    final refreshedTokens = await callback();
-    if (refreshedTokens == null) {
-      return false;
-    }
-
-    final refreshedClient = _blueskyClientFactory(refreshedTokens);
-    if (refreshedClient == null) {
-      return false;
-    }
-
-    _bluesky = refreshedClient;
-    return true;
-  }
-
   Future<void> _cacheThread(ThreadViewPost thread) async {
     final rootUri = _threadRoot(thread).post.uri.toString();
     await _database.cacheThreadRoot(accountDid: _accountDid, rootUri: rootUri, payload: jsonEncode(thread.toJson()));
@@ -125,8 +97,12 @@ class PostThreadRepository {
     if (direct != null) {
       try {
         return ThreadViewPost.fromJson(jsonDecode(direct.payload) as Map<String, dynamic>);
-      } catch (_) {
-        // Ignore malformed cache rows and continue scanning.
+      } catch (error, stackTrace) {
+        log.d(
+          'thread.cache failed to decode direct snapshot for requestedUri=$requestedUri',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
     }
 
@@ -139,8 +115,12 @@ class PostThreadRepository {
         if (_containsPostUri(decoded, requestedUri)) {
           return decoded;
         }
-      } catch (_) {
-        // Ignore malformed cache rows and keep scanning valid snapshots.
+      } catch (error, stackTrace) {
+        log.d(
+          'thread.cache failed to decode snapshot while scanning rootUri=${candidate.rootUri} for requestedUri=$requestedUri',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
     }
     return null;

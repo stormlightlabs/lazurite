@@ -356,6 +356,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
 
     final completer = Completer<AuthTokens?>();
     _authRecoveryCompleter = completer;
+    String? refreshingDid;
     try {
       final authState = widget.authBloc.state;
       final tokens = authState.tokens;
@@ -363,16 +364,26 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
         completer.complete(null);
         return null;
       }
+      refreshingDid = tokens.did;
 
       final refreshed = await widget.authRepository.refreshSession(tokens);
-      if (refreshed != null) {
-        widget.authBloc.add(SessionRestored(tokens: refreshed));
+      if (!_canPublishRecoveryForDid(refreshingDid)) {
+        completer.complete(null);
+        return null;
       }
+
+      if (refreshed == null || refreshed.did != refreshingDid) {
+        completer.complete(null);
+        return null;
+      }
+      widget.authBloc.add(SessionRestored(tokens: refreshed));
       completer.complete(refreshed);
       return refreshed;
     } catch (error, stackTrace) {
       log.w('Auth recovery failed (trigger=$trigger)', error: error, stackTrace: stackTrace);
-      widget.authBloc.add(const CheckSessionRequested());
+      if (_canPublishRecoveryForDid(refreshingDid)) {
+        widget.authBloc.add(const CheckSessionRequested());
+      }
       completer.complete(null);
       return null;
     } finally {
@@ -380,6 +391,15 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
         _authRecoveryCompleter = null;
       }
     }
+  }
+
+  bool _canPublishRecoveryForDid(String? refreshingDid) {
+    if (!mounted || refreshingDid == null) {
+      return false;
+    }
+
+    final state = widget.authBloc.state;
+    return state.isAuthenticated && state.tokens?.did == refreshingDid;
   }
 
   GoRouter _createRouter() {
