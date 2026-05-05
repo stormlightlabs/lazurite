@@ -4,6 +4,9 @@ import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 
 void main() {
   group('XrpcNetworkInterceptor', () {
+    setUp(XrpcNetworkInterceptor.debugResetForcedUnauthorized);
+    tearDown(XrpcNetworkInterceptor.debugResetForcedUnauthorized);
+
     group('metadataFor', () {
       test('extracts pds, appview, and xrpc method', () {
         final metadata = XrpcNetworkInterceptor.metadataFor(
@@ -35,6 +38,24 @@ void main() {
     });
 
     group('wrap clients', () {
+      test('debug hook forces one unauthorized response then clears', () async {
+        var calls = 0;
+        final wrapped = XrpcNetworkInterceptor.wrapGetClient((url, {headers}) async {
+          calls += 1;
+          return http.Response('ok', 200, request: http.Request('GET', url));
+        });
+
+        XrpcNetworkInterceptor.debugForceUnauthorizedOnce();
+
+        final first = await wrapped(Uri.parse('https://example.com/xrpc/app.bsky.feed.getFeed'));
+        final second = await wrapped(Uri.parse('https://example.com/xrpc/app.bsky.feed.getFeed'));
+
+        expect(first.statusCode, 401);
+        expect(first.body, contains('Unauthorized'));
+        expect(second.statusCode, 200);
+        expect(calls, 1);
+      });
+
       test('wrapGetClient delegates request and returns response', () async {
         final wrapped = XrpcNetworkInterceptor.wrapGetClient((url, {headers}) async {
           return http.Response('ok', 200, request: http.Request('GET', url));
