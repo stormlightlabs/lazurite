@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/logs/cubit/log_viewer_cubit.dart';
 import 'package:lazurite/features/logs/data/log_entry.dart';
+import 'package:lazurite/shared/presentation/helpers/share_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class LogsScreen extends StatelessWidget {
@@ -84,11 +85,7 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
         appBar: AppBar(
           title: const Text('Logs'),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.share_outlined),
-              tooltip: 'Share log file',
-              onPressed: () => _shareLogs(context),
-            ),
+            IconButton(icon: const Icon(Icons.share_outlined), tooltip: 'Share log file', onPressed: _shareLogs),
             IconButton(
               icon: Icon(Icons.delete_outline, color: context.colorScheme.error),
               tooltip: 'Clear all logs',
@@ -114,15 +111,36 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
     );
   }
 
-  Future<void> _shareLogs(BuildContext context) async {
+  Future<void> _shareLogs() async {
     final cubit = context.read<LogViewerCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final shareOrigin = ShareHelper.sharePositionOriginForContext(context);
+
     final file = await cubit.getTodaysLogFile();
-    if (file != null && await file.exists()) {
-      await Share.shareXFiles([XFile(file.path)], subject: 'Lazurite logs');
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No log file available')));
+    if (!mounted) {
+      return;
+    }
+
+    if (file == null || !await file.exists()) {
+      if (!mounted) {
+        return;
       }
+      messenger.showSnackBar(const SnackBar(content: Text('No log file available')));
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    try {
+      await ShareHelper.shareFilePathsAtOrigin(shareOrigin, [file.path], subject: 'Lazurite logs');
+    } catch (error, stackTrace) {
+      log.e('LogsScreen: Failed to open share sheet for log file', error: error, stackTrace: stackTrace);
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(const SnackBar(content: Text('Unable to open share sheet. Please try again.')));
     }
   }
 

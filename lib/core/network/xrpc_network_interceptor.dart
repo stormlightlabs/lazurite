@@ -14,12 +14,37 @@ class XrpcRequestMetadata {
 }
 
 abstract final class XrpcNetworkInterceptor {
+  static int _forcedUnauthorizedResponses = 0;
+
+  static void debugForceUnauthorizedOnce() {
+    if (!kDebugMode) {
+      return;
+    }
+    _forcedUnauthorizedResponses += 1;
+    log.w('XRPC Debug Hook: next $_forcedUnauthorizedResponses request(s) will return 401 Unauthorized');
+  }
+
+  @visibleForTesting
+  static void debugResetForcedUnauthorized() {
+    _forcedUnauthorizedResponses = 0;
+  }
+
   static atp_core.GetClient wrapGetClient([atp_core.GetClient? baseClient]) {
     final delegate = baseClient ?? http.get;
     return (Uri url, {Map<String, String>? headers}) async {
       final metadata = metadataFor(url, headers: headers);
       final stopwatch = Stopwatch()..start();
       log.t(_requestLogLine(httpMethod: 'GET', metadata: metadata));
+      final forced = _takeForcedUnauthorized(method: 'GET', url: url, metadata: metadata);
+      if (forced != null) {
+        _logResponse(
+          httpMethod: 'GET',
+          metadata: metadata,
+          statusCode: forced.statusCode,
+          elapsed: stopwatch.elapsed,
+        );
+        return forced;
+      }
       try {
         final response = await delegate(url, headers: headers);
         _logResponse(
@@ -46,6 +71,16 @@ abstract final class XrpcNetworkInterceptor {
       final metadata = metadataFor(url, headers: headers);
       final stopwatch = Stopwatch()..start();
       log.t(_requestLogLine(httpMethod: 'POST', metadata: metadata));
+      final forced = _takeForcedUnauthorized(method: 'POST', url: url, metadata: metadata);
+      if (forced != null) {
+        _logResponse(
+          httpMethod: 'POST',
+          metadata: metadata,
+          statusCode: forced.statusCode,
+          elapsed: stopwatch.elapsed,
+        );
+        return forced;
+      }
       try {
         final response = await delegate(url, headers: headers, body: body, encoding: encoding);
         _logResponse(
@@ -94,6 +129,28 @@ abstract final class XrpcNetworkInterceptor {
       }
     }
     return null;
+  }
+
+  static http.Response? _takeForcedUnauthorized({
+    required String method,
+    required Uri url,
+    required XrpcRequestMetadata metadata,
+  }) {
+    if (!kDebugMode || _forcedUnauthorizedResponses < 1) {
+      return null;
+    }
+
+    _forcedUnauthorizedResponses -= 1;
+    log.w(
+      'XRPC Debug Hook: forcing 401 for method=$method, PDS=${metadata.pdsHost}, '
+      'AppView=${metadata.appView}, XRPC method=${metadata.xrpcMethod}',
+    );
+    return http.Response(
+      '{"error":"Unauthorized","message":"Forced debug Unauthorized response"}',
+      401,
+      headers: const {'content-type': 'application/json'},
+      request: http.Request(method, url),
+    );
   }
 
   static String _requestLogLine({required String httpMethod, required XrpcRequestMetadata metadata}) {

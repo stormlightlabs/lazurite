@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:atproto_core/atproto_core.dart' show AtUri;
+import 'package:atproto_core/atproto_core.dart' as atcore show AtUri;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/app_bsky_feed_getauthorfeed.dart';
@@ -11,6 +11,9 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/data/trending_join.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
@@ -27,8 +30,9 @@ class FeedRepository {
     AppViewFallbackService? appViewFallbackService,
     int routingEpoch = 0,
     int Function()? routingEpochResolver,
-  }) : _bluesky = bluesky,
-       _database = database,
+    Future<AuthTokens?> Function()? onUnauthorized,
+    dynamic Function(AuthTokens tokens)? blueskyClientFactory,
+  }) : _database = database,
        _accountDid = accountDid,
        _moderationService = moderationService,
        _appViewContext = AppViewRequestContext(
@@ -39,9 +43,18 @@ class FeedRepository {
        _crossProviderFallbackEnabledResolver = crossProviderFallbackEnabledResolver,
        _appViewFallbackService = appViewFallbackService ?? AppViewFallbackService(),
        _routingEpoch = routingEpoch,
-       _routingEpochResolver = routingEpochResolver;
+       _routingEpochResolver = routingEpochResolver {
+    _authRecovery = UnauthorizedRecoveryRunner<dynamic>(
+      initialClient: bluesky,
+      onUnauthorized: onUnauthorized,
+      clientFactory: blueskyClientFactory ?? createBlueskyClient,
+      onUnauthorizedException: (error, stackTrace) {
+        log.w('feed.auth unauthorized; attempting session recovery', error: error, stackTrace: stackTrace);
+      },
+    );
+  }
 
-  final dynamic _bluesky;
+  late final UnauthorizedRecoveryRunner<dynamic> _authRecovery;
   final AppDatabase _database;
   final String _accountDid;
   final ModerationService? _moderationService;
@@ -77,25 +90,21 @@ class FeedRepository {
       await _moderationService?.headersForRequest(),
     );
 
-    final response = await _bluesky.feed.getAuthorFeed(
-      actor: actor,
-      cursor: cursor,
-      limit: limit,
-      filter: bskyFilter,
-      $headers: headers,
+    final response = await _authRecovery.run(
+      (client) =>
+          client.feed.getAuthorFeed(actor: actor, cursor: cursor, limit: limit, filter: bskyFilter, $headers: headers),
     );
 
     return FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
   }
 
   Future<FeedResult> getTimeline({String? cursor, int limit = 50}) async {
-    final response = await _bluesky.feed.getTimeline(
-      cursor: cursor,
-      limit: limit,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.feed.getTimeline',
-        await _moderationService?.headersForRequest(),
-      ),
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.feed.getTimeline',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.feed.getTimeline(cursor: cursor, limit: limit, $headers: headers),
     );
 
     final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
@@ -103,15 +112,13 @@ class FeedRepository {
     return result;
   }
 
-  Future<FeedResult> getFeed({required AtUri feedUri, String? cursor, int limit = 50}) async {
-    final response = await _bluesky.feed.getFeed(
-      feed: feedUri,
-      cursor: cursor,
-      limit: limit,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.feed.getFeed',
-        await _moderationService?.headersForRequest(),
-      ),
+  Future<FeedResult> getFeed({required atcore.AtUri feedUri, String? cursor, int limit = 50}) async {
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.feed.getFeed',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.feed.getFeed(feed: feedUri, cursor: cursor, limit: limit, $headers: headers),
     );
 
     final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
@@ -161,28 +168,27 @@ class FeedRepository {
 
   Future<PreferencesResult> getPreferences() async {
     final headers = _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest());
-    final response = await _bluesky.actor.getPreferences($headers: headers);
+    final response = await _authRecovery.run((client) => client.actor.getPreferences($headers: headers));
     return PreferencesResult(preferences: response.data.preferences);
   }
 
   Future<void> putPreferences({required List<UPreferences> preferences}) async {
     final headers = _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest());
-    await _bluesky.actor.putPreferences(preferences: preferences, $headers: headers);
+    await _authRecovery.run((client) => client.actor.putPreferences(preferences: preferences, $headers: headers));
   }
 
   Future<List<GeneratorView>> getSuggestedFeeds({String? cursor, int limit = 50}) async {
-    final response = await _bluesky.feed.getSuggestedFeeds(
-      cursor: cursor,
-      limit: limit,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.feed.getSuggestedFeeds',
-        await _moderationService?.headersForRequest(),
-      ),
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.feed.getSuggestedFeeds',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.feed.getSuggestedFeeds(cursor: cursor, limit: limit, $headers: headers),
     );
     return response.data.feeds;
   }
 
-  Future<AtUri> resolveFeedGeneratorUri({required String actor, required String rkey}) async {
+  Future<atcore.AtUri> resolveFeedGeneratorUri({required String actor, required String rkey}) async {
     final normalizedActor = actor.trim();
     final normalizedRkey = rkey.trim();
     if (normalizedActor.isEmpty || normalizedRkey.isEmpty) {
@@ -190,21 +196,21 @@ class FeedRepository {
     }
 
     if (normalizedActor.startsWith('did:')) {
-      return AtUri.parse('at://$normalizedActor/app.bsky.feed.generator/$normalizedRkey');
+      return atcore.AtUri.parse('at://$normalizedActor/app.bsky.feed.generator/$normalizedRkey');
     }
 
-    final response = await _bluesky.actor.getProfile(
-      actor: normalizedActor,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.actor.getProfile',
-        await _moderationService?.headersForRequest(),
-      ),
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.actor.getProfile',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.actor.getProfile(actor: normalizedActor, $headers: headers),
     );
     final did = response.data.did.trim();
     if (did.isEmpty) {
       throw StateError('Resolved profile did was empty for actor=$normalizedActor');
     }
-    return AtUri.parse('at://$did/app.bsky.feed.generator/$normalizedRkey');
+    return atcore.AtUri.parse('at://$did/app.bsky.feed.generator/$normalizedRkey');
   }
 
   Future<TrendingScreenData> getTrendingScreenData({int limit = 10}) async {
@@ -236,7 +242,7 @@ class FeedRepository {
     return _runPublicReadWithFallback(
       endpointId: 'app.bsky.unspecced.getTrendingTopics',
       request: (context, headers, {required fallbackUsed}) async {
-        final response = await _bluesky.unspecced.getTrendingTopics(
+        final response = await _authRecovery.client.unspecced.getTrendingTopics(
           limit: clampedLimit,
           $service: context.publicServiceHost(),
           $headers: headers,
@@ -251,7 +257,7 @@ class FeedRepository {
     return _runPublicReadWithFallback(
       endpointId: 'app.bsky.unspecced.getTrends',
       request: (context, headers, {required fallbackUsed}) async {
-        final response = await _bluesky.unspecced.getTrends(
+        final response = await _authRecovery.client.unspecced.getTrends(
           limit: clampedLimit,
           $service: context.publicServiceHost(),
           $headers: headers,
@@ -304,25 +310,25 @@ class FeedRepository {
     );
   }
 
-  Future<GeneratorView> getFeedGenerator(AtUri feedUri) async {
-    final response = await _bluesky.feed.getFeedGenerator(
-      feed: feedUri,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.feed.getFeedGenerator',
-        await _moderationService?.headersForRequest(),
-      ),
+  Future<GeneratorView> getFeedGenerator(atcore.AtUri feedUri) async {
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.feed.getFeedGenerator',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.feed.getFeedGenerator(feed: feedUri, $headers: headers),
     );
     return response.data.view;
   }
 
-  Future<List<GeneratorView>> getFeedGenerators(List<AtUri> feedUris) async {
+  Future<List<GeneratorView>> getFeedGenerators(List<atcore.AtUri> feedUris) async {
     if (feedUris.isEmpty) return [];
-    final response = await _bluesky.feed.getFeedGenerators(
-      feeds: feedUris,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.feed.getFeedGenerators',
-        await _moderationService?.headersForRequest(),
-      ),
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.feed.getFeedGenerators',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.feed.getFeedGenerators(feeds: feedUris, $headers: headers),
     );
     return response.data.feeds;
   }

@@ -8,6 +8,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 
 class _FakeFeedData {
@@ -37,10 +38,21 @@ class _QueuedFeedApi {
   }
 }
 
+class _HandlerFeedApi {
+  _HandlerFeedApi({required this.getTimelineHandler});
+
+  final Future<_FakeFeedResponse> Function({String? cursor, int? limit, Map<String, String>? headers})
+  getTimelineHandler;
+
+  Future<_FakeFeedResponse> getTimeline({String? cursor, int? limit, Map<String, String>? $headers}) {
+    return getTimelineHandler(cursor: cursor, limit: limit, headers: $headers);
+  }
+}
+
 class _FakeBluesky {
   _FakeBluesky(this.feed);
 
-  final _QueuedFeedApi feed;
+  final dynamic feed;
 }
 
 void main() {
@@ -139,6 +151,85 @@ void main() {
       expect(cached!.posts.length, 1);
       expect(cached.posts.single.post.uri.toString(), validPost.post.uri.toString());
     });
+
+    test('retries timeline request once after unauthorized recovery', () async {
+      var refreshCalls = 0;
+      var primaryCalls = 0;
+      var fallbackCalls = 0;
+
+      final primaryFeedApi = _HandlerFeedApi(
+        getTimelineHandler: ({String? cursor, int? limit, Map<String, String>? headers}) async {
+          primaryCalls += 1;
+          throw _unauthorizedException('app.bsky.feed.getTimeline');
+        },
+      );
+      final fallbackFeedApi = _HandlerFeedApi(
+        getTimelineHandler: ({String? cursor, int? limit, Map<String, String>? headers}) async {
+          fallbackCalls += 1;
+          return _FakeFeedResponse(_FakeFeedData(feed: [_post(1)], cursor: null));
+        },
+      );
+      final repository = FeedRepository(
+        bluesky: _FakeBluesky(primaryFeedApi),
+        database: database,
+        accountDid: 'did:plc:test',
+        onUnauthorized: () async {
+          refreshCalls += 1;
+          return _testTokens();
+        },
+        blueskyClientFactory: (_) => _FakeBluesky(fallbackFeedApi),
+      );
+
+      final result = await repository.getTimeline();
+
+      expect(refreshCalls, 1);
+      expect(primaryCalls, 1);
+      expect(fallbackCalls, 1);
+      expect(result.posts.length, 1);
+      expect(result.posts.first.post.uri.toString(), _post(1).post.uri.toString());
+    });
+
+    test('rethrows unauthorized when recovery callback returns null tokens', () async {
+      var refreshCalls = 0;
+      var primaryCalls = 0;
+      final primaryFeedApi = _HandlerFeedApi(
+        getTimelineHandler: ({String? cursor, int? limit, Map<String, String>? headers}) async {
+          primaryCalls += 1;
+          throw _unauthorizedException('app.bsky.feed.getTimeline');
+        },
+      );
+      final repository = FeedRepository(
+        bluesky: _FakeBluesky(primaryFeedApi),
+        database: database,
+        accountDid: 'did:plc:test',
+        onUnauthorized: () async {
+          refreshCalls += 1;
+          return null;
+        },
+      );
+
+      await expectLater(repository.getTimeline(), throwsA(isA<UnauthorizedException>()));
+      expect(primaryCalls, 1);
+      expect(refreshCalls, 1);
+    });
+
+    test('rethrows unauthorized when no recovery callback is configured', () async {
+      var primaryCalls = 0;
+      final primaryFeedApi = _HandlerFeedApi(
+        getTimelineHandler: ({String? cursor, int? limit, Map<String, String>? headers}) async {
+          primaryCalls += 1;
+          throw _unauthorizedException('app.bsky.feed.getTimeline');
+        },
+      );
+      final repository = FeedRepository(
+        bluesky: _FakeBluesky(primaryFeedApi),
+        database: database,
+        accountDid: 'did:plc:test',
+      );
+
+      await expectLater(repository.getTimeline(), throwsA(isA<UnauthorizedException>()));
+      expect(primaryCalls, 1);
+    });
   });
 }
 
@@ -157,3 +248,27 @@ FeedViewPost _post(int index) {
 }
 
 List<String> _uris(List<FeedViewPost> posts) => posts.map((post) => post.post.uri.toString()).toList(growable: false);
+
+AuthTokens _testTokens() {
+  final now = DateTime.now().toUtc();
+  return AuthTokens(
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+    expiresAt: now.add(const Duration(hours: 1)),
+    did: 'did:plc:test',
+    handle: 'test.bsky.social',
+    service: 'bsky.social',
+  );
+}
+
+UnauthorizedException _unauthorizedException(String methodId) {
+  return UnauthorizedException(
+    XRPCResponse(
+      headers: const {},
+      status: HttpStatus.unauthorized,
+      request: XRPCRequest(method: HttpMethod.get, url: Uri.https('bsky.social', '/xrpc/$methodId')),
+      rateLimit: RateLimit.unlimited(),
+      data: const XRPCError(error: 'Unauthorized', message: 'exp claim timestamp check failed'),
+    ),
+  );
+}
