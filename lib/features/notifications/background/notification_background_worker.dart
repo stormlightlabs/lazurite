@@ -66,6 +66,9 @@ Future<bool?> handleNotificationWorkmanagerTask(String taskName, Map<String, dyn
 class NotificationBackgroundScheduler {
   NotificationBackgroundScheduler._();
 
+  /// iOS fetch/BGTask execution is system-managed. Workmanager's
+  /// `registerPeriodicTask` channel method is Android-specific,
+  /// so avoid calling it on iOS.
   static Future<void> ensureScheduled() async {
     if (Platform.isAndroid) {
       await Workmanager().registerPeriodicTask(
@@ -82,9 +85,6 @@ class NotificationBackgroundScheduler {
       return;
     }
 
-    // iOS fetch/BGTask execution is system-managed. Workmanager's
-    // `registerPeriodicTask` channel method is Android-specific, so avoid
-    // calling it on iOS.
     try {
       await Workmanager().registerOneOffTask(
         notificationReconcileUniqueName,

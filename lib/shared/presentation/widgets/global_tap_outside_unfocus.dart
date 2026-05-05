@@ -9,13 +9,13 @@ class GlobalTapOutsideUnfocus extends StatelessWidget {
 
   final Widget child;
 
+  /// On invoke, we preserve Flutter's default down-event behavior on touch so
+  /// overlay interactions (like typeahead suggestion taps) are not interrupted.
   @override
   Widget build(BuildContext context) => Actions(
     actions: <Type, Action<Intent>>{
       EditableTextTapOutsideIntent: CallbackAction<EditableTextTapOutsideIntent>(
         onInvoke: (intent) {
-          // Preserve Flutter's default down-event behavior on touch so overlay
-          // interactions (like typeahead suggestion taps) are not interrupted.
           if (intent.pointerDownEvent.kind != ui.PointerDeviceKind.touch) {
             intent.focusNode.unfocus();
           }

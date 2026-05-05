@@ -76,7 +76,6 @@ class ProfileRepository {
       rethrow;
     }
 
-    // Cache failures should not downgrade a fresh network response into stale fallback data.
     unawaited(_cacheProfileSafely(profile));
 
     if (_moderationService?.shouldFilterProfileDetailedInView(profile) ?? false) {
@@ -128,14 +127,14 @@ class ProfileRepository {
     return suggestions.where((p) => !moderationService.shouldFilterProfileInList(p)).toList();
   }
 
+  /// Likes transport matrix:
+  /// - Self liked tab: app.bsky.feed.getActorLikes via viewer-auth context
+  ///   (PDS-routed, read-after-write behavior for the current account).
+  /// - Non-self liked tab: actor repo scan on actor PDS via
+  ///   com.atproto.repo.listRecords(app.bsky.feed.like), then hydrate subjects
+  ///   on AppView via app.bsky.feed.getPosts.
+  /// Never route non-self repo reads through the viewer PDS.
   Future<ProfileActorLikesResult> getActorLikes({required String actor, String? cursor, int limit = 50}) async {
-    // Likes transport matrix:
-    // - Self liked tab: app.bsky.feed.getActorLikes via viewer-auth context
-    //   (PDS-routed, read-after-write behavior for the current account).
-    // - Non-self liked tab: actor repo scan on actor PDS via
-    //   com.atproto.repo.listRecords(app.bsky.feed.like), then hydrate subjects
-    //   on AppView via app.bsky.feed.getPosts.
-    // Never route non-self repo reads through the viewer PDS.
     if (_isCurrentSessionActor(actor)) {
       final headers = _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest());
       log.i(
@@ -331,7 +330,9 @@ class ProfileRepository {
       if (normalizedActor == sessionDid || normalizedActor == sessionHandle) {
         return true;
       }
-    } catch (_) {}
+    } catch (e) {
+      log.d('ProfileRepository: Unable to parse current session actor', error: e);
+    }
 
     try {
       final oauthSession = bluesky.oAuthSession;
@@ -339,8 +340,8 @@ class ProfileRepository {
       if (normalizedActor == oauthDid) {
         return true;
       }
-    } catch (_) {
-      // Ignore non-standard test doubles/wrappers missing OAuth shape.
+    } catch (e) {
+      log.d('ProfileRepository: Unable to parse current session actor', error: e);
     }
     return false;
   }

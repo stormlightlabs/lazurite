@@ -793,14 +793,14 @@ class AuthRepository {
     return _oauthLaunchModeForPlatform(isWeb: isWeb, platform: platform);
   }
 
+  /// ATProto OAuth providers can enforce browser-like fetch metadata semantics
+  /// that are not always met by embedded WebViews. Prefer browser tab UX.
   static LaunchMode _oauthLaunchModeForPlatform({required bool isWeb, required TargetPlatform platform}) {
     if (isWeb) {
       return LaunchMode.platformDefault;
     }
 
     return switch (platform) {
-      // ATProto OAuth providers can enforce browser-like fetch metadata semantics
-      // that are not always met by embedded WebViews. Prefer browser tab UX.
       TargetPlatform.android => LaunchMode.inAppBrowserView,
       TargetPlatform.iOS => LaunchMode.inAppBrowserView,
       _ => LaunchMode.externalApplication,

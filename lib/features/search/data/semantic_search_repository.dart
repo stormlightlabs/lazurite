@@ -74,7 +74,7 @@ class SemanticSearchRepository {
       if (postJson == null) {
         continue;
       }
-      // FTS rank determines order; map position to a readable confidence range.
+
       final score = (90.0 - (index * 2.5)).clamp(55.0, 95.0).toDouble();
       results.add(SemanticSearchResult(postUri: match.postUri, score: score, source: match.source, postJson: postJson));
     }

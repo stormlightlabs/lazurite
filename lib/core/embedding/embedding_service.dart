@@ -3,8 +3,8 @@ import 'dart:math' show sqrt;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/embedding/word_piece_tokenizer.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 /// L2-normalize [vector], returning a new [Float32List].
@@ -94,7 +94,6 @@ List<Object> _buildModelInputs(
     }
   }
 
-  // Fallback mapping when tensor names are opaque or stripped.
   if (!assignedInputIds && inputTensors.isNotEmpty) {
     inputs[0] = inputIds;
   }
@@ -133,7 +132,6 @@ Float32List _extractEmbeddingFromModelOutput(Object? output, List<int> attention
     return Float32List.fromList(first);
   }
 
-  // [batch, seq, hidden] shape: mean-pool token embeddings.
   if (first is List && first.isNotEmpty && first.first is List<double>) {
     final tokenRows = first.cast<List<double>>();
     final hiddenSize = tokenRows.first.length;
