@@ -13,6 +13,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LoginRequested>(_onLoginRequested);
     on<OAuthLoginRequested>(_onOAuthLoginRequested);
     on<LogoutRequested>(_onLogoutRequested);
+    on<LocalAuthDataClearRequested>(_onLocalAuthDataClearRequested);
     on<SessionRestored>(_onSessionRestored);
     on<CheckSessionRequested>(_onCheckSessionRequested);
     on<SessionCleared>(_onSessionCleared);
@@ -62,6 +63,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(const AuthState.unauthenticated());
     } catch (error) {
       emit(AuthState.authError('Logout failed: $error'));
+    }
+  }
+
+  Future<void> _onLocalAuthDataClearRequested(LocalAuthDataClearRequested event, Emitter<AuthState> emit) async {
+    try {
+      await _authRepository.clearSession();
+      emit(const AuthState.unauthenticated());
+    } catch (error) {
+      emit(AuthState.authError('Failed to clear sign-in data: $error'));
     }
   }
 

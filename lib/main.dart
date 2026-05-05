@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/bootstrap/auth_bootstrap.dart';
+import 'package:lazurite/core/cache/local_cache_maintenance_service.dart';
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/database/app_database.dart';
@@ -469,8 +470,13 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider<CrashReportingService>.value(
-      value: widget.crashReportingService,
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<CrashReportingService>.value(value: widget.crashReportingService),
+        RepositoryProvider(
+          create: (_) => LocalCacheMaintenanceService(database: widget.database, objectBoxStore: widget.objectBoxStore),
+        ),
+      ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider.value(value: widget.authBloc),

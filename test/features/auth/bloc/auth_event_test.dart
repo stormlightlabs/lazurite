@@ -45,6 +45,15 @@ void main() {
       });
     });
 
+    group('LocalAuthDataClearRequested', () {
+      test('should support value equality', () {
+        const event1 = LocalAuthDataClearRequested();
+        const event2 = LocalAuthDataClearRequested();
+
+        expect(event1, equals(event2));
+      });
+    });
+
     group('SessionRestored', () {
       test('should support value equality', () {
         const event1 = SessionRestored(tokens: tokens);

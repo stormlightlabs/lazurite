@@ -77,6 +77,21 @@ void main() {
     );
 
     blocTest<AuthBloc, AuthState>(
+      'clears local auth data and emits [unauthenticated] when LocalAuthDataClearRequested is added',
+      build: () => AuthBloc(authRepository: mockAuthRepository),
+      seed: () => const AuthState.authenticated(tokens),
+      setUp: () {
+        when(() => mockAuthRepository.clearSession()).thenAnswer((_) async {});
+      },
+      act: (bloc) => bloc.add(const LocalAuthDataClearRequested()),
+      expect: () => [const AuthState.unauthenticated()],
+      verify: (_) {
+        verify(() => mockAuthRepository.clearSession()).called(1);
+        verifyNever(() => mockAuthRepository.logout());
+      },
+    );
+
+    blocTest<AuthBloc, AuthState>(
       'emits [authenticated] when SessionRestored is added',
       build: () => AuthBloc(authRepository: mockAuthRepository),
       act: (bloc) => bloc.add(const SessionRestored(tokens: tokens)),
