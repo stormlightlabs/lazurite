@@ -434,6 +434,8 @@ void main() {
           const ['org.stormlightlabs.lazurite:/oauth/callback', 'https://lazurite.stormlightlabs.org/oauth/callback'],
           isAndroid: true,
           httpsAndroidCallbackEnabled: true,
+          isIos: false,
+          httpsIosCallbackEnabled: true,
         );
 
         expect(selected.toString(), equals('https://lazurite.stormlightlabs.org/oauth/callback'));
@@ -444,6 +446,8 @@ void main() {
           const ['org.stormlightlabs.lazurite:/oauth/callback', 'https://lazurite.stormlightlabs.org/oauth/callback'],
           isAndroid: true,
           httpsAndroidCallbackEnabled: false,
+          isIos: false,
+          httpsIosCallbackEnabled: true,
         );
 
         expect(selected.toString(), equals('org.stormlightlabs.lazurite:/oauth/callback'));
@@ -454,6 +458,8 @@ void main() {
           const ['org.stormlightlabs.lazurite:/oauth/callback'],
           isAndroid: true,
           httpsAndroidCallbackEnabled: true,
+          isIos: false,
+          httpsIosCallbackEnabled: true,
         );
 
         expect(selected.toString(), equals('org.stormlightlabs.lazurite:/oauth/callback'));
@@ -464,9 +470,35 @@ void main() {
           const ['https://lazurite.stormlightlabs.org/oauth/callback'],
           isAndroid: true,
           httpsAndroidCallbackEnabled: true,
+          isIos: false,
+          httpsIosCallbackEnabled: true,
         );
 
         expect(selected.toString(), equals('https://lazurite.stormlightlabs.org/oauth/callback'));
+      });
+
+      test('prefers HTTPS callback on iOS when flag is enabled', () {
+        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+          const ['org.stormlightlabs.lazurite:/oauth/callback', 'https://lazurite.stormlightlabs.org/oauth/callback'],
+          isAndroid: false,
+          httpsAndroidCallbackEnabled: true,
+          isIos: true,
+          httpsIosCallbackEnabled: true,
+        );
+
+        expect(selected.toString(), equals('https://lazurite.stormlightlabs.org/oauth/callback'));
+      });
+
+      test('uses custom scheme callback on iOS when HTTPS flag is disabled', () {
+        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+          const ['org.stormlightlabs.lazurite:/oauth/callback', 'https://lazurite.stormlightlabs.org/oauth/callback'],
+          isAndroid: false,
+          httpsAndroidCallbackEnabled: true,
+          isIos: true,
+          httpsIosCallbackEnabled: false,
+        );
+
+        expect(selected.toString(), equals('org.stormlightlabs.lazurite:/oauth/callback'));
       });
 
       test('throws when no supported callback URI is present', () {
@@ -475,6 +507,8 @@ void main() {
             const ['https://example.com/oauth/callback'],
             isAndroid: true,
             httpsAndroidCallbackEnabled: true,
+            isIos: false,
+            httpsIosCallbackEnabled: true,
           ),
           throwsA(isA<UnsupportedError>()),
         );
@@ -508,10 +542,10 @@ void main() {
     });
 
     group('oauth browser launch mode', () {
-      test('uses in-app browser view on iOS', () {
+      test('uses external application on iOS', () {
         expect(
           AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.iOS),
-          equals(LaunchMode.inAppBrowserView),
+          equals(LaunchMode.externalApplication),
         );
       });
 

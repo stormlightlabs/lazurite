@@ -70,9 +70,12 @@ class AuthRepository {
   static const String _mobileOAuthRedirectPath = '/oauth/callback';
   static const String _httpsOAuthRedirectHost = 'lazurite.stormlightlabs.org';
   static const String _httpsOAuthRedirectPath = '/oauth/callback';
-  // TODO: Add iOS Universal Links callback support and AASA validation.
   static const bool _androidHttpsCallbackEnabled = bool.fromEnvironment(
     'OAUTH_ANDROID_HTTPS_CALLBACK_ENABLED',
+    defaultValue: true,
+  );
+  static const bool _iosHttpsCallbackEnabled = bool.fromEnvironment(
+    'OAUTH_IOS_HTTPS_CALLBACK_ENABLED',
     defaultValue: true,
   );
   static final Uri _mobileOAuthRedirectUri = Uri.parse('$_mobileOAuthRedirectScheme:$_mobileOAuthRedirectPath');
@@ -223,15 +226,20 @@ class AuthRepository {
       final metadata = await _loadClientMetadata(kClientId);
       log.d('AuthRepository: Loaded client metadata with redirect URIs: ${metadata.redirectUris.join(', ')}');
       final isAndroidNative = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      final isIosNative = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
       final redirectUri = _selectOAuthRedirectUriTemplate(
         metadata.redirectUris,
         isAndroid: isAndroidNative,
         httpsAndroidCallbackEnabled: _androidHttpsCallbackEnabled,
+        isIos: isIosNative,
+        httpsIosCallbackEnabled: _iosHttpsCallbackEnabled,
       );
       log.d(
         'AuthRepository: OAuth callback strategy '
         'androidNative=$isAndroidNative '
-        'androidHttpsCallbackEnabled=$_androidHttpsCallbackEnabled',
+        'androidHttpsCallbackEnabled=$_androidHttpsCallbackEnabled '
+        'iosNative=$isIosNative '
+        'iosHttpsCallbackEnabled=$_iosHttpsCallbackEnabled',
       );
       log.i('AuthRepository: Using OAuth callback redirect ${_sanitizeUriForLog(redirectUri)}');
 
@@ -811,8 +819,8 @@ class AuthRepository {
     return _oauthLaunchModeForPlatform(isWeb: isWeb, platform: platform);
   }
 
-  /// ATProto OAuth providers can enforce browser-like fetch metadata semantics
-  /// that are not always met by embedded WebViews. Prefer browser tab UX.
+  /// ATProto OAuth providers can enforce browser-like fetch metadata semantics.
+  /// Prefer the system browser app on mobile for consistent behavior.
   static LaunchMode _oauthLaunchModeForPlatform({required bool isWeb, required TargetPlatform platform}) {
     if (isWeb) {
       return LaunchMode.platformDefault;
@@ -820,7 +828,7 @@ class AuthRepository {
 
     return switch (platform) {
       TargetPlatform.android => LaunchMode.externalApplication,
-      TargetPlatform.iOS => LaunchMode.inAppBrowserView,
+      TargetPlatform.iOS => LaunchMode.externalApplication,
       _ => LaunchMode.externalApplication,
     };
   }
@@ -866,6 +874,8 @@ class AuthRepository {
     List<String> redirectUris, {
     required bool isAndroid,
     required bool httpsAndroidCallbackEnabled,
+    required bool isIos,
+    required bool httpsIosCallbackEnabled,
   }) {
     final candidates = redirectUris.map(Uri.parse).toList(growable: false);
     if (candidates.isEmpty) {
@@ -884,6 +894,9 @@ class AuthRepository {
     }
 
     if (isAndroid && httpsAndroidCallbackEnabled && httpsRedirect != null) {
+      return httpsRedirect;
+    }
+    if (isIos && httpsIosCallbackEnabled && httpsRedirect != null) {
       return httpsRedirect;
     }
     if (customSchemeRedirect != null) {
@@ -907,11 +920,15 @@ class AuthRepository {
     List<String> redirectUris, {
     required bool isAndroid,
     required bool httpsAndroidCallbackEnabled,
+    required bool isIos,
+    required bool httpsIosCallbackEnabled,
   }) {
     return _selectOAuthRedirectUriTemplate(
       redirectUris,
       isAndroid: isAndroid,
       httpsAndroidCallbackEnabled: httpsAndroidCallbackEnabled,
+      isIos: isIos,
+      httpsIosCallbackEnabled: httpsIosCallbackEnabled,
     );
   }
 
