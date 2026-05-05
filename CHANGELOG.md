@@ -1,6 +1,21 @@
 # CHANGELOG
 
-## v1.0.0 (Alpha 3) (Unreleased)
+## v1.0.0 (Alpha 4)
+
+### Changed
+
+#### 2026-05-05
+
+- OAuth callback handling now prefers HTTPS app links/universal links on Android and iOS, with hosted app-association files and custom-scheme fallback retained.
+
+### Fixed
+
+#### 2026-05-04
+
+- Fixed background auth-expiry recovery by adding unauthorized retry + session refresh/recovery paths across feed/thread/conversation reads.
+- Fixed account-switch reliability.
+
+## v1.0.0 (Alpha 3)
 
 ### Added
 
