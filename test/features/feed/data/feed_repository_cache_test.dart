@@ -188,6 +188,48 @@ void main() {
       expect(result.posts.length, 1);
       expect(result.posts.first.post.uri.toString(), _post(1).post.uri.toString());
     });
+
+    test('rethrows unauthorized when recovery callback returns null tokens', () async {
+      var refreshCalls = 0;
+      var primaryCalls = 0;
+      final primaryFeedApi = _HandlerFeedApi(
+        getTimelineHandler: ({String? cursor, int? limit, Map<String, String>? headers}) async {
+          primaryCalls += 1;
+          throw _unauthorizedException('app.bsky.feed.getTimeline');
+        },
+      );
+      final repository = FeedRepository(
+        bluesky: _FakeBluesky(primaryFeedApi),
+        database: database,
+        accountDid: 'did:plc:test',
+        onUnauthorized: () async {
+          refreshCalls += 1;
+          return null;
+        },
+      );
+
+      await expectLater(repository.getTimeline(), throwsA(isA<UnauthorizedException>()));
+      expect(primaryCalls, 1);
+      expect(refreshCalls, 1);
+    });
+
+    test('rethrows unauthorized when no recovery callback is configured', () async {
+      var primaryCalls = 0;
+      final primaryFeedApi = _HandlerFeedApi(
+        getTimelineHandler: ({String? cursor, int? limit, Map<String, String>? headers}) async {
+          primaryCalls += 1;
+          throw _unauthorizedException('app.bsky.feed.getTimeline');
+        },
+      );
+      final repository = FeedRepository(
+        bluesky: _FakeBluesky(primaryFeedApi),
+        database: database,
+        accountDid: 'did:plc:test',
+      );
+
+      await expectLater(repository.getTimeline(), throwsA(isA<UnauthorizedException>()));
+      expect(primaryCalls, 1);
+    });
   });
 }
 

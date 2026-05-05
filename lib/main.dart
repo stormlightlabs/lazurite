@@ -345,10 +345,10 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
     if (!authState.isAuthenticated || tokens == null || !tokens.isExpired) {
       return;
     }
-    await _recoverAuthSession();
+    await _recoverAuthSession(trigger: 'app_resumed');
   }
 
-  Future<AuthTokens?> _recoverAuthSession() async {
+  Future<AuthTokens?> _recoverAuthSession({required String trigger}) async {
     final inFlight = _authRecoveryCompleter;
     if (inFlight != null) {
       return inFlight.future;
@@ -371,7 +371,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
       completer.complete(refreshed);
       return refreshed;
     } catch (error, stackTrace) {
-      log.w('Auth recovery failed after unauthorized response', error: error, stackTrace: stackTrace);
+      log.w('Auth recovery failed (trigger=$trigger)', error: error, stackTrace: stackTrace);
       widget.authBloc.add(const CheckSessionRequested());
       completer.complete(null);
       return null;
@@ -550,7 +550,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                       appViewFallbackService: widget.appViewFallbackService,
                       routingEpoch: context.read<SettingsCubit>().state.routingEpoch,
                       routingEpochResolver: () => context.read<SettingsCubit>().state.routingEpoch,
-                      onUnauthorized: _recoverAuthSession,
+                      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                     ),
                   ),
                   RepositoryProvider(
@@ -619,7 +619,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                       accountDid: accountDid,
                       moderationService: context.read<ModerationService>(),
                       appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                      onUnauthorized: _recoverAuthSession,
+                      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                     ),
                   ),
                   RepositoryProvider(
@@ -642,7 +642,10 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                     ),
                   ),
                   RepositoryProvider(
-                    create: (_) => ConvoRepository(chat: blueskyChat, onUnauthorized: _recoverAuthSession),
+                    create: (_) => ConvoRepository(
+                      chat: blueskyChat,
+                      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
+                    ),
                   ),
                   RepositoryProvider(create: (_) => PostActionCache()),
                   RepositoryProvider(create: (_) => VideoRepository(bluesky: bluesky)),
