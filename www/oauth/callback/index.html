@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lazurite Authentication Complete</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+      rel="stylesheet" />
+    <link rel="stylesheet" href="/static/shared.css" />
+  </head>
+  <body class="oauth-callback-page">
+    <div class="oauth-callback-container">
+      <main class="oauth-callback-main">
+        <h1 class="oauth-callback-title">Authentication Complete</h1>
+        <p class="oauth-callback-copy">Lazurite is finishing sign-in. If the app does not reopen automatically, tap below.</p>
+        <a id="reopen-link" class="oauth-callback-button" href="#">Open Lazurite</a>
+        <p class="oauth-callback-copy oauth-callback-hint">If this still fails, use your browser menu and choose “Open in app”.</p>
+      </main>
+    </div>
+    <iframe
+      id="reopen-frame"
+      title="Return to Lazurite"
+      style="display: none; width: 0; height: 0; border: 0"
+    ></iframe>
+    <script>
+      const query = window.location.search || '';
+      const fragment = window.location.hash || '';
+      const reopenUrl = `org.stormlightlabs.lazurite:/oauth/callback${query}${fragment}`;
+      const reopenLink = document.getElementById('reopen-link');
+      const reopenFrame = document.getElementById('reopen-frame');
+
+      reopenLink.setAttribute('href', reopenUrl);
+
+      let attemptCount = 0;
+      function attemptReopen() {
+        attemptCount += 1;
+        if (reopenFrame) {
+          reopenFrame.src = reopenUrl;
+        }
+        if (attemptCount === 1) {
+          window.location.assign(reopenUrl);
+          return;
+        }
+        window.location.href = reopenUrl;
+      }
+
+      window.addEventListener('load', function () {
+        window.setTimeout(attemptReopen, 120);
+        window.setTimeout(attemptReopen, 480);
+        window.setTimeout(attemptReopen, 1000);
+      });
+    </script>
+  </body>
+</html>

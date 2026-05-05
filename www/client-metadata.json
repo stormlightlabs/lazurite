@@ -1,14 +1,17 @@
 {
-    "client_id": "https://lazurite.stormlightlabs.org/client-metadata.json",
-    "client_name": "Lazurite",
-    "client_uri": "https://lazurite.stormlightlabs.org",
-    "redirect_uris": ["org.stormlightlabs.lazurite:/oauth/callback"],
-    "scope": "atproto transition:generic transition:chat.bsky",
-    "grant_types": ["authorization_code", "refresh_token"],
-    "response_types": ["code"],
-    "token_endpoint_auth_method": "none",
-    "application_type": "native",
-    "dpop_bound_access_tokens": true,
-    "software_id": "org.stormlightlabs.lazurite",
-    "software_version": "1.0.0"
+  "client_id": "https://lazurite.stormlightlabs.org/client-metadata.json",
+  "client_name": "Lazurite",
+  "client_uri": "https://lazurite.stormlightlabs.org",
+  "redirect_uris": [
+    "https://lazurite.stormlightlabs.org/oauth/callback",
+    "org.stormlightlabs.lazurite:/oauth/callback"
+  ],
+  "scope": "atproto transition:generic transition:chat.bsky",
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none",
+  "application_type": "native",
+  "dpop_bound_access_tokens": true,
+  "software_id": "org.stormlightlabs.lazurite",
+  "software_version": "1.0.0"
 }

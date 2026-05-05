@@ -353,11 +353,7 @@ void main() {
           database: mockDatabase,
           resolveDidDocument: (_) async => {
             'service': [
-              {
-                'id': '#atproto_pds',
-                'type': 'AtprotoPersonalDataServer',
-                'serviceEndpoint': 'https://pds.example',
-              },
+              {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://pds.example'},
             ],
           },
         );
@@ -376,6 +372,111 @@ void main() {
               contains('Invalid DID format'),
             ),
           ),
+        );
+      });
+    });
+
+    group('oauth callback normalization', () {
+      test('accepts canonical custom scheme callback URI', () {
+        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
+          Uri.parse('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'),
+        );
+
+        expect(normalized, isNotNull);
+        expect(normalized!.scheme, equals('org.stormlightlabs.lazurite'));
+        expect(normalized.path, equals('/oauth/callback'));
+      });
+
+      test('normalizes path-only callback URI to canonical custom scheme', () {
+        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
+          Uri.parse('/oauth/callback?code=abc&state=xyz'),
+        );
+
+        expect(normalized, isNotNull);
+        expect(normalized!.toString(), equals('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'));
+      });
+
+      test('accepts exact HTTPS callback URI with oauth query parameters', () {
+        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
+          Uri.parse(
+            'https://lazurite.stormlightlabs.org/oauth/callback?code=abc&state=xyz&iss=https%3A%2F%2Fbsky.social',
+          ),
+        );
+
+        expect(normalized, isNotNull);
+        expect(normalized!.scheme, equals('https'));
+        expect(normalized.host, equals('lazurite.stormlightlabs.org'));
+        expect(normalized.path, equals('/oauth/callback'));
+        expect(normalized.queryParameters['code'], equals('abc'));
+        expect(normalized.queryParameters['state'], equals('xyz'));
+      });
+
+      test('rejects HTTPS callback URI with unexpected host', () {
+        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
+          Uri.parse('https://example.com/oauth/callback?code=abc&state=xyz'),
+        );
+
+        expect(normalized, isNull);
+      });
+
+      test('rejects HTTPS callback URI with unexpected path', () {
+        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
+          Uri.parse('https://lazurite.stormlightlabs.org/callback?code=abc&state=xyz'),
+        );
+
+        expect(normalized, isNull);
+      });
+    });
+
+    group('oauth redirect URI selection', () {
+      test('prefers HTTPS callback on Android when flag is enabled', () {
+        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+          const ['org.stormlightlabs.lazurite:/oauth/callback', 'https://lazurite.stormlightlabs.org/oauth/callback'],
+          isAndroid: true,
+          httpsAndroidCallbackEnabled: true,
+        );
+
+        expect(selected.toString(), equals('https://lazurite.stormlightlabs.org/oauth/callback'));
+      });
+
+      test('uses custom scheme callback on Android when HTTPS flag is disabled', () {
+        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+          const ['org.stormlightlabs.lazurite:/oauth/callback', 'https://lazurite.stormlightlabs.org/oauth/callback'],
+          isAndroid: true,
+          httpsAndroidCallbackEnabled: false,
+        );
+
+        expect(selected.toString(), equals('org.stormlightlabs.lazurite:/oauth/callback'));
+      });
+
+      test('uses custom scheme callback when HTTPS callback is unavailable', () {
+        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+          const ['org.stormlightlabs.lazurite:/oauth/callback'],
+          isAndroid: true,
+          httpsAndroidCallbackEnabled: true,
+        );
+
+        expect(selected.toString(), equals('org.stormlightlabs.lazurite:/oauth/callback'));
+      });
+
+      test('uses HTTPS callback when custom scheme callback is unavailable', () {
+        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+          const ['https://lazurite.stormlightlabs.org/oauth/callback'],
+          isAndroid: true,
+          httpsAndroidCallbackEnabled: true,
+        );
+
+        expect(selected.toString(), equals('https://lazurite.stormlightlabs.org/oauth/callback'));
+      });
+
+      test('throws when no supported callback URI is present', () {
+        expect(
+          () => authRepository.selectOAuthRedirectUriTemplateForTest(
+            const ['https://example.com/oauth/callback'],
+            isAndroid: true,
+            httpsAndroidCallbackEnabled: true,
+          ),
+          throwsA(isA<UnsupportedError>()),
         );
       });
     });
@@ -414,10 +515,10 @@ void main() {
         );
       });
 
-      test('uses in-app browser view on Android', () {
+      test('uses external application on Android', () {
         expect(
           AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.android),
-          equals(LaunchMode.inAppBrowserView),
+          equals(LaunchMode.externalApplication),
         );
       });
 
@@ -507,7 +608,7 @@ OAuthClientMetadata _testClientMetadata() {
     applicationType: 'native',
     clientName: 'Lazurite Test',
     clientUri: 'https://lazurite.stormlightlabs.org',
-    redirectUris: ['org.stormlightlabs.lazurite:/oauth/callback'],
+    redirectUris: ['https://lazurite.stormlightlabs.org/oauth/callback', 'org.stormlightlabs.lazurite:/oauth/callback'],
     responseTypes: ['code'],
     grantTypes: ['authorization_code', 'refresh_token'],
     scope: 'atproto',
