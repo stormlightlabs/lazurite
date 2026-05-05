@@ -104,6 +104,9 @@ class AppRouter {
       final path = state.uri.path;
       final publicPaths = {
         '/login',
+        '/login/settings',
+        '/login/settings/about',
+        '/login/settings/logs',
         '/terms',
         '/privacy',
         OAuthCallbackScreen.routePath,
@@ -125,6 +128,14 @@ class AppRouter {
     },
     routes: [
       GoRoute(path: '/login', pageBuilder: (context, state) => _page(context, state, const LoginScreen())),
+      GoRoute(
+        path: '/login/settings',
+        pageBuilder: (context, state) => _page(context, state, const SettingsScreen(isPublic: true)),
+        routes: [
+          GoRoute(path: 'about', pageBuilder: (context, state) => _page(context, state, const AboutScreen())),
+          GoRoute(path: 'logs', pageBuilder: (context, state) => _page(context, state, const LogsScreen())),
+        ],
+      ),
       GoRoute(
         path: OAuthCallbackScreen.routePath,
         parentNavigatorKey: _rootNavigatorKey,

@@ -25,92 +25,100 @@ import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({this.isPublic = false, super.key});
+
+  final bool isPublic;
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.watch<AuthBloc>().state;
+    final tokens = authState.tokens;
+    final showAccountSettings = authState.isAuthenticated && tokens != null && !isPublic;
+
     return Scaffold(
       appBar: AppBar(
-        leading: const AppShellMenuButton(),
+        leading: isPublic ? const BackButton() : const AppShellMenuButton(),
         title: _title(context),
-        actions: [
-          IconButton(
-            tooltip: 'Log Out',
-            onPressed: () {
-              context.read<AuthBloc>().add(const LogoutRequested());
-            },
-            icon: Icon(Icons.logout, color: context.colorScheme.error),
-          ),
-        ],
+        actions: showAccountSettings
+            ? [
+                IconButton(
+                  tooltip: 'Log Out',
+                  onPressed: () {
+                    context.read<AuthBloc>().add(const LogoutRequested());
+                  },
+                  icon: Icon(Icons.logout, color: context.colorScheme.error),
+                ),
+              ]
+            : null,
       ),
       body: ListView(
         children: [
-          BlocBuilder<AuthBloc, AuthState>(
-            builder: (context, authState) {
-              final tokens = authState.tokens;
-              if (!authState.isAuthenticated || tokens == null) {
-                return const SizedBox.shrink();
-              }
+          if (showAccountSettings)
+            BlocBuilder<AccountSwitcherCubit, AccountSwitcherState>(
+              builder: (context, switcherState) {
+                final authenticatedTokens = tokens;
+                final subtitle = switcherState.accounts.length > 1
+                    ? '${switcherState.accounts.length} accounts — tap to switch'
+                    : '@${authenticatedTokens.handle}';
 
-              return BlocBuilder<AccountSwitcherCubit, AccountSwitcherState>(
-                builder: (context, switcherState) {
-                  final subtitle = switcherState.accounts.length > 1
-                      ? '${switcherState.accounts.length} accounts — tap to switch'
-                      : '@${tokens.handle}';
-
-                  return ListTile(
-                    leading: ProfileAvatar(size: 40, fallbackText: tokens.displayName ?? tokens.handle),
-                    title: Text(tokens.displayName ?? tokens.handle),
-                    subtitle: Text(subtitle),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => showAccountSwitcherSheet(context),
-                  );
-                },
-              );
-            },
-          ),
+                return ListTile(
+                  leading: ProfileAvatar(
+                    size: 40,
+                    fallbackText: authenticatedTokens.displayName ?? authenticatedTokens.handle,
+                  ),
+                  title: Text(authenticatedTokens.displayName ?? authenticatedTokens.handle),
+                  subtitle: Text(subtitle),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => showAccountSwitcherSheet(context),
+                );
+              },
+            ),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Appearance'),
           _buildThemeSelector(context),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Layout'),
           _buildLayoutSettings(context),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Moderation'),
-          const _ModerationSettingsPreview(),
+          if (showAccountSettings) ...[
+            const SizedBox(height: 24),
+            _buildSectionHeader(context, 'Moderation'),
+            const _ModerationSettingsPreview(),
+          ],
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Search'),
           _buildSearchSettings(context),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Account'),
-          const _AtProtocolConnectionCard(),
-          const SizedBox(height: 12),
-          _SettingsTile(
-            icon: Icons.dynamic_feed_outlined,
-            title: 'Feeds',
-            subtitle: 'Manage pinned and saved feeds',
-            onTap: () => context.push('/feeds'),
-          ),
-          _SettingsTile(
-            icon: Icons.bookmark_outline,
-            title: 'Bookmarks & Likes',
-            subtitle: 'View your bookmarked and liked posts',
-            onTap: () => context.push('/bookmarks'),
-          ),
-          _SettingsTile(
-            icon: Icons.videocam_outlined,
-            title: 'Video Upload Limits',
-            subtitle: 'Check your daily video quota',
-            onTap: () => context.push('/settings/video-limits'),
-          ),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Account Maintenance'),
-          _SettingsTile(
-            icon: Icons.cleaning_services_outlined,
-            title: 'Clean Follows',
-            subtitle: 'Audit and unfollow problematic accounts in bulk',
-            onTap: () => context.push('/settings/clean-follows'),
-          ),
+          if (showAccountSettings) ...[
+            const SizedBox(height: 24),
+            _buildSectionHeader(context, 'Account'),
+            const _AtProtocolConnectionCard(),
+            const SizedBox(height: 12),
+            _SettingsTile(
+              icon: Icons.dynamic_feed_outlined,
+              title: 'Feeds',
+              subtitle: 'Manage pinned and saved feeds',
+              onTap: () => context.push('/feeds'),
+            ),
+            _SettingsTile(
+              icon: Icons.bookmark_outline,
+              title: 'Bookmarks & Likes',
+              subtitle: 'View your bookmarked and liked posts',
+              onTap: () => context.push('/bookmarks'),
+            ),
+            _SettingsTile(
+              icon: Icons.videocam_outlined,
+              title: 'Video Upload Limits',
+              subtitle: 'Check your daily video quota',
+              onTap: () => context.push('/settings/video-limits'),
+            ),
+            const SizedBox(height: 24),
+            _buildSectionHeader(context, 'Account Maintenance'),
+            _SettingsTile(
+              icon: Icons.cleaning_services_outlined,
+              title: 'Clean Follows',
+              subtitle: 'Audit and unfollow problematic accounts in bulk',
+              onTap: () => context.push('/settings/clean-follows'),
+            ),
+          ],
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Advanced'),
           _buildAdvancedSettings(context),
@@ -124,23 +132,24 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 24),
           ],
           _buildSectionHeader(context, 'About'),
-          _SettingsTile(
-            icon: Icons.explore_outlined,
-            title: 'AT Explorer',
-            subtitle: 'View PDS Records',
-            onTap: () => context.push('/settings/devtools'),
-          ),
+          if (showAccountSettings)
+            _SettingsTile(
+              icon: Icons.explore_outlined,
+              title: 'AT Explorer',
+              subtitle: 'View PDS Records',
+              onTap: () => context.push('/settings/devtools'),
+            ),
           _SettingsTile(
             icon: Icons.description_outlined,
             title: 'Logs',
             subtitle: 'View app log files',
-            onTap: () => context.push('/settings/logs'),
+            onTap: () => context.push(isPublic ? '/login/settings/logs' : '/settings/logs'),
           ),
           _SettingsTile(
             icon: Icons.info_outline,
             title: 'About',
             subtitle: 'Stormlight Labs',
-            onTap: () => context.push('/settings/about'),
+            onTap: () => context.push(isPublic ? '/login/settings/about' : '/settings/about'),
           ),
           _SettingsTile(
             icon: Icons.gavel_outlined,
@@ -154,16 +163,18 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'How Lazurite handles data',
             onTap: () => context.push('/privacy'),
           ),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Danger Zone'),
-          _SettingsTile(
-            icon: Icons.logout,
-            title: 'Log Out',
-            isDestructive: true,
-            onTap: () {
-              context.read<AuthBloc>().add(const LogoutRequested());
-            },
-          ),
+          if (showAccountSettings) ...[
+            const SizedBox(height: 24),
+            _buildSectionHeader(context, 'Danger Zone'),
+            _SettingsTile(
+              icon: Icons.logout,
+              title: 'Log Out',
+              isDestructive: true,
+              onTap: () {
+                context.read<AuthBloc>().add(const LogoutRequested());
+              },
+            ),
+          ],
           const SizedBox(height: 24),
           Center(child: Text('Lazurite v1.0.0', style: context.textTheme.bodySmall)),
           const SizedBox(height: 24),
