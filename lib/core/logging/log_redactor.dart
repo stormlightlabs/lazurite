@@ -18,7 +18,11 @@ class LogRedactor {
     caseSensitive: false,
   );
   static final RegExp _sensitiveScalarKeyValuePattern = RegExp(
-    '($_sensitiveKeyPattern)\\s*[:=]\\s*(?:"(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\'|[^\\s,|}]+)',
+    '(?<![?&])\\b($_sensitiveKeyPattern)\\b\\s*[:=]\\s*(?:"(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\'|[^\\s,|}]+)',
+    caseSensitive: false,
+  );
+  static final RegExp _sensitiveScalarCodeStatePattern = RegExp(
+    '(?<![?&])\\b($_sensitiveJsonOnlyKeyPattern)\\b\\s*=\\s*(?:"(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\'|[^\\s,|}]+)',
     caseSensitive: false,
   );
 
@@ -28,6 +32,7 @@ class LogRedactor {
     redacted = redacted.replaceAll(_bearerPattern, 'Bearer [REDACTED]');
     redacted = redacted.replaceAllMapped(_sensitiveJsonKeyValuePattern, (match) => '${match.group(1)}"[REDACTED]"');
     redacted = redacted.replaceAllMapped(_sensitiveScalarKeyValuePattern, (match) => '${match.group(1)}: [REDACTED]');
+    redacted = redacted.replaceAllMapped(_sensitiveScalarCodeStatePattern, (match) => '${match.group(1)}: [REDACTED]');
     redacted = redacted.replaceAll(_jwtPattern, '[REDACTED_JWT]');
     return redacted;
   }

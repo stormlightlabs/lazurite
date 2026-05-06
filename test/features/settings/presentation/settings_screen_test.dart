@@ -9,7 +9,6 @@ import 'package:lazurite/core/cache/local_cache_maintenance_service.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
-import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
@@ -574,7 +573,7 @@ void main() {
     expect(find.byTooltip('Open menu'), findsNothing);
   });
 
-  testWidgets('uses menu button when authenticated', (tester) async {
+  testWidgets('uses back button when authenticated', (tester) async {
     final tokens = _authenticatedTokens();
     final authenticatedState = AuthState.authenticated(tokens);
     when(() => authBloc.state).thenReturn(authenticatedState);
@@ -583,7 +582,8 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.byType(AppShellMenuButton), findsOneWidget);
+    expect(find.byTooltip('Back'), findsOneWidget);
+    expect(find.byTooltip('Open menu'), findsNothing);
   });
 
   testWidgets('public mode hides account-gated sections and logout controls', (tester) async {
@@ -608,6 +608,7 @@ void main() {
     expect(find.text('DANGER ZONE'), findsNothing);
     expect(find.text('Video Upload Limits'), findsNothing);
     expect(find.text('Clean Follows'), findsNothing);
+    expect(find.text('Typeahead Provider'), findsNothing);
     expect(find.text('APPEARANCE'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('AT Explorer'), 300);
     await tester.pumpAndSettle();

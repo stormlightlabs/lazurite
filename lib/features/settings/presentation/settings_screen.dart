@@ -9,7 +9,6 @@ import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
-import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -32,23 +31,22 @@ class SettingsScreen extends StatelessWidget {
     final authState = context.watch<AuthBloc>().state;
     final tokens = authState.tokens;
     final showAccountSettings = authState.isAuthenticated && tokens != null;
+    final backFallbackRoute = showAccountSettings ? '/' : '/login';
 
     return Scaffold(
       appBar: AppBar(
-        leading: showAccountSettings
-            ? const AppShellMenuButton()
-            : IconButton(
-                tooltip: 'Back',
-                onPressed: () {
-                  final router = GoRouter.of(context);
-                  if (router.canPop()) {
-                    router.pop();
-                    return;
-                  }
-                  router.go('/login');
-                },
-                icon: const Icon(Icons.arrow_back),
-              ),
+        leading: IconButton(
+          tooltip: 'Back',
+          onPressed: () {
+            final router = GoRouter.of(context);
+            if (router.canPop()) {
+              router.pop();
+              return;
+            }
+            router.go(backFallbackRoute);
+          },
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: _title(context),
         actions: showAccountSettings
             ? [
@@ -97,7 +95,7 @@ class SettingsScreen extends StatelessWidget {
           ],
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Search'),
-          _buildSearchSettings(context),
+          _buildSearchSettings(context, showTypeaheadSettings: showAccountSettings),
           if (showAccountSettings) ...[
             const SizedBox(height: 24),
             _buildSectionHeader(context, 'Account'),
@@ -324,55 +322,58 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchSettings(BuildContext context) => BlocBuilder<SettingsCubit, SettingsState>(
-    builder: (context, settingsState) {
-      final theme = Theme.of(context);
-      return Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: theme.dividerColor),
-            bottom: BorderSide(color: theme.dividerColor),
-          ),
-          color: theme.cardColor,
-        ),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.tune_outlined),
-              title: const Text('Typeahead Provider'),
-              subtitle: Text(
-                settingsState.typeaheadProvider == 'community'
-                    ? 'Community (waow.tech) selected. Third-party service, works before login.'
-                    : 'Bluesky official endpoint selected.',
+  Widget _buildSearchSettings(BuildContext context, {required bool showTypeaheadSettings}) =>
+      BlocBuilder<SettingsCubit, SettingsState>(
+        builder: (context, settingsState) {
+          final theme = Theme.of(context);
+          return Container(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: theme.dividerColor),
+                bottom: BorderSide(color: theme.dividerColor),
               ),
+              color: theme.cardColor,
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment<String>(value: 'bluesky', label: Text('Bluesky')),
-                    ButtonSegment<String>(value: 'community', label: Text('Community')),
-                  ],
-                  selected: {settingsState.typeaheadProvider},
-                  onSelectionChanged: (selection) {
-                    context.read<SettingsCubit>().setTypeaheadProvider(selection.first);
-                  },
+            child: Column(
+              children: [
+                if (showTypeaheadSettings) ...[
+                  ListTile(
+                    leading: const Icon(Icons.tune_outlined),
+                    title: const Text('Typeahead Provider'),
+                    subtitle: Text(
+                      settingsState.typeaheadProvider == 'community'
+                          ? 'Community (waow.tech) selected. Third-party service.'
+                          : 'Bluesky official endpoint selected.',
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment<String>(value: 'bluesky', label: Text('Bluesky')),
+                          ButtonSegment<String>(value: 'community', label: Text('Community')),
+                        ],
+                        selected: {settingsState.typeaheadProvider},
+                        onSelectionChanged: (selection) {
+                          context.read<SettingsCubit>().setTypeaheadProvider(selection.first);
+                        },
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                ],
+                const _SettingsTile(
+                  icon: Icons.manage_search_outlined,
+                  title: 'Semantic Search',
+                  subtitle: 'Manage semantic search from Bookmarks & Likes -> Search',
                 ),
-              ),
+              ],
             ),
-            const Divider(height: 1),
-            const _SettingsTile(
-              icon: Icons.manage_search_outlined,
-              title: 'Semantic Search',
-              subtitle: 'Manage semantic search from Bookmarks & Likes -> Search',
-            ),
-          ],
-        ),
+          );
+        },
       );
-    },
-  );
 
   Widget _buildDeveloperSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
@@ -405,7 +406,7 @@ class SettingsScreen extends StatelessWidget {
                 trailing: const Icon(Icons.warning_amber_rounded),
                 onTap: crashReportingService?.crash,
               ),
-              if (kDebugMode) ...[
+              if (kDebugMode || kProfileMode) ...[
                 const Divider(height: 1),
                 _SettingsTile(
                   icon: Icons.lock_reset_outlined,

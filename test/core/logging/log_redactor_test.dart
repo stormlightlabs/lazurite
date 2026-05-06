@@ -60,6 +60,17 @@ void main() {
       expect(output, isNot(contains('privRaw')));
     });
 
+    test('redacts scalar code and state key-value fragments', () {
+      const input = 'oauth callback fragment: state=xyz123 code=abc456 did=did:plc:alice';
+      final output = LogRedactor.redact(input);
+
+      expect(output, contains('state: [REDACTED]'));
+      expect(output, contains('code: [REDACTED]'));
+      expect(output, isNot(contains('xyz123')));
+      expect(output, isNot(contains('abc456')));
+      expect(output, contains('did=did:plc:alice'));
+    });
+
     test('preserves non-sensitive text', () {
       const input = 'NavObserver: Route pushed: /profile/me (from /)';
       final output = LogRedactor.redact(input);

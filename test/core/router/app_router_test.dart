@@ -537,6 +537,29 @@ void main() {
     router.dispose();
   });
 
+  testWidgets('authenticated settings back button falls back to home when there is no stack to pop', (tester) async {
+    currentAuthState = const AuthState.authenticated(tokens);
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    await tester.pumpAndSettle();
+
+    router.go('/settings');
+    await tester.pumpAndSettle();
+    expect(find.text('APPEARANCE'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('HOME'), findsAtLeastNWidgets(1));
+    expect(find.text('APPEARANCE'), findsNothing);
+
+    router.dispose();
+  });
+
   testWidgets('keeps account-scoped settings routes auth-gated when unauthenticated', (tester) async {
     currentAuthState = const AuthState.unauthenticated();
     when(() => authBloc.state).thenReturn(currentAuthState);
