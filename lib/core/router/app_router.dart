@@ -130,7 +130,19 @@ class AppRouter {
       return null;
     },
     routes: [
-      GoRoute(path: '/login', pageBuilder: (context, state) => _page(context, state, const LoginScreen())),
+      GoRoute(
+        path: '/login',
+        pageBuilder: (context, state) {
+          final initialHandle = state.uri.queryParameters['handle']?.trim();
+          final hasInitialHandle = initialHandle != null && initialHandle.isNotEmpty;
+          final autoStartOAuth = state.uri.queryParameters['reauth'] == '1' && hasInitialHandle;
+          return _page(
+            context,
+            state,
+            LoginScreen(initialHandle: hasInitialHandle ? initialHandle : null, autoStartOAuth: autoStartOAuth),
+          );
+        },
+      ),
       GoRoute(
         path: '/settings',
         pageBuilder: (context, state) => _page(context, state, const SettingsScreen()),

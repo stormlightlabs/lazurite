@@ -45,6 +45,8 @@ class TypeaheadTextField extends StatefulWidget {
 }
 
 class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBindingObserver {
+  static const double _overlayGap = 6;
+
   final LayerLink _layerLink = LayerLink();
   final GlobalKey _fieldKey = GlobalKey();
   late FocusNode _focusNode;
@@ -230,7 +232,7 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
       child: CompositedTransformFollower(
         link: _layerLink,
         showWhenUnlinked: false,
-        offset: Offset(0, fieldSize.height + 4),
+        offset: Offset(0, fieldSize.height + _overlayGap),
         child: Align(
           alignment: Alignment.topLeft,
           child: TapRegion(
@@ -259,8 +261,9 @@ class _TypeaheadTextFieldState extends State<TypeaheadTextField> with WidgetsBin
 
   @override
   Widget build(BuildContext context) {
-    final resolvedDecoration = _isLoading
-        ? (widget.decoration ?? const InputDecoration()).copyWith(
+    final baseDecoration = widget.decoration ?? const InputDecoration();
+    final resolvedDecoration = _isLoading && baseDecoration.suffixIcon == null
+        ? baseDecoration.copyWith(
             suffixIcon: const Padding(
               padding: EdgeInsets.all(12),
               child: SizedBox(

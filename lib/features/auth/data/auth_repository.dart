@@ -463,7 +463,11 @@ class AuthRepository {
         await atp.deleteSession(refreshJwt: storedSession!.refreshToken!, service: storedSession.service);
       }
     } finally {
-      await clearSession();
+      if (storedSession != null) {
+        await _invalidateSession(storedSession);
+      } else {
+        await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
+      }
       log.i('AuthRepository: Logout complete');
     }
   }

@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
@@ -17,13 +22,17 @@ class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
+class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
+
 void main() {
   late MockAuthBloc authBloc;
   late MockSettingsCubit settingsCubit;
+  late MockAccountSwitcherCubit accountSwitcherCubit;
 
   setUp(() {
     authBloc = MockAuthBloc();
     settingsCubit = MockSettingsCubit();
+    accountSwitcherCubit = MockAccountSwitcherCubit();
     when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.unauthenticated());
     const settingsState = SettingsState(
@@ -34,9 +43,21 @@ void main() {
     when(() => settingsCubit.state).thenReturn(settingsState);
     whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: settingsState);
     when(() => settingsCubit.setAppViewProvider(any())).thenAnswer((_) async {});
+    when(() => accountSwitcherCubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
+    whenListen(
+      accountSwitcherCubit,
+      const Stream<AccountSwitcherState>.empty(),
+      initialState: const AccountSwitcherState.ready(accounts: []),
+    );
+    when(() => accountSwitcherCubit.loadAccounts()).thenAnswer((_) async {});
   });
 
-  Widget buildSubject({ThemeMode themeMode = ThemeMode.system}) {
+  Widget buildSubject({
+    ThemeMode themeMode = ThemeMode.system,
+    MockAccountSwitcherCubit? accountCubit,
+    String? initialHandle,
+    bool autoStartOAuth = false,
+  }) {
     final typeaheadRepository = _FakeTypeaheadRepository(
       searchHandler: ({required String query, int limit = 10}) async => const [],
     );
@@ -49,8 +70,13 @@ void main() {
             providers: [
               BlocProvider<AuthBloc>.value(value: authBloc),
               BlocProvider<SettingsCubit>.value(value: settingsCubit),
+              BlocProvider<AccountSwitcherCubit>.value(value: accountCubit ?? accountSwitcherCubit),
             ],
-            child: LoginScreen(typeaheadRepository: typeaheadRepository),
+            child: LoginScreen(
+              initialHandle: initialHandle,
+              autoStartOAuth: autoStartOAuth,
+              typeaheadRepository: typeaheadRepository,
+            ),
           ),
         ),
         GoRoute(
@@ -79,7 +105,8 @@ void main() {
 
   testWidgets('shows settings icon plus terms and privacy links', (tester) async {
     await tester.pumpWidget(buildSubject());
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     final scrollable = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(find.text('Terms of Service'), 200, scrollable: scrollable);
@@ -94,7 +121,8 @@ void main() {
 
   testWidgets('tapping settings icon opens public settings route', (tester) async {
     await tester.pumpWidget(buildSubject());
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
@@ -104,7 +132,8 @@ void main() {
 
   testWidgets('tapping Terms of Service opens terms route', (tester) async {
     await tester.pumpWidget(buildSubject());
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     await tester.scrollUntilVisible(find.text('Terms of Service'), 200, scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
@@ -162,7 +191,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('River Tam'), findsOneWidget);
-    await tester.tap(find.text('River Tam'));
+    final suggestionTile = tester.widget<ListTile>(
+      find.byKey(const ValueKey<String>('typeahead-result-did:plc:river')),
+    );
+    suggestionTile.onTap?.call();
     await tester.pumpAndSettle();
 
     verify(() => authBloc.add(const OAuthLoginRequested(handle: 'river.bsky.social'))).called(1);
@@ -173,13 +205,64 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).first, 'river.bsky.social');
-    await tester.tap(find.text('Continue'));
+    await tester.tap(find.byKey(const ValueKey<String>('login-continue-button')));
     await tester.pumpAndSettle();
 
     verifyInOrder([
       () => settingsCubit.setAppViewProvider('bluesky'),
       () => authBloc.add(const OAuthLoginRequested(handle: 'river.bsky.social')),
     ]);
+  });
+
+  testWidgets('handle field exposes persistent label and continue tooltip', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byType(TextField).first);
+    expect(field.decoration?.labelText, 'Handle or DID');
+    expect(find.byTooltip('Continue'), findsOneWidget);
+  });
+
+  testWidgets('login normalizes identifier before starting OAuth', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).first, ' @River.BSky.Social ');
+    await tester.tap(find.byKey(const ValueKey<String>('login-continue-button')));
+    await tester.pumpAndSettle();
+
+    verifyInOrder([
+      () => settingsCubit.setAppViewProvider('bluesky'),
+      () => authBloc.add(const OAuthLoginRequested(handle: 'river.bsky.social')),
+    ]);
+  });
+
+  testWidgets('invalid identifier shows centralized validation message and does not start OAuth', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).first, 'not-a-handle');
+    await tester.tap(find.byKey(const ValueKey<String>('login-continue-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a full handle like username.bsky.social'), findsOneWidget);
+    verifyNever(() => settingsCubit.setAppViewProvider(any()));
+    verifyNever(() => authBloc.add(const OAuthLoginRequested(handle: 'not-a-handle')));
+  });
+
+  testWidgets('auto-starts OAuth once when reauth opens with an initial handle', (tester) async {
+    await tester.pumpWidget(buildSubject(initialHandle: 'alice.bsky.social', autoStartOAuth: true));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextFormField>(find.byType(TextFormField).first);
+    expect(field.controller?.text, 'alice.bsky.social');
+    verifyInOrder([
+      () => settingsCubit.setAppViewProvider('bluesky'),
+      () => authBloc.add(const OAuthLoginRequested(handle: 'alice.bsky.social')),
+    ]);
+
+    await tester.pump();
+    verifyNever(() => authBloc.add(const OAuthLoginRequested(handle: 'alice.bsky.social')));
   });
 
   testWidgets('tints BlackSky logo in dark mode', (tester) async {
@@ -196,6 +279,107 @@ void main() {
     final blueSkySvg = tester.widget<SvgPicture>(blueSkyLogo.first);
     expect(blueSkySvg.colorFilter, isNull);
   });
+
+  testWidgets('saved account row tap restores stored session', (tester) async {
+    final account = _makeAccount(did: 'did:plc:alice', handle: 'alice.bsky.social', displayName: 'Alice');
+    final state = AccountSwitcherState.ready(accounts: [account], activeDid: account.did);
+    const tokens = AuthTokens(accessToken: 'token', did: 'did:plc:alice', handle: 'alice.bsky.social');
+    when(() => accountSwitcherCubit.state).thenReturn(state);
+    whenListen(accountSwitcherCubit, const Stream<AccountSwitcherState>.empty(), initialState: state);
+    when(() => accountSwitcherCubit.switchAccount(account.did)).thenAnswer((_) async => tokens);
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Saved accounts'), findsOneWidget);
+    expect(find.text('Alice'), findsOneWidget);
+    expect(find.text('@alice.bsky.social'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey<String>('saved-account-did:plc:alice')));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextFormField>(find.byType(TextFormField).first);
+    expect(field.controller?.text, 'alice.bsky.social');
+    verify(() => accountSwitcherCubit.switchAccount(account.did)).called(1);
+    verify(() => authBloc.add(const SessionRestored(tokens: tokens))).called(1);
+    verifyNever(() => authBloc.add(const OAuthLoginRequested(handle: 'alice.bsky.social')));
+  });
+
+  testWidgets('saved account row tap starts OAuth reauth when stored session cannot be restored', (tester) async {
+    final account = _makeAccount(did: 'did:plc:alice', handle: 'alice.bsky.social', displayName: 'Alice');
+    final state = AccountSwitcherState.ready(accounts: [account], activeDid: account.did);
+    when(() => accountSwitcherCubit.state).thenReturn(state);
+    whenListen(accountSwitcherCubit, const Stream<AccountSwitcherState>.empty(), initialState: state);
+    when(() => accountSwitcherCubit.switchAccount(account.did)).thenAnswer((_) async => null);
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('saved-account-did:plc:alice')));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextFormField>(find.byType(TextFormField).first);
+    expect(field.controller?.text, 'alice.bsky.social');
+    verify(() => accountSwitcherCubit.switchAccount(account.did)).called(1);
+    verifyInOrder([
+      () => settingsCubit.setAppViewProvider('bluesky'),
+      () => authBloc.add(const OAuthLoginRequested(handle: 'alice.bsky.social')),
+    ]);
+    verifyNever(
+      () => authBloc.add(
+        const SessionRestored(
+          tokens: AuthTokens(accessToken: 'token', did: 'did:plc:alice', handle: 'alice.bsky.social'),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('shows saved accounts loading state while account list is loading', (tester) async {
+    when(() => accountSwitcherCubit.state).thenReturn(const AccountSwitcherState.loading());
+    whenListen(
+      accountSwitcherCubit,
+      const Stream<AccountSwitcherState>.empty(),
+      initialState: const AccountSwitcherState.loading(),
+    );
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Saved accounts'), findsOneWidget);
+    expect(find.text('Loading saved accounts...'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsWidgets);
+  });
+
+  testWidgets('remove saved account dispatches SessionCleared and hides section when list becomes empty', (
+    tester,
+  ) async {
+    final account = _makeAccount(did: 'did:plc:alice', handle: 'alice.bsky.social', displayName: 'Alice');
+    final initial = AccountSwitcherState.ready(accounts: [account], activeDid: account.did);
+    const empty = AccountSwitcherState.ready(accounts: []);
+    final states = StreamController<AccountSwitcherState>();
+    addTearDown(states.close);
+
+    when(() => accountSwitcherCubit.state).thenReturn(initial);
+    whenListen(accountSwitcherCubit, states.stream, initialState: initial);
+    when(() => accountSwitcherCubit.removeAccount(account.did)).thenAnswer((_) async {
+      states.add(empty);
+      return const AccountRemovalResult.requiresSignIn();
+    });
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Saved accounts'), findsOneWidget);
+    await tester.tap(find.byTooltip('Remove account').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove'));
+    await tester.pumpAndSettle();
+
+    verify(() => accountSwitcherCubit.removeAccount(account.did)).called(1);
+    verify(() => authBloc.add(const SessionCleared())).called(1);
+    expect(find.text('Saved accounts'), findsNothing);
+  });
 }
 
 class _FakeTypeaheadRepository extends TypeaheadRepository {
@@ -207,4 +391,23 @@ class _FakeTypeaheadRepository extends TypeaheadRepository {
   Future<List<TypeaheadResult>> search({required String query, int limit = 10}) {
     return searchHandler(query: query, limit: limit);
   }
+}
+
+Account _makeAccount({required String did, required String handle, String? displayName}) {
+  return Account(
+    did: did,
+    handle: handle,
+    displayName: displayName,
+    service: null,
+    oauthService: null,
+    oauthClientId: null,
+    accessToken: 'token',
+    refreshToken: null,
+    dpopPublicKey: null,
+    dpopPrivateKey: null,
+    dpopNonce: null,
+    expiresAt: null,
+    createdAt: DateTime.utc(2026, 1, 1),
+    updatedAt: DateTime.utc(2026, 1, 1),
+  );
 }

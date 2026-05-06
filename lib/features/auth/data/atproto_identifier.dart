@@ -1,6 +1,18 @@
 import 'package:flutter/foundation.dart';
 
-enum AtProtoIdentifierValidationErrorCode { empty, unsupportedDid, invalidDid, invalidHandle }
+enum AtProtoIdentifierValidationErrorCode {
+  empty,
+  unsupportedDid,
+  invalidDid,
+  invalidHandle;
+
+  String get message => switch (this) {
+    AtProtoIdentifierValidationErrorCode.empty => 'Enter a Bluesky handle or DID',
+    AtProtoIdentifierValidationErrorCode.unsupportedDid => 'Use a did:plc:... or did:web:... identifier',
+    AtProtoIdentifierValidationErrorCode.invalidDid => 'Enter a complete DID like did:plc:... or did:web:...',
+    AtProtoIdentifierValidationErrorCode.invalidHandle => 'Enter a full handle like username.bsky.social',
+  };
+}
 
 class AtProtoIdentifierValidationError {
   const AtProtoIdentifierValidationError(this.code);
