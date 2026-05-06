@@ -532,7 +532,7 @@ void main() {
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Continue'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('login-continue-button')), findsOneWidget);
 
     router.dispose();
   });
@@ -581,7 +581,7 @@ void main() {
     router.go('/settings/video-limits');
     await tester.pumpAndSettle();
 
-    expect(find.text('Continue'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('login-continue-button')), findsOneWidget);
 
     router.dispose();
   });
@@ -595,7 +595,7 @@ void main() {
     router.go('/login?reauth=1');
     await tester.pumpAndSettle();
 
-    expect(find.text('Continue'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('login-continue-button')), findsOneWidget);
 
     router.dispose();
   });

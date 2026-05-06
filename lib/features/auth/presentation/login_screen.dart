@@ -206,47 +206,67 @@ class _LoginScreenState extends State<LoginScreen> {
                             );
                           },
                         ),
-                        TypeaheadTextField(
-                          controller: _handleController,
-                          repository: _typeaheadRepository,
-                          onSelected: _onTypeaheadSelected,
-                          minChars: 2,
-                          debounceMs: 300,
-                          limit: 8,
-                          decoration: const InputDecoration(
-                            labelText: 'Handle or DID',
-                            hintText: 'username.bsky.social or did:plc:...',
-                            prefixIcon: Icon(Icons.person_outline),
-                            border: OutlineInputBorder(),
-                          ),
-                          autocorrect: false,
-                          textInputAction: TextInputAction.next,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Enter your BlueSky handle or DID';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
                         BlocBuilder<AuthBloc, AuthState>(
                           builder: (context, state) {
                             final busy = state.isLoading || _isPersistingProvider;
-                            return FilledButton.icon(
-                              onPressed: busy
-                                  ? null
-                                  : () {
-                                      unawaited(_onOAuthLogin());
-                                    },
-                              icon: busy
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Icon(Icons.language),
-                              label: Text(busy ? 'Starting sign in...' : 'Continue'),
-                              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 18)),
+                            final border = OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1.5),
+                            );
+
+                            return TypeaheadTextField(
+                              controller: _handleController,
+                              repository: _typeaheadRepository,
+                              onSelected: _onTypeaheadSelected,
+                              minChars: 2,
+                              debounceMs: 300,
+                              limit: 8,
+                              decoration: InputDecoration(
+                                hintText: 'username.bsky.social or did:plc:...',
+                                prefixIcon: const Icon(Icons.person_outline),
+                                filled: true,
+                                fillColor: colorScheme.surface,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                                border: border,
+                                enabledBorder: border,
+                                focusedBorder: border.copyWith(
+                                  borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+                                ),
+                                suffixIconConstraints: const BoxConstraints(minWidth: 52, minHeight: 52),
+                                suffixIcon: Padding(
+                                  padding: const EdgeInsets.all(5),
+                                  child: FilledButton(
+                                    key: const ValueKey<String>('login-continue-button'),
+                                    onPressed: busy
+                                        ? null
+                                        : () {
+                                            unawaited(_onOAuthLogin());
+                                          },
+                                    style: FilledButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: const Size(40, 40),
+                                      maximumSize: const Size(40, 40),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    child: busy
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          )
+                                        : const Icon(Icons.arrow_forward_rounded, size: 18),
+                                  ),
+                                ),
+                              ),
+                              autocorrect: false,
+                              textInputAction: TextInputAction.go,
+                              onFieldSubmitted: (_) => unawaited(_onOAuthLogin()),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Enter your BlueSky handle or DID';
+                                }
+                                return null;
+                              },
                             );
                           },
                         ),

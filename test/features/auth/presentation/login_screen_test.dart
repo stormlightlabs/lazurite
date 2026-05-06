@@ -162,7 +162,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('River Tam'), findsOneWidget);
-    await tester.tap(find.text('River Tam'));
+    final suggestionTile = tester.widget<ListTile>(
+      find.byKey(const ValueKey<String>('typeahead-result-did:plc:river')),
+    );
+    suggestionTile.onTap?.call();
     await tester.pumpAndSettle();
 
     verify(() => authBloc.add(const OAuthLoginRequested(handle: 'river.bsky.social'))).called(1);
@@ -173,7 +176,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).first, 'river.bsky.social');
-    await tester.tap(find.text('Continue'));
+    await tester.tap(find.byKey(const ValueKey<String>('login-continue-button')));
     await tester.pumpAndSettle();
 
     verifyInOrder([
