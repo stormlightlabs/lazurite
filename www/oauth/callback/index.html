@@ -23,7 +23,11 @@
     <script>
       const query = window.location.search || '';
       const fragment = window.location.hash || '';
-      const reopenUrl = `org.stormlightlabs.lazurite:/oauth/callback${query}${fragment}`;
+      const isAppleMobile =
+        /iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
+        (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+      const reopenPath = isAppleMobile ? '//oauth/callback' : '/oauth/callback';
+      const reopenUrl = `org.stormlightlabs.lazurite:${reopenPath}${query}${fragment}`;
       const reopenLink = document.getElementById('reopen-link');
       const autoOpenKey = `lazurite.oauth.reopen.${query}${fragment}`;
 
@@ -42,6 +46,9 @@
       }
 
       window.addEventListener('load', function () {
+        if (isAppleMobile) {
+          return;
+        }
         window.setTimeout(attemptReopen, 250);
       });
     </script>
