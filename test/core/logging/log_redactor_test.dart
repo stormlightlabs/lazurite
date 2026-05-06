@@ -32,6 +32,34 @@ void main() {
       expect(output, contains('app_password: [REDACTED]'));
     });
 
+    test('redacts JSON-formatted sensitive key values', () {
+      const input = '{"access_token":"token123","refresh_token":"refresh456","state":"xyz"}';
+      final output = LogRedactor.redact(input);
+
+      expect(output, contains('"access_token":"[REDACTED]"'));
+      expect(output, contains('"refresh_token":"[REDACTED]"'));
+      expect(output, contains('"state":"[REDACTED]"'));
+      expect(output, isNot(contains('token123')));
+      expect(output, isNot(contains('refresh456')));
+      expect(output, isNot(contains('"state":"xyz"')));
+    });
+
+    test('redacts snake_case DPoP key fields', () {
+      const input =
+          '{"dpop_public_key":"pubKeyValue","dpop_private_key":"privKeyValue"} '
+          'dpop_public_key=pubRaw dpop_private_key=privRaw';
+      final output = LogRedactor.redact(input);
+
+      expect(output, contains('"dpop_public_key":"[REDACTED]"'));
+      expect(output, contains('"dpop_private_key":"[REDACTED]"'));
+      expect(output, contains('dpop_public_key: [REDACTED]'));
+      expect(output, contains('dpop_private_key: [REDACTED]'));
+      expect(output, isNot(contains('pubKeyValue')));
+      expect(output, isNot(contains('privKeyValue')));
+      expect(output, isNot(contains('pubRaw')));
+      expect(output, isNot(contains('privRaw')));
+    });
+
     test('preserves non-sensitive text', () {
       const input = 'NavObserver: Route pushed: /profile/me (from /)';
       final output = LogRedactor.redact(input);

@@ -54,5 +54,26 @@ void main() {
       expect(lines.single, contains('code=[REDACTED]'));
       expect(lines.single, contains('state=[REDACTED]'));
     });
+
+    test('redacts sensitive values in structured map logs', () {
+      final printer = AppFileLogPrinter();
+      final lines = printer.log(
+        LogEvent(Level.info, {
+          'access_token': 'token123',
+          'refresh_token': 'refresh456',
+          'dpop_public_key': 'pubkey',
+          'dpop_private_key': 'privkey',
+        }, time: DateTime(2026, 3, 16, 14, 32, 12, 450)),
+      );
+
+      expect(lines.single, contains('"access_token":"[REDACTED]"'));
+      expect(lines.single, contains('"refresh_token":"[REDACTED]"'));
+      expect(lines.single, contains('"dpop_public_key":"[REDACTED]"'));
+      expect(lines.single, contains('"dpop_private_key":"[REDACTED]"'));
+      expect(lines.single, isNot(contains('token123')));
+      expect(lines.single, isNot(contains('refresh456')));
+      expect(lines.single, isNot(contains('pubkey')));
+      expect(lines.single, isNot(contains('privkey')));
+    });
   });
 }

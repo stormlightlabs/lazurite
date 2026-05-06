@@ -95,9 +95,9 @@ void main() {
       expect(sharedFile, isNotNull);
       expect(sharedFile!.path, isNot(equals(sourceFile.path)));
       addTearDown(() async {
-        final parent = sharedFile.parent;
-        if (await parent.exists()) {
-          await parent.delete(recursive: true);
+        final shareDirectory = sharedFile.parent;
+        if (await shareDirectory.exists()) {
+          await shareDirectory.delete(recursive: true);
         }
       });
       final sharedContent = await sharedFile.readAsString();
@@ -107,6 +107,59 @@ void main() {
       expect(sharedContent, isNot(contains('state=xyz')));
       expect(sharedContent, contains('code=[REDACTED]'));
       expect(sharedContent, contains('state=[REDACTED]'));
+    });
+
+    test('reuses a stable shared file path across repeated shares', () async {
+      final tempRoot = await Directory.systemTemp.createTemp('lazurite_log_viewer_temp_root_');
+      final sourceDir = await tempRoot.createTemp('lazurite_log_source_');
+      final sourceFile = File('${sourceDir.path}/lazurite_2026-05-06.log');
+      await sourceFile.writeAsString('[I] TIME: 2026-05-06T10:00:00.000 code=abc123');
+
+      final cubit = LogViewerCubit(
+        todaysLogFileProvider: () async => sourceFile,
+        systemTempDirectoryProvider: () => tempRoot,
+      );
+      addTearDown(() async {
+        await cubit.close();
+        if (await tempRoot.exists()) {
+          await tempRoot.delete(recursive: true);
+        }
+      });
+
+      final first = await cubit.getTodaysLogFile();
+      final second = await cubit.getTodaysLogFile();
+
+      expect(first, isNotNull);
+      expect(second, isNotNull);
+      expect(second!.path, equals(first!.path));
+    });
+
+    test('cleans up legacy per-share temp directories', () async {
+      final tempRoot = await Directory.systemTemp.createTemp('lazurite_log_viewer_temp_root_');
+      final sourceDir = await tempRoot.createTemp('lazurite_log_source_');
+      final sourceFile = File('${sourceDir.path}/lazurite_2026-05-06.log');
+      await sourceFile.writeAsString('[I] TIME: 2026-05-06T10:00:00.000 state=xyz');
+
+      final legacyOne = await tempRoot.createTemp('lazurite_logs_share_');
+      final legacyTwo = await tempRoot.createTemp('lazurite_logs_share_');
+      await File('${legacyOne.path}/old.log').writeAsString('legacy 1');
+      await File('${legacyTwo.path}/old.log').writeAsString('legacy 2');
+
+      final cubit = LogViewerCubit(
+        todaysLogFileProvider: () async => sourceFile,
+        systemTempDirectoryProvider: () => tempRoot,
+      );
+      addTearDown(() async {
+        await cubit.close();
+        if (await tempRoot.exists()) {
+          await tempRoot.delete(recursive: true);
+        }
+      });
+
+      final sharedFile = await cubit.getTodaysLogFile();
+      expect(sharedFile, isNotNull);
+      expect(await legacyOne.exists(), isFalse);
+      expect(await legacyTwo.exists(), isFalse);
     });
   });
 }

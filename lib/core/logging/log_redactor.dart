@@ -1,14 +1,24 @@
 class LogRedactor {
   LogRedactor._();
 
+  static const String _sensitiveKeyPattern =
+      r'access[_-]?token|refresh[_-]?token|token|authcode|password|client[_-]?secret|authorization|'
+      r'dpop(?:[_-]?nonce|[_-]?private[_-]?key|[_-]?public[_-]?key|nonce|privatekey|publickey)|'
+      r'app[_-]?password';
+  static const String _sensitiveJsonOnlyKeyPattern = r'code|state|authcode';
+
   static final RegExp _jwtPattern = RegExp(r'\beyJ[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b');
   static final RegExp _bearerPattern = RegExp(r'\bbearer\s+[A-Za-z0-9._~+\/-]+=*', caseSensitive: false);
   static final RegExp _sensitiveQueryParamPattern = RegExp(
     r'([?&](?:access_token|refresh_token|code|state|token|password|client_secret|authcode)=)([^&#\s|]+)',
     caseSensitive: false,
   );
-  static final RegExp _sensitiveKeyValuePattern = RegExp(
-    r'\b(access[_-]?token|refresh[_-]?token|password|client[_-]?secret|authorization|dpop[_-]?(?:nonce|privatekey|publickey)|app[_-]?password)\b\s*[:=]\s*([^\s,|]+)',
+  static final RegExp _sensitiveJsonKeyValuePattern = RegExp(
+    '("($_sensitiveKeyPattern|$_sensitiveJsonOnlyKeyPattern)"\\s*:\\s*)"(?:[^"\\\\]|\\\\.)*"',
+    caseSensitive: false,
+  );
+  static final RegExp _sensitiveScalarKeyValuePattern = RegExp(
+    '($_sensitiveKeyPattern)\\s*[:=]\\s*(?:"(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\'|[^\\s,|}]+)',
     caseSensitive: false,
   );
 
@@ -16,7 +26,8 @@ class LogRedactor {
     var redacted = input;
     redacted = redacted.replaceAllMapped(_sensitiveQueryParamPattern, (match) => '${match.group(1)}[REDACTED]');
     redacted = redacted.replaceAll(_bearerPattern, 'Bearer [REDACTED]');
-    redacted = redacted.replaceAllMapped(_sensitiveKeyValuePattern, (match) => '${match.group(1)}: [REDACTED]');
+    redacted = redacted.replaceAllMapped(_sensitiveJsonKeyValuePattern, (match) => '${match.group(1)}"[REDACTED]"');
+    redacted = redacted.replaceAllMapped(_sensitiveScalarKeyValuePattern, (match) => '${match.group(1)}: [REDACTED]');
     redacted = redacted.replaceAll(_jwtPattern, '[REDACTED_JWT]');
     return redacted;
   }
