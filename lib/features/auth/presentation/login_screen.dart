@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
@@ -47,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return context.read<AccountSwitcherCubit>();
     } catch (_) {
       if (kDebugMode && !_didLogMissingAccountSwitcherProvider) {
-        debugPrint('LoginScreen: AccountSwitcherCubit unavailable for login route.');
+        log.d('LoginScreen: AccountSwitcherCubit unavailable for login route.');
         _didLogMissingAccountSwitcherProvider = true;
       }
       return null;
@@ -281,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return null;
     } catch (_) {
       if (kDebugMode && !_didLogAvatarLookupFailure) {
-        debugPrint('LoginScreen: cached avatar lookup unavailable.');
+        log.d('LoginScreen: cached avatar lookup unavailable.');
         _didLogAvatarLookupFailure = true;
       }
       return null;

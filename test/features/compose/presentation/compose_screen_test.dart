@@ -9,9 +9,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
-import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_screen.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:mocktail/mocktail.dart';
@@ -522,6 +522,20 @@ void main() {
 
         expect(find.text('Scheduled draft'), findsOneWidget);
         expect(find.text('Scheduled'), findsOneWidget);
+      });
+
+      testWidgets('scheduled pill clear action is accessible and dispatches ScheduleCleared', (tester) async {
+        seedState(ComposeState.ready(scheduledAt: DateTime(2026, 6, 1, 12)));
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        expect(find.byTooltip('Clear scheduled time'), findsOneWidget);
+
+        await tester.tap(find.byTooltip('Clear scheduled time'));
+        await tester.pump();
+
+        verify(() => mockBloc.add(const ScheduleCleared())).called(1);
       });
 
       testWidgets('shows loading indicator while drafts are loading', (tester) async {

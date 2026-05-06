@@ -2,14 +2,16 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky_text/bluesky_text.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/data/link_preview_service.dart';
@@ -86,6 +88,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
   bool _showDrafts = false;
   String? _composerAvatarDid;
   Future<String?>? _composerAvatarFuture;
+  bool _didLogMissingAuthProviderForAvatar = false;
+  bool _didLogMissingProfileRepositoryForAvatar = false;
+  bool _didLogComposerAvatarLookupFailure = false;
 
   @override
   void initState() {
@@ -167,7 +172,10 @@ class _ComposeScreenState extends State<ComposeScreen> {
     try {
       authState = context.read<AuthBloc>().state;
     } catch (_) {
-      debugPrint('ComposeScreen: auth provider unavailable for composer avatar.');
+      if (kDebugMode && !_didLogMissingAuthProviderForAvatar) {
+        log.d('ComposeScreen: auth provider unavailable for composer avatar.');
+        _didLogMissingAuthProviderForAvatar = true;
+      }
     }
 
     final did = authState?.tokens?.did.trim();
@@ -190,15 +198,21 @@ class _ComposeScreenState extends State<ComposeScreen> {
     try {
       repository = context.read<ProfileRepository>();
     } catch (_) {
-      debugPrint('ComposeScreen: profile repository unavailable for composer avatar.');
+      if (kDebugMode && !_didLogMissingProfileRepositoryForAvatar) {
+        log.d('ComposeScreen: profile repository unavailable for composer avatar.');
+        _didLogMissingProfileRepositoryForAvatar = true;
+      }
       return null;
     }
 
     try {
       final profile = await repository.getProfile(did);
       return profile.avatar;
-    } catch (error, stackTrace) {
-      debugPrint('ComposeScreen: failed to load composer avatar for $did: $error\n$stackTrace');
+    } catch (_) {
+      if (kDebugMode && !_didLogComposerAvatarLookupFailure) {
+        log.d('ComposeScreen: composer avatar lookup failed.');
+        _didLogComposerAvatarLookupFailure = true;
+      }
       return null;
     }
   }
@@ -867,7 +881,10 @@ class _ComposeScreenState extends State<ComposeScreen> {
         return handle;
       }
     } catch (_) {
-      debugPrint('ComposeScreen: auth provider unavailable for avatar fallback.');
+      if (kDebugMode && !_didLogMissingAuthProviderForAvatar) {
+        log.d('ComposeScreen: auth provider unavailable for avatar fallback.');
+        _didLogMissingAuthProviderForAvatar = true;
+      }
     }
 
     return 'Lazurite';
@@ -966,10 +983,18 @@ class _ComposeScreenState extends State<ComposeScreen> {
               'Scheduled for ${DateFormat('MMM d, h:mm a').format(state.scheduledAt!)}',
               style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onPrimary, fontWeight: FontWeight.w600),
             ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => context.read<ComposeBloc>().add(const ScheduleCleared()),
-              child: Icon(Icons.close, size: 16, color: colorScheme.onPrimary),
+            const SizedBox(width: 2),
+            IconButton(
+              onPressed: () => context.read<ComposeBloc>().add(const ScheduleCleared()),
+              icon: Icon(Icons.close, size: 16, color: colorScheme.onPrimary),
+              tooltip: 'Clear scheduled time',
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              style: IconButton.styleFrom(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                minimumSize: const Size(40, 40),
+              ),
             ),
           ],
         ),
