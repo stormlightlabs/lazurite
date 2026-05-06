@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
@@ -90,6 +92,19 @@ void main() {
 
       await Future.delayed(const Duration(milliseconds: 100));
       await cubit.close();
+
+      expect(cubit.isClosed, true);
+    });
+
+    test('does not emit when an in-flight poll completes after close', () async {
+      final unreadCount = Completer<int>();
+      when(() => mockNotificationRepository.getUnreadCount()).thenAnswer((_) => unreadCount.future);
+
+      final cubit = UnreadCountCubit(notificationRepository: mockNotificationRepository);
+
+      await cubit.close();
+      unreadCount.complete(9);
+      await Future<void>.delayed(Duration.zero);
 
       expect(cubit.isClosed, true);
     });

@@ -151,13 +151,13 @@ Future<Map<String, dynamic>?> _buildImageEmbed(ComposeRepository repo, Map<Strin
       continue;
     }
 
-    final blobRef = await repo.uploadBlob(bytes.toList(), mimeType: mime);
-    if (blobRef == null) {
+    final blob = await repo.uploadBlobRecord(bytes.toList(), mimeType: mime);
+    if (blob == null) {
       throw Exception('Failed to upload image ${paths[i]}');
     }
 
     final altText = i < alts.length ? alts[i] : '';
-    final entry = <String, dynamic>{'image': blobRef.toJson(), 'alt': altText};
+    final entry = <String, dynamic>{'image': blob.toJson(), 'alt': altText};
 
     try {
       final dims = await readImageDimensions(bytes.toList());

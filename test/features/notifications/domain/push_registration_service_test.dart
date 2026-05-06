@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:atproto_core/atproto_core.dart'
+    show HttpMethod, HttpStatus, RateLimit, UnauthorizedException, XRPCError, XRPCRequest, XRPCResponse;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
@@ -45,6 +47,13 @@ void main() {
     refreshToken: 'refresh-b',
     did: 'did:plc:account-b',
     handle: 'account-b.bsky.social',
+    service: 'bsky.social',
+  );
+  const refreshedAccountATokens = AuthTokens(
+    accessToken: 'fresh-access-a',
+    refreshToken: 'fresh-refresh-a',
+    did: 'did:plc:account-a',
+    handle: 'account-a.bsky.social',
     service: 'bsky.social',
   );
 
@@ -99,6 +108,7 @@ void main() {
   PushRegistrationService buildService({
     int maxAttempts = 4,
     Duration initialBackoff = const Duration(milliseconds: 1),
+    PushAuthRecoveryCallback? authRecovery,
   }) {
     return PushRegistrationService(
       tokenProvider: tokenProvider,
@@ -107,6 +117,7 @@ void main() {
       initialBackoff: initialBackoff,
       delayFn: (_) async {},
       isPushPlatformSupported: () => true,
+      authRecovery: authRecovery,
     );
   }
 
@@ -202,6 +213,69 @@ void main() {
       expect(attempts, 3);
     });
 
+    test('refreshes session and retries registration after unauthorized response', () async {
+      tokenProvider.token = 'token-a';
+      final refreshedRepository = MockNotificationRepository();
+      when(
+        () => refreshedRepository.registerPush(
+          token: any(named: 'token'),
+          appId: any(named: 'appId'),
+          platform: any(named: 'platform'),
+          ageRestricted: any(named: 'ageRestricted'),
+        ),
+      ).thenAnswer((_) async {});
+
+      NotificationRepository factory(AuthTokens tokens) {
+        if (tokens.accessToken == refreshedAccountATokens.accessToken) {
+          return refreshedRepository;
+        }
+        return accountARepository;
+      }
+
+      var recoveryCalls = 0;
+      final service = PushRegistrationService(
+        tokenProvider: tokenProvider,
+        notificationRepositoryFactory: factory,
+        initialBackoff: const Duration(milliseconds: 1),
+        delayFn: (_) async {},
+        isPushPlatformSupported: () => true,
+        authRecovery: () async {
+          recoveryCalls += 1;
+          return refreshedAccountATokens;
+        },
+      );
+      addTearDown(service.dispose);
+
+      when(
+        () => accountARepository.registerPush(
+          token: any(named: 'token'),
+          appId: any(named: 'appId'),
+          platform: any(named: 'platform'),
+          ageRestricted: any(named: 'ageRestricted'),
+        ),
+      ).thenThrow(_unauthorizedException());
+
+      await service.start(initialTokens: accountATokens);
+
+      expect(recoveryCalls, 1);
+      verify(
+        () => accountARepository.registerPush(
+          token: 'token-a',
+          appId: 'org.stormlightlabs.lazurite',
+          platform: any(named: 'platform'),
+          ageRestricted: null,
+        ),
+      ).called(1);
+      verify(
+        () => refreshedRepository.registerPush(
+          token: 'token-a',
+          appId: 'org.stormlightlabs.lazurite',
+          platform: any(named: 'platform'),
+          ageRestricted: null,
+        ),
+      ).called(1);
+    });
+
     test('re-registers on token refresh and unregisters old token first', () async {
       tokenProvider.token = 'token-a';
       final service = buildService();
@@ -228,4 +302,19 @@ void main() {
       ).called(1);
     });
   });
+}
+
+UnauthorizedException _unauthorizedException() {
+  return UnauthorizedException(
+    XRPCResponse<XRPCError>(
+      headers: const {},
+      status: HttpStatus.unauthorized,
+      request: XRPCRequest(
+        method: HttpMethod.post,
+        url: Uri.parse('https://example.com/xrpc/app.bsky.notification.registerPush'),
+      ),
+      rateLimit: RateLimit.unlimited(),
+      data: const XRPCError(error: 'Unauthorized', message: '"exp" claim timestamp check failed'),
+    ),
+  );
 }

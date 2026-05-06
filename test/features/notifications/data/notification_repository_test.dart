@@ -1,8 +1,11 @@
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
+import 'package:bluesky/bluesky.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
@@ -90,6 +93,50 @@ void main() {
 
       verify(() => mockRepository.updateSeen()).called(1);
     });
+
+    test('refreshes and retries unread count after unauthorized response', () async {
+      var initialRequests = 0;
+      var refreshedRequests = 0;
+      var recoveryCalls = 0;
+      late final Bluesky refreshedClient;
+      final initialClient = _buildBluesky(
+        getClient: (url, {headers}) async {
+          initialRequests += 1;
+          return http.Response(
+            '{"error":"Unauthorized","message":"\\"exp\\" claim timestamp check failed"}',
+            401,
+            request: http.Request('GET', url),
+          );
+        },
+      );
+      refreshedClient = _buildBluesky(
+        getClient: (url, {headers}) async {
+          refreshedRequests += 1;
+          return http.Response('{"count":7}', 200, request: http.Request('GET', url));
+        },
+      );
+
+      final repository = NotificationRepository(
+        bluesky: initialClient,
+        onUnauthorized: () async {
+          recoveryCalls += 1;
+          return const AuthTokens(
+            accessToken: 'fresh-access',
+            refreshToken: 'fresh-refresh',
+            did: 'did:plc:test',
+            handle: 'test.bsky.social',
+          );
+        },
+        blueskyClientFactory: (_) => refreshedClient,
+      );
+
+      final count = await repository.getUnreadCount();
+
+      expect(count, 7);
+      expect(initialRequests, 1);
+      expect(recoveryCalls, 1);
+      expect(refreshedRequests, 1);
+    });
   });
 
   group('NotificationListResult', () {
@@ -125,4 +172,15 @@ void main() {
       expect(result.seenAt, seenAt);
     });
   });
+}
+
+Bluesky _buildBluesky({required GetClient getClient}) {
+  return Bluesky.fromSession(
+    const Session(did: 'did:plc:test', handle: 'test.bsky.social', accessJwt: 'access', refreshJwt: 'refresh'),
+    service: 'example.com',
+    getClient: getClient,
+    postClient: (url, {headers, body, encoding}) async {
+      return http.Response('{}', 200, request: http.Request('POST', url));
+    },
+  );
 }

@@ -1,20 +1,35 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:bloc_test/bloc_test.dart';
+import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
-import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_screen.dart';
+import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/features/profile/data/profile_repository.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockComposeBloc extends MockBloc<ComposeEvent, ComposeState> implements ComposeBloc {}
 
 class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
 
+class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
+
+class MockProfileRepository extends Mock implements ProfileRepository {}
+
 class FakeDraftsCompanion extends Fake implements DraftsCompanion {}
 
-DraftEntry _makeDraft({int id = 1, String content = 'Draft'}) => DraftEntry(
+const _transparentPngBase64 =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lJRCiQAAAABJRU5ErkJggg==';
+
+DraftEntry _makeDraft({int id = 1, String content = 'Draft', DateTime? scheduledAt}) => DraftEntry(
   id: id,
   accountDid: 'did:plc:test',
   content: content,
@@ -26,12 +41,26 @@ DraftEntry _makeDraft({int id = 1, String content = 'Draft'}) => DraftEntry(
   rootCid: null,
   createdAt: DateTime(2025, 1, 1),
   updatedAt: DateTime(2025, 1, 1),
-  scheduledAt: null,
+  scheduledAt: scheduledAt,
 );
+
+File _writeTempImage() {
+  final dir = Directory.systemTemp.createTempSync('lazurite_compose_screen_test_');
+  addTearDown(() {
+    if (dir.existsSync()) {
+      dir.deleteSync(recursive: true);
+    }
+  });
+  final file = File('${dir.path}/image.png');
+  file.writeAsBytesSync(base64Decode(_transparentPngBase64));
+  return file;
+}
 
 void main() {
   late MockComposeBloc mockBloc;
   late MockConnectivityCubit connectivityCubit;
+  late MockAuthBloc authBloc;
+  late MockProfileRepository profileRepository;
 
   setUp(() {
     registerFallbackValue(FakeDraftsCompanion());
@@ -45,27 +74,40 @@ void main() {
     );
     mockBloc = MockComposeBloc();
     connectivityCubit = MockConnectivityCubit();
+    authBloc = MockAuthBloc();
+    profileRepository = MockProfileRepository();
     when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
     whenListen(
       connectivityCubit,
       const Stream<ConnectivityState>.empty(),
       initialState: const ConnectivityState.online(),
     );
+    when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.unauthenticated());
   });
 
   tearDown(() {
     mockBloc.close();
+    authBloc.close();
   });
 
-  Widget buildSubject({ComposeScreen screen = const ComposeScreen()}) => MaterialApp(
-    home: MultiBlocProvider(
+  Widget buildSubject({ComposeScreen screen = const ComposeScreen(), ProfileRepository? profileRepositoryOverride}) {
+    Widget home = MultiBlocProvider(
       providers: [
         BlocProvider<ComposeBloc>.value(value: mockBloc),
         BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+        BlocProvider<AuthBloc>.value(value: authBloc),
       ],
       child: screen,
-    ),
-  );
+    );
+
+    final repository = profileRepositoryOverride;
+    if (repository != null) {
+      home = RepositoryProvider<ProfileRepository>.value(value: repository, child: home);
+    }
+
+    return MaterialApp(home: home);
+  }
 
   void seedState(ComposeState state) {
     whenListen(mockBloc, Stream.value(state), initialState: state);
@@ -108,6 +150,66 @@ void main() {
 
         expect(find.text('@river.bsky.social '), findsOneWidget);
         verify(() => mockBloc.add(const TextChanged('@river.bsky.social '))).called(1);
+      });
+
+      testWidgets('autofocuses the composer text field', (tester) async {
+        seedState(const ComposeState.ready());
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        final textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.autofocus, isTrue);
+      });
+    });
+
+    group('composer avatar', () {
+      testWidgets('renders an initial fallback avatar', (tester) async {
+        seedState(const ComposeState.ready());
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        expect(find.byKey(const ValueKey('compose_author_avatar')), findsOneWidget);
+        expect(find.byType(ProfileAvatar), findsOneWidget);
+      });
+
+      testWidgets('uses authenticated display name for avatar initials', (tester) async {
+        const authState = AuthState.authenticated(
+          AuthTokens(accessToken: 'token', did: 'did:plc:river', handle: 'river.bsky.social', displayName: 'River Tam'),
+        );
+        when(() => authBloc.state).thenReturn(authState);
+        whenListen(authBloc, const Stream<AuthState>.empty(), initialState: authState);
+        seedState(const ComposeState.ready());
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        expect(find.text('RT'), findsOneWidget);
+      });
+
+      testWidgets('loads authenticated user avatar when profile repository is available', (tester) async {
+        const authState = AuthState.authenticated(
+          AuthTokens(accessToken: 'token', did: 'did:plc:river', handle: 'river.bsky.social', displayName: 'River Tam'),
+        );
+        when(() => authBloc.state).thenReturn(authState);
+        whenListen(authBloc, const Stream<AuthState>.empty(), initialState: authState);
+        when(() => profileRepository.getProfile('did:plc:river')).thenAnswer(
+          (_) async => ProfileViewDetailed(
+            did: 'did:plc:river',
+            handle: 'river.bsky.social',
+            displayName: 'River Tam',
+            avatar: 'https://example.com/avatar.jpg',
+            indexedAt: DateTime.utc(2026),
+          ),
+        );
+        seedState(const ComposeState.ready());
+
+        await tester.pumpWidget(buildSubject(profileRepositoryOverride: profileRepository));
+        await tester.pump();
+
+        verify(() => profileRepository.getProfile('did:plc:river')).called(1);
+        expect(find.byKey(const ValueKey('compose_author_avatar')), findsOneWidget);
       });
     });
 
@@ -262,6 +364,66 @@ void main() {
       });
     });
 
+    group('image alt text', () {
+      testWidgets('shows image preview while editing alt text and saves changes', (tester) async {
+        final image = _writeTempImage();
+        seedState(
+          ComposeState.ready(
+            isEmpty: false,
+            mediaAttachments: [MediaAttachment(localPath: image.path, altText: 'Existing description')],
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.text('ALT'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Alt text'), findsOneWidget);
+        expect(find.byKey(const ValueKey('alt-text-image-preview')), findsOneWidget);
+        expect(find.text('Existing description'), findsOneWidget);
+
+        await tester.enterText(find.byKey(const ValueKey('alt-text-field')), 'A clearer image description');
+        await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+        await tester.pumpAndSettle();
+
+        verify(() => mockBloc.add(const AltTextUpdated(index: 0, altText: 'A clearer image description'))).called(1);
+      });
+    });
+
+    group('video alt text', () {
+      testWidgets('shows video preview while editing alt text and saves changes', (tester) async {
+        seedState(
+          const ComposeState.ready(
+            isEmpty: false,
+            videoAttachment: VideoAttachment(
+              localPath: '/tmp/composer-video.mp4',
+              status: VideoUploadStatus.ready,
+              altText: 'Existing video description',
+            ),
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.byIcon(Icons.subtitles_outlined));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Video alt text'), findsOneWidget);
+        expect(find.byKey(const ValueKey('video-alt-preview')), findsOneWidget);
+        expect(find.byKey(const ValueKey('video-alt-preview-filename')), findsOneWidget);
+        expect(find.text('Existing video description'), findsOneWidget);
+
+        await tester.enterText(find.byKey(const ValueKey('video-alt-text-field')), 'A clearer video description');
+        await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+        await tester.pumpAndSettle();
+
+        verify(() => mockBloc.add(const VideoAltTextUpdated('A clearer video description'))).called(1);
+      });
+    });
+
     group('inline drafts panel (Bug #3)', () {
       testWidgets('drafts panel is hidden initially', (tester) async {
         seedState(const ComposeState.ready());
@@ -316,6 +478,18 @@ void main() {
         expect(find.text('No drafts saved'), findsOneWidget);
       });
 
+      testWidgets('tapping save draft toolbar action fires DraftSaved', (tester) async {
+        seedState(const ComposeState.ready(text: 'Save this', graphemeCount: 9, isEmpty: false));
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.byTooltip('Save draft'));
+        await tester.pump();
+
+        verify(() => mockBloc.add(const DraftSaved())).called(1);
+      });
+
       testWidgets('shows draft items when drafts are loaded', (tester) async {
         seedState(
           const ComposeState.ready().copyWith(drafts: [_makeDraft(content: 'My saved draft')], isLoadingDrafts: false),
@@ -329,6 +503,39 @@ void main() {
         await tester.pump(const Duration(milliseconds: 300));
 
         expect(find.text('My saved draft'), findsOneWidget);
+      });
+
+      testWidgets('shows scheduled badges in the inline draft list', (tester) async {
+        seedState(
+          const ComposeState.ready().copyWith(
+            drafts: [_makeDraft(content: 'Scheduled draft', scheduledAt: DateTime(2026, 6, 1, 12))],
+            isLoadingDrafts: false,
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.byIcon(Icons.drive_file_rename_outline));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(find.text('Scheduled draft'), findsOneWidget);
+        expect(find.text('Scheduled'), findsOneWidget);
+      });
+
+      testWidgets('scheduled pill clear action is accessible and dispatches ScheduleCleared', (tester) async {
+        seedState(ComposeState.ready(scheduledAt: DateTime(2026, 6, 1, 12)));
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        expect(find.byTooltip('Clear scheduled time'), findsOneWidget);
+
+        await tester.tap(find.byTooltip('Clear scheduled time'));
+        await tester.pump();
+
+        verify(() => mockBloc.add(const ScheduleCleared())).called(1);
       });
 
       testWidgets('shows loading indicator while drafts are loading', (tester) async {

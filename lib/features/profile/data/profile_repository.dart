@@ -10,6 +10,8 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/actor_repository_service_resolver.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
@@ -21,17 +23,28 @@ class ProfileRepository {
     ActorRepositoryServiceResolver? actorRepositoryServiceResolver,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
+    Future<AuthTokens?> Function()? onUnauthorized,
+    dynamic Function(AuthTokens tokens)? blueskyClientFactory,
   }) : _database = database,
-       _bluesky = bluesky,
        _moderationService = moderationService,
        _actorRepoResolver = actorRepositoryServiceResolver ?? _createActorRepositoryServiceResolver(),
        _appViewContext = AppViewRequestContext(
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
-       );
+       ) {
+    _authRecovery = UnauthorizedRecoveryRunner<dynamic>(
+      initialClient: bluesky,
+      onUnauthorized: onUnauthorized,
+      clientFactory: blueskyClientFactory ?? createBlueskyClient,
+      onUnauthorizedException: (error, stackTrace) {
+        log.w('profile.auth unauthorized; attempting session recovery', error: error, stackTrace: stackTrace);
+      },
+    );
+  }
 
+  late final UnauthorizedRecoveryRunner<dynamic> _authRecovery;
   final AppDatabase _database;
-  final dynamic _bluesky;
+  dynamic get _bluesky => _authRecovery.client;
   final ModerationService? _moderationService;
   final ActorRepositoryServiceResolver? _actorRepoResolver;
   final AppViewRequestContext _appViewContext;
@@ -58,7 +71,7 @@ class ProfileRepository {
       log.i(
         'ProfileRepository: getProfile request actor=$actor atproto-proxy=${_headerValue(headers, 'atproto-proxy') ?? 'none'}',
       );
-      final response = await _bluesky.actor.getProfile(actor: actor, $headers: headers);
+      final response = await _authRecovery.run((client) => client.actor.getProfile(actor: actor, $headers: headers));
       profile = response.data;
       log.i('ProfileRepository: Loaded profile ${profile.did} (${profile.handle})');
     } catch (error, stackTrace) {
@@ -103,7 +116,7 @@ class ProfileRepository {
     final profiles = <ProfileView>[];
     for (var i = 0; i < normalizedActors.length; i += _maxProfilesBatchSize) {
       final batch = normalizedActors.sublist(i, (i + _maxProfilesBatchSize).clamp(0, normalizedActors.length));
-      final response = await _bluesky.actor.getProfiles(actors: batch, $headers: headers);
+      final response = await _authRecovery.run((client) => client.actor.getProfiles(actors: batch, $headers: headers));
       profiles.addAll(
         response.data.profiles.where((profile) => !(_moderationService?.shouldFilterProfileInList(profile) ?? false)),
       );
@@ -114,12 +127,12 @@ class ProfileRepository {
   }
 
   Future<List<ProfileView>> getSuggestedFollows(String actor) async {
-    final response = await _bluesky.graph.getSuggestedFollowsByActor(
-      actor: actor,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.graph.getSuggestedFollowsByActor',
-        await _moderationService?.headersForRequest(),
-      ),
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.graph.getSuggestedFollowsByActor',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.graph.getSuggestedFollowsByActor(actor: actor, $headers: headers),
     );
     final suggestions = response.data.suggestions;
     final moderationService = _moderationService;
@@ -140,7 +153,9 @@ class ProfileRepository {
       log.i(
         'ProfileRepository: likes self path actor=$actor endpoint=app.bsky.feed.getActorLikes host=current-session-pds',
       );
-      final response = await _bluesky.feed.getActorLikes(actor: actor, cursor: cursor, limit: limit, $headers: headers);
+      final response = await _authRecovery.run(
+        (client) => client.feed.getActorLikes(actor: actor, cursor: cursor, limit: limit, $headers: headers),
+      );
       final feed = (response.data.feed as List<dynamic>).whereType<FeedViewPost>().toList(growable: false);
       final moderationService = _moderationService;
       final posts = moderationService == null
@@ -161,13 +176,15 @@ class ProfileRepository {
     log.i(
       'ProfileRepository: likes non-self list path actor=$actor did=${resolved.did} endpoint=com.atproto.repo.listRecords host=${resolved.pdsHost}',
     );
-    final recordsResponse = await _bluesky.atproto.repo.listRecords(
-      repo: resolved.did,
-      collection: 'app.bsky.feed.like',
-      limit: limit.clamp(1, 100),
-      cursor: cursor,
-      reverse: false,
-      $service: resolved.pdsHost,
+    final recordsResponse = await _authRecovery.run(
+      (client) => client.atproto.repo.listRecords(
+        repo: resolved.did,
+        collection: 'app.bsky.feed.like',
+        limit: limit.clamp(1, 100),
+        cursor: cursor,
+        reverse: false,
+        $service: resolved.pdsHost,
+      ),
     );
     final likeRecords = _extractLikeRecords(recordsResponse.data.records as List<dynamic>);
     if (likeRecords.isEmpty) {
@@ -187,7 +204,9 @@ class ProfileRepository {
     final subjectUris = likeRecords.map((record) => atp_core.AtUri.parse(record.subjectUri)).toList(growable: false);
     for (var i = 0; i < subjectUris.length; i += _maxPostsHydrationBatchSize) {
       final batch = subjectUris.sublist(i, (i + _maxPostsHydrationBatchSize).clamp(0, subjectUris.length));
-      final response = await _bluesky.feed.getPosts(uris: batch, $service: appViewHost, $headers: hydrationHeaders);
+      final response = await _authRecovery.run(
+        (client) => client.feed.getPosts(uris: batch, $service: appViewHost, $headers: hydrationHeaders),
+      );
       for (final post in response.data.posts) {
         postsByUri[post.uri.toString()] = post;
       }
@@ -226,7 +245,9 @@ class ProfileRepository {
       log.i(
         'ProfileRepository: getCurrentUserProfile request did=${tokens.did} atproto-proxy=${_headerValue(headers, 'atproto-proxy') ?? 'none'}',
       );
-      final response = await _bluesky.actor.getProfile(actor: tokens.did, $headers: headers);
+      final response = await _authRecovery.run(
+        (client) => client.actor.getProfile(actor: tokens.did, $headers: headers),
+      );
       log.i('ProfileRepository: Loaded current user profile ${response.data.did} (${response.data.handle})');
       return response.data;
     } catch (error, stackTrace) {

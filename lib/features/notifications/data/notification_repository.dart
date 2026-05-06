@@ -2,7 +2,11 @@ import 'package:bluesky/app_bsky_notification_listnotifications.dart';
 import 'package:bluesky/app_bsky_notification_registerpush.dart';
 import 'package:bluesky/app_bsky_notification_unregisterpush.dart';
 import 'package:bluesky/bluesky.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class NotificationRepository {
@@ -11,25 +15,34 @@ class NotificationRepository {
     ModerationService? moderationService,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
-  }) : _bluesky = bluesky,
-       _moderationService = moderationService,
+    Future<AuthTokens?> Function()? onUnauthorized,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
+  }) : _moderationService = moderationService,
        _appViewContext = AppViewRequestContext(
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
-       );
+       ) {
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
+      initialClient: bluesky,
+      onUnauthorized: onUnauthorized,
+      clientFactory: blueskyClientFactory ?? createBlueskyClient,
+      onUnauthorizedException: (error, stackTrace) {
+        log.w('notifications.auth unauthorized; attempting session recovery', error: error, stackTrace: stackTrace);
+      },
+    );
+  }
 
-  final Bluesky _bluesky;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
 
   Future<NotificationListResult> listNotifications({String? cursor, int limit = 50}) async {
-    final response = await _bluesky.notification.listNotifications(
-      cursor: cursor,
-      limit: limit,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.notification.listNotifications',
-        await _moderationService?.headersForRequest(),
-      ),
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.notification.listNotifications',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.notification.listNotifications(cursor: cursor, limit: limit, $headers: headers),
     );
 
     return NotificationListResult(
@@ -40,23 +53,20 @@ class NotificationRepository {
   }
 
   Future<int> getUnreadCount() async {
-    final response = await _bluesky.notification.getUnreadCount(
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.notification.getUnreadCount',
-        await _moderationService?.headersForRequest(),
-      ),
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.notification.getUnreadCount',
+      await _moderationService?.headersForRequest(),
     );
+    final response = await _authRecovery.run((client) => client.notification.getUnreadCount($headers: headers));
     return response.data.count;
   }
 
   Future<void> updateSeen() async {
-    await _bluesky.notification.updateSeen(
-      seenAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.notification.updateSeen',
-        await _moderationService?.headersForRequest(),
-      ),
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.notification.updateSeen',
+      await _moderationService?.headersForRequest(),
     );
+    await _authRecovery.run((client) => client.notification.updateSeen(seenAt: DateTime.now(), $headers: headers));
   }
 
   Future<void> registerPush({
@@ -67,13 +77,15 @@ class NotificationRepository {
   }) async {
     final serviceDid = _appViewContext.notificationServiceDid();
     final headers = _notificationPushHeaders(await _moderationService?.headersForRequest());
-    await _bluesky.notification.registerPush(
-      serviceDid: serviceDid,
-      token: token,
-      platform: _registerPlatformFor(platform),
-      appId: appId,
-      ageRestricted: ageRestricted,
-      $headers: headers,
+    await _authRecovery.run(
+      (client) => client.notification.registerPush(
+        serviceDid: serviceDid,
+        token: token,
+        platform: _registerPlatformFor(platform),
+        appId: appId,
+        ageRestricted: ageRestricted,
+        $headers: headers,
+      ),
     );
   }
 
@@ -84,12 +96,14 @@ class NotificationRepository {
   }) async {
     final serviceDid = _appViewContext.notificationServiceDid();
     final headers = _notificationPushHeaders(await _moderationService?.headersForRequest());
-    await _bluesky.notification.unregisterPush(
-      serviceDid: serviceDid,
-      token: token,
-      platform: _unregisterPlatformFor(platform),
-      appId: appId,
-      $headers: headers,
+    await _authRecovery.run(
+      (client) => client.notification.unregisterPush(
+        serviceDid: serviceDid,
+        token: token,
+        platform: _unregisterPlatformFor(platform),
+        appId: appId,
+        $headers: headers,
+      ),
     );
   }
 
@@ -106,12 +120,15 @@ class NotificationRepository {
 
     var cursor = '';
     for (var page = 0; page < maxPages; page++) {
-      final response = await _bluesky.notification.listNotifications(
-        cursor: cursor.isEmpty ? null : cursor,
-        limit: limit,
-        $headers: _appViewContext.appBskyHeadersForEndpoint(
-          'app.bsky.notification.listNotifications',
-          await _moderationService?.headersForRequest(),
+      final headers = _appViewContext.appBskyHeadersForEndpoint(
+        'app.bsky.notification.listNotifications',
+        await _moderationService?.headersForRequest(),
+      );
+      final response = await _authRecovery.run(
+        (client) => client.notification.listNotifications(
+          cursor: cursor.isEmpty ? null : cursor,
+          limit: limit,
+          $headers: headers,
         ),
       );
 
