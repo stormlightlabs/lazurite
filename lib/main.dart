@@ -279,6 +279,9 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
         return widget.localNotificationAdapter.requestPermissions();
       }),
     );
+    widget.pushRegistrationService.configureAuthRecovery(
+      () => _recoverAuthSession(trigger: 'push_registration_unauthorized'),
+    );
     unawaited(widget.pushRegistrationService.start(initialTokens: widget.authBloc.state.tokens));
     _pushRegistrationSubscription = widget.authBloc.stream.map((state) => state.tokens).listen((tokens) {
       unawaited(widget.pushRegistrationService.updateSession(tokens));
@@ -623,6 +626,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                         bluesky: bluesky,
                         moderationService: service,
                         appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                        onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                       );
                     },
                   ),
@@ -631,6 +635,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                       bluesky: bluesky,
                       moderationService: context.read<ModerationService>(),
                       appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                     ),
                   ),
                   RepositoryProvider(

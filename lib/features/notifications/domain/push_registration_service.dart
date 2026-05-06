@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:atproto_core/atproto_core.dart' as atcore show UnauthorizedException;
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
@@ -8,6 +9,7 @@ import 'package:lazurite/features/notifications/domain/push_token_provider.dart'
 
 typedef NotificationRepositoryFactory = NotificationRepository Function(AuthTokens tokens);
 typedef DelayFn = Future<void> Function(Duration delay);
+typedef PushAuthRecoveryCallback = Future<AuthTokens?> Function();
 
 class PushRegistrationService {
   PushRegistrationService({
@@ -18,12 +20,14 @@ class PushRegistrationService {
     int maxAttempts = 4,
     DelayFn delayFn = Future.delayed,
     bool Function()? isPushPlatformSupported,
+    PushAuthRecoveryCallback? authRecovery,
   }) : _tokenProvider = tokenProvider,
        _notificationRepositoryFactory = notificationRepositoryFactory,
        _initialBackoff = initialBackoff,
        _maxAttempts = maxAttempts,
        _delayFn = delayFn,
-       _isPushPlatformSupported = isPushPlatformSupported ?? (() => Platform.isAndroid || Platform.isIOS);
+       _isPushPlatformSupported = isPushPlatformSupported ?? (() => Platform.isAndroid || Platform.isIOS),
+       _authRecovery = authRecovery;
 
   final PushTokenProvider _tokenProvider;
   final NotificationRepositoryFactory _notificationRepositoryFactory;
@@ -32,6 +36,7 @@ class PushRegistrationService {
   final int _maxAttempts;
   final DelayFn _delayFn;
   final bool Function() _isPushPlatformSupported;
+  PushAuthRecoveryCallback? _authRecovery;
 
   StreamSubscription<String>? _tokenRefreshSubscription;
   AuthTokens? _activeTokens;
@@ -40,6 +45,10 @@ class PushRegistrationService {
   var _started = false;
 
   bool get _supportsPushPlatform => _isPushPlatformSupported();
+
+  void configureAuthRecovery(PushAuthRecoveryCallback? authRecovery) {
+    _authRecovery = authRecovery;
+  }
 
   Future<void> start({required AuthTokens? initialTokens}) async {
     if (_started || !_supportsPushPlatform) {
@@ -152,14 +161,25 @@ class PushRegistrationService {
   }
 
   Future<void> _register({required AuthTokens tokens, required String token}) async {
+    var operationTokens = tokens;
     await _retry(
       operation: 'push register',
       action: () async {
-        await _notificationRepositoryFactory(tokens).registerPush(token: token, appId: appId, platform: _platform);
+        await _notificationRepositoryFactory(
+          operationTokens,
+        ).registerPush(token: token, appId: appId, platform: _platform);
+      },
+      recoverUnauthorized: () async {
+        final recovered = await _recoverActiveSession(expectedDid: tokens.did);
+        if (recovered == null) {
+          return false;
+        }
+        operationTokens = recovered;
+        return true;
       },
     );
 
-    _registeredDid = tokens.did;
+    _registeredDid = operationTokens.did;
     _registeredToken = token;
   }
 
@@ -182,7 +202,11 @@ class PushRegistrationService {
     _registeredToken = null;
   }
 
-  Future<void> _retry({required String operation, required Future<void> Function() action}) async {
+  Future<void> _retry({
+    required String operation,
+    required Future<void> Function() action,
+    Future<bool> Function()? recoverUnauthorized,
+  }) async {
     var backoff = Duration.zero;
     Object? lastError;
     StackTrace? lastStackTrace;
@@ -198,6 +222,15 @@ class PushRegistrationService {
       } catch (error, stackTrace) {
         lastError = error;
         lastStackTrace = stackTrace;
+
+        if (error is atcore.UnauthorizedException && recoverUnauthorized != null) {
+          final recovered = await recoverUnauthorized();
+          if (recovered) {
+            backoff = Duration.zero;
+            log.w('Push lifecycle operation recovered auth session: $operation');
+            continue;
+          }
+        }
 
         if (attempt >= _maxAttempts) {
           log.e('Push lifecycle operation failed: $operation', error: error, stackTrace: stackTrace);
@@ -216,6 +249,21 @@ class PushRegistrationService {
     if (lastError != null) {
       Error.throwWithStackTrace(lastError, lastStackTrace ?? StackTrace.current);
     }
+  }
+
+  Future<AuthTokens?> _recoverActiveSession({required String expectedDid}) async {
+    final recovery = _authRecovery;
+    if (recovery == null) {
+      return null;
+    }
+
+    final recovered = await recovery();
+    if (recovered == null || recovered.did != expectedDid) {
+      return null;
+    }
+
+    _activeTokens = recovered;
+    return recovered;
   }
 
   NotificationPushPlatform get _platform =>

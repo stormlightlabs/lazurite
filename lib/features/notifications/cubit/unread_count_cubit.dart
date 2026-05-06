@@ -13,10 +13,11 @@ class UnreadCountCubit extends Cubit<UnreadCountState> {
   }) : _notificationDomainService =
            notificationDomainService ??
            NotificationDomainService(
-             notificationRepository: notificationRepository ??
+             notificationRepository:
+                 notificationRepository ??
                  (throw ArgumentError('Either notificationDomainService or notificationRepository is required')),
            ),
-      super(const UnreadCountState(0)) {
+       super(const UnreadCountState(0)) {
     _startPolling();
   }
 
@@ -33,8 +34,14 @@ class UnreadCountCubit extends Cubit<UnreadCountState> {
   Future<void> _pollUnreadCount() async {
     try {
       final count = await _notificationDomainService.getUnreadCount();
+      if (isClosed) {
+        return;
+      }
       emit(UnreadCountState(count));
     } catch (_) {
+      if (isClosed) {
+        return;
+      }
       log.w('Failed to poll unread count');
     }
   }

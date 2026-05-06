@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+import 'package:atproto_core/atproto_core.dart' as atp_core;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 
 void main() {
@@ -80,6 +82,39 @@ void main() {
       final cached = await database.select(database.cachedProfiles).getSingle();
       expect(cached.did, profile.did);
       expect(cached.handle, profile.handle);
+    });
+
+    test('refreshes and retries getProfile after unauthorized response', () async {
+      final profile = _buildProfile();
+      final initialClient = _FakeBlueskyClient(
+        actor: _FakeActorService(onGetProfile: (_) async => throw _unauthorizedException()),
+      );
+      final refreshedClient = _FakeBlueskyClient(
+        actor: _FakeActorService(onGetProfile: (_) async => _FakeResponse(profile)),
+      );
+      var recoveryCalls = 0;
+
+      final repository = ProfileRepository(
+        database: database,
+        bluesky: initialClient,
+        onUnauthorized: () async {
+          recoveryCalls += 1;
+          return const AuthTokens(
+            accessToken: 'fresh-access',
+            refreshToken: 'fresh-refresh',
+            did: 'did:plc:alice',
+            handle: 'alice.bsky.social',
+          );
+        },
+        blueskyClientFactory: (_) => refreshedClient,
+      );
+
+      final result = await repository.getProfile(profile.did);
+
+      expect(result.did, profile.did);
+      expect(recoveryCalls, 1);
+      expect(initialClient.actor.getProfileCalls, 1);
+      expect(refreshedClient.actor.getProfileCalls, 1);
     });
 
     test('falls back to the cached profile when the xrpc request fails', () async {
@@ -169,8 +204,10 @@ class _FakeActorService {
 
   final Future<_FakeResponse<ProfileViewDetailed>> Function(String actor) onGetProfile;
   final Future<_FakeProfilesResponse> Function(List<String> actors)? onGetProfiles;
+  int getProfileCalls = 0;
 
   Future<_FakeResponse<ProfileViewDetailed>> getProfile({required String actor, Map<String, String>? $headers}) {
+    getProfileCalls += 1;
     return onGetProfile(actor);
   }
 
@@ -228,4 +265,19 @@ class _FakeSuggestedData {
   const _FakeSuggestedData(this.suggestions);
 
   final List<ProfileView> suggestions;
+}
+
+atp_core.UnauthorizedException _unauthorizedException() {
+  return atp_core.UnauthorizedException(
+    atp_core.XRPCResponse<atp_core.XRPCError>(
+      headers: const {},
+      status: atp_core.HttpStatus.unauthorized,
+      request: atp_core.XRPCRequest(
+        method: atp_core.HttpMethod.get,
+        url: Uri.parse('https://example.com/xrpc/app.bsky.actor.getProfile'),
+      ),
+      rateLimit: atp_core.RateLimit.unlimited(),
+      data: const atp_core.XRPCError(error: 'Unauthorized', message: '"exp" claim timestamp check failed'),
+    ),
+  );
 }
