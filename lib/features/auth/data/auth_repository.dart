@@ -344,7 +344,8 @@ class AuthRepository {
       }
 
       try {
-        final metadata = await _loadClientMetadata(kClientId);
+        final metadataClientId = _resolveOauthClientId(currentSession.oauthClientId);
+        final metadata = await _loadClientMetadata(metadataClientId);
         final restoredSession = _restoreOAuthSession(
           currentSession: currentSession,
           publicKey: publicKey,
@@ -1050,6 +1051,14 @@ class AuthRepository {
 
   static String _defaultOAuthServiceResolver() {
     return AppViewProviders.descriptorForSetting(AppViewProviders.defaultKey).entrywayUrl.host;
+  }
+
+  String _resolveOauthClientId(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return kClientId;
+    }
+    return normalized;
   }
 
   static bool _defaultFalse() => false;

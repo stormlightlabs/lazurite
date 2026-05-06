@@ -33,29 +33,43 @@ abstract final class XrpcNetworkInterceptor {
     final delegate = baseClient ?? http.get;
     return (Uri url, {Map<String, String>? headers}) async {
       final normalizedHeaders = normalizeOutgoingHeaders(headers);
-      final metadata = metadataFor(url, headers: normalizedHeaders);
-      final stopwatch = Stopwatch()..start();
-      _trace(_requestLogLine(httpMethod: 'GET', metadata: metadata));
-      final forced = _takeForcedUnauthorized(method: 'GET', url: url, metadata: metadata);
-      if (forced != null) {
-        _logResponse(httpMethod: 'GET', metadata: metadata, statusCode: forced.statusCode, elapsed: stopwatch.elapsed);
-        return forced;
+      XrpcRequestMetadata? metadata;
+      Stopwatch? stopwatch;
+
+      if (kDebugMode) {
+        metadata = metadataFor(url, headers: normalizedHeaders);
+        stopwatch = Stopwatch()..start();
+        _trace(_requestLogLine(httpMethod: 'GET', metadata: metadata));
+        final forced = _takeForcedUnauthorized(method: 'GET', url: url, metadata: metadata);
+        if (forced != null) {
+          _logResponse(
+            httpMethod: 'GET',
+            metadata: metadata,
+            statusCode: forced.statusCode,
+            elapsed: stopwatch.elapsed,
+          );
+          return forced;
+        }
       }
       try {
         final response = await delegate(url, headers: normalizedHeaders);
-        _logResponse(
-          httpMethod: 'GET',
-          metadata: metadata,
-          statusCode: response.statusCode,
-          elapsed: stopwatch.elapsed,
-        );
+        if (kDebugMode && metadata != null && stopwatch != null) {
+          _logResponse(
+            httpMethod: 'GET',
+            metadata: metadata,
+            statusCode: response.statusCode,
+            elapsed: stopwatch.elapsed,
+          );
+        }
         return response;
       } catch (error, stackTrace) {
-        _error(
-          _failureLogLine(httpMethod: 'GET', metadata: metadata, elapsed: stopwatch.elapsed),
-          error: error,
-          stackTrace: stackTrace,
-        );
+        if (kDebugMode && metadata != null && stopwatch != null) {
+          _error(
+            _failureLogLine(httpMethod: 'GET', metadata: metadata, elapsed: stopwatch.elapsed),
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
         rethrow;
       }
     };
@@ -65,29 +79,43 @@ abstract final class XrpcNetworkInterceptor {
     final delegate = baseClient ?? http.post;
     return (Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
       final normalizedHeaders = normalizeOutgoingHeaders(headers);
-      final metadata = metadataFor(url, headers: normalizedHeaders);
-      final stopwatch = Stopwatch()..start();
-      _trace(_requestLogLine(httpMethod: 'POST', metadata: metadata));
-      final forced = _takeForcedUnauthorized(method: 'POST', url: url, metadata: metadata);
-      if (forced != null) {
-        _logResponse(httpMethod: 'POST', metadata: metadata, statusCode: forced.statusCode, elapsed: stopwatch.elapsed);
-        return forced;
+      XrpcRequestMetadata? metadata;
+      Stopwatch? stopwatch;
+
+      if (kDebugMode) {
+        metadata = metadataFor(url, headers: normalizedHeaders);
+        stopwatch = Stopwatch()..start();
+        _trace(_requestLogLine(httpMethod: 'POST', metadata: metadata));
+        final forced = _takeForcedUnauthorized(method: 'POST', url: url, metadata: metadata);
+        if (forced != null) {
+          _logResponse(
+            httpMethod: 'POST',
+            metadata: metadata,
+            statusCode: forced.statusCode,
+            elapsed: stopwatch.elapsed,
+          );
+          return forced;
+        }
       }
       try {
         final response = await delegate(url, headers: normalizedHeaders, body: body, encoding: encoding);
-        _logResponse(
-          httpMethod: 'POST',
-          metadata: metadata,
-          statusCode: response.statusCode,
-          elapsed: stopwatch.elapsed,
-        );
+        if (kDebugMode && metadata != null && stopwatch != null) {
+          _logResponse(
+            httpMethod: 'POST',
+            metadata: metadata,
+            statusCode: response.statusCode,
+            elapsed: stopwatch.elapsed,
+          );
+        }
         return response;
       } catch (error, stackTrace) {
-        _error(
-          _failureLogLine(httpMethod: 'POST', metadata: metadata, elapsed: stopwatch.elapsed),
-          error: error,
-          stackTrace: stackTrace,
-        );
+        if (kDebugMode && metadata != null && stopwatch != null) {
+          _error(
+            _failureLogLine(httpMethod: 'POST', metadata: metadata, elapsed: stopwatch.elapsed),
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
         rethrow;
       }
     };

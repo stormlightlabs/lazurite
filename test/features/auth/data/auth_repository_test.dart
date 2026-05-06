@@ -257,6 +257,144 @@ void main() {
         verifyNever(() => mockDatabase.deleteAccount(any()));
         verify(() => mockDatabase.insertAccount(any())).called(1);
       });
+
+      test('loads OAuth refresh metadata using stored oauthClientId', () async {
+        final requestedClientIds = <String>[];
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final expiredAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds - 3600,
+          iatEpochSeconds: nowEpochSeconds - 7200,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://northsky.social',
+        );
+        final refreshedAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://northsky.social',
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (clientId) async {
+            requestedClientIds.add(clientId);
+            return _testClientMetadata();
+          },
+          oauthRefreshSession:
+              ({required OAuthClientMetadata metadata, required String service, required OAuthSession session}) async {
+                return OAuthSession(
+                  accessToken: refreshedAccessToken,
+                  refreshToken: session.refreshToken,
+                  tokenType: 'DPoP',
+                  scope: 'atproto',
+                  expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+                  sub: session.sub,
+                  $dPoPNonce: 'new-nonce',
+                  $publicKey: session.$publicKey,
+                  $privateKey: session.$privateKey,
+                );
+              },
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'REPLACE_ME',
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'northsky.social',
+          oauthClientId: 'https://northsky.social/oauth/client-metadata.json',
+          dpopNonce: 'nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+        final sessionWithJwt = currentSession.copyWith(accessToken: expiredAccessToken);
+
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);
+        when(
+          () => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, currentSession.did),
+        ).thenAnswer((_) async => 1);
+
+        final refreshed = await authRepository.refreshSession(sessionWithJwt);
+
+        expect(refreshed, isNotNull);
+        expect(requestedClientIds, equals(['https://northsky.social/oauth/client-metadata.json']));
+      });
+
+      test('falls back to default client id when stored oauthClientId is blank', () async {
+        final requestedClientIds = <String>[];
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final expiredAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds - 3600,
+          iatEpochSeconds: nowEpochSeconds - 7200,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://northsky.social',
+        );
+        final refreshedAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://northsky.social',
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (clientId) async {
+            requestedClientIds.add(clientId);
+            return _testClientMetadata();
+          },
+          oauthRefreshSession:
+              ({required OAuthClientMetadata metadata, required String service, required OAuthSession session}) async {
+                return OAuthSession(
+                  accessToken: refreshedAccessToken,
+                  refreshToken: session.refreshToken,
+                  tokenType: 'DPoP',
+                  scope: 'atproto',
+                  expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+                  sub: session.sub,
+                  $dPoPNonce: 'new-nonce',
+                  $publicKey: session.$publicKey,
+                  $privateKey: session.$privateKey,
+                );
+              },
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'REPLACE_ME',
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'northsky.social',
+          oauthClientId: '   ',
+          dpopNonce: 'nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+        final sessionWithJwt = currentSession.copyWith(accessToken: expiredAccessToken);
+
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);
+        when(
+          () => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, currentSession.did),
+        ).thenAnswer((_) async => 1);
+
+        final refreshed = await authRepository.refreshSession(sessionWithJwt);
+
+        expect(refreshed, isNotNull);
+        expect(requestedClientIds, equals([AuthRepository.kClientId]));
+      });
     });
 
     group('oauth authorize candidates', () {
