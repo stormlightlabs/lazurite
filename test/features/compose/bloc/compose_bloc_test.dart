@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:atproto_core/atproto_core.dart' show Blob, BlobRef;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
@@ -9,6 +12,8 @@ class MockAppDatabase extends Mock implements AppDatabase {}
 class MockComposeRepository extends Mock implements ComposeRepository {}
 
 class FakeDraftsCompanion extends Fake implements DraftsCompanion {}
+
+final _jpegBytes = <int>[0xFF, 0xD8, 0xFF, 0xE0, 0, 16, 0x4A, 0x46, 0x49, 0x46, 0, 1];
 
 DraftEntry _makeDraft({
   int id = 1,
@@ -34,6 +39,18 @@ DraftEntry _makeDraft({
   updatedAt: DateTime(2025, 1, 1),
   scheduledAt: scheduledAt,
 );
+
+File _writeTempImage(String name, List<int> bytes) {
+  final dir = Directory.systemTemp.createTempSync('lazurite_compose_test_');
+  addTearDown(() {
+    if (dir.existsSync()) {
+      dir.deleteSync(recursive: true);
+    }
+  });
+  final file = File('${dir.path}/$name');
+  file.writeAsBytesSync(bytes);
+  return file;
+}
 
 void main() {
   group('ComposeBloc', () {
@@ -744,6 +761,74 @@ void main() {
             ),
           ).captured.single;
           expect(embed, isNull);
+        },
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'uploads images and creates image embed with full blob records',
+        build: () {
+          when(() => mockRepository.uploadBlobRecord(any(), mimeType: any(named: 'mimeType'))).thenAnswer(
+            (_) async => const Blob(
+              ref: BlobRef(link: 'bafkreiimageblob'),
+              mimeType: 'image/jpeg',
+              size: 12,
+            ),
+          );
+          when(
+            () => mockRepository.createPost(
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              embed: any(named: 'embed'),
+              reply: any(named: 'reply'),
+              repo: any(named: 'repo'),
+            ),
+          ).thenAnswer((_) async => true);
+          return composeBloc;
+        },
+        seed: () {
+          final image = _writeTempImage('photo.jpg', _jpegBytes);
+          return ComposeState.ready(
+            text: 'Photo',
+            graphemeCount: 5,
+            isEmpty: false,
+            mediaAttachments: [MediaAttachment(localPath: image.path, altText: 'A photo', width: 640, height: 480)],
+          );
+        },
+        act: (bloc) => bloc.add(const PostSubmitted()),
+        wait: const Duration(milliseconds: 10),
+        expect: () => [
+          isA<ComposeState>().having((s) => s.isSubmitting, 'isSubmitting', true),
+          isA<ComposeState>().having((s) => s.isSuccess, 'isSuccess', true),
+        ],
+        verify: (_) {
+          final uploadedBytes =
+              verify(() => mockRepository.uploadBlobRecord(captureAny(), mimeType: 'image/jpeg')).captured.single
+                  as List<int>;
+          expect(uploadedBytes, _jpegBytes);
+          final embed =
+              verify(
+                    () => mockRepository.createPost(
+                      text: any(named: 'text'),
+                      facets: any(named: 'facets'),
+                      embed: captureAny(named: 'embed'),
+                      reply: any(named: 'reply'),
+                      repo: any(named: 'repo'),
+                    ),
+                  ).captured.single
+                  as Map<String, dynamic>;
+
+          expect(embed[r'$type'], 'app.bsky.embed.images');
+          final images = embed['images'] as List<dynamic>;
+          expect(images, hasLength(1));
+          final image = images.single as Map<String, dynamic>;
+          expect(image['alt'], 'A photo');
+          expect(image['aspectRatio'], {'width': 640, 'height': 480});
+          expect(image['image'], {
+            r'$type': 'blob',
+            'ref': {r'$link': 'bafkreiimageblob'},
+            'mimeType': 'image/jpeg',
+            'size': 12,
+          });
         },
       );
 

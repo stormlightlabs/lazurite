@@ -483,25 +483,20 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
             return;
           }
 
-          final blob = await _composeRepository.uploadBlob(bytes, mimeType: mime);
+          final blob = await _composeRepository.uploadBlobRecord(bytes, mimeType: mime);
           if (blob == null) {
             _emitError(emit, 'Failed to upload image. Please try again.');
             return;
           }
           uploaded.add(
-            _UploadedImage(
-              blobRef: blob,
-              altText: attachment.altText,
-              width: attachment.width,
-              height: attachment.height,
-            ),
+            _UploadedImage(blob: blob, altText: attachment.altText, width: attachment.width, height: attachment.height),
           );
         }
 
         mediaEmbed = {
           '\$type': 'app.bsky.embed.images',
           'images': uploaded.map((img) {
-            final entry = <String, dynamic>{'image': img.blobRef.toJson(), 'alt': img.altText};
+            final entry = <String, dynamic>{'image': img.blob.toJson(), 'alt': img.altText};
             if (img.width != null && img.height != null) {
               entry['aspectRatio'] = {'width': img.width, 'height': img.height};
             }
@@ -627,7 +622,8 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
       );
       await _database.saveDraft(draft);
       _emitError(emit, 'Network error — post saved as draft.');
-    } catch (_) {
+    } catch (draftError, stackTrace) {
+      log.e('Failed to save failed post submission as draft', error: draftError, stackTrace: stackTrace);
       _emitError(emit, 'Failed to submit post: $error');
     }
   }
@@ -679,9 +675,9 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 }
 
 class _UploadedImage {
-  const _UploadedImage({required this.blobRef, required this.altText, this.width, this.height});
+  const _UploadedImage({required this.blob, required this.altText, this.width, this.height});
 
-  final BlobRef blobRef;
+  final Blob blob;
   final String altText;
   final int? width;
   final int? height;
@@ -712,17 +708,22 @@ class ComposeRepository {
   final LinkPreviewService _linkPreviewService;
   final ActorRepositoryServiceResolver _actorRepoResolver;
 
-  Future<BlobRef?> uploadBlob(List<int> bytes, {String mimeType = 'image/jpeg'}) async {
+  Future<Blob?> uploadBlobRecord(List<int> bytes, {String mimeType = 'image/jpeg'}) async {
     try {
       final response = await _bluesky.atproto.repo.uploadBlob(
         bytes: Uint8List.fromList(bytes),
         $headers: {'Content-Type': mimeType},
       );
-      return response.data.blob.ref;
+      return response.data.blob;
     } catch (e, stackTrace) {
       log.e('Failed to upload blob', error: e, stackTrace: stackTrace);
       return null;
     }
+  }
+
+  Future<BlobRef?> uploadBlob(List<int> bytes, {String mimeType = 'image/jpeg'}) async {
+    final blob = await uploadBlobRecord(bytes, mimeType: mimeType);
+    return blob?.ref;
   }
 
   /// Uploads video bytes and returns the job ID, or null on failure.
@@ -857,13 +858,13 @@ class ComposeRepository {
     }
   }
 
-  Future<BlobRef?> _uploadExternalThumb(String thumbUrl) async {
+  Future<Blob?> _uploadExternalThumb(String thumbUrl) async {
     try {
       final thumb = await _linkPreviewService.fetchThumbnail(thumbUrl);
       if (thumb == null) {
         return null;
       }
-      return await uploadBlob(thumb.bytes, mimeType: thumb.mimeType);
+      return await uploadBlobRecord(thumb.bytes, mimeType: thumb.mimeType);
     } catch (error, stackTrace) {
       log.w('Failed to upload external embed thumbnail blob', error: error, stackTrace: stackTrace);
       return null;
@@ -1077,7 +1078,8 @@ Future<({int width, int height})?> readImageDimensions(List<int> bytes) async {
     final result = (width: image.width, height: image.height);
     image.dispose();
     return result;
-  } catch (_) {
+  } catch (error, stackTrace) {
+    log.w('Failed to read image dimensions', error: error, stackTrace: stackTrace);
     return null;
   }
 }
