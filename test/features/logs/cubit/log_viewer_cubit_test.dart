@@ -94,6 +94,7 @@ void main() {
       final sharedFile = await cubit.getTodaysLogFile();
       expect(sharedFile, isNotNull);
       expect(sharedFile!.path, isNot(equals(sourceFile.path)));
+      expect(sharedFile.uri.pathSegments.last, 'lazurite_logs_2026_05_05_share.log');
       addTearDown(() async {
         final shareDirectory = sharedFile.parent;
         if (await shareDirectory.exists()) {
@@ -134,7 +135,7 @@ void main() {
       expect(second!.path, equals(first!.path));
     });
 
-    test('cleans up legacy per-share temp directories', () async {
+    test('cleans up stale per-share temp directories', () async {
       final tempRoot = await Directory.systemTemp.createTemp('lazurite_log_viewer_temp_root_');
       final sourceDir = await tempRoot.createTemp('lazurite_log_source_');
       final sourceFile = File('${sourceDir.path}/lazurite_2026-05-06.log');
