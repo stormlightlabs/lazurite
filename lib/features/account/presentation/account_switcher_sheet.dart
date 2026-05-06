@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/atproto_identifier.dart';
@@ -21,12 +22,8 @@ String? validateAtProtoIdentifierInput(String? value) {
     return null;
   }
 
-  return switch (validationError.code) {
-    AtProtoIdentifierValidationErrorCode.empty => 'Enter a Bluesky handle or DID',
-    AtProtoIdentifierValidationErrorCode.unsupportedDid => 'Use a did:plc:... or did:web:... identifier',
-    AtProtoIdentifierValidationErrorCode.invalidDid => 'Enter a complete DID like did:plc:... or did:web:...',
-    AtProtoIdentifierValidationErrorCode.invalidHandle => 'Enter a full handle like username.bsky.social',
-  };
+  final code = validationError.code;
+  return code.message;
 }
 
 void showAccountSwitcherSheet(BuildContext context) {
@@ -108,7 +105,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
                         ),
                       ],
                     ),
-                    onTap: isActive ? null : () => _onSwitchAccount(context, account.did),
+                    onTap: isActive ? null : () => _onSwitchAccount(context, account),
                   );
                 },
               );
@@ -141,10 +138,10 @@ class _AccountSwitcherSheet extends StatelessWidget {
     ),
   );
 
-  Future<void> _onSwitchAccount(BuildContext context, String did) async {
+  Future<void> _onSwitchAccount(BuildContext context, Account account) async {
     final cubit = context.read<AccountSwitcherCubit>();
     Navigator.pop(context);
-    final tokens = await cubit.switchAccount(did);
+    final tokens = await cubit.switchAccount(account.did);
     if (tokens != null) {
       authBloc.add(SessionRestored(tokens: tokens));
       return;
@@ -154,10 +151,13 @@ class _AccountSwitcherSheet extends StatelessWidget {
       showAppSnackBar(parentContext, 'Please sign in again for that account.');
       final router = GoRouter.maybeOf(parentContext);
       if (router != null) {
-        unawaited(Future<void>.delayed(Duration.zero, () => router.go('/login?reauth=1')));
+        unawaited(Future<void>.delayed(Duration.zero, () => router.go(_reauthLoginLocation(account.handle))));
       }
     }
   }
+
+  String _reauthLoginLocation(String handle) =>
+      Uri(path: '/login', queryParameters: {'reauth': '1', 'handle': handle}).toString();
 
   Future<void> _onAddAccount(BuildContext context) async {
     final cubit = context.read<AccountSwitcherCubit>();

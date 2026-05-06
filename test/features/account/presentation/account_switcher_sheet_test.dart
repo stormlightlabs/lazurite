@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/account/presentation/account_switcher_sheet.dart';
@@ -77,6 +78,19 @@ void main() {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget buildSubjectWithRouter(GoRouter router) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>.value(value: authBloc),
+        BlocProvider<AccountSwitcherCubit>.value(value: cubit),
+      ],
+      child: RepositoryProvider<TypeaheadRepository>.value(
+        value: typeaheadRepository,
+        child: MaterialApp.router(routerConfig: router),
       ),
     );
   }
@@ -205,6 +219,49 @@ void main() {
 
       verifyNever(() => authBloc.add(any(that: isA<LogoutRequested>())));
       verify(() => cubit.switchAccount('did:plc:user2')).called(1);
+    });
+
+    testWidgets('reauth fallback routes to login with selected account handle', (tester) async {
+      late GoRouter router;
+      router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(
+              body: TextButton(onPressed: () => showAccountSwitcherSheet(context), child: const Text('Open')),
+            ),
+          ),
+          GoRoute(
+            path: '/login',
+            builder: (context, state) => Scaffold(body: Text('reauth:${state.uri.queryParameters['handle'] ?? ''}')),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      when(() => cubit.state).thenReturn(
+        AccountSwitcherState.ready(
+          accounts: [
+            makeAccount(did: 'did:plc:user1', handle: 'alice.bsky.social'),
+            makeAccount(did: 'did:plc:user2', handle: 'bob.bsky.social'),
+          ],
+          activeDid: 'did:plc:user1',
+        ),
+      );
+      when(() => cubit.switchAccount('did:plc:user2')).thenAnswer((_) async => null);
+
+      await tester.pumpWidget(buildSubjectWithRouter(router));
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      await tester.tap(find.text('bob.bsky.social'));
+      await tester.pumpAndSettle();
+
+      expect(router.routeInformationProvider.value.uri.path, '/login');
+      expect(router.routeInformationProvider.value.uri.queryParameters['reauth'], '1');
+      expect(router.routeInformationProvider.value.uri.queryParameters['handle'], 'bob.bsky.social');
+      expect(find.text('reauth:bob.bsky.social'), findsOneWidget);
     });
 
     testWidgets('tapping active account does nothing', (tester) async {

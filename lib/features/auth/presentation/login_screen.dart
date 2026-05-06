@@ -18,8 +18,10 @@ import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.da
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({this.typeaheadRepository, super.key});
+  const LoginScreen({this.initialHandle, this.autoStartOAuth = false, this.typeaheadRepository, super.key});
 
+  final String? initialHandle;
+  final bool autoStartOAuth;
   final TypeaheadRepository? typeaheadRepository;
 
   @override
@@ -34,6 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showDebugForm = false;
   bool _isPersistingProvider = false;
   bool _didRequestAccountsLoad = false;
+  bool _didRequestAutoOAuth = false;
   bool _didLogMissingAccountSwitcherProvider = false;
   bool _didLogAvatarLookupFailure = false;
   late final TypeaheadRepository _typeaheadRepository;
@@ -55,11 +58,21 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     _typeaheadRepository =
         widget.typeaheadRepository ?? TypeaheadRepository(provider: TypeaheadRepository.communityProvider);
+    final initialHandle = widget.initialHandle?.trim();
+    if (initialHandle != null && initialHandle.isNotEmpty) {
+      _handleController.text = initialHandle;
+      _handleController.selection = TextSelection.collapsed(offset: initialHandle.length);
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _requestAccountsLoadIfAvailable();
+    _requestAutoOAuthIfNeeded();
+  }
+
+  void _requestAccountsLoadIfAvailable() {
     if (_didRequestAccountsLoad) {
       return;
     }
@@ -75,6 +88,20 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
       unawaited(accountSwitcherCubit.loadAccounts());
+    });
+  }
+
+  void _requestAutoOAuthIfNeeded() {
+    if (_didRequestAutoOAuth || !widget.autoStartOAuth || _handleController.text.trim().isEmpty) {
+      return;
+    }
+
+    _didRequestAutoOAuth = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      unawaited(_onOAuthLogin());
     });
   }
 
@@ -122,6 +149,32 @@ class _LoginScreenState extends State<LoginScreen> {
   void _onTypeaheadSelected(TypeaheadResult result) {
     _handleController.text = result.handle;
     unawaited(_onOAuthLogin());
+  }
+
+  void _fillHandleFromAccount(Account account) {
+    _handleController.text = account.handle;
+    _handleController.selection = TextSelection.collapsed(offset: _handleController.text.length);
+  }
+
+  Future<void> _onSelectSavedAccount(Account account) async {
+    _fillHandleFromAccount(account);
+
+    final cubit = _maybeAccountSwitcherCubit(context);
+    if (cubit == null) {
+      return;
+    }
+
+    final tokens = await cubit.switchAccount(account.did);
+    if (!mounted) {
+      return;
+    }
+
+    if (tokens != null) {
+      context.read<AuthBloc>().add(SessionRestored(tokens: tokens));
+      return;
+    }
+
+    await _onOAuthLogin();
   }
 
   Future<bool> _persistSelectedProvider() async {
@@ -413,10 +466,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   accounts: state.accounts,
                                   avatarFutureForDid: _avatarFutureForDid,
                                   onSelect: (account) {
-                                    _handleController.text = account.handle;
-                                    _handleController.selection = TextSelection.collapsed(
-                                      offset: _handleController.text.length,
-                                    );
+                                    unawaited(_onSelectSavedAccount(account));
                                   },
                                   onRemove: (account) {
                                     unawaited(_onRemoveSavedAccount(account));

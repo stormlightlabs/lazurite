@@ -122,6 +122,7 @@ void main() {
         useSystemTheme: false,
       ),
     );
+    when(() => settingsCubit.setAppViewProvider(any())).thenAnswer((_) async {});
     when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
     when(() => accountSwitcherCubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
     when(() => accountSwitcherCubit.loadAccounts()).thenAnswer((_) async {});
@@ -596,6 +597,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey<String>('login-continue-button')), findsOneWidget);
+
+    router.dispose();
+  });
+
+  testWidgets('reauth login route passes handle through and starts OAuth for that account', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    await tester.pumpAndSettle();
+
+    router.go('/login?reauth=1&handle=alice.bsky.social');
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextFormField>(find.byType(TextFormField).first);
+    expect(field.controller?.text, 'alice.bsky.social');
+    verify(() => authBloc.add(const OAuthLoginRequested(handle: 'alice.bsky.social'))).called(1);
 
     router.dispose();
   });

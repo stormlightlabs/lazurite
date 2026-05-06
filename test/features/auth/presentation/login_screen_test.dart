@@ -10,6 +10,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
@@ -51,7 +52,12 @@ void main() {
     when(() => accountSwitcherCubit.loadAccounts()).thenAnswer((_) async {});
   });
 
-  Widget buildSubject({ThemeMode themeMode = ThemeMode.system, MockAccountSwitcherCubit? accountCubit}) {
+  Widget buildSubject({
+    ThemeMode themeMode = ThemeMode.system,
+    MockAccountSwitcherCubit? accountCubit,
+    String? initialHandle,
+    bool autoStartOAuth = false,
+  }) {
     final typeaheadRepository = _FakeTypeaheadRepository(
       searchHandler: ({required String query, int limit = 10}) async => const [],
     );
@@ -66,7 +72,11 @@ void main() {
               BlocProvider<SettingsCubit>.value(value: settingsCubit),
               BlocProvider<AccountSwitcherCubit>.value(value: accountCubit ?? accountSwitcherCubit),
             ],
-            child: LoginScreen(typeaheadRepository: typeaheadRepository),
+            child: LoginScreen(
+              initialHandle: initialHandle,
+              autoStartOAuth: autoStartOAuth,
+              typeaheadRepository: typeaheadRepository,
+            ),
           ),
         ),
         GoRoute(
@@ -204,6 +214,21 @@ void main() {
     ]);
   });
 
+  testWidgets('auto-starts OAuth once when reauth opens with an initial handle', (tester) async {
+    await tester.pumpWidget(buildSubject(initialHandle: 'alice.bsky.social', autoStartOAuth: true));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextFormField>(find.byType(TextFormField).first);
+    expect(field.controller?.text, 'alice.bsky.social');
+    verifyInOrder([
+      () => settingsCubit.setAppViewProvider('bluesky'),
+      () => authBloc.add(const OAuthLoginRequested(handle: 'alice.bsky.social')),
+    ]);
+
+    await tester.pump();
+    verifyNever(() => authBloc.add(const OAuthLoginRequested(handle: 'alice.bsky.social')));
+  });
+
   testWidgets('tints BlackSky logo in dark mode', (tester) async {
     await tester.pumpWidget(buildSubject(themeMode: ThemeMode.dark));
     await tester.pumpAndSettle();
@@ -219,11 +244,13 @@ void main() {
     expect(blueSkySvg.colorFilter, isNull);
   });
 
-  testWidgets('saved account row tap pre-fills handle field', (tester) async {
+  testWidgets('saved account row tap restores stored session', (tester) async {
     final account = _makeAccount(did: 'did:plc:alice', handle: 'alice.bsky.social', displayName: 'Alice');
     final state = AccountSwitcherState.ready(accounts: [account], activeDid: account.did);
+    const tokens = AuthTokens(accessToken: 'token', did: 'did:plc:alice', handle: 'alice.bsky.social');
     when(() => accountSwitcherCubit.state).thenReturn(state);
     whenListen(accountSwitcherCubit, const Stream<AccountSwitcherState>.empty(), initialState: state);
+    when(() => accountSwitcherCubit.switchAccount(account.did)).thenAnswer((_) async => tokens);
 
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
@@ -237,6 +264,38 @@ void main() {
 
     final field = tester.widget<TextFormField>(find.byType(TextFormField).first);
     expect(field.controller?.text, 'alice.bsky.social');
+    verify(() => accountSwitcherCubit.switchAccount(account.did)).called(1);
+    verify(() => authBloc.add(const SessionRestored(tokens: tokens))).called(1);
+    verifyNever(() => authBloc.add(const OAuthLoginRequested(handle: 'alice.bsky.social')));
+  });
+
+  testWidgets('saved account row tap starts OAuth reauth when stored session cannot be restored', (tester) async {
+    final account = _makeAccount(did: 'did:plc:alice', handle: 'alice.bsky.social', displayName: 'Alice');
+    final state = AccountSwitcherState.ready(accounts: [account], activeDid: account.did);
+    when(() => accountSwitcherCubit.state).thenReturn(state);
+    whenListen(accountSwitcherCubit, const Stream<AccountSwitcherState>.empty(), initialState: state);
+    when(() => accountSwitcherCubit.switchAccount(account.did)).thenAnswer((_) async => null);
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('saved-account-did:plc:alice')));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextFormField>(find.byType(TextFormField).first);
+    expect(field.controller?.text, 'alice.bsky.social');
+    verify(() => accountSwitcherCubit.switchAccount(account.did)).called(1);
+    verifyInOrder([
+      () => settingsCubit.setAppViewProvider('bluesky'),
+      () => authBloc.add(const OAuthLoginRequested(handle: 'alice.bsky.social')),
+    ]);
+    verifyNever(
+      () => authBloc.add(
+        const SessionRestored(
+          tokens: AuthTokens(accessToken: 'token', did: 'did:plc:alice', handle: 'alice.bsky.social'),
+        ),
+      ),
+    );
   });
 
   testWidgets('shows saved accounts loading state while account list is loading', (tester) async {
