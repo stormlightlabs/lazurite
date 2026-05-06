@@ -163,6 +163,92 @@ void main() {
         expect(restored, isNotNull);
         expect(restored!.handle, equals('user.bsky.social'));
       });
+
+      test('preserves expired stored session when refresh failure is transient', () async {
+        final expiredAt = DateTime.now().subtract(const Duration(hours: 1));
+        final account = Account(
+          did: 'did:plc:oauth123',
+          handle: 'oauth-user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'bsky.social',
+          oauthClientId: AuthRepository.kClientId,
+          accessToken: 'expired-access-token',
+          refreshToken: 'refresh-token',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          dpopNonce: 'nonce',
+          displayName: 'OAuth User',
+          expiresAt: expiredAt,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => throw Exception('metadata unavailable'),
+        );
+        when(() => mockDatabase.getActiveAccount()).thenAnswer((_) async => account);
+
+        final restored = await authRepository.restoreSession();
+
+        expect(restored, isNotNull);
+        expect(restored!.did, equals(account.did));
+        expect(restored.isExpired, isTrue);
+        verifyNever(() => mockDatabase.deleteAccount(any()));
+        verifyNever(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey));
+      });
+    });
+
+    group('app password refresh', () {
+      test('preserves account when refresh fails transiently', () async {
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async =>
+              throw Exception('refresh service unavailable'),
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+
+        await expectLater(authRepository.refreshSession(currentSession), throwsA(isA<Exception>()));
+
+        verifyNever(() => mockDatabase.deleteAccount(any()));
+        verifyNever(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey));
+      });
+
+      test('invalidates account when refresh token is rejected', () async {
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async =>
+              throw _unauthorizedRefreshException(),
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+
+        when(() => mockDatabase.deleteAccount(currentSession.did)).thenAnswer((_) async => 1);
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).thenAnswer((_) async => 1);
+
+        await expectLater(authRepository.refreshSession(currentSession), throwsA(isA<Exception>()));
+
+        verify(() => mockDatabase.deleteAccount(currentSession.did)).called(1);
+        verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
+      });
     });
 
     group('oauth refresh', () {
@@ -394,6 +480,135 @@ void main() {
 
         expect(refreshed, isNotNull);
         expect(requestedClientIds, equals([AuthRepository.kClientId]));
+      });
+
+      test('preserves account when OAuth refresh fails transiently', () async {
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final expiredAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds - 3600,
+          iatEpochSeconds: nowEpochSeconds - 7200,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthRefreshSession:
+              ({required OAuthClientMetadata metadata, required String service, required OAuthSession session}) async {
+                throw const OAuthException('{"error":"temporarily_unavailable"}');
+              },
+        );
+
+        final currentSession = AuthTokens(
+          accessToken: expiredAccessToken,
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'bsky.social',
+          oauthClientId: AuthRepository.kClientId,
+          dpopNonce: 'nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+
+        await expectLater(authRepository.refreshSession(currentSession), throwsA(isA<Exception>()));
+
+        verifyNever(() => mockDatabase.deleteAccount(any()));
+        verifyNever(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey));
+      });
+
+      test('invalidates account when OAuth refresh token is rejected', () async {
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final expiredAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds - 3600,
+          iatEpochSeconds: nowEpochSeconds - 7200,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthRefreshSession:
+              ({required OAuthClientMetadata metadata, required String service, required OAuthSession session}) async {
+                throw const OAuthException('{"error":"invalid_grant"}');
+              },
+        );
+
+        final currentSession = AuthTokens(
+          accessToken: expiredAccessToken,
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'bsky.social',
+          oauthClientId: AuthRepository.kClientId,
+          dpopNonce: 'nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+
+        when(() => mockDatabase.deleteAccount(currentSession.did)).thenAnswer((_) async => 1);
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).thenAnswer((_) async => 1);
+
+        await expectLater(authRepository.refreshSession(currentSession), throwsA(isA<Exception>()));
+
+        verify(() => mockDatabase.deleteAccount(currentSession.did)).called(1);
+        verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
+      });
+
+      test('does not invalidate when only fallback OAuth candidates reject credentials', () async {
+        final attemptedServices = <String>[];
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final expiredAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds - 3600,
+          iatEpochSeconds: nowEpochSeconds - 7200,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://issuer.example',
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthRefreshSession:
+              ({required OAuthClientMetadata metadata, required String service, required OAuthSession session}) async {
+                attemptedServices.add(service);
+                if (service == 'issuer.example') {
+                  throw const OAuthException('{"error":"temporarily_unavailable"}');
+                }
+                throw const OAuthException('{"error":"invalid_grant"}');
+              },
+        );
+
+        final currentSession = AuthTokens(
+          accessToken: expiredAccessToken,
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'stale-auth.example',
+          oauthClientId: AuthRepository.kClientId,
+          dpopNonce: 'nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+
+        await expectLater(authRepository.refreshSession(currentSession), throwsA(isA<Exception>()));
+
+        expect(attemptedServices, equals(['issuer.example', 'stale-auth.example', 'bsky.social']));
+        verifyNever(() => mockDatabase.deleteAccount(any()));
+        verifyNever(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey));
       });
     });
 
@@ -860,6 +1075,21 @@ atcore.InvalidRequestException _invalidResolveHandleRequestException() {
       ),
       rateLimit: atcore.RateLimit.unlimited(),
       data: const atcore.XRPCError(error: 'InvalidRequest', message: 'Could not resolve handle'),
+    ),
+  );
+}
+
+atcore.UnauthorizedException _unauthorizedRefreshException() {
+  return atcore.UnauthorizedException(
+    atcore.XRPCResponse(
+      headers: const {},
+      status: atcore.HttpStatus.unauthorized,
+      request: atcore.XRPCRequest(
+        method: atcore.HttpMethod.post,
+        url: Uri.https('bsky.social', '/xrpc/com.atproto.server.refreshSession'),
+      ),
+      rateLimit: atcore.RateLimit.unlimited(),
+      data: const atcore.XRPCError(error: 'ExpiredToken', message: 'Refresh token rejected'),
     ),
   );
 }

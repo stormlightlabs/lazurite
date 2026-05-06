@@ -28,6 +28,8 @@ typedef OAuthRefreshSession =
       required String service,
       required OAuthSession session,
     });
+typedef AppPasswordRefreshSession =
+    Future<atcore.XRPCResponse<atcore.Session>> Function({required String refreshJwt, String? service});
 
 final class AuthIdentifierResolutionException implements Exception {
   const AuthIdentifierResolutionException(this.message);
@@ -38,6 +40,23 @@ final class AuthIdentifierResolutionException implements Exception {
   String toString() => message;
 }
 
+final class _SessionRefreshException implements Exception {
+  const _SessionRefreshException(this.message, {required this.shouldInvalidateSession});
+
+  final String message;
+  final bool shouldInvalidateSession;
+
+  @override
+  String toString() => message;
+}
+
+final class _OAuthRefreshAttemptFailure {
+  const _OAuthRefreshAttemptFailure({required this.service, required this.oauthErrorCode});
+
+  final String service;
+  final String? oauthErrorCode;
+}
+
 class AuthRepository {
   AuthRepository({
     required AppDatabase database,
@@ -45,6 +64,7 @@ class AuthRepository {
     CloseInAppBrowser closeInAppBrowser = closeInAppWebView,
     SupportsCloseForMode supportsCloseForMode = supportsCloseForLaunchMode,
     OAuthRefreshSession oauthRefreshSession = _defaultOAuthRefreshSession,
+    AppPasswordRefreshSession appPasswordRefreshSession = _defaultAppPasswordRefreshSession,
     Future<OAuthClientMetadata> Function(String clientId) loadClientMetadata = getClientMetadata,
     String Function()? oauthServiceResolver,
     bool Function()? slingshotIdentityFallbackEnabledResolver,
@@ -56,6 +76,7 @@ class AuthRepository {
        _closeInAppBrowser = closeInAppBrowser,
        _supportsCloseForMode = supportsCloseForMode,
        _oauthRefreshSession = oauthRefreshSession,
+       _appPasswordRefreshSession = appPasswordRefreshSession,
        _loadClientMetadata = loadClientMetadata,
        _oauthServiceResolver = oauthServiceResolver ?? _defaultOAuthServiceResolver,
        _slingshotIdentityFallbackEnabledResolver = slingshotIdentityFallbackEnabledResolver ?? _defaultFalse,
@@ -86,6 +107,7 @@ class AuthRepository {
   final CloseInAppBrowser _closeInAppBrowser;
   final SupportsCloseForMode _supportsCloseForMode;
   final OAuthRefreshSession _oauthRefreshSession;
+  final AppPasswordRefreshSession _appPasswordRefreshSession;
   final Future<OAuthClientMetadata> Function(String clientId) _loadClientMetadata;
   final String Function() _oauthServiceResolver;
   final bool Function() _slingshotIdentityFallbackEnabledResolver;
@@ -152,7 +174,14 @@ class AuthRepository {
       return await refreshSession(storedSession);
     } catch (error, stackTrace) {
       log.e('AuthRepository: Failed to restore expired session', error: error, stackTrace: stackTrace);
-      return restoreSession();
+      final fallbackSession = await getStoredSession();
+      if (fallbackSession != null && fallbackSession.did == storedSession.did) {
+        log.w(
+          'AuthRepository: Preserving expired stored session for ${storedSession.handle} after refresh failure; '
+          'runtime auth recovery can retry without forcing sign-in.',
+        );
+      }
+      return fallbackSession;
     }
   }
 
@@ -351,15 +380,18 @@ class AuthRepository {
           publicKey: publicKey,
           privateKey: privateKey,
         );
+        final issuerHost = normalizeAtprotoServiceHost(restoredSession.accessTokenJwt.iss);
+        final storedAuthHost = normalizeAtprotoServiceHost(currentSession.oauthService);
         final oauthServices = _oauthRefreshServiceCandidates(
           storedAuthService: currentSession.oauthService,
-          issuer: restoredSession.accessTokenJwt.iss,
+          issuer: issuerHost,
         );
 
         Object? lastAttemptError;
         StackTrace? lastAttemptStackTrace;
         String? successfulOauthService;
         final failedAttemptSummaries = <String>[];
+        final failedAttempts = <_OAuthRefreshAttemptFailure>[];
         OAuthSession? refreshedSession;
         for (final oauthService in oauthServices) {
           try {
@@ -380,6 +412,12 @@ class AuthRepository {
             lastAttemptStackTrace = stackTrace;
             final summary = _summarizeOAuthRefreshError(error);
             failedAttemptSummaries.add('$oauthService=$summary');
+            failedAttempts.add(
+              _OAuthRefreshAttemptFailure(
+                service: oauthService,
+                oauthErrorCode: error is OAuthException ? _oauthRefreshErrorCode(error.message) : null,
+              ),
+            );
             log.w(
               'AuthRepository: OAuth refresh attempt failed using auth service $oauthService ($summary)',
               error: error,
@@ -389,10 +427,16 @@ class AuthRepository {
         }
 
         if (refreshedSession == null) {
+          final shouldInvalidateFailedOAuthRefresh = _shouldInvalidateOAuthSessionAfterRefreshFailures(
+            failedAttempts,
+            issuerHost: issuerHost,
+            storedAuthHost: storedAuthHost,
+          );
           Error.throwWithStackTrace(
-            Exception(
+            _SessionRefreshException(
               'OAuth refresh failed across ${oauthServices.length} auth service candidate(s). '
               'Attempts: ${failedAttemptSummaries.join(' | ')}. Last error: $lastAttemptError',
+              shouldInvalidateSession: shouldInvalidateFailedOAuthRefresh,
             ),
             lastAttemptStackTrace ?? StackTrace.current,
           );
@@ -417,15 +461,23 @@ class AuthRepository {
         );
         return refreshedTokens;
       } catch (error, stackTrace) {
-        log.e('AuthRepository: OAuth session refresh failed', error: error, stackTrace: stackTrace);
-        await _invalidateSession(currentSession);
+        final shouldInvalidate = _shouldInvalidateSessionAfterRefreshFailure(error);
+        log.e(
+          'AuthRepository: OAuth session refresh failed; '
+          '${shouldInvalidate ? 'invalidating rejected credentials' : 'preserving session for retry'}',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        if (shouldInvalidate) {
+          await _invalidateSession(currentSession);
+        }
         throw Exception('Failed to refresh OAuth session: $error');
       }
     }
 
     try {
       log.i('AuthRepository: Refreshing app password session for ${currentSession.handle}');
-      final refreshed = await atp.refreshSession(
+      final refreshed = await _appPasswordRefreshSession(
         refreshJwt: currentSession.refreshToken!,
         service: currentSession.service,
       );
@@ -448,8 +500,16 @@ class AuthRepository {
       log.i('AuthRepository: App password session refresh succeeded for ${tokens.handle}');
       return tokens;
     } catch (error, stackTrace) {
-      log.e('AuthRepository: App password session refresh failed', error: error, stackTrace: stackTrace);
-      await _invalidateSession(currentSession);
+      final shouldInvalidate = _shouldInvalidateSessionAfterRefreshFailure(error);
+      log.e(
+        'AuthRepository: App password session refresh failed; '
+        '${shouldInvalidate ? 'invalidating rejected credentials' : 'preserving session for retry'}',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (shouldInvalidate) {
+        await _invalidateSession(currentSession);
+      }
       throw Exception('Failed to refresh session: $error');
     }
   }
@@ -1012,6 +1072,64 @@ class AuthRepository {
     }
   }
 
+  bool _shouldInvalidateSessionAfterRefreshFailure(Object error) {
+    if (error is _SessionRefreshException) {
+      return error.shouldInvalidateSession;
+    }
+
+    if (error is atcore.UnauthorizedException) {
+      return true;
+    }
+
+    if (error is OAuthException) {
+      return _oauthRefreshErrorCode(error.message) == 'invalid_grant';
+    }
+
+    return false;
+  }
+
+  String? _oauthRefreshErrorCode(String message) {
+    try {
+      final decoded = jsonDecode(message);
+      if (decoded is Map<String, dynamic>) {
+        final error = decoded['error'];
+        if (error is String && error.trim().isNotEmpty) {
+          return error.trim();
+        }
+      }
+    } catch (error, stackTrace) {
+      log.d('AuthRepository: Unable to parse OAuth refresh error code', error: error, stackTrace: stackTrace);
+    }
+
+    return null;
+  }
+
+  bool _shouldInvalidateOAuthSessionAfterRefreshFailures(
+    List<_OAuthRefreshAttemptFailure> failures, {
+    required String? issuerHost,
+    required String? storedAuthHost,
+  }) {
+    if (failures.isEmpty) {
+      return false;
+    }
+
+    final allCandidatesRejectedCredentials = failures.every((failure) => failure.oauthErrorCode == 'invalid_grant');
+    if (allCandidatesRejectedCredentials) {
+      return true;
+    }
+
+    final authoritativeHost = issuerHost ?? storedAuthHost;
+    if (authoritativeHost == null) {
+      return false;
+    }
+
+    return failures.any(
+      (failure) =>
+          normalizeAtprotoServiceHost(failure.service) == authoritativeHost &&
+          failure.oauthErrorCode == 'invalid_grant',
+    );
+  }
+
   void _resetPendingOAuthState({bool clearLaunchMode = true}) {
     _oauthCompleter = null;
     _resetPendingOAuthAttemptState();
@@ -1051,6 +1169,13 @@ class AuthRepository {
   }) {
     final oauthClient = OAuthClient(metadata, service: service);
     return oauthClient.refresh(session);
+  }
+
+  static Future<atcore.XRPCResponse<atcore.Session>> _defaultAppPasswordRefreshSession({
+    required String refreshJwt,
+    String? service,
+  }) {
+    return atp.refreshSession(refreshJwt: refreshJwt, service: service);
   }
 
   static String _defaultOAuthServiceResolver() {
