@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,6 +17,9 @@ class MockConnectivityCubit extends MockCubit<ConnectivityState> implements Conn
 
 class FakeDraftsCompanion extends Fake implements DraftsCompanion {}
 
+const _transparentPngBase64 =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lJRCiQAAAABJRU5ErkJggg==';
+
 DraftEntry _makeDraft({int id = 1, String content = 'Draft'}) => DraftEntry(
   id: id,
   accountDid: 'did:plc:test',
@@ -28,6 +34,18 @@ DraftEntry _makeDraft({int id = 1, String content = 'Draft'}) => DraftEntry(
   updatedAt: DateTime(2025, 1, 1),
   scheduledAt: null,
 );
+
+File _writeTempImage() {
+  final dir = Directory.systemTemp.createTempSync('lazurite_compose_screen_test_');
+  addTearDown(() {
+    if (dir.existsSync()) {
+      dir.deleteSync(recursive: true);
+    }
+  });
+  final file = File('${dir.path}/image.png');
+  file.writeAsBytesSync(base64Decode(_transparentPngBase64));
+  return file;
+}
 
 void main() {
   late MockComposeBloc mockBloc;
@@ -259,6 +277,66 @@ void main() {
         await tester.pump();
 
         verify(() => mockBloc.add(const QuoteContextCleared())).called(1);
+      });
+    });
+
+    group('image alt text', () {
+      testWidgets('shows image preview while editing alt text and saves changes', (tester) async {
+        final image = _writeTempImage();
+        seedState(
+          ComposeState.ready(
+            isEmpty: false,
+            mediaAttachments: [MediaAttachment(localPath: image.path, altText: 'Existing description')],
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.text('ALT'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Alt text'), findsOneWidget);
+        expect(find.byKey(const ValueKey('alt-text-image-preview')), findsOneWidget);
+        expect(find.text('Existing description'), findsOneWidget);
+
+        await tester.enterText(find.byKey(const ValueKey('alt-text-field')), 'A clearer image description');
+        await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+        await tester.pumpAndSettle();
+
+        verify(() => mockBloc.add(const AltTextUpdated(index: 0, altText: 'A clearer image description'))).called(1);
+      });
+    });
+
+    group('video alt text', () {
+      testWidgets('shows video preview while editing alt text and saves changes', (tester) async {
+        seedState(
+          const ComposeState.ready(
+            isEmpty: false,
+            videoAttachment: VideoAttachment(
+              localPath: '/tmp/composer-video.mp4',
+              status: VideoUploadStatus.ready,
+              altText: 'Existing video description',
+            ),
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.byIcon(Icons.subtitles_outlined));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Video alt text'), findsOneWidget);
+        expect(find.byKey(const ValueKey('video-alt-preview')), findsOneWidget);
+        expect(find.byKey(const ValueKey('video-alt-preview-filename')), findsOneWidget);
+        expect(find.text('Existing video description'), findsOneWidget);
+
+        await tester.enterText(find.byKey(const ValueKey('video-alt-text-field')), 'A clearer video description');
+        await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+        await tester.pumpAndSettle();
+
+        verify(() => mockBloc.add(const VideoAltTextUpdated('A clearer video description'))).called(1);
       });
     });
 

@@ -18,6 +18,7 @@ import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/external_link_preview_card.dart';
+import 'package:video_player/video_player.dart';
 
 class ComposeScreen extends StatefulWidget {
   const ComposeScreen({
@@ -410,58 +411,31 @@ class _ComposeScreenState extends State<ComposeScreen> {
     }
   }
 
-  Future<void> _showVideoAltTextDialog(String currentAltText) async {
-    final TextEditingController altController = TextEditingController(text: currentAltText);
-
+  Future<void> _showVideoAltTextDialog(VideoAttachment video) async {
     final result = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => ConfirmationDialog(
-        title: const Text('Add video alt text'),
-        content: TextField(
-          controller: altController,
-          maxLines: 3,
-          maxLength: 1000,
-          decoration: const InputDecoration(
-            hintText: 'Describe the video for accessibility',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        confirmLabel: 'Save',
+      builder: (dialogContext) => _VideoAltTextDialog(
+        video: video,
         onCancel: () => Navigator.pop(dialogContext),
-        onConfirm: () => Navigator.pop(dialogContext, altController.text),
+        onSave: (altText) => Navigator.pop(dialogContext, altText),
       ),
     );
-
-    altController.dispose();
 
     if (result != null && mounted) {
       context.read<ComposeBloc>().add(VideoAltTextUpdated(result));
     }
   }
 
-  Future<void> _showAltTextDialog(int index, String currentAltText) async {
-    final TextEditingController altController = TextEditingController(text: currentAltText);
-
+  Future<void> _showAltTextDialog(int index, MediaAttachment attachment) async {
     final result = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => ConfirmationDialog(
-        title: const Text('Add alt text'),
-        content: TextField(
-          controller: altController,
-          maxLines: 3,
-          maxLength: 1000,
-          decoration: const InputDecoration(
-            hintText: 'Describe the image for visually impaired users',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        confirmLabel: 'Save',
+      builder: (dialogContext) => _ImageAltTextDialog(
+        imagePath: attachment.localPath,
+        initialAltText: attachment.altText,
         onCancel: () => Navigator.pop(dialogContext),
-        onConfirm: () => Navigator.pop(dialogContext, altController.text),
+        onSave: (altText) => Navigator.pop(dialogContext, altText),
       ),
     );
-
-    altController.dispose();
 
     if (result != null && mounted) {
       context.read<ComposeBloc>().add(AltTextUpdated(index: index, altText: result));
@@ -1069,23 +1043,24 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                 Positioned(
                                   left: 8,
                                   bottom: 8,
-                                  child: GestureDetector(
-                                    onTap: () => _showAltTextDialog(index, attachment.altText),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: attachment.altText.isNotEmpty
-                                            ? theme.colorScheme.primary
-                                            : Colors.black54,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        'ALT',
-                                        style: theme.textTheme.labelSmall?.copyWith(
-                                          color: attachment.altText.isNotEmpty
-                                              ? theme.colorScheme.onPrimary
-                                              : Colors.white,
-                                          fontWeight: FontWeight.bold,
+                                  child: Material(
+                                    color: attachment.altText.isNotEmpty ? theme.colorScheme.primary : Colors.black54,
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(8),
+                                      onTap: () => _showAltTextDialog(index, attachment),
+                                      child: ConstrainedBox(
+                                        constraints: const BoxConstraints(minWidth: 44, minHeight: 40),
+                                        child: Center(
+                                          child: Text(
+                                            'ALT',
+                                            style: theme.textTheme.labelSmall?.copyWith(
+                                              color: attachment.altText.isNotEmpty
+                                                  ? theme.colorScheme.onPrimary
+                                                  : Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1094,14 +1069,23 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                 Positioned(
                                   top: 4,
                                   right: 4,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      context.read<ComposeBloc>().add(MediaRemoved(index));
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                                      child: const Icon(Icons.close, size: 16, color: Colors.white),
+                                  child: SizedBox(
+                                    width: 40,
+                                    height: 40,
+                                    child: Center(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          context.read<ComposeBloc>().add(MediaRemoved(index));
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.black54,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(Icons.close, size: 16, color: Colors.white),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1189,7 +1173,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             IconButton(
                               icon: const Icon(Icons.subtitles_outlined),
                               tooltip: 'Add alt text',
-                              onPressed: () => _showVideoAltTextDialog(video.altText),
+                              onPressed: () => _showVideoAltTextDialog(video),
                               color: video.altText.isNotEmpty
                                   ? theme.colorScheme.primary
                                   : theme.colorScheme.onSurfaceVariant,
@@ -1349,6 +1333,349 @@ class _FacetHighlightController extends TextEditingController {
     if (byteOffset <= 0) return 0;
     if (byteOffset >= textBytes.length) return utf8.decode(textBytes, allowMalformed: true).length;
     return utf8.decode(textBytes.sublist(0, byteOffset), allowMalformed: true).length;
+  }
+}
+
+class _ImageAltTextDialog extends StatefulWidget {
+  const _ImageAltTextDialog({
+    required this.imagePath,
+    required this.initialAltText,
+    required this.onCancel,
+    required this.onSave,
+  });
+
+  final String imagePath;
+  final String initialAltText;
+  final VoidCallback onCancel;
+  final ValueChanged<String> onSave;
+
+  @override
+  State<_ImageAltTextDialog> createState() => _ImageAltTextDialogState();
+}
+
+class _ImageAltTextDialogState extends State<_ImageAltTextDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.initialAltText);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final size = MediaQuery.sizeOf(context);
+    final imageHeight = (size.height * 0.32).clamp(140.0, 280.0).toDouble();
+
+    return Dialog(
+      clipBehavior: Clip.antiAlias,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 560, maxHeight: size.height * 0.9),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: Text('Alt text', style: theme.textTheme.titleLarge)),
+                  IconButton(tooltip: 'Close', onPressed: widget.onCancel, icon: const Icon(Icons.close)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                height: imageHeight,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.6)),
+                ),
+                child: Image.file(
+                  key: const ValueKey('alt-text-image-preview'),
+                  File(widget.imagePath),
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                      Center(child: Icon(Icons.broken_image_outlined, size: 40, color: colorScheme.onSurfaceVariant)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                key: const ValueKey('alt-text-field'),
+                controller: _controller,
+                minLines: 3,
+                maxLines: 5,
+                maxLength: 1000,
+                textInputAction: TextInputAction.newline,
+                decoration: const InputDecoration(hintText: 'Describe the image', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(onPressed: widget.onCancel, child: const Text('Cancel')),
+                  const SizedBox(width: 8),
+                  FilledButton(onPressed: () => widget.onSave(_controller.text), child: const Text('Save')),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoAltTextDialog extends StatefulWidget {
+  const _VideoAltTextDialog({required this.video, required this.onCancel, required this.onSave});
+
+  final VideoAttachment video;
+  final VoidCallback onCancel;
+  final ValueChanged<String> onSave;
+
+  @override
+  State<_VideoAltTextDialog> createState() => _VideoAltTextDialogState();
+}
+
+class _VideoAltTextDialogState extends State<_VideoAltTextDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.video.altText);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final previewHeight = (size.height * 0.32).clamp(140.0, 280.0).toDouble();
+
+    return Dialog(
+      clipBehavior: Clip.antiAlias,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 560, maxHeight: size.height * 0.9),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: Text('Video alt text', style: theme.textTheme.titleLarge)),
+                  IconButton(tooltip: 'Close', onPressed: widget.onCancel, icon: const Icon(Icons.close)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _LocalVideoPreview(videoPath: widget.video.localPath, height: previewHeight),
+              const SizedBox(height: 16),
+              TextField(
+                key: const ValueKey('video-alt-text-field'),
+                controller: _controller,
+                minLines: 3,
+                maxLines: 5,
+                maxLength: 1000,
+                textInputAction: TextInputAction.newline,
+                decoration: const InputDecoration(hintText: 'Describe the video', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(onPressed: widget.onCancel, child: const Text('Cancel')),
+                  const SizedBox(width: 8),
+                  FilledButton(onPressed: () => widget.onSave(_controller.text), child: const Text('Save')),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LocalVideoPreview extends StatefulWidget {
+  const _LocalVideoPreview({required this.videoPath, required this.height});
+
+  final String videoPath;
+  final double height;
+
+  @override
+  State<_LocalVideoPreview> createState() => _LocalVideoPreviewState();
+}
+
+class _LocalVideoPreviewState extends State<_LocalVideoPreview> {
+  VideoPlayerController? _controller;
+  Object? _error;
+  bool _isInitializing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final controller = _controller;
+    final filename = widget.videoPath.split('/').last;
+
+    return Container(
+      key: const ValueKey('video-alt-preview'),
+      height: widget.height,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.6)),
+      ),
+      child: GestureDetector(
+        onTap: controller != null && controller.value.isInitialized ? _togglePlayback : null,
+        child: Stack(
+          fit: StackFit.expand,
+          alignment: Alignment.center,
+          children: [
+            if (controller != null && controller.value.isInitialized)
+              FittedBox(
+                fit: BoxFit.contain,
+                child: SizedBox(
+                  width: controller.value.size.width,
+                  height: controller.value.size.height,
+                  child: VideoPlayer(controller),
+                ),
+              )
+            else
+              _VideoPreviewFallback(filename: filename, isLoading: _isInitializing, error: _error),
+            Center(
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.62), shape: BoxShape.circle),
+                child: Icon(
+                  controller?.value.isPlaying == true ? Icons.pause : Icons.play_arrow,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _initialize() async {
+    final file = File(widget.videoPath);
+    if (!file.existsSync()) {
+      return;
+    }
+
+    setState(() {
+      _isInitializing = true;
+    });
+
+    try {
+      final controller = VideoPlayerController.file(file);
+      await controller.initialize();
+      await controller.setLooping(true);
+
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+
+      setState(() {
+        _controller = controller;
+        _isInitializing = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = error;
+        _isInitializing = false;
+      });
+    }
+  }
+
+  Future<void> _togglePlayback() async {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) {
+      return;
+    }
+
+    if (controller.value.isPlaying) {
+      await controller.pause();
+    } else {
+      await controller.play();
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+}
+
+class _VideoPreviewFallback extends StatelessWidget {
+  const _VideoPreviewFallback({required this.filename, required this.isLoading, required this.error});
+
+  final String filename;
+  final bool isLoading;
+  final Object? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isLoading)
+              const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.4))
+            else
+              Icon(Icons.videocam_outlined, size: 40, color: colorScheme.onSurfaceVariant),
+            const SizedBox(height: 10),
+            Text(
+              filename.isEmpty ? 'Video' : filename,
+              key: const ValueKey('video-alt-preview-filename'),
+              style: theme.textTheme.bodyMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Preview unavailable',
+                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 
