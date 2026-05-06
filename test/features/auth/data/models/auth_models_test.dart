@@ -12,6 +12,7 @@ void main() {
         displayName: 'User Name',
         service: 'bsky.social',
         oauthService: 'bsky.social',
+        oauthClientId: 'https://lazurite.stormlightlabs.org/client-metadata.json',
       );
 
       expect(tokens.accessToken, equals('access_token'));
@@ -21,6 +22,7 @@ void main() {
       expect(tokens.displayName, equals('User Name'));
       expect(tokens.service, equals('bsky.social'));
       expect(tokens.oauthService, equals('bsky.social'));
+      expect(tokens.oauthClientId, equals('https://lazurite.stormlightlabs.org/client-metadata.json'));
     });
 
     test('should create AuthTokens without optional fields', () {
@@ -36,12 +38,18 @@ void main() {
     test('should copy with new values', () {
       const tokens = AuthTokens(accessToken: 'old_token', did: 'did:plc:abc123', handle: 'user.bsky.social');
 
-      final newTokens = tokens.copyWith(accessToken: 'new_token', displayName: 'New Name', oauthService: 'bsky.social');
+      final newTokens = tokens.copyWith(
+        accessToken: 'new_token',
+        displayName: 'New Name',
+        oauthService: 'bsky.social',
+        oauthClientId: 'client-id',
+      );
 
       expect(newTokens.accessToken, equals('new_token'));
       expect(newTokens.did, equals('did:plc:abc123'));
       expect(newTokens.displayName, equals('New Name'));
       expect(newTokens.oauthService, equals('bsky.social'));
+      expect(newTokens.oauthClientId, equals('client-id'));
     });
 
     test('should identify oauth-backed sessions', () {

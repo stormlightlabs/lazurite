@@ -81,6 +81,7 @@ void main() {
           handle: 'oauth-user.bsky.social',
           service: 'porcini.us-east.host.bsky.network',
           oauthService: 'bsky.social',
+          oauthClientId: 'https://lazurite.stormlightlabs.org/client-metadata.json',
           accessToken: 'access_token',
           refreshToken: 'refresh_token',
           dpopPublicKey: 'public-key',
@@ -99,6 +100,7 @@ void main() {
         expect(result, isNotNull);
         expect(result!.usesOAuth, isTrue);
         expect(result.oauthService, equals('bsky.social'));
+        expect(result.oauthClientId, equals('https://lazurite.stormlightlabs.org/client-metadata.json'));
       });
     });
 
@@ -111,6 +113,7 @@ void main() {
           handle: 'user.bsky.social',
           displayName: 'User Name',
           service: 'bsky.social',
+          oauthClientId: 'https://lazurite.stormlightlabs.org/client-metadata.json',
         );
 
         when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);

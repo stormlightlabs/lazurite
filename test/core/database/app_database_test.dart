@@ -183,6 +183,21 @@ void main() {
         expect(retrieved!.service, equals('porcini.us-east.host.bsky.network'));
         expect(retrieved.oauthService, equals('bsky.social'));
       });
+
+      test('should persist oauth client id for oauth-backed accounts', () async {
+        final account = AccountsCompanion.insert(
+          did: 'did:plc:oauthclient123',
+          handle: 'oauth-client-user.bsky.social',
+          accessToken: 'access-token',
+          oauthClientId: const Value('https://lazurite.stormlightlabs.org/client-metadata.json'),
+        );
+
+        await database.insertAccount(account);
+        final retrieved = await database.getAccount('did:plc:oauthclient123');
+
+        expect(retrieved, isNotNull);
+        expect(retrieved!.oauthClientId, equals('https://lazurite.stormlightlabs.org/client-metadata.json'));
+      });
     });
 
     group('Cache operations', () {

@@ -84,6 +84,34 @@ void main() {
         expect(response.statusCode, 201);
         expect(response.body, 'created');
       });
+
+      test('normalizes DPoP signature segment to base64url before request dispatch', () async {
+        const originalDpop =
+            'eyJhbGciOiJFUzI1NiIsInR5cCI6ImRwb3Arand0In0.eyJzdWIiOiJodHRwczovL2xhenVyaXRlLnN0b3JtbGlnaHRsYWJzLm9yZy9jbGllbnQtbWV0YWRhdGEuanNvbiJ9.Bw==';
+        late Map<String, String>? forwardedHeaders;
+
+        final wrapped = XrpcNetworkInterceptor.wrapPostClient((url, {headers, body, encoding}) async {
+          forwardedHeaders = headers;
+          return http.Response('ok', 200, request: http.Request('POST', url));
+        });
+
+        await wrapped(
+          Uri.parse('https://example.com/xrpc/com.atproto.server.getSession'),
+          headers: {'DPoP': originalDpop},
+        );
+
+        expect(forwardedHeaders, isNotNull);
+        expect(forwardedHeaders!['DPoP'], isNotNull);
+        expect(forwardedHeaders!['DPoP'], isNot(equals(originalDpop)));
+        expect(forwardedHeaders!['DPoP']!.split('.').last, equals('Bw'));
+      });
+
+      test('leaves headers unchanged when DPoP proof is not a compact JWT', () {
+        final headers = {'DPoP': 'not-a-jwt-proof'};
+        final normalized = XrpcNetworkInterceptor.normalizeOutgoingHeaders(headers);
+
+        expect(identical(normalized, headers), isTrue);
+      });
     });
   });
 }

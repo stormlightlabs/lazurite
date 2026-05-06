@@ -12,6 +12,7 @@ class AuthTokens extends Equatable {
     this.displayName,
     this.service,
     this.oauthService,
+    this.oauthClientId,
     this.dpopNonce,
     this.dpopPublicKey,
     this.dpopPrivateKey,
@@ -25,6 +26,7 @@ class AuthTokens extends Equatable {
   final String? displayName;
   final String? service;
   final String? oauthService;
+  final String? oauthClientId;
   final String? dpopNonce;
   final String? dpopPublicKey;
   final String? dpopPrivateKey;
@@ -39,6 +41,7 @@ class AuthTokens extends Equatable {
     String? displayName,
     String? service,
     String? oauthService,
+    String? oauthClientId,
     String? dpopNonce,
     String? dpopPublicKey,
     String? dpopPrivateKey,
@@ -53,6 +56,7 @@ class AuthTokens extends Equatable {
       displayName: displayName ?? this.displayName,
       service: service ?? this.service,
       oauthService: oauthService ?? this.oauthService,
+      oauthClientId: oauthClientId ?? this.oauthClientId,
       dpopNonce: dpopNonce ?? this.dpopNonce,
       dpopPublicKey: dpopPublicKey ?? this.dpopPublicKey,
       dpopPrivateKey: dpopPrivateKey ?? this.dpopPrivateKey,
@@ -77,6 +81,7 @@ class AuthTokens extends Equatable {
     displayName,
     service,
     oauthService,
+    oauthClientId,
     dpopNonce,
     dpopPublicKey,
     dpopPrivateKey,
