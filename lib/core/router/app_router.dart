@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:atproto/atproto.dart' as atp;
 import 'package:atproto_core/atproto_core.dart' show AtUri;
 import 'package:bluesky/bluesky.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ import 'package:lazurite/features/auth/presentation/login_screen.dart';
 import 'package:lazurite/features/auth/presentation/oauth_callback_screen.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
+import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:lazurite/features/compose/presentation/compose_screen.dart';
 import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_detail_screen.dart';
@@ -107,6 +109,7 @@ class AppRouter {
         '/settings',
         '/settings/about',
         '/settings/logs',
+        '/settings/devtools',
         '/terms',
         '/privacy',
         OAuthCallbackScreen.routePath,
@@ -164,8 +167,7 @@ class AppRouter {
           ),
           GoRoute(
             path: 'devtools',
-            pageBuilder: (context, state) =>
-                _page(context, state, DevToolsScreen(initialQuery: state.uri.queryParameters['query'])),
+            pageBuilder: (context, state) => _page(context, state, _buildDevToolsRoute(context, state)),
           ),
           GoRoute(
             path: 'video-limits',
@@ -590,6 +592,26 @@ class AppRouter {
     } catch (_) {
       return null;
     }
+  }
+
+  Widget _buildDevToolsRoute(BuildContext context, GoRouterState state) {
+    atp.ATProto atproto;
+    try {
+      atproto = context.read<Bluesky>().atproto;
+    } catch (_) {
+      final providerKey = context.read<SettingsCubit>().state.appViewProvider;
+      final provider = AppViewProviders.descriptorForSetting(providerKey);
+      atproto = atp.ATProto.anonymous(
+        service: provider.publicBaseUrl.host,
+        getClient: XrpcNetworkInterceptor.wrapGetClient(),
+        postClient: XrpcNetworkInterceptor.wrapPostClient(),
+      );
+    }
+
+    return BlocProvider(
+      create: (_) => DevToolsCubit(atproto: atproto),
+      child: DevToolsScreen(initialQuery: state.uri.queryParameters['query']),
+    );
   }
 }
 

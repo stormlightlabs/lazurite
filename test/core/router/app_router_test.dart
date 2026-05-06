@@ -461,7 +461,7 @@ void main() {
     router.dispose();
   });
 
-  testWidgets('allows unauthenticated access to public settings, privacy, and terms routes', (tester) async {
+  testWidgets('allows unauthenticated access to public settings, devtools, privacy, and terms routes', (tester) async {
     currentAuthState = const AuthState.unauthenticated();
     when(() => authBloc.state).thenReturn(currentAuthState);
     whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
@@ -492,6 +492,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('About'), findsWidgets);
 
+    router.go('/settings/devtools');
+    await tester.pumpAndSettle();
+    expect(find.text('PDS Explorer'), findsWidgets);
+
     router.go('/privacy');
     await tester.pumpAndSettle();
     expect(find.text('Privacy Policy'), findsWidgets);
@@ -499,6 +503,36 @@ void main() {
     router.go('/terms');
     await tester.pumpAndSettle();
     expect(find.text('Terms of Service'), findsWidgets);
+
+    router.dispose();
+  });
+
+  testWidgets('unauthenticated settings back button falls back to login when there is no stack to pop', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    router.go('/settings');
+    await tester.pumpAndSettle();
+    expect(find.text('APPEARANCE'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Continue'), findsOneWidget);
 
     router.dispose();
   });

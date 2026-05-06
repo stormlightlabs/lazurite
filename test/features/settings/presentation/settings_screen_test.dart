@@ -184,6 +184,10 @@ void main() {
           path: '/settings/logs',
           builder: (context, state) => const Scaffold(body: Text('public-logs-screen')),
         ),
+        GoRoute(
+          path: '/settings/devtools',
+          builder: (context, state) => const Scaffold(body: Text('public-devtools-screen')),
+        ),
       ],
     );
 
@@ -566,7 +570,7 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.byType(BackButton), findsOneWidget);
+    expect(find.byTooltip('Back'), findsOneWidget);
     expect(find.byTooltip('Open menu'), findsNothing);
   });
 
@@ -602,13 +606,12 @@ void main() {
     expect(find.text('ACCOUNT'), findsNothing);
     expect(find.text('ACCOUNT MAINTENANCE'), findsNothing);
     expect(find.text('DANGER ZONE'), findsNothing);
-    expect(find.text('AT Explorer'), findsNothing);
     expect(find.text('Video Upload Limits'), findsNothing);
     expect(find.text('Clean Follows'), findsNothing);
     expect(find.text('APPEARANCE'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('ADVANCED'), 300);
+    await tester.scrollUntilVisible(find.text('AT Explorer'), 300);
     await tester.pumpAndSettle();
-    expect(find.text('ADVANCED'), findsOneWidget);
+    expect(find.text('AT Explorer'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Terms of Service'), 300);
     await tester.pumpAndSettle();
     expect(find.text('Terms of Service'), findsOneWidget);
@@ -635,6 +638,18 @@ void main() {
     await tester.tap(aboutTile);
     await tester.pumpAndSettle();
     expect(find.text('public-about-screen'), findsOneWidget);
+  });
+
+  testWidgets('public mode AT Explorer row uses public /settings/devtools route', (tester) async {
+    await tester.pumpWidget(buildPublicRoutedSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('AT Explorer'), 300);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('AT Explorer'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('public-devtools-screen'), findsOneWidget);
   });
 
   testWidgets('tapping Clean Follows tile navigates to clean follows screen', (tester) async {

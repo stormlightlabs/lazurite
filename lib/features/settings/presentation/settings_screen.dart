@@ -35,7 +35,20 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        leading: showAccountSettings ? const AppShellMenuButton() : const BackButton(),
+        leading: showAccountSettings
+            ? const AppShellMenuButton()
+            : IconButton(
+                tooltip: 'Back',
+                onPressed: () {
+                  final router = GoRouter.of(context);
+                  if (router.canPop()) {
+                    router.pop();
+                    return;
+                  }
+                  router.go('/login');
+                },
+                icon: const Icon(Icons.arrow_back),
+              ),
         title: _title(context),
         actions: showAccountSettings
             ? [
@@ -130,13 +143,12 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 24),
           ],
           _buildSectionHeader(context, 'About'),
-          if (showAccountSettings)
-            _SettingsTile(
-              icon: Icons.explore_outlined,
-              title: 'AT Explorer',
-              subtitle: 'View PDS Records',
-              onTap: () => context.push('/settings/devtools'),
-            ),
+          _SettingsTile(
+            icon: Icons.explore_outlined,
+            title: 'AT Explorer',
+            subtitle: 'View PDS Records',
+            onTap: () => context.push('/settings/devtools'),
+          ),
           _SettingsTile(
             icon: Icons.info_outline,
             title: 'About',
