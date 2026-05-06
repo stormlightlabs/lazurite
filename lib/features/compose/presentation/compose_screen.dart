@@ -922,6 +922,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
               child: TextField(
                 controller: _textController,
                 focusNode: _textFocusNode,
+                autofocus: true,
                 maxLines: null,
                 expands: true,
                 textAlignVertical: TextAlignVertical.top,

@@ -151,6 +151,16 @@ void main() {
         expect(find.text('@river.bsky.social '), findsOneWidget);
         verify(() => mockBloc.add(const TextChanged('@river.bsky.social '))).called(1);
       });
+
+      testWidgets('autofocuses the composer text field', (tester) async {
+        seedState(const ComposeState.ready());
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        final textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.autofocus, isTrue);
+      });
     });
 
     group('composer avatar', () {
