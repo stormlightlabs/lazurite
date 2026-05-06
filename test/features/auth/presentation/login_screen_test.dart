@@ -214,6 +214,42 @@ void main() {
     ]);
   });
 
+  testWidgets('handle field exposes persistent label and continue tooltip', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byType(TextField).first);
+    expect(field.decoration?.labelText, 'Handle or DID');
+    expect(find.byTooltip('Continue'), findsOneWidget);
+  });
+
+  testWidgets('login normalizes identifier before starting OAuth', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).first, ' @River.BSky.Social ');
+    await tester.tap(find.byKey(const ValueKey<String>('login-continue-button')));
+    await tester.pumpAndSettle();
+
+    verifyInOrder([
+      () => settingsCubit.setAppViewProvider('bluesky'),
+      () => authBloc.add(const OAuthLoginRequested(handle: 'river.bsky.social')),
+    ]);
+  });
+
+  testWidgets('invalid identifier shows centralized validation message and does not start OAuth', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).first, 'not-a-handle');
+    await tester.tap(find.byKey(const ValueKey<String>('login-continue-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a full handle like username.bsky.social'), findsOneWidget);
+    verifyNever(() => settingsCubit.setAppViewProvider(any()));
+    verifyNever(() => authBloc.add(const OAuthLoginRequested(handle: 'not-a-handle')));
+  });
+
   testWidgets('auto-starts OAuth once when reauth opens with an initial handle', (tester) async {
     await tester.pumpWidget(buildSubject(initialHandle: 'alice.bsky.social', autoStartOAuth: true));
     await tester.pumpAndSettle();

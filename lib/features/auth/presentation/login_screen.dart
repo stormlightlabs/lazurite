@@ -10,6 +10,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/data/atproto_identifier.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
@@ -117,6 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    final handle = _normalizedIdentifierInput;
     final persisted = await _persistSelectedProvider();
     if (!persisted) {
       return;
@@ -124,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) {
       return;
     }
-    context.read<AuthBloc>().add(OAuthLoginRequested(handle: _handleController.text.trim()));
+    context.read<AuthBloc>().add(OAuthLoginRequested(handle: handle));
   }
 
   Future<void> _onAppPasswordLogin() async {
@@ -132,6 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    final handle = _normalizedIdentifierInput;
     final persisted = await _persistSelectedProvider();
     if (!persisted) {
       return;
@@ -139,12 +142,18 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) {
       return;
     }
-    context.read<AuthBloc>().add(
-      LoginRequested(handle: _handleController.text.trim(), appPassword: _appPasswordController.text.trim()),
-    );
+    context.read<AuthBloc>().add(LoginRequested(handle: handle, appPassword: _appPasswordController.text.trim()));
   }
 
   bool _isHandleValid() => _formKey.currentState?.validate() ?? false;
+
+  String get _normalizedIdentifierInput => normalizeAtProtoIdentifierForAuth(_handleController.text);
+
+  String? _validateIdentifierInput(String? value) {
+    final normalized = normalizeAtProtoIdentifierForAuth(value ?? '');
+    final validationError = validateAtProtoIdentifierForAuth(normalized);
+    return validationError?.code.message;
+  }
 
   void _onTypeaheadSelected(TypeaheadResult result) {
     _handleController.text = result.handle;
@@ -399,6 +408,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               debounceMs: 300,
                               limit: 8,
                               decoration: InputDecoration(
+                                labelText: 'Handle or DID',
                                 hintText: 'username.bsky.social or did:plc:...',
                                 prefixIcon: const Icon(Icons.person_outline),
                                 filled: true,
@@ -412,38 +422,41 @@ class _LoginScreenState extends State<LoginScreen> {
                                 suffixIconConstraints: const BoxConstraints(minWidth: 52, minHeight: 52),
                                 suffixIcon: Padding(
                                   padding: const EdgeInsets.all(5),
-                                  child: FilledButton(
-                                    key: const ValueKey<String>('login-continue-button'),
-                                    onPressed: busy
-                                        ? null
-                                        : () {
-                                            unawaited(_onOAuthLogin());
-                                          },
-                                    style: FilledButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: const Size(40, 40),
-                                      maximumSize: const Size(40, 40),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  child: Tooltip(
+                                    message: busy ? 'Starting sign in' : 'Continue',
+                                    child: Semantics(
+                                      label: busy ? 'Starting sign in' : 'Continue sign in',
+                                      button: true,
+                                      enabled: !busy,
+                                      child: FilledButton(
+                                        key: const ValueKey<String>('login-continue-button'),
+                                        onPressed: busy
+                                            ? null
+                                            : () {
+                                                unawaited(_onOAuthLogin());
+                                              },
+                                        style: FilledButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: const Size(40, 40),
+                                          maximumSize: const Size(40, 40),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                        child: busy
+                                            ? const SizedBox(
+                                                width: 18,
+                                                height: 18,
+                                                child: CircularProgressIndicator(strokeWidth: 2),
+                                              )
+                                            : const Icon(Icons.arrow_forward_rounded, size: 18),
+                                      ),
                                     ),
-                                    child: busy
-                                        ? const SizedBox(
-                                            width: 18,
-                                            height: 18,
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          )
-                                        : const Icon(Icons.arrow_forward_rounded, size: 18),
                                   ),
                                 ),
                               ),
                               autocorrect: false,
                               textInputAction: TextInputAction.go,
                               onFieldSubmitted: (_) => unawaited(_onOAuthLogin()),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Enter your BlueSky handle or DID';
-                                }
-                                return null;
-                              },
+                              validator: _validateIdentifierInput,
                             );
                           },
                         ),
