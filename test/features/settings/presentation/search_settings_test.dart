@@ -6,6 +6,7 @@ import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
@@ -27,6 +28,14 @@ SettingsState _baseSettings({bool semanticSearchEnabled = false, int maxResults 
 );
 
 void main() {
+  const tokens = AuthTokens(
+    accessToken: 'access',
+    refreshToken: 'refresh',
+    did: 'did:plc:test',
+    handle: 'test.bsky.social',
+    displayName: 'Test User',
+  );
+
   late MockAuthBloc authBloc;
   late MockAccountSwitcherCubit accountSwitcherCubit;
   late MockSettingsCubit settingsCubit;
@@ -71,6 +80,10 @@ void main() {
     });
 
     testWidgets('shows typeahead provider selector', (tester) async {
+      const authenticatedState = AuthState.authenticated(tokens);
+      when(() => authBloc.state).thenReturn(authenticatedState);
+      whenListen(authBloc, const Stream<AuthState>.empty(), initialState: authenticatedState);
+
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('Typeahead Provider'), 300);
@@ -85,6 +98,10 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(800, 2400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
+      const authenticatedState = AuthState.authenticated(tokens);
+      when(() => authBloc.state).thenReturn(authenticatedState);
+      whenListen(authBloc, const Stream<AuthState>.empty(), initialState: authenticatedState);
+
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('Typeahead Provider'), 300);
@@ -93,6 +110,16 @@ void main() {
       await tester.pumpAndSettle();
 
       verify(() => settingsCubit.setTypeaheadProvider('community')).called(1);
+    });
+
+    testWidgets('hides typeahead provider selector when unauthenticated', (tester) async {
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Semantic Search'), 300);
+
+      expect(find.text('Typeahead Provider'), findsNothing);
+      expect(find.text('Community'), findsNothing);
+      expect(find.text('Bluesky'), findsNothing);
     });
 
     testWidgets('shows semantic search management hint', (tester) async {

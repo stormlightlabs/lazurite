@@ -158,6 +158,41 @@ void main() {
     return MaterialApp.router(routerConfig: router);
   }
 
+  Widget buildPublicRoutedSubject() {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => RepositoryProvider<CrashReportingService>.value(
+            value: crashReportingService,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: authBloc),
+                BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
+                BlocProvider<SettingsCubit>.value(value: settingsCubit),
+              ],
+              child: const SettingsScreen(),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/settings/about',
+          builder: (context, state) => const Scaffold(body: Text('public-about-screen')),
+        ),
+        GoRoute(
+          path: '/settings/logs',
+          builder: (context, state) => const Scaffold(body: Text('public-logs-screen')),
+        ),
+        GoRoute(
+          path: '/settings/devtools',
+          builder: (context, state) => const Scaffold(body: Text('public-devtools-screen')),
+        ),
+      ],
+    );
+
+    return MaterialApp.router(routerConfig: router);
+  }
+
   testWidgets('shows active settings controls that are wired up', (tester) async {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
@@ -303,6 +338,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('ADVANCED'), findsOneWidget);
+    expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Constellation URL'), findsOneWidget);
     expect(find.text('https://constellation.microcosm.blue'), findsOneWidget);
     expect(find.text('AppView Provider'), findsOneWidget);
@@ -488,6 +524,10 @@ void main() {
   });
 
   testWidgets('shows Video Upload Limits tile in Account section', (tester) async {
+    final tokens = _authenticatedTokens();
+    when(() => authBloc.state).thenReturn(AuthState.authenticated(tokens));
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: AuthState.authenticated(tokens));
+
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
@@ -499,6 +539,10 @@ void main() {
   });
 
   testWidgets('shows Account Maintenance section with Clean Follows tile', (tester) async {
+    final tokens = _authenticatedTokens();
+    when(() => authBloc.state).thenReturn(AuthState.authenticated(tokens));
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: AuthState.authenticated(tokens));
+
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
@@ -521,7 +565,99 @@ void main() {
     expect(find.text('Privacy Policy'), findsOneWidget);
   });
 
+  testWidgets('uses back button when unauthenticated', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Back'), findsOneWidget);
+    expect(find.byTooltip('Open menu'), findsNothing);
+  });
+
+  testWidgets('uses back button when authenticated', (tester) async {
+    final tokens = _authenticatedTokens();
+    final authenticatedState = AuthState.authenticated(tokens);
+    when(() => authBloc.state).thenReturn(authenticatedState);
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: authenticatedState);
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Back'), findsOneWidget);
+    expect(find.byTooltip('Open menu'), findsNothing);
+  });
+
+  testWidgets('public mode hides account-gated sections and logout controls', (tester) async {
+    await tester.pumpWidget(
+      RepositoryProvider<CrashReportingService>.value(
+        value: crashReportingService,
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthBloc>.value(value: authBloc),
+            BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
+            BlocProvider<SettingsCubit>.value(value: settingsCubit),
+          ],
+          child: const MaterialApp(home: SettingsScreen()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Log Out'), findsNothing);
+    expect(find.text('ACCOUNT'), findsNothing);
+    expect(find.text('ACCOUNT MAINTENANCE'), findsNothing);
+    expect(find.text('DANGER ZONE'), findsNothing);
+    expect(find.text('Video Upload Limits'), findsNothing);
+    expect(find.text('Clean Follows'), findsNothing);
+    expect(find.text('Typeahead Provider'), findsNothing);
+    expect(find.text('APPEARANCE'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('AT Explorer'), 300);
+    await tester.pumpAndSettle();
+    expect(find.text('AT Explorer'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Terms of Service'), 300);
+    await tester.pumpAndSettle();
+    expect(find.text('Terms of Service'), findsOneWidget);
+  });
+
+  testWidgets('public mode Logs and About rows use public /settings routes', (tester) async {
+    await tester.pumpWidget(buildPublicRoutedSubject());
+    await tester.pumpAndSettle();
+
+    final logsTile = find.widgetWithText(ListTile, 'Logs');
+    await tester.scrollUntilVisible(logsTile, 300);
+    await tester.pumpAndSettle();
+    await tester.tap(logsTile);
+    await tester.pumpAndSettle();
+    expect(find.text('public-logs-screen'), findsOneWidget);
+
+    final router = GoRouter.of(tester.element(find.text('public-logs-screen')));
+    router.go('/');
+    await tester.pumpAndSettle();
+
+    final aboutTile = find.widgetWithText(ListTile, 'About');
+    await tester.scrollUntilVisible(aboutTile, 300);
+    await tester.pumpAndSettle();
+    await tester.tap(aboutTile);
+    await tester.pumpAndSettle();
+    expect(find.text('public-about-screen'), findsOneWidget);
+  });
+
+  testWidgets('public mode AT Explorer row uses public /settings/devtools route', (tester) async {
+    await tester.pumpWidget(buildPublicRoutedSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('AT Explorer'), 300);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('AT Explorer'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('public-devtools-screen'), findsOneWidget);
+  });
+
   testWidgets('tapping Clean Follows tile navigates to clean follows screen', (tester) async {
+    final tokens = _authenticatedTokens();
+    when(() => authBloc.state).thenReturn(AuthState.authenticated(tokens));
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: AuthState.authenticated(tokens));
+
     await tester.pumpWidget(buildRoutedSubject());
     await tester.pumpAndSettle();
 
@@ -559,6 +695,16 @@ void main() {
 
     expect(find.text('privacy-screen'), findsOneWidget);
   });
+}
+
+AuthTokens _authenticatedTokens() {
+  return const AuthTokens(
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+    did: 'did:plc:test',
+    handle: 'test.bsky.social',
+    displayName: 'Test User',
+  );
 }
 
 String _buildJwt({required String aud, required String sub, required String clientId, required String iss}) {

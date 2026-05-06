@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
+import 'package:lazurite/core/logging/log_redactor.dart';
 
 class LogEntry extends Equatable {
   const LogEntry({required this.timestamp, required this.level, required this.message, this.source});
@@ -43,9 +44,17 @@ class LogEntry extends Equatable {
       message = remaining.trim();
     }
 
-    if (message.isEmpty && source == null) return null;
+    final redactedSource = source == null ? null : LogRedactor.redact(source);
+    final redactedMessage = LogRedactor.redact(message);
 
-    return LogEntry(timestamp: timestamp ?? DateTime.now(), level: level, message: message, source: source);
+    if (redactedMessage.isEmpty && redactedSource == null) return null;
+
+    return LogEntry(
+      timestamp: timestamp ?? DateTime.now(),
+      level: level,
+      message: redactedMessage,
+      source: redactedSource,
+    );
   }
 
   static Level _parseLevel(String? levelChar) {

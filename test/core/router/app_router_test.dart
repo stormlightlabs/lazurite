@@ -401,7 +401,7 @@ void main() {
     expect(find.byTooltip('Open menu'), findsOneWidget);
   });
 
-  testWidgets('redirects to login after logout without crashing on the settings route', (tester) async {
+  testWidgets('stays on public settings after logout without crashing', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -454,13 +454,14 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Continue'), findsOneWidget);
+    expect(find.text('APPEARANCE'), findsOneWidget);
+    expect(find.byTooltip('Log Out'), findsNothing);
     expect(tester.takeException(), isNull);
 
     router.dispose();
   });
 
-  testWidgets('allows unauthenticated access to privacy and terms routes', (tester) async {
+  testWidgets('allows unauthenticated access to public settings, devtools, privacy, and terms routes', (tester) async {
     currentAuthState = const AuthState.unauthenticated();
     when(() => authBloc.state).thenReturn(currentAuthState);
     whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
@@ -478,6 +479,23 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    router.go('/settings');
+    await tester.pumpAndSettle();
+    expect(find.text('APPEARANCE'), findsOneWidget);
+    expect(find.text('ACCOUNT'), findsNothing);
+
+    router.go('/settings/logs');
+    await tester.pumpAndSettle();
+    expect(find.text('Logs'), findsWidgets);
+
+    router.go('/settings/about');
+    await tester.pumpAndSettle();
+    expect(find.text('About'), findsWidgets);
+
+    router.go('/settings/devtools');
+    await tester.pumpAndSettle();
+    expect(find.text('PDS Explorer'), findsWidgets);
+
     router.go('/privacy');
     await tester.pumpAndSettle();
     expect(find.text('Privacy Policy'), findsWidgets);
@@ -485,6 +503,85 @@ void main() {
     router.go('/terms');
     await tester.pumpAndSettle();
     expect(find.text('Terms of Service'), findsWidgets);
+
+    router.dispose();
+  });
+
+  testWidgets('unauthenticated settings back button falls back to login when there is no stack to pop', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    router.go('/settings');
+    await tester.pumpAndSettle();
+    expect(find.text('APPEARANCE'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Continue'), findsOneWidget);
+
+    router.dispose();
+  });
+
+  testWidgets('authenticated settings back button falls back to home when there is no stack to pop', (tester) async {
+    currentAuthState = const AuthState.authenticated(tokens);
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    await tester.pumpAndSettle();
+
+    router.go('/settings');
+    await tester.pumpAndSettle();
+    expect(find.text('APPEARANCE'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('HOME'), findsAtLeastNWidgets(1));
+    expect(find.text('APPEARANCE'), findsNothing);
+
+    router.dispose();
+  });
+
+  testWidgets('keeps account-scoped settings routes auth-gated when unauthenticated', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    router.go('/settings/video-limits');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Continue'), findsOneWidget);
 
     router.dispose();
   });

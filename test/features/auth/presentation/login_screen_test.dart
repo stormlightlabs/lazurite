@@ -61,6 +61,10 @@ void main() {
           path: '/privacy',
           builder: (context, state) => const Scaffold(body: Text('privacy-route')),
         ),
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const Scaffold(body: Text('public-settings-route')),
+        ),
       ],
       initialLocation: '/login',
     );
@@ -73,7 +77,7 @@ void main() {
     );
   }
 
-  testWidgets('shows terms and privacy links', (tester) async {
+  testWidgets('shows settings icon plus terms and privacy links', (tester) async {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
@@ -82,8 +86,20 @@ void main() {
     await tester.scrollUntilVisible(find.text('Privacy Policy'), 200, scrollable: scrollable);
     await tester.pumpAndSettle();
 
+    expect(find.byTooltip('Settings'), findsOneWidget);
+    expect(find.text('Settings'), findsNothing);
     expect(find.text('Terms of Service'), findsOneWidget);
     expect(find.text('Privacy Policy'), findsOneWidget);
+  });
+
+  testWidgets('tapping settings icon opens public settings route', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('public-settings-route'), findsOneWidget);
   });
 
   testWidgets('tapping Terms of Service opens terms route', (tester) async {
@@ -173,10 +189,7 @@ void main() {
     final blackSkyRow = find.ancestor(of: find.text('BlackSky'), matching: find.byType(Row));
     final blackSkyLogo = find.descendant(of: blackSkyRow, matching: find.byType(SvgPicture));
     final blackSkySvg = tester.widget<SvgPicture>(blackSkyLogo.first);
-    expect(
-      blackSkySvg.colorFilter,
-      const ColorFilter.mode(Color(0xFF6868B6), BlendMode.srcIn),
-    );
+    expect(blackSkySvg.colorFilter, const ColorFilter.mode(Color(0xFF6868B6), BlendMode.srcIn));
 
     final blueSkyRow = find.ancestor(of: find.text('BlueSky'), matching: find.byType(Row));
     final blueSkyLogo = find.descendant(of: blueSkyRow, matching: find.byType(SvgPicture));

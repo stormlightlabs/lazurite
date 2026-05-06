@@ -5,16 +5,29 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/logging/log_redactor.dart';
 import 'package:lazurite/features/logs/data/log_entry.dart';
 
 part 'log_viewer_state.dart';
 
 class LogViewerCubit extends Cubit<LogViewerState> {
-  LogViewerCubit({Duration refreshInterval = const Duration(seconds: 1)}) : super(LogViewerState.initial()) {
+  LogViewerCubit({
+    Duration refreshInterval = const Duration(seconds: 1),
+    Future<File?> Function()? todaysLogFileProvider,
+    Directory Function()? systemTempDirectoryProvider,
+  }) : _todaysLogFileProvider = todaysLogFileProvider ?? log.getTodaysLogFile,
+       _systemTempDirectoryProvider = systemTempDirectoryProvider ?? (() => Directory.systemTemp),
+       super(LogViewerState.initial()) {
     unawaited(loadLogs());
     _refreshTimer = Timer.periodic(refreshInterval, (_) => unawaited(loadLogs(showLoading: false)));
   }
 
+  static const String _shareDirectoryName = 'lazurite_logs_share';
+  static const String _shareFileName = 'redacted_share.log';
+  static const String _legacyShareDirectoryPrefix = 'lazurite_logs_share_';
+
+  final Future<File?> Function() _todaysLogFileProvider;
+  final Directory Function() _systemTempDirectoryProvider;
   Timer? _refreshTimer;
   bool _isLoading = false;
 
@@ -110,7 +123,51 @@ class LogViewerCubit extends Cubit<LogViewerState> {
     return filtered;
   }
 
-  Future<File?> getTodaysLogFile() => log.getTodaysLogFile();
+  Future<File?> getTodaysLogFile() async {
+    final rawFile = await _todaysLogFileProvider();
+    if (rawFile == null || !await rawFile.exists()) {
+      return null;
+    }
+
+    final systemTempDirectory = _systemTempDirectoryProvider();
+    await _cleanupLegacyShareTempDirectories(systemTempDirectory);
+
+    final content = await rawFile.readAsString();
+    final redactedLines = content.split('\n').map(LogRedactor.redact).join('\n');
+    final shareDirectory = Directory('${systemTempDirectory.path}/$_shareDirectoryName');
+    if (!await shareDirectory.exists()) {
+      await shareDirectory.create(recursive: true);
+    }
+
+    final redactedFile = File('${shareDirectory.path}/$_shareFileName');
+    await redactedFile.writeAsString(redactedLines, flush: true);
+    return redactedFile;
+  }
+
+  Future<void> _cleanupLegacyShareTempDirectories(Directory systemTempDirectory) async {
+    if (!await systemTempDirectory.exists()) {
+      return;
+    }
+
+    await for (final entity in systemTempDirectory.list(followLinks: false)) {
+      if (entity is! Directory) {
+        continue;
+      }
+
+      final name = entity.uri.pathSegments.isNotEmpty
+          ? entity.uri.pathSegments[entity.uri.pathSegments.length - 2]
+          : '';
+      if (!name.startsWith(_legacyShareDirectoryPrefix)) {
+        continue;
+      }
+
+      try {
+        await entity.delete(recursive: true);
+      } catch (_) {
+        // Best-effort cleanup only.
+      }
+    }
+  }
 
   Future<void> clearAllLogs() async {
     await log.clearAllLogs();

@@ -9,7 +9,6 @@ import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
-import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -29,88 +28,106 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.watch<AuthBloc>().state;
+    final tokens = authState.tokens;
+    final showAccountSettings = authState.isAuthenticated && tokens != null;
+    final backFallbackRoute = showAccountSettings ? '/' : '/login';
+
     return Scaffold(
       appBar: AppBar(
-        leading: const AppShellMenuButton(),
+        leading: IconButton(
+          tooltip: 'Back',
+          onPressed: () {
+            final router = GoRouter.of(context);
+            if (router.canPop()) {
+              router.pop();
+              return;
+            }
+            router.go(backFallbackRoute);
+          },
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: _title(context),
-        actions: [
-          IconButton(
-            tooltip: 'Log Out',
-            onPressed: () {
-              context.read<AuthBloc>().add(const LogoutRequested());
-            },
-            icon: Icon(Icons.logout, color: context.colorScheme.error),
-          ),
-        ],
+        actions: showAccountSettings
+            ? [
+                IconButton(
+                  tooltip: 'Log Out',
+                  onPressed: () {
+                    context.read<AuthBloc>().add(const LogoutRequested());
+                  },
+                  icon: Icon(Icons.logout, color: context.colorScheme.error),
+                ),
+              ]
+            : null,
       ),
       body: ListView(
         children: [
-          BlocBuilder<AuthBloc, AuthState>(
-            builder: (context, authState) {
-              final tokens = authState.tokens;
-              if (!authState.isAuthenticated || tokens == null) {
-                return const SizedBox.shrink();
-              }
+          if (showAccountSettings)
+            BlocBuilder<AccountSwitcherCubit, AccountSwitcherState>(
+              builder: (context, switcherState) {
+                final authenticatedTokens = tokens;
+                final subtitle = switcherState.accounts.length > 1
+                    ? '${switcherState.accounts.length} accounts — tap to switch'
+                    : '@${authenticatedTokens.handle}';
 
-              return BlocBuilder<AccountSwitcherCubit, AccountSwitcherState>(
-                builder: (context, switcherState) {
-                  final subtitle = switcherState.accounts.length > 1
-                      ? '${switcherState.accounts.length} accounts — tap to switch'
-                      : '@${tokens.handle}';
-
-                  return ListTile(
-                    leading: ProfileAvatar(size: 40, fallbackText: tokens.displayName ?? tokens.handle),
-                    title: Text(tokens.displayName ?? tokens.handle),
-                    subtitle: Text(subtitle),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => showAccountSwitcherSheet(context),
-                  );
-                },
-              );
-            },
-          ),
+                return ListTile(
+                  leading: ProfileAvatar(
+                    size: 40,
+                    fallbackText: authenticatedTokens.displayName ?? authenticatedTokens.handle,
+                  ),
+                  title: Text(authenticatedTokens.displayName ?? authenticatedTokens.handle),
+                  subtitle: Text(subtitle),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => showAccountSwitcherSheet(context),
+                );
+              },
+            ),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Appearance'),
           _buildThemeSelector(context),
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Layout'),
           _buildLayoutSettings(context),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Moderation'),
-          const _ModerationSettingsPreview(),
+          if (showAccountSettings) ...[
+            const SizedBox(height: 24),
+            _buildSectionHeader(context, 'Moderation'),
+            const _ModerationSettingsPreview(),
+          ],
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Search'),
-          _buildSearchSettings(context),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Account'),
-          const _AtProtocolConnectionCard(),
-          const SizedBox(height: 12),
-          _SettingsTile(
-            icon: Icons.dynamic_feed_outlined,
-            title: 'Feeds',
-            subtitle: 'Manage pinned and saved feeds',
-            onTap: () => context.push('/feeds'),
-          ),
-          _SettingsTile(
-            icon: Icons.bookmark_outline,
-            title: 'Bookmarks & Likes',
-            subtitle: 'View your bookmarked and liked posts',
-            onTap: () => context.push('/bookmarks'),
-          ),
-          _SettingsTile(
-            icon: Icons.videocam_outlined,
-            title: 'Video Upload Limits',
-            subtitle: 'Check your daily video quota',
-            onTap: () => context.push('/settings/video-limits'),
-          ),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Account Maintenance'),
-          _SettingsTile(
-            icon: Icons.cleaning_services_outlined,
-            title: 'Clean Follows',
-            subtitle: 'Audit and unfollow problematic accounts in bulk',
-            onTap: () => context.push('/settings/clean-follows'),
-          ),
+          _buildSearchSettings(context, showTypeaheadSettings: showAccountSettings),
+          if (showAccountSettings) ...[
+            const SizedBox(height: 24),
+            _buildSectionHeader(context, 'Account'),
+            const _AtProtocolConnectionCard(),
+            const SizedBox(height: 12),
+            _SettingsTile(
+              icon: Icons.dynamic_feed_outlined,
+              title: 'Feeds',
+              subtitle: 'Manage pinned and saved feeds',
+              onTap: () => context.push('/feeds'),
+            ),
+            _SettingsTile(
+              icon: Icons.bookmark_outline,
+              title: 'Bookmarks & Likes',
+              subtitle: 'View your bookmarked and liked posts',
+              onTap: () => context.push('/bookmarks'),
+            ),
+            _SettingsTile(
+              icon: Icons.videocam_outlined,
+              title: 'Video Upload Limits',
+              subtitle: 'Check your daily video quota',
+              onTap: () => context.push('/settings/video-limits'),
+            ),
+            const SizedBox(height: 24),
+            _buildSectionHeader(context, 'Account Maintenance'),
+            _SettingsTile(
+              icon: Icons.cleaning_services_outlined,
+              title: 'Clean Follows',
+              subtitle: 'Audit and unfollow problematic accounts in bulk',
+              onTap: () => context.push('/settings/clean-follows'),
+            ),
+          ],
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Advanced'),
           _buildAdvancedSettings(context),
@@ -131,12 +148,6 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => context.push('/settings/devtools'),
           ),
           _SettingsTile(
-            icon: Icons.description_outlined,
-            title: 'Logs',
-            subtitle: 'View app log files',
-            onTap: () => context.push('/settings/logs'),
-          ),
-          _SettingsTile(
             icon: Icons.info_outline,
             title: 'About',
             subtitle: 'Stormlight Labs',
@@ -154,16 +165,18 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'How Lazurite handles data',
             onTap: () => context.push('/privacy'),
           ),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Danger Zone'),
-          _SettingsTile(
-            icon: Icons.logout,
-            title: 'Log Out',
-            isDestructive: true,
-            onTap: () {
-              context.read<AuthBloc>().add(const LogoutRequested());
-            },
-          ),
+          if (showAccountSettings) ...[
+            const SizedBox(height: 24),
+            _buildSectionHeader(context, 'Danger Zone'),
+            _SettingsTile(
+              icon: Icons.logout,
+              title: 'Log Out',
+              isDestructive: true,
+              onTap: () {
+                context.read<AuthBloc>().add(const LogoutRequested());
+              },
+            ),
+          ],
           const SizedBox(height: 24),
           Center(child: Text('Lazurite v1.0.0', style: context.textTheme.bodySmall)),
           const SizedBox(height: 24),
@@ -309,55 +322,58 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchSettings(BuildContext context) => BlocBuilder<SettingsCubit, SettingsState>(
-    builder: (context, settingsState) {
-      final theme = Theme.of(context);
-      return Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: theme.dividerColor),
-            bottom: BorderSide(color: theme.dividerColor),
-          ),
-          color: theme.cardColor,
-        ),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.tune_outlined),
-              title: const Text('Typeahead Provider'),
-              subtitle: Text(
-                settingsState.typeaheadProvider == 'community'
-                    ? 'Community (waow.tech) selected. Third-party service, works before login.'
-                    : 'Bluesky official endpoint selected.',
+  Widget _buildSearchSettings(BuildContext context, {required bool showTypeaheadSettings}) =>
+      BlocBuilder<SettingsCubit, SettingsState>(
+        builder: (context, settingsState) {
+          final theme = Theme.of(context);
+          return Container(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: theme.dividerColor),
+                bottom: BorderSide(color: theme.dividerColor),
               ),
+              color: theme.cardColor,
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment<String>(value: 'bluesky', label: Text('Bluesky')),
-                    ButtonSegment<String>(value: 'community', label: Text('Community')),
-                  ],
-                  selected: {settingsState.typeaheadProvider},
-                  onSelectionChanged: (selection) {
-                    context.read<SettingsCubit>().setTypeaheadProvider(selection.first);
-                  },
+            child: Column(
+              children: [
+                if (showTypeaheadSettings) ...[
+                  ListTile(
+                    leading: const Icon(Icons.tune_outlined),
+                    title: const Text('Typeahead Provider'),
+                    subtitle: Text(
+                      settingsState.typeaheadProvider == 'community'
+                          ? 'Community (waow.tech) selected. Third-party service.'
+                          : 'Bluesky official endpoint selected.',
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment<String>(value: 'bluesky', label: Text('Bluesky')),
+                          ButtonSegment<String>(value: 'community', label: Text('Community')),
+                        ],
+                        selected: {settingsState.typeaheadProvider},
+                        onSelectionChanged: (selection) {
+                          context.read<SettingsCubit>().setTypeaheadProvider(selection.first);
+                        },
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                ],
+                const _SettingsTile(
+                  icon: Icons.manage_search_outlined,
+                  title: 'Semantic Search',
+                  subtitle: 'Manage semantic search from Bookmarks & Likes -> Search',
                 ),
-              ),
+              ],
             ),
-            const Divider(height: 1),
-            const _SettingsTile(
-              icon: Icons.manage_search_outlined,
-              title: 'Semantic Search',
-              subtitle: 'Manage semantic search from Bookmarks & Likes -> Search',
-            ),
-          ],
-        ),
+          );
+        },
       );
-    },
-  );
 
   Widget _buildDeveloperSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
@@ -390,7 +406,7 @@ class SettingsScreen extends StatelessWidget {
                 trailing: const Icon(Icons.warning_amber_rounded),
                 onTap: crashReportingService?.crash,
               ),
-              if (kDebugMode) ...[
+              if (kDebugMode || kProfileMode) ...[
                 const Divider(height: 1),
                 _SettingsTile(
                   icon: Icons.lock_reset_outlined,
@@ -433,6 +449,13 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
+              _SettingsTile(
+                icon: Icons.description_outlined,
+                title: 'Logs',
+                subtitle: 'View app log files',
+                onTap: () => context.push('/settings/logs'),
+              ),
+              const Divider(height: 1),
               _ConstellationUrlTile(currentUrl: state.constellationUrl),
               const Divider(height: 1),
               _SettingsTile(
