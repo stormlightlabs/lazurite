@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:atproto_core/atproto_core.dart' show AtUri, Blob, BlobRef, XRPCException;
-import 'package:bluesky/bluesky.dart';
 import 'package:bluesky/app_bsky_video_defs.dart' show KnownJobStatusState;
 import 'package:bluesky_text/bluesky_text.dart';
 import 'package:characters/characters.dart';
@@ -14,7 +13,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/actor_repository_service_resolver.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/scheduler/post_scheduler.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/compose/data/link_preview_service.dart';
 
 part 'compose_event.dart';
@@ -697,22 +699,33 @@ class EditPostResult {
 
 class ComposeRepository {
   ComposeRepository({
-    required Bluesky bluesky,
+    required dynamic bluesky,
     LinkPreviewService? linkPreviewService,
     ActorRepositoryServiceResolver? actorRepositoryServiceResolver,
+    Future<AuthTokens?> Function()? onUnauthorized,
+    dynamic Function(AuthTokens tokens)? blueskyClientFactory,
   }) : _actorRepoResolver = actorRepositoryServiceResolver ?? ActorRepositoryServiceResolver(),
-       _bluesky = bluesky,
-       _linkPreviewService = linkPreviewService ?? LinkPreviewService();
+       _linkPreviewService = linkPreviewService ?? LinkPreviewService() {
+    _authRecovery = UnauthorizedRecoveryRunner<dynamic>(
+      initialClient: bluesky,
+      onUnauthorized: onUnauthorized,
+      clientFactory: blueskyClientFactory ?? createBlueskyClient,
+      onUnauthorizedException: (error, stackTrace) {
+        log.w('compose.auth unauthorized; attempting session recovery', error: error, stackTrace: stackTrace);
+      },
+    );
+  }
 
-  final Bluesky _bluesky;
+  late final UnauthorizedRecoveryRunner<dynamic> _authRecovery;
+  dynamic get _bluesky => _authRecovery.client;
   final LinkPreviewService _linkPreviewService;
   final ActorRepositoryServiceResolver _actorRepoResolver;
 
   Future<Blob?> uploadBlobRecord(List<int> bytes, {String mimeType = 'image/jpeg'}) async {
     try {
-      final response = await _bluesky.atproto.repo.uploadBlob(
-        bytes: Uint8List.fromList(bytes),
-        $headers: {'Content-Type': mimeType},
+      final response = await _authRecovery.run(
+        (client) =>
+            client.atproto.repo.uploadBlob(bytes: Uint8List.fromList(bytes), $headers: {'Content-Type': mimeType}),
       );
       return response.data.blob;
     } catch (e, stackTrace) {
@@ -729,7 +742,7 @@ class ComposeRepository {
   /// Uploads video bytes and returns the job ID, or null on failure.
   Future<String?> uploadVideo(Uint8List bytes) async {
     try {
-      final response = await _bluesky.video.uploadVideo(bytes: bytes);
+      final response = await _authRecovery.run((client) => client.video.uploadVideo(bytes: bytes));
       return response.data.jobId;
     } catch (e, stackTrace) {
       log.e('Failed to upload video', error: e, stackTrace: stackTrace);
@@ -739,7 +752,7 @@ class ComposeRepository {
 
   Future<dynamic> getJobStatus(String jobId) async {
     try {
-      final response = await _bluesky.video.getJobStatus(jobId: jobId);
+      final response = await _authRecovery.run((client) => client.video.getJobStatus(jobId: jobId));
       return response.data.jobStatus;
     } catch (e, stackTrace) {
       log.e('Failed to get job status', error: e, stackTrace: stackTrace);
@@ -749,9 +762,11 @@ class ComposeRepository {
 
   Future<({bool canUpload, String? message})?> getUploadLimits() async {
     try {
-      final response = await _bluesky.video.getUploadLimits();
+      final response = await _authRecovery.run((client) => client.video.getUploadLimits());
       final d = response.data;
-      return (canUpload: d.canUpload, message: d.message ?? d.error);
+      final canUpload = d.canUpload;
+      final message = d.message ?? d.error;
+      return (canUpload: canUpload == true, message: message is String ? message : null);
     } catch (e, stackTrace) {
       log.e('Failed to get upload limits', error: e, stackTrace: stackTrace);
       return null;
@@ -776,7 +791,9 @@ class ComposeRepository {
       if (embed != null) record['embed'] = embed;
       if (reply != null) record['reply'] = reply;
 
-      await _bluesky.atproto.repo.createRecord(repo: repo, collection: 'app.bsky.feed.post', record: record);
+      await _authRecovery.run(
+        (client) => client.atproto.repo.createRecord(repo: repo, collection: 'app.bsky.feed.post', record: record),
+      );
       return true;
     } catch (e, stackTrace) {
       log.e('Failed to create post', error: e, stackTrace: stackTrace);
@@ -907,20 +924,20 @@ class ComposeRepository {
       }
       updatedRecord[r'$type'] = 'app.bsky.feed.post';
 
-      await _bluesky.atproto.repo.deleteRecord(
-        repo: targetRepo,
-        collection: collection,
-        rkey: rkey,
-        swapRecord: swapCid,
+      await _authRecovery.run(
+        (client) =>
+            client.atproto.repo.deleteRecord(repo: targetRepo, collection: collection, rkey: rkey, swapRecord: swapCid),
       );
 
       late final String newCid;
       try {
-        final created = await _bluesky.atproto.repo.createRecord(
-          repo: targetRepo,
-          collection: collection,
-          rkey: rkey,
-          record: updatedRecord,
+        final created = await _authRecovery.run(
+          (client) => client.atproto.repo.createRecord(
+            repo: targetRepo,
+            collection: collection,
+            rkey: rkey,
+            record: updatedRecord,
+          ),
         );
         newCid = created.data.cid;
       } on XRPCException catch (e, stackTrace) {
@@ -1022,7 +1039,10 @@ class ComposeRepository {
     }
 
     try {
-      await _bluesky.atproto.repo.createRecord(repo: repo, collection: collection, rkey: rkey, record: restoredRecord);
+      await _authRecovery.run(
+        (client) =>
+            client.atproto.repo.createRecord(repo: repo, collection: collection, rkey: rkey, record: restoredRecord),
+      );
       return true;
     } catch (e, stackTrace) {
       log.e('Failed to restore original record after edit failure', error: e, stackTrace: stackTrace);
@@ -1032,7 +1052,9 @@ class ComposeRepository {
 
   Future<dynamic> _getRecordFromRepo({required String repo, required String collection, required String rkey}) async {
     final serviceHost = await _resolveRepoServiceHost(repo);
-    return _bluesky.atproto.repo.getRecord(repo: repo, collection: collection, rkey: rkey, $service: serviceHost);
+    return _authRecovery.run(
+      (client) => client.atproto.repo.getRecord(repo: repo, collection: collection, rkey: rkey, $service: serviceHost),
+    );
   }
 
   Future<String?> _resolveRepoServiceHost(String repo) async {

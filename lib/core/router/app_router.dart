@@ -15,6 +15,7 @@ import 'package:lazurite/core/router/app_route_page.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/features/alerts/presentation/alerts_screen.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/auth/presentation/login_screen.dart';
 import 'package:lazurite/features/auth/presentation/oauth_callback_screen.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
@@ -79,9 +80,10 @@ import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 
 class AppRouter {
-  AppRouter({required this.authBloc, this.navigatorObserver});
+  AppRouter({required this.authBloc, this.navigatorObserver, this.onUnauthorized});
   final AuthBloc authBloc;
   final NavigatorObserver? navigatorObserver;
+  final Future<AuthTokens?> Function()? onUnauthorized;
   final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
   final GlobalKey<NavigatorState> _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'home');
   final GlobalKey<NavigatorState> _searchNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'search');
@@ -218,7 +220,7 @@ class AppRouter {
             state,
             BlocProvider(
               create: (_) => ComposeBloc(
-                composeRepository: ComposeRepository(bluesky: context.read<Bluesky>()),
+                composeRepository: ComposeRepository(bluesky: context.read<Bluesky>(), onUnauthorized: onUnauthorized),
                 database: context.read<AppDatabase>(),
                 accountDid: context.read<String>(),
               ),

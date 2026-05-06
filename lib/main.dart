@@ -404,7 +404,11 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
   }
 
   GoRouter _createRouter() {
-    return AppRouter(authBloc: widget.authBloc, navigatorObserver: _navigatorObserver).router;
+    return AppRouter(
+      authBloc: widget.authBloc,
+      navigatorObserver: _navigatorObserver,
+      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
+    ).router;
   }
 
   String _sessionKeyFor(AuthState state) => state.tokens?.did ?? 'guest';
