@@ -104,9 +104,9 @@ class AppRouter {
       final path = state.uri.path;
       final publicPaths = {
         '/login',
-        '/login/settings',
-        '/login/settings/about',
-        '/login/settings/logs',
+        '/settings',
+        '/settings/about',
+        '/settings/logs',
         '/terms',
         '/privacy',
         OAuthCallbackScreen.routePath,
@@ -129,11 +129,55 @@ class AppRouter {
     routes: [
       GoRoute(path: '/login', pageBuilder: (context, state) => _page(context, state, const LoginScreen())),
       GoRoute(
-        path: '/login/settings',
-        pageBuilder: (context, state) => _page(context, state, const SettingsScreen(isPublic: true)),
+        path: '/settings',
+        pageBuilder: (context, state) => _page(context, state, const SettingsScreen()),
         routes: [
+          GoRoute(
+            path: 'moderation',
+            pageBuilder: (context, state) => _page(context, state, const ModerationSettingsScreen()),
+            routes: [
+              GoRoute(
+                path: 'detail',
+                pageBuilder: (context, state) =>
+                    _page(context, state, LabelerDetailScreen(did: state.uri.queryParameters['did'] ?? '')),
+              ),
+            ],
+          ),
           GoRoute(path: 'about', pageBuilder: (context, state) => _page(context, state, const AboutScreen())),
           GoRoute(path: 'logs', pageBuilder: (context, state) => _page(context, state, const LogsScreen())),
+          GoRoute(
+            path: 'clean-follows',
+            pageBuilder: (context, state) => _page(
+              context,
+              state,
+              BlocProvider(
+                create: (_) => FollowAuditCubit(
+                  repository: FollowAuditRepository(
+                    bluesky: context.read<Bluesky>(),
+                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                  ),
+                  ownDid: context.read<String>(),
+                ),
+                child: const FollowAuditScreen(),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: 'devtools',
+            pageBuilder: (context, state) =>
+                _page(context, state, DevToolsScreen(initialQuery: state.uri.queryParameters['query'])),
+          ),
+          GoRoute(
+            path: 'video-limits',
+            pageBuilder: (context, state) => _page(
+              context,
+              state,
+              BlocProvider(
+                create: (_) => VideoUploadLimitsCubit(repository: context.read<VideoRepository>()),
+                child: const VideoUploadLimitsScreen(),
+              ),
+            ),
+          ),
         ],
       ),
       GoRoute(
@@ -403,61 +447,6 @@ class AppRouter {
                   GoRoute(
                     path: 'trending',
                     pageBuilder: (context, state) => _page(context, state, const TrendingScreen()),
-                  ),
-                  GoRoute(
-                    path: 'settings',
-                    pageBuilder: (context, state) => _page(context, state, const SettingsScreen()),
-                    routes: [
-                      GoRoute(
-                        path: 'moderation',
-                        pageBuilder: (context, state) => _page(context, state, const ModerationSettingsScreen()),
-                        routes: [
-                          GoRoute(
-                            path: 'detail',
-                            pageBuilder: (context, state) =>
-                                _page(context, state, LabelerDetailScreen(did: state.uri.queryParameters['did'] ?? '')),
-                          ),
-                        ],
-                      ),
-                      GoRoute(
-                        path: 'about',
-                        pageBuilder: (context, state) => _page(context, state, const AboutScreen()),
-                      ),
-                      GoRoute(path: 'logs', pageBuilder: (context, state) => _page(context, state, const LogsScreen())),
-                      GoRoute(
-                        path: 'clean-follows',
-                        pageBuilder: (context, state) => _page(
-                          context,
-                          state,
-                          BlocProvider(
-                            create: (_) => FollowAuditCubit(
-                              repository: FollowAuditRepository(
-                                bluesky: context.read<Bluesky>(),
-                                appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                              ),
-                              ownDid: context.read<String>(),
-                            ),
-                            child: const FollowAuditScreen(),
-                          ),
-                        ),
-                      ),
-                      GoRoute(
-                        path: 'devtools',
-                        pageBuilder: (context, state) =>
-                            _page(context, state, DevToolsScreen(initialQuery: state.uri.queryParameters['query'])),
-                      ),
-                      GoRoute(
-                        path: 'video-limits',
-                        pageBuilder: (context, state) => _page(
-                          context,
-                          state,
-                          BlocProvider(
-                            create: (_) => VideoUploadLimitsCubit(repository: context.read<VideoRepository>()),
-                            child: const VideoUploadLimitsScreen(),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

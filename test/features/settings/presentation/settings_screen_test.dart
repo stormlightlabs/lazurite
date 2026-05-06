@@ -9,6 +9,7 @@ import 'package:lazurite/core/cache/local_cache_maintenance_service.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
@@ -171,16 +172,16 @@ void main() {
                 BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
                 BlocProvider<SettingsCubit>.value(value: settingsCubit),
               ],
-              child: const SettingsScreen(isPublic: true),
+              child: const SettingsScreen(),
             ),
           ),
         ),
         GoRoute(
-          path: '/login/settings/about',
+          path: '/settings/about',
           builder: (context, state) => const Scaffold(body: Text('public-about-screen')),
         ),
         GoRoute(
-          path: '/login/settings/logs',
+          path: '/settings/logs',
           builder: (context, state) => const Scaffold(body: Text('public-logs-screen')),
         ),
       ],
@@ -561,6 +562,26 @@ void main() {
     expect(find.text('Privacy Policy'), findsOneWidget);
   });
 
+  testWidgets('uses back button when unauthenticated', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BackButton), findsOneWidget);
+    expect(find.byTooltip('Open menu'), findsNothing);
+  });
+
+  testWidgets('uses menu button when authenticated', (tester) async {
+    final tokens = _authenticatedTokens();
+    final authenticatedState = AuthState.authenticated(tokens);
+    when(() => authBloc.state).thenReturn(authenticatedState);
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: authenticatedState);
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppShellMenuButton), findsOneWidget);
+  });
+
   testWidgets('public mode hides account-gated sections and logout controls', (tester) async {
     await tester.pumpWidget(
       RepositoryProvider<CrashReportingService>.value(
@@ -571,7 +592,7 @@ void main() {
             BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
             BlocProvider<SettingsCubit>.value(value: settingsCubit),
           ],
-          child: const MaterialApp(home: SettingsScreen(isPublic: true)),
+          child: const MaterialApp(home: SettingsScreen()),
         ),
       ),
     );
@@ -593,7 +614,7 @@ void main() {
     expect(find.text('Terms of Service'), findsOneWidget);
   });
 
-  testWidgets('public mode Logs and About rows use public login settings routes', (tester) async {
+  testWidgets('public mode Logs and About rows use public /settings routes', (tester) async {
     await tester.pumpWidget(buildPublicRoutedSubject());
     await tester.pumpAndSettle();
 

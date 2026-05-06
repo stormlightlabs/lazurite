@@ -123,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
           IconButton(
             tooltip: 'Settings',
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push('/login/settings'),
+            onPressed: () => context.push('/settings'),
           ),
         ],
       ),

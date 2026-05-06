@@ -401,7 +401,7 @@ void main() {
     expect(find.byTooltip('Open menu'), findsOneWidget);
   });
 
-  testWidgets('redirects to login after logout without crashing on the settings route', (tester) async {
+  testWidgets('stays on public settings after logout without crashing', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -454,55 +454,14 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Continue'), findsOneWidget);
+    expect(find.text('APPEARANCE'), findsOneWidget);
+    expect(find.byTooltip('Log Out'), findsNothing);
     expect(tester.takeException(), isNull);
 
     router.dispose();
   });
 
-  testWidgets('allows unauthenticated access to public login settings, privacy, and terms routes', (tester) async {
-    currentAuthState = const AuthState.unauthenticated();
-    when(() => authBloc.state).thenReturn(currentAuthState);
-    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
-
-    final router = AppRouter(authBloc: authBloc).router;
-
-    await tester.pumpWidget(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider<AuthBloc>.value(value: authBloc),
-          BlocProvider<SettingsCubit>.value(value: settingsCubit),
-        ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    router.go('/login/settings');
-    await tester.pumpAndSettle();
-    expect(find.text('APPEARANCE'), findsOneWidget);
-    expect(find.text('ACCOUNT'), findsNothing);
-
-    router.go('/login/settings/logs');
-    await tester.pumpAndSettle();
-    expect(find.text('Logs'), findsWidgets);
-
-    router.go('/login/settings/about');
-    await tester.pumpAndSettle();
-    expect(find.text('About'), findsWidgets);
-
-    router.go('/privacy');
-    await tester.pumpAndSettle();
-    expect(find.text('Privacy Policy'), findsWidgets);
-
-    router.go('/terms');
-    await tester.pumpAndSettle();
-    expect(find.text('Terms of Service'), findsWidgets);
-
-    router.dispose();
-  });
-
-  testWidgets('keeps /settings auth-gated when unauthenticated', (tester) async {
+  testWidgets('allows unauthenticated access to public settings, privacy, and terms routes', (tester) async {
     currentAuthState = const AuthState.unauthenticated();
     when(() => authBloc.state).thenReturn(currentAuthState);
     whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
@@ -521,6 +480,48 @@ void main() {
     await tester.pumpAndSettle();
 
     router.go('/settings');
+    await tester.pumpAndSettle();
+    expect(find.text('APPEARANCE'), findsOneWidget);
+    expect(find.text('ACCOUNT'), findsNothing);
+
+    router.go('/settings/logs');
+    await tester.pumpAndSettle();
+    expect(find.text('Logs'), findsWidgets);
+
+    router.go('/settings/about');
+    await tester.pumpAndSettle();
+    expect(find.text('About'), findsWidgets);
+
+    router.go('/privacy');
+    await tester.pumpAndSettle();
+    expect(find.text('Privacy Policy'), findsWidgets);
+
+    router.go('/terms');
+    await tester.pumpAndSettle();
+    expect(find.text('Terms of Service'), findsWidgets);
+
+    router.dispose();
+  });
+
+  testWidgets('keeps account-scoped settings routes auth-gated when unauthenticated', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    router.go('/settings/video-limits');
     await tester.pumpAndSettle();
 
     expect(find.text('Continue'), findsOneWidget);

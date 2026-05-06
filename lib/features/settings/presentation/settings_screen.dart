@@ -25,19 +25,17 @@ import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({this.isPublic = false, super.key});
-
-  final bool isPublic;
+  const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final authState = context.watch<AuthBloc>().state;
     final tokens = authState.tokens;
-    final showAccountSettings = authState.isAuthenticated && tokens != null && !isPublic;
+    final showAccountSettings = authState.isAuthenticated && tokens != null;
 
     return Scaffold(
       appBar: AppBar(
-        leading: isPublic ? const BackButton() : const AppShellMenuButton(),
+        leading: showAccountSettings ? const AppShellMenuButton() : const BackButton(),
         title: _title(context),
         actions: showAccountSettings
             ? [
@@ -143,7 +141,7 @@ class SettingsScreen extends StatelessWidget {
             icon: Icons.info_outline,
             title: 'About',
             subtitle: 'Stormlight Labs',
-            onTap: () => context.push(isPublic ? '/login/settings/about' : '/settings/about'),
+            onTap: () => context.push('/settings/about'),
           ),
           _SettingsTile(
             icon: Icons.gavel_outlined,
@@ -442,7 +440,7 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.description_outlined,
                 title: 'Logs',
                 subtitle: 'View app log files',
-                onTap: () => context.push(isPublic ? '/login/settings/logs' : '/settings/logs'),
+                onTap: () => context.push('/settings/logs'),
               ),
               const Divider(height: 1),
               _ConstellationUrlTile(currentUrl: state.constellationUrl),

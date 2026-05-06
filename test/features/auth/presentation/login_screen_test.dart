@@ -62,7 +62,7 @@ void main() {
           builder: (context, state) => const Scaffold(body: Text('privacy-route')),
         ),
         GoRoute(
-          path: '/login/settings',
+          path: '/settings',
           builder: (context, state) => const Scaffold(body: Text('public-settings-route')),
         ),
       ],
