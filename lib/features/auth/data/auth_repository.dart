@@ -152,7 +152,14 @@ class AuthRepository {
       return await refreshSession(storedSession);
     } catch (error, stackTrace) {
       log.e('AuthRepository: Failed to restore expired session', error: error, stackTrace: stackTrace);
-      return restoreSession();
+      final fallbackSession = await getStoredSession();
+      if (fallbackSession != null && fallbackSession.did == storedSession.did) {
+        log.w(
+          'AuthRepository: Preserving expired stored session for ${storedSession.handle} after refresh failure; '
+          'runtime auth recovery can retry without forcing sign-in.',
+        );
+      }
+      return fallbackSession;
     }
   }
 
@@ -417,8 +424,16 @@ class AuthRepository {
         );
         return refreshedTokens;
       } catch (error, stackTrace) {
-        log.e('AuthRepository: OAuth session refresh failed', error: error, stackTrace: stackTrace);
-        await _invalidateSession(currentSession);
+        final shouldInvalidate = _shouldInvalidateSessionAfterRefreshFailure(error);
+        log.e(
+          'AuthRepository: OAuth session refresh failed; '
+          '${shouldInvalidate ? 'invalidating rejected credentials' : 'preserving session for retry'}',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        if (shouldInvalidate) {
+          await _invalidateSession(currentSession);
+        }
         throw Exception('Failed to refresh OAuth session: $error');
       }
     }
@@ -448,8 +463,16 @@ class AuthRepository {
       log.i('AuthRepository: App password session refresh succeeded for ${tokens.handle}');
       return tokens;
     } catch (error, stackTrace) {
-      log.e('AuthRepository: App password session refresh failed', error: error, stackTrace: stackTrace);
-      await _invalidateSession(currentSession);
+      final shouldInvalidate = _shouldInvalidateSessionAfterRefreshFailure(error);
+      log.e(
+        'AuthRepository: App password session refresh failed; '
+        '${shouldInvalidate ? 'invalidating rejected credentials' : 'preserving session for retry'}',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (shouldInvalidate) {
+        await _invalidateSession(currentSession);
+      }
       throw Exception('Failed to refresh session: $error');
     }
   }
@@ -1010,6 +1033,41 @@ class AuthRepository {
     if (await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == tokens.did) {
       await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
     }
+  }
+
+  bool _shouldInvalidateSessionAfterRefreshFailure(Object error) {
+    if (error is atcore.UnauthorizedException) {
+      return true;
+    }
+
+    if (error is OAuthException) {
+      return _oauthRefreshErrorCode(error.message) == 'invalid_grant';
+    }
+
+    return _containsOAuthInvalidGrant(error.toString());
+  }
+
+  String? _oauthRefreshErrorCode(String message) {
+    try {
+      final decoded = jsonDecode(message);
+      if (decoded is Map<String, dynamic>) {
+        final error = decoded['error'];
+        if (error is String && error.trim().isNotEmpty) {
+          return error.trim();
+        }
+      }
+    } catch (error, stackTrace) {
+      log.d('AuthRepository: Unable to parse OAuth refresh error code', error: error, stackTrace: stackTrace);
+    }
+
+    return null;
+  }
+
+  bool _containsOAuthInvalidGrant(String message) {
+    return message.contains('"error":"invalid_grant"') ||
+        message.contains('"error": "invalid_grant"') ||
+        message.contains("'error':'invalid_grant'") ||
+        message.contains("'error': 'invalid_grant'");
   }
 
   void _resetPendingOAuthState({bool clearLaunchMode = true}) {
