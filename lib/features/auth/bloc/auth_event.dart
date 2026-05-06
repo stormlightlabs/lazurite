@@ -28,6 +28,10 @@ class LogoutRequested extends AuthEvent {
   const LogoutRequested();
 }
 
+class LocalAuthDataClearRequested extends AuthEvent {
+  const LocalAuthDataClearRequested();
+}
+
 class SessionRestored extends AuthEvent {
   const SessionRestored({required this.tokens});
   final AuthTokens tokens;

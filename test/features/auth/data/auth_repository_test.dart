@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:atproto_core/atproto_core.dart' as atcore;
@@ -396,6 +397,28 @@ void main() {
         expect(normalized!.toString(), equals('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'));
       });
 
+      test('normalizes authority-style custom scheme callback URI to canonical custom scheme', () {
+        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
+          Uri.parse('org.stormlightlabs.lazurite://oauth/callback?code=abc&state=xyz'),
+        );
+
+        expect(normalized, isNotNull);
+        expect(normalized!.toString(), equals('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'));
+      });
+
+      test('normalizes compatibility callback path to canonical custom scheme', () {
+        final normalized = authRepository.normalizeOAuthCallbackUriForTest(Uri.parse('/callback?code=abc&state=xyz'));
+
+        expect(normalized, isNotNull);
+        expect(normalized!.toString(), equals('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'));
+      });
+
+      test('rejects path-only callback without oauth response parameters', () {
+        final normalized = authRepository.normalizeOAuthCallbackUriForTest(Uri.parse('/callback?foo=bar'));
+
+        expect(normalized, isNull);
+      });
+
       test('accepts exact HTTPS callback URI with oauth query parameters', () {
         final normalized = authRepository.normalizeOAuthCallbackUriForTest(
           Uri.parse(
@@ -425,6 +448,38 @@ void main() {
         );
 
         expect(normalized, isNull);
+      });
+    });
+
+    group('oauth callback exchange coordination', () {
+      test('joins duplicate callback deliveries to one token exchange', () async {
+        const tokens = AuthTokens(accessToken: 'access', did: 'did:plc:abc123', handle: 'user.bsky.social');
+        final exchangeCompleter = Completer<AuthTokens>();
+        var exchangeCalls = 0;
+
+        Future<AuthTokens> exchange(String callbackUrl) {
+          exchangeCalls += 1;
+          expect(callbackUrl, equals('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'));
+          return exchangeCompleter.future;
+        }
+
+        final firstResult = authRepository.runOAuthCallbackExchangeOnceForTest(
+          Uri.parse('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'),
+          exchange,
+        );
+        final secondResult = authRepository.runOAuthCallbackExchangeOnceForTest(
+          Uri.parse('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'),
+          exchange,
+        );
+
+        await Future<void>.delayed(Duration.zero);
+        expect(exchangeCalls, equals(1));
+
+        exchangeCompleter.complete(tokens);
+
+        expect(await firstResult, equals(tokens));
+        expect(await secondResult, equals(tokens));
+        expect(exchangeCalls, equals(1));
       });
     });
 

@@ -9,6 +9,7 @@ class OAuthCallbackScreen extends StatefulWidget {
   const OAuthCallbackScreen({required this.callbackUri, super.key});
 
   static const String routePath = '/oauth/callback';
+  static const String compatibilityRoutePath = '/callback';
 
   final Uri callbackUri;
 

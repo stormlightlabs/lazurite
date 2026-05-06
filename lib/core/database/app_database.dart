@@ -266,6 +266,18 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteSetting(String key) => (delete(settings)..where((s) => s.key.equals(key))).go();
 
+  Future<void> clearLocalCaches() async {
+    await transaction(() async {
+      await delete(cachedProfiles).go();
+      await delete(cachedPosts).go();
+      await delete(cachedFeedPages).go();
+      await delete(cachedFeedPosts).go();
+      await delete(cachedThreadRoots).go();
+      await delete(labelerCache).go();
+      await customStatement("DELETE FROM settings WHERE key LIKE 'moderation_preferences::%'");
+    });
+  }
+
   Future<List<SavedFeedEntry>> getSavedFeeds(String accountDid) =>
       (select(savedFeeds)
             ..where((f) => f.accountDid.equals(accountDid))

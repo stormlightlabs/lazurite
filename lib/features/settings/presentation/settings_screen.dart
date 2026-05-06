@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/cache/local_cache_maintenance_service.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
@@ -113,6 +114,9 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Advanced'),
           _buildAdvancedSettings(context),
+          const SizedBox(height: 24),
+          _buildSectionHeader(context, 'Troubleshooting'),
+          _buildTroubleshootingSettings(context),
           const SizedBox(height: 24),
           if (!kReleaseMode || kDebugMode) ...[
             _buildSectionHeader(context, 'Developer'),
@@ -578,6 +582,104 @@ class SettingsScreen extends StatelessWidget {
       return;
     }
     await crashReportingService.deleteUnsentReports();
+  }
+
+  Widget _buildTroubleshootingSettings(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: theme.dividerColor),
+          bottom: BorderSide(color: theme.dividerColor),
+        ),
+        color: theme.cardColor,
+      ),
+      child: Column(
+        children: [
+          _SettingsTile(
+            icon: Icons.cached_outlined,
+            title: 'Clear Cache',
+            subtitle: 'Remove cached posts, profiles, images, feeds, threads, and semantic search data',
+            onTap: () => unawaited(_confirmAndClearCaches(context)),
+          ),
+          const Divider(height: 1),
+          _SettingsTile(
+            icon: Icons.manage_accounts_outlined,
+            title: 'Reset Sign-In Data',
+            subtitle: 'Troubleshoot OAuth or account-switching issues by clearing local sessions on this device',
+            isDestructive: true,
+            onTap: () => unawaited(_confirmAndClearLocalAuthData(context)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmAndClearCaches(BuildContext context) async {
+    final shouldClear = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Clear cache?'),
+          content: const Text(
+            'This removes cached posts, profiles, images, feeds, threads, label data, and local semantic search data.\n\n'
+            'Accounts, settings, drafts, bookmarks, and likes are kept.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Clear Cache')),
+          ],
+        );
+      },
+    );
+
+    if (shouldClear != true || !context.mounted) {
+      return;
+    }
+
+    try {
+      await context.read<LocalCacheMaintenanceService>().clearCaches();
+      if (context.mounted) {
+        showAppSnackBar(context, 'Cache cleared');
+      }
+    } catch (error) {
+      if (context.mounted) {
+        showAppSnackBar(context, 'Failed to clear cache: $error', isError: true);
+      }
+    }
+  }
+
+  Future<void> _confirmAndClearLocalAuthData(BuildContext context) async {
+    final shouldClear = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Reset sign-in data?'),
+          content: const Text(
+            'Use this only when troubleshooting sign-in or account switching.\n\n'
+            'This clears all local account sessions on this device and sends you back to sign in. '
+            'It does not delete your Bluesky account or posts.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Reset Sign-In Data'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldClear != true || !context.mounted) {
+      return;
+    }
+
+    context.read<AuthBloc>().add(const LocalAuthDataClearRequested());
   }
 }
 

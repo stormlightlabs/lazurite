@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/cache/local_cache_maintenance_service.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
@@ -23,6 +24,8 @@ class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implement
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
+
+class MockLocalCacheMaintenanceService extends Mock implements LocalCacheMaintenanceService {}
 
 class FakeCrashReportingService implements CrashReportingService {
   var crashCalls = 0;
@@ -52,12 +55,14 @@ void main() {
   late MockAccountSwitcherCubit accountSwitcherCubit;
   late MockAuthBloc authBloc;
   late MockSettingsCubit settingsCubit;
+  late MockLocalCacheMaintenanceService cacheMaintenanceService;
   late FakeCrashReportingService crashReportingService;
 
   setUp(() {
     accountSwitcherCubit = MockAccountSwitcherCubit();
     authBloc = MockAuthBloc();
     settingsCubit = MockSettingsCubit();
+    cacheMaintenanceService = MockLocalCacheMaintenanceService();
     crashReportingService = FakeCrashReportingService();
 
     when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
@@ -91,11 +96,15 @@ void main() {
     when(() => settingsCubit.refreshAppViewHealth()).thenAnswer((_) async {});
     when(() => settingsCubit.setCrashReportingEnabled(any())).thenAnswer((_) async {});
     when(() => settingsCubit.setCrashReportingConsentPrompted(any())).thenAnswer((_) async {});
+    when(() => cacheMaintenanceService.clearCaches()).thenAnswer((_) async {});
   });
 
   Widget buildSubject() {
-    return RepositoryProvider<CrashReportingService>.value(
-      value: crashReportingService,
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<CrashReportingService>.value(value: crashReportingService),
+        RepositoryProvider<LocalCacheMaintenanceService>.value(value: cacheMaintenanceService),
+      ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>.value(value: authBloc),
@@ -112,8 +121,11 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => RepositoryProvider<CrashReportingService>.value(
-            value: crashReportingService,
+          builder: (context, state) => MultiRepositoryProvider(
+            providers: [
+              RepositoryProvider<CrashReportingService>.value(value: crashReportingService),
+              RepositoryProvider<LocalCacheMaintenanceService>.value(value: cacheMaintenanceService),
+            ],
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AuthBloc>.value(value: authBloc),
@@ -300,6 +312,75 @@ void main() {
     expect(find.text('Provider Diagnostics'), findsOneWidget);
     expect(find.text('Refresh Provider Health'), findsOneWidget);
     expect(find.byIcon(Icons.edit_outlined), findsNothing);
+  });
+
+  testWidgets('troubleshooting reset sign-in data requires confirmation before clearing local auth data', (
+    tester,
+  ) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('TROUBLESHOOTING'), 300);
+    await tester.pumpAndSettle();
+
+    expect(find.text('TROUBLESHOOTING'), findsOneWidget);
+    expect(find.text('Reset Sign-In Data'), findsOneWidget);
+    expect(
+      find.text('Troubleshoot OAuth or account-switching issues by clearing local sessions on this device'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Reset Sign-In Data'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reset sign-in data?'), findsOneWidget);
+    expect(find.textContaining('It does not delete your Bluesky account or posts.'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    verifyNever(() => authBloc.add(const LocalAuthDataClearRequested()));
+
+    await tester.tap(find.text('Reset Sign-In Data'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Reset Sign-In Data'));
+    await tester.pumpAndSettle();
+
+    verify(() => authBloc.add(const LocalAuthDataClearRequested())).called(1);
+  });
+
+  testWidgets('troubleshooting clear cache requires confirmation and keeps auth state intact', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('TROUBLESHOOTING'), 300);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Clear Cache'), findsOneWidget);
+    expect(
+      find.text('Remove cached posts, profiles, images, feeds, threads, and semantic search data'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Clear Cache'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Clear cache?'), findsOneWidget);
+    expect(find.textContaining('Accounts, settings, drafts, bookmarks, and likes are kept.'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    verifyNever(() => cacheMaintenanceService.clearCaches());
+
+    await tester.tap(find.text('Clear Cache'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Clear Cache'));
+    await tester.pumpAndSettle();
+
+    verify(() => cacheMaintenanceService.clearCaches()).called(1);
+    verifyNever(() => authBloc.add(const LocalAuthDataClearRequested()));
+    expect(find.text('Cache cleared'), findsOneWidget);
   });
 
   testWidgets('crash reporting toggle persists consent and reporting state', (tester) async {

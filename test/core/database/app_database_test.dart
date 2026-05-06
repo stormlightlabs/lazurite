@@ -262,6 +262,65 @@ void main() {
         expect(newest, isNotNull);
         expect(oldest, isNull);
       });
+
+      test('clearLocalCaches removes cache tables while preserving user data', () async {
+        await database.insertAccount(
+          AccountsCompanion.insert(did: 'did:plc:user', handle: 'user.bsky.social', accessToken: 'token'),
+        );
+        await database.setSetting(AppDatabase.activeAccountDidSettingKey, 'did:plc:user');
+        await database.setSetting('theme', 'dark');
+        await database.setSetting('moderation_preferences::did:plc:user', '[]');
+        await database.cacheProfile(did: 'did:plc:user', handle: 'user.bsky.social', payload: '{}');
+        await database.cachePost(
+          uri: 'at://did:plc:user/app.bsky.feed.post/1',
+          authorDid: 'did:plc:user',
+          payload: '{}',
+        );
+        await database.cacheFeedPage(accountDid: 'did:plc:user', feedKey: 'timeline', payload: '{}');
+        await database.upsertCachedFeedPosts(
+          accountDid: 'did:plc:user',
+          feedKey: 'timeline',
+          posts: [
+            CachedFeedPostsCompanion.insert(
+              accountDid: 'did:plc:user',
+              feedKey: 'timeline',
+              postUri: 'at://did:plc:user/app.bsky.feed.post/1',
+              postJson: '{}',
+              sortOrder: 1,
+            ),
+          ],
+        );
+        await database.cacheThreadRoot(
+          accountDid: 'did:plc:user',
+          rootUri: 'at://did:plc:user/app.bsky.feed.post/1',
+          payload: '{}',
+        );
+        await database.upsertLabelerCache('did:plc:labeler', '{}');
+        await database.saveDraft(DraftsCompanion.insert(accountDid: 'did:plc:user', content: 'draft'));
+        await database.savePost(
+          SavedPostsCompanion.insert(
+            accountDid: 'did:plc:user',
+            postUri: 'at://did:plc:user/app.bsky.feed.post/saved',
+            postJson: '{}',
+          ),
+        );
+
+        await database.clearLocalCaches();
+
+        expect(await database.select(database.cachedProfiles).get(), isEmpty);
+        expect(await database.select(database.cachedPosts).get(), isEmpty);
+        expect(await database.select(database.cachedFeedPages).get(), isEmpty);
+        expect(await database.select(database.cachedFeedPosts).get(), isEmpty);
+        expect(await database.select(database.cachedThreadRoots).get(), isEmpty);
+        expect(await database.select(database.labelerCache).get(), isEmpty);
+        expect(await database.getSetting('moderation_preferences::did:plc:user'), isNull);
+
+        expect(await database.getAccount('did:plc:user'), isNotNull);
+        expect(await database.getSetting(AppDatabase.activeAccountDidSettingKey), 'did:plc:user');
+        expect(await database.getSetting('theme'), 'dark');
+        expect(await database.getDrafts('did:plc:user'), hasLength(1));
+        expect(await database.getSavedPosts('did:plc:user'), hasLength(1));
+      });
     });
 
     group('Notification delivery operations', () {
