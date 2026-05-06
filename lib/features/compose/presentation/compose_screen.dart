@@ -9,15 +9,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/data/link_preview_service.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
+import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/external_link_preview_card.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:video_player/video_player.dart';
 
 class ComposeScreen extends StatefulWidget {
@@ -80,6 +84,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
   bool _isLoadingLinkPreview = false;
   String? _hiddenPreviewUrl;
   bool _showDrafts = false;
+  String? _composerAvatarDid;
+  Future<String?>? _composerAvatarFuture;
 
   @override
   void initState() {
@@ -148,6 +154,53 @@ class _ComposeScreenState extends State<ComposeScreen> {
     _mentionDebounce?.cancel();
     _linkPreviewDebounce?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncComposerAvatarFuture();
+  }
+
+  void _syncComposerAvatarFuture() {
+    AuthState? authState;
+    try {
+      authState = context.read<AuthBloc>().state;
+    } catch (_) {
+      debugPrint('ComposeScreen: auth provider unavailable for composer avatar.');
+    }
+
+    final did = authState?.tokens?.did.trim();
+    if (did == null || did.isEmpty) {
+      _composerAvatarDid = null;
+      _composerAvatarFuture = null;
+      return;
+    }
+
+    if (_composerAvatarDid == did && _composerAvatarFuture != null) {
+      return;
+    }
+
+    _composerAvatarDid = did;
+    _composerAvatarFuture = _loadComposerAvatarUrl(did);
+  }
+
+  Future<String?> _loadComposerAvatarUrl(String did) async {
+    ProfileRepository repository;
+    try {
+      repository = context.read<ProfileRepository>();
+    } catch (_) {
+      debugPrint('ComposeScreen: profile repository unavailable for composer avatar.');
+      return null;
+    }
+
+    try {
+      final profile = await repository.getProfile(did);
+      return profile.avatar;
+    } catch (error, stackTrace) {
+      debugPrint('ComposeScreen: failed to load composer avatar for $did: $error\n$stackTrace');
+      return null;
+    }
   }
 
   void _onTextChanged() {
@@ -512,105 +565,94 @@ class _ComposeScreenState extends State<ComposeScreen> {
   Widget _buildDraftsPanel() {
     return BlocBuilder<ComposeBloc, ComposeState>(
       builder: (context, state) {
-        return Container(
-          constraints: const BoxConstraints(maxHeight: 280),
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: theme.dividerColor)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Drafts', style: theme.textTheme.titleMedium),
-                    if (state.drafts.isNotEmpty)
-                      Text(
-                        '${state.drafts.length} draft${state.drafts.length != 1 ? 's' : ''}',
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                      ),
-                  ],
+        final colorScheme = theme.colorScheme;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 8,
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                border: Border(
+                  top: BorderSide(color: colorScheme.outlineVariant),
+                  bottom: BorderSide(color: colorScheme.outlineVariant),
                 ),
               ),
-              if (state.isLoadingDrafts)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (state.drafts.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Text(
-                      'No drafts saved',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 292),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Drafts', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                        Text(
+                          '${state.drafts.length} draft${state.drafts.length == 1 ? '' : 's'}',
+                          style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                      ],
                     ),
                   ),
-                )
-              else
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: state.drafts.length,
-                    itemBuilder: (context, index) {
-                      final draft = state.drafts[index];
-                      return ListTile(
-                        dense: true,
-                        title: Text(
-                          draft.content.isEmpty ? '(No text)' : draft.content,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                  if (state.isLoadingDrafts)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 26),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (state.drafts.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 26),
+                      child: Center(
+                        child: Text(
+                          'No drafts saved',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
-                        subtitle: Row(
-                          children: [
-                            Text(_formatDraftTime(draft.updatedAt), style: theme.textTheme.bodySmall),
-                            if (draft.scheduledAt != null) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'Scheduled',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
-                          onPressed: () {
-                            final bloc = context.read<ComposeBloc>();
-                            showConfirmationDialog(
-                              context: context,
-                              title: const Text('Delete Draft?'),
-                              content: const Text('This action cannot be undone.'),
-                              confirmLabel: 'Delete',
-                              confirmDestructive: true,
-                            ).then((confirmed) {
-                              if (confirmed && mounted) {
-                                bloc.add(DraftDeleted(draft.id));
-                              }
-                            });
-                          },
-                        ),
-                        onTap: () {
-                          setState(() => _showDrafts = false);
-                          context.read<ComposeBloc>().add(DraftLoaded(draft.id));
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: state.drafts.length,
+                        separatorBuilder: (_, _) => Divider(height: 1, color: colorScheme.outlineVariant),
+                        itemBuilder: (context, index) {
+                          final draft = state.drafts[index];
+                          return _DraftListItem(
+                            draft: draft,
+                            formattedTime: _formatDraftTime(draft.updatedAt),
+                            onTap: () {
+                              setState(() => _showDrafts = false);
+                              context.read<ComposeBloc>().add(DraftLoaded(draft.id));
+                            },
+                            onDelete: () {
+                              final bloc = context.read<ComposeBloc>();
+                              showConfirmationDialog(
+                                context: context,
+                                title: const Text('Delete Draft?'),
+                                content: const Text('This action cannot be undone.'),
+                                confirmLabel: 'Delete',
+                                confirmDestructive: true,
+                              ).then((confirmed) {
+                                if (confirmed && mounted) {
+                                  bloc.add(DraftDeleted(draft.id));
+                                }
+                              });
+                            },
+                          );
                         },
-                      );
-                    },
-                  ),
-                ),
-            ],
-          ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
         );
       },
     );
@@ -724,7 +766,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.fromLTRB(68, 0, 16, 8),
       child: ExternalLinkPreviewCard(
         uri: _linkPreview!.uri,
         title: _linkPreview!.title,
@@ -812,6 +854,153 @@ class _ComposeScreenState extends State<ComposeScreen> {
     }
   }
 
+  String _composerAvatarFallbackText() {
+    try {
+      final tokens = context.read<AuthBloc>().state.tokens;
+      final displayName = tokens?.displayName?.trim();
+      if (displayName != null && displayName.isNotEmpty) {
+        return displayName;
+      }
+
+      final handle = tokens?.handle.trim();
+      if (handle != null && handle.isNotEmpty) {
+        return handle;
+      }
+    } catch (_) {
+      debugPrint('ComposeScreen: auth provider unavailable for avatar fallback.');
+    }
+
+    return 'Lazurite';
+  }
+
+  Widget _buildComposerAvatar() {
+    final avatar = ProfileAvatar(
+      key: const ValueKey('compose_author_avatar'),
+      size: 40,
+      imageUrl: null,
+      fallbackText: _composerAvatarFallbackText(),
+      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+      placeholderTextStyle: theme.textTheme.labelMedium?.copyWith(
+        color: theme.colorScheme.onSurface,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+
+    final avatarFuture = _composerAvatarFuture;
+    if (avatarFuture == null) {
+      return avatar;
+    }
+
+    return FutureBuilder<String?>(
+      future: avatarFuture,
+      builder: (context, snapshot) {
+        return ProfileAvatar(
+          key: const ValueKey('compose_author_avatar'),
+          size: 40,
+          imageUrl: snapshot.data,
+          fallbackText: _composerAvatarFallbackText(),
+          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+          placeholderTextStyle: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildComposerTextArea() {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildComposerAvatar(),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: _textController,
+                focusNode: _textFocusNode,
+                maxLines: null,
+                expands: true,
+                textAlignVertical: TextAlignVertical.top,
+                decoration: InputDecoration(
+                  hintText: "What's on your mind?",
+                  hintStyle: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                style: theme.textTheme.bodyLarge?.copyWith(height: 1.5, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScheduledPill(ComposeState state) {
+    if (!state.hasScheduledTime) {
+      return const SizedBox.shrink();
+    }
+
+    final colorScheme = theme.colorScheme;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(68, 4, 16, 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: colorScheme.primary,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: colorScheme.primary),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.schedule, size: 15, color: colorScheme.onPrimary),
+            const SizedBox(width: 7),
+            Text(
+              'Scheduled for ${DateFormat('MMM d, h:mm a').format(state.scheduledAt!)}',
+              style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onPrimary, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => context.read<ComposeBloc>().add(const ScheduleCleared()),
+              child: Icon(Icons.close, size: 16, color: colorScheme.onPrimary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToolbarIconButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onPressed,
+    bool isActive = false,
+  }) {
+    final colorScheme = theme.colorScheme;
+    final foregroundColor = onPressed == null
+        ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+        : colorScheme.primary;
+
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(icon, color: foregroundColor),
+      tooltip: tooltip,
+      style: IconButton.styleFrom(
+        fixedSize: const Size(40, 40),
+        minimumSize: const Size(40, 40),
+        padding: EdgeInsets.zero,
+        backgroundColor: isActive ? colorScheme.surfaceContainerLow : Colors.transparent,
+        shape: const CircleBorder(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<ComposeBloc, ComposeState>(
@@ -849,25 +1038,33 @@ class _ComposeScreenState extends State<ComposeScreen> {
         },
         child: Scaffold(
           appBar: AppBar(
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: theme.colorScheme.surface,
+            surfaceTintColor: Colors.transparent,
+            shape: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant)),
             leading: TextButton(onPressed: () => _handleBackNavigation(context), child: const Text('Cancel')),
             leadingWidth: 80,
             title: BlocBuilder<ComposeBloc, ComposeState>(
-              builder: (context, state) => Text(state.isEditing ? 'Edit Post' : 'New Post'),
+              builder: (context, state) => Text(
+                state.isEditing ? 'Edit Post' : 'New Post',
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
             ),
             centerTitle: true,
             actions: [
               BlocBuilder<ComposeBloc, ComposeState>(
-                builder: (context, state) => state.isEditing
-                    ? const SizedBox.shrink()
-                    : TextButton(onPressed: _saveDraft, child: const Text('Save Draft')),
-              ),
-              BlocBuilder<ComposeBloc, ComposeState>(
                 builder: (context, state) {
                   final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
-                  final button = TextButton(
+                  final button = FilledButton(
                     onPressed: !isOffline && state.canSubmit && !state.isSubmitting ? _submitPost : null,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(64, 36),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      visualDensity: VisualDensity.compact,
+                    ),
                     child: state.isSubmitting
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                         : Text(state.isEditing ? 'Save Changes' : 'Post'),
                   );
 
@@ -952,24 +1149,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     );
                   },
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: _textController,
-                      focusNode: _textFocusNode,
-                      maxLines: null,
-                      expands: true,
-                      textAlignVertical: TextAlignVertical.top,
-                      decoration: const InputDecoration(
-                        hintText: "What's on your mind?",
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      style: theme.textTheme.bodyLarge?.copyWith(height: 1.5, fontSize: 17),
-                    ),
-                  ),
-                ),
+                _buildComposerTextArea(),
                 _buildMentionAutocompletePanel(),
                 BlocBuilder<ComposeBloc, ComposeState>(builder: (context, state) => _buildComposerLinkPreview(state)),
                 if (_isLoadingLinkPreview)
@@ -977,40 +1157,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     padding: EdgeInsets.only(bottom: 8),
                     child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
                   ),
-                BlocBuilder<ComposeBloc, ComposeState>(
-                  builder: (context, state) {
-                    if (!state.hasScheduledTime) return const SizedBox.shrink();
-
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.schedule, size: 16, color: theme.colorScheme.onPrimaryContainer),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Scheduled for ${DateFormat('MMM d, h:mm a').format(state.scheduledAt!)}',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.copyWith(color: theme.colorScheme.onPrimaryContainer),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () {
-                              context.read<ComposeBloc>().add(const ScheduleCleared());
-                            },
-                            child: Icon(Icons.close, size: 16, color: theme.colorScheme.onPrimaryContainer),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                BlocBuilder<ComposeBloc, ComposeState>(builder: (context, state) => _buildScheduledPill(state)),
 
                 BlocBuilder<ComposeBloc, ComposeState>(
                   builder: (context, state) {
@@ -1019,78 +1166,80 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     }
                     if (state.mediaAttachments.isEmpty) return const SizedBox.shrink();
 
-                    return Container(
-                      height: 120,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(68, 0, 16, 16),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         itemCount: state.mediaAttachments.length,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 4 / 3,
+                        ),
                         itemBuilder: (context, index) {
                           final attachment = state.mediaAttachments[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Stack(
-                              children: [
-                                ClipRRect(
+                          return Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Positioned.fill(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.surfaceContainerLow,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const SizedBox.expand(),
+                                ),
+                              ),
+                              Positioned.fill(
+                                child: ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: Image.file(
-                                    File(attachment.localPath),
-                                    width: 120,
-                                    height: 120,
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: Image.file(File(attachment.localPath), fit: BoxFit.cover),
                                 ),
-                                Positioned(
-                                  left: 8,
-                                  bottom: 8,
-                                  child: Material(
-                                    color: attachment.altText.isNotEmpty ? theme.colorScheme.primary : Colors.black54,
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(8),
-                                      onTap: () => _showAltTextDialog(index, attachment),
-                                      child: ConstrainedBox(
-                                        constraints: const BoxConstraints(minWidth: 44, minHeight: 40),
-                                        child: Center(
-                                          child: Text(
-                                            'ALT',
-                                            style: theme.textTheme.labelSmall?.copyWith(
-                                              color: attachment.altText.isNotEmpty
-                                                  ? theme.colorScheme.onPrimary
-                                                  : Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                              ),
+                              Positioned(
+                                left: 6,
+                                bottom: 6,
+                                child: Material(
+                                  color: attachment.altText.isNotEmpty ? theme.colorScheme.primary : Colors.black54,
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(4),
+                                    onTap: () => _showAltTextDialog(index, attachment),
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(minWidth: 40, minHeight: 30),
+                                      child: Center(
+                                        child: Text(
+                                          'ALT',
+                                          style: theme.textTheme.labelSmall?.copyWith(
+                                            color: attachment.altText.isNotEmpty
+                                                ? theme.colorScheme.onPrimary
+                                                : Colors.white,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: SizedBox(
-                                    width: 40,
-                                    height: 40,
-                                    child: Center(
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          context.read<ComposeBloc>().add(MediaRemoved(index));
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: const BoxDecoration(
-                                            color: Colors.black54,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Icon(Icons.close, size: 16, color: Colors.white),
-                                        ),
-                                      ),
-                                    ),
+                              ),
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: SizedBox(
+                                  width: 32,
+                                  height: 32,
+                                  child: IconButton(
+                                    padding: EdgeInsets.zero,
+                                    style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                                    onPressed: () => context.read<ComposeBloc>().add(MediaRemoved(index)),
+                                    icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                    tooltip: 'Remove image',
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           );
                         },
                       ),
@@ -1106,10 +1255,10 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     if (video == null) return const SizedBox.shrink();
 
                     return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      margin: const EdgeInsets.fromLTRB(68, 0, 16, 16),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
+                        color: theme.colorScheme.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: video.hasError ? theme.colorScheme.error : theme.dividerColor),
                       ),
@@ -1158,6 +1307,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                         ? theme.colorScheme.error
                                         : theme.colorScheme.onSurfaceVariant,
                                   ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 if (video.isActive && video.uploadProgress > 0) ...[
                                   const SizedBox(height: 4),
@@ -1196,62 +1347,70 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       ? const SizedBox.shrink()
                       : (_showDrafts ? _buildDraftsPanel() : const SizedBox.shrink()),
                 ),
-                const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: theme.dividerColor)),
+                    color: theme.colorScheme.surface,
+                    border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: SafeArea(
+                    top: false,
                     child: Row(
                       children: [
                         BlocBuilder<ComposeBloc, ComposeState>(
                           builder: (context, state) {
                             if (state.isEditing) return const SizedBox.shrink();
-                            return IconButton(
-                              onPressed: state.canAddMoreMedia ? _pickImage : null,
-                              icon: Icon(
-                                Icons.image_outlined,
-                                color: state.canAddMoreMedia
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                              ),
+                            return _buildToolbarIconButton(
+                              icon: Icons.image_outlined,
                               tooltip: 'Add image',
+                              onPressed: state.canAddMoreMedia ? _pickImage : null,
                             );
                           },
                         ),
                         BlocBuilder<ComposeBloc, ComposeState>(
                           builder: (context, state) {
                             if (state.isEditing) return const SizedBox.shrink();
-                            return IconButton(
-                              onPressed: state.canAddVideo ? _pickVideo : null,
-                              icon: Icon(
-                                Icons.videocam_outlined,
-                                color: state.canAddVideo
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                              ),
+                            return _buildToolbarIconButton(
+                              icon: Icons.videocam_outlined,
                               tooltip: 'Add video',
+                              onPressed: state.canAddVideo ? _pickVideo : null,
                             );
                           },
                         ),
                         BlocBuilder<ComposeBloc, ComposeState>(
                           builder: (context, state) {
                             if (state.isEditing) return const SizedBox.shrink();
-                            return IconButton(
-                              onPressed: _toggleDrafts,
-                              icon: Icon(Icons.drive_file_rename_outline, color: theme.colorScheme.primary),
+                            final hasDraftableContent =
+                                state.text.trim().isNotEmpty ||
+                                state.hasMedia ||
+                                state.hasVideo ||
+                                state.hasScheduledTime;
+                            return _buildToolbarIconButton(
+                              icon: Icons.save_outlined,
+                              tooltip: 'Save draft',
+                              onPressed: hasDraftableContent ? _saveDraft : null,
+                            );
+                          },
+                        ),
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) {
+                            if (state.isEditing) return const SizedBox.shrink();
+                            return _buildToolbarIconButton(
+                              icon: Icons.drive_file_rename_outline,
                               tooltip: 'Drafts',
+                              onPressed: _toggleDrafts,
+                              isActive: _showDrafts,
                             );
                           },
                         ),
                         BlocBuilder<ComposeBloc, ComposeState>(
                           builder: (context, state) {
                             if (state.isEditing) return const SizedBox.shrink();
-                            return IconButton(
-                              onPressed: _showSchedulePicker,
-                              icon: Icon(Icons.schedule, color: theme.colorScheme.primary),
+                            return _buildToolbarIconButton(
+                              icon: Icons.schedule,
                               tooltip: 'Schedule',
+                              onPressed: _showSchedulePicker,
+                              isActive: state.hasScheduledTime,
                             );
                           },
                         ),
@@ -1268,6 +1427,75 @@ class _ComposeScreenState extends State<ComposeScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DraftListItem extends StatelessWidget {
+  const _DraftListItem({required this.draft, required this.formattedTime, required this.onTap, required this.onDelete});
+
+  final DraftEntry draft;
+  final String formattedTime;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 11, 8, 11),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    draft.content.isEmpty ? '(No text)' : draft.content,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Text(
+                        formattedTime,
+                        style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                      if (draft.scheduledAt != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: colorScheme.primary, borderRadius: BorderRadius.circular(4)),
+                          child: Text(
+                            'Scheduled',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.delete_outline, color: colorScheme.error),
+              onPressed: onDelete,
+              tooltip: 'Delete draft',
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
         ),
       ),
     );
