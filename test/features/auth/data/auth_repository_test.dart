@@ -724,16 +724,48 @@ void main() {
     });
 
     group('logout', () {
-      test('should clear session', () async {
-        when(() => mockDatabase.getActiveAccount()).thenAnswer((_) async => null);
-        when(() => mockDatabase.deleteAllAccounts()).thenAnswer((_) async => 1);
+      test('removes only the active account session', () async {
+        final account = Account(
+          did: 'did:plc:active',
+          handle: 'active.bsky.social',
+          service: null,
+          oauthService: null,
+          accessToken: 'access_token',
+          refreshToken: null,
+          dpopPublicKey: null,
+          dpopPrivateKey: null,
+          dpopNonce: null,
+          displayName: 'Active User',
+          expiresAt: null,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        when(() => mockDatabase.getActiveAccount()).thenAnswer((_) async => account);
+        when(() => mockDatabase.deleteAccount(account.did)).thenAnswer((_) async => 1);
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => account.did);
         when(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).thenAnswer((_) async => 1);
 
         await authRepository.logout();
 
         verify(() => mockDatabase.getActiveAccount()).called(1);
-        verify(() => mockDatabase.deleteAllAccounts()).called(1);
+        verify(() => mockDatabase.deleteAccount(account.did)).called(1);
         verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
+        verifyNever(() => mockDatabase.deleteAllAccounts());
+      });
+
+      test('clears stale active account setting when no active account exists', () async {
+        when(() => mockDatabase.getActiveAccount()).thenAnswer((_) async => null);
+        when(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).thenAnswer((_) async => 1);
+
+        await authRepository.logout();
+
+        verify(() => mockDatabase.getActiveAccount()).called(1);
+        verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
+        verifyNever(() => mockDatabase.deleteAllAccounts());
+        verifyNever(() => mockDatabase.deleteAccount(any()));
       });
     });
 

@@ -1,17 +1,21 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({this.typeaheadRepository, super.key});
@@ -26,15 +30,52 @@ class _LoginScreenState extends State<LoginScreen> {
   final _handleController = TextEditingController();
   final _appPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final Map<String, Future<String?>> _avatarFutureByDid = <String, Future<String?>>{};
   bool _showDebugForm = false;
   bool _isPersistingProvider = false;
+  bool _didRequestAccountsLoad = false;
+  bool _didLogMissingAccountSwitcherProvider = false;
+  bool _didLogAvatarLookupFailure = false;
   late final TypeaheadRepository _typeaheadRepository;
+
+  AccountSwitcherCubit? _maybeAccountSwitcherCubit(BuildContext context) {
+    try {
+      return context.read<AccountSwitcherCubit>();
+    } catch (_) {
+      if (kDebugMode && !_didLogMissingAccountSwitcherProvider) {
+        debugPrint('LoginScreen: AccountSwitcherCubit unavailable for login route.');
+        _didLogMissingAccountSwitcherProvider = true;
+      }
+      return null;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _typeaheadRepository =
         widget.typeaheadRepository ?? TypeaheadRepository(provider: TypeaheadRepository.communityProvider);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didRequestAccountsLoad) {
+      return;
+    }
+
+    final accountSwitcherCubit = _maybeAccountSwitcherCubit(context);
+    if (accountSwitcherCubit == null) {
+      return;
+    }
+
+    _didRequestAccountsLoad = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      unawaited(accountSwitcherCubit.loadAccounts());
+    });
   }
 
   @override
@@ -111,10 +152,93 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _onRemoveSavedAccount(Account account) async {
+    final cubit = _maybeAccountSwitcherCubit(context);
+    if (cubit == null) {
+      return;
+    }
+
+    final remove = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove Account'),
+        content: Text('Remove @${account.handle} from this device?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Remove')),
+        ],
+      ),
+    );
+
+    if (remove != true) {
+      return;
+    }
+
+    final result = await cubit.removeAccount(account.did);
+    if (!result.removed) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to remove account right now.')));
+      return;
+    }
+
+    final switchedTokens = result.switchedTokens;
+    if (switchedTokens != null && mounted) {
+      context.read<AuthBloc>().add(SessionRestored(tokens: switchedTokens));
+    }
+
+    if (result.requiresSignIn && mounted) {
+      context.read<AuthBloc>().add(const SessionCleared());
+      final router = GoRouter.maybeOf(context);
+      if (router != null) {
+        router.go('/login?reauth=1');
+      }
+    }
+  }
+
+  Future<String?> _loadCachedAvatarUrlForDid(String did) async {
+    try {
+      final database = context.read<AppDatabase>();
+      final profile = await (database.select(
+        database.cachedProfiles,
+      )..where((profile) => profile.did.equals(did))).getSingleOrNull();
+      if (profile == null) {
+        return null;
+      }
+
+      final json = jsonDecode(profile.payload);
+      if (json is! Map<String, dynamic>) {
+        return null;
+      }
+
+      final avatar = json['avatar'];
+      if (avatar is String && avatar.isNotEmpty) {
+        return avatar;
+      }
+      return null;
+    } catch (_) {
+      if (kDebugMode && !_didLogAvatarLookupFailure) {
+        debugPrint('LoginScreen: cached avatar lookup unavailable.');
+        _didLogAvatarLookupFailure = true;
+      }
+      return null;
+    }
+  }
+
+  Future<String?> _avatarFutureForDid(String did) =>
+      _avatarFutureByDid.putIfAbsent(did, () => _loadCachedAvatarUrlForDid(did));
+
+  void _pruneAvatarFutureCache(Iterable<String> activeDids) {
+    final activeDidSet = activeDids.toSet();
+    _avatarFutureByDid.removeWhere((did, _) => !activeDidSet.contains(did));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final accountSwitcherCubit = _maybeAccountSwitcherCubit(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -270,6 +394,37 @@ class _LoginScreenState extends State<LoginScreen> {
                             );
                           },
                         ),
+                        const SizedBox(height: 16),
+                        if (accountSwitcherCubit != null)
+                          BlocProvider.value(
+                            value: accountSwitcherCubit,
+                            child: BlocBuilder<AccountSwitcherCubit, AccountSwitcherState>(
+                              builder: (context, state) {
+                                if (state.status == AccountSwitcherStatus.loading ||
+                                    state.status == AccountSwitcherStatus.initial) {
+                                  return const _SavedAccountsLoading();
+                                }
+
+                                if (state.accounts.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                _pruneAvatarFutureCache(state.accounts.map((account) => account.did));
+                                return _SavedAccountsSection(
+                                  accounts: state.accounts,
+                                  avatarFutureForDid: _avatarFutureForDid,
+                                  onSelect: (account) {
+                                    _handleController.text = account.handle;
+                                    _handleController.selection = TextSelection.collapsed(
+                                      offset: _handleController.text.length,
+                                    );
+                                  },
+                                  onRemove: (account) {
+                                    unawaited(_onRemoveSavedAccount(account));
+                                  },
+                                );
+                              },
+                            ),
+                          ),
                         if (kDebugMode) ...[
                           const SizedBox(height: 24),
                           Row(
@@ -398,6 +553,122 @@ class _ProviderTabLabel extends StatelessWidget {
       Text(name),
     ],
   );
+}
+
+class _SavedAccountsSection extends StatelessWidget {
+  const _SavedAccountsSection({
+    required this.accounts,
+    required this.avatarFutureForDid,
+    required this.onSelect,
+    required this.onRemove,
+  });
+
+  final List<Account> accounts;
+  final Future<String?> Function(String did) avatarFutureForDid;
+  final ValueChanged<Account> onSelect;
+  final ValueChanged<Account> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Saved accounts', style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: Column(
+            children: [
+              for (var index = 0; index < accounts.length; index++) ...[
+                _SavedAccountTile(
+                  key: ValueKey<String>('saved-account-${accounts[index].did}'),
+                  account: accounts[index],
+                  avatarFutureForDid: avatarFutureForDid,
+                  onTap: () => onSelect(accounts[index]),
+                  onRemove: () => onRemove(accounts[index]),
+                ),
+                if (index != accounts.length - 1) Divider(height: 1, color: colorScheme.outlineVariant),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SavedAccountsLoading extends StatelessWidget {
+  const _SavedAccountsLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Saved accounts', style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                SizedBox(width: 10),
+                Text('Loading saved accounts...'),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SavedAccountTile extends StatelessWidget {
+  const _SavedAccountTile({
+    required this.account,
+    required this.avatarFutureForDid,
+    required this.onTap,
+    required this.onRemove,
+    super.key,
+  });
+
+  final Account account;
+  final Future<String?> Function(String did) avatarFutureForDid;
+  final VoidCallback onTap;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = account.displayName ?? account.handle;
+    return FutureBuilder<String?>(
+      future: avatarFutureForDid(account.did),
+      builder: (context, snapshot) {
+        return ListTile(
+          dense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+          leading: ProfileAvatar(size: 36, fallbackText: label, imageUrl: snapshot.data),
+          title: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: Text('@${account.handle}', maxLines: 1, overflow: TextOverflow.ellipsis),
+          trailing: IconButton(tooltip: 'Remove account', icon: const Icon(Icons.close_rounded), onPressed: onRemove),
+          onTap: onTap,
+        );
+      },
+    );
+  }
 }
 
 class _LogoCard extends StatelessWidget {
