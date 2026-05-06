@@ -120,6 +120,7 @@ class AuthRepository {
       displayName: account.displayName,
       service: account.service,
       oauthService: authMethod == AuthMethod.oauth ? normalizeAtprotoServiceHost(account.oauthService) : null,
+      oauthClientId: authMethod == AuthMethod.oauth ? account.oauthClientId : null,
       dpopNonce: account.dpopNonce,
       dpopPublicKey: account.dpopPublicKey,
       dpopPrivateKey: account.dpopPrivateKey,
@@ -163,6 +164,7 @@ class AuthRepository {
         displayName: tokens.displayName != null ? Value(tokens.displayName) : const Value.absent(),
         service: tokens.service != null ? Value(tokens.service) : const Value.absent(),
         oauthService: tokens.oauthService != null ? Value(tokens.oauthService) : const Value.absent(),
+        oauthClientId: tokens.oauthClientId != null ? Value(tokens.oauthClientId) : const Value.absent(),
         accessToken: Value(tokens.accessToken),
         refreshToken: tokens.refreshToken != null ? Value(tokens.refreshToken) : const Value.absent(),
         dpopPublicKey: tokens.dpopPublicKey != null ? Value(tokens.dpopPublicKey) : const Value.absent(),
@@ -342,7 +344,8 @@ class AuthRepository {
       }
 
       try {
-        final metadata = await _loadClientMetadata(kClientId);
+        final metadataClientId = _resolveOauthClientId(currentSession.oauthClientId);
+        final metadata = await _loadClientMetadata(metadataClientId);
         final restoredSession = _restoreOAuthSession(
           currentSession: currentSession,
           publicKey: publicKey,
@@ -401,6 +404,7 @@ class AuthRepository {
           fallbackHandle: currentSession.handle,
           fallbackPdsHost: fallbackPdsHost,
           oauthService: successfulOauthService ?? currentSession.oauthService ?? _oauthService,
+          oauthClientId: currentSession.oauthClientId,
         );
 
         await saveSession(
@@ -486,6 +490,7 @@ class AuthRepository {
       fallbackHandle: fallbackHandle,
       fallbackPdsHost: _fallbackService,
       oauthService: service,
+      oauthClientId: oauthClient.metadata.clientId,
     );
     await saveSession(tokens, makeActive: true);
     log.i('AuthRepository: OAuth login completed for ${tokens.handle}');
@@ -556,6 +561,7 @@ class AuthRepository {
     required String fallbackHandle,
     required String fallbackPdsHost,
     required String oauthService,
+    String? oauthClientId,
   }) async {
     var resolvedHandle = fallbackHandle;
     String? displayName;
@@ -569,6 +575,10 @@ class AuthRepository {
         normalizeAtprotoServiceHost(session.accessTokenJwt.iss) ??
         normalizeAtprotoServiceHost(oauthService) ??
         _oauthService;
+    final candidateOauthClientId = oauthClientId?.trim();
+    final normalizedOauthClientId = candidateOauthClientId != null && candidateOauthClientId.isNotEmpty
+        ? candidateOauthClientId
+        : kClientId;
 
     try {
       final authSession = await createAtProtoForOAuthSession(session).server.getSession();
@@ -597,6 +607,7 @@ class AuthRepository {
       displayName: displayName,
       service: pdsHost,
       oauthService: normalizedOauthService,
+      oauthClientId: normalizedOauthClientId,
       dpopNonce: session.$dPoPNonce,
       dpopPublicKey: session.$publicKey,
       dpopPrivateKey: session.$privateKey,
@@ -1040,6 +1051,14 @@ class AuthRepository {
 
   static String _defaultOAuthServiceResolver() {
     return AppViewProviders.descriptorForSetting(AppViewProviders.defaultKey).entrywayUrl.host;
+  }
+
+  String _resolveOauthClientId(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return kClientId;
+    }
+    return normalized;
   }
 
   static bool _defaultFalse() => false;

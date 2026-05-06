@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:path/path.dart' as p;
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,8 +24,8 @@ class LogViewerCubit extends Cubit<LogViewerState> {
   }
 
   static const String _shareDirectoryName = 'lazurite_logs_share';
-  static const String _shareFileName = 'redacted_share.log';
-  static const String _legacyShareDirectoryPrefix = 'lazurite_logs_share_';
+  static final RegExp _datedLogFilePattern = RegExp(r'(\d{4})-(\d{2})-(\d{2})');
+  static const String _staleShareDirectoryPrefix = 'lazurite_logs_share_';
 
   final Future<File?> Function() _todaysLogFileProvider;
   final Directory Function() _systemTempDirectoryProvider;
@@ -130,7 +131,7 @@ class LogViewerCubit extends Cubit<LogViewerState> {
     }
 
     final systemTempDirectory = _systemTempDirectoryProvider();
-    await _cleanupLegacyShareTempDirectories(systemTempDirectory);
+    await _cleanupStaleShareTempDirectories(systemTempDirectory);
 
     final content = await rawFile.readAsString();
     final redactedLines = content.split('\n').map(LogRedactor.redact).join('\n');
@@ -139,12 +140,27 @@ class LogViewerCubit extends Cubit<LogViewerState> {
       await shareDirectory.create(recursive: true);
     }
 
-    final redactedFile = File('${shareDirectory.path}/$_shareFileName');
+    final shareFileName = _buildShareFileName(rawFile);
+    final redactedFile = File('${shareDirectory.path}/$shareFileName');
     await redactedFile.writeAsString(redactedLines, flush: true);
     return redactedFile;
   }
 
-  Future<void> _cleanupLegacyShareTempDirectories(Directory systemTempDirectory) async {
+  String _buildShareFileName(File sourceFile) {
+    final basename = p.basename(sourceFile.path);
+    final match = _datedLogFilePattern.firstMatch(basename);
+    if (match != null) {
+      return 'lazurite_logs_${match.group(1)}_${match.group(2)}_${match.group(3)}_share.log';
+    }
+
+    final now = DateTime.now();
+    final year = now.year.toString().padLeft(4, '0');
+    final month = now.month.toString().padLeft(2, '0');
+    final day = now.day.toString().padLeft(2, '0');
+    return 'lazurite_logs_${year}_${month}_${day}_share.log';
+  }
+
+  Future<void> _cleanupStaleShareTempDirectories(Directory systemTempDirectory) async {
     if (!await systemTempDirectory.exists()) {
       return;
     }
@@ -157,14 +173,18 @@ class LogViewerCubit extends Cubit<LogViewerState> {
       final name = entity.uri.pathSegments.isNotEmpty
           ? entity.uri.pathSegments[entity.uri.pathSegments.length - 2]
           : '';
-      if (!name.startsWith(_legacyShareDirectoryPrefix)) {
+      if (!name.startsWith(_staleShareDirectoryPrefix)) {
         continue;
       }
 
       try {
         await entity.delete(recursive: true);
-      } catch (_) {
-        // Best-effort cleanup only.
+      } catch (error, stackTrace) {
+        log.d(
+          'LogViewerCubit: could not remove stale temp share directory ${entity.path}.',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
     }
   }

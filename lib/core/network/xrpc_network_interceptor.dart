@@ -32,34 +32,44 @@ abstract final class XrpcNetworkInterceptor {
   static atp_core.GetClient wrapGetClient([atp_core.GetClient? baseClient]) {
     final delegate = baseClient ?? http.get;
     return (Uri url, {Map<String, String>? headers}) async {
-      final metadata = metadataFor(url, headers: headers);
-      final stopwatch = Stopwatch()..start();
-      log.t(_requestLogLine(httpMethod: 'GET', metadata: metadata));
-      final forced = _takeForcedUnauthorized(method: 'GET', url: url, metadata: metadata);
-      if (forced != null) {
-        _logResponse(
-          httpMethod: 'GET',
-          metadata: metadata,
-          statusCode: forced.statusCode,
-          elapsed: stopwatch.elapsed,
-        );
-        return forced;
+      final normalizedHeaders = normalizeOutgoingHeaders(headers);
+      XrpcRequestMetadata? metadata;
+      Stopwatch? stopwatch;
+
+      if (kDebugMode) {
+        metadata = metadataFor(url, headers: normalizedHeaders);
+        stopwatch = Stopwatch()..start();
+        _trace(_requestLogLine(httpMethod: 'GET', metadata: metadata));
+        final forced = _takeForcedUnauthorized(method: 'GET', url: url, metadata: metadata);
+        if (forced != null) {
+          _logResponse(
+            httpMethod: 'GET',
+            metadata: metadata,
+            statusCode: forced.statusCode,
+            elapsed: stopwatch.elapsed,
+          );
+          return forced;
+        }
       }
       try {
-        final response = await delegate(url, headers: headers);
-        _logResponse(
-          httpMethod: 'GET',
-          metadata: metadata,
-          statusCode: response.statusCode,
-          elapsed: stopwatch.elapsed,
-        );
+        final response = await delegate(url, headers: normalizedHeaders);
+        if (kDebugMode && metadata != null && stopwatch != null) {
+          _logResponse(
+            httpMethod: 'GET',
+            metadata: metadata,
+            statusCode: response.statusCode,
+            elapsed: stopwatch.elapsed,
+          );
+        }
         return response;
       } catch (error, stackTrace) {
-        log.e(
-          _failureLogLine(httpMethod: 'GET', metadata: metadata, elapsed: stopwatch.elapsed),
-          error: error,
-          stackTrace: stackTrace,
-        );
+        if (kDebugMode && metadata != null && stopwatch != null) {
+          _error(
+            _failureLogLine(httpMethod: 'GET', metadata: metadata, elapsed: stopwatch.elapsed),
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
         rethrow;
       }
     };
@@ -68,37 +78,77 @@ abstract final class XrpcNetworkInterceptor {
   static atp_core.PostClient wrapPostClient([atp_core.PostClient? baseClient]) {
     final delegate = baseClient ?? http.post;
     return (Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
-      final metadata = metadataFor(url, headers: headers);
-      final stopwatch = Stopwatch()..start();
-      log.t(_requestLogLine(httpMethod: 'POST', metadata: metadata));
-      final forced = _takeForcedUnauthorized(method: 'POST', url: url, metadata: metadata);
-      if (forced != null) {
-        _logResponse(
-          httpMethod: 'POST',
-          metadata: metadata,
-          statusCode: forced.statusCode,
-          elapsed: stopwatch.elapsed,
-        );
-        return forced;
+      final normalizedHeaders = normalizeOutgoingHeaders(headers);
+      XrpcRequestMetadata? metadata;
+      Stopwatch? stopwatch;
+
+      if (kDebugMode) {
+        metadata = metadataFor(url, headers: normalizedHeaders);
+        stopwatch = Stopwatch()..start();
+        _trace(_requestLogLine(httpMethod: 'POST', metadata: metadata));
+        final forced = _takeForcedUnauthorized(method: 'POST', url: url, metadata: metadata);
+        if (forced != null) {
+          _logResponse(
+            httpMethod: 'POST',
+            metadata: metadata,
+            statusCode: forced.statusCode,
+            elapsed: stopwatch.elapsed,
+          );
+          return forced;
+        }
       }
       try {
-        final response = await delegate(url, headers: headers, body: body, encoding: encoding);
-        _logResponse(
-          httpMethod: 'POST',
-          metadata: metadata,
-          statusCode: response.statusCode,
-          elapsed: stopwatch.elapsed,
-        );
+        final response = await delegate(url, headers: normalizedHeaders, body: body, encoding: encoding);
+        if (kDebugMode && metadata != null && stopwatch != null) {
+          _logResponse(
+            httpMethod: 'POST',
+            metadata: metadata,
+            statusCode: response.statusCode,
+            elapsed: stopwatch.elapsed,
+          );
+        }
         return response;
       } catch (error, stackTrace) {
-        log.e(
-          _failureLogLine(httpMethod: 'POST', metadata: metadata, elapsed: stopwatch.elapsed),
-          error: error,
-          stackTrace: stackTrace,
-        );
+        if (kDebugMode && metadata != null && stopwatch != null) {
+          _error(
+            _failureLogLine(httpMethod: 'POST', metadata: metadata, elapsed: stopwatch.elapsed),
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
         rethrow;
       }
     };
+  }
+
+  @visibleForTesting
+  static Map<String, String>? normalizeOutgoingHeaders(Map<String, String>? headers) {
+    if (headers == null || headers.isEmpty) {
+      return headers;
+    }
+
+    var dpopKey = '';
+    var dpopValue = '';
+    for (final entry in headers.entries) {
+      if (entry.key.toLowerCase() == 'dpop') {
+        dpopKey = entry.key;
+        dpopValue = entry.value;
+        break;
+      }
+    }
+    if (dpopKey.isEmpty) {
+      return headers;
+    }
+
+    final normalizedDpop = _normalizeDpopProof(dpopValue);
+    if (normalizedDpop == dpopValue) {
+      return headers;
+    }
+
+    final normalized = Map<String, String>.from(headers);
+    normalized[dpopKey] = normalizedDpop;
+    _trace('XRPC Request: normalized DPoP proof encoding to base64url');
+    return normalized;
   }
 
   @visibleForTesting
@@ -131,6 +181,48 @@ abstract final class XrpcNetworkInterceptor {
     return null;
   }
 
+  static String _normalizeDpopProof(String proof) {
+    final trimmed = proof.trim();
+    if (trimmed.isEmpty) {
+      return proof;
+    }
+
+    final segments = trimmed.split('.');
+    if (segments.length != 3) {
+      return proof;
+    }
+
+    final decodedSignature = _decodeJwtSegment(segments[2]);
+    if (decodedSignature == null) {
+      return proof;
+    }
+
+    final normalizedSignature = base64UrlEncode(decodedSignature).replaceAll('=', '');
+    if (normalizedSignature == segments[2]) {
+      return proof;
+    }
+
+    segments[2] = normalizedSignature;
+    return segments.join('.');
+  }
+
+  static List<int>? _decodeJwtSegment(String segment) {
+    final normalizedSegment = segment.trim();
+    if (normalizedSegment.isEmpty) {
+      return null;
+    }
+
+    try {
+      return base64Url.decode(base64Url.normalize(normalizedSegment));
+    } catch (_) {}
+
+    try {
+      return base64.decode(base64.normalize(normalizedSegment));
+    } catch (_) {}
+
+    return null;
+  }
+
   static http.Response? _takeForcedUnauthorized({
     required String method,
     required Uri url,
@@ -141,7 +233,7 @@ abstract final class XrpcNetworkInterceptor {
     }
 
     _forcedUnauthorizedResponses -= 1;
-    log.w(
+    _warn(
       'XRPC Debug Hook: forcing 401 for method=$method, PDS=${metadata.pdsHost}, '
       'AppView=${metadata.appView}, XRPC method=${metadata.xrpcMethod}',
     );
@@ -190,9 +282,30 @@ abstract final class XrpcNetworkInterceptor {
       elapsed: elapsed,
     );
     if (statusCode >= 400) {
-      log.w(message);
+      _warn(message);
+      return;
+    }
+    _trace(message);
+  }
+
+  static void _trace(String message) {
+    if (!kDebugMode) {
       return;
     }
     log.t(message);
+  }
+
+  static void _warn(String message, {Object? error, StackTrace? stackTrace}) {
+    if (!kDebugMode) {
+      return;
+    }
+    log.w(message, error: error, stackTrace: stackTrace);
+  }
+
+  static void _error(String message, {Object? error, StackTrace? stackTrace}) {
+    if (!kDebugMode) {
+      return;
+    }
+    log.e(message, error: error, stackTrace: stackTrace);
   }
 }

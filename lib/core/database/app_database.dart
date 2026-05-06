@@ -37,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
   static const activeAccountDidSettingKey = 'active_account_did';
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -169,15 +169,16 @@ class AppDatabase extends _$AppDatabase {
         await _createPostSearchFtsSchema();
         await _rebuildPostSearchFts();
       }
+      if (from < 23) {
+        await migrator.addColumn(accounts, accounts.oauthClientId);
+      }
     },
   );
 
-  static QueryExecutor _openConnection() {
-    return driftDatabase(
-      name: 'lazurite_db',
-      native: const DriftNativeOptions(databaseDirectory: getApplicationSupportDirectory),
-    );
-  }
+  static QueryExecutor _openConnection() => driftDatabase(
+    name: 'lazurite_db',
+    native: const DriftNativeOptions(databaseDirectory: getApplicationSupportDirectory),
+  );
 
   Future<Account?> getAccount(String did) => (select(accounts)..where((a) => a.did.equals(did))).getSingleOrNull();
 
