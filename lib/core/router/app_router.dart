@@ -403,26 +403,6 @@ class AppRouter {
           );
         },
       ),
-      GoRoute(
-        path: '/profile-connections',
-        pageBuilder: (context, state) {
-          final actor = Uri.decodeComponent(state.uri.queryParameters['actor'] ?? '').trim();
-          final handle = Uri.decodeComponent(state.uri.queryParameters['handle'] ?? '').trim();
-          final initialTab = ProfileConnectionsTabX.fromRouteValue(state.uri.queryParameters['tab']);
-          return _page(
-            context,
-            state,
-            BlocProvider(
-              create: (_) => ProfileConnectionsCubit(repository: context.read<ProfileRepository>(), actor: actor),
-              child: ProfileConnectionsScreen(
-                actor: actor,
-                handle: handle.isEmpty ? null : handle,
-                initialTab: initialTab,
-              ),
-            ),
-          );
-        },
-      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           if (!context.read<AuthBloc>().state.isAuthenticated) {
@@ -551,6 +531,13 @@ class AppRouter {
               GoRoute(
                 path: '/profile/me',
                 pageBuilder: (context, state) => _page(context, state, const ProfileScreen(actor: 'me')),
+                routes: [
+                  GoRoute(
+                    path: 'connections',
+                    pageBuilder: (context, state) =>
+                        _page(context, state, _buildProfileConnectionsRoute(context, state, context.read<String>())),
+                  ),
+                ],
               ),
               GoRoute(
                 path: '/profile/:actor',
@@ -567,6 +554,18 @@ class AppRouter {
                   ProfileScreen(actor: Uri.decodeComponent(state.pathParameters['actor'] ?? ''), showBackButton: true),
                 ),
                 routes: [
+                  GoRoute(
+                    path: 'connections',
+                    pageBuilder: (context, state) => _page(
+                      context,
+                      state,
+                      _buildProfileConnectionsRoute(
+                        context,
+                        state,
+                        Uri.decodeComponent(state.pathParameters['actor'] ?? ''),
+                      ),
+                    ),
+                  ),
                   GoRoute(
                     path: 'search-posts',
                     pageBuilder: (context, state) {
@@ -620,6 +619,18 @@ class AppRouter {
         notificationRepository: context.read<NotificationRepository>(),
       ),
       child: child,
+    );
+  }
+
+  Widget _buildProfileConnectionsRoute(BuildContext context, GoRouterState state, String actor) {
+    final normalizedActor = actor.trim();
+    final initialTab = ProfileConnectionsTabX.fromRouteValue(state.uri.queryParameters['tab']);
+    final handle = normalizedActor.startsWith('did:') || normalizedActor == context.read<String>()
+        ? null
+        : normalizedActor;
+    return BlocProvider(
+      create: (_) => ProfileConnectionsCubit(repository: context.read<ProfileRepository>(), actor: normalizedActor),
+      child: ProfileConnectionsScreen(actor: normalizedActor, handle: handle, initialTab: initialTab),
     );
   }
 

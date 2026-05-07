@@ -313,7 +313,7 @@ void main() {
   testWidgets('opens profile connections route with requested initial tab', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    when(() => profileRepository.getFollowers(actor: tokens.did, cursor: null, limit: 50)).thenAnswer(
+    when(() => profileRepository.getFollowers(actor: tokens.handle, cursor: null, limit: 50)).thenAnswer(
       (_) async => const ProfileConnectionsPage(
         subject: ProfileView(did: 'did:plc:me', handle: 'me.bsky.social'),
         profiles: [],
@@ -322,11 +322,11 @@ void main() {
     final router = AppRouter(authBloc: authBloc).router;
 
     await tester.pumpWidget(buildSubjectWithRouter(router));
-    router.go('/profile-connections?actor=${Uri.encodeComponent(tokens.did)}&handle=me.bsky.social&tab=followers');
+    router.go('/profile/${Uri.encodeComponent(tokens.handle)}/connections?tab=followers');
     await tester.pumpAndSettle();
 
     expect(find.text('@me.bsky.social'), findsOneWidget);
-    verify(() => profileRepository.getFollowers(actor: tokens.did, cursor: null, limit: 50)).called(1);
+    verify(() => profileRepository.getFollowers(actor: tokens.handle, cursor: null, limit: 50)).called(1);
 
     router.dispose();
   });

@@ -7,8 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_web_links.dart';
 import 'package:lazurite/core/router/app_shell.dart';
@@ -931,9 +931,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   void _openConnections(BuildContext context, ProfileViewDetailed profile, ProfileConnectionsTab tab) {
-    final encodedActor = Uri.encodeComponent(profile.did);
-    final encodedHandle = Uri.encodeComponent(profile.handle);
-    context.push('/profile-connections?actor=$encodedActor&handle=$encodedHandle&tab=${tab.routeValue}');
+    final routeActor = profile.handle.trim().isNotEmpty ? profile.handle.trim() : profile.did;
+    final encodedActor = Uri.encodeComponent(routeActor);
+    context.push('/profile/$encodedActor/connections?tab=${tab.routeValue}');
   }
 
   Widget _buildProfileActions(BuildContext context, ProfileViewDetailed profile) {

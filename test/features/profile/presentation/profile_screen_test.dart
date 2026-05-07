@@ -206,16 +206,9 @@ void main() {
           ),
         ),
         GoRoute(
-          path: '/profile-connections',
-          builder: (context, state) => Scaffold(
-            body: Text(
-              [
-                state.uri.queryParameters['tab'],
-                state.uri.queryParameters['actor'],
-                state.uri.queryParameters['handle'],
-              ].join(' '),
-            ),
-          ),
+          path: '/profile/:actor/connections',
+          builder: (context, state) =>
+              Scaffold(body: Text([state.uri.queryParameters['tab'], state.pathParameters['actor']].join(' '))),
         ),
       ],
     );
@@ -226,7 +219,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('profile_following_stat')));
     await tester.pumpAndSettle();
 
-    expect(find.text('following did:plc:me me.bsky.social'), findsOneWidget);
+    expect(find.text('following me.bsky.social'), findsOneWidget);
 
     router.dispose();
   });
