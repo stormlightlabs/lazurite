@@ -17,10 +17,7 @@ void main() {
               refreshStarted = true;
               return completer.future;
             },
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: const [SizedBox(height: 1200)],
-            ),
+            child: ListView(physics: const AlwaysScrollableScrollPhysics(), children: const [SizedBox(height: 1200)]),
           ),
         ),
       ),

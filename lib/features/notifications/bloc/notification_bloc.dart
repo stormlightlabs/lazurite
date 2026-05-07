@@ -15,10 +15,11 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   }) : _notificationDomainService =
            notificationDomainService ??
            NotificationDomainService(
-             notificationRepository: notificationRepository ??
+             notificationRepository:
+                 notificationRepository ??
                  (throw ArgumentError('Either notificationDomainService or notificationRepository is required')),
            ),
-      super(const NotificationState.initial()) {
+       super(const NotificationState.initial()) {
     on<NotificationsRequested>(_onNotificationsRequested);
     on<NotificationsRefreshed>(_onNotificationsRefreshed);
     on<NotificationsPageLoaded>(_onNotificationsPageLoaded);

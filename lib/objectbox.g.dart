@@ -9,8 +9,7 @@
 import 'dart:typed_data';
 
 import 'package:flat_buffers/flat_buffers.dart' as fb;
-import 'package:objectbox/internal.dart'
-    as obx_int; // generated code can access "internal" functionality
+import 'package:objectbox/internal.dart' as obx_int; // generated code can access "internal" functionality
 import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
@@ -25,12 +24,7 @@ final _entities = <obx_int.ModelEntity>[
     lastPropertyId: const obx_int.IdUid(7, 8430059363224486218),
     flags: 0,
     properties: <obx_int.ModelProperty>[
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 2023883478741600837),
-        name: 'id',
-        type: 6,
-        flags: 1,
-      ),
+      obx_int.ModelProperty(id: const obx_int.IdUid(1, 2023883478741600837), name: 'id', type: 6, flags: 1),
       obx_int.ModelProperty(
         id: const obx_int.IdUid(2, 3549521277099340373),
         name: 'postUri',
@@ -38,24 +32,9 @@ final _entities = <obx_int.ModelEntity>[
         flags: 2080,
         indexId: const obx_int.IdUid(1, 4682420966856057445),
       ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 115219216497020018),
-        name: 'accountDid',
-        type: 9,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(4, 2084589381727568380),
-        name: 'source',
-        type: 9,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(5, 4494373135934411874),
-        name: 'indexedText',
-        type: 9,
-        flags: 0,
-      ),
+      obx_int.ModelProperty(id: const obx_int.IdUid(3, 115219216497020018), name: 'accountDid', type: 9, flags: 0),
+      obx_int.ModelProperty(id: const obx_int.IdUid(4, 2084589381727568380), name: 'source', type: 9, flags: 0),
+      obx_int.ModelProperty(id: const obx_int.IdUid(5, 4494373135934411874), name: 'indexedText', type: 9, flags: 0),
       obx_int.ModelProperty(
         id: const obx_int.IdUid(6, 7790743710249736574),
         name: 'embedding',
@@ -64,12 +43,7 @@ final _entities = <obx_int.ModelEntity>[
         indexId: const obx_int.IdUid(2, 7649439792027952584),
         hnswParams: obx_int.ModelHnswParams(dimensions: 384, distanceType: 2),
       ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(7, 8430059363224486218),
-        name: 'embeddedAt',
-        type: 12,
-        flags: 0,
-      ),
+      obx_int.ModelProperty(id: const obx_int.IdUid(7, 8430059363224486218), name: 'embeddedAt', type: 12, flags: 0),
     ],
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
@@ -146,9 +120,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final accountDidOffset = fbb.writeString(object.accountDid);
         final sourceOffset = fbb.writeString(object.source);
         final indexedTextOffset = fbb.writeString(object.indexedText);
-        final embeddingOffset = object.embedding == null
-            ? null
-            : fbb.writeListFloat32(object.embedding!);
+        final embeddingOffset = object.embedding == null ? null : fbb.writeListFloat32(object.embedding!);
         fbb.startTable(8);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, postUriOffset);
@@ -163,31 +135,17 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectFromFB: (obx.Store store, ByteData fbData) {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
-        final idParam = const fb.Int64Reader().vTableGet(
-          buffer,
-          rootOffset,
-          4,
-          0,
-        );
-        final postUriParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 6, '');
-        final accountDidParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 8, '');
-        final sourceParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 10, '');
-        final indexedTextParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 12, '');
+        final idParam = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
+        final postUriParam = const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 6, '');
+        final accountDidParam = const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 8, '');
+        final sourceParam = const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 10, '');
+        final indexedTextParam = const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 12, '');
         final embeddingParam = const fb.ListReader<double>(
           fb.Float32Reader(),
           lazy: false,
         ).vTableGetNullable(buffer, rootOffset, 14);
         final embeddedAtParam = DateTime.fromMicrosecondsSinceEpoch(
-          (const fb.Int64Reader().vTableGet(buffer, rootOffset, 16, 0) / 1000)
-              .round(),
+          (const fb.Int64Reader().vTableGet(buffer, rootOffset, 16, 0) / 1000).round(),
         );
         final object = EmbeddedPost(
           id: idParam,
@@ -210,37 +168,23 @@ obx_int.ModelDefinition getObjectBoxModel() {
 /// [EmbeddedPost] entity fields to define ObjectBox queries.
 class EmbeddedPost_ {
   /// See [EmbeddedPost.id].
-  static final id = obx.QueryIntegerProperty<EmbeddedPost>(
-    _entities[0].properties[0],
-  );
+  static final id = obx.QueryIntegerProperty<EmbeddedPost>(_entities[0].properties[0]);
 
   /// See [EmbeddedPost.postUri].
-  static final postUri = obx.QueryStringProperty<EmbeddedPost>(
-    _entities[0].properties[1],
-  );
+  static final postUri = obx.QueryStringProperty<EmbeddedPost>(_entities[0].properties[1]);
 
   /// See [EmbeddedPost.accountDid].
-  static final accountDid = obx.QueryStringProperty<EmbeddedPost>(
-    _entities[0].properties[2],
-  );
+  static final accountDid = obx.QueryStringProperty<EmbeddedPost>(_entities[0].properties[2]);
 
   /// See [EmbeddedPost.source].
-  static final source = obx.QueryStringProperty<EmbeddedPost>(
-    _entities[0].properties[3],
-  );
+  static final source = obx.QueryStringProperty<EmbeddedPost>(_entities[0].properties[3]);
 
   /// See [EmbeddedPost.indexedText].
-  static final indexedText = obx.QueryStringProperty<EmbeddedPost>(
-    _entities[0].properties[4],
-  );
+  static final indexedText = obx.QueryStringProperty<EmbeddedPost>(_entities[0].properties[4]);
 
   /// See [EmbeddedPost.embedding].
-  static final embedding = obx.QueryHnswProperty<EmbeddedPost>(
-    _entities[0].properties[5],
-  );
+  static final embedding = obx.QueryHnswProperty<EmbeddedPost>(_entities[0].properties[5]);
 
   /// See [EmbeddedPost.embeddedAt].
-  static final embeddedAt = obx.QueryDateNanoProperty<EmbeddedPost>(
-    _entities[0].properties[6],
-  );
+  static final embeddedAt = obx.QueryDateNanoProperty<EmbeddedPost>(_entities[0].properties[6]);
 }
