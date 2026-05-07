@@ -52,10 +52,7 @@ a:hover {
 
 .site-shell {
   min-height: 100vh;
-  background:
-    linear-gradient(180deg, rgba(125, 175, 255, 0.08), transparent 520px),
-    radial-gradient(circle at top left, rgba(8, 189, 186, 0.12), transparent 360px),
-    var(--bg-page);
+  background: var(--bg-page);
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
@@ -485,6 +482,203 @@ a:hover {
 .site-footer__copy {
   max-width: 980px;
   margin-inline: auto;
+}
+
+.legal-page,
+.oauth-page {
+  min-height: 100vh;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.page-container--legal {
+  width: min(100%, 980px);
+  flex: 1;
+  padding-block: clamp(1.5rem, 4vw, 3rem);
+}
+
+.utility-nav {
+  margin-bottom: 2rem;
+}
+
+.utility-nav a {
+  color: var(--brand-blue);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.brand-mark--legal {
+  font-size: clamp(2.25rem, 6vw, 2.75rem);
+}
+
+.legal-document {
+  margin-top: 1.25rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 120px), var(--surface-card);
+  padding: clamp(1.35rem, 4vw, 2.25rem);
+}
+
+.legal-document__header {
+  margin-bottom: 1.5rem;
+}
+
+.legal-document__title {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 4vw, 2.15rem);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+
+.legal-document__meta,
+.legal-document__lead,
+.legal-document__content p,
+.legal-document__content li,
+.oauth-card__hint {
+  color: var(--text-secondary);
+}
+
+.legal-document__meta {
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.legal-document__lead {
+  margin-top: 1.25rem;
+  font-size: 0.98rem;
+  line-height: 1.7;
+}
+
+.legal-document__alert {
+  margin-top: 1.25rem;
+  border: 1px solid rgba(255, 143, 163, 0.35);
+  border-radius: var(--radius-card);
+  background: rgba(255, 143, 163, 0.12);
+  color: #ffd8df;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  padding: 0.85rem 1rem;
+}
+
+.legal-document__content {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.legal-document__content h2 {
+  margin-top: 1rem;
+  color: var(--brand-blue);
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+.legal-document__content p {
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.legal-document__content ul {
+  margin: 0.1rem 0 0.75rem 1.25rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.legal-document__content li {
+  margin-bottom: 0.35rem;
+  line-height: 1.55;
+}
+
+.legal-links {
+  margin-top: 1.25rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  padding: 1rem 1.15rem;
+}
+
+.legal-links p + p {
+  margin-top: 0.35rem;
+}
+
+.legal-footer {
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  margin-top: auto;
+  padding: 2rem clamp(1.25rem, 3vw, 2rem);
+  text-align: center;
+}
+
+.legal-footer__copy {
+  max-width: 860px;
+  margin-inline: auto;
+}
+
+.oauth-page {
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.oauth-card {
+  width: min(100%, 520px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 96px), var(--surface-card);
+  padding: clamp(1.5rem, 4vw, 2rem);
+  text-align: center;
+}
+
+.oauth-card__title {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.oauth-card__copy {
+  margin: 0.9rem 0 1rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.oauth-card__hint {
+  margin-top: 0.85rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.8rem;
+  padding: 0.72rem 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.button--primary {
+  background: var(--brand-cobalt);
+  color: #ffffff;
+}
+
+.button--primary:hover {
+  background: var(--brand-blue);
+  color: #ffffff;
 }
 
 @media (max-width: 860px) {
