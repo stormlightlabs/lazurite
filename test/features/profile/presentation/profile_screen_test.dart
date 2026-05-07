@@ -169,6 +169,9 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('she/her'), findsOneWidget);
+    final nameTop = tester.getTopLeft(find.text('RIVER TAM')).dy;
+    final pronounsTop = tester.getTopLeft(find.text('she/her')).dy;
+    expect((nameTop - pronounsTop).abs(), lessThan(12));
     expect(find.text('river.example'), findsOneWidget);
     expect(find.byIcon(Icons.open_in_new), findsOneWidget);
     expect(find.text('Joined March 2024'), findsOneWidget);
@@ -181,16 +184,17 @@ void main() {
     expect(find.text('River Tam'), findsOneWidget);
   });
 
-  testWidgets('shows own profile shortcut buttons', (tester) async {
+  testWidgets('shows own profile header edit action and shortcut buttons', (tester) async {
     useLargeScreen(tester);
     await tester.pumpWidget(buildSubject());
 
-    expect(find.text('Edit Profile'), findsOneWidget);
+    expect(find.byKey(const Key('profile_edit_header_button')), findsOneWidget);
+    expect(find.text('Edit Profile'), findsNothing);
     expect(find.text('Bookmarks'), findsOneWidget);
     expect(find.text('Liked'), findsOneWidget);
   });
 
-  testWidgets('edit profile shortcut opens the profile edit route', (tester) async {
+  testWidgets('header edit profile action opens the profile edit route', (tester) async {
     useLargeScreen(tester);
     final router = GoRouter(
       routes: [
@@ -217,7 +221,7 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('profile_edit_button')));
+    await tester.tap(find.byKey(const Key('profile_edit_header_button')));
     await tester.pumpAndSettle();
 
     expect(find.text('edit-profile'), findsOneWidget);
@@ -293,6 +297,7 @@ void main() {
 
     await tester.pumpWidget(widget);
 
+    expect(find.byKey(const Key('profile_edit_header_button')), findsNothing);
     expect(find.text('Edit Profile'), findsNothing);
     expect(find.text('Bookmarks'), findsNothing);
     expect(find.text('Liked'), findsNothing);

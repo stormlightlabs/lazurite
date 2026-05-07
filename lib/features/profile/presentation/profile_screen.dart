@@ -585,6 +585,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                               actions: [
                                 if (actorScopedProfile != null && isOwnProfile)
                                   IconButton(
+                                    key: const Key('profile_edit_header_button'),
+                                    icon: const Icon(Icons.edit_outlined),
+                                    tooltip: 'Edit profile',
+                                    onPressed: () => context.push('/profile/me/edit'),
+                                  ),
+                                if (actorScopedProfile != null && isOwnProfile)
+                                  IconButton(
                                     key: const Key('profile_more_button'),
                                     icon: const Icon(Icons.more_vert),
                                     onPressed: () => _showOwnProfileMoreOptions(context, actorScopedProfile),
@@ -787,10 +794,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     final profileUi =
         moderationService?.profileDetailedUi(profile, bsky_moderation.ModerationBehaviorContext.profileView) ??
         const bsky_moderation.ModerationUI();
+    final pronouns = profile.pronouns?.trim();
 
     final metaChildren = <Widget>[
-      if (profile.pronouns?.isNotEmpty ?? false)
-        _buildMetaChip(context, Icons.record_voice_over_outlined, profile.pronouns!),
       if (profile.website?.isNotEmpty ?? false)
         _buildMetaChip(
           context,
@@ -812,9 +818,24 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            (profile.displayName ?? profile.handle).toUpperCase(),
-            style: textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.5),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 10,
+            runSpacing: 4,
+            children: [
+              Text(
+                (profile.displayName ?? profile.handle).toUpperCase(),
+                style: textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0),
+              ),
+              if (pronouns != null && pronouns.isNotEmpty)
+                Text(
+                  pronouns,
+                  style: textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 4),
 
@@ -867,12 +888,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               spacing: 8,
               runSpacing: 8,
               children: [
-                OutlinedButton.icon(
-                  key: const ValueKey('profile_edit_button'),
-                  onPressed: () => context.push('/profile/me/edit'),
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Edit Profile'),
-                ),
                 OutlinedButton.icon(
                   onPressed: () => context.push('/bookmarks'),
                   icon: const Icon(Icons.bookmark_outline),
