@@ -1,71 +1,75 @@
 <!-- markdownlint-disable MD041 -->
+![Lazurite Banner](./docs/images/hero.png)
 
-![Lazurite Hero](./docs/images/hero.png)
+# Lazurite
 
-Lazurite is a cross-platform Bluesky client that *rocks*[^1] built with Flutter and Dart using Material You (M3) design.
+Lazurite is a cross-platform Bluesky & BlackSky client that *rocks*[^1] built with
+Flutter and Dart using Material You (M3) design.
 
 Download it on our [releases page](https://github.com/stormlightlabs/lazurite/releases/).
 
 <!-- markdownlint-disable MD033 -->
-[<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get Lazurite on Obtainium" height="48">](http://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/stormlightlabs/lazurite/releases)
+[<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get Lazurite on Obtainium" height="48px">](http://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/stormlightlabs/lazurite/releases)
 
 ## Features
 
-### Home Feed & Composer
+### Core Bluesky & BlackSky Client
 
-| Home Feed                                                       | Composer                                                                                  | Profile                                                          |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| ![Home Feed](./docs/images/home-feed.png)                       | ![Compose Screenshot](https://placehold.co/400x800/4CAF50/FFFFFF?text=Compose+Screenshot) | ![Profile](./docs/images/profile.png)                            |
-| View your personal timeline with support for threads and media. | Create new posts with rich text and media attachments. Supports replies and quoting.      | View detailed actor profiles, including their feed and metadata. |
+- Home timeline, custom feeds, feed pinning, and feed reordering.
+- Post threads, replies, quote posts, reposts, likes, saves, and sharing.
+- Rich post composition with facets, images, video uploads, replies, quotes, drafts, and scheduling.
+- Profile screens with author feeds, likes, starter packs, lists, follows, followers, and profile actions.
+- Search for posts, actors, hashtags, starter packs, and profile-scoped posts.
+- Notifications, direct messages, lists, starter packs, labelers, and moderation preferences.
+- In-app image viewer, video playback, media sharing, and media download support.
 
-### Search & Profile
+### Local And Offline Features
 
-| Search                                                | About                                | DevTools                                                                              |
-| ----------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
-| ![Search Results](./docs/images/search.png)           | ![About](./docs/images/about.png)    | ![DevTools](./docs/images/dev-tools.png)                                              |
-| Discover people and posts across the Bluesky network. | About (showing Rose Pine Moon theme) | Built-in logs and developer utilities for exploring the AT Protocol (Rose Pine Dawn). |
+- Drift-backed local cache for the first page of feeds and profile data.
+- Local drafts with account-scoped reply, quote, and media context.
+- Local saved posts, liked-post sync, and search history.
+- On-device semantic search for saved and liked posts using MiniLM embeddings and ObjectBox vector search.
+- Offline-aware screens that render cached data and disable network-only actions when needed.
 
-### Offline Support & Drafts
+### Account And Protocol Tools
 
-Local-only drafts and caching powered by Drift (SQLite).
+- OAuth login, account switching, session restore, and debug app-password login.
+- Provider-aware AppView routing for Bluesky, Blacksky, and validated custom AppViews.
+- Follow audit for deleted, deactivated, suspended, blocking, hidden, and self-follow records.
+- Profile context powered by [Constellation](https://constellation.microcosm.blue) backlinks.
+- AT Protocol Dev Tools for browsing PDS repositories, collections, and records as JSON.
+- In-app logs with level filters, search, sharing, and export for debugging.
 
-- **Drafts:** Save posts locally and publish later.
-- **Search History:** Persisted local search history.
-- **Saved Feeds:** Manage and pin your favorite feeds.
+### Customization
 
-## What Lazurite Offers Beyond Bluesky
+- Five theme palettes: Lazurite™️[^2], Rose Pine, Catppuccin, Nord, and Oxocarbon.
+- Light and dark variants built on Material 3.
+- Card and Compact feed layouts.
+- Configurable thread auto-collapse depth.
 
-### Available Now
+## Planned
 
-- **Semantic Search:** On-device vector embeddings (all-MiniLM-L6-v2) let you search saved
-  and liked posts by meaning, not just keywords.
-- **Post Scheduling:** Write posts now, publish them later.
-- **Follow Audit:** Bulk-analyze your follows to find deleted, deactivated, suspended, or
-  blocking accounts. Batch unfollow in one tap like [clean follows](https://cleanfollow-bsky.pages.dev/)
-- **Constellation Integration:** See who has blocked you and which lists you appear on,
-  powered by [Constellation](https://constellation.microcosm.blue) backlinks.
-- **AT Protocol Dev Tools:** Browse any user's PDS repository, inspect collections and
-  individual records as JSON, like an in-app [pds.ls](https://pds.ls/).
-- **Rich Theming:** Five full palettes (Lazurite™️[^2], Rose Pine, Catppuccin, Nord, Oxocarbon),
-  each with light and dark variants, built on Material 3.
-- **Offline First:** First page of feeds is cached locally; drafts, search history, and saved
-  posts persist in an on-device database.
-- **Local Drafts:** Auto-saved to the database, surviving crashes and force-closes. Multiple
-  drafts per account with full reply/quote/media context.
-- **Layout Options:** Toggle between Card and Compact feed views. Configure thread
-  auto-collapse depth (off, 1–6 levels).
-- **In-App Logs:** Filter by level, full-text search, share or export, useful for
-  debugging and AT Protocol development.
+### Reading And Media
 
-### On the Roadmap
+- Gallery mode for browsing media-heavy feeds and post threads.
+- Last-read position for resuming timelines.
+- RSS feed export for public Bluesky profiles.
 
-- **RSS Feed Export:** View and export any public Bluesky profile as an RSS feed.
-- **Custom Fonts:** User-selectable serif, sans-serif, and monospace typefaces across the
-  entire app.
-- **Markdown Posts:** Toggleable Markdown rendering in post bodies.
-- **Firehose & Jetstream Viewers:** Live AT Protocol event streams inside Dev Tools.
-- **Auto-Threading:** Automatically split long posts into threaded replies.
-- **Last Read Position:** Resume your timeline exactly where you left off.
+### Publishing
+
+- Markdown rendering for post bodies.
+- Auto-threading for long posts.
+
+### Customization
+
+- User-selectable serif, sans-serif, and monospace typefaces.
+- Expanded layout controls for feed density and feed architecture.
+
+### Protocol And Maintenance
+
+- Social graph visualization.
+- Firehose and Jetstream viewers inside Dev Tools.
+- Expanded notification settings, permission flows, and remote push validation.
 
 ## Architecture
 

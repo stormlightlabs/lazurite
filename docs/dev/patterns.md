@@ -1,4 +1,7 @@
-# Lazurite Code Patterns
+---
+title: Code Patterns
+updated: 2026-05-07
+---
 
 This document captures recurring architectural and implementation patterns in the Lazurite codebase.
 
@@ -110,7 +113,7 @@ State copyWith({
 
 ## Testing Patterns
 
-- Per-file harness builders are standard (`buildSubject(...)`, plus helpers like `openSheet(...)`) so test bodies focus on behavior, not setup.
+- Per-file setup builders are standard (`buildSubject(...)`, plus helpers like `openSheet(...)`) so test bodies focus on behavior, not setup.
 - Widget tests usually mount through `MaterialApp`/`Scaffold` for component tests, and `MaterialApp.router` + `GoRouter` for navigation tests.
 - Interaction flow follows a consistent shape:
   `pumpWidget` -> input (`tap`, `enterText`) -> `pump`/`pumpAndSettle` -> assertions on visible UI and side effects.
@@ -120,4 +123,4 @@ State copyWith({
   - `MockClient` from `http/testing.dart` for HTTP-level contracts
   - Small local fake implementations when protocol surfaces are complex
 - Async UI timing is made explicit where animations/debounce are relevant (`pump(const Duration(...))` in sheet/search tests), and responsive behavior is exercised with `setSurfaceSize` in router/shell tests.
-- Defensive assertions are common for robustness: boundary-value checks in utility tests, null/empty/error-path repository tests, and `expect(tester.takeException(), isNull)` guards in navigation/router tests.
+- Defensive assertions are common: boundary-value checks in utility tests, null/empty/error-path repository tests, and `expect(tester.takeException(), isNull)` guards in navigation/router tests.
