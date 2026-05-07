@@ -121,6 +121,35 @@ void main() {
     expect(find.text('Searched 2 accounts'), findsOneWidget);
   });
 
+  testWidgets('renders a retry footer when loading more fails', (tester) async {
+    var loadMoreCalls = 0;
+    when(
+      () => profileRepository.getFollowing(actor: subject.did, cursor: null, limit: 100),
+    ).thenAnswer((_) async => ProfileConnectionsPage(subject: subject, profiles: [astronaut], cursor: 'next'));
+    when(() => profileRepository.getFollowing(actor: subject.did, cursor: 'next', limit: 100)).thenAnswer((_) async {
+      loadMoreCalls += 1;
+      if (loadMoreCalls == 1) {
+        throw Exception('network down');
+      }
+      return const ProfileConnectionsPage(subject: subject, profiles: [gardener]);
+    });
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Load more'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Failed to load more'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Retry'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Retry'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Moss Vale'), findsOneWidget);
+    expect(find.textContaining('Failed to load more'), findsNothing);
+  });
+
   testWidgets('loads the requested initial followers tab', (tester) async {
     when(
       () => profileRepository.getFollowers(actor: subject.did, cursor: null, limit: 100),

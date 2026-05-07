@@ -165,6 +165,8 @@ class _ConnectionsTabView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileConnectionsCubit, ProfileConnectionsState>(
+      buildWhen: (previous, current) =>
+          previous.searchQuery != current.searchQuery || previous.dataFor(tab) != current.dataFor(tab),
       builder: (context, state) {
         final data = state.dataFor(tab);
         if (data.isLoading && data.profiles.isEmpty) {
@@ -203,7 +205,7 @@ class _ConnectionsTabView extends StatelessWidget {
                 if (isSearchMode) {
                   return _SearchProgressFooter(data: data);
                 }
-                return _LoadMoreButton(tab: tab, isLoading: data.isLoadingMore);
+                return _LoadMoreFooter(tab: tab, data: data);
               }
               return _ConnectionProfileTile(profile: profiles[index]);
             },
@@ -383,22 +385,38 @@ class _YouPill extends StatelessWidget {
   }
 }
 
-class _LoadMoreButton extends StatelessWidget {
-  const _LoadMoreButton({required this.tab, required this.isLoading});
+class _LoadMoreFooter extends StatelessWidget {
+  const _LoadMoreFooter({required this.tab, required this.data});
 
   final ProfileConnectionsTab tab;
-  final bool isLoading;
+  final ProfileConnectionsTabData data;
 
   @override
   Widget build(BuildContext context) {
+    final errorMessage = data.loadMoreErrorMessage;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: isLoading
+        child: data.isLoadingMore
             ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-            : OutlinedButton(
-                onPressed: () => context.read<ProfileConnectionsCubit>().loadMore(tab),
-                child: const Text('Load more'),
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (errorMessage != null) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                      child: Text(
+                        errorMessage,
+                        textAlign: TextAlign.center,
+                        style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.error),
+                      ),
+                    ),
+                  ],
+                  OutlinedButton(
+                    onPressed: () => context.read<ProfileConnectionsCubit>().loadMore(tab),
+                    child: Text(errorMessage == null ? 'Load more' : 'Retry'),
+                  ),
+                ],
               ),
       ),
     );

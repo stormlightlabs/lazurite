@@ -78,7 +78,12 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
       return;
     }
 
-    emit(state.copyWithTab(tab, data.copyWith(status: ProfileConnectionsStatus.loading, errorMessage: null)));
+    emit(
+      state.copyWithTab(
+        tab,
+        data.copyWith(status: ProfileConnectionsStatus.loading, errorMessage: null, loadMoreErrorMessage: null),
+      ),
+    );
 
     try {
       final page = await _fetch(tab);
@@ -91,6 +96,7 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
             cursor: page.cursor,
             subject: page.subject,
             errorMessage: null,
+            loadMoreErrorMessage: null,
           ),
         ),
       );
@@ -116,7 +122,7 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
       return;
     }
 
-    emit(state.copyWithTab(tab, data.copyWith(isLoadingMore: true, errorMessage: null)));
+    emit(state.copyWithTab(tab, data.copyWith(isLoadingMore: true, loadMoreErrorMessage: null)));
 
     try {
       final page = await _fetch(tab, cursor: data.cursor);
@@ -129,11 +135,17 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
             subject: page.subject,
             isLoadingMore: false,
             errorMessage: null,
+            loadMoreErrorMessage: null,
           ),
         ),
       );
     } catch (error) {
-      emit(state.copyWithTab(tab, data.copyWith(isLoadingMore: false, errorMessage: 'Failed to load more: $error')));
+      emit(
+        state.copyWithTab(
+          tab,
+          data.copyWith(isLoadingMore: false, loadMoreErrorMessage: 'Failed to load more: $error'),
+        ),
+      );
     }
   }
 
@@ -476,6 +488,7 @@ class ProfileConnectionsTabData extends Equatable {
     this.cursor,
     this.subject,
     this.errorMessage,
+    this.loadMoreErrorMessage,
     this.isLoadingMore = false,
     this.searchStatus = ProfileConnectionsSearchStatus.idle,
     this.searchQuery = '',
@@ -489,6 +502,7 @@ class ProfileConnectionsTabData extends Equatable {
   final String? cursor;
   final ProfileView? subject;
   final String? errorMessage;
+  final String? loadMoreErrorMessage;
   final bool isLoadingMore;
   final ProfileConnectionsSearchStatus searchStatus;
   final String searchQuery;
@@ -518,6 +532,7 @@ class ProfileConnectionsTabData extends Equatable {
     Object? cursor = _profileConnectionsNoValue,
     Object? subject = _profileConnectionsNoValue,
     Object? errorMessage = _profileConnectionsNoValue,
+    Object? loadMoreErrorMessage = _profileConnectionsNoValue,
     bool? isLoadingMore,
     ProfileConnectionsSearchStatus? searchStatus,
     String? searchQuery,
@@ -531,6 +546,9 @@ class ProfileConnectionsTabData extends Equatable {
       cursor: identical(cursor, _profileConnectionsNoValue) ? this.cursor : cursor as String?,
       subject: identical(subject, _profileConnectionsNoValue) ? this.subject : subject as ProfileView?,
       errorMessage: identical(errorMessage, _profileConnectionsNoValue) ? this.errorMessage : errorMessage as String?,
+      loadMoreErrorMessage: identical(loadMoreErrorMessage, _profileConnectionsNoValue)
+          ? this.loadMoreErrorMessage
+          : loadMoreErrorMessage as String?,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       searchStatus: searchStatus ?? this.searchStatus,
       searchQuery: searchQuery ?? this.searchQuery,
@@ -549,6 +567,7 @@ class ProfileConnectionsTabData extends Equatable {
     cursor,
     subject,
     errorMessage,
+    loadMoreErrorMessage,
     isLoadingMore,
     searchStatus,
     searchQuery,

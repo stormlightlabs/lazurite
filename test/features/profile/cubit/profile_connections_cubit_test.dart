@@ -81,6 +81,35 @@ void main() {
       ],
     );
 
+    blocTest<ProfileConnectionsCubit, ProfileConnectionsState>(
+      'stores load-more failures separately while keeping loaded profiles',
+      build: () {
+        when(
+          () => repository.getFollowers(actor: 'did:plc:alice', cursor: 'next', limit: 100),
+        ).thenThrow(Exception('network down'));
+        return ProfileConnectionsCubit(repository: repository, actor: 'did:plc:alice');
+      },
+      seed: () => const ProfileConnectionsState(
+        followers: ProfileConnectionsTabData(
+          status: ProfileConnectionsStatus.loaded,
+          profiles: [astronaut],
+          cursor: 'next',
+        ),
+      ),
+      act: (cubit) => cubit.loadMore(ProfileConnectionsTab.followers),
+      expect: () => [
+        isA<ProfileConnectionsState>()
+            .having((state) => state.followers.status, 'followers.status', ProfileConnectionsStatus.loaded)
+            .having((state) => state.followers.isLoadingMore, 'isLoadingMore', isTrue)
+            .having((state) => state.followers.loadMoreErrorMessage, 'loadMoreErrorMessage', isNull),
+        isA<ProfileConnectionsState>()
+            .having((state) => state.followers.status, 'followers.status', ProfileConnectionsStatus.loaded)
+            .having((state) => state.followers.isLoadingMore, 'isLoadingMore', isFalse)
+            .having((state) => state.followers.profiles, 'followers.profiles', [astronaut])
+            .having((state) => state.followers.loadMoreErrorMessage, 'loadMoreErrorMessage', contains('network down')),
+      ],
+    );
+
     test('visible profiles use progressive search results when a query is active', () {
       final state = const ProfileConnectionsState(
         following: ProfileConnectionsTabData(
