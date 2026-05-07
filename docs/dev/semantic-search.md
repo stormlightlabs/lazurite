@@ -1,9 +1,7 @@
 ---
-title: Semantic Search Developer Notes
+title: Semantic Search
 updated: 2026-05-07
 ---
-
-# Semantic Search Developer Notes
 
 Semantic search lets users search saved and liked posts by meaning while
 keeping all indexing and query work on device. Drift remains the source of truth
@@ -12,9 +10,10 @@ join search results back to Drift rows.
 
 ## Storage Model
 
-ObjectBox is the secondary store for vectors. Each embedded post records the
-post URI, active account DID, source (`saved` or `liked`), indexed text, vector,
-and embedding timestamp. The vector uses a 384-dimensional HNSW cosine index.
+ObjectBox is the secondary store for vectors. `EmbeddedPost` in
+`lib/core/objectbox/embedded_post.dart` records the post URI, active account
+DID, source (`saved` or `liked`), indexed text, vector, and embedding timestamp.
+The vector uses a 384-dimensional HNSW cosine index.
 
 All queries filter by account DID. Account switching must not query another
 account's vector rows. Removing a saved or liked post deletes the matching
@@ -27,10 +26,11 @@ configured cap.
 
 ## Embedding Runtime
 
-`EmbeddingService` loads the bundled MiniLM INT8 TFLite model and WordPiece
-vocabulary in a long-lived isolate. The isolate keeps model work off the UI
-thread. Each request tokenizes text, pads or truncates to the model limit, runs
-inference, normalizes the vector, and returns it to the caller.
+`EmbeddingService` in `lib/core/embedding/embedding_service.dart` loads the
+bundled MiniLM INT8 TFLite model and WordPiece vocabulary in a long-lived
+isolate. The isolate keeps model work off the UI thread. Each request tokenizes
+text, pads or truncates to the model limit, runs inference, normalizes the
+vector, and returns it to the caller.
 
 Searchable text comes from the post text, image alt text, and link-card title
 or description. If the model or tokenizer cannot load, the service reports
@@ -39,7 +39,8 @@ throwing.
 
 ## Indexing
 
-Incremental indexing runs when a post is saved or synced as liked. The indexer
+`SemanticIndexer` in `lib/features/search/data/semantic_indexer.dart` handles
+incremental indexing when a post is saved or synced as liked. The indexer
 extracts text, embeds it, and upserts the ObjectBox row. Backfill runs when the
 feature is enabled for an account or when the user requests reindexing. It
 processes posts in batches and reports progress for the settings UI.
@@ -50,7 +51,7 @@ vectors so search results match the user's visible saved and liked sets.
 
 ## Query Flow
 
-The search repository embeds the query with the same model, runs ObjectBox
+`SemanticSearchRepository` embeds the query with the same model, runs ObjectBox
 nearest-neighbor search, applies account and source filters, then hydrates full
 post views from Drift. Results are ordered by vector similarity and shown with a
 relevance indicator.

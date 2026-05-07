@@ -1,9 +1,7 @@
 ---
-title: Follow Hygiene Developer Notes
+title: Follow Hygiene
 updated: 2026-05-07
 ---
-
-# Follow Hygiene Developer Notes
 
 Follow hygiene audits the active account's follow records and helps the user
 remove dead or problematic follows in batches. It works from the user's own
@@ -11,7 +9,8 @@ repo records, then hydrates followed accounts to classify their current state.
 
 ## Audit Flow
 
-The repository paginates `app.bsky.graph.follow` records through
+`FollowAuditRepository` in `lib/features/profile/data/follow_audit_repository.dart`
+paginates `app.bsky.graph.follow` records through
 `com.atproto.repo.listRecords` for the active DID. Each record provides the
 follow URI, record key, and subject DID. The repository then batch-hydrates
 subjects with `app.bsky.actor.getProfiles`.
@@ -42,9 +41,10 @@ leaves the remaining selected rows available for retry.
 
 ## UI Model
 
-The audit screen progresses through fetching records, classifying profiles,
-ready, unfollowing, complete, and error states. The UI shows scan progress,
-category counts, selectable rows, visibility filters, and selected totals.
+`FollowAuditCubit` in `lib/features/profile/cubit/follow_audit_cubit.dart`
+drives the audit screen through fetching records, classifying profiles, ready,
+unfollowing, complete, and error states. The UI shows scan progress, category
+counts, selectable rows, visibility filters, and selected totals.
 
 Rows include checkbox, handle, truncated DID, status badge, and profile
 navigation. The screen renders empty and complete states for clean audits and

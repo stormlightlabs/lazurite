@@ -1,9 +1,7 @@
 ---
-title: AppView Routing Developer Notes
+title: AppView Routing
 updated: 2026-05-07
 ---
-
-# AppView Routing Developer Notes
 
 Lazurite can route AppView reads through Bluesky, Blacksky, or a validated
 custom provider. The selected provider controls `app.bsky.*` content routing
@@ -16,18 +14,18 @@ Provider selection is persisted from login and settings. Built-in providers
 define a stable key, AppView service DID, public XRPC host, login entryway, and
 web base URL. Custom providers require validation before use.
 
-`AppViewRouter` is the runtime source of provider state. Repositories should
-ask it for headers, public endpoint URLs, auth entryway URLs, web-link
-resolution, and health results. Long-lived services should not cache provider
-fields independently.
+`AppViewRouter` in `lib/core/network/app_view_router.dart` is the runtime
+source of provider state. Repositories should ask it for headers, public
+endpoint URLs, auth entryway URLs, web-link resolution, and health results.
+Long-lived services should not cache provider fields independently.
 
 ## Request Policy
 
-Authenticated `app.bsky.*` requests route through the user's PDS with an
-explicit `atproto-proxy` header for the selected AppView. Signed-out public
-`app.bsky.*` reads call the selected provider's public host directly.
-`com.atproto.*` requests bypass AppView routing and resolve to the relevant
-repo or PDS.
+`AppBskyRoutingPolicy` applies the request policy. Authenticated `app.bsky.*`
+requests route through the user's PDS with an explicit `atproto-proxy` header
+for the selected AppView. Signed-out public `app.bsky.*` reads call the
+selected provider's public host directly. `com.atproto.*` requests bypass
+AppView routing and resolve to the relevant repo or PDS.
 
 Provider switching requires a soft restart. The app persists the new provider,
 stops new requests, cancels in-flight work where possible, rebuilds dependency
@@ -57,11 +55,11 @@ state without including auth tokens or full payloads.
 
 ## Trending
 
-Trending is a first-class route at `/trending`. The screen loads trending
-topics and trend metadata from the selected provider. The implementation joins
-topic rows with trend rows by parsed link key first, then by normalized topic
-text. If multiple candidates match, the newest trend wins, with a stable link
-tie-breaker.
+Trending is a route at `/trending`. `TrendingScreen` loads trending topics and
+trend metadata from the selected provider. `lib/features/feed/data/trending_join.dart`
+joins topic rows with trend rows by parsed link key first, then by normalized
+topic text. If multiple candidates match, the newest trend wins, with a stable
+link tie-breaker.
 
 The screen handles provider divergence. Bluesky and Blacksky can return
 different link formats and suggested topic sets. Unknown internal links fall
@@ -76,4 +74,3 @@ account authority: resolve handle or DID, fetch protected-resource metadata, and
 prefer the advertised authorization server. Fallbacks can use the resolved PDS,
 then default entryways, but the selected AppView must not override account
 authority.
-

@@ -1,9 +1,7 @@
 ---
-title: Typeahead Developer Notes
+title: Typeahead
 updated: 2026-05-07
 ---
-
-# Typeahead Developer Notes
 
 Typeahead is a shared actor autocomplete system used by login, search,
 jump-to-profile, list member management, and starter pack member management. It
@@ -28,11 +26,11 @@ branch on raw provider response shapes.
 
 ## Repository Behavior
 
-`TypeaheadRepository` owns provider selection, HTTP calls, SDK calls, parsing,
-moderation filtering, and fallback. When the configured provider is official,
-it delegates to the SDK and includes moderation-aware request behavior. When the
-configured provider is community, it performs the HTTP request, parses JSON, and
-filters locally.
+`TypeaheadRepository` in `lib/features/typeahead/data/typeahead_repository.dart`
+owns provider selection, HTTP calls, SDK calls, parsing, moderation filtering,
+and fallback. When the configured provider is official, it delegates to the SDK
+and includes moderation-aware request behavior. When the configured provider is
+community, it performs the HTTP request, parses JSON, and filters locally.
 
 If the community endpoint fails and an authenticated Bluesky client is
 available, the repository can fall back to the official endpoint. Login cannot
@@ -55,10 +53,11 @@ typeahead requires auth. All authenticated surfaces respect the saved setting.
 state. Consumers should use the shared Cubit or repository instead of calling
 search repositories directly for actor autocomplete.
 
-`TypeaheadTextField` anchors suggestions below a text field with an overlay.
-It debounces input, ignores empty or too-short queries, and updates overlay
-position with keyboard and layout changes. Selecting a result fills the field
-and calls the consumer's selection callback.
+`TypeaheadTextField` in `lib/features/typeahead/presentation/typeahead_text_field.dart`
+anchors suggestions below a text field with an overlay. It debounces input,
+ignores empty or too-short queries, and updates overlay position with keyboard
+and layout changes. Selecting a result fills the field and calls the consumer's
+selection callback.
 
 The search screen should keep post search state separate from actor typeahead.
 Jump-to-profile, list member add, and starter pack member add use the same
@@ -73,4 +72,3 @@ In-flight requests should be canceled or ignored when a newer query starts.
 Community responses do not include viewer state, so follow badges or other
 viewer-dependent affordances should hide rather than guess. DID entry bypasses
 typeahead because typeahead is handle and display-name search.
-

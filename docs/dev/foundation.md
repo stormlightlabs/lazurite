@@ -1,12 +1,11 @@
 ---
-title: App Foundation Developer Notes
+title: App Foundation
 updated: 2026-05-07
 ---
 
-Phase 1 established Lazurite's app shell, authentication, profile rendering,
-and settings model. The core pattern is feature-first Flutter code backed by
-`flutter_bloc`, `go_router`, and Drift. Cross-feature concerns live under
-`lib/core`, while feature modules own their data, state, and presentation code.
+Lazurite's app shell is feature-first Flutter code backed by `flutter_bloc`,
+`go_router`, and Drift. Cross-feature concerns live under `lib/core`; feature
+modules own their data, state, and presentation code under `lib/features`.
 
 State is modeled with small Bloc or Cubit classes. Presentation widgets render
 state and dispatch user intent; they should not own network or persistence
@@ -16,10 +15,12 @@ than widget state.
 
 ## Persistence
 
-Drift is the primary local store. Phase 1 introduced tables for accounts,
-cached profiles, cached posts, and settings. Any user-scoped row must include
-the active account DID, and queries should filter by that DID at repository
-boundaries. Drift migrations remain mandatory for schema changes.
+Drift is the primary local store. The schema lives in
+`lib/core/database/tables.dart` and `lib/core/database/app_database.dart`.
+Account, cached profile, cached post, and settings rows form the base local
+model. Any user-scoped row must include the active account DID, and repository
+queries should filter by that DID. Drift migrations remain mandatory for schema
+changes.
 
 The account table stores the DID, handle, and token material needed to restore
 the active session. Sensitive values must not be logged. Settings store theme

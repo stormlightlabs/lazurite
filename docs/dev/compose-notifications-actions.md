@@ -1,19 +1,18 @@
 ---
-title: Compose Notifications And Actions Developer Notes
+title: Compose, Notifications, And Actions
 updated: 2026-05-07
 ---
 
-# Compose Notifications And Actions Developer Notes
-
-Phase 3 covered compose, notification polling, post and profile actions, and
-local saved posts. These features are write-heavy, so they use optimistic UI
-only where rollback behavior is clear and tested.
+Compose, notification polling, post actions, profile actions, and saved posts
+touch local state and network writes. Use optimistic UI only where rollback
+behavior is clear and tested.
 
 ## Compose
 
-Posts are written with `com.atproto.repo.createRecord` in the
-`app.bsky.feed.post` collection. The compose state tracks text, facets, media,
-reply refs, quote refs, language tags, and submission status.
+`ComposeBloc` in `lib/features/compose/bloc/compose_bloc.dart` tracks text,
+facets, media, reply refs, quote refs, language tags, and submission status.
+Posts are written through `ComposeRepository` with `com.atproto.repo.createRecord`
+in the `app.bsky.feed.post` collection.
 
 Text length is counted with Dart grapheme clusters, not code units. The submit
 action is disabled for empty text and over-limit posts. Rich text facets are
@@ -32,6 +31,7 @@ returns.
 
 ## Notifications
 
+`NotificationBloc` in `lib/features/notifications/bloc` owns polling state.
 Polling notifications use `app.bsky.notification.listNotifications`,
 `getUnreadCount`, and `updateSeen`. Notifications are grouped by day and render
 author, reason, reason icon, read state, and an optional post preview.
@@ -44,8 +44,8 @@ work builds on this navigation and seen-state model.
 ## Post And Profile Actions
 
 Likes, reposts, follows, and blocks are AT Protocol records. Muting is a server
-procedure call. The action repositories should derive delete keys from viewer
-state URIs rather than guessing record keys.
+procedure call. `PostActionRepository` and `ProfileActionRepository` should
+derive delete keys from viewer state URIs rather than guessing record keys.
 
 Post actions manage like, repost, reply, share, save, report, and copy-link
 behavior. Profile actions manage follow, mute, block, report, DID copy, and
@@ -59,7 +59,8 @@ viewer-state hydration.
 
 ## Saved Posts
 
-Saved posts are private and local-only. They are stored in Drift with
+Saved posts are private and local-only. `SavedPostsCubit` reads and writes
+Drift rows with
 `account_did`, `post_uri`, serialized post JSON, and `saved_at`. The table has a
 unique account/post constraint so repeated saves update one row instead of
 creating duplicates.

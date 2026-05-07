@@ -1,5 +1,5 @@
 ---
-title: Motion Developer Notes
+title: Motion
 updated: 2026-05-07
 ---
 
@@ -15,7 +15,8 @@ the shared package does not fit.
 ## Shared Tokens
 
 Animation durations, curves, and stagger offsets belong in
-`lib/core/theme/animation_tokens.dart`. Widget files should use those tokens
+`lib/core/theme/animation_tokens.dart`. Shared helpers live in
+`lib/core/theme/animation_utils.dart`. Widget files should use those tokens
 instead of local magic numbers. This keeps feed cards, snackbars, buttons, and
 empty states moving at the same pace.
 

@@ -1,29 +1,30 @@
 ---
-title: Social Features And Moderation Developer Notes
+title: Social Features And Moderation
 updated: 2026-05-07
 ---
 
-Phase 4 added messaging, in-app media, multi-account behavior, offline
-rendering, moderation, lists, and starter packs. Most of this work connects
-existing shared patterns to more AT Protocol surfaces.
+Messaging, in-app media, multi-account behavior, offline rendering, moderation, lists,
+and starter packs extend the same repository, Cubit, and presentation patterns used by
+feeds and profiles.
 
 ## Direct Messages
 
-Direct messages use the `chat.bsky.*` namespace. Conversation lists come from
-`chat.bsky.convo.listConvos`, and message threads paginate through
-`chat.bsky.convo.getMessages`. Sending uses `sendMessage`; starting a thread
-uses `getConvoForMembers`.
+Direct messages use the `chat.bsky.*` namespace. `ConvoListBloc` in
+`lib/features/messages/bloc` manages conversation list state.
+`chat.bsky.convo.listConvos` loads conversations, and message threads paginate
+through `chat.bsky.convo.getMessages`. Sending uses `sendMessage`; starting a
+thread uses `getConvoForMembers`.
 
-The list separates primary conversations from requests. A request is a
-conversation where the active user has not sent a message. Threads render own
-messages on the trailing side and other messages on the leading side. Long
-press copies one message, while the conversation overflow can copy the full
-thread.
+The list separates primary conversations from requests. A request is a conversation
+where the active user has not sent a message. Threads render own messages on the
+trailing side and other messages on the leading side. Long press copies one message,
+while the conversation overflow can copy the full thread.
 
 ## Media
 
-Images open in an in-app full-screen viewer with paging, zoom, alt text, share,
-and download controls. Videos open in an in-app player that uses the embed HLS
+Media screens live under `lib/features/feed/presentation/media`. Images open
+in an in-app full-screen viewer with paging, zoom, alt text, share, and
+download controls. Videos open in an in-app player that uses the embed HLS
 playlist, respects aspect ratio, disposes controllers on pop, and handles
 GIF-style looping playback.
 
@@ -46,10 +47,11 @@ while offline with a clear explanation.
 
 ## Moderation
 
-Moderation uses Bluesky labelers, user preferences, and the SDK moderation
-engine. The app builds moderation options from the active account's preferences
-and subscribed labelers, then runs posts, profiles, and notifications through
-the appropriate moderation helper before display.
+`ModerationService` in `lib/features/moderation/data/moderation_service.dart`
+uses Bluesky labelers, user preferences, and the SDK moderation engine. The app
+builds moderation options from the active account's preferences and subscribed
+labelers, then runs posts, profiles, and notifications through the appropriate
+moderation helper before display.
 
 Rendering uses the moderation UI decision for the current context. Filtered
 content is removed from lists. Blurred content gets a click-through overlay
@@ -63,10 +65,11 @@ preferences change.
 
 ## Lists
 
-Lists are AT Protocol graph records. Curation lists provide feeds, moderation
-lists can be muted or blocked as a group, and reference lists back starter
-packs. List records, list items, and list blocks are created and deleted
-through `com.atproto.repo` operations.
+`ListRepository` in `lib/features/lists/data/list_repository.dart` manages AT
+Protocol graph list records. Curation lists provide feeds, moderation lists can
+be muted or blocked as a group, and reference lists back starter packs. List
+records, list items, and list blocks are created and deleted through
+`com.atproto.repo` operations.
 
 My Lists shows lists created by the active account. List detail screens show
 metadata, members, and for curation lists, a feed backed by
@@ -76,8 +79,9 @@ when removing members.
 
 ## Starter Packs
 
-Starter packs bundle recommended accounts and feeds. A starter pack points at a
-reference list for members and can include up to three feed generator URIs.
+`StarterPackRepository` in `lib/features/starter_packs/data` manages starter
+packs. A starter pack points at a reference list for members and can include up
+to three feed generator URIs.
 
 Creating a starter pack first creates the reference list, then member list-item
 records, then the starter pack record. Editing members changes the backing
