@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## v1.0.0 (Alpha 6 - unreleased)
+
+### Added
+
+- Edit profile screen with support for updating display name, bio, images, pronouns,
+and website
+- Display pronouns and website (with link to browser) on profile screens
+
+### Changed
+
+- Reorganized dev docs
+
+## v1.0.0 (Alpha 5)
+
+TODO
+
 ## v1.0.0 (Alpha 4)
 
 ### Changed
