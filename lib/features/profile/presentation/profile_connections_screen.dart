@@ -80,6 +80,7 @@ class _ProfileConnectionsScreenState extends State<ProfileConnectionsScreen> wit
           tabs: const [
             Tab(text: 'Following'),
             Tab(text: 'Followers'),
+            Tab(text: 'Mutuals'),
           ],
         ),
       ),
@@ -92,6 +93,7 @@ class _ProfileConnectionsScreenState extends State<ProfileConnectionsScreen> wit
               children: const [
                 _ConnectionsTabView(tab: ProfileConnectionsTab.following),
                 _ConnectionsTabView(tab: ProfileConnectionsTab.followers),
+                _ConnectionsTabView(tab: ProfileConnectionsTab.mutuals),
               ],
             ),
           ),

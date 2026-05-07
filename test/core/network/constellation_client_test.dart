@@ -283,6 +283,20 @@ void main() {
         expect(capturedUri?.queryParameters['cursor'], 'page2');
       });
 
+      test('passes repeated did filters as query parameters', () async {
+        Uri? capturedUri;
+        final client = ConstellationClient(
+          httpClient: MockClient((request) async {
+            capturedUri = request.url;
+            return http.Response(jsonEncode({'total': 0, 'records': []}), 200);
+          }),
+        );
+
+        await client.getBacklinks('did:plc:abc', 'app.bsky.graph.follow:subject', dids: ['did:plc:one', 'did:plc:two']);
+
+        expect(capturedUri?.queryParametersAll['did'], ['did:plc:one', 'did:plc:two']);
+      });
+
       test('throws ConstellationException on error response', () async {
         final client = ConstellationClient(httpClient: MockClient((_) async => http.Response('Unauthorized', 401)));
 

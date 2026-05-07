@@ -1,14 +1,18 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/features/profile/cubit/profile_connections_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockProfileRepository extends Mock implements ProfileRepository {}
 
+class MockConstellationClient extends Mock implements ConstellationClient {}
+
 void main() {
   late MockProfileRepository repository;
+  late MockConstellationClient constellationClient;
 
   const subject = ProfileView(did: 'did:plc:alice', handle: 'alice.bsky.social');
   const astronaut = ProfileView(
@@ -26,6 +30,7 @@ void main() {
 
   setUp(() {
     repository = MockProfileRepository();
+    constellationClient = MockConstellationClient();
   });
 
   group('ProfileConnectionsCubit', () {
@@ -141,6 +146,58 @@ void main() {
       verify: (_) {
         verify(() => repository.getFollowing(actor: 'did:plc:alice', cursor: null, limit: 100)).called(1);
         verify(() => repository.getFollowing(actor: 'did:plc:alice', cursor: 'next', limit: 100)).called(1);
+      },
+    );
+
+    blocTest<ProfileConnectionsCubit, ProfileConnectionsState>(
+      'loads mutuals by checking followed accounts against Constellation backlinks',
+      build: () {
+        when(
+          () => repository.getFollowing(actor: 'did:plc:alice', cursor: null, limit: 100),
+        ).thenAnswer((_) async => const ProfileConnectionsPage(subject: subject, profiles: [astronaut, gardener]));
+        when(
+          () => constellationClient.getBacklinks(
+            subject.did,
+            'app.bsky.graph.follow:subject',
+            limit: 100,
+            cursor: null,
+            dids: [astronaut.did, gardener.did],
+          ),
+        ).thenAnswer(
+          (_) async => const (
+            total: 1,
+            records: [ConstellationLinkRecord(did: 'did:plc:astro', collection: 'app.bsky.graph.follow', rkey: 'abc')],
+            cursor: null,
+          ),
+        );
+        return ProfileConnectionsCubit(
+          repository: repository,
+          actor: 'did:plc:alice',
+          constellationClient: constellationClient,
+        );
+      },
+      act: (cubit) => cubit.loadTab(ProfileConnectionsTab.mutuals),
+      expect: () => [
+        isA<ProfileConnectionsState>().having(
+          (state) => state.mutuals.status,
+          'mutuals.status',
+          ProfileConnectionsStatus.loading,
+        ),
+        isA<ProfileConnectionsState>()
+            .having((state) => state.mutuals.status, 'mutuals.status', ProfileConnectionsStatus.loaded)
+            .having((state) => state.mutuals.profiles, 'mutuals.profiles', [astronaut])
+            .having((state) => state.mutuals.cursor, 'mutuals.cursor', isNull),
+      ],
+      verify: (_) {
+        verify(
+          () => constellationClient.getBacklinks(
+            subject.did,
+            'app.bsky.graph.follow:subject',
+            limit: 100,
+            cursor: null,
+            dids: [astronaut.did, gardener.did],
+          ),
+        ).called(1);
       },
     );
   });

@@ -8,13 +8,11 @@ const Duration _kTimeout = Duration(seconds: 10);
 class ConstellationLinkRecord {
   const ConstellationLinkRecord({required this.did, required this.collection, required this.rkey});
 
-  factory ConstellationLinkRecord.fromJson(Map<String, dynamic> json) {
-    return ConstellationLinkRecord(
-      did: json['did'] as String,
-      collection: json['collection'] as String,
-      rkey: json['rkey'] as String,
-    );
-  }
+  factory ConstellationLinkRecord.fromJson(Map<String, dynamic> json) => ConstellationLinkRecord(
+    did: json['did'] as String,
+    collection: json['collection'] as String,
+    rkey: json['rkey'] as String,
+  );
 
   final String did;
   final String collection;
@@ -24,12 +22,10 @@ class ConstellationLinkRecord {
 class ManyToManyItem {
   const ManyToManyItem({required this.linkRecord, required this.otherSubject});
 
-  factory ManyToManyItem.fromJson(Map<String, dynamic> json) {
-    return ManyToManyItem(
-      linkRecord: ConstellationLinkRecord.fromJson(json['linkRecord'] as Map<String, dynamic>),
-      otherSubject: json['otherSubject'] as String,
-    );
-  }
+  factory ManyToManyItem.fromJson(Map<String, dynamic> json) => ManyToManyItem(
+    linkRecord: ConstellationLinkRecord.fromJson(json['linkRecord'] as Map<String, dynamic>),
+    otherSubject: json['otherSubject'] as String,
+  );
 
   final ConstellationLinkRecord linkRecord;
   final String otherSubject;
@@ -63,10 +59,17 @@ class ConstellationClient {
     return trimmed.replaceFirst(RegExp(r'/+$'), '');
   }
 
-  Uri _xrpcUri(String endpoint, Map<String, String?> params) {
-    final filtered = <String, String>{};
+  Uri _xrpcUri(String endpoint, Map<String, dynamic> params) {
+    final filtered = <String, dynamic>{};
     for (final entry in params.entries) {
-      if (entry.value != null) filtered[entry.key] = entry.value!;
+      final value = entry.value;
+      if (value == null) {
+        continue;
+      }
+      if (value is Iterable && value.isEmpty) {
+        continue;
+      }
+      filtered[entry.key] = value;
     }
     final base = Uri.parse('$_baseUrl/xrpc/$endpoint');
     return filtered.isEmpty ? base : base.replace(queryParameters: filtered);
@@ -128,12 +131,14 @@ class ConstellationClient {
     String source, {
     int? limit,
     String? cursor,
+    List<String> dids = const [],
   }) async {
     final uri = _xrpcUri('blue.microcosm.links.getBacklinks', {
       'subject': subject,
       'source': source,
       if (limit != null) 'limit': limit.toString(),
       'cursor': cursor,
+      'did': dids,
     });
     final data = await _get(uri);
     final records = _listFieldAny(data, [

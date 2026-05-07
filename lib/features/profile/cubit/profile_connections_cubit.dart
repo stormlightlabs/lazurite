@@ -4,25 +4,30 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart' as fuzzywuzzy;
+import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 
-enum ProfileConnectionsTab { following, followers }
+enum ProfileConnectionsTab { following, followers, mutuals }
 
 extension ProfileConnectionsTabX on ProfileConnectionsTab {
   String get routeValue => switch (this) {
     ProfileConnectionsTab.following => 'following',
     ProfileConnectionsTab.followers => 'followers',
+    ProfileConnectionsTab.mutuals => 'mutuals',
   };
 
   String get title => switch (this) {
     ProfileConnectionsTab.following => 'Following',
     ProfileConnectionsTab.followers => 'Followers',
+    ProfileConnectionsTab.mutuals => 'Mutuals',
   };
 
   static ProfileConnectionsTab fromRouteValue(String? value) {
-    return value == ProfileConnectionsTab.followers.routeValue
-        ? ProfileConnectionsTab.followers
-        : ProfileConnectionsTab.following;
+    return switch (value) {
+      'followers' => ProfileConnectionsTab.followers,
+      'mutuals' => ProfileConnectionsTab.mutuals,
+      _ => ProfileConnectionsTab.following,
+    };
   }
 }
 
@@ -33,28 +38,37 @@ enum ProfileConnectionsSearchStatus { idle, searching, complete, error }
 const _profileConnectionsNoValue = Object();
 
 class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
-  ProfileConnectionsCubit({required ProfileRepository repository, required String actor})
-    : _repository = repository,
-      _actor = actor,
-      super(const ProfileConnectionsState());
+  ProfileConnectionsCubit({
+    required ProfileRepository repository,
+    required String actor,
+    ConstellationClient? constellationClient,
+  }) : _repository = repository,
+       _constellationClient = constellationClient,
+       _actor = actor,
+       super(const ProfileConnectionsState());
 
   final ProfileRepository _repository;
+  final ConstellationClient? _constellationClient;
   final String _actor;
   final Map<ProfileConnectionsTab, int> _searchGenerations = {
     ProfileConnectionsTab.following: 0,
     ProfileConnectionsTab.followers: 0,
+    ProfileConnectionsTab.mutuals: 0,
   };
   Timer? _searchDebounce;
   static const _pageLimit = 100;
   static const _searchDebounceDuration = Duration(milliseconds: 300);
   static const _searchCutoff = 60;
   static const _maxSearchResults = 100;
+  static const _mutualCandidateBatchSize = 50;
+  static const _followSource = 'app.bsky.graph.follow:subject';
 
   @override
   Future<void> close() {
     _searchDebounce?.cancel();
-    _cancelSearch(ProfileConnectionsTab.following);
-    _cancelSearch(ProfileConnectionsTab.followers);
+    for (final tab in ProfileConnectionsTab.values) {
+      _cancelSearch(tab);
+    }
     return super.close();
   }
 
@@ -136,6 +150,7 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
           searchQuery: normalizedQuery,
           following: state.following.clearSearch(),
           followers: state.followers.clearSearch(),
+          mutuals: state.mutuals.clearSearch(),
         ),
       );
     }
@@ -170,7 +185,68 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
     return switch (tab) {
       ProfileConnectionsTab.following => _repository.getFollowing(actor: _actor, cursor: cursor, limit: _pageLimit),
       ProfileConnectionsTab.followers => _repository.getFollowers(actor: _actor, cursor: cursor, limit: _pageLimit),
+      ProfileConnectionsTab.mutuals => _getMutuals(cursor: cursor),
     };
+  }
+
+  Future<ProfileConnectionsPage> _getMutuals({String? cursor}) async {
+    final constellationClient = _constellationClient;
+    if (constellationClient == null) {
+      throw StateError('Constellation client is required to load mutual follows.');
+    }
+
+    final mutualProfiles = <ProfileView>[];
+    late ProfileView subject;
+    String? nextCursor = cursor;
+
+    do {
+      final followsPage = await _repository.getFollowing(actor: _actor, cursor: nextCursor, limit: _pageLimit);
+      subject = followsPage.subject;
+      nextCursor = followsPage.cursor;
+
+      final candidatesByDid = {for (final profile in followsPage.profiles) profile.did: profile};
+      if (candidatesByDid.isEmpty) {
+        continue;
+      }
+
+      final mutualDids = await _getMutualDids(
+        constellationClient: constellationClient,
+        subjectDid: followsPage.subject.did,
+        candidateDids: candidatesByDid.keys.toList(growable: false),
+      );
+      for (final did in mutualDids) {
+        final profile = candidatesByDid[did];
+        if (profile != null) {
+          mutualProfiles.add(profile);
+        }
+      }
+    } while (mutualProfiles.isEmpty && nextCursor != null);
+
+    return ProfileConnectionsPage(subject: subject, profiles: mutualProfiles, cursor: nextCursor);
+  }
+
+  Future<Set<String>> _getMutualDids({
+    required ConstellationClient constellationClient,
+    required String subjectDid,
+    required List<String> candidateDids,
+  }) async {
+    final mutualDids = <String>{};
+    for (var i = 0; i < candidateDids.length; i += _mutualCandidateBatchSize) {
+      final batch = candidateDids.sublist(i, (i + _mutualCandidateBatchSize).clamp(0, candidateDids.length));
+      String? cursor;
+      do {
+        final result = await constellationClient.getBacklinks(
+          subjectDid,
+          _followSource,
+          limit: _pageLimit,
+          cursor: cursor,
+          dids: batch,
+        );
+        mutualDids.addAll(result.records.map((record) => record.did));
+        cursor = result.cursor;
+      } while (cursor != null);
+    }
+    return mutualDids;
   }
 
   Future<void> _searchFullList(ProfileConnectionsTab tab, String query) async {
@@ -332,16 +408,19 @@ class ProfileConnectionsState extends Equatable {
   const ProfileConnectionsState({
     this.following = const ProfileConnectionsTabData(),
     this.followers = const ProfileConnectionsTabData(),
+    this.mutuals = const ProfileConnectionsTabData(),
     this.searchQuery = '',
   });
 
   final ProfileConnectionsTabData following;
   final ProfileConnectionsTabData followers;
+  final ProfileConnectionsTabData mutuals;
   final String searchQuery;
 
   ProfileConnectionsTabData dataFor(ProfileConnectionsTab tab) => switch (tab) {
     ProfileConnectionsTab.following => following,
     ProfileConnectionsTab.followers => followers,
+    ProfileConnectionsTab.mutuals => mutuals,
   };
 
   List<ProfileView> visibleProfilesFor(ProfileConnectionsTab tab) {
@@ -359,11 +438,13 @@ class ProfileConnectionsState extends Equatable {
   ProfileConnectionsState copyWith({
     ProfileConnectionsTabData? following,
     ProfileConnectionsTabData? followers,
+    ProfileConnectionsTabData? mutuals,
     String? searchQuery,
   }) {
     return ProfileConnectionsState(
       following: following ?? this.following,
       followers: followers ?? this.followers,
+      mutuals: mutuals ?? this.mutuals,
       searchQuery: searchQuery ?? this.searchQuery,
     );
   }
@@ -372,6 +453,7 @@ class ProfileConnectionsState extends Equatable {
     return switch (tab) {
       ProfileConnectionsTab.following => copyWith(following: data),
       ProfileConnectionsTab.followers => copyWith(followers: data),
+      ProfileConnectionsTab.mutuals => copyWith(mutuals: data),
     };
   }
 
@@ -384,7 +466,7 @@ class ProfileConnectionsState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [following, followers, searchQuery];
+  List<Object?> get props => [following, followers, mutuals, searchQuery];
 }
 
 class ProfileConnectionsTabData extends Equatable {

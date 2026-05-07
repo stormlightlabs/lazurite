@@ -625,11 +625,16 @@ class AppRouter {
   Widget _buildProfileConnectionsRoute(BuildContext context, GoRouterState state, String actor) {
     final normalizedActor = actor.trim();
     final initialTab = ProfileConnectionsTabX.fromRouteValue(state.uri.queryParameters['tab']);
+    final constellationUrl = context.read<SettingsCubit>().state.constellationUrl;
     final handle = normalizedActor.startsWith('did:') || normalizedActor == context.read<String>()
         ? null
         : normalizedActor;
     return BlocProvider(
-      create: (_) => ProfileConnectionsCubit(repository: context.read<ProfileRepository>(), actor: normalizedActor),
+      create: (_) => ProfileConnectionsCubit(
+        repository: context.read<ProfileRepository>(),
+        actor: normalizedActor,
+        constellationClient: ConstellationClient(baseUrl: constellationUrl),
+      ),
       child: ProfileConnectionsScreen(actor: normalizedActor, handle: handle, initialTab: initialTab),
     );
   }

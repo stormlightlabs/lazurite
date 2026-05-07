@@ -83,6 +83,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('@alice.bsky.social'), findsOneWidget);
+    expect(find.text('Mutuals'), findsOneWidget);
     expect(find.text('Lina Orbit'), findsWidgets);
     expect(find.text('Space systems engineer'), findsWidgets);
     expect(find.textContaining('Joined'), findsWidgets);
