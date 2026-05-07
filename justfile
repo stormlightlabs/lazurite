@@ -11,6 +11,10 @@ alias fmt := format
 lint:
     flutter analyze
 
+# Generate Flutter localization files from ARB sources
+l10n:
+    flutter gen-l10n
+
 # Install pinned ObjectBox runtime library for local development
 objectbox-setup:
     bash scripts/objectbox_runtime.sh install
@@ -44,10 +48,10 @@ generate-native-splash:
 splash: generate-splash-assets generate-native-splash
 
 # Run code gen
-gen: generate format
+gen: generate l10n format
 
-# Run format, lint, and test
-check: format lint test
+# Run localization generation, format, lint, and test
+check: l10n format lint test
 
 find-comments:
     rg -n --pcre2 '^\s*//(?![!/])' -g '*.dart' -g '!*.g.dart' -g '!*.freezed.dart'

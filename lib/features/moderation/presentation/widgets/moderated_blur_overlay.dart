@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky/moderation.dart' as bsky_moderation;
@@ -37,6 +38,7 @@ class _ModeratedBlurOverlayState extends State<ModeratedBlurOverlay> {
     }
 
     final colorScheme = context.colorScheme;
+    final l10n = context.l10n;
     final canReveal = !widget.ui.noOverride;
     final moderationService = maybeModerationService(context);
     final locale = Localizations.localeOf(context);
@@ -87,9 +89,7 @@ class _ModeratedBlurOverlayState extends State<ModeratedBlurOverlay> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        canReveal
-                            ? 'Hidden by your moderation settings. You can reveal it for this view.'
-                            : 'Hidden by your moderation settings and cannot be revealed here.',
+                        canReveal ? l10n.messageModeratedContentCanReveal : l10n.messageModeratedContentCannotReveal,
                         textAlign: TextAlign.center,
                         style: context.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.35),
                       ),
@@ -97,7 +97,7 @@ class _ModeratedBlurOverlayState extends State<ModeratedBlurOverlay> {
                         const SizedBox(height: 14),
                         FilledButton.tonal(
                           onPressed: () => setState(() => _revealed = true),
-                          child: const Text('Show content'),
+                          child: Text(l10n.buttonShowContent),
                         ),
                       ],
                     ],

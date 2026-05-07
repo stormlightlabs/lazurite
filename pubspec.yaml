@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
   atproto: ^1.4.1
   atproto_core: ^1.2.0
@@ -26,7 +28,7 @@ dependencies:
   json_annotation: ^4.9.0
   crypto: ^3.0.6
   url_launcher: ^6.3.1
-  intl: ^0.19.0
+  intl: ^0.20.2
   google_fonts: ^8.0.2
   logger: ^2.6.2
   share_plus: ^10.1.4
@@ -74,6 +76,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
 
   # Vocab Text: https://huggingface.co/google-bert/bert-base-uncased/blob/main/vocab.txt
   # MiniLM Model: https://huggingface.co/Nihal2000/all-MiniLM-L6-v2-quant.tflite/tree/main

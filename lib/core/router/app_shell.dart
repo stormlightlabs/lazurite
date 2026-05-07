@@ -7,6 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_consent_gate.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
+import 'package:lazurite/core/l10n/app_localizations.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -38,7 +40,7 @@ class AppShellMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final shellScope = AppShellScope.maybeOf(context);
     final onPressed = shellScope?.openMenu ?? AppShell.openDrawer;
-    return IconButton(tooltip: 'Open menu', onPressed: onPressed, icon: const Icon(Icons.menu));
+    return IconButton(tooltip: context.l10n.labelOpenMenu, onPressed: onPressed, icon: const Icon(Icons.menu));
   }
 }
 
@@ -94,6 +96,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     CrashReportingService? crashReportingService;
     try {
       crashReportingService = context.read<CrashReportingService>();
@@ -131,7 +134,7 @@ class _AppShellState extends State<AppShell> {
                 widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
               },
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-              destinations: _destinations,
+              destinations: _destinations(l10n),
             ),
           ),
         ),
@@ -139,26 +142,26 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  List<Widget> get _destinations => [
-    const NavigationDestination(
-      icon: _AnimatedNavIcon(selected: false, outlined: Icons.home_outlined, filled: Icons.home),
-      selectedIcon: _AnimatedNavIcon(selected: true, outlined: Icons.home_outlined, filled: Icons.home),
-      label: 'HOME',
+  List<Widget> _destinations(AppLocalizations l10n) => [
+    NavigationDestination(
+      icon: const _AnimatedNavIcon(selected: false, outlined: Icons.home_outlined, filled: Icons.home),
+      selectedIcon: const _AnimatedNavIcon(selected: true, outlined: Icons.home_outlined, filled: Icons.home),
+      label: l10n.labelHome,
     ),
-    const NavigationDestination(
-      icon: _AnimatedNavIcon(selected: false, outlined: Icons.search_outlined, filled: Icons.search),
-      selectedIcon: _AnimatedNavIcon(selected: true, outlined: Icons.search_outlined, filled: Icons.search),
-      label: 'SEARCH',
+    NavigationDestination(
+      icon: const _AnimatedNavIcon(selected: false, outlined: Icons.search_outlined, filled: Icons.search),
+      selectedIcon: const _AnimatedNavIcon(selected: true, outlined: Icons.search_outlined, filled: Icons.search),
+      label: l10n.labelSearchNav,
     ),
-    const NavigationDestination(
-      icon: _AnimatedNotificationNavIcon(selected: false),
-      selectedIcon: _AnimatedNotificationNavIcon(selected: true),
-      label: 'ALERTS',
+    NavigationDestination(
+      icon: const _AnimatedNotificationNavIcon(selected: false),
+      selectedIcon: const _AnimatedNotificationNavIcon(selected: true),
+      label: l10n.labelAlerts,
     ),
-    const NavigationDestination(
-      icon: _AnimatedNavIcon(selected: false, outlined: Icons.person_outline, filled: Icons.person),
-      selectedIcon: _AnimatedNavIcon(selected: true, outlined: Icons.person_outline, filled: Icons.person),
-      label: 'PROFILE',
+    NavigationDestination(
+      icon: const _AnimatedNavIcon(selected: false, outlined: Icons.person_outline, filled: Icons.person),
+      selectedIcon: const _AnimatedNavIcon(selected: true, outlined: Icons.person_outline, filled: Icons.person),
+      label: l10n.labelProfile,
     ),
   ];
 }
@@ -265,9 +268,10 @@ class _AppMenu extends StatelessWidget {
     final isMessagesRoute = currentPath.startsWith('/alerts/messages') || currentPath.startsWith('/alerts/requests');
     final isNotificationsRoute = currentPath.startsWith('/alerts') && !isMessagesRoute;
     final isOffline = rootContext.read<ConnectivityCubit>().state.isOffline;
+    final l10n = context.l10n;
     final tokens = rootContext.watch<AuthBloc>().state.tokens;
-    final displayName = tokens?.displayName ?? tokens?.handle ?? 'Guest';
-    final handle = tokens?.handle ?? 'Sign in required';
+    final displayName = tokens?.displayName ?? tokens?.handle ?? l10n.labelGuest;
+    final handle = tokens?.handle ?? l10n.labelSignInRequired;
     final did = tokens?.did;
     final initials = _initialsFor(tokens?.displayName ?? tokens?.handle ?? 'L');
     final drawerWidth = (MediaQuery.sizeOf(context).width * 0.82).clamp(280.0, 320.0).toDouble();
@@ -289,10 +293,10 @@ class _AppMenu extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
                     child: Row(
                       children: [
-                        Text('Lazurite', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                        Text(l10n.appTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                         const Spacer(),
                         IconButton(
-                          tooltip: 'Close menu',
+                          tooltip: l10n.buttonCancel,
                           onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.close),
                         ),
@@ -313,38 +317,38 @@ class _AppMenu extends StatelessWidget {
                       _MenuTile(
                         icon: Icons.add_circle_outline,
                         selectedIcon: Icons.add_circle,
-                        label: 'New Post',
+                        label: l10n.labelNewPost,
                         isSelected: isComposeRoute,
                         tooltip: isOffline ? offlineActionMessage('compose a post') : null,
                         onTap: isOffline ? null : () => _pushRoute(context, '/compose'),
                       ),
                       const Divider(height: 24),
-                      const _MenuSectionLabel(label: 'Navigation'),
+                      _MenuSectionLabel(label: l10n.labelNavigation),
                       _MenuTile(
                         icon: Icons.home_outlined,
                         selectedIcon: Icons.home,
-                        label: 'Home',
+                        label: l10n.labelHome,
                         isSelected: isHomeRoute,
                         onTap: () => _selectBranch(context, 0),
                       ),
                       _MenuTile(
                         icon: Icons.search_outlined,
                         selectedIcon: Icons.search,
-                        label: 'Search',
+                        label: l10n.labelSearch,
                         isSelected: isSearchRoute,
                         onTap: () => _selectBranch(context, 1),
                       ),
                       _MenuTile(
                         icon: Icons.rss_feed_outlined,
                         selectedIcon: Icons.rss_feed,
-                        label: 'Feeds',
+                        label: l10n.labelFeeds,
                         isSelected: isFeedsRoute,
                         onTap: () => _pushRoute(context, '/feeds'),
                       ),
                       _MenuTile(
                         icon: Icons.notifications_outlined,
                         selectedIcon: Icons.notifications,
-                        label: 'Notifications',
+                        label: l10n.labelNotifications,
                         isSelected: isNotificationsRoute,
                         trailing: _notificationsBadge(),
                         onTap: () => _goRoute(context, '/alerts'),
@@ -352,30 +356,30 @@ class _AppMenu extends StatelessWidget {
                       _MenuTile(
                         icon: Icons.chat_bubble_outline,
                         selectedIcon: Icons.chat_bubble,
-                        label: 'Messages',
+                        label: l10n.labelMessages,
                         isSelected: isMessagesRoute,
                         onTap: () => _goRoute(context, '/alerts/messages'),
                       ),
                       _MenuTile(
                         icon: Icons.person_outline,
                         selectedIcon: Icons.person,
-                        label: 'Profile',
+                        label: l10n.labelProfile,
                         isSelected: isProfileRoute,
                         onTap: () => _selectBranch(context, 3),
                       ),
                       const Divider(height: 24),
-                      const _MenuSectionLabel(label: 'Advanced'),
+                      _MenuSectionLabel(label: l10n.labelAdvanced),
                       _MenuTile(
                         icon: Icons.explore_outlined,
                         selectedIcon: Icons.explore,
-                        label: 'AT Explorer',
+                        label: l10n.labelAtExplorer,
                         isSelected: isDevToolsRoute,
                         onTap: () => _pushRoute(context, '/settings/devtools'),
                       ),
                       _MenuTile(
                         icon: Icons.cleaning_services_outlined,
                         selectedIcon: Icons.cleaning_services,
-                        label: 'Audit Follows',
+                        label: l10n.labelAuditFollows,
                         isSelected: isCleanFollowsRoute,
                         onTap: () => _pushRoute(context, '/settings/clean-follows'),
                       ),
@@ -383,14 +387,14 @@ class _AppMenu extends StatelessWidget {
                       _MenuTile(
                         icon: Icons.settings_outlined,
                         selectedIcon: Icons.settings,
-                        label: 'Settings',
+                        label: l10n.labelSettings,
                         isSelected: isSettingsRoute,
                         onTap: () => _pushRoute(context, '/settings'),
                       ),
                       _MenuTile(
                         icon: Icons.logout,
                         selectedIcon: Icons.logout,
-                        label: 'Log Out',
+                        label: l10n.labelLogOut,
                         isDestructive: true,
                         onTap: () =>
                             _runAfterClose(context, () => rootContext.read<AuthBloc>().add(const LogoutRequested())),

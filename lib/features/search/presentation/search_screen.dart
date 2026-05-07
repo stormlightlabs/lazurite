@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
@@ -137,9 +138,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _onClearHistory() async {
     await showConfirmationDialog(
       context: context,
-      title: const Text('Clear search history?'),
-      content: const Text('This will delete all your recent searches.'),
-      confirmLabel: 'Clear',
+      title: Text(context.l10n.messageClearSearchHistoryTitle),
+      content: Text(context.l10n.messageClearSearchHistoryContent),
+      confirmLabel: context.l10n.buttonClear,
       onConfirmed: () => context.read<SearchBloc>().add(const HistoryCleared()),
     );
   }
@@ -170,7 +171,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
             final showTypingHint = controller.text.trim().length <= 3;
             return ConfirmationDialog(
-              title: const Text('Jump to profile'),
+              title: Text(context.l10n.labelJumpToProfile),
               content: SizedBox(
                 width: 420,
                 child: Column(
@@ -190,23 +191,23 @@ class _SearchScreenState extends State<SearchScreen> {
                       textInputAction: TextInputAction.search,
                       onFieldSubmitted: submitHandle,
                       onChanged: (_) => setDialogState(() {}),
-                      decoration: const InputDecoration(
-                        labelText: 'Handle',
+                      decoration: InputDecoration(
+                        labelText: context.l10n.labelHandle,
                         hintText: 'alice.bsky.social',
                         prefixText: '@',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 12),
                     if (showTypingHint)
                       Align(
                         alignment: Alignment.topLeft,
-                        child: Text('Start typing to search handles.', style: context.textTheme.bodySmall),
+                        child: Text(context.l10n.messageStartTypingToSearchHandles, style: context.textTheme.bodySmall),
                       ),
                   ],
                 ),
               ),
-              confirmLabel: 'Open',
+              confirmLabel: context.l10n.buttonOpen,
               confirmEnabled: controller.text.trim().isNotEmpty,
               onCancel: () => Navigator.of(dialogContext).pop(),
               onConfirm: submitHandle,
@@ -220,11 +221,12 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final shouldShowFab = widget.showJumpToProfileAction && !widget.postsOnlyMode;
+    final l10n = context.l10n;
     return AppScreenEntrance(
       child: Scaffold(
         appBar: widget.postsOnlyMode
             ? AppBar(
-                title: Text(widget.title ?? 'Search Posts'),
+                title: Text(widget.title ?? l10n.labelSearchPosts),
                 leading: widget.showBackButton
                     ? IconButton(
                         icon: const Icon(Icons.arrow_back),
@@ -237,7 +239,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ? FloatingActionButton.extended(
                 onPressed: _openJumpToProfileDialog,
                 icon: const Icon(Icons.person_search),
-                label: const Text('Jump to profile'),
+                label: Text(l10n.labelJumpToProfile),
               ).animateIfAllowed(
                 context,
                 effects: const [
@@ -269,6 +271,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildSearchBar(BuildContext context, SearchState state) {
     final hasText = _searchController.text.isNotEmpty;
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final isSearchDisabled = state.currentTab == SearchTab.starterPacks;
     final fieldFillColor = isSearchDisabled
         ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55)
@@ -295,7 +298,7 @@ class _SearchScreenState extends State<SearchScreen> {
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
                 hintText: _searchPlaceholderForTab(state.currentTab),
-                helperText: isSearchDisabled ? 'Starter pack search is not available in the API yet.' : null,
+                helperText: isSearchDisabled ? l10n.messageStarterPackSearchApiUnavailable : null,
                 helperMaxLines: 1,
                 prefixIcon: Icon(
                   isSearchDisabled ? Icons.block_outlined : Icons.search,
@@ -384,7 +387,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
         child: Text(
-          tab.label,
+          _tabLabel(context, tab),
           textAlign: TextAlign.center,
           style: textStyle,
           maxLines: 1,
@@ -408,7 +411,10 @@ class _SearchScreenState extends State<SearchScreen> {
         runSpacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text('Sort by', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            context.l10n.labelSortBy,
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
           Container(
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerHighest,
@@ -425,7 +431,7 @@ class _SearchScreenState extends State<SearchScreen> {
           OutlinedButton.icon(
             onPressed: () => _openPostFiltersSheet(state.postFilters),
             icon: const Icon(Icons.tune, size: 16),
-            label: const Text('Filters'),
+            label: Text(context.l10n.labelFilters),
           ),
         ],
       ),
@@ -446,7 +452,7 @@ class _SearchScreenState extends State<SearchScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
-          sort.label,
+          _sortLabel(context, sort),
           style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500, color: labelColor),
         ),
       ),
@@ -521,7 +527,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ? const PostSearchFilters()
                     : PostSearchFilters(author: widget.fixedPostAuthor),
               ),
-              child: const Text('Clear all'),
+              child: Text(context.l10n.buttonClearAll),
             ),
           ),
         ],
@@ -584,7 +590,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Post filters', style: context.textTheme.titleMedium),
+                    Text(context.l10n.labelPostFilters, style: context.textTheme.titleMedium),
                     const SizedBox(height: 12),
                     TextField(
                       controller: mentionsController,
@@ -592,7 +598,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       enableSuggestions: false,
                       smartDashesType: SmartDashesType.disabled,
                       smartQuotesType: SmartQuotesType.disabled,
-                      decoration: const InputDecoration(labelText: 'Mentions', hintText: 'did:plc:... or handle'),
+                      decoration: InputDecoration(
+                        labelText: context.l10n.labelMentions,
+                        hintText: 'did:plc:... or handle',
+                      ),
                     ),
                     const SizedBox(height: 10),
                     if (widget.fixedPostAuthor == null) ...[
@@ -602,12 +611,15 @@ class _SearchScreenState extends State<SearchScreen> {
                         enableSuggestions: false,
                         smartDashesType: SmartDashesType.disabled,
                         smartQuotesType: SmartQuotesType.disabled,
-                        decoration: const InputDecoration(labelText: 'Author', hintText: 'did:plc:... or handle'),
+                        decoration: InputDecoration(
+                          labelText: context.l10n.labelAuthor,
+                          hintText: 'did:plc:... or handle',
+                        ),
                       ),
                       const SizedBox(height: 10),
                     ] else ...[
                       InputDecorator(
-                        decoration: const InputDecoration(labelText: 'Author (fixed)'),
+                        decoration: InputDecoration(labelText: context.l10n.labelAuthorFixed),
                         child: Text(widget.fixedPostAuthor!),
                       ),
                       const SizedBox(height: 10),
@@ -618,7 +630,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       enableSuggestions: false,
                       smartDashesType: SmartDashesType.disabled,
                       smartQuotesType: SmartQuotesType.disabled,
-                      decoration: const InputDecoration(labelText: 'Language', hintText: 'en'),
+                      decoration: InputDecoration(labelText: context.l10n.labelLanguage, hintText: 'en'),
                     ),
                     const SizedBox(height: 10),
                     TextField(
@@ -627,7 +639,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       enableSuggestions: false,
                       smartDashesType: SmartDashesType.disabled,
                       smartQuotesType: SmartQuotesType.disabled,
-                      decoration: const InputDecoration(labelText: 'Domain', hintText: 'example.com'),
+                      decoration: InputDecoration(labelText: context.l10n.labelDomain, hintText: 'example.com'),
                     ),
                     const SizedBox(height: 10),
                     TextField(
@@ -636,7 +648,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       enableSuggestions: false,
                       smartDashesType: SmartDashesType.disabled,
                       smartQuotesType: SmartQuotesType.disabled,
-                      decoration: const InputDecoration(labelText: 'URL', hintText: 'https://example.com/path'),
+                      decoration: InputDecoration(
+                        labelText: context.l10n.labelUrl,
+                        hintText: 'https://example.com/path',
+                      ),
                     ),
                     const SizedBox(height: 10),
                     TextField(
@@ -645,7 +660,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       enableSuggestions: false,
                       smartDashesType: SmartDashesType.disabled,
                       smartQuotesType: SmartQuotesType.disabled,
-                      decoration: const InputDecoration(labelText: 'Tags', hintText: '#dart, flutter'),
+                      decoration: InputDecoration(labelText: context.l10n.labelTags, hintText: '#dart, flutter'),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -661,7 +676,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               setState(() => since = selected);
                             },
                             icon: const Icon(Icons.calendar_today, size: 16),
-                            label: Text(since == null ? 'Since' : formatTimestamp(since!)),
+                            label: Text(since == null ? context.l10n.labelSince : formatTimestamp(since!)),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -676,7 +691,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               setState(() => until = selected);
                             },
                             icon: const Icon(Icons.calendar_today, size: 16),
-                            label: Text(until == null ? 'Until' : formatTimestamp(until!)),
+                            label: Text(until == null ? context.l10n.labelUntil : formatTimestamp(until!)),
                           ),
                         ),
                       ],
@@ -684,15 +699,24 @@ class _SearchScreenState extends State<SearchScreen> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        TextButton(onPressed: () => setState(() => since = null), child: const Text('Clear since')),
-                        TextButton(onPressed: () => setState(() => until = null), child: const Text('Clear until')),
+                        TextButton(
+                          onPressed: () => setState(() => since = null),
+                          child: Text(context.l10n.labelClearSince),
+                        ),
+                        TextButton(
+                          onPressed: () => setState(() => until = null),
+                          child: Text(context.l10n.labelClearUntil),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        TextButton(onPressed: () => Navigator.of(sheetContext).pop(), child: const Text('Cancel')),
+                        TextButton(
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          child: Text(context.l10n.buttonCancel),
+                        ),
                         TextButton(
                           onPressed: () {
                             FocusScope.of(sheetContext).unfocus();
@@ -703,7 +727,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             );
                             Navigator.of(sheetContext).pop();
                           },
-                          child: const Text('Clear all'),
+                          child: Text(context.l10n.buttonClearAll),
                         ),
                         const SizedBox(width: 8),
                         FilledButton(
@@ -727,7 +751,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             _updatePostFilters(nextFilters);
                             Navigator.of(sheetContext).pop();
                           },
-                          child: const Text('Apply'),
+                          child: Text(context.l10n.buttonApply),
                         ),
                       ],
                     ),
@@ -984,8 +1008,13 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   String _searchPlaceholderForTab(SearchTab tab) => switch (tab) {
-    SearchTab.posts => widget.postsOnlyMode ? 'Search this profile\'s posts' : 'Search posts',
-    _ => tab.placeholder,
+    SearchTab.posts =>
+      widget.postsOnlyMode
+          ? context.l10n.messageSearchThisProfilesPostsPlaceholder
+          : context.l10n.messageSearchPostsPlaceholder,
+    SearchTab.actors => context.l10n.messageSearchPeoplePlaceholder,
+    SearchTab.feeds => context.l10n.messageSearchFeedsPlaceholder,
+    SearchTab.starterPacks => context.l10n.messageStarterPackSearchUnavailablePlaceholder,
   };
 
   Widget _buildStarterPacksUnavailableState(BuildContext context) => Center(
@@ -996,10 +1025,14 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           Icon(Icons.info_outline, size: 52, color: context.colorScheme.outline),
           const SizedBox(height: 16),
-          Text('Starter Pack Search Is Unavailable', style: context.textTheme.titleMedium, textAlign: TextAlign.center),
+          Text(
+            context.l10n.messageStarterPackSearchUnavailableTitle,
+            style: context.textTheme.titleMedium,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 8),
           Text(
-            '(Starter Pack Search is not yet implemented in the BlueSky API)',
+            context.l10n.messageStarterPackSearchUnavailableBody,
             style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
@@ -1007,7 +1040,7 @@ class _SearchScreenState extends State<SearchScreen> {
           TextButton.icon(
             onPressed: _openStarterPackIssue,
             icon: const Icon(Icons.open_in_new),
-            label: const Text('Track API progress'),
+            label: Text(context.l10n.messageTrackApiProgress),
           ),
         ],
       ),
@@ -1017,9 +1050,21 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _openStarterPackIssue() async {
     final launched = await launchUrl(_starterPackSearchIssueUri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
-      showAppSnackBar(context, 'Could not open issue link.');
+      showAppSnackBar(context, context.l10n.messageCouldNotOpenIssueLink);
     }
   }
+
+  String _tabLabel(BuildContext context, SearchTab tab) => switch (tab) {
+    SearchTab.posts => context.l10n.labelPosts,
+    SearchTab.actors => context.l10n.labelPeople,
+    SearchTab.feeds => context.l10n.labelFeeds,
+    SearchTab.starterPacks => context.l10n.labelStarterPacks,
+  };
+
+  String _sortLabel(BuildContext context, SearchSort sort) => switch (sort) {
+    SearchSort.top => context.l10n.labelTop,
+    SearchSort.latest => context.l10n.labelLatest,
+  };
 }
 
 class _ActorResultTile extends StatelessWidget {

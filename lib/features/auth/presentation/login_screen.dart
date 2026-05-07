@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
@@ -203,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save provider selection: $error')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.errorFailedToSaveProviderSelection(error))));
       }
       return false;
     } finally {
@@ -224,11 +225,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final remove = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Remove Account'),
-        content: Text('Remove @${account.handle} from this device?'),
+        title: Text(context.l10n.dialogRemoveAccountTitle),
+        content: Text(context.l10n.dialogRemoveAccountContent(account.handle)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Remove')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(context.l10n.buttonCancel)),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(context.l10n.buttonRemove)),
         ],
       ),
     );
@@ -242,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to remove account right now.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.errorUnableToRemoveAccount)));
       return;
     }
 
@@ -301,6 +302,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final l10n = context.l10n;
     final accountSwitcherCubit = _maybeAccountSwitcherCubit(context);
 
     return Scaffold(
@@ -308,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            tooltip: 'Settings',
+            tooltip: l10n.labelSettings,
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.push('/settings'),
           ),
@@ -347,13 +349,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         _LogoCard(colorScheme: colorScheme),
                         const SizedBox(height: 24),
                         Text(
-                          'Lazurite',
+                          l10n.appTitle,
                           textAlign: TextAlign.center,
                           style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Roam the ATmosphere',
+                          l10n.labelRoamTheAtmosphere,
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
@@ -365,7 +367,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Choose your portal',
+                                  l10n.labelChooseYourPortal,
                                   textAlign: TextAlign.center,
                                   style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
                                 ),
@@ -409,8 +411,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               debounceMs: 300,
                               limit: 8,
                               decoration: InputDecoration(
-                                labelText: 'Handle or DID',
-                                hintText: 'username.bsky.social or did:plc:...',
+                                labelText: l10n.promptHandleOrDid,
+                                hintText: l10n.placeholderHandleOrDid,
                                 prefixIcon: const Icon(Icons.person_outline),
                                 filled: true,
                                 fillColor: colorScheme.surface,
@@ -424,9 +426,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 suffixIcon: Padding(
                                   padding: const EdgeInsets.all(5),
                                   child: Tooltip(
-                                    message: busy ? 'Starting sign in' : 'Continue',
+                                    message: busy ? l10n.labelStartingSignIn : l10n.buttonContinue,
                                     child: Semantics(
-                                      label: busy ? 'Starting sign in' : 'Continue sign in',
+                                      label: busy ? l10n.labelStartingSignIn : l10n.labelContinueSignIn,
                                       button: true,
                                       enabled: !busy,
                                       child: FilledButton(
@@ -496,7 +498,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               const Expanded(child: Divider()),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                                child: Text('Debug', style: theme.textTheme.labelMedium),
+                                child: Text(l10n.labelDebug, style: theme.textTheme.labelMedium),
                               ),
                               const Expanded(child: Divider()),
                             ],
@@ -512,14 +514,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                     children: [
                                       const Icon(Icons.bug_report_outlined),
                                       const SizedBox(width: 8),
-                                      Expanded(child: Text('App Password Login', style: theme.textTheme.titleMedium)),
+                                      Expanded(
+                                        child: Text(l10n.labelAppPasswordLogin, style: theme.textTheme.titleMedium),
+                                      ),
                                       TextButton(
                                         onPressed: () {
                                           setState(() {
                                             _showDebugForm = !_showDebugForm;
                                           });
                                         },
-                                        child: Text(_showDebugForm ? 'Hide' : 'Show'),
+                                        child: Text(_showDebugForm ? l10n.labelHide : l10n.labelShow),
                                       ),
                                     ],
                                   ),
@@ -527,16 +531,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                     const SizedBox(height: 12),
                                     TextFormField(
                                       controller: _appPasswordController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'App Password',
-                                        hintText: 'xxxx-xxxx-xxxx-xxxx',
-                                        prefixIcon: Icon(Icons.lock_outline),
-                                        border: OutlineInputBorder(),
+                                      decoration: InputDecoration(
+                                        labelText: l10n.labelAppPassword,
+                                        hintText: l10n.placeholderAppPassword,
+                                        prefixIcon: const Icon(Icons.lock_outline),
+                                        border: const OutlineInputBorder(),
                                       ),
                                       obscureText: true,
                                       validator: (value) {
                                         if (_showDebugForm && (value == null || value.trim().isEmpty)) {
-                                          return 'Enter your app password';
+                                          return l10n.validationEnterAppPassword;
                                         }
                                         return null;
                                       },
@@ -553,13 +557,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                                   unawaited(_onAppPasswordLogin());
                                                 },
                                           icon: const Icon(Icons.login),
-                                          label: const Text('Sign In'),
+                                          label: Text(l10n.buttonSignIn),
                                         );
                                       },
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Can be generated via BlueSky\'s App Passwords section at bsky.app.',
+                                      l10n.messageAppPasswordGeneratedViaBluesky,
                                       style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                                       textAlign: TextAlign.center,
                                     ),
@@ -575,9 +579,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           spacing: 8,
                           children: [
-                            TextButton(onPressed: () => context.push('/terms'), child: const Text('Terms of Service')),
+                            TextButton(onPressed: () => context.push('/terms'), child: Text(l10n.labelTermsOfService)),
                             Text('•', style: theme.textTheme.bodySmall),
-                            TextButton(onPressed: () => context.push('/privacy'), child: const Text('Privacy Policy')),
+                            TextButton(onPressed: () => context.push('/privacy'), child: Text(l10n.labelPrivacyPolicy)),
                           ],
                         ),
                       ],
@@ -639,7 +643,7 @@ class _SavedAccountsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Saved accounts', style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
+        Text(context.l10n.labelSavedAccounts, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         DecoratedBox(
           decoration: BoxDecoration(
@@ -677,7 +681,7 @@ class _SavedAccountsLoading extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Saved accounts', style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
+        Text(context.l10n.labelSavedAccounts, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         DecoratedBox(
           decoration: BoxDecoration(
@@ -685,13 +689,13 @@ class _SavedAccountsLoading extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: colorScheme.outlineVariant),
           ),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                SizedBox(width: 10),
-                Text('Loading saved accounts...'),
+                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                const SizedBox(width: 10),
+                Text(context.l10n.messageLoadingSavedAccounts),
               ],
             ),
           ),
@@ -727,7 +731,11 @@ class _SavedAccountTile extends StatelessWidget {
           leading: ProfileAvatar(size: 36, fallbackText: label, imageUrl: snapshot.data),
           title: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text('@${account.handle}', maxLines: 1, overflow: TextOverflow.ellipsis),
-          trailing: IconButton(tooltip: 'Remove account', icon: const Icon(Icons.close_rounded), onPressed: onRemove),
+          trailing: IconButton(
+            tooltip: context.l10n.labelRemoveAccount,
+            icon: const Icon(Icons.close_rounded),
+            onPressed: onRemove,
+          ),
           onTap: onTap,
         );
       },

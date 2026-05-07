@@ -14,7 +14,8 @@ String formatInitials(String value) {
 }
 
 /// Formats counts using compact K/M suffixes.
-String formatCount(int count) {
+String formatCount(int count, {String? locale}) {
+  final numberFormat = NumberFormat.decimalPattern(locale ?? Intl.getCurrentLocale());
   final absoluteCount = count.abs();
   final sign = count < 0 ? '-' : '';
   if (absoluteCount >= 1000000) {
@@ -23,7 +24,7 @@ String formatCount(int count) {
   if (absoluteCount >= 1000) {
     return '$sign${(absoluteCount / 1000).toStringAsFixed(1)}K';
   }
-  return '$count';
+  return numberFormat.format(count);
 }
 
 /// Formats a relative timestamp using short units with optional suffix/casing.
@@ -33,6 +34,7 @@ String formatRelativeTime(
   String nowLabel = 'now',
   bool includeAgo = false,
   bool uppercase = false,
+  String? locale,
 }) {
   final current = now ?? DateTime.now();
   var difference = current.difference(time);
@@ -46,13 +48,13 @@ String formatRelativeTime(
     final d when d.inHours < 1 => '${d.inMinutes}m$agoSuffix',
     final d when d.inDays < 1 => '${d.inHours}h$agoSuffix',
     final d when d.inDays < 7 => '${d.inDays}d$agoSuffix',
-    _ => DateFormat('MMM d').format(time),
+    _ => DateFormat('MMM d', locale ?? Intl.getCurrentLocale()).format(time),
   };
 
   return uppercase ? formatted.toUpperCase() : formatted;
 }
 
-String formatTimestamp(DateTime time) {
+String formatTimestamp(DateTime time, {String? locale}) {
   final month = time.month.toString().padLeft(2, '0');
   final day = time.day.toString().padLeft(2, '0');
   final hour = time.hour.toString().padLeft(2, '0');
