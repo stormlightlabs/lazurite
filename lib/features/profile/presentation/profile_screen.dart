@@ -819,6 +819,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Wrap(
+            key: const ValueKey('profile_name_pronouns_wrap'),
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 10,
             runSpacing: 4,

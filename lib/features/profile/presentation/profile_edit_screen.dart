@@ -1,8 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -89,8 +88,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         return;
       }
 
-      final file = File(image.path);
-      final size = await file.length();
+      final size = await image.length();
       if (size > ProfileImageUpload.maxBytes) {
         if (mounted) {
           showAppSnackBar(context, 'Image must be smaller than 1MB', isError: true);
@@ -98,15 +96,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         return;
       }
 
-      final mimeType = _mimeTypeForPath(image.path);
-      if (!ProfileImageUpload.acceptedMimeTypes.contains(mimeType)) {
+      final mimeType = profileImageMimeTypeFor(reportedMimeType: image.mimeType, path: image.path);
+      if (mimeType == null) {
         if (mounted) {
           showAppSnackBar(context, 'Use a JPEG or PNG image', isError: true);
         }
         return;
       }
 
-      final bytes = await file.readAsBytes();
+      final bytes = await image.readAsBytes();
       if (!mounted) {
         return;
       }
@@ -135,8 +133,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       }
     }
   }
-
-  String _mimeTypeForPath(String path) => path.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
 
   Future<void> _save(ProfileViewDetailed profile) async {
     if (_saving) {
@@ -282,29 +278,36 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectRatio(
-          aspectRatio: 3,
-          child: InkWell(
-            key: const ValueKey('profile_edit_banner_picker'),
-            onTap: _saving ? null : () => _pickProfileImage(banner: true),
-            borderRadius: BorderRadius.circular(8),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _buildBannerPreview(context, profile),
-                  ColoredBox(color: Colors.black.withValues(alpha: 0.24)),
-                  Center(
-                    child: FilledButton.tonalIcon(
-                      onPressed: _saving ? null : () => _pickProfileImage(banner: true),
-                      icon: _pickingBanner
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.image_outlined),
-                      label: const Text('Banner'),
-                    ),
+        Tooltip(
+          message: 'Change banner image',
+          child: Semantics(
+            label: 'Change banner image',
+            button: true,
+            child: AspectRatio(
+              aspectRatio: 3,
+              child: InkWell(
+                key: const ValueKey('profile_edit_banner_picker'),
+                onTap: _saving ? null : () => _pickProfileImage(banner: true),
+                borderRadius: BorderRadius.circular(8),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _buildBannerPreview(context, profile),
+                      ColoredBox(color: Colors.black.withValues(alpha: 0.24)),
+                      Center(
+                        child: FilledButton.tonalIcon(
+                          onPressed: _saving ? null : () => _pickProfileImage(banner: true),
+                          icon: _pickingBanner
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.image_outlined),
+                          label: const Text('Banner'),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -313,30 +316,37 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           offset: const Offset(0, -28),
           child: Padding(
             padding: const EdgeInsets.only(left: 16),
-            child: InkWell(
-              key: const ValueKey('profile_edit_avatar_picker'),
-              onTap: _saving ? null : () => _pickProfileImage(banner: false),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
+            child: Tooltip(
+              message: 'Change avatar image',
+              child: Semantics(
+                label: 'Change avatar image',
+                button: true,
+                child: InkWell(
+                  key: const ValueKey('profile_edit_avatar_picker'),
+                  onTap: _saving ? null : () => _pickProfileImage(banner: false),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colorScheme.surfaceContainerLowest, width: 4),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _buildAvatarPreview(context, profile),
-                    ColoredBox(color: Colors.black.withValues(alpha: 0.24)),
-                    Center(
-                      child: _pickingAvatar
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.photo_camera_outlined, color: Colors.white),
+                  child: Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colorScheme.surfaceContainerLowest, width: 4),
                     ),
-                  ],
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildAvatarPreview(context, profile),
+                        ColoredBox(color: Colors.black.withValues(alpha: 0.24)),
+                        Center(
+                          child: _pickingAvatar
+                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.photo_camera_outlined, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -432,4 +442,21 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       ),
     ],
   );
+}
+
+@visibleForTesting
+String? profileImageMimeTypeFor({required String? reportedMimeType, required String path}) {
+  final normalizedMimeType = reportedMimeType?.trim().toLowerCase();
+  if (normalizedMimeType != null && normalizedMimeType.isNotEmpty) {
+    return ProfileImageUpload.acceptedMimeTypes.contains(normalizedMimeType) ? normalizedMimeType : null;
+  }
+
+  final normalizedPath = path.toLowerCase();
+  if (normalizedPath.endsWith('.png')) {
+    return 'image/png';
+  }
+  if (normalizedPath.endsWith('.jpg') || normalizedPath.endsWith('.jpeg')) {
+    return 'image/jpeg';
+  }
+  return null;
 }

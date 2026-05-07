@@ -133,8 +133,21 @@ void main() {
       tester.widget<TextFormField>(find.byKey(const ValueKey('profile_edit_website_field'))).controller?.text,
       'river.example',
     );
+    expect(find.byTooltip('Change avatar image'), findsOneWidget);
+    expect(find.byTooltip('Change banner image'), findsOneWidget);
 
     router.dispose();
+  });
+
+  test('profile image MIME resolver accepts only JPEG and PNG', () {
+    expect(profileImageMimeTypeFor(reportedMimeType: 'image/png', path: 'anything'), 'image/png');
+    expect(profileImageMimeTypeFor(reportedMimeType: 'image/jpeg', path: 'anything'), 'image/jpeg');
+    expect(profileImageMimeTypeFor(reportedMimeType: null, path: '/tmp/avatar.jpg'), 'image/jpeg');
+    expect(profileImageMimeTypeFor(reportedMimeType: null, path: '/tmp/avatar.jpeg'), 'image/jpeg');
+    expect(profileImageMimeTypeFor(reportedMimeType: null, path: '/tmp/avatar.png'), 'image/png');
+    expect(profileImageMimeTypeFor(reportedMimeType: null, path: '/tmp/avatar.gif'), isNull);
+    expect(profileImageMimeTypeFor(reportedMimeType: null, path: '/tmp/avatar.webp'), isNull);
+    expect(profileImageMimeTypeFor(reportedMimeType: 'image/gif', path: '/tmp/avatar.jpg'), isNull);
   });
 
   testWidgets('saves normalized profile edits and returns to own profile', (tester) async {

@@ -169,9 +169,9 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('she/her'), findsOneWidget);
-    final nameTop = tester.getTopLeft(find.text('RIVER TAM')).dy;
-    final pronounsTop = tester.getTopLeft(find.text('she/her')).dy;
-    expect((nameTop - pronounsTop).abs(), lessThan(12));
+    final namePronounsWrap = find.byKey(const ValueKey('profile_name_pronouns_wrap'));
+    expect(find.descendant(of: namePronounsWrap, matching: find.text('RIVER TAM')), findsOneWidget);
+    expect(find.descendant(of: namePronounsWrap, matching: find.text('she/her')), findsOneWidget);
     expect(find.text('river.example'), findsOneWidget);
     expect(find.byIcon(Icons.open_in_new), findsOneWidget);
     expect(find.text('Joined March 2024'), findsOneWidget);
