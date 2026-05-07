@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/cache/local_cache_maintenance_service.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
@@ -29,6 +30,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authState = context.watch<AuthBloc>().state;
+    final l10n = context.l10n;
     final tokens = authState.tokens;
     final showAccountSettings = authState.isAuthenticated && tokens != null;
     final backFallbackRoute = showAccountSettings ? '/' : '/login';
@@ -36,7 +38,7 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: l10n.labelBack,
           onPressed: () {
             final router = GoRouter.of(context);
             if (router.canPop()) {
@@ -51,7 +53,7 @@ class SettingsScreen extends StatelessWidget {
         actions: showAccountSettings
             ? [
                 IconButton(
-                  tooltip: 'Log Out',
+                  tooltip: l10n.labelLogOut,
                   onPressed: () {
                     context.read<AuthBloc>().add(const LogoutRequested());
                   },
@@ -67,7 +69,7 @@ class SettingsScreen extends StatelessWidget {
               builder: (context, switcherState) {
                 final authenticatedTokens = tokens;
                 final subtitle = switcherState.accounts.length > 1
-                    ? '${switcherState.accounts.length} accounts — tap to switch'
+                    ? l10n.formatAccountsTapToSwitch(switcherState.accounts.length)
                     : '@${authenticatedTokens.handle}';
 
                 return ListTile(
@@ -83,94 +85,94 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
           const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Appearance'),
+          _buildSectionHeader(context, l10n.labelAppearance),
           _buildThemeSelector(context),
           const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Layout'),
+          _buildSectionHeader(context, l10n.labelLayout),
           _buildLayoutSettings(context),
           if (showAccountSettings) ...[
             const SizedBox(height: 24),
-            _buildSectionHeader(context, 'Moderation'),
+            _buildSectionHeader(context, l10n.labelModeration),
             const _ModerationSettingsPreview(),
           ],
           const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Search'),
+          _buildSectionHeader(context, l10n.labelSearch),
           _buildSearchSettings(context, showTypeaheadSettings: showAccountSettings),
           if (showAccountSettings) ...[
             const SizedBox(height: 24),
-            _buildSectionHeader(context, 'Account'),
+            _buildSectionHeader(context, l10n.labelAccount),
             const _AtProtocolConnectionCard(),
             const SizedBox(height: 12),
             _SettingsTile(
               icon: Icons.dynamic_feed_outlined,
-              title: 'Feeds',
-              subtitle: 'Manage pinned and saved feeds',
+              title: l10n.labelFeeds,
+              subtitle: l10n.messageFeedsSubtitle,
               onTap: () => context.push('/feeds'),
             ),
             _SettingsTile(
               icon: Icons.bookmark_outline,
-              title: 'Bookmarks & Likes',
-              subtitle: 'View your bookmarked and liked posts',
+              title: l10n.labelBookmarksAndLikes,
+              subtitle: l10n.messageBookmarksAndLikesSubtitle,
               onTap: () => context.push('/bookmarks'),
             ),
             _SettingsTile(
               icon: Icons.videocam_outlined,
-              title: 'Video Upload Limits',
-              subtitle: 'Check your daily video quota',
+              title: l10n.labelVideoUploadLimits,
+              subtitle: l10n.messageVideoUploadLimitsSubtitle,
               onTap: () => context.push('/settings/video-limits'),
             ),
             const SizedBox(height: 24),
-            _buildSectionHeader(context, 'Account Maintenance'),
+            _buildSectionHeader(context, l10n.labelAccountMaintenance),
             _SettingsTile(
               icon: Icons.cleaning_services_outlined,
-              title: 'Clean Follows',
-              subtitle: 'Audit and unfollow problematic accounts in bulk',
+              title: l10n.labelCleanFollows,
+              subtitle: l10n.messageCleanFollowsSubtitle,
               onTap: () => context.push('/settings/clean-follows'),
             ),
           ],
           const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Advanced'),
+          _buildSectionHeader(context, l10n.labelAdvanced),
           _buildAdvancedSettings(context),
           const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Troubleshooting'),
+          _buildSectionHeader(context, l10n.labelTroubleshooting),
           _buildTroubleshootingSettings(context),
           const SizedBox(height: 24),
           if (!kReleaseMode || kDebugMode) ...[
-            _buildSectionHeader(context, 'Developer'),
+            _buildSectionHeader(context, l10n.labelDeveloper),
             _buildDeveloperSettings(context),
             const SizedBox(height: 24),
           ],
-          _buildSectionHeader(context, 'About'),
+          _buildSectionHeader(context, l10n.labelAbout),
           _SettingsTile(
             icon: Icons.explore_outlined,
-            title: 'AT Explorer',
+            title: l10n.labelAtExplorer,
             subtitle: 'View PDS Records',
             onTap: () => context.push('/settings/devtools'),
           ),
           _SettingsTile(
             icon: Icons.info_outline,
-            title: 'About',
+            title: l10n.labelAbout,
             subtitle: 'Stormlight Labs',
             onTap: () => context.push('/settings/about'),
           ),
           _SettingsTile(
             icon: Icons.gavel_outlined,
-            title: 'Terms of Service',
+            title: l10n.labelTermsOfService,
             subtitle: 'Usage rules and responsibilities',
             onTap: () => context.push('/terms'),
           ),
           _SettingsTile(
             icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
+            title: l10n.labelPrivacyPolicy,
             subtitle: 'How Lazurite handles data',
             onTap: () => context.push('/privacy'),
           ),
           if (showAccountSettings) ...[
             const SizedBox(height: 24),
-            _buildSectionHeader(context, 'Danger Zone'),
+            _buildSectionHeader(context, l10n.labelDangerZone),
             _SettingsTile(
               icon: Icons.logout,
-              title: 'Log Out',
+              title: l10n.labelLogOut,
               isDestructive: true,
               onTap: () {
                 context.read<AuthBloc>().add(const LogoutRequested());
@@ -193,11 +195,12 @@ class SettingsScreen extends StatelessWidget {
     ),
   );
 
-  Widget _title(BuildContext context) => Text('Settings', style: context.textTheme.titleLarge);
+  Widget _title(BuildContext context) => Text(context.l10n.labelSettings, style: context.textTheme.titleLarge);
 
   Widget _buildThemeSelector(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
@@ -219,10 +222,10 @@ class SettingsScreen extends StatelessWidget {
                       selectedBackgroundColor: theme.colorScheme.primary,
                       selectedForegroundColor: theme.colorScheme.onPrimary,
                     ),
-                    segments: const [
-                      ButtonSegment(value: _AppearanceMode.system, label: Text('System')),
-                      ButtonSegment(value: _AppearanceMode.light, label: Text('Light')),
-                      ButtonSegment(value: _AppearanceMode.dark, label: Text('Dark')),
+                    segments: [
+                      ButtonSegment(value: _AppearanceMode.system, label: Text(l10n.labelSystem)),
+                      ButtonSegment(value: _AppearanceMode.light, label: Text(l10n.labelLight)),
+                      ButtonSegment(value: _AppearanceMode.dark, label: Text(l10n.labelDark)),
                     ],
                     selected: {_AppearanceMode.fromState(state)},
                     onSelectionChanged: (selected) {
@@ -247,7 +250,7 @@ class SettingsScreen extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'THEME',
+                    l10n.labelTheme,
                     style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
                   ),
                 ),
@@ -269,6 +272,7 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildLayoutSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
@@ -283,12 +287,12 @@ class SettingsScreen extends StatelessWidget {
           child: Column(
             children: [
               _SettingsDropdownTile<FeedLayout>(
-                title: 'Feed Layout',
+                title: l10n.labelFeedLayout,
                 value: state.feedLayout,
                 options: FeedLayout.values,
                 labelBuilder: (layout) => switch (layout) {
-                  FeedLayout.card => 'Card',
-                  FeedLayout.compact => 'Compact',
+                  FeedLayout.card => l10n.messageFeedLayoutCard,
+                  FeedLayout.compact => l10n.messageFeedLayoutCompact,
                 },
                 onChanged: (value) {
                   if (value != null) {
@@ -298,18 +302,18 @@ class SettingsScreen extends StatelessWidget {
               ),
               const Divider(height: 1),
               _SettingsDropdownTile<int?>(
-                title: 'Thread Auto-Collapse',
-                subtitle: 'Collapse reply branches deeper than the selected level',
+                title: l10n.labelThreadAutoCollapse,
+                subtitle: l10n.messageThreadAutoCollapseSubtitle,
                 value: state.threadAutoCollapseDepth,
                 options: const <int?>[null, 1, 2, 3, 4, 5, 6],
-                labelBuilder: (depth) => depth == null ? 'Off' : 'Depth $depth',
+                labelBuilder: (depth) => depth == null ? l10n.commonOff : l10n.formatDepth(depth),
                 onChanged: settingsCubit.setThreadAutoCollapseDepth,
               ),
               const Divider(height: 1),
               _SettingsTile(
                 icon: Icons.motion_photos_off_outlined,
-                title: 'Animations',
-                subtitle: 'Turn off non-essential motion effects',
+                title: l10n.labelAnimations,
+                subtitle: l10n.messageTurnOffNonEssentialMotion,
                 trailing: Switch.adaptive(
                   value: state.animationsEnabled,
                   onChanged: settingsCubit.setAnimationsEnabled,
@@ -326,6 +330,7 @@ class SettingsScreen extends StatelessWidget {
       BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, settingsState) {
           final theme = Theme.of(context);
+          final l10n = context.l10n;
           return Container(
             decoration: BoxDecoration(
               border: Border(
@@ -339,11 +344,11 @@ class SettingsScreen extends StatelessWidget {
                 if (showTypeaheadSettings) ...[
                   ListTile(
                     leading: const Icon(Icons.tune_outlined),
-                    title: const Text('Typeahead Provider'),
+                    title: Text(l10n.labelTypeaheadProvider),
                     subtitle: Text(
                       settingsState.typeaheadProvider == 'community'
-                          ? 'Community (waow.tech) selected. Third-party service.'
-                          : 'Bluesky official endpoint selected.',
+                          ? l10n.messageCommunityTypeaheadSelected
+                          : l10n.messageBlueskyEndpointSelected,
                     ),
                   ),
                   Padding(
@@ -351,9 +356,9 @@ class SettingsScreen extends StatelessWidget {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment<String>(value: 'bluesky', label: Text('Bluesky')),
-                          ButtonSegment<String>(value: 'community', label: Text('Community')),
+                        segments: [
+                          const ButtonSegment<String>(value: 'bluesky', label: Text('Bluesky')),
+                          ButtonSegment<String>(value: 'community', label: Text(l10n.labelCommunity)),
                         ],
                         selected: {settingsState.typeaheadProvider},
                         onSelectionChanged: (selection) {
@@ -364,10 +369,10 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const Divider(height: 1),
                 ],
-                const _SettingsTile(
+                _SettingsTile(
                   icon: Icons.manage_search_outlined,
-                  title: 'Semantic Search',
-                  subtitle: 'Manage semantic search from Bookmarks & Likes -> Search',
+                  title: l10n.labelSemanticSearch,
+                  subtitle: l10n.messageManageSemanticSearchSubtitle,
                 ),
               ],
             ),
@@ -378,6 +383,7 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildDeveloperSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
     final crashReportingService = _readCrashReportingServiceOrNull(context);
+    final l10n = context.l10n;
 
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
@@ -394,15 +400,15 @@ class SettingsScreen extends StatelessWidget {
             children: [
               _SettingsTile(
                 icon: Icons.cloud_off_outlined,
-                title: 'Go Offline',
-                subtitle: 'Turn off online connectivity',
+                title: l10n.labelGoOffline,
+                subtitle: l10n.messageDeveloperGoOfflineSubtitle,
                 trailing: Switch.adaptive(value: state.simulateOffline, onChanged: settingsCubit.setSimulateOffline),
               ),
               const Divider(height: 1),
               _SettingsTile(
                 icon: Icons.bug_report_outlined,
-                title: 'Crashlytics Test Crash',
-                subtitle: 'Intentionally crash to validate Crashlytics reports',
+                title: l10n.labelCrashlyticsTestCrash,
+                subtitle: l10n.messageCrashlyticsTestCrashSubtitle,
                 trailing: const Icon(Icons.warning_amber_rounded),
                 onTap: crashReportingService?.crash,
               ),
@@ -410,12 +416,12 @@ class SettingsScreen extends StatelessWidget {
                 const Divider(height: 1),
                 _SettingsTile(
                   icon: Icons.lock_reset_outlined,
-                  title: 'Force Next XRPC 401',
-                  subtitle: 'Debug-only: next network request returns Unauthorized to test token refresh',
+                  title: l10n.labelForceNextXrpc401,
+                  subtitle: l10n.messageForceNextXrpc401Subtitle,
                   trailing: const Icon(Icons.play_arrow_outlined),
                   onTap: () {
                     XrpcNetworkInterceptor.debugForceUnauthorizedOnce();
-                    showAppSnackBar(context, 'Armed: next XRPC request will return debug 401 Unauthorized');
+                    showAppSnackBar(context, l10n.messageAppViewDebug401Armed);
                   },
                 ),
               ],
@@ -437,6 +443,7 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildAdvancedSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
         return Container(
@@ -451,7 +458,7 @@ class SettingsScreen extends StatelessWidget {
             children: [
               _SettingsTile(
                 icon: Icons.description_outlined,
-                title: 'Logs',
+                title: l10n.labelLogs,
                 subtitle: 'View app log files',
                 onTap: () => context.push('/settings/logs'),
               ),
@@ -460,8 +467,8 @@ class SettingsScreen extends StatelessWidget {
               const Divider(height: 1),
               _SettingsTile(
                 icon: Icons.route_outlined,
-                title: 'AppView Provider',
-                subtitle: _appViewSubtitle(state.appViewProvider),
+                title: l10n.labelAppViewProvider,
+                subtitle: _appViewSubtitle(context, state.appViewProvider),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -487,8 +494,8 @@ class SettingsScreen extends StatelessWidget {
               const Divider(height: 1),
               _SettingsTile(
                 icon: Icons.compare_arrows_outlined,
-                title: 'Cross-Provider Fallback',
-                subtitle: 'Retry public reads on the alternate AppView when transient errors occur',
+                title: l10n.labelCrossProviderFallback,
+                subtitle: l10n.messageCrossProviderFallbackSubtitle,
                 trailing: Switch.adaptive(
                   value: state.crossProviderFallbackEnabled,
                   onChanged: settingsCubit.setCrossProviderFallbackEnabled,
@@ -497,8 +504,8 @@ class SettingsScreen extends StatelessWidget {
               const Divider(height: 1),
               _SettingsTile(
                 icon: Icons.alt_route_outlined,
-                title: 'Slingshot Identity Fallback',
-                subtitle: 'If handle lookup fails, use Slingshot to find your DID and PDS so sign-in can continue',
+                title: l10n.labelSlingshotIdentityFallback,
+                subtitle: l10n.messageSlingshotIdentityFallbackSubtitle,
                 trailing: Switch.adaptive(
                   value: state.slingshotIdentityFallbackEnabled,
                   onChanged: settingsCubit.setSlingshotIdentityFallbackEnabled,
@@ -507,43 +514,46 @@ class SettingsScreen extends StatelessWidget {
               const Divider(height: 1),
               _SettingsTile(
                 icon: Icons.bug_report_outlined,
-                title: 'Crash Reporting',
+                title: l10n.labelCrashReporting,
                 subtitle: state.crashReportingEnabled
-                    ? 'Enabled. Crash and error reports are sent to improve stability.'
-                    : 'Disabled. Crash and error reports are not sent.',
+                    ? l10n.messageCrashReportingEnabled
+                    : l10n.messageCrashReportingDisabled,
                 trailing: Switch.adaptive(
                   value: state.crashReportingEnabled,
                   onChanged: (enabled) => unawaited(_handleCrashReportingToggle(context, enabled)),
                 ),
               ),
               const Divider(height: 1),
-              const _SettingsTile(
+              _SettingsTile(
                 icon: Icons.monitor_heart_outlined,
-                title: 'Provider Diagnostics',
-                subtitle: 'Moderation/ranking can differ by provider. Verify health and recent fallback state.',
+                title: l10n.labelProviderDiagnostics,
+                subtitle: l10n.messageProviderDiagnosticsSubtitle,
               ),
               _ConnectionDetailRow(
-                label: 'Active Provider',
+                label: l10n.labelActiveProvider,
                 value: AppViewProviders.providerDisplayName(state.appViewProvider),
               ),
               const Divider(height: 1),
-              _ConnectionDetailRow(label: 'Health', value: state.appViewHealthSummary ?? 'Not checked yet'),
+              _ConnectionDetailRow(
+                label: l10n.labelHealth,
+                value: state.appViewHealthSummary ?? l10n.commonNotCheckedYet,
+              ),
               const Divider(height: 1),
               _ConnectionDetailRow(
-                label: 'Last Health Check',
+                label: l10n.labelLastHealthCheck,
                 value: state.appViewHealthCheckedAt == null
-                    ? 'Never'
+                    ? l10n.commonNever
                     : formatTimestamp(state.appViewHealthCheckedAt!.toLocal()),
               ),
               const Divider(height: 1),
-              _ConnectionDetailRow(label: 'Last Fallback', value: state.appViewLastFallback ?? 'None'),
+              _ConnectionDetailRow(label: l10n.labelLastFallback, value: state.appViewLastFallback ?? l10n.commonNone),
               const Divider(height: 1),
-              _ConnectionDetailRow(label: 'Last Error', value: state.appViewLastError ?? 'None'),
+              _ConnectionDetailRow(label: l10n.labelLastError, value: state.appViewLastError ?? l10n.commonNone),
               const Divider(height: 1),
               _SettingsTile(
                 icon: Icons.medical_information_outlined,
-                title: 'Refresh Provider Health',
-                subtitle: 'Probe public AppView endpoints now',
+                title: l10n.labelRefreshProviderHealth,
+                subtitle: l10n.messageRefreshProviderHealthSubtitle,
                 trailing: state.appViewHealthRefreshing
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.refresh_outlined),
@@ -560,9 +570,9 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  String _appViewSubtitle(String providerKey) {
+  String _appViewSubtitle(BuildContext context, String providerKey) {
     final provider = AppViewProviders.providerDisplayName(providerKey);
-    return '$provider selected. Switching providers performs a soft restart.';
+    return context.l10n.formatAppViewProviderSelected(provider);
   }
 
   Future<void> _confirmAndApplyProviderChange(BuildContext context, String selectedProvider) async {
@@ -570,17 +580,13 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Switch AppView provider?'),
-          content: const Text(
-            'Apply and restart now to rebuild network services.\n\n'
-            'You will stay signed in and no local data will be deleted.\n\n'
-            'Moderation labels, ranking, and trending results can differ between providers.',
-          ),
+          title: Text(context.l10n.dialogSwitchAppViewProviderTitle),
+          content: Text(context.l10n.dialogSwitchAppViewProviderContent),
           actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(context.l10n.buttonCancel)),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Apply and Restart'),
+              child: Text(context.l10n.buttonApplyAndRestart),
             ),
           ],
         );
@@ -609,6 +615,7 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildTroubleshootingSettings(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -621,15 +628,15 @@ class SettingsScreen extends StatelessWidget {
         children: [
           _SettingsTile(
             icon: Icons.cached_outlined,
-            title: 'Clear Cache',
-            subtitle: 'Remove cached posts, profiles, images, feeds, threads, and semantic search data',
+            title: l10n.labelClearCache,
+            subtitle: l10n.messageClearCacheSubtitle,
             onTap: () => unawaited(_confirmAndClearCaches(context)),
           ),
           const Divider(height: 1),
           _SettingsTile(
             icon: Icons.manage_accounts_outlined,
-            title: 'Reset Sign-In Data',
-            subtitle: 'Troubleshoot OAuth or account-switching issues by clearing local sessions on this device',
+            title: l10n.labelResetSignInData,
+            subtitle: l10n.messageResetSignInDataSubtitle,
             isDestructive: true,
             onTap: () => unawaited(_confirmAndClearLocalAuthData(context)),
           ),
@@ -643,14 +650,14 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Clear cache?'),
-          content: const Text(
-            'This removes cached posts, profiles, images, feeds, threads, label data, and local semantic search data.\n\n'
-            'Accounts, settings, drafts, bookmarks, and likes are kept.',
-          ),
+          title: Text(context.l10n.dialogClearCacheTitle),
+          content: Text(context.l10n.dialogClearCacheContent),
           actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Clear Cache')),
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(context.l10n.buttonCancel)),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(context.l10n.buttonClearCache),
+            ),
           ],
         );
       },
@@ -663,11 +670,11 @@ class SettingsScreen extends StatelessWidget {
     try {
       await context.read<LocalCacheMaintenanceService>().clearCaches();
       if (context.mounted) {
-        showAppSnackBar(context, 'Cache cleared');
+        showAppSnackBar(context, context.l10n.labelCacheCleared);
       }
     } catch (error) {
       if (context.mounted) {
-        showAppSnackBar(context, 'Failed to clear cache: $error', isError: true);
+        showAppSnackBar(context, context.l10n.errorFailedToClearCache(error), isError: true);
       }
     }
   }
@@ -677,21 +684,17 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Reset sign-in data?'),
-          content: const Text(
-            'Use this only when troubleshooting sign-in or account switching.\n\n'
-            'This clears all local account sessions on this device and sends you back to sign in. '
-            'It does not delete your Bluesky account or posts.',
-          ),
+          title: Text(context.l10n.dialogResetSignInDataTitle),
+          content: Text(context.l10n.dialogResetSignInDataContent),
           actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(context.l10n.buttonCancel)),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(dialogContext).colorScheme.error,
                 foregroundColor: Theme.of(dialogContext).colorScheme.onError,
               ),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Reset Sign-In Data'),
+              child: Text(context.l10n.buttonResetSignInData),
             ),
           ],
         );
@@ -744,11 +747,12 @@ class _ModerationSettingsPreviewState extends State<_ModerationSettingsPreview> 
   @override
   Widget build(BuildContext context) {
     final service = _service;
+    final l10n = context.l10n;
     if (service == null) {
       return _SettingsTile(
         icon: Icons.shield_outlined,
-        title: 'Content Moderation',
-        subtitle: 'Manage labelers and visibility rules',
+        title: l10n.labelContentModeration,
+        subtitle: l10n.messageContentModerationSubtitle,
         onTap: () => context.push('/settings/moderation'),
       );
     }
@@ -765,15 +769,15 @@ class _ModerationSettingsPreviewState extends State<_ModerationSettingsPreview> 
           children: [
             _SettingsTile(
               icon: Icons.visibility_outlined,
-              title: 'Adult Content',
-              subtitle: adultEnabled ? '18+ labels can be configured' : 'Required before 18+ labels can be configured',
+              title: l10n.labelAdultContent,
+              subtitle: adultEnabled ? l10n.messageAdultContentEnabled : l10n.messageAdultContentRequired,
               trailing: Switch.adaptive(value: adultEnabled, onChanged: _isUpdating ? null : _toggleAdultContent),
             ),
             const Divider(height: 1),
             _SettingsTile(
               icon: Icons.policy_outlined,
-              title: 'Content Moderation',
-              subtitle: '$customLabelers custom labeler${customLabelers == 1 ? '' : 's'} subscribed',
+              title: l10n.labelContentModeration,
+              subtitle: l10n.formatContentModerationCustomLabelers(customLabelers),
               onTap: () => context.push('/settings/moderation'),
             ),
           ],
@@ -797,6 +801,7 @@ class _AtProtocolConnectionCard extends StatelessWidget {
 
         final pds = resolvePdsHost(tokens);
         final theme = Theme.of(context);
+        final l10n = context.l10n;
         return Container(
           decoration: BoxDecoration(
             border: Border(
@@ -811,7 +816,7 @@ class _AtProtocolConnectionCard extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                  child: Text('AT Protocol Connection', style: context.textTheme.titleMedium),
+                  child: Text(l10n.labelAtProtocolConnection, style: context.textTheme.titleMedium),
                 ),
                 const Divider(height: 1),
                 _ConnectionDetailRow(label: 'Handle', value: '@${tokens.handle}'),

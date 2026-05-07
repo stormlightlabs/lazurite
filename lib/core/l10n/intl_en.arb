@@ -1,0 +1,776 @@
+{
+  "@@locale": "en",
+  "@@context": "Lazurite English localization strings",
+  "appTitle": "Lazurite",
+  "@appTitle": {
+    "description": "Application title"
+  },
+  "buttonApplyAndRestart": "Apply and Restart",
+  "@buttonApplyAndRestart": {
+    "description": "Button label to apply a setting and restart app services"
+  },
+  "buttonCancel": "Cancel",
+  "@buttonCancel": {
+    "description": "Cancel button label"
+  },
+  "buttonClearCache": "Clear Cache",
+  "@buttonClearCache": {
+    "description": "Button label to clear local cache"
+  },
+  "buttonContinue": "Continue",
+  "@buttonContinue": {
+    "description": "Continue button label"
+  },
+  "buttonRemove": "Remove",
+  "@buttonRemove": {
+    "description": "Remove button label"
+  },
+  "buttonApply": "Apply",
+  "@buttonApply": {
+    "description": "Apply button label"
+  },
+  "buttonClear": "Clear",
+  "@buttonClear": {
+    "description": "Clear button label"
+  },
+  "buttonClearAll": "Clear all",
+  "@buttonClearAll": {
+    "description": "Clear all filters button label"
+  },
+  "buttonOpen": "Open",
+  "@buttonOpen": {
+    "description": "Open button label"
+  },
+  "buttonResetSignInData": "Reset Sign-In Data",
+  "@buttonResetSignInData": {
+    "description": "Button label to clear local sign-in data"
+  },
+  "buttonRetry": "Retry",
+  "@buttonRetry": {
+    "description": "Retry button label"
+  },
+  "buttonSignIn": "Sign In",
+  "@buttonSignIn": {
+    "description": "Sign in button label"
+  },
+  "buttonShowContent": "Show content",
+  "@buttonShowContent": {
+    "description": "Button label to reveal moderated content"
+  },
+  "buttonTryAgain": "Try again",
+  "@buttonTryAgain": {
+    "description": "Try again button label"
+  },
+  "commonNever": "Never",
+  "@commonNever": {
+    "description": "Label for a value that has never happened"
+  },
+  "commonNone": "None",
+  "@commonNone": {
+    "description": "Label for no value"
+  },
+  "commonNotCheckedYet": "Not checked yet",
+  "@commonNotCheckedYet": {
+    "description": "Label for a health check that has not run"
+  },
+  "commonOff": "Off",
+  "@commonOff": {
+    "description": "Disabled option label"
+  },
+  "dialogClearCacheContent": "This removes cached posts, profiles, images, feeds, threads, label data, and local semantic search data.\n\nAccounts, settings, drafts, bookmarks, and likes are kept.",
+  "@dialogClearCacheContent": {
+    "description": "Confirmation dialog body before clearing local cache"
+  },
+  "dialogClearCacheTitle": "Clear cache?",
+  "@dialogClearCacheTitle": {
+    "description": "Confirmation dialog title before clearing local cache"
+  },
+  "dialogRemoveAccountContent": "Remove @{handle} from this device?",
+  "@dialogRemoveAccountContent": {
+    "description": "Confirmation dialog body before removing a saved account from this device",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "dialogRemoveAccountTitle": "Remove Account",
+  "@dialogRemoveAccountTitle": {
+    "description": "Confirmation dialog title before removing a saved account"
+  },
+  "dialogResetSignInDataContent": "Use this only when troubleshooting sign-in or account switching.\n\nThis clears all local account sessions on this device and sends you back to sign in. It does not delete your Bluesky account or posts.",
+  "@dialogResetSignInDataContent": {
+    "description": "Confirmation dialog body before clearing local sign-in data"
+  },
+  "dialogResetSignInDataTitle": "Reset sign-in data?",
+  "@dialogResetSignInDataTitle": {
+    "description": "Confirmation dialog title before clearing local sign-in data"
+  },
+  "dialogSwitchAppViewProviderContent": "Apply and restart now to rebuild network services.\n\nYou will stay signed in and no local data will be deleted.\n\nModeration labels, ranking, and trending results can differ between providers.",
+  "@dialogSwitchAppViewProviderContent": {
+    "description": "Confirmation dialog body before switching AppView provider"
+  },
+  "dialogSwitchAppViewProviderTitle": "Switch AppView provider?",
+  "@dialogSwitchAppViewProviderTitle": {
+    "description": "Confirmation dialog title before switching AppView provider"
+  },
+  "errorFailedToSaveProviderSelection": "Failed to save provider selection: {error}",
+  "@errorFailedToSaveProviderSelection": {
+    "description": "Snackbar message when persisting selected provider fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "database unavailable"
+      }
+    }
+  },
+  "errorFailedToClearCache": "Failed to clear cache: {error}",
+  "@errorFailedToClearCache": {
+    "description": "Snackbar message when cache clearing fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "permission denied"
+      }
+    }
+  },
+  "errorGenericTitle": "Something went wrong",
+  "@errorGenericTitle": {
+    "description": "Generic error state title"
+  },
+  "errorUnableToRemoveAccount": "Unable to remove account right now.",
+  "@errorUnableToRemoveAccount": {
+    "description": "Snackbar message when a saved account cannot be removed"
+  },
+  "labelRemoveAccount": "Remove account",
+  "@labelRemoveAccount": {
+    "description": "Tooltip for removing a saved account"
+  },
+  "formatAccountsTapToSwitch": "{count, plural, =1{1 account - tap to switch} other{{count} accounts - tap to switch}}",
+  "@formatAccountsTapToSwitch": {
+    "description": "Settings account row subtitle when multiple accounts are available",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "formatAppViewProviderSelected": "{provider} selected. Switching providers performs a soft restart.",
+  "@formatAppViewProviderSelected": {
+    "description": "Settings subtitle for selected AppView provider",
+    "placeholders": {
+      "provider": {
+        "type": "String",
+        "example": "Bluesky"
+      }
+    }
+  },
+  "formatContentModerationCustomLabelers": "{count, plural, =0{No custom labelers subscribed} =1{1 custom labeler subscribed} other{{count} custom labelers subscribed}}",
+  "@formatContentModerationCustomLabelers": {
+    "description": "Settings subtitle showing the count of subscribed custom moderation labelers",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "formatDepth": "Depth {depth}",
+  "@formatDepth": {
+    "description": "Thread auto-collapse depth setting option",
+    "placeholders": {
+      "depth": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "labelAbout": "About",
+  "@labelAbout": {
+    "description": "About page or settings label"
+  },
+  "labelAccount": "Account",
+  "@labelAccount": {
+    "description": "Account settings section label"
+  },
+  "labelAccountMaintenance": "Account Maintenance",
+  "@labelAccountMaintenance": {
+    "description": "Settings section for account maintenance actions"
+  },
+  "labelActiveProvider": "Active Provider",
+  "@labelActiveProvider": {
+    "description": "Provider diagnostics label for active provider"
+  },
+  "labelAdultContent": "Adult Content",
+  "@labelAdultContent": {
+    "description": "Adult content setting label"
+  },
+  "labelAdvanced": "Advanced",
+  "@labelAdvanced": {
+    "description": "Advanced settings section label"
+  },
+  "labelAlerts": "ALERTS",
+  "@labelAlerts": {
+    "description": "Bottom navigation alerts label"
+  },
+  "labelAnimations": "Animations",
+  "@labelAnimations": {
+    "description": "Animations settings label"
+  },
+  "labelAppearance": "Appearance",
+  "@labelAppearance": {
+    "description": "Appearance settings section label"
+  },
+  "labelAppPassword": "App Password",
+  "@labelAppPassword": {
+    "description": "Debug app password field label"
+  },
+  "labelAppPasswordLogin": "App Password Login",
+  "@labelAppPasswordLogin": {
+    "description": "Debug app password login card title"
+  },
+  "labelAppViewProvider": "AppView Provider",
+  "@labelAppViewProvider": {
+    "description": "AppView provider settings label"
+  },
+  "labelAtExplorer": "AT Explorer",
+  "@labelAtExplorer": {
+    "description": "AT Protocol explorer settings/menu label"
+  },
+  "labelAtProtocolConnection": "AT Protocol Connection",
+  "@labelAtProtocolConnection": {
+    "description": "Settings section title for AT Protocol connection details"
+  },
+  "labelAuditFollows": "Audit Follows",
+  "@labelAuditFollows": {
+    "description": "Menu item for follow audit feature"
+  },
+  "labelBack": "Back",
+  "@labelBack": {
+    "description": "Back tooltip label"
+  },
+  "labelBookmarksAndLikes": "Bookmarks & Likes",
+  "@labelBookmarksAndLikes": {
+    "description": "Settings item for bookmarked and liked posts"
+  },
+  "labelCacheCleared": "Cache cleared",
+  "@labelCacheCleared": {
+    "description": "Snackbar message after clearing cache"
+  },
+  "labelChooseYourPortal": "Choose your portal",
+  "@labelChooseYourPortal": {
+    "description": "Login provider selection label"
+  },
+  "labelCleanFollows": "Clean Follows",
+  "@labelCleanFollows": {
+    "description": "Settings item for follow audit feature"
+  },
+  "labelClearCache": "Clear Cache",
+  "@labelClearCache": {
+    "description": "Settings item for clearing cache"
+  },
+  "labelCommunity": "Community",
+  "@labelCommunity": {
+    "description": "Community provider option label"
+  },
+  "labelConstellationUrl": "Constellation URL",
+  "@labelConstellationUrl": {
+    "description": "Constellation URL setting label"
+  },
+  "labelContentModeration": "Content Moderation",
+  "@labelContentModeration": {
+    "description": "Content moderation settings label"
+  },
+  "labelContinueSignIn": "Continue sign in",
+  "@labelContinueSignIn": {
+    "description": "Semantic label for continuing sign in"
+  },
+  "labelCrashReporting": "Crash Reporting",
+  "@labelCrashReporting": {
+    "description": "Crash reporting setting label"
+  },
+  "labelCrashlyticsTestCrash": "Crashlytics Test Crash",
+  "@labelCrashlyticsTestCrash": {
+    "description": "Developer setting to trigger a test crash"
+  },
+  "labelCrossProviderFallback": "Cross-Provider Fallback",
+  "@labelCrossProviderFallback": {
+    "description": "Cross-provider fallback setting label"
+  },
+  "labelDangerZone": "Danger Zone",
+  "@labelDangerZone": {
+    "description": "Destructive settings section label"
+  },
+  "labelDark": "Dark",
+  "@labelDark": {
+    "description": "Dark theme option label"
+  },
+  "labelDebug": "Debug",
+  "@labelDebug": {
+    "description": "Debug section label"
+  },
+  "labelDeveloper": "Developer",
+  "@labelDeveloper": {
+    "description": "Developer settings section label"
+  },
+  "labelFeedLayout": "Feed Layout",
+  "@labelFeedLayout": {
+    "description": "Feed layout setting label"
+  },
+  "labelFeeds": "Feeds",
+  "@labelFeeds": {
+    "description": "Feeds menu/settings label"
+  },
+  "labelForceNextXrpc401": "Force Next XRPC 401",
+  "@labelForceNextXrpc401": {
+    "description": "Developer setting to force the next XRPC request to return Unauthorized"
+  },
+  "labelGoOffline": "Go Offline",
+  "@labelGoOffline": {
+    "description": "Developer setting to simulate offline mode"
+  },
+  "labelGuest": "Guest",
+  "@labelGuest": {
+    "description": "Fallback account display name when no user is signed in"
+  },
+  "labelHealth": "Health",
+  "@labelHealth": {
+    "description": "Provider diagnostics health label"
+  },
+  "labelHandle": "Handle",
+  "@labelHandle": {
+    "description": "Handle field label"
+  },
+  "labelHide": "Hide",
+  "@labelHide": {
+    "description": "Hide button label"
+  },
+  "labelHome": "HOME",
+  "@labelHome": {
+    "description": "Bottom navigation home label"
+  },
+  "labelLastError": "Last Error",
+  "@labelLastError": {
+    "description": "Provider diagnostics last error label"
+  },
+  "labelLastFallback": "Last Fallback",
+  "@labelLastFallback": {
+    "description": "Provider diagnostics last fallback label"
+  },
+  "labelLastHealthCheck": "Last Health Check",
+  "@labelLastHealthCheck": {
+    "description": "Provider diagnostics last health check label"
+  },
+  "labelLayout": "Layout",
+  "@labelLayout": {
+    "description": "Layout settings section label"
+  },
+  "labelLight": "Light",
+  "@labelLight": {
+    "description": "Light theme option label"
+  },
+  "labelLogOut": "Log Out",
+  "@labelLogOut": {
+    "description": "Log out button or menu label"
+  },
+  "labelLogs": "Logs",
+  "@labelLogs": {
+    "description": "Logs settings label"
+  },
+  "labelMessages": "Messages",
+  "@labelMessages": {
+    "description": "Messages menu label"
+  },
+  "labelModeration": "Moderation",
+  "@labelModeration": {
+    "description": "Moderation settings section label"
+  },
+  "labelNavigation": "Navigation",
+  "@labelNavigation": {
+    "description": "Navigation menu section label"
+  },
+  "labelNewPost": "New Post",
+  "@labelNewPost": {
+    "description": "New post menu label"
+  },
+  "labelNotifications": "Notifications",
+  "@labelNotifications": {
+    "description": "Notifications menu label"
+  },
+  "labelOpenMenu": "Open menu",
+  "@labelOpenMenu": {
+    "description": "Tooltip for opening the navigation menu"
+  },
+  "labelPrivacyPolicy": "Privacy Policy",
+  "@labelPrivacyPolicy": {
+    "description": "Privacy policy link label"
+  },
+  "labelProfile": "PROFILE",
+  "@labelProfile": {
+    "description": "Bottom navigation profile label"
+  },
+  "labelProviderDiagnostics": "Provider Diagnostics",
+  "@labelProviderDiagnostics": {
+    "description": "Settings section for provider diagnostics"
+  },
+  "labelRefreshProviderHealth": "Refresh Provider Health",
+  "@labelRefreshProviderHealth": {
+    "description": "Settings item for refreshing provider health"
+  },
+  "labelResetSignInData": "Reset Sign-In Data",
+  "@labelResetSignInData": {
+    "description": "Settings item for resetting local sign-in data"
+  },
+  "labelRoamTheAtmosphere": "Roam the ATmosphere",
+  "@labelRoamTheAtmosphere": {
+    "description": "Login screen subtitle"
+  },
+  "labelSearch": "Search",
+  "@labelSearch": {
+    "description": "Search menu/settings label"
+  },
+  "labelSearchPosts": "Search Posts",
+  "@labelSearchPosts": {
+    "description": "Title for posts-only search mode"
+  },
+  "labelJumpToProfile": "Jump to profile",
+  "@labelJumpToProfile": {
+    "description": "Button and dialog title for jumping directly to a profile"
+  },
+  "labelPosts": "Posts",
+  "@labelPosts": {
+    "description": "Posts tab label"
+  },
+  "labelPeople": "People",
+  "@labelPeople": {
+    "description": "People tab label"
+  },
+  "labelStarterPacks": "Starter Packs",
+  "@labelStarterPacks": {
+    "description": "Starter packs tab label"
+  },
+  "labelSortBy": "Sort by",
+  "@labelSortBy": {
+    "description": "Sort control label"
+  },
+  "labelTop": "Top",
+  "@labelTop": {
+    "description": "Top sort option label"
+  },
+  "labelLatest": "Latest",
+  "@labelLatest": {
+    "description": "Latest sort option label"
+  },
+  "labelFilters": "Filters",
+  "@labelFilters": {
+    "description": "Search filters button label"
+  },
+  "labelPostFilters": "Post filters",
+  "@labelPostFilters": {
+    "description": "Post filters sheet title"
+  },
+  "labelMentions": "Mentions",
+  "@labelMentions": {
+    "description": "Mentions filter label"
+  },
+  "labelAuthor": "Author",
+  "@labelAuthor": {
+    "description": "Author filter label"
+  },
+  "labelAuthorFixed": "Author (fixed)",
+  "@labelAuthorFixed": {
+    "description": "Fixed author filter label"
+  },
+  "labelLanguage": "Language",
+  "@labelLanguage": {
+    "description": "Language filter label"
+  },
+  "labelDomain": "Domain",
+  "@labelDomain": {
+    "description": "Domain filter label"
+  },
+  "labelUrl": "URL",
+  "@labelUrl": {
+    "description": "URL filter label"
+  },
+  "labelTags": "Tags",
+  "@labelTags": {
+    "description": "Tags filter label"
+  },
+  "labelSince": "Since",
+  "@labelSince": {
+    "description": "Since date filter label"
+  },
+  "labelUntil": "Until",
+  "@labelUntil": {
+    "description": "Until date filter label"
+  },
+  "labelClearSince": "Clear since",
+  "@labelClearSince": {
+    "description": "Button label to clear since date filter"
+  },
+  "labelClearUntil": "Clear until",
+  "@labelClearUntil": {
+    "description": "Button label to clear until date filter"
+  },
+  "labelSavedAccounts": "Saved accounts",
+  "@labelSavedAccounts": {
+    "description": "Saved accounts section label on login screen"
+  },
+  "labelSearchNav": "SEARCH",
+  "@labelSearchNav": {
+    "description": "Bottom navigation search label"
+  },
+  "labelSemanticSearch": "Semantic Search",
+  "@labelSemanticSearch": {
+    "description": "Semantic search settings label"
+  },
+  "labelSettings": "Settings",
+  "@labelSettings": {
+    "description": "Settings page title or tooltip"
+  },
+  "labelShow": "Show",
+  "@labelShow": {
+    "description": "Show button label"
+  },
+  "labelSignInRequired": "Sign in required",
+  "@labelSignInRequired": {
+    "description": "Fallback account handle text when sign in is required"
+  },
+  "labelSlingshotIdentityFallback": "Slingshot Identity Fallback",
+  "@labelSlingshotIdentityFallback": {
+    "description": "Slingshot identity fallback setting label"
+  },
+  "labelStartingSignIn": "Starting sign in",
+  "@labelStartingSignIn": {
+    "description": "Tooltip while sign in is starting"
+  },
+  "labelSystem": "System",
+  "@labelSystem": {
+    "description": "System theme option label"
+  },
+  "labelTermsOfService": "Terms of Service",
+  "@labelTermsOfService": {
+    "description": "Terms of service link label"
+  },
+  "labelTheme": "THEME",
+  "@labelTheme": {
+    "description": "Theme subsection label in settings"
+  },
+  "labelThreadAutoCollapse": "Thread Auto-Collapse",
+  "@labelThreadAutoCollapse": {
+    "description": "Thread auto-collapse setting label"
+  },
+  "labelTroubleshooting": "Troubleshooting",
+  "@labelTroubleshooting": {
+    "description": "Troubleshooting settings section label"
+  },
+  "labelTypeaheadProvider": "Typeahead Provider",
+  "@labelTypeaheadProvider": {
+    "description": "Typeahead provider settings label"
+  },
+  "labelVideoUploadLimits": "Video Upload Limits",
+  "@labelVideoUploadLimits": {
+    "description": "Video upload limits settings label"
+  },
+  "messageAppPasswordGeneratedViaBluesky": "Can be generated via Bluesky''s App Passwords section at bsky.app.",
+  "@messageAppPasswordGeneratedViaBluesky": {
+    "description": "Debug app password help text"
+  },
+  "messageAppViewDebug401Armed": "Armed: next XRPC request will return debug 401 Unauthorized",
+  "@messageAppViewDebug401Armed": {
+    "description": "Snackbar message after arming debug unauthorized response"
+  },
+  "messageBlueskyEndpointSelected": "Bluesky official endpoint selected.",
+  "@messageBlueskyEndpointSelected": {
+    "description": "Settings subtitle for Bluesky typeahead provider"
+  },
+  "messageBookmarksAndLikesSubtitle": "View your bookmarked and liked posts",
+  "@messageBookmarksAndLikesSubtitle": {
+    "description": "Settings subtitle for bookmarks and likes"
+  },
+  "messageChooseProviderSubtitle": "Choose the AppView provider used for sign in and public reads.",
+  "@messageChooseProviderSubtitle": {
+    "description": "Login screen provider selection helper text"
+  },
+  "messageCleanFollowsSubtitle": "Audit and unfollow problematic accounts in bulk",
+  "@messageCleanFollowsSubtitle": {
+    "description": "Settings subtitle for clean follows"
+  },
+  "messageClearCacheSubtitle": "Remove cached posts, profiles, images, feeds, threads, and semantic search data",
+  "@messageClearCacheSubtitle": {
+    "description": "Settings subtitle for clearing cache"
+  },
+  "messageCommunityTypeaheadSelected": "Community (waow.tech) selected. Third-party service.",
+  "@messageCommunityTypeaheadSelected": {
+    "description": "Settings subtitle for community typeahead provider"
+  },
+  "messageContentModerationSubtitle": "Manage labelers and visibility rules",
+  "@messageContentModerationSubtitle": {
+    "description": "Settings subtitle for content moderation"
+  },
+  "messageAdultContentEnabled": "18+ labels can be configured",
+  "@messageAdultContentEnabled": {
+    "description": "Settings subtitle when adult content preference is enabled"
+  },
+  "messageAdultContentRequired": "Required before 18+ labels can be configured",
+  "@messageAdultContentRequired": {
+    "description": "Settings subtitle when adult content preference is disabled"
+  },
+  "messageCrashReportingDisabled": "Disabled. Crash and error reports are not sent.",
+  "@messageCrashReportingDisabled": {
+    "description": "Settings subtitle when crash reporting is disabled"
+  },
+  "messageCrashReportingEnabled": "Enabled. Crash and error reports are sent to improve stability.",
+  "@messageCrashReportingEnabled": {
+    "description": "Settings subtitle when crash reporting is enabled"
+  },
+  "messageCrashlyticsTestCrashSubtitle": "Intentionally crash to validate Crashlytics reports",
+  "@messageCrashlyticsTestCrashSubtitle": {
+    "description": "Developer setting subtitle for test crash"
+  },
+  "messageCrossProviderFallbackSubtitle": "Retry public reads on the alternate AppView when transient errors occur",
+  "@messageCrossProviderFallbackSubtitle": {
+    "description": "Settings subtitle for cross-provider fallback"
+  },
+  "messageDeveloperGoOfflineSubtitle": "Turn off online connectivity",
+  "@messageDeveloperGoOfflineSubtitle": {
+    "description": "Developer setting subtitle for simulated offline"
+  },
+  "messageFeedLayoutCard": "Card",
+  "@messageFeedLayoutCard": {
+    "description": "Feed layout card option"
+  },
+  "messageLoadingSavedAccounts": "Loading saved accounts...",
+  "@messageLoadingSavedAccounts": {
+    "description": "Loading message while saved accounts load"
+  },
+  "messageFeedLayoutCompact": "Compact",
+  "@messageFeedLayoutCompact": {
+    "description": "Feed layout compact option"
+  },
+  "messageFeedsSubtitle": "Manage pinned and saved feeds",
+  "@messageFeedsSubtitle": {
+    "description": "Settings subtitle for feeds"
+  },
+  "messageForceNextXrpc401Subtitle": "Debug-only: next network request returns Unauthorized to test token refresh",
+  "@messageForceNextXrpc401Subtitle": {
+    "description": "Developer setting subtitle for forced 401"
+  },
+  "messageManageSemanticSearchSubtitle": "Manage semantic search from Bookmarks & Likes -> Search",
+  "@messageManageSemanticSearchSubtitle": {
+    "description": "Settings subtitle for semantic search management"
+  },
+
+  "messageModeratedContentCannotReveal": "Hidden by your moderation settings and cannot be revealed here.",
+  "@messageModeratedContentCannotReveal": {
+    "description": "Moderation overlay description when content cannot be revealed"
+  },
+
+  "messageModeratedContentCanReveal": "Hidden by your moderation settings. You can reveal it for this view.",
+  "@messageModeratedContentCanReveal": {
+    "description": "Moderation overlay description when content can be revealed"
+  },
+  "messageProviderDiagnosticsSubtitle": "Moderation/ranking can differ by provider. Verify health and recent fallback state.",
+  "@messageProviderDiagnosticsSubtitle": {
+    "description": "Settings subtitle for provider diagnostics"
+  },
+  "messageRefreshProviderHealthSubtitle": "Probe public AppView endpoints now",
+  "@messageRefreshProviderHealthSubtitle": {
+    "description": "Settings subtitle for refreshing provider health"
+  },
+  "messageResetSignInDataSubtitle": "Troubleshoot OAuth or account-switching issues by clearing local sessions on this device",
+  "@messageResetSignInDataSubtitle": {
+    "description": "Settings subtitle for resetting sign-in data"
+  },
+  "messageSearchSubtitle": "Search",
+  "@messageSearchSubtitle": {
+    "description": "Generic search subtitle"
+  },
+  "messageClearSearchHistoryContent": "This will delete all your recent searches.",
+  "@messageClearSearchHistoryContent": {
+    "description": "Confirmation dialog body before clearing search history"
+  },
+  "messageClearSearchHistoryTitle": "Clear search history?",
+  "@messageClearSearchHistoryTitle": {
+    "description": "Confirmation dialog title before clearing search history"
+  },
+  "messageStartTypingToSearchHandles": "Start typing to search handles.",
+  "@messageStartTypingToSearchHandles": {
+    "description": "Hint shown in jump to profile dialog"
+  },
+  "messageStarterPackSearchApiUnavailable": "Starter pack search is not available in the API yet.",
+  "@messageStarterPackSearchApiUnavailable": {
+    "description": "Helper text when starter pack search is disabled"
+  },
+  "messageStarterPackSearchUnavailableTitle": "Starter Pack Search Is Unavailable",
+  "@messageStarterPackSearchUnavailableTitle": {
+    "description": "Starter pack search unavailable state title"
+  },
+  "messageStarterPackSearchUnavailableBody": "(Starter Pack Search is not yet implemented in the BlueSky API)",
+  "@messageStarterPackSearchUnavailableBody": {
+    "description": "Starter pack search unavailable state body"
+  },
+  "messageTrackApiProgress": "Track API progress",
+  "@messageTrackApiProgress": {
+    "description": "Button label to open upstream API issue"
+  },
+  "messageCouldNotOpenIssueLink": "Could not open issue link.",
+  "@messageCouldNotOpenIssueLink": {
+    "description": "Snackbar message when opening upstream issue link fails"
+  },
+  "messageSearchPostsPlaceholder": "Search posts",
+  "@messageSearchPostsPlaceholder": {
+    "description": "Search posts field placeholder"
+  },
+  "messageSearchThisProfilesPostsPlaceholder": "Search this profile''s posts",
+  "@messageSearchThisProfilesPostsPlaceholder": {
+    "description": "Search placeholder in profile posts-only mode"
+  },
+  "messageSearchPeoplePlaceholder": "Search people",
+  "@messageSearchPeoplePlaceholder": {
+    "description": "Search people field placeholder"
+  },
+  "messageSearchFeedsPlaceholder": "Search feeds",
+  "@messageSearchFeedsPlaceholder": {
+    "description": "Search feeds field placeholder"
+  },
+  "messageStarterPackSearchUnavailablePlaceholder": "Starter pack search unavailable",
+  "@messageStarterPackSearchUnavailablePlaceholder": {
+    "description": "Starter pack search field placeholder"
+  },
+  "messageSlingshotIdentityFallbackSubtitle": "If handle lookup fails, use Slingshot to find your DID and PDS so sign-in can continue",
+  "@messageSlingshotIdentityFallbackSubtitle": {
+    "description": "Settings subtitle for Slingshot identity fallback"
+  },
+  "messageThreadAutoCollapseSubtitle": "Collapse reply branches deeper than the selected level",
+  "@messageThreadAutoCollapseSubtitle": {
+    "description": "Settings subtitle for thread auto-collapse"
+  },
+  "messageTurnOffNonEssentialMotion": "Turn off non-essential motion effects",
+  "@messageTurnOffNonEssentialMotion": {
+    "description": "Settings subtitle for animations"
+  },
+  "messageVideoUploadLimitsSubtitle": "Check your daily video quota",
+  "@messageVideoUploadLimitsSubtitle": {
+    "description": "Settings subtitle for video upload limits"
+  },
+  "placeholderAppPassword": "xxxx-xxxx-xxxx-xxxx",
+  "@placeholderAppPassword": {
+    "description": "Placeholder for app password field"
+  },
+  "placeholderHandleOrDid": "username.bsky.social or did:plc:...",
+  "@placeholderHandleOrDid": {
+    "description": "Placeholder for handle or DID sign-in field"
+  },
+  "promptHandleOrDid": "Handle or DID",
+  "@promptHandleOrDid": {
+    "description": "Label for handle or DID sign-in field"
+  },
+  "validationEnterAppPassword": "Enter your app password",
+  "@validationEnterAppPassword": {
+    "description": "Validation error for missing app password"
+  }
+}

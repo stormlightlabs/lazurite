@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ConfirmationDialog extends StatelessWidget {
   const ConfirmationDialog({
@@ -10,7 +11,7 @@ class ConfirmationDialog extends StatelessWidget {
     required this.content,
     required this.confirmLabel,
     required this.onConfirm,
-    this.cancelLabel = 'Cancel',
+    this.cancelLabel,
     this.onCancel,
     this.confirmDestructive = false,
     this.showCancel = true,
@@ -21,7 +22,7 @@ class ConfirmationDialog extends StatelessWidget {
   final Widget content;
   final String confirmLabel;
   final VoidCallback onConfirm;
-  final String cancelLabel;
+  final String? cancelLabel;
   final VoidCallback? onCancel;
   final bool confirmDestructive;
   final bool showCancel;
@@ -34,7 +35,10 @@ class ConfirmationDialog extends StatelessWidget {
       content: content,
       actions: [
         if (showCancel)
-          TextButton(onPressed: onCancel ?? () => Navigator.of(context).pop(false), child: Text(cancelLabel)),
+          TextButton(
+            onPressed: onCancel ?? () => Navigator.of(context).pop(false),
+            child: Text(cancelLabel ?? context.l10n.buttonCancel),
+          ),
         FilledButton(
           onPressed: confirmEnabled ? onConfirm : null,
           style: confirmDestructive
@@ -55,7 +59,7 @@ Future<bool> showConfirmationDialog({
   required Widget title,
   required Widget content,
   required String confirmLabel,
-  String cancelLabel = 'Cancel',
+  String? cancelLabel,
   bool confirmDestructive = false,
   bool showCancel = true,
   bool barrierDismissible = true,

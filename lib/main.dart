@@ -14,6 +14,7 @@ import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/embedding/embedding_service.dart';
+import 'package:lazurite/core/l10n/app_localizations.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
 import 'package:lazurite/core/logging/logging_navigator_observer.dart';
@@ -45,15 +46,15 @@ import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
-import 'package:lazurite/features/notifications/data/notification_repository.dart';
-import 'package:lazurite/features/notifications/data/flutter_local_notification_adapter.dart';
+import 'package:lazurite/features/notifications/background/notification_background_worker.dart';
 import 'package:lazurite/features/notifications/data/firebase_push_token_provider.dart';
+import 'package:lazurite/features/notifications/data/flutter_local_notification_adapter.dart';
+import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/notifications/domain/local_notification_adapter.dart';
 import 'package:lazurite/features/notifications/domain/notification_deep_link_navigator.dart';
 import 'package:lazurite/features/notifications/domain/notification_domain_service.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_models.dart';
 import 'package:lazurite/features/notifications/domain/push_registration_service.dart';
-import 'package:lazurite/features/notifications/background/notification_background_worker.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
@@ -507,10 +508,13 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                 return MaterialApp.router(
                   key: ValueKey('router-$_routerSessionKey-$_routerGeneration'),
                   title: 'Lazurite',
+                  onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
                   debugShowCheckedModeBanner: false,
                   theme: lightTheme,
                   darkTheme: darkTheme,
                   themeMode: themeMode,
+                  localizationsDelegates: AppLocalizations.localizationsDelegates,
+                  supportedLocales: AppLocalizations.supportedLocales,
                   routerConfig: _router,
                   builder: (context, child) => GlobalTapOutsideUnfocus(
                     child: Stack(
