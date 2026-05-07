@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "8TVR4TPL9Y.org.stormlightlabs.lazurite",
+        "paths": [
+          "/oauth/callback",
+          "/oauth/callback/*"
+        ]
+      }
+    ]
+  }
+}
