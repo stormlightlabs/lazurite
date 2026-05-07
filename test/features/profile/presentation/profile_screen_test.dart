@@ -169,7 +169,11 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('she/her'), findsOneWidget);
+    final namePronounsWrap = find.byKey(const ValueKey('profile_name_pronouns_wrap'));
+    expect(find.descendant(of: namePronounsWrap, matching: find.text('RIVER TAM')), findsOneWidget);
+    expect(find.descendant(of: namePronounsWrap, matching: find.text('she/her')), findsOneWidget);
     expect(find.text('river.example'), findsOneWidget);
+    expect(find.byIcon(Icons.open_in_new), findsOneWidget);
     expect(find.text('Joined March 2024'), findsOneWidget);
   });
 
@@ -180,12 +184,49 @@ void main() {
     expect(find.text('River Tam'), findsOneWidget);
   });
 
-  testWidgets('shows separate Bookmarks and Liked buttons on own profile', (tester) async {
+  testWidgets('shows own profile header edit action and shortcut buttons', (tester) async {
     useLargeScreen(tester);
     await tester.pumpWidget(buildSubject());
 
+    expect(find.byKey(const Key('profile_edit_header_button')), findsOneWidget);
+    expect(find.text('Edit Profile'), findsNothing);
     expect(find.text('Bookmarks'), findsOneWidget);
     expect(find.text('Liked'), findsOneWidget);
+  });
+
+  testWidgets('header edit profile action opens the profile edit route', (tester) async {
+    useLargeScreen(tester);
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: authBloc),
+              BlocProvider<ProfileBloc>.value(value: profileBloc),
+              BlocProvider<FeedBloc>.value(value: feedBloc),
+              BlocProvider<SettingsCubit>.value(value: settingsCubit),
+              BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+            ],
+            child: const ProfileScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/profile/me/edit',
+          builder: (context, state) => const Scaffold(body: Text('edit-profile')),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('profile_edit_header_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('edit-profile'), findsOneWidget);
+
+    router.dispose();
   });
 
   testWidgets('tapping following stat opens connections screen on following tab', (tester) async {
@@ -256,6 +297,8 @@ void main() {
 
     await tester.pumpWidget(widget);
 
+    expect(find.byKey(const Key('profile_edit_header_button')), findsNothing);
+    expect(find.text('Edit Profile'), findsNothing);
     expect(find.text('Bookmarks'), findsNothing);
     expect(find.text('Liked'), findsNothing);
   });
