@@ -792,7 +792,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       if (profile.pronouns?.isNotEmpty ?? false)
         _buildMetaChip(context, Icons.record_voice_over_outlined, profile.pronouns!),
       if (profile.website?.isNotEmpty ?? false)
-        _buildMetaChip(context, Icons.link_outlined, profile.website!, onTap: () => _launchWebsite(profile.website!)),
+        _buildMetaChip(
+          context,
+          Icons.link_outlined,
+          profile.website!,
+          trailingIcon: Icons.open_in_new,
+          onTap: () => _launchWebsite(profile.website!),
+        ),
       if (profile.createdAt != null)
         _buildMetaChip(
           context,
@@ -862,6 +868,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               runSpacing: 8,
               children: [
                 OutlinedButton.icon(
+                  key: const ValueKey('profile_edit_button'),
+                  onPressed: () => context.push('/profile/me/edit'),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Edit Profile'),
+                ),
+                OutlinedButton.icon(
                   onPressed: () => context.push('/bookmarks'),
                   icon: const Icon(Icons.bookmark_outline),
                   label: const Text('Bookmarks'),
@@ -880,7 +892,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildMetaChip(BuildContext context, IconData icon, String label, {VoidCallback? onTap}) {
+  Widget _buildMetaChip(
+    BuildContext context,
+    IconData icon,
+    String label, {
+    IconData? trailingIcon,
+    VoidCallback? onTap,
+  }) {
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -898,6 +916,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
             ),
           ),
+          if (trailingIcon != null) ...[
+            const SizedBox(width: 6),
+            Icon(trailingIcon, size: 14, color: context.colorScheme.onSurfaceVariant),
+          ],
         ],
       ),
     );
