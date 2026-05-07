@@ -20,6 +20,7 @@ import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
+import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
@@ -46,6 +47,8 @@ class MockConvoListBloc extends MockBloc<ConvoListEvent, ConvoListState> impleme
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 
+class MockProfileRepository extends Mock implements ProfileRepository {}
+
 class MockSearchRepository extends Mock implements SearchRepository {}
 
 class MockTypeaheadRepository extends Mock implements TypeaheadRepository {}
@@ -63,6 +66,7 @@ void main() {
   late MockUnreadCountCubit unreadCountCubit;
   late MockConvoListBloc convoListBloc;
   late MockNotificationRepository notificationRepository;
+  late MockProfileRepository profileRepository;
   late MockSearchRepository searchRepository;
   late MockTypeaheadRepository typeaheadRepository;
   late MockAppDatabase database;
@@ -102,6 +106,7 @@ void main() {
     unreadCountCubit = MockUnreadCountCubit();
     convoListBloc = MockConvoListBloc();
     notificationRepository = MockNotificationRepository();
+    profileRepository = MockProfileRepository();
     searchRepository = MockSearchRepository();
     typeaheadRepository = MockTypeaheadRepository();
     database = MockAppDatabase();
@@ -197,6 +202,7 @@ void main() {
           RepositoryProvider<SearchRepository>.value(value: searchRepository),
           RepositoryProvider<TypeaheadRepository>.value(value: typeaheadRepository),
           RepositoryProvider<AppDatabase>.value(value: database),
+          RepositoryProvider<ProfileRepository>.value(value: profileRepository),
           RepositoryProvider<String>.value(value: tokens.did),
         ],
         child: MaterialApp.router(routerConfig: router),
@@ -302,6 +308,27 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Search @me.bsky.social'), findsOneWidget);
+  });
+
+  testWidgets('opens profile connections route with requested initial tab', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    when(() => profileRepository.getFollowers(actor: tokens.handle, cursor: null, limit: 100)).thenAnswer(
+      (_) async => const ProfileConnectionsPage(
+        subject: ProfileView(did: 'did:plc:me', handle: 'me.bsky.social'),
+        profiles: [],
+      ),
+    );
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/profile/${Uri.encodeComponent(tokens.handle)}/connections?tab=followers');
+    await tester.pumpAndSettle();
+
+    expect(find.text('@me.bsky.social'), findsOneWidget);
+    verify(() => profileRepository.getFollowers(actor: tokens.handle, cursor: null, limit: 100)).called(1);
+
+    router.dispose();
   });
 
   testWidgets('Android back at non-Home tab root switches to Home tab', (tester) async {

@@ -63,6 +63,8 @@ abstract final class AppBskyRoutingPolicy {
     'app.bsky.graph.muteActor': AppBskyProxyMode.bypassProxy,
     'app.bsky.graph.unmuteActor': AppBskyProxyMode.bypassProxy,
     'app.bsky.graph.getSuggestedFollowsByActor': AppBskyProxyMode.bypassProxy,
+    'app.bsky.graph.getFollows': AppBskyProxyMode.bypassProxy,
+    'app.bsky.graph.getFollowers': AppBskyProxyMode.bypassProxy,
     'app.bsky.graph.getLists': AppBskyProxyMode.bypassProxy,
     'app.bsky.graph.getList': AppBskyProxyMode.bypassProxy,
     'app.bsky.graph.getListsWithMembership': AppBskyProxyMode.bypassProxy,

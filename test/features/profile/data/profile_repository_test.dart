@@ -67,6 +67,47 @@ void main() {
       });
     });
 
+    group('connections', () {
+      test('returns following page from graph service', () async {
+        const subject = ProfileView(did: 'did:plc:alice', handle: 'alice.bsky.social');
+        const follows = [
+          ProfileView(did: 'did:plc:bob', handle: 'bob.bsky.social'),
+          ProfileView(did: 'did:plc:carol', handle: 'carol.bsky.social'),
+        ];
+        final repository = ProfileRepository(
+          database: database,
+          bluesky: _FakeBlueskyClient(
+            actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
+            graph: _FakeGraphService(follows: follows, followsSubject: subject, followsCursor: 'next'),
+          ),
+        );
+
+        final result = await repository.getFollowing(actor: subject.did, limit: 25);
+
+        expect(result.subject, subject);
+        expect(result.profiles, follows);
+        expect(result.cursor, 'next');
+      });
+
+      test('returns followers page from graph service', () async {
+        const subject = ProfileView(did: 'did:plc:alice', handle: 'alice.bsky.social');
+        const followers = [ProfileView(did: 'did:plc:dana', handle: 'dana.bsky.social')];
+        final repository = ProfileRepository(
+          database: database,
+          bluesky: _FakeBlueskyClient(
+            actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
+            graph: _FakeGraphService(followers: followers, followersSubject: subject),
+          ),
+        );
+
+        final result = await repository.getFollowers(actor: subject.did, cursor: 'cursor');
+
+        expect(result.subject, subject);
+        expect(result.profiles, followers);
+        expect(result.cursor, isNull);
+      });
+    });
+
     test('loads and caches a profile after a successful xrpc response', () async {
       final profile = _buildProfile();
       final repository = ProfileRepository(
@@ -242,16 +283,60 @@ class _FakeGraphService {
   _FakeGraphService({
     List<ProfileView>? suggestions,
     Future<_FakeSuggestedResponse> Function(String actor)? onGetSuggested,
+    List<ProfileView>? follows,
+    ProfileView? followsSubject,
+    String? followsCursor,
+    List<ProfileView>? followers,
+    ProfileView? followersSubject,
+    String? followersCursor,
   }) : _suggestions = suggestions ?? [],
-       _onGetSuggested = onGetSuggested;
+       _onGetSuggested = onGetSuggested,
+       _follows = follows ?? [],
+       _followsSubject = followsSubject,
+       _followsCursor = followsCursor,
+       _followers = followers ?? [],
+       _followersSubject = followersSubject,
+       _followersCursor = followersCursor;
 
   final List<ProfileView> _suggestions;
   final Future<_FakeSuggestedResponse> Function(String actor)? _onGetSuggested;
+  final List<ProfileView> _follows;
+  final ProfileView? _followsSubject;
+  final String? _followsCursor;
+  final List<ProfileView> _followers;
+  final ProfileView? _followersSubject;
+  final String? _followersCursor;
 
   Future<_FakeSuggestedResponse> getSuggestedFollowsByActor({required String actor, Map<String, String>? $headers}) {
     final handler = _onGetSuggested;
     if (handler != null) return handler(actor);
     return Future.value(_FakeSuggestedResponse(_FakeSuggestedData(_suggestions)));
+  }
+
+  Future<_FakeFollowsResponse> getFollows({
+    required String actor,
+    String? cursor,
+    int? limit,
+    Map<String, String>? $headers,
+  }) {
+    return Future.value(
+      _FakeFollowsResponse(
+        _FakeFollowsData(_followsSubject ?? ProfileView(did: actor, handle: actor), _follows, _followsCursor),
+      ),
+    );
+  }
+
+  Future<_FakeFollowersResponse> getFollowers({
+    required String actor,
+    String? cursor,
+    int? limit,
+    Map<String, String>? $headers,
+  }) {
+    return Future.value(
+      _FakeFollowersResponse(
+        _FakeFollowersData(_followersSubject ?? ProfileView(did: actor, handle: actor), _followers, _followersCursor),
+      ),
+    );
   }
 }
 
@@ -265,6 +350,34 @@ class _FakeSuggestedData {
   const _FakeSuggestedData(this.suggestions);
 
   final List<ProfileView> suggestions;
+}
+
+class _FakeFollowsResponse {
+  _FakeFollowsResponse(this.data);
+
+  final _FakeFollowsData data;
+}
+
+class _FakeFollowsData {
+  const _FakeFollowsData(this.subject, this.follows, this.cursor);
+
+  final ProfileView subject;
+  final List<ProfileView> follows;
+  final String? cursor;
+}
+
+class _FakeFollowersResponse {
+  _FakeFollowersResponse(this.data);
+
+  final _FakeFollowersData data;
+}
+
+class _FakeFollowersData {
+  const _FakeFollowersData(this.subject, this.followers, this.cursor);
+
+  final ProfileView subject;
+  final List<ProfileView> followers;
+  final String? cursor;
 }
 
 atp_core.UnauthorizedException _unauthorizedException() {

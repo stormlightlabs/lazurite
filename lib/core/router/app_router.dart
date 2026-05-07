@@ -20,8 +20,8 @@ import 'package:lazurite/features/auth/presentation/login_screen.dart';
 import 'package:lazurite/features/auth/presentation/oauth_callback_screen.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
-import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:lazurite/features/compose/presentation/compose_screen.dart';
+import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_detail_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
@@ -50,10 +50,13 @@ import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/notifications/domain/notification_domain_service.dart';
 import 'package:lazurite/features/profile/cubit/follow_audit_cubit.dart';
+import 'package:lazurite/features/profile/cubit/profile_connections_cubit.dart';
 import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
 import 'package:lazurite/features/profile/data/follow_audit_repository.dart';
 import 'package:lazurite/features/profile/data/profile_context_repository.dart';
+import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/follow_audit_screen.dart';
+import 'package:lazurite/features/profile/presentation/profile_connections_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
@@ -528,6 +531,13 @@ class AppRouter {
               GoRoute(
                 path: '/profile/me',
                 pageBuilder: (context, state) => _page(context, state, const ProfileScreen(actor: 'me')),
+                routes: [
+                  GoRoute(
+                    path: 'connections',
+                    pageBuilder: (context, state) =>
+                        _page(context, state, _buildProfileConnectionsRoute(context, state, context.read<String>())),
+                  ),
+                ],
               ),
               GoRoute(
                 path: '/profile/:actor',
@@ -544,6 +554,18 @@ class AppRouter {
                   ProfileScreen(actor: Uri.decodeComponent(state.pathParameters['actor'] ?? ''), showBackButton: true),
                 ),
                 routes: [
+                  GoRoute(
+                    path: 'connections',
+                    pageBuilder: (context, state) => _page(
+                      context,
+                      state,
+                      _buildProfileConnectionsRoute(
+                        context,
+                        state,
+                        Uri.decodeComponent(state.pathParameters['actor'] ?? ''),
+                      ),
+                    ),
+                  ),
                   GoRoute(
                     path: 'search-posts',
                     pageBuilder: (context, state) {
@@ -597,6 +619,23 @@ class AppRouter {
         notificationRepository: context.read<NotificationRepository>(),
       ),
       child: child,
+    );
+  }
+
+  Widget _buildProfileConnectionsRoute(BuildContext context, GoRouterState state, String actor) {
+    final normalizedActor = actor.trim();
+    final initialTab = ProfileConnectionsTabX.fromRouteValue(state.uri.queryParameters['tab']);
+    final constellationUrl = context.read<SettingsCubit>().state.constellationUrl;
+    final handle = normalizedActor.startsWith('did:') || normalizedActor == context.read<String>()
+        ? null
+        : normalizedActor;
+    return BlocProvider(
+      create: (_) => ProfileConnectionsCubit(
+        repository: context.read<ProfileRepository>(),
+        actor: normalizedActor,
+        constellationClient: ConstellationClient(baseUrl: constellationUrl),
+      ),
+      child: ProfileConnectionsScreen(actor: normalizedActor, handle: handle, initialTab: initialTab),
     );
   }
 

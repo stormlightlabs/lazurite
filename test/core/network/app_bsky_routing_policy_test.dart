@@ -8,6 +8,8 @@ void main() {
         'app.bsky.actor.getProfile',
         'app.bsky.actor.getProfiles',
         'app.bsky.actor.searchActorsTypeahead',
+        'app.bsky.graph.getFollowers',
+        'app.bsky.graph.getFollows',
         'app.bsky.graph.getList',
         'app.bsky.graph.getLists',
         'app.bsky.feed.getActorLikes',
