@@ -1,0 +1,16 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  variant?: "desktop" | "phone" | "card";
+  caption?: string;
+  loading?: "eager" | "lazy";
+}
+
+const { src, alt, variant = "card", caption, loading = "lazy" } = Astro.props;
+---
+
+<figure class:list={["screenshot-frame", `screenshot-frame--${variant}`]}>
+  <img src={src} alt={alt} loading={loading} decoding="async" />
+  {caption && <figcaption class="screenshot-frame__caption">{caption}</figcaption>}
+</figure>

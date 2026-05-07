@@ -1,0 +1,19 @@
+---
+import IconBadge from "./IconBadge.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  icon: string;
+  iconAlt: string;
+  iconTone?: "blue" | "violet";
+}
+
+const { title, description, icon, iconAlt, iconTone = "blue" } = Astro.props;
+---
+
+<article class="feature-card">
+  <IconBadge src={icon} alt={iconAlt} tone={iconTone} class="feature-card__icon" />
+  <h3 class="feature-card__title">{title}</h3>
+  <p class="feature-card__description">{description}</p>
+</article>

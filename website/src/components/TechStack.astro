@@ -1,0 +1,31 @@
+---
+interface TechGroup {
+  label: string;
+  items: string[];
+}
+
+interface Props {
+  title: string;
+  groups: TechGroup[];
+}
+
+const { title, groups } = Astro.props;
+---
+
+<section class="tech-stack" aria-labelledby="tech-stack-title">
+  <h2 id="tech-stack-title" class="tech-stack__title">{title}</h2>
+  <div class="tech-stack__groups">
+    {
+      groups.map((group) => (
+        <div class="tech-stack__group">
+          <h3 class="tech-stack__label">{group.label}</h3>
+          <div class="tag-list tag-list--dense">
+            {group.items.map((item) => (
+              <span class="tag-list__item">{item}</span>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</section>

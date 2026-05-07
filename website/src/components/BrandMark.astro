@@ -1,0 +1,15 @@
+---
+interface Props {
+  href?: string;
+  label?: string;
+  class?: string;
+}
+
+const { href, label = "Lazurite", class: className = "" } = Astro.props;
+const Element = href ? "a" : "div";
+---
+
+<Element href={href} class:list={["brand-mark", className]}>
+  <span class="brand-mark__icon" aria-hidden="true"></span>
+  <span class="brand-mark__label">{label}</span>
+</Element>
