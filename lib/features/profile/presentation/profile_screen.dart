@@ -585,13 +585,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                               actions: [
                                 if (actorScopedProfile != null && isOwnProfile)
                                   IconButton(
-                                    key: const Key('profile_edit_header_button'),
-                                    icon: const Icon(Icons.edit_outlined),
-                                    tooltip: 'Edit profile',
-                                    onPressed: () => context.push('/profile/me/edit'),
-                                  ),
-                                if (actorScopedProfile != null && isOwnProfile)
-                                  IconButton(
                                     key: const Key('profile_more_button'),
                                     icon: const Icon(Icons.more_vert),
                                     onPressed: () => _showOwnProfileMoreOptions(context, actorScopedProfile),
@@ -794,17 +787,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     final profileUi =
         moderationService?.profileDetailedUi(profile, bsky_moderation.ModerationBehaviorContext.profileView) ??
         const bsky_moderation.ModerationUI();
-    final pronouns = profile.pronouns?.trim();
 
     final metaChildren = <Widget>[
+      if (profile.pronouns?.isNotEmpty ?? false)
+        _buildMetaChip(context, Icons.record_voice_over_outlined, profile.pronouns!),
       if (profile.website?.isNotEmpty ?? false)
-        _buildMetaChip(
-          context,
-          Icons.link_outlined,
-          profile.website!,
-          trailingIcon: Icons.open_in_new,
-          onTap: () => _launchWebsite(profile.website!),
-        ),
+        _buildMetaChip(context, Icons.link_outlined, profile.website!, onTap: () => _launchWebsite(profile.website!)),
       if (profile.createdAt != null)
         _buildMetaChip(
           context,
@@ -818,24 +806,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 10,
-            runSpacing: 4,
-            children: [
-              Text(
-                (profile.displayName ?? profile.handle).toUpperCase(),
-                style: textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0),
-              ),
-              if (pronouns != null && pronouns.isNotEmpty)
-                Text(
-                  pronouns,
-                  style: textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-            ],
+          Text(
+            (profile.displayName ?? profile.handle).toUpperCase(),
+            style: textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.5),
           ),
           const SizedBox(height: 4),
 
@@ -907,13 +880,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildMetaChip(
-    BuildContext context,
-    IconData icon,
-    String label, {
-    IconData? trailingIcon,
-    VoidCallback? onTap,
-  }) {
+  Widget _buildMetaChip(BuildContext context, IconData icon, String label, {VoidCallback? onTap}) {
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -931,10 +898,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
             ),
           ),
-          if (trailingIcon != null) ...[
-            const SizedBox(width: 6),
-            Icon(trailingIcon, size: 14, color: context.colorScheme.onSurfaceVariant),
-          ],
         ],
       ),
     );

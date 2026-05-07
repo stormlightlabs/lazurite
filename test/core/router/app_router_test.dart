@@ -310,21 +310,6 @@ void main() {
     expect(find.text('Search @me.bsky.social'), findsOneWidget);
   });
 
-  testWidgets('profile edit route builds the own profile edit screen', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(430, 932));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final router = AppRouter(authBloc: authBloc).router;
-
-    await tester.pumpWidget(buildSubjectWithRouter(router));
-    router.go('/profile/me/edit');
-    await tester.pumpAndSettle();
-
-    expect(find.text('Edit profile'), findsOneWidget);
-    expect(find.byKey(const ValueKey('profile_edit_save_button')), findsOneWidget);
-
-    router.dispose();
-  });
-
   testWidgets('opens profile connections route with requested initial tab', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));

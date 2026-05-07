@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:atproto_core/atproto_core.dart' as atp_core;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:characters/characters.dart';
 import 'package:bluesky/bluesky.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -295,93 +293,6 @@ class ProfileRepository {
     }
   }
 
-  Future<void> updateProfile({required String did, required ProfileEditDraft draft}) async {
-    _validateProfileEditDraft(draft);
-    log.d('ProfileRepository: Updating profile record for $did');
-
-    final response = await _authRecovery.run(
-      (client) => client.atproto.repo.getRecord(repo: did, collection: 'app.bsky.actor.profile', rkey: 'self'),
-    );
-    final currentRecord = Map<String, dynamic>.from(response.data.value as Map);
-    final updatedRecord = Map<String, dynamic>.from(currentRecord);
-    updatedRecord['\$type'] = 'app.bsky.actor.profile';
-
-    _setOptionalString(updatedRecord, 'displayName', draft.displayName);
-    _setOptionalString(updatedRecord, 'description', draft.description);
-    _setOptionalString(updatedRecord, 'pronouns', draft.pronouns);
-    _setOptionalString(updatedRecord, 'website', draft.website);
-
-    final avatar = draft.avatar;
-    if (avatar != null) {
-      updatedRecord['avatar'] = (await _uploadProfileBlob(avatar)).toJson();
-    }
-
-    final banner = draft.banner;
-    if (banner != null) {
-      updatedRecord['banner'] = (await _uploadProfileBlob(banner)).toJson();
-    }
-
-    await _authRecovery.run(
-      (client) => client.atproto.repo.putRecord(
-        repo: did,
-        collection: 'app.bsky.actor.profile',
-        rkey: 'self',
-        validate: true,
-        record: updatedRecord,
-        swapRecord: response.data.cid,
-      ),
-    );
-  }
-
-  Future<atp_core.Blob> _uploadProfileBlob(ProfileImageUpload upload) async {
-    final response = await _authRecovery.run(
-      (client) => client.atproto.repo.uploadBlob(
-        bytes: Uint8List.fromList(upload.bytes),
-        $headers: {'Content-Type': upload.mimeType},
-      ),
-    );
-    return response.data.blob as atp_core.Blob;
-  }
-
-  void _setOptionalString(Map<String, dynamic> record, String key, String? value) {
-    final trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
-      record.remove(key);
-      return;
-    }
-    record[key] = trimmed;
-  }
-
-  void _validateProfileEditDraft(ProfileEditDraft draft) {
-    _validateTextLimit('displayName', draft.displayName, maxGraphemes: 64, maxUtf8Bytes: 640);
-    _validateTextLimit('description', draft.description, maxGraphemes: 256, maxUtf8Bytes: 2560);
-    _validateTextLimit('pronouns', draft.pronouns, maxGraphemes: 20, maxUtf8Bytes: 200);
-    _validateProfileImage('avatar', draft.avatar);
-    _validateProfileImage('banner', draft.banner);
-  }
-
-  void _validateTextLimit(String field, String? value, {required int maxGraphemes, required int maxUtf8Bytes}) {
-    final text = value?.trim();
-    if (text == null || text.isEmpty) {
-      return;
-    }
-    if (text.characters.length > maxGraphemes || utf8.encode(text).length > maxUtf8Bytes) {
-      throw ArgumentError('$field exceeds the profile lexicon limit.');
-    }
-  }
-
-  void _validateProfileImage(String field, ProfileImageUpload? upload) {
-    if (upload == null) {
-      return;
-    }
-    if (!ProfileImageUpload.acceptedMimeTypes.contains(upload.mimeType)) {
-      throw ArgumentError('$field must be a JPEG or PNG image.');
-    }
-    if (upload.bytes.length > ProfileImageUpload.maxBytes) {
-      throw ArgumentError('$field must be smaller than 1MB.');
-    }
-  }
-
   Future<ProfileViewDetailed?> _getCachedProfile(String actor) async {
     final cachedProfileByDid = await (_database.select(
       _database.cachedProfiles,
@@ -545,27 +456,6 @@ class ProfileConnectionsPage {
   final ProfileView subject;
   final List<ProfileView> profiles;
   final String? cursor;
-}
-
-class ProfileEditDraft {
-  const ProfileEditDraft({this.displayName, this.description, this.pronouns, this.website, this.avatar, this.banner});
-
-  final String? displayName;
-  final String? description;
-  final String? pronouns;
-  final String? website;
-  final ProfileImageUpload? avatar;
-  final ProfileImageUpload? banner;
-}
-
-class ProfileImageUpload {
-  const ProfileImageUpload({required this.bytes, required this.mimeType});
-
-  static const int maxBytes = 1000000;
-  static const Set<String> acceptedMimeTypes = {'image/jpeg', 'image/png'};
-
-  final List<int> bytes;
-  final String mimeType;
 }
 
 class ProfileActorLikesResult {

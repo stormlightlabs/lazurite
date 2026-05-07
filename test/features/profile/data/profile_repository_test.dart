@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:atproto_core/atproto_core.dart' as atp_core;
 import 'package:bluesky/app_bsky_actor_defs.dart';
@@ -218,119 +217,6 @@ void main() {
       expect(profiles.length, 26);
       expect(profiles.map((p) => p.did), orderedEquals(actors));
     });
-
-    test('updates editable profile fields while preserving existing record fields', () async {
-      final repo = _FakeRepoService(
-        record: {
-          r'$type': 'app.bsky.actor.profile',
-          'displayName': 'Old Name',
-          'description': 'Old description',
-          'labels': {r'$type': 'com.atproto.label.defs#selfLabels', 'values': []},
-          'createdAt': '2026-01-01T00:00:00.000Z',
-        },
-        cid: 'bafy-current',
-      );
-      final repository = ProfileRepository(
-        database: database,
-        bluesky: _FakeBlueskyClient(
-          actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
-          atproto: _FakeAtprotoService(repo: repo),
-        ),
-      );
-
-      await repository.updateProfile(
-        did: 'did:plc:alice',
-        draft: const ProfileEditDraft(
-          displayName: 'Alice Updated',
-          description: 'New description',
-          pronouns: 'she/her',
-          website: 'https://alice.example',
-        ),
-      );
-
-      expect(repo.putRecords, hasLength(1));
-      final put = repo.putRecords.single;
-      expect(put.repo, 'did:plc:alice');
-      expect(put.collection, 'app.bsky.actor.profile');
-      expect(put.rkey, 'self');
-      expect(put.validate, isTrue);
-      expect(put.swapRecord, 'bafy-current');
-      expect(put.record['displayName'], 'Alice Updated');
-      expect(put.record['description'], 'New description');
-      expect(put.record['pronouns'], 'she/her');
-      expect(put.record['website'], 'https://alice.example');
-      expect(put.record['labels'], isA<Map>());
-      expect(put.record['createdAt'], '2026-01-01T00:00:00.000Z');
-    });
-
-    test('removes emptied optional text fields and uploads selected profile images', () async {
-      final repo = _FakeRepoService(
-        record: {
-          r'$type': 'app.bsky.actor.profile',
-          'displayName': 'Old Name',
-          'description': 'Old description',
-          'pronouns': 'they/them',
-          'website': 'https://old.example',
-          'avatar': {
-            r'$type': 'blob',
-            'mimeType': 'image/jpeg',
-            'size': 4,
-            'ref': {r'$link': 'old-avatar'},
-          },
-        },
-        cid: 'bafy-current',
-      );
-      final repository = ProfileRepository(
-        database: database,
-        bluesky: _FakeBlueskyClient(
-          actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
-          atproto: _FakeAtprotoService(repo: repo),
-        ),
-      );
-
-      await repository.updateProfile(
-        did: 'did:plc:alice',
-        draft: const ProfileEditDraft(
-          displayName: '',
-          description: '',
-          pronouns: '',
-          website: '',
-          avatar: ProfileImageUpload(bytes: [1, 2, 3], mimeType: 'image/png'),
-          banner: ProfileImageUpload(bytes: [4, 5], mimeType: 'image/jpeg'),
-        ),
-      );
-
-      final record = repo.putRecords.single.record;
-      expect(record.containsKey('displayName'), isFalse);
-      expect(record.containsKey('description'), isFalse);
-      expect(record.containsKey('pronouns'), isFalse);
-      expect(record.containsKey('website'), isFalse);
-      expect((record['avatar'] as Map)['mimeType'], 'image/png');
-      expect(((record['avatar'] as Map)['ref'] as Map)[r'$link'], 'uploaded-1');
-      expect((record['banner'] as Map)['mimeType'], 'image/jpeg');
-      expect(((record['banner'] as Map)['ref'] as Map)[r'$link'], 'uploaded-2');
-      expect(repo.uploadContentTypes, ['image/png', 'image/jpeg']);
-    });
-
-    test('rejects profile edit values outside the profile lexicon limits', () async {
-      final repo = _FakeRepoService(record: const {r'$type': 'app.bsky.actor.profile'});
-      final repository = ProfileRepository(
-        database: database,
-        bluesky: _FakeBlueskyClient(
-          actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
-          atproto: _FakeAtprotoService(repo: repo),
-        ),
-      );
-
-      expect(
-        () => repository.updateProfile(
-          did: 'did:plc:alice',
-          draft: ProfileEditDraft(displayName: List.filled(65, 'A').join()),
-        ),
-        throwsArgumentError,
-      );
-      expect(repo.putRecords, isEmpty);
-    });
   });
 }
 
@@ -348,13 +234,10 @@ ProfileViewDetailed _buildProfile() {
 }
 
 class _FakeBlueskyClient {
-  _FakeBlueskyClient({required this.actor, _FakeGraphService? graph, _FakeAtprotoService? atproto})
-    : graph = graph ?? _FakeGraphService(),
-      atproto = atproto ?? _FakeAtprotoService(repo: _FakeRepoService(record: const {}));
+  _FakeBlueskyClient({required this.actor, _FakeGraphService? graph}) : graph = graph ?? _FakeGraphService();
 
   final _FakeActorService actor;
   final _FakeGraphService graph;
-  final _FakeAtprotoService atproto;
 }
 
 class _FakeActorService {
@@ -394,112 +277,6 @@ class _FakeProfilesData {
   const _FakeProfilesData(this.profiles);
 
   final List<ProfileView> profiles;
-}
-
-class _FakeAtprotoService {
-  const _FakeAtprotoService({required this.repo});
-
-  final _FakeRepoService repo;
-}
-
-class _FakeRepoService {
-  _FakeRepoService({required Map<String, dynamic> record, this.cid = 'bafy-record'}) : _record = record;
-
-  final Map<String, dynamic> _record;
-  final String? cid;
-  final putRecords = <_FakePutRecordCall>[];
-  final uploadContentTypes = <String>[];
-
-  Future<_FakeResponse<_FakeGetRecordData>> getRecord({
-    required String repo,
-    required String collection,
-    required String rkey,
-    String? cid,
-    String? $service,
-    Map<String, String>? $headers,
-    Map<String, String>? $unknown,
-  }) async {
-    return _FakeResponse(_FakeGetRecordData(value: _record, cid: this.cid));
-  }
-
-  Future<_FakeResponse<_FakePutRecordData>> putRecord({
-    required String repo,
-    required String collection,
-    required String rkey,
-    bool? validate,
-    required Map<String, dynamic> record,
-    String? swapRecord,
-    String? swapCommit,
-    String? $service,
-    Map<String, String>? $headers,
-    Map<String, String>? $unknown,
-  }) async {
-    putRecords.add(
-      _FakePutRecordCall(
-        repo: repo,
-        collection: collection,
-        rkey: rkey,
-        validate: validate,
-        record: Map<String, dynamic>.from(record),
-        swapRecord: swapRecord,
-      ),
-    );
-    return _FakeResponse(const _FakePutRecordData());
-  }
-
-  Future<_FakeResponse<_FakeUploadBlobData>> uploadBlob({
-    required Uint8List bytes,
-    String? $service,
-    Map<String, String>? $headers,
-    Map<String, String>? $parameters,
-  }) async {
-    final contentType = $headers?['Content-Type'] ?? 'image/jpeg';
-    uploadContentTypes.add(contentType);
-    return _FakeResponse(
-      _FakeUploadBlobData(
-        atp_core.Blob(
-          mimeType: contentType,
-          size: bytes.length,
-          ref: atp_core.BlobRef(link: 'uploaded-${uploadContentTypes.length}'),
-        ),
-      ),
-    );
-  }
-}
-
-class _FakeGetRecordData {
-  const _FakeGetRecordData({required this.value, this.cid});
-
-  final Map<String, dynamic> value;
-  final String? cid;
-}
-
-class _FakePutRecordData {
-  const _FakePutRecordData();
-}
-
-class _FakeUploadBlobData {
-  const _FakeUploadBlobData(this.blob);
-
-  final atp_core.Blob blob;
-}
-
-class _FakePutRecordCall {
-  const _FakePutRecordCall({
-    required this.repo,
-    required this.collection,
-    required this.rkey,
-    required this.validate,
-    required this.record,
-    required this.swapRecord,
-  });
-
-  final String repo;
-  final String collection;
-  final String rkey;
-  final bool? validate;
-  final Map<String, dynamic> record;
-  final String? swapRecord;
 }
 
 class _FakeGraphService {

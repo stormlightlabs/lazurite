@@ -58,7 +58,6 @@ import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/follow_audit_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_connections_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
-import 'package:lazurite/features/profile/presentation/profile_edit_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
@@ -537,10 +536,6 @@ class AppRouter {
                     path: 'connections',
                     pageBuilder: (context, state) =>
                         _page(context, state, _buildProfileConnectionsRoute(context, state, context.read<String>())),
-                  ),
-                  GoRoute(
-                    path: 'edit',
-                    pageBuilder: (context, state) => _page(context, state, const ProfileEditScreen()),
                   ),
                 ],
               ),
