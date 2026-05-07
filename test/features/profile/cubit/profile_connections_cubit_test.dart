@@ -32,7 +32,7 @@ void main() {
     blocTest<ProfileConnectionsCubit, ProfileConnectionsState>(
       'loads following through the repository',
       build: () {
-        when(() => repository.getFollowing(actor: 'did:plc:alice', cursor: null, limit: 50)).thenAnswer(
+        when(() => repository.getFollowing(actor: 'did:plc:alice', cursor: null, limit: 100)).thenAnswer(
           (_) async => const ProfileConnectionsPage(subject: subject, profiles: [astronaut], cursor: 'next'),
         );
         return ProfileConnectionsCubit(repository: repository, actor: 'did:plc:alice');
@@ -55,7 +55,7 @@ void main() {
       'loads more followers using the stored cursor',
       build: () {
         when(
-          () => repository.getFollowers(actor: 'did:plc:alice', cursor: 'next', limit: 50),
+          () => repository.getFollowers(actor: 'did:plc:alice', cursor: 'next', limit: 100),
         ).thenAnswer((_) async => const ProfileConnectionsPage(subject: subject, profiles: [gardener]));
         return ProfileConnectionsCubit(repository: repository, actor: 'did:plc:alice');
       },
@@ -76,12 +76,72 @@ void main() {
       ],
     );
 
-    test('fuzzy filters by handle, name, and description', () {
+    test('visible profiles use progressive search results when a query is active', () {
       final state = const ProfileConnectionsState(
-        following: ProfileConnectionsTabData(status: ProfileConnectionsStatus.loaded, profiles: [astronaut, gardener]),
+        following: ProfileConnectionsTabData(
+          status: ProfileConnectionsStatus.loaded,
+          profiles: [gardener],
+          searchStatus: ProfileConnectionsSearchStatus.complete,
+          searchQuery: 'space engineer',
+          searchResults: [astronaut],
+          searchedCount: 2,
+        ),
       ).copyWith(searchQuery: 'space engineer');
 
       expect(state.visibleProfilesFor(ProfileConnectionsTab.following), [astronaut]);
     });
+
+    blocTest<ProfileConnectionsCubit, ProfileConnectionsState>(
+      'progressively searches every API page using limit 100',
+      build: () {
+        when(
+          () => repository.getFollowing(actor: 'did:plc:alice', cursor: null, limit: 100),
+        ).thenAnswer((_) async => const ProfileConnectionsPage(subject: subject, profiles: [gardener], cursor: 'next'));
+        when(
+          () => repository.getFollowing(actor: 'did:plc:alice', cursor: 'next', limit: 100),
+        ).thenAnswer((_) async => const ProfileConnectionsPage(subject: subject, profiles: [astronaut]));
+        return ProfileConnectionsCubit(repository: repository, actor: 'did:plc:alice');
+      },
+      act: (cubit) {
+        cubit.setSearchQuery('space engineer', ProfileConnectionsTab.following);
+      },
+      wait: const Duration(milliseconds: 350),
+      expect: () => [
+        isA<ProfileConnectionsState>().having((state) => state.searchQuery, 'searchQuery', 'space engineer'),
+        isA<ProfileConnectionsState>().having(
+          (state) => state.following.searchStatus,
+          'following.searchStatus',
+          ProfileConnectionsSearchStatus.searching,
+        ),
+        isA<ProfileConnectionsState>()
+            .having(
+              (state) => state.following.searchStatus,
+              'following.searchStatus',
+              ProfileConnectionsSearchStatus.searching,
+            )
+            .having((state) => state.following.searchResults, 'following.searchResults', isEmpty)
+            .having((state) => state.following.searchedCount, 'following.searchedCount', 1),
+        isA<ProfileConnectionsState>()
+            .having(
+              (state) => state.following.searchStatus,
+              'following.searchStatus',
+              ProfileConnectionsSearchStatus.searching,
+            )
+            .having((state) => state.following.searchResults, 'following.searchResults', [astronaut])
+            .having((state) => state.following.searchedCount, 'following.searchedCount', 2),
+        isA<ProfileConnectionsState>()
+            .having(
+              (state) => state.following.searchStatus,
+              'following.searchStatus',
+              ProfileConnectionsSearchStatus.complete,
+            )
+            .having((state) => state.following.searchResults, 'following.searchResults', [astronaut])
+            .having((state) => state.following.searchedCount, 'following.searchedCount', 2),
+      ],
+      verify: (_) {
+        verify(() => repository.getFollowing(actor: 'did:plc:alice', cursor: null, limit: 100)).called(1);
+        verify(() => repository.getFollowing(actor: 'did:plc:alice', cursor: 'next', limit: 100)).called(1);
+      },
+    );
   });
 }

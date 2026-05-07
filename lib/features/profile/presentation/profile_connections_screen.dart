@@ -57,7 +57,10 @@ class _ProfileConnectionsScreenState extends State<ProfileConnectionsScreen> wit
     if (!mounted || _tabController.indexIsChanging) {
       return;
     }
-    context.read<ProfileConnectionsCubit>().loadTab(ProfileConnectionsTab.values[_tabController.index]);
+    final tab = ProfileConnectionsTab.values[_tabController.index];
+    final cubit = context.read<ProfileConnectionsCubit>();
+    cubit.loadTab(tab);
+    cubit.ensureSearchForTab(tab);
   }
 
   @override
@@ -68,7 +71,12 @@ class _ProfileConnectionsScreenState extends State<ProfileConnectionsScreen> wit
         title: Text(subtitle == null || subtitle.isEmpty ? 'Connections' : '@$subtitle'),
         bottom: TabBar(
           controller: _tabController,
-          onTap: (index) => context.read<ProfileConnectionsCubit>().loadTab(ProfileConnectionsTab.values[index]),
+          onTap: (index) {
+            final tab = ProfileConnectionsTab.values[index];
+            final cubit = context.read<ProfileConnectionsCubit>();
+            cubit.loadTab(tab);
+            cubit.ensureSearchForTab(tab);
+          },
           tabs: const [
             Tab(text: 'Following'),
             Tab(text: 'Followers'),
@@ -77,7 +85,7 @@ class _ProfileConnectionsScreenState extends State<ProfileConnectionsScreen> wit
       ),
       body: Column(
         children: [
-          const _ConnectionsSearchField(),
+          _ConnectionsSearchField(activeTab: () => ProfileConnectionsTab.values[_tabController.index]),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -94,7 +102,9 @@ class _ProfileConnectionsScreenState extends State<ProfileConnectionsScreen> wit
 }
 
 class _ConnectionsSearchField extends StatefulWidget {
-  const _ConnectionsSearchField();
+  const _ConnectionsSearchField({required this.activeTab});
+
+  final ValueGetter<ProfileConnectionsTab> activeTab;
 
   @override
   State<_ConnectionsSearchField> createState() => _ConnectionsSearchFieldState();
@@ -116,7 +126,7 @@ class _ConnectionsSearchFieldState extends State<_ConnectionsSearchField> {
       child: TextField(
         key: const ValueKey('profile_connections_search_field'),
         controller: _controller,
-        onChanged: context.read<ProfileConnectionsCubit>().setSearchQuery,
+        onChanged: (query) => context.read<ProfileConnectionsCubit>().setSearchQuery(query, widget.activeTab()),
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: 'Search handle, name, or description',
@@ -132,7 +142,7 @@ class _ConnectionsSearchFieldState extends State<_ConnectionsSearchField> {
                 icon: const Icon(Icons.close),
                 onPressed: () {
                   _controller.clear();
-                  context.read<ProfileConnectionsCubit>().setSearchQuery('');
+                  context.read<ProfileConnectionsCubit>().setSearchQuery('', widget.activeTab());
                   FocusScope.of(context).unfocus();
                 },
               );
@@ -168,7 +178,12 @@ class _ConnectionsTabView extends StatelessWidget {
         }
 
         final profiles = state.visibleProfilesFor(tab);
+        final isSearchMode = state.searchQuery.isNotEmpty;
         if (profiles.isEmpty) {
+          if (isSearchMode && data.isSearching) {
+            return LoadingState(message: 'Searching ${data.searchedCount} accounts...');
+          }
+
           final message = state.searchQuery.isEmpty
               ? 'No ${tab.title.toLowerCase()} found'
               : 'No ${tab.title.toLowerCase()} match "${state.searchQuery}"';
@@ -179,10 +194,13 @@ class _ConnectionsTabView extends StatelessWidget {
           onRefresh: () => context.read<ProfileConnectionsCubit>().refreshTab(tab),
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
-            itemCount: profiles.length + (data.hasMore ? 1 : 0),
+            itemCount: profiles.length + (isSearchMode || data.hasMore ? 1 : 0),
             separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               if (index >= profiles.length) {
+                if (isSearchMode) {
+                  return _SearchProgressFooter(data: data);
+                }
                 return _LoadMoreButton(tab: tab, isLoading: data.isLoadingMore);
               }
               return _ConnectionProfileTile(profile: profiles[index]);
@@ -380,6 +398,48 @@ class _LoadMoreButton extends StatelessWidget {
                 onPressed: () => context.read<ProfileConnectionsCubit>().loadMore(tab),
                 child: const Text('Load more'),
               ),
+      ),
+    );
+  }
+}
+
+class _SearchProgressFooter extends StatelessWidget {
+  const _SearchProgressFooter({required this.data});
+
+  final ProfileConnectionsTabData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.colorScheme;
+    final textTheme = context.textTheme;
+    final message = switch (data.searchStatus) {
+      ProfileConnectionsSearchStatus.searching => 'Searching ${data.searchedCount} accounts...',
+      ProfileConnectionsSearchStatus.complete => 'Searched ${data.searchedCount} accounts',
+      ProfileConnectionsSearchStatus.error => 'Search stopped after ${data.searchedCount} accounts',
+      ProfileConnectionsSearchStatus.idle => '',
+    };
+
+    if (message.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (data.searchStatus == ProfileConnectionsSearchStatus.searching) ...[
+            const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+            const SizedBox(width: AppSpacing.xs),
+          ],
+          Flexible(
+            child: Text(
+              data.searchErrorMessage ?? message,
+              textAlign: TextAlign.center,
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
       ),
     );
   }

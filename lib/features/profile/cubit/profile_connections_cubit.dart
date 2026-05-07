@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,6 +28,8 @@ extension ProfileConnectionsTabX on ProfileConnectionsTab {
 
 enum ProfileConnectionsStatus { initial, loading, loaded, error }
 
+enum ProfileConnectionsSearchStatus { idle, searching, complete, error }
+
 const _profileConnectionsNoValue = Object();
 
 class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
@@ -36,7 +40,23 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
 
   final ProfileRepository _repository;
   final String _actor;
-  static const _pageLimit = 50;
+  final Map<ProfileConnectionsTab, int> _searchGenerations = {
+    ProfileConnectionsTab.following: 0,
+    ProfileConnectionsTab.followers: 0,
+  };
+  Timer? _searchDebounce;
+  static const _pageLimit = 100;
+  static const _searchDebounceDuration = Duration(milliseconds: 300);
+  static const _searchCutoff = 60;
+  static const _maxSearchResults = 100;
+
+  @override
+  Future<void> close() {
+    _searchDebounce?.cancel();
+    _cancelSearch(ProfileConnectionsTab.following);
+    _cancelSearch(ProfileConnectionsTab.followers);
+    return super.close();
+  }
 
   Future<void> loadTab(ProfileConnectionsTab tab, {bool force = false}) async {
     final data = state.dataFor(tab);
@@ -73,6 +93,7 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
   Future<void> refreshTab(ProfileConnectionsTab tab) async {
     emit(state.copyWithTab(tab, state.dataFor(tab).copyWith(cursor: null, profiles: const [])));
     await loadTab(tab, force: true);
+    ensureSearchForTab(tab, force: true);
   }
 
   Future<void> loadMore(ProfileConnectionsTab tab) async {
@@ -102,8 +123,47 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
     }
   }
 
-  void setSearchQuery(String query) {
-    emit(state.copyWith(searchQuery: query.trim()));
+  void setSearchQuery(String query, ProfileConnectionsTab activeTab) {
+    final normalizedQuery = query.trim();
+    _searchDebounce?.cancel();
+
+    if (normalizedQuery != state.searchQuery) {
+      for (final tab in ProfileConnectionsTab.values) {
+        _cancelSearch(tab);
+      }
+      emit(
+        state.copyWith(
+          searchQuery: normalizedQuery,
+          following: state.following.clearSearch(),
+          followers: state.followers.clearSearch(),
+        ),
+      );
+    }
+
+    if (normalizedQuery.isEmpty) {
+      return;
+    }
+
+    _searchDebounce = Timer(_searchDebounceDuration, () {
+      ensureSearchForTab(activeTab);
+    });
+  }
+
+  void ensureSearchForTab(ProfileConnectionsTab tab, {bool force = false}) {
+    final query = state.searchQuery;
+    if (query.isEmpty) {
+      return;
+    }
+
+    final data = state.dataFor(tab);
+    if (!force &&
+        data.searchQuery == query &&
+        (data.searchStatus == ProfileConnectionsSearchStatus.searching ||
+            data.searchStatus == ProfileConnectionsSearchStatus.complete)) {
+      return;
+    }
+
+    unawaited(_searchFullList(tab, query));
   }
 
   Future<ProfileConnectionsPage> _fetch(ProfileConnectionsTab tab, {String? cursor}) {
@@ -112,6 +172,160 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
       ProfileConnectionsTab.followers => _repository.getFollowers(actor: _actor, cursor: cursor, limit: _pageLimit),
     };
   }
+
+  Future<void> _searchFullList(ProfileConnectionsTab tab, String query) async {
+    final generation = _nextSearchGeneration(tab);
+    final matchesByDid = <String, _ProfileSearchMatch>{};
+    var searchedCount = 0;
+    String? cursor;
+
+    emit(
+      state.copyWithTab(
+        tab,
+        state
+            .dataFor(tab)
+            .copyWith(
+              searchStatus: ProfileConnectionsSearchStatus.searching,
+              searchQuery: query,
+              searchResults: const [],
+              searchedCount: 0,
+              searchErrorMessage: null,
+            ),
+      ),
+    );
+
+    try {
+      while (true) {
+        if (!_isCurrentSearch(tab, generation, query)) {
+          return;
+        }
+
+        final page = await _fetch(tab, cursor: cursor);
+        if (!_isCurrentSearch(tab, generation, query)) {
+          return;
+        }
+
+        searchedCount += page.profiles.length;
+        _mergeSearchMatches(query, matchesByDid, page.profiles);
+        final topMatches = _topSearchResults(matchesByDid);
+        final currentData = state.dataFor(tab);
+        emit(
+          state.copyWithTab(
+            tab,
+            currentData.copyWith(
+              status: currentData.status == ProfileConnectionsStatus.initial
+                  ? ProfileConnectionsStatus.loaded
+                  : currentData.status,
+              subject: page.subject,
+              searchStatus: ProfileConnectionsSearchStatus.searching,
+              searchQuery: query,
+              searchResults: topMatches,
+              searchedCount: searchedCount,
+              searchErrorMessage: null,
+            ),
+          ),
+        );
+
+        cursor = page.cursor;
+        if (cursor == null) {
+          break;
+        }
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      if (!_isCurrentSearch(tab, generation, query)) {
+        return;
+      }
+
+      emit(
+        state.copyWithTab(
+          tab,
+          state
+              .dataFor(tab)
+              .copyWith(
+                searchStatus: ProfileConnectionsSearchStatus.complete,
+                searchQuery: query,
+                searchedCount: searchedCount,
+                searchErrorMessage: null,
+              ),
+        ),
+      );
+    } catch (error) {
+      if (!_isCurrentSearch(tab, generation, query)) {
+        return;
+      }
+      emit(
+        state.copyWithTab(
+          tab,
+          state
+              .dataFor(tab)
+              .copyWith(
+                searchStatus: ProfileConnectionsSearchStatus.error,
+                searchQuery: query,
+                searchedCount: searchedCount,
+                searchErrorMessage: 'Search stopped: $error',
+              ),
+        ),
+      );
+    }
+  }
+
+  int _nextSearchGeneration(ProfileConnectionsTab tab) {
+    final next = (_searchGenerations[tab] ?? 0) + 1;
+    _searchGenerations[tab] = next;
+    return next;
+  }
+
+  void _cancelSearch(ProfileConnectionsTab tab) {
+    _searchGenerations[tab] = (_searchGenerations[tab] ?? 0) + 1;
+  }
+
+  bool _isCurrentSearch(ProfileConnectionsTab tab, int generation, String query) {
+    return !isClosed && _searchGenerations[tab] == generation && state.searchQuery == query;
+  }
+
+  void _mergeSearchMatches(String query, Map<String, _ProfileSearchMatch> matchesByDid, List<ProfileView> profiles) {
+    for (final profile in profiles) {
+      final score = fuzzywuzzy.weightedRatio(query, ProfileConnectionsState.searchTextForProfile(profile));
+      if (score < _searchCutoff) {
+        continue;
+      }
+
+      final existing = matchesByDid[profile.did];
+      if (existing == null || score > existing.score) {
+        matchesByDid[profile.did] = _ProfileSearchMatch(profile: profile, score: score);
+      }
+    }
+
+    final ranked = matchesByDid.values.toList()..sort(_compareSearchMatches);
+    if (ranked.length <= _maxSearchResults) {
+      return;
+    }
+
+    matchesByDid
+      ..clear()
+      ..addEntries(ranked.take(_maxSearchResults).map((match) => MapEntry(match.profile.did, match)));
+  }
+
+  List<ProfileView> _topSearchResults(Map<String, _ProfileSearchMatch> matchesByDid) {
+    final ranked = matchesByDid.values.toList()..sort(_compareSearchMatches);
+    return ranked.map((match) => match.profile).toList(growable: false);
+  }
+
+  int _compareSearchMatches(_ProfileSearchMatch a, _ProfileSearchMatch b) {
+    final scoreCompare = b.score.compareTo(a.score);
+    if (scoreCompare != 0) {
+      return scoreCompare;
+    }
+    return a.profile.handle.compareTo(b.profile.handle);
+  }
+}
+
+class _ProfileSearchMatch {
+  const _ProfileSearchMatch({required this.profile, required this.score});
+
+  final ProfileView profile;
+  final int score;
 }
 
 class ProfileConnectionsState extends Equatable {
@@ -131,15 +345,15 @@ class ProfileConnectionsState extends Equatable {
   };
 
   List<ProfileView> visibleProfilesFor(ProfileConnectionsTab tab) {
-    final profiles = dataFor(tab).profiles;
     if (searchQuery.isEmpty) {
-      return profiles;
+      return dataFor(tab).profiles;
     }
 
-    return fuzzywuzzy
-        .extractAllSorted<ProfileView>(query: searchQuery, choices: profiles, cutoff: 60, getter: _searchTextForProfile)
-        .map((result) => result.choice)
-        .toList(growable: false);
+    final data = dataFor(tab);
+    if (data.searchQuery != searchQuery) {
+      return const [];
+    }
+    return data.searchResults;
   }
 
   ProfileConnectionsState copyWith({
@@ -161,7 +375,7 @@ class ProfileConnectionsState extends Equatable {
     };
   }
 
-  static String _searchTextForProfile(ProfileView profile) {
+  static String searchTextForProfile(ProfileView profile) {
     return [
       profile.handle,
       profile.displayName,
@@ -181,6 +395,11 @@ class ProfileConnectionsTabData extends Equatable {
     this.subject,
     this.errorMessage,
     this.isLoadingMore = false,
+    this.searchStatus = ProfileConnectionsSearchStatus.idle,
+    this.searchQuery = '',
+    this.searchResults = const [],
+    this.searchedCount = 0,
+    this.searchErrorMessage,
   });
 
   final ProfileConnectionsStatus status;
@@ -189,10 +408,27 @@ class ProfileConnectionsTabData extends Equatable {
   final ProfileView? subject;
   final String? errorMessage;
   final bool isLoadingMore;
+  final ProfileConnectionsSearchStatus searchStatus;
+  final String searchQuery;
+  final List<ProfileView> searchResults;
+  final int searchedCount;
+  final String? searchErrorMessage;
 
   bool get isLoading => status == ProfileConnectionsStatus.loading;
   bool get hasError => status == ProfileConnectionsStatus.error;
   bool get hasMore => cursor != null;
+  bool get isSearching => searchStatus == ProfileConnectionsSearchStatus.searching;
+  bool get hasActiveSearch => searchQuery.isNotEmpty;
+
+  ProfileConnectionsTabData clearSearch() {
+    return copyWith(
+      searchStatus: ProfileConnectionsSearchStatus.idle,
+      searchQuery: '',
+      searchResults: const [],
+      searchedCount: 0,
+      searchErrorMessage: null,
+    );
+  }
 
   ProfileConnectionsTabData copyWith({
     ProfileConnectionsStatus? status,
@@ -201,6 +437,11 @@ class ProfileConnectionsTabData extends Equatable {
     Object? subject = _profileConnectionsNoValue,
     Object? errorMessage = _profileConnectionsNoValue,
     bool? isLoadingMore,
+    ProfileConnectionsSearchStatus? searchStatus,
+    String? searchQuery,
+    List<ProfileView>? searchResults,
+    int? searchedCount,
+    Object? searchErrorMessage = _profileConnectionsNoValue,
   }) {
     return ProfileConnectionsTabData(
       status: status ?? this.status,
@@ -209,9 +450,28 @@ class ProfileConnectionsTabData extends Equatable {
       subject: identical(subject, _profileConnectionsNoValue) ? this.subject : subject as ProfileView?,
       errorMessage: identical(errorMessage, _profileConnectionsNoValue) ? this.errorMessage : errorMessage as String?,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      searchStatus: searchStatus ?? this.searchStatus,
+      searchQuery: searchQuery ?? this.searchQuery,
+      searchResults: searchResults ?? this.searchResults,
+      searchedCount: searchedCount ?? this.searchedCount,
+      searchErrorMessage: identical(searchErrorMessage, _profileConnectionsNoValue)
+          ? this.searchErrorMessage
+          : searchErrorMessage as String?,
     );
   }
 
   @override
-  List<Object?> get props => [status, profiles, cursor, subject, errorMessage, isLoadingMore];
+  List<Object?> get props => [
+    status,
+    profiles,
+    cursor,
+    subject,
+    errorMessage,
+    isLoadingMore,
+    searchStatus,
+    searchQuery,
+    searchResults,
+    searchedCount,
+    searchErrorMessage,
+  ];
 }

@@ -73,7 +73,7 @@ void main() {
 
   testWidgets('renders profiles with relationship action, description, and joined age', (tester) async {
     when(
-      () => profileRepository.getFollowing(actor: subject.did, cursor: null, limit: 50),
+      () => profileRepository.getFollowing(actor: subject.did, cursor: null, limit: 100),
     ).thenAnswer((_) async => ProfileConnectionsPage(subject: subject, profiles: [astronaut, followingAstronaut]));
     when(
       () => profileActionRepository.followActor(did: astronaut.did),
@@ -96,29 +96,39 @@ void main() {
   });
 
   testWidgets('fuzzy search filters by profile description', (tester) async {
+    var firstPageCalls = 0;
+    when(() => profileRepository.getFollowing(actor: subject.did, cursor: null, limit: 100)).thenAnswer((_) async {
+      firstPageCalls += 1;
+      if (firstPageCalls == 1) {
+        return const ProfileConnectionsPage(subject: subject, profiles: [gardener], cursor: 'next');
+      }
+      return const ProfileConnectionsPage(subject: subject, profiles: [gardener], cursor: 'next');
+    });
     when(
-      () => profileRepository.getFollowing(actor: subject.did, cursor: null, limit: 50),
-    ).thenAnswer((_) async => ProfileConnectionsPage(subject: subject, profiles: [astronaut, gardener]));
+      () => profileRepository.getFollowing(actor: subject.did, cursor: 'next', limit: 100),
+    ).thenAnswer((_) async => ProfileConnectionsPage(subject: subject, profiles: [astronaut]));
 
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const ValueKey('profile_connections_search_field')), 'space engineer');
+    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
 
     expect(find.text('Lina Orbit'), findsOneWidget);
     expect(find.text('Moss Vale'), findsNothing);
+    expect(find.text('Searched 2 accounts'), findsOneWidget);
   });
 
   testWidgets('loads the requested initial followers tab', (tester) async {
     when(
-      () => profileRepository.getFollowers(actor: subject.did, cursor: null, limit: 50),
+      () => profileRepository.getFollowers(actor: subject.did, cursor: null, limit: 100),
     ).thenAnswer((_) async => const ProfileConnectionsPage(subject: subject, profiles: [gardener]));
 
     await tester.pumpWidget(buildSubject(initialTab: ProfileConnectionsTab.followers));
     await tester.pumpAndSettle();
 
-    verify(() => profileRepository.getFollowers(actor: subject.did, cursor: null, limit: 50)).called(1);
+    verify(() => profileRepository.getFollowers(actor: subject.did, cursor: null, limit: 100)).called(1);
     expect(find.text('Moss Vale'), findsOneWidget);
   });
 }
