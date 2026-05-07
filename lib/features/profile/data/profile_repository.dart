@@ -54,7 +54,8 @@ class ProfileRepository {
   static ActorRepositoryServiceResolver? _createActorRepositoryServiceResolver() {
     try {
       return ActorRepositoryServiceResolver();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('ProfileRepository: actor repository service resolver unavailable', error: error, stackTrace: stackTrace);
       return null;
     }
   }
@@ -138,6 +139,38 @@ class ProfileRepository {
     final moderationService = _moderationService;
     if (moderationService == null) return suggestions;
     return suggestions.where((p) => !moderationService.shouldFilterProfileInList(p)).toList();
+  }
+
+  Future<ProfileConnectionsPage> getFollowing({required String actor, String? cursor, int limit = 50}) async {
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.graph.getFollows',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.graph.getFollows(actor: actor, cursor: cursor, limit: limit, $headers: headers),
+    );
+    final profiles = _filterProfileList(response.data.follows as List<ProfileView>);
+    return ProfileConnectionsPage(
+      subject: response.data.subject as ProfileView,
+      profiles: profiles,
+      cursor: response.data.cursor as String?,
+    );
+  }
+
+  Future<ProfileConnectionsPage> getFollowers({required String actor, String? cursor, int limit = 50}) async {
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.graph.getFollowers',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.graph.getFollowers(actor: actor, cursor: cursor, limit: limit, $headers: headers),
+    );
+    final profiles = _filterProfileList(response.data.followers as List<ProfileView>);
+    return ProfileConnectionsPage(
+      subject: response.data.subject as ProfileView,
+      profiles: profiles,
+      cursor: response.data.cursor as String?,
+    );
   }
 
   /// Likes transport matrix:
@@ -404,10 +437,25 @@ class ProfileRepository {
       final map = reason is Map ? reason : (reason as dynamic).toJson();
       final indexedAt = map['indexedAt'] as String?;
       return indexedAt == null ? null : DateTime.tryParse(indexedAt);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('ProfileRepository: ignored malformed actor likes reason', error: error, stackTrace: stackTrace);
       return null;
     }
   }
+
+  List<ProfileView> _filterProfileList(List<ProfileView> profiles) {
+    final moderationService = _moderationService;
+    if (moderationService == null) return profiles;
+    return profiles.where((profile) => !moderationService.shouldFilterProfileInList(profile)).toList(growable: false);
+  }
+}
+
+class ProfileConnectionsPage {
+  const ProfileConnectionsPage({required this.subject, required this.profiles, this.cursor});
+
+  final ProfileView subject;
+  final List<ProfileView> profiles;
+  final String? cursor;
 }
 
 class ProfileActorLikesResult {

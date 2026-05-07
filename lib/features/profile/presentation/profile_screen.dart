@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_web_links.dart';
@@ -34,6 +35,7 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_avat
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
+import 'package:lazurite/features/profile/cubit/profile_connections_cubit.dart';
 import 'package:lazurite/features/profile/cubit/suggested_follows_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
@@ -409,7 +411,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
     try {
       await Future.wait(futures);
-    } catch (_) {}
+    } catch (error, stackTrace) {
+      log.d('ProfileScreen: ignored jump-to-top scroll animation error', error: error, stackTrace: stackTrace);
+    }
   }
 
   bool get _isAtTop => !_profileScrollController.hasClients || _profileScrollController.position.pixels <= 0.5;
@@ -831,9 +835,21 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(
               children: [
-                _buildStat(context, profile.followsCount ?? 0, 'Following'),
+                _buildStat(
+                  context,
+                  profile.followsCount ?? 0,
+                  'Following',
+                  key: const ValueKey('profile_following_stat'),
+                  onTap: () => _openConnections(context, profile, ProfileConnectionsTab.following),
+                ),
                 const SizedBox(width: 24),
-                _buildStat(context, profile.followersCount ?? 0, 'Followers'),
+                _buildStat(
+                  context,
+                  profile.followersCount ?? 0,
+                  'Followers',
+                  key: const ValueKey('profile_followers_stat'),
+                  onTap: () => _openConnections(context, profile, ProfileConnectionsTab.followers),
+                ),
                 const SizedBox(width: 24),
                 _buildStat(context, profile.postsCount ?? 0, 'Posts'),
               ],
@@ -890,9 +906,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(999), child: chip);
   }
 
-  Widget _buildStat(BuildContext context, int count, String label) {
+  Widget _buildStat(BuildContext context, int count, String label, {Key? key, VoidCallback? onTap}) {
     final colorScheme = context.colorScheme;
-    return Column(
+    final child = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(formatCount(count), style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
@@ -902,6 +918,22 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         ),
       ],
     );
+
+    if (onTap == null) {
+      return KeyedSubtree(key: key, child: child);
+    }
+    return InkWell(
+      key: key,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(padding: AppInsets.allXs, child: child),
+    );
+  }
+
+  void _openConnections(BuildContext context, ProfileViewDetailed profile, ProfileConnectionsTab tab) {
+    final encodedActor = Uri.encodeComponent(profile.did);
+    final encodedHandle = Uri.encodeComponent(profile.handle);
+    context.push('/profile-connections?actor=$encodedActor&handle=$encodedHandle&tab=${tab.routeValue}');
   }
 
   Widget _buildProfileActions(BuildContext context, ProfileViewDetailed profile) {
@@ -1013,7 +1045,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     ListRepository? listRepository;
     try {
       listRepository = context.read<ListRepository>();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('ProfileScreen: ListRepository unavailable for add-to-list sheet', error: error, stackTrace: stackTrace);
       return;
     }
 
@@ -1086,7 +1119,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   String _resolveAppViewProvider(BuildContext context) {
     try {
       return context.read<SettingsCubit>().state.appViewProvider;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d(
+        'ProfileScreen: SettingsCubit unavailable; using default AppView provider',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return AppViewProviders.defaultKey;
     }
   }
@@ -1095,7 +1133,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     ProfileRepository? profileRepository;
     try {
       profileRepository = context.read<ProfileRepository>();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d(
+        'ProfileScreen: ProfileRepository unavailable for suggested follows sheet',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return;
     }
 
@@ -1372,7 +1415,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     ListRepository? listRepository;
     try {
       listRepository = context.read<ListRepository>();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('ProfileScreen: ListRepository unavailable for lists tab', error: error, stackTrace: stackTrace);
       return const SizedBox.shrink();
     }
 
@@ -1386,7 +1430,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     ProfileRepository? profileRepository;
     try {
       profileRepository = context.read<ProfileRepository>();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('ProfileScreen: ProfileRepository unavailable for liked posts tab', error: error, stackTrace: stackTrace);
       return const SizedBox.shrink();
     }
 
@@ -1400,7 +1445,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     StarterPackRepository? starterPackRepository;
     try {
       starterPackRepository = context.read<StarterPackRepository>();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d(
+        'ProfileScreen: StarterPackRepository unavailable for starter packs tab',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return const SizedBox.shrink();
     }
 
@@ -1507,7 +1557,8 @@ class _SuggestedFollowsTabState extends State<_SuggestedFollowsTab> {
     try {
       final repository = context.read<ProfileRepository>();
       return SuggestedFollowsCubit(repository: repository)..load(actor);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('ProfileScreen: ProfileRepository unavailable for suggested tab', error: error, stackTrace: stackTrace);
       return null;
     }
   }

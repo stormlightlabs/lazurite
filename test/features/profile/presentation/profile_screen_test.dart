@@ -188,6 +188,49 @@ void main() {
     expect(find.text('Liked'), findsOneWidget);
   });
 
+  testWidgets('tapping following stat opens connections screen on following tab', (tester) async {
+    useLargeScreen(tester);
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthBloc>.value(value: authBloc),
+              BlocProvider<ProfileBloc>.value(value: profileBloc),
+              BlocProvider<FeedBloc>.value(value: feedBloc),
+              BlocProvider<SettingsCubit>.value(value: settingsCubit),
+              BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+            ],
+            child: const ProfileScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/profile-connections',
+          builder: (context, state) => Scaffold(
+            body: Text(
+              [
+                state.uri.queryParameters['tab'],
+                state.uri.queryParameters['actor'],
+                state.uri.queryParameters['handle'],
+              ].join(' '),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('profile_following_stat')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('following did:plc:me me.bsky.social'), findsOneWidget);
+
+    router.dispose();
+  });
+
   testWidgets('does not show Bookmarks/Liked buttons on other profiles', (tester) async {
     useLargeScreen(tester);
     const otherProfile = ProfileViewDetailed(

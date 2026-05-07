@@ -20,8 +20,8 @@ import 'package:lazurite/features/auth/presentation/login_screen.dart';
 import 'package:lazurite/features/auth/presentation/oauth_callback_screen.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
-import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:lazurite/features/compose/presentation/compose_screen.dart';
+import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_detail_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
@@ -50,10 +50,13 @@ import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/notifications/domain/notification_domain_service.dart';
 import 'package:lazurite/features/profile/cubit/follow_audit_cubit.dart';
+import 'package:lazurite/features/profile/cubit/profile_connections_cubit.dart';
 import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
 import 'package:lazurite/features/profile/data/follow_audit_repository.dart';
 import 'package:lazurite/features/profile/data/profile_context_repository.dart';
+import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/follow_audit_screen.dart';
+import 'package:lazurite/features/profile/presentation/profile_connections_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
@@ -396,6 +399,26 @@ class AppRouter {
             BlocProvider(
               create: (_) => ProfileContextCubit(repository: repository, did: did, isOwnProfile: isOwnProfile),
               child: ProfileContextScreen(handle: handle),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/profile-connections',
+        pageBuilder: (context, state) {
+          final actor = Uri.decodeComponent(state.uri.queryParameters['actor'] ?? '').trim();
+          final handle = Uri.decodeComponent(state.uri.queryParameters['handle'] ?? '').trim();
+          final initialTab = ProfileConnectionsTabX.fromRouteValue(state.uri.queryParameters['tab']);
+          return _page(
+            context,
+            state,
+            BlocProvider(
+              create: (_) => ProfileConnectionsCubit(repository: context.read<ProfileRepository>(), actor: actor),
+              child: ProfileConnectionsScreen(
+                actor: actor,
+                handle: handle.isEmpty ? null : handle,
+                initialTab: initialTab,
+              ),
             ),
           );
         },
