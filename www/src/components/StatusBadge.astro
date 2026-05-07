@@ -1,0 +1,12 @@
+---
+interface Props {
+  label: string;
+}
+
+const { label } = Astro.props;
+---
+
+<div class="status-badge">
+  <span class="status-badge__dot" aria-hidden="true"></span>
+  <span>{label}</span>
+</div>

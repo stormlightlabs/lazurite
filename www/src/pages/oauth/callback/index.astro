@@ -1,0 +1,49 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Lazurite Authentication Complete" description="Lazurite authentication callback page.">
+  <main class="oauth-page">
+    <section class="oauth-card" aria-labelledby="oauth-title">
+      <h1 id="oauth-title" class="oauth-card__title">Authentication Complete</h1>
+      <p class="oauth-card__copy">
+        Lazurite is finishing sign-in. If the app does not reopen automatically, tap below.
+      </p>
+      <a id="reopen-link" class="button button--primary" href="#">Open Lazurite</a>
+      <p class="oauth-card__hint">If this still fails, use your browser menu and choose "Open in app".</p>
+    </section>
+  </main>
+
+  <script is:inline>
+    const query = window.location.search || "";
+    const fragment = window.location.hash || "";
+    const isAppleMobile =
+      /iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
+      (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
+    const reopenPath = isAppleMobile ? "//oauth/callback" : "/oauth/callback";
+    const reopenUrl = `org.stormlightlabs.lazurite:${reopenPath}${query}${fragment}`;
+    const reopenLink = document.getElementById("reopen-link");
+    const autoOpenKey = `lazurite.oauth.reopen.${query}${fragment}`;
+
+    reopenLink.setAttribute("href", reopenUrl);
+
+    function attemptReopen() {
+      try {
+        if (window.sessionStorage.getItem(autoOpenKey) === "1") {
+          return;
+        }
+        window.sessionStorage.setItem(autoOpenKey, "1");
+      } catch (err) {
+        console.debug("Storage unavailable; trying a single best-effort reopen.", err);
+      }
+      window.location.assign(reopenUrl);
+    }
+
+    window.addEventListener("load", function () {
+      if (isAppleMobile) {
+        return;
+      }
+      window.setTimeout(attemptReopen, 250);
+    });
+  </script>
+</BaseLayout>

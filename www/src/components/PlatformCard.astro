@@ -1,0 +1,57 @@
+---
+import IconBadge from "./IconBadge.astro";
+import ScreenshotFrame from "./ScreenshotFrame.astro";
+
+interface PlatformScreenshot {
+  src: string;
+  alt: string;
+  caption: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  badge: string;
+  badgeTone: "alpha" | "beta";
+  icon: string;
+  iconAlt: string;
+  iconTone: "blue" | "violet";
+  targets: string[];
+  features: string[];
+  screenshot: PlatformScreenshot;
+}
+
+const {
+  title,
+  description,
+  badge,
+  badgeTone,
+  icon,
+  iconAlt,
+  iconTone,
+  targets,
+  features,
+  screenshot,
+} = Astro.props;
+---
+
+<article class="platform-card">
+  <header class="platform-card__header">
+    <IconBadge src={icon} alt={iconAlt} tone={iconTone} />
+    <h2 class="platform-card__title">{title}</h2>
+    <span class:list={["status-label", `status-label--${badgeTone}`]}>{badge}</span>
+  </header>
+  <p class="platform-card__description">{description}</p>
+  <div class="tag-list" aria-label={`${title} platforms`}>
+    {targets.map((target) => <span class="tag-list__item">{target}</span>)}
+  </div>
+  <ul class="check-list">
+    {features.map((feature) => <li>{feature}</li>)}
+  </ul>
+  <ScreenshotFrame
+    src={screenshot.src}
+    alt={screenshot.alt}
+    caption={screenshot.caption}
+    variant="card"
+  />
+</article>

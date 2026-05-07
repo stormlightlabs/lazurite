@@ -1,0 +1,51 @@
+---
+import type { CollectionEntry } from "astro:content";
+import BrandMark from "./BrandMark.astro";
+
+interface Props {
+  page: CollectionEntry<"legalPages">["data"];
+}
+
+const { page } = Astro.props;
+---
+
+<div class="legal-page">
+  <div class="page-container page-container--legal">
+    <nav class="utility-nav" aria-label="Legal page navigation">
+      <a href="/">Back to home</a>
+    </nav>
+    <BrandMark href="/" class="brand-mark--legal" />
+
+    <main class="legal-document">
+      <header class="legal-document__header">
+        <h1 class="legal-document__title">{page.title}</h1>
+        <p class="legal-document__meta">Effective {page.effectiveDate}</p>
+        <p class="legal-document__lead">{page.lead}</p>
+        {page.alert && <p class="legal-document__alert">{page.alert}</p>}
+      </header>
+      <div class="legal-document__content">
+        <slot />
+      </div>
+    </main>
+  </div>
+
+  <footer class="legal-footer">
+    <p class="legal-footer__copy">
+      Built by
+      <a href="https://stormlightlabs.org" target="_blank" rel="noopener noreferrer">Stormlight Labs</a>
+      {
+        page.footerLinks.map((link) => (
+          <>
+            &nbsp;&middot;&nbsp;
+            <a
+              href={link.href}
+              target={link.external ? "_blank" : undefined}
+              rel={link.external ? "noopener noreferrer" : undefined}>
+              {link.label}
+            </a>
+          </>
+        ))
+      }
+    </p>
+  </footer>
+</div>

@@ -1,0 +1,24 @@
+---
+const footerLinks = [
+  { href: "https://desertthunder.dev", label: "Owais", external: true },
+  { href: "https://stormlightlabs.org", label: "Stormlight Labs", external: true },
+  { href: "https://atproto.com", label: "AT Protocol", external: true },
+  { href: "/csae-policy", label: "Child Safety Standards" },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/terms", label: "Terms of Service" },
+];
+---
+
+<footer class="site-footer">
+  <p class="site-footer__copy">
+    Built with <span aria-label="lightning">&#9889;&#65039;</span> by
+    <a href={footerLinks[0].href} target="_blank" rel="noopener noreferrer">{footerLinks[0].label}</a>
+    at
+    <a href={footerLinks[1].href} target="_blank" rel="noopener noreferrer">{footerLinks[1].label}</a>
+    &middot; Powered by the
+    <a href={footerLinks[2].href} target="_blank" rel="noopener noreferrer">{footerLinks[2].label}</a>
+    &middot; <a href={footerLinks[3].href}>{footerLinks[3].label}</a>
+    &middot; <a href={footerLinks[4].href}>{footerLinks[4].label}</a>
+    &middot; <a href={footerLinks[5].href}>{footerLinks[5].label}</a>
+  </p>
+</footer>

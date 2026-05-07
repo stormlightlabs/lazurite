@@ -23,6 +23,34 @@ Use `just` for common workflows:
 | `just gen`             | Run `build_runner` for code generation                |
 | `just check`           | Format, lint, and test in sequence                    |
 
+## Website
+
+The public website lives in `www` as an Astro project.
+
+```sh
+cd www
+pnpm install
+pnpm dev
+pnpm build
+```
+
+Astro source files live under `www/src`:
+
+- `/pages` defines routes.
+- `/components` holds reusable page sections and layout components.
+- `/content/legal` contains the legal pages as Markdown.
+- `/styles/shared.css` is the shared stylesheet for the Astro site.
+
+Static files that must keep exact public routes live in `www/public`, including:
+
+- `.well-known/apple-app-site-association`
+- `.well-known/assetlinks.json`
+- `_headers`
+- `client-metadata.json`
+- favicon and image assets
+
+The legal routes are `/privacy`, `/terms`, and `/csae-policy`.
+
 ## Architecture
 
 ### Stack

@@ -1,0 +1,23 @@
+---
+import { getCollection, render } from "astro:content";
+import LegalDocument from "../components/LegalDocument.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+export async function getStaticPaths() {
+  const pages = await getCollection("legalPages");
+
+  return pages.map((page) => ({
+    params: { slug: page.data.slug },
+    props: { page },
+  }));
+}
+
+const { page } = Astro.props;
+const { Content } = await render(page);
+---
+
+<BaseLayout title={`Lazurite ${page.data.title}`} description={page.data.description}>
+  <LegalDocument page={page.data}>
+    <Content />
+  </LegalDocument>
+</BaseLayout>

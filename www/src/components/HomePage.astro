@@ -1,0 +1,185 @@
+---
+import BrandMark from "./BrandMark.astro";
+import FeatureCard from "./FeatureCard.astro";
+import PlatformCard from "./PlatformCard.astro";
+import ScreenshotFrame from "./ScreenshotFrame.astro";
+import SiteFooter from "./SiteFooter.astro";
+import StatusBadge from "./StatusBadge.astro";
+import TechStack from "./TechStack.astro";
+
+const screenshots = [
+  {
+    src: "/static/desktop-deck.png",
+    alt: "Lazurite desktop workspace screenshot",
+    variant: "desktop" as const,
+    loading: "eager" as const,
+  },
+  {
+    src: "https://placehold.co/720x1280/191919/33b1ff?text=Mobile%0AProfile&font=inter",
+    alt: "Lazurite mobile profile screenshot",
+    variant: "phone" as const,
+    loading: "lazy" as const,
+  },
+];
+
+const platforms = [
+  {
+    title: "Mobile",
+    description:
+      "Material You design with offline support, smart folders, and full AT Protocol coverage. Built with Flutter for a native feel on both platforms.",
+    badge: "Beta",
+    badgeTone: "beta" as const,
+    icon: "/static/smartphone.svg",
+    iconAlt: "Mobile icon",
+    iconTone: "blue" as const,
+    targets: ["iOS", "Android"],
+    features: [
+      "Offline-first with local caching and offline compose",
+      "Full DM support with conversation requests",
+      "Drafts, scheduled posts, and bookmarks",
+      "Content moderation with custom labelers",
+      "Multi-account switching with data isolation",
+      "Themeable: Oxocarbon, Catppuccin, Nord, Rose Pine",
+    ],
+    screenshot: {
+      src: "https://placehold.co/720x1280/000000/7dafff?text=Feed+%2B+Compose&font=inter",
+      alt: "Mobile feed and compose",
+      caption: "Your home feed and a composer button",
+    },
+  },
+  {
+    title: "Desktop",
+    description:
+      "A native desktop experience built with Tauri and Solid.js. Semantic search across your saved posts, multi-column layouts, and deep AT Protocol tooling.",
+    badge: "Alpha",
+    badgeTone: "alpha" as const,
+    icon: "/static/desktop.svg",
+    iconAlt: "Desktop icon",
+    iconTone: "violet" as const,
+    targets: ["macOS", "Windows", "Linux"],
+    features: [
+      "Full-text and vector search over saved and liked posts",
+      "Multi-column workspace layouts",
+      "PDS browser for exploring repository data",
+      "Composer window for distraction-free posting",
+      "Deep-link handling for at:// URIs",
+      "Global shortcuts (post from anywhere)",
+    ],
+    screenshot: {
+      src: "/static/desktop-deck.png",
+      alt: "Desktop multi-column layout",
+      caption: "Multi-column workspace with search",
+    },
+  },
+];
+
+const features = [
+  {
+    title: "Feeds & Timelines",
+    description:
+      "Home timeline, custom algorithmic feeds, pinned feeds with drag-to-reorder. Full thread and reply chain rendering.",
+    icon: "/static/feed.svg",
+    iconAlt: "Feed icon",
+  },
+  {
+    title: "Search & Discovery",
+    description:
+      "Search your saved & liked posts, discover starterpacks with the power of local semantic search with embeddings.",
+    icon: "/static/search.svg",
+    iconAlt: "Search icon",
+    iconTone: "violet" as const,
+  },
+  {
+    title: "Moderation",
+    description:
+      "Subscribe to labelers, configure per-label preferences, mute and block lists. Adult content controls with granular filtering.",
+    icon: "/static/lock.svg",
+    iconAlt: "Moderation icon",
+  },
+  {
+    title: "Lists & Starter Packs",
+    description:
+      "Create and manage curation and moderation lists. Browse, search, and build starter packs to share with others.",
+    icon: "/static/folder.svg",
+    iconAlt: "Lists icon",
+    iconTone: "violet" as const,
+  },
+  {
+    title: "Offline & Fast",
+    description:
+      "Smart caching with local databases on both platforms. Browse cached content and queue actions while offline.",
+    icon: "/static/offline.svg",
+    iconAlt: "Offline icon",
+  },
+  {
+    title: "Social Graph",
+    description:
+      "Explore connections with a force-directed graph visualization. See mutual follows, followers, and blocking context at a glance.",
+    icon: "/static/graph.svg",
+    iconAlt: "Graph icon",
+    iconTone: "violet" as const,
+  },
+];
+
+const techGroups = [
+  { label: "Mobile", items: ["Flutter", "Dart", "Material 3", "Drift", "BLoC"] },
+  { label: "Desktop", items: ["Tauri 2", "Rust", "Solid.js", "SQLite + FTS", "fastembed"] },
+  { label: "Protocol", items: ["AT Protocol", "OAuth 2.0 + DPoP", "Constellation"] },
+];
+---
+
+<div class="home-page">
+  <div class="page-container page-container--home">
+    <header class="home-masthead">
+      <BrandMark />
+      <p class="home-masthead__tagline">The ATmosphere client that <em>rocks</em>.</p>
+    </header>
+
+    <main class="home-content">
+      <section class="hero-section" aria-labelledby="hero-title">
+        <StatusBadge label="In Active Development" />
+        <h1 id="hero-title" class="hero-section__title">Roam the ATmosphere</h1>
+        <p class="hero-section__copy">
+          Lazurite is a client for Bluesky & BlackSky built for people who want more from their
+          social experience. A full-featured mobile app for iOS and Android, paired with a powerful
+          desktop companion for macOS, Windows, and Linux.
+        </p>
+      </section>
+
+      <section class="screenshot-showcase" aria-label="Lazurite app screenshots">
+        {
+          screenshots.map((screenshot) => (
+            <ScreenshotFrame
+              src={screenshot.src}
+              alt={screenshot.alt}
+              variant={screenshot.variant}
+              loading={screenshot.loading}
+            />
+          ))
+        }
+      </section>
+
+      <section class="platform-grid" aria-label="Platforms">
+        {platforms.map((platform) => <PlatformCard {...platform} />)}
+      </section>
+
+      <section class="section-block" aria-labelledby="shared-features-title">
+        <h2 id="shared-features-title" class="section-heading">Across both platforms</h2>
+        <div class="feature-grid">
+          {features.map((feature) => <FeatureCard {...feature} />)}
+        </div>
+      </section>
+
+      <TechStack title="Built with" groups={techGroups} />
+
+      <aside class="callout">
+        Follow development updates on Bluesky:
+        <a href="https://bsky.app/profile/desertthunder.dev" target="_blank" rel="noopener noreferrer">
+          @desertthunder.dev
+        </a>
+      </aside>
+    </main>
+  </div>
+
+  <SiteFooter />
+</div>
