@@ -65,5 +65,49 @@ void main() {
       expect(await staleFile.exists(), isFalse);
       expect(await keptFile.exists(), isTrue);
     });
+
+    test('trims oldest entries when the daily file reaches its size cap', () async {
+      final output = DailyLogFileOutput(directoryPath: tempDirectory.path, maxFileBytes: 420);
+      final logger = Logger(
+        filter: ProductionFilter(),
+        printer: AppFileLogPrinter(),
+        output: output,
+        level: Level.trace,
+      );
+      await logger.init;
+
+      for (var index = 0; index < 12; index += 1) {
+        logger.i(
+          'AppLogger: bounded entry $index ${List.filled(48, 'x').join()}',
+          time: DateTime(2026, 3, 16, 14, 32, index),
+        );
+      }
+      await logger.close();
+
+      final file = File('${tempDirectory.path}/${DailyLogFileOutput.fileNameFor(DateTime(2026, 3, 16))}');
+      final content = await file.readAsString();
+      expect(await file.length(), lessThanOrEqualTo(420));
+      expect(content, contains('Older log entries trimmed'));
+      expect(content, isNot(contains('bounded entry 0')));
+      expect(content, contains('bounded entry 11'));
+    });
+
+    test('bounds a single oversized log event', () async {
+      final output = DailyLogFileOutput(directoryPath: tempDirectory.path, maxFileBytes: 260);
+      final logger = Logger(
+        filter: ProductionFilter(),
+        printer: AppFileLogPrinter(),
+        output: output,
+        level: Level.trace,
+      );
+      await logger.init;
+
+      logger.e('AppLogger: ${List.filled(1000, 'x').join()}', time: DateTime(2026, 3, 16, 14, 32));
+      await logger.close();
+
+      final file = File('${tempDirectory.path}/${DailyLogFileOutput.fileNameFor(DateTime(2026, 3, 16))}');
+      expect(await file.length(), lessThanOrEqualTo(260));
+      expect(await file.readAsString(), contains('x'));
+    });
   });
 }

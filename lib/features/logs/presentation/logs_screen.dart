@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
@@ -30,6 +32,8 @@ class _LogsScreenContent extends StatefulWidget {
 class _LogsScreenContentState extends State<_LogsScreenContent> {
   late final ScrollController _scrollController;
   bool _autoScroll = true;
+  int? _lastEntryCount;
+  LogEntry? _lastEntry;
 
   @override
   void initState() {
@@ -55,6 +59,10 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
     if (isAtBottom != _autoScroll) {
       setState(() => _autoScroll = isAtBottom);
     }
+
+    if (_scrollController.offset <= 120) {
+      unawaited(context.read<LogViewerCubit>().loadOlderEntries());
+    }
   }
 
   void _scrollToBottom({bool animated = false}) {
@@ -76,8 +84,41 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
 
     return BlocListener<LogViewerCubit, LogViewerState>(
       listenWhen: (previous, current) =>
-          previous.filteredEntries != current.filteredEntries || previous.status != current.status,
+          previous.filteredEntries != current.filteredEntries ||
+          previous.entries != current.entries ||
+          previous.status != current.status,
       listener: (context, state) {
+        final loadedOlderEntries =
+            _lastEntryCount != null &&
+            _lastEntry != null &&
+            state.entries.length > _lastEntryCount! &&
+            state.entries.isNotEmpty &&
+            state.entries.last == _lastEntry &&
+            !_autoScroll;
+        if (loadedOlderEntries) {
+          final previousMaxScrollExtent = _scrollController.hasClients
+              ? _scrollController.position.maxScrollExtent
+              : null;
+          final previousOffset = _scrollController.hasClients ? _scrollController.offset : null;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!_scrollController.hasClients || previousMaxScrollExtent == null || previousOffset == null) {
+              return;
+            }
+
+            final nextMaxScrollExtent = _scrollController.position.maxScrollExtent;
+            final offset = (previousOffset + nextMaxScrollExtent - previousMaxScrollExtent).clamp(
+              _scrollController.position.minScrollExtent,
+              nextMaxScrollExtent,
+            );
+            _scrollController.jumpTo(offset);
+          });
+          _lastEntryCount = state.entries.length;
+          _lastEntry = state.entries.isEmpty ? null : state.entries.last;
+          return;
+        }
+
+        _lastEntryCount = state.entries.length;
+        _lastEntry = state.entries.isEmpty ? null : state.entries.last;
         if (!_autoScroll || state.status != LogViewerStatus.loaded) {
           return;
         }
@@ -316,12 +357,18 @@ class _LogList extends StatelessWidget {
           );
         }
 
+        final itemCount = state.filteredEntries.length + (state.isLoadingOlderEntries ? 1 : 0);
         return ListView.separated(
           controller: controller,
-          itemCount: state.filteredEntries.length,
+          itemCount: itemCount,
           separatorBuilder: (context, index) => Divider(height: 1, color: context.colorScheme.outlineVariant),
           itemBuilder: (context, index) {
-            return _LogEntryTile(entry: state.filteredEntries[index]);
+            if (state.isLoadingOlderEntries && index == 0) {
+              return const _OlderLogsLoadingTile();
+            }
+
+            final entryIndex = state.isLoadingOlderEntries ? index - 1 : index;
+            return _LogEntryTile(entry: state.filteredEntries[entryIndex]);
           },
         );
       },
@@ -340,6 +387,18 @@ String _labelForLevel(BuildContext context, Level level) {
     Level.trace => l10n.labelLogLevelTrace,
     _ => level.name,
   };
+}
+
+class _OlderLogsLoadingTile extends StatelessWidget {
+  const _OlderLogsLoadingTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: 48,
+      child: Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))),
+    );
+  }
 }
 
 class _LogEntryTile extends StatefulWidget {

@@ -1,14 +1,20 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 
 class DailyLogFileOutput extends LogOutput {
-  DailyLogFileOutput({required this.directoryPath, this.retentionDays = 3});
+  DailyLogFileOutput({required this.directoryPath, this.retentionDays = 3, this.maxFileBytes = defaultMaxFileBytes})
+    : assert(retentionDays > 0),
+      assert(maxFileBytes > 0);
+
+  static const int defaultMaxFileBytes = 2 * 1024 * 1024;
 
   final String directoryPath;
   final int retentionDays;
+  final int maxFileBytes;
 
   String? _lastCleanupDateKey;
   Future<void> _pendingWrites = Future<void>.value();
@@ -39,7 +45,7 @@ class DailyLogFileOutput extends LogOutput {
     final shouldFlush = event.level.index >= Level.warning.index;
     _pendingWrites = _pendingWrites
         .then((_) => _appendLine(filePath: filePath, content: content, flush: shouldFlush))
-        .catchError((_) {});
+        .catchError(_reportWriteFailure);
   }
 
   Future<void> clearAllLogs() async {
@@ -86,7 +92,55 @@ class DailyLogFileOutput extends LogOutput {
     if (!await file.parent.exists()) {
       await file.parent.create(recursive: true);
     }
-    await file.writeAsString(content, mode: FileMode.writeOnlyAppend, flush: flush);
+
+    final maxEventBytes = maxFileBytes > 1 ? maxFileBytes ~/ 2 : maxFileBytes;
+    final contentBytes = utf8.encode(content);
+    final boundedContent = contentBytes.length > maxEventBytes ? _tailUtf8(contentBytes, maxEventBytes) : content;
+    final boundedContentBytes = utf8.encode(boundedContent);
+    if (await file.exists() && await file.length() + boundedContentBytes.length > maxFileBytes) {
+      await _trimFileForAppend(file: file, incomingByteCount: boundedContentBytes.length);
+    }
+    await file.writeAsString(boundedContent, mode: FileMode.writeOnlyAppend, flush: flush);
+  }
+
+  Future<void> _trimFileForAppend({required File file, required int incomingByteCount}) async {
+    final existingBytes = await file.readAsBytes();
+    final marker = _trimMarker();
+    final markerBytes = utf8.encode(marker);
+    final retainedBudget = maxFileBytes - incomingByteCount - markerBytes.length;
+    if (retainedBudget <= 0) {
+      await file.writeAsString(marker, flush: true);
+      return;
+    }
+
+    final retainedByteCount = retainedBudget.clamp(0, maxFileBytes ~/ 2);
+    final tailStart = existingBytes.length > retainedByteCount ? existingBytes.length - retainedByteCount : 0;
+    var tailBytes = existingBytes.sublist(tailStart);
+    final firstNewline = tailBytes.indexOf(10);
+    if (tailStart > 0 && firstNewline >= 0 && firstNewline + 1 < tailBytes.length) {
+      tailBytes = tailBytes.sublist(firstNewline + 1);
+    }
+
+    final tail = utf8.decode(tailBytes, allowMalformed: true);
+    await file.writeAsString('$marker$tail', flush: true);
+  }
+
+  String _tailUtf8(List<int> bytes, int maxBytes) {
+    if (bytes.length <= maxBytes) {
+      return utf8.decode(bytes, allowMalformed: true);
+    }
+
+    final tailBytes = bytes.sublist(bytes.length - maxBytes);
+    return utf8.decode(tailBytes, allowMalformed: true);
+  }
+
+  String _trimMarker() {
+    return '[W] TIME: ${DateTime.now().toIso8601String()} '
+        'AppLogger: Older log entries trimmed to keep this log file below $maxFileBytes bytes.\n';
+  }
+
+  void _reportWriteFailure(Object error, StackTrace stackTrace) {
+    stderr.writeln('Lazurite log write failed: $error');
   }
 
   static String fileNameFor(DateTime timestamp) {
