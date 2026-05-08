@@ -19,7 +19,7 @@
 
 ## M2 - Remaining Feature Surfaces
 
-- [ ] Localize feed cards, post menus, post actions, saved posts, and trending
+- [x] Localize feed cards, post menus, post actions, saved posts, and trending
 - [ ] Localize compose flow, media alt text editors, draft/schedule states, and validation
 - [ ] Localize profile screens, profile actions, reports, follows, lists, and starter packs
 - [ ] Localize messages, notifications, alerts, and account switching sheets

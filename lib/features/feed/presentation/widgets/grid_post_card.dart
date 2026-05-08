@@ -5,6 +5,7 @@ import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/color_filters.dart';
 import 'package:lazurite/core/theme/spacing.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -63,7 +64,9 @@ class GridPostCard extends StatelessWidget {
         ? PostEmbedView(feedViewPost: feedViewPost, embed: post.embed!, compact: isCompactGrid)
         : null;
 
-    final resolvedFooter = footer ?? PostCardFooter(timestamp: formatPostTime(record?.createdAt ?? post.indexedAt));
+    final resolvedFooter =
+        footer ??
+        PostCardFooter(timestamp: formatPostTime(record?.createdAt ?? post.indexedAt, nowLabel: context.l10n.labelNow));
 
     return Container(
       decoration: BoxDecoration(
@@ -236,7 +239,7 @@ class GridPostCard extends StatelessWidget {
           const SizedBox(width: 6),
           Expanded(
             child: Text(
-              'Reply in a thread',
+              context.l10n.messageReplyInThread,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
@@ -259,7 +262,7 @@ class GridPostCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Replying to @${parentPost.author.handle}',
+            context.l10n.formatReplyingToHandle(parentPost.author.handle),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: context.textTheme.labelSmall?.copyWith(color: context.colorScheme.onSurfaceVariant),

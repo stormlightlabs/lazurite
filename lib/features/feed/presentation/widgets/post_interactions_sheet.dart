@@ -2,6 +2,7 @@ import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
@@ -140,7 +141,7 @@ class _PostInteractionsSheetState extends State<PostInteractionsSheet> {
   }
 
   Widget _buildSectionLabel(BuildContext context, ColorScheme colorScheme) {
-    final label = _selectedTab == InteractionTab.likes ? 'LIKED BY' : 'REPOSTED BY';
+    final label = _selectedTab == InteractionTab.likes ? context.l10n.labelLikedBy : context.l10n.labelRepostedBy;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Text(
@@ -164,14 +165,14 @@ class _PostInteractionsSheetState extends State<PostInteractionsSheet> {
             colorScheme: colorScheme,
             tab: InteractionTab.likes,
             icon: Icons.favorite_outline,
-            label: '${widget.likeCount} Likes',
+            label: context.l10n.formatLikesCount(widget.likeCount),
           ),
           const SizedBox(width: 10),
           _buildTabChip(
             colorScheme: colorScheme,
             tab: InteractionTab.reposts,
             icon: Icons.repeat,
-            label: '${widget.repostCount} Reposts',
+            label: context.l10n.formatRepostsCount(widget.repostCount),
           ),
         ],
       ),
@@ -229,7 +230,7 @@ class _PostInteractionsSheetState extends State<PostInteractionsSheet> {
 
     if (loaded && profiles.isEmpty) {
       return Center(
-        child: Text('No interactions yet', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+        child: Text(context.l10n.messageNoInteractionsYet, style: TextStyle(color: colorScheme.onSurfaceVariant)),
       );
     }
 

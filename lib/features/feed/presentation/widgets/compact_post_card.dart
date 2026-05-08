@@ -2,6 +2,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart';
@@ -104,7 +105,7 @@ class CompactPostCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '@${author.handle} · ${formatRelativeTime(createdAt)}',
+                  '@${author.handle} · ${formatRelativeTime(createdAt, nowLabel: context.l10n.commonNow)}',
                   style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                 ),
               ],

@@ -121,6 +121,30 @@ abstract class AppLocalizations {
   /// **'Continue'**
   String get buttonContinue;
 
+  /// Button label to clear locally stored items
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Local'**
+  String get buttonClearLocal;
+
+  /// Delete button label
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get buttonDelete;
+
+  /// Button label to load additional quote posts
+  ///
+  /// In en, this message translates to:
+  /// **'Load more quotes'**
+  String get buttonLoadMoreQuotes;
+
+  /// Button label to load additional repost users
+  ///
+  /// In en, this message translates to:
+  /// **'Load more reposts'**
+  String get buttonLoadMoreReposts;
+
   /// Remove button label
   ///
   /// In en, this message translates to:
@@ -175,6 +199,12 @@ abstract class AppLocalizations {
   /// **'Show content'**
   String get buttonShowContent;
 
+  /// Share button or menu label
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get buttonShare;
+
   /// Try again button label
   ///
   /// In en, this message translates to:
@@ -192,6 +222,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'None'**
   String get commonNone;
+
+  /// Lowercase relative time label for the current moment
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get commonNow;
 
   /// Label for a health check that has not run
   ///
@@ -216,6 +252,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear cache?'**
   String get dialogClearCacheTitle;
+
+  /// Confirmation dialog body before clearing local bookmarks
+  ///
+  /// In en, this message translates to:
+  /// **'This removes only local bookmarks from this device. Bluesky cloud bookmarks will not be deleted.'**
+  String get dialogClearLocalBookmarksContent;
+
+  /// Confirmation dialog title before clearing local bookmarks
+  ///
+  /// In en, this message translates to:
+  /// **'Clear local bookmarks?'**
+  String get dialogClearLocalBookmarksTitle;
+
+  /// Confirmation dialog body before deleting a post
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone.'**
+  String get dialogDeletePostContent;
+
+  /// Confirmation dialog title before deleting a post
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Post?'**
+  String get dialogDeletePostTitle;
 
   /// Confirmation dialog body before removing a saved account from this device
   ///
@@ -271,6 +331,48 @@ abstract class AppLocalizations {
   /// **'Something went wrong'**
   String get errorGenericTitle;
 
+  /// Error title shown when bookmarks cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load bookmarks'**
+  String get errorFailedToLoadBookmarks;
+
+  /// Error title shown when liked posts cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load liked posts'**
+  String get errorFailedToLoadLikedPosts;
+
+  /// Error message shown when liked posts cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load liked posts: {error}'**
+  String errorFailedToLoadLikedPostsDetails(Object error);
+
+  /// Warning message shown when refreshing liked posts fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to refresh liked posts: {error}'**
+  String errorFailedToRefreshLikedPosts(Object error);
+
+  /// Error title shown when trending content cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load trending'**
+  String get errorFailedToLoadTrending;
+
+  /// Error message shown when trending topics cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load trending topics: {error}'**
+  String errorFailedToLoadTrendingTopics(Object error);
+
+  /// Fallback message when an error has no details
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown error'**
+  String get errorUnknown;
+
   /// Snackbar message when a saved account cannot be removed
   ///
   /// In en, this message translates to:
@@ -306,6 +408,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Depth {depth}'**
   String formatDepth(int depth);
+
+  /// Fallback liked-post card subtitle showing when a post was liked
+  ///
+  /// In en, this message translates to:
+  /// **'Liked on {date}'**
+  String formatLikedOn(String date);
+
+  /// Interaction sheet tab label showing like count
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Like} other{{count} Likes}}'**
+  String formatLikesCount(int count);
+
+  /// Message explaining that a post action requires reconnecting
+  ///
+  /// In en, this message translates to:
+  /// **'You are offline. Reconnect to {action}.'**
+  String formatOfflineReconnectAction(String action);
+
+  /// Post card reply context label showing the parent post author
+  ///
+  /// In en, this message translates to:
+  /// **'Replying to @{handle}'**
+  String formatReplyingToHandle(String handle);
+
+  /// Interaction sheet tab label showing repost count
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Repost} other{{count} Reposts}}'**
+  String formatRepostsCount(int count);
+
+  /// Fallback saved-post card subtitle showing when a post was saved
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on {date}'**
+  String formatSavedOn(String date);
+
+  /// Trending topic category subtitle line
+  ///
+  /// In en, this message translates to:
+  /// **'Category: {category}'**
+  String formatTrendingCategory(String category);
+
+  /// Trending topic post count subtitle line
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 post} other{{count} posts}}'**
+  String formatTrendingPostCount(int count);
+
+  /// Post overflow action label to view an author profile
+  ///
+  /// In en, this message translates to:
+  /// **'View @{handle}'**
+  String formatViewHandle(String handle);
+
+  /// Offline action phrase for liking a post
+  ///
+  /// In en, this message translates to:
+  /// **'like this post'**
+  String get actionLikeThisPost;
+
+  /// Offline action phrase for replying to a post
+  ///
+  /// In en, this message translates to:
+  /// **'reply to this post'**
+  String get actionReplyToThisPost;
+
+  /// Offline action phrase for reposting a post
+  ///
+  /// In en, this message translates to:
+  /// **'repost this post'**
+  String get actionRepostThisPost;
 
   /// About page or settings label
   ///
@@ -408,6 +582,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bookmarks & Likes'**
   String get labelBookmarksAndLikes;
+
+  /// Tooltip for bookmark actions menu
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark actions'**
+  String get labelBookmarkActions;
+
+  /// Fallback saved-post card title
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmarked Post'**
+  String get labelBookmarkedPost;
+
+  /// Bookmarks tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmarks'**
+  String get labelBookmarks;
+
+  /// Bluesky source tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Bluesky'**
+  String get labelBluesky;
 
   /// Snackbar message after clearing cache
   ///
@@ -619,6 +817,12 @@ abstract class AppLocalizations {
   /// **'New Post'**
   String get labelNewPost;
 
+  /// Uppercase compact relative time label for the current moment
+  ///
+  /// In en, this message translates to:
+  /// **'NOW'**
+  String get labelNow;
+
   /// Notifications menu label
   ///
   /// In en, this message translates to:
@@ -799,6 +1003,132 @@ abstract class AppLocalizations {
   /// **'Clear until'**
   String get labelClearUntil;
 
+  /// Bookmark menu item to clear local bookmarks
+  ///
+  /// In en, this message translates to:
+  /// **'Clear local bookmarks'**
+  String get labelClearLocalBookmarks;
+
+  /// Post overflow menu item to copy a post link
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Link'**
+  String get labelCopyLink;
+
+  /// Post overflow menu item to delete a post
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Post'**
+  String get labelDeletePost;
+
+  /// Post overflow menu item to edit a post
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Post'**
+  String get labelEditPost;
+
+  /// Liked posts tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Liked'**
+  String get labelLiked;
+
+  /// Post interactions sheet section label for users who liked a post
+  ///
+  /// In en, this message translates to:
+  /// **'LIKED BY'**
+  String get labelLikedBy;
+
+  /// Fallback liked-post card title
+  ///
+  /// In en, this message translates to:
+  /// **'Liked Post'**
+  String get labelLikedPost;
+
+  /// Local saved-post source tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get labelLocal;
+
+  /// Tooltip to open a post
+  ///
+  /// In en, this message translates to:
+  /// **'Open post'**
+  String get labelOpenPost;
+
+  /// Post action label to quote a post
+  ///
+  /// In en, this message translates to:
+  /// **'Quote Post'**
+  String get labelQuotePost;
+
+  /// Heading for quote and repost bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'QUOTE / REPOSTS'**
+  String get labelQuoteReposts;
+
+  /// Quotes section title
+  ///
+  /// In en, this message translates to:
+  /// **'Quotes'**
+  String get labelQuotes;
+
+  /// Post save menu item to remove a cloud bookmark
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from Bluesky'**
+  String get labelRemoveFromBluesky;
+
+  /// Post save menu item to remove a local bookmark
+  ///
+  /// In en, this message translates to:
+  /// **'Remove local save'**
+  String get labelRemoveLocalSave;
+
+  /// Post overflow menu item to report a post
+  ///
+  /// In en, this message translates to:
+  /// **'Report Post'**
+  String get labelReportPost;
+
+  /// Post action label to repost a post
+  ///
+  /// In en, this message translates to:
+  /// **'Repost'**
+  String get labelRepost;
+
+  /// Post interactions sheet section label for users who reposted a post
+  ///
+  /// In en, this message translates to:
+  /// **'REPOSTED BY'**
+  String get labelRepostedBy;
+
+  /// Reposts section title
+  ///
+  /// In en, this message translates to:
+  /// **'Reposts'**
+  String get labelReposts;
+
+  /// Image context menu item to save an image
+  ///
+  /// In en, this message translates to:
+  /// **'Save image'**
+  String get labelSaveImage;
+
+  /// Post save menu item to create a local bookmark
+  ///
+  /// In en, this message translates to:
+  /// **'Save locally'**
+  String get labelSaveLocally;
+
+  /// Post save menu item to create a cloud bookmark
+  ///
+  /// In en, this message translates to:
+  /// **'Save to Bluesky'**
+  String get labelSaveToBluesky;
+
   /// Saved accounts section label on login screen
   ///
   /// In en, this message translates to:
@@ -816,6 +1146,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Semantic Search'**
   String get labelSemanticSearch;
+
+  /// Post overflow menu item to open users who liked a post
+  ///
+  /// In en, this message translates to:
+  /// **'Show Liked Users'**
+  String get labelShowLikedUsers;
+
+  /// Post overflow menu item to open quote and repost lists
+  ///
+  /// In en, this message translates to:
+  /// **'Show Quote/Repost List'**
+  String get labelShowQuoteRepostList;
 
   /// Settings page title or tooltip
   ///
@@ -876,6 +1218,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Troubleshooting'**
   String get labelTroubleshooting;
+
+  /// Trending topics section label
+  ///
+  /// In en, this message translates to:
+  /// **'Topics'**
+  String get labelTopics;
+
+  /// Trending screen title and tooltip label
+  ///
+  /// In en, this message translates to:
+  /// **'Trending'**
+  String get labelTrending;
+
+  /// Trending suggested topics section label
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested'**
+  String get labelSuggested;
+
+  /// Post action label to undo a repost
+  ///
+  /// In en, this message translates to:
+  /// **'Unrepost'**
+  String get labelUnrepost;
 
   /// Typeahead provider settings label
   ///
@@ -1009,6 +1375,18 @@ abstract class AppLocalizations {
   /// **'Manage pinned and saved feeds'**
   String get messageFeedsSubtitle;
 
+  /// Snackbar message after copying a post link
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied to clipboard'**
+  String get messageLinkCopiedToClipboard;
+
+  /// Loading message while trending topics load
+  ///
+  /// In en, this message translates to:
+  /// **'Loading trending topics'**
+  String get messageLoadingTrendingTopics;
+
   /// Developer setting subtitle for forced 401
   ///
   /// In en, this message translates to:
@@ -1020,6 +1398,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manage semantic search from Bookmarks & Likes -> Search'**
   String get messageManageSemanticSearchSubtitle;
+
+  /// Trending banner shown when supplemental metadata cannot be loaded
+  ///
+  /// In en, this message translates to:
+  /// **'Metadata temporarily unavailable'**
+  String get messageMetadataTemporarilyUnavailable;
 
   /// Moderation overlay description when content cannot be revealed
   ///
@@ -1038,6 +1422,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Moderation/ranking can differ by provider. Verify health and recent fallback state.'**
   String get messageProviderDiagnosticsSubtitle;
+
+  /// Message shown when liked posts dependencies are unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Liked posts are unavailable right now.'**
+  String get messageLikedPostsUnavailable;
+
+  /// Empty state title when there are no bookmarks
+  ///
+  /// In en, this message translates to:
+  /// **'No bookmarks'**
+  String get messageNoBookmarks;
+
+  /// Empty state subtitle when there are no bookmarks
+  ///
+  /// In en, this message translates to:
+  /// **'Posts you bookmark will appear here'**
+  String get messageNoBookmarksSubtitle;
+
+  /// Empty state title when a bookmark source tab is empty
+  ///
+  /// In en, this message translates to:
+  /// **'No bookmarks in this source'**
+  String get messageNoBookmarksInSource;
+
+  /// Empty state subtitle when a bookmark source tab is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Try switching tabs or saving posts to this source'**
+  String get messageNoBookmarksInSourceSubtitle;
+
+  /// Empty state message when a post has no likes or reposts
+  ///
+  /// In en, this message translates to:
+  /// **'No interactions yet'**
+  String get messageNoInteractionsYet;
+
+  /// Empty state title when there are no liked posts
+  ///
+  /// In en, this message translates to:
+  /// **'No liked posts'**
+  String get messageNoLikedPosts;
+
+  /// Empty state subtitle when there are no liked posts
+  ///
+  /// In en, this message translates to:
+  /// **'Posts you like will appear here after sync'**
+  String get messageNoLikedPostsSubtitle;
+
+  /// Empty state message when a post has no quote posts
+  ///
+  /// In en, this message translates to:
+  /// **'No quotes yet'**
+  String get messageNoQuotesYet;
+
+  /// Empty state message when a post has no reposts
+  ///
+  /// In en, this message translates to:
+  /// **'No reposts yet'**
+  String get messageNoRepostsYet;
+
+  /// Empty state message when there are no trending topics
+  ///
+  /// In en, this message translates to:
+  /// **'No trending topics right now'**
+  String get messageNoTrendingTopicsRightNow;
+
+  /// Snackbar message after deleting a post
+  ///
+  /// In en, this message translates to:
+  /// **'Post deleted'**
+  String get messagePostDeleted;
+
+  /// Post action subtitle for quote post
+  ///
+  /// In en, this message translates to:
+  /// **'Quote this post with your own text'**
+  String get messageQuotePostSubtitle;
+
+  /// Quoted embed unavailable message for blocked quoted posts
+  ///
+  /// In en, this message translates to:
+  /// **'Quoted post is blocked'**
+  String get messageQuotedPostBlocked;
+
+  /// Quoted embed unavailable message for missing quoted posts
+  ///
+  /// In en, this message translates to:
+  /// **'Quoted post not found'**
+  String get messageQuotedPostNotFound;
+
+  /// Quoted embed unavailable message for detached or unavailable quoted posts
+  ///
+  /// In en, this message translates to:
+  /// **'Quoted post is unavailable'**
+  String get messageQuotedPostUnavailable;
+
+  /// Post action subtitle for removing a repost
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this repost'**
+  String get messageRemoveRepostSubtitle;
+
+  /// Post card reply context label when parent post details are unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Reply in a thread'**
+  String get messageReplyInThread;
+
+  /// Post action subtitle for reposting a post
+  ///
+  /// In en, this message translates to:
+  /// **'Share this post'**
+  String get messageShareThisPostSubtitle;
+
+  /// Post overflow subtitle for viewing users who liked a post
+  ///
+  /// In en, this message translates to:
+  /// **'View who liked this post'**
+  String get messageShowLikedUsersSubtitle;
+
+  /// Post overflow subtitle for viewing quotes and reposts
+  ///
+  /// In en, this message translates to:
+  /// **'View quote posts and expand reposts'**
+  String get messageShowQuoteRepostListSubtitle;
 
   /// Settings subtitle for refreshing provider health
   ///

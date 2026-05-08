@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 /// Formats a post timestamp as a short, uppercase string.
-String formatPostTime(DateTime time) {
-  return formatRelativeTime(time, nowLabel: 'NOW', uppercase: true);
+String formatPostTime(DateTime time, {String nowLabel = 'NOW'}) {
+  return formatRelativeTime(time, nowLabel: nowLabel, uppercase: true);
 }
 
 /// Shared footer for post cards. Renders a top-bordered row with
@@ -93,7 +93,7 @@ class PostCardFooter extends StatelessWidget {
             verticalPadding: actionVerticalPadding,
             minTapTarget: minimumTapTarget,
             showCount: canShowCounts,
-            tooltip: isOffline ? offlineActionMessage('reply to this post') : null,
+            tooltip: isOffline ? context.l10n.formatOfflineReconnectAction(context.l10n.actionReplyToThisPost) : null,
           ),
           _FooterAction(
             icon: Icons.repeat,
@@ -110,7 +110,7 @@ class PostCardFooter extends StatelessWidget {
             verticalPadding: actionVerticalPadding,
             minTapTarget: minimumTapTarget,
             showCount: canShowCounts,
-            tooltip: isOffline ? offlineActionMessage('repost this post') : null,
+            tooltip: isOffline ? context.l10n.formatOfflineReconnectAction(context.l10n.actionRepostThisPost) : null,
           ),
           _FooterAction(
             icon: Icons.favorite_outline,
@@ -126,7 +126,7 @@ class PostCardFooter extends StatelessWidget {
             verticalPadding: actionVerticalPadding,
             minTapTarget: minimumTapTarget,
             showCount: canShowCounts,
-            tooltip: isOffline ? offlineActionMessage('like this post') : null,
+            tooltip: isOffline ? context.l10n.formatOfflineReconnectAction(context.l10n.actionLikeThisPost) : null,
           ),
           _FooterAction(
             icon: isSaved ? Icons.bookmark : Icons.bookmark_outline,
@@ -194,15 +194,15 @@ class PostCardFooter extends StatelessWidget {
       items: [
         OptionsSheetItem(
           leading: Icon(Icons.repeat, color: isReposted ? Colors.green : null),
-          title: isReposted ? 'Unrepost' : 'Repost',
-          subtitle: isReposted ? 'Remove this repost' : 'Share this post',
+          title: isReposted ? context.l10n.labelUnrepost : context.l10n.labelRepost,
+          subtitle: isReposted ? context.l10n.messageRemoveRepostSubtitle : context.l10n.messageShareThisPostSubtitle,
           onTap: onRepost,
         ),
         if (!isReposted)
           OptionsSheetItem(
             leading: const Icon(Icons.format_quote),
-            title: 'Quote Post',
-            subtitle: 'Quote this post with your own text',
+            title: context.l10n.labelQuotePost,
+            subtitle: context.l10n.messageQuotePostSubtitle,
             onTap: onQuote,
           ),
       ],
@@ -270,7 +270,7 @@ class PostCardFooter extends StatelessWidget {
             isLocalSaved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined,
             color: Colors.amber,
           ),
-          title: isLocalSaved ? 'Remove local save' : 'Save locally',
+          title: isLocalSaved ? context.l10n.labelRemoveLocalSave : context.l10n.labelSaveLocally,
           onTap: onSave,
         ),
         OptionsSheetItem(
@@ -278,7 +278,7 @@ class PostCardFooter extends StatelessWidget {
             isCloudSaved ? Icons.cloud_off_outlined : Icons.cloud_outlined,
             color: context.colorScheme.primary,
           ),
-          title: isCloudSaved ? 'Remove from Bluesky' : 'Save to Bluesky',
+          title: isCloudSaved ? context.l10n.labelRemoveFromBluesky : context.l10n.labelSaveToBluesky,
           onTap: isCloudSaved ? onCloudUnsave : onCloudSave,
         ),
       ],

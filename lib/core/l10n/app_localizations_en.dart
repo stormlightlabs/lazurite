@@ -24,6 +24,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buttonContinue => 'Continue';
 
   @override
+  String get buttonClearLocal => 'Clear Local';
+
+  @override
+  String get buttonDelete => 'Delete';
+
+  @override
+  String get buttonLoadMoreQuotes => 'Load more quotes';
+
+  @override
+  String get buttonLoadMoreReposts => 'Load more reposts';
+
+  @override
   String get buttonRemove => 'Remove';
 
   @override
@@ -51,6 +63,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buttonShowContent => 'Show content';
 
   @override
+  String get buttonShare => 'Share';
+
+  @override
   String get buttonTryAgain => 'Try again';
 
   @override
@@ -58,6 +73,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonNone => 'None';
+
+  @override
+  String get commonNow => 'now';
 
   @override
   String get commonNotCheckedYet => 'Not checked yet';
@@ -71,6 +89,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dialogClearCacheTitle => 'Clear cache?';
+
+  @override
+  String get dialogClearLocalBookmarksContent =>
+      'This removes only local bookmarks from this device. Bluesky cloud bookmarks will not be deleted.';
+
+  @override
+  String get dialogClearLocalBookmarksTitle => 'Clear local bookmarks?';
+
+  @override
+  String get dialogDeletePostContent => 'This action cannot be undone.';
+
+  @override
+  String get dialogDeletePostTitle => 'Delete Post?';
 
   @override
   String dialogRemoveAccountContent(String handle) {
@@ -106,6 +137,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorGenericTitle => 'Something went wrong';
+
+  @override
+  String get errorFailedToLoadBookmarks => 'Failed to load bookmarks';
+
+  @override
+  String get errorFailedToLoadLikedPosts => 'Failed to load liked posts';
+
+  @override
+  String errorFailedToLoadLikedPostsDetails(Object error) {
+    return 'Failed to load liked posts: $error';
+  }
+
+  @override
+  String errorFailedToRefreshLikedPosts(Object error) {
+    return 'Failed to refresh liked posts: $error';
+  }
+
+  @override
+  String get errorFailedToLoadTrending => 'Failed to load trending';
+
+  @override
+  String errorFailedToLoadTrendingTopics(Object error) {
+    return 'Failed to load trending topics: $error';
+  }
+
+  @override
+  String get errorUnknown => 'Unknown error';
 
   @override
   String get errorUnableToRemoveAccount => 'Unable to remove account right now.';
@@ -145,6 +203,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String formatDepth(int depth) {
     return 'Depth $depth';
   }
+
+  @override
+  String formatLikedOn(String date) {
+    return 'Liked on $date';
+  }
+
+  @override
+  String formatLikesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Likes', one: '1 Like');
+    return '$_temp0';
+  }
+
+  @override
+  String formatOfflineReconnectAction(String action) {
+    return 'You are offline. Reconnect to $action.';
+  }
+
+  @override
+  String formatReplyingToHandle(String handle) {
+    return 'Replying to @$handle';
+  }
+
+  @override
+  String formatRepostsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Reposts', one: '1 Repost');
+    return '$_temp0';
+  }
+
+  @override
+  String formatSavedOn(String date) {
+    return 'Saved on $date';
+  }
+
+  @override
+  String formatTrendingCategory(String category) {
+    return 'Category: $category';
+  }
+
+  @override
+  String formatTrendingPostCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count posts', one: '1 post');
+    return '$_temp0';
+  }
+
+  @override
+  String formatViewHandle(String handle) {
+    return 'View @$handle';
+  }
+
+  @override
+  String get actionLikeThisPost => 'like this post';
+
+  @override
+  String get actionReplyToThisPost => 'reply to this post';
+
+  @override
+  String get actionRepostThisPost => 'repost this post';
 
   @override
   String get labelAbout => 'About';
@@ -196,6 +311,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelBookmarksAndLikes => 'Bookmarks & Likes';
+
+  @override
+  String get labelBookmarkActions => 'Bookmark actions';
+
+  @override
+  String get labelBookmarkedPost => 'Bookmarked Post';
+
+  @override
+  String get labelBookmarks => 'Bookmarks';
+
+  @override
+  String get labelBluesky => 'Bluesky';
 
   @override
   String get labelCacheCleared => 'Cache cleared';
@@ -303,6 +430,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelNewPost => 'New Post';
 
   @override
+  String get labelNow => 'NOW';
+
+  @override
   String get labelNotifications => 'Notifications';
 
   @override
@@ -393,6 +523,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelClearUntil => 'Clear until';
 
   @override
+  String get labelClearLocalBookmarks => 'Clear local bookmarks';
+
+  @override
+  String get labelCopyLink => 'Copy Link';
+
+  @override
+  String get labelDeletePost => 'Delete Post';
+
+  @override
+  String get labelEditPost => 'Edit Post';
+
+  @override
+  String get labelLiked => 'Liked';
+
+  @override
+  String get labelLikedBy => 'LIKED BY';
+
+  @override
+  String get labelLikedPost => 'Liked Post';
+
+  @override
+  String get labelLocal => 'Local';
+
+  @override
+  String get labelOpenPost => 'Open post';
+
+  @override
+  String get labelQuotePost => 'Quote Post';
+
+  @override
+  String get labelQuoteReposts => 'QUOTE / REPOSTS';
+
+  @override
+  String get labelQuotes => 'Quotes';
+
+  @override
+  String get labelRemoveFromBluesky => 'Remove from Bluesky';
+
+  @override
+  String get labelRemoveLocalSave => 'Remove local save';
+
+  @override
+  String get labelReportPost => 'Report Post';
+
+  @override
+  String get labelRepost => 'Repost';
+
+  @override
+  String get labelRepostedBy => 'REPOSTED BY';
+
+  @override
+  String get labelReposts => 'Reposts';
+
+  @override
+  String get labelSaveImage => 'Save image';
+
+  @override
+  String get labelSaveLocally => 'Save locally';
+
+  @override
+  String get labelSaveToBluesky => 'Save to Bluesky';
+
+  @override
   String get labelSavedAccounts => 'Saved accounts';
 
   @override
@@ -400,6 +593,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelSemanticSearch => 'Semantic Search';
+
+  @override
+  String get labelShowLikedUsers => 'Show Liked Users';
+
+  @override
+  String get labelShowQuoteRepostList => 'Show Quote/Repost List';
 
   @override
   String get labelSettings => 'Settings';
@@ -430,6 +629,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelTroubleshooting => 'Troubleshooting';
+
+  @override
+  String get labelTopics => 'Topics';
+
+  @override
+  String get labelTrending => 'Trending';
+
+  @override
+  String get labelSuggested => 'Suggested';
+
+  @override
+  String get labelUnrepost => 'Unrepost';
 
   @override
   String get labelTypeaheadProvider => 'Typeahead Provider';
@@ -501,11 +712,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageFeedsSubtitle => 'Manage pinned and saved feeds';
 
   @override
+  String get messageLinkCopiedToClipboard => 'Link copied to clipboard';
+
+  @override
+  String get messageLoadingTrendingTopics => 'Loading trending topics';
+
+  @override
   String get messageForceNextXrpc401Subtitle =>
       'Debug-only: next network request returns Unauthorized to test token refresh';
 
   @override
   String get messageManageSemanticSearchSubtitle => 'Manage semantic search from Bookmarks & Likes -> Search';
+
+  @override
+  String get messageMetadataTemporarilyUnavailable => 'Metadata temporarily unavailable';
 
   @override
   String get messageModeratedContentCannotReveal => 'Hidden by your moderation settings and cannot be revealed here.';
@@ -516,6 +736,69 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get messageProviderDiagnosticsSubtitle =>
       'Moderation/ranking can differ by provider. Verify health and recent fallback state.';
+
+  @override
+  String get messageLikedPostsUnavailable => 'Liked posts are unavailable right now.';
+
+  @override
+  String get messageNoBookmarks => 'No bookmarks';
+
+  @override
+  String get messageNoBookmarksSubtitle => 'Posts you bookmark will appear here';
+
+  @override
+  String get messageNoBookmarksInSource => 'No bookmarks in this source';
+
+  @override
+  String get messageNoBookmarksInSourceSubtitle => 'Try switching tabs or saving posts to this source';
+
+  @override
+  String get messageNoInteractionsYet => 'No interactions yet';
+
+  @override
+  String get messageNoLikedPosts => 'No liked posts';
+
+  @override
+  String get messageNoLikedPostsSubtitle => 'Posts you like will appear here after sync';
+
+  @override
+  String get messageNoQuotesYet => 'No quotes yet';
+
+  @override
+  String get messageNoRepostsYet => 'No reposts yet';
+
+  @override
+  String get messageNoTrendingTopicsRightNow => 'No trending topics right now';
+
+  @override
+  String get messagePostDeleted => 'Post deleted';
+
+  @override
+  String get messageQuotePostSubtitle => 'Quote this post with your own text';
+
+  @override
+  String get messageQuotedPostBlocked => 'Quoted post is blocked';
+
+  @override
+  String get messageQuotedPostNotFound => 'Quoted post not found';
+
+  @override
+  String get messageQuotedPostUnavailable => 'Quoted post is unavailable';
+
+  @override
+  String get messageRemoveRepostSubtitle => 'Remove this repost';
+
+  @override
+  String get messageReplyInThread => 'Reply in a thread';
+
+  @override
+  String get messageShareThisPostSubtitle => 'Share this post';
+
+  @override
+  String get messageShowLikedUsersSubtitle => 'View who liked this post';
+
+  @override
+  String get messageShowQuoteRepostListSubtitle => 'View quote posts and expand reposts';
 
   @override
   String get messageRefreshProviderHealthSubtitle => 'Probe public AppView endpoints now';

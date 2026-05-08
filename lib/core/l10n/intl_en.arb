@@ -21,6 +21,22 @@
   "@buttonContinue": {
     "description": "Continue button label"
   },
+  "buttonClearLocal": "Clear Local",
+  "@buttonClearLocal": {
+    "description": "Button label to clear locally stored items"
+  },
+  "buttonDelete": "Delete",
+  "@buttonDelete": {
+    "description": "Delete button label"
+  },
+  "buttonLoadMoreQuotes": "Load more quotes",
+  "@buttonLoadMoreQuotes": {
+    "description": "Button label to load additional quote posts"
+  },
+  "buttonLoadMoreReposts": "Load more reposts",
+  "@buttonLoadMoreReposts": {
+    "description": "Button label to load additional repost users"
+  },
   "buttonRemove": "Remove",
   "@buttonRemove": {
     "description": "Remove button label"
@@ -57,6 +73,10 @@
   "@buttonShowContent": {
     "description": "Button label to reveal moderated content"
   },
+  "buttonShare": "Share",
+  "@buttonShare": {
+    "description": "Share button or menu label"
+  },
   "buttonTryAgain": "Try again",
   "@buttonTryAgain": {
     "description": "Try again button label"
@@ -68,6 +88,10 @@
   "commonNone": "None",
   "@commonNone": {
     "description": "Label for no value"
+  },
+  "commonNow": "now",
+  "@commonNow": {
+    "description": "Lowercase relative time label for the current moment"
   },
   "commonNotCheckedYet": "Not checked yet",
   "@commonNotCheckedYet": {
@@ -84,6 +108,22 @@
   "dialogClearCacheTitle": "Clear cache?",
   "@dialogClearCacheTitle": {
     "description": "Confirmation dialog title before clearing local cache"
+  },
+  "dialogClearLocalBookmarksContent": "This removes only local bookmarks from this device. Bluesky cloud bookmarks will not be deleted.",
+  "@dialogClearLocalBookmarksContent": {
+    "description": "Confirmation dialog body before clearing local bookmarks"
+  },
+  "dialogClearLocalBookmarksTitle": "Clear local bookmarks?",
+  "@dialogClearLocalBookmarksTitle": {
+    "description": "Confirmation dialog title before clearing local bookmarks"
+  },
+  "dialogDeletePostContent": "This action cannot be undone.",
+  "@dialogDeletePostContent": {
+    "description": "Confirmation dialog body before deleting a post"
+  },
+  "dialogDeletePostTitle": "Delete Post?",
+  "@dialogDeletePostTitle": {
+    "description": "Confirmation dialog title before deleting a post"
   },
   "dialogRemoveAccountContent": "Remove @{handle} from this device?",
   "@dialogRemoveAccountContent": {
@@ -139,6 +179,52 @@
   "@errorGenericTitle": {
     "description": "Generic error state title"
   },
+  "errorFailedToLoadBookmarks": "Failed to load bookmarks",
+  "@errorFailedToLoadBookmarks": {
+    "description": "Error title shown when bookmarks cannot load"
+  },
+  "errorFailedToLoadLikedPosts": "Failed to load liked posts",
+  "@errorFailedToLoadLikedPosts": {
+    "description": "Error title shown when liked posts cannot load"
+  },
+  "errorFailedToLoadLikedPostsDetails": "Failed to load liked posts: {error}",
+  "@errorFailedToLoadLikedPostsDetails": {
+    "description": "Error message shown when liked posts cannot load",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorFailedToRefreshLikedPosts": "Failed to refresh liked posts: {error}",
+  "@errorFailedToRefreshLikedPosts": {
+    "description": "Warning message shown when refreshing liked posts fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorFailedToLoadTrending": "Failed to load trending",
+  "@errorFailedToLoadTrending": {
+    "description": "Error title shown when trending content cannot load"
+  },
+  "errorFailedToLoadTrendingTopics": "Failed to load trending topics: {error}",
+  "@errorFailedToLoadTrendingTopics": {
+    "description": "Error message shown when trending topics cannot load",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorUnknown": "Unknown error",
+  "@errorUnknown": {
+    "description": "Fallback message when an error has no details"
+  },
   "errorUnableToRemoveAccount": "Unable to remove account right now.",
   "@errorUnableToRemoveAccount": {
     "description": "Snackbar message when a saved account cannot be removed"
@@ -186,6 +272,108 @@
         "example": "3"
       }
     }
+  },
+  "formatLikedOn": "Liked on {date}",
+  "@formatLikedOn": {
+    "description": "Fallback liked-post card subtitle showing when a post was liked",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Mar 15"
+      }
+    }
+  },
+  "formatLikesCount": "{count, plural, =1{1 Like} other{{count} Likes}}",
+  "@formatLikesCount": {
+    "description": "Interaction sheet tab label showing like count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "formatOfflineReconnectAction": "You are offline. Reconnect to {action}.",
+  "@formatOfflineReconnectAction": {
+    "description": "Message explaining that a post action requires reconnecting",
+    "placeholders": {
+      "action": {
+        "type": "String",
+        "example": "like this post"
+      }
+    }
+  },
+  "formatReplyingToHandle": "Replying to @{handle}",
+  "@formatReplyingToHandle": {
+    "description": "Post card reply context label showing the parent post author",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "formatRepostsCount": "{count, plural, =1{1 Repost} other{{count} Reposts}}",
+  "@formatRepostsCount": {
+    "description": "Interaction sheet tab label showing repost count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "8"
+      }
+    }
+  },
+  "formatSavedOn": "Saved on {date}",
+  "@formatSavedOn": {
+    "description": "Fallback saved-post card subtitle showing when a post was saved",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Mar 15"
+      }
+    }
+  },
+  "formatTrendingCategory": "Category: {category}",
+  "@formatTrendingCategory": {
+    "description": "Trending topic category subtitle line",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "Technology"
+      }
+    }
+  },
+  "formatTrendingPostCount": "{count, plural, =1{1 post} other{{count} posts}}",
+  "@formatTrendingPostCount": {
+    "description": "Trending topic post count subtitle line",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "1200"
+      }
+    }
+  },
+  "formatViewHandle": "View @{handle}",
+  "@formatViewHandle": {
+    "description": "Post overflow action label to view an author profile",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "actionLikeThisPost": "like this post",
+  "@actionLikeThisPost": {
+    "description": "Offline action phrase for liking a post"
+  },
+  "actionReplyToThisPost": "reply to this post",
+  "@actionReplyToThisPost": {
+    "description": "Offline action phrase for replying to a post"
+  },
+  "actionRepostThisPost": "repost this post",
+  "@actionRepostThisPost": {
+    "description": "Offline action phrase for reposting a post"
   },
   "labelAbout": "About",
   "@labelAbout": {
@@ -254,6 +442,22 @@
   "labelBookmarksAndLikes": "Bookmarks & Likes",
   "@labelBookmarksAndLikes": {
     "description": "Settings item for bookmarked and liked posts"
+  },
+  "labelBookmarkActions": "Bookmark actions",
+  "@labelBookmarkActions": {
+    "description": "Tooltip for bookmark actions menu"
+  },
+  "labelBookmarkedPost": "Bookmarked Post",
+  "@labelBookmarkedPost": {
+    "description": "Fallback saved-post card title"
+  },
+  "labelBookmarks": "Bookmarks",
+  "@labelBookmarks": {
+    "description": "Bookmarks tab label"
+  },
+  "labelBluesky": "Bluesky",
+  "@labelBluesky": {
+    "description": "Bluesky source tab label"
   },
   "labelCacheCleared": "Cache cleared",
   "@labelCacheCleared": {
@@ -395,6 +599,10 @@
   "@labelNewPost": {
     "description": "New post menu label"
   },
+  "labelNow": "NOW",
+  "@labelNow": {
+    "description": "Uppercase compact relative time label for the current moment"
+  },
   "labelNotifications": "Notifications",
   "@labelNotifications": {
     "description": "Notifications menu label"
@@ -515,6 +723,90 @@
   "@labelClearUntil": {
     "description": "Button label to clear until date filter"
   },
+  "labelClearLocalBookmarks": "Clear local bookmarks",
+  "@labelClearLocalBookmarks": {
+    "description": "Bookmark menu item to clear local bookmarks"
+  },
+  "labelCopyLink": "Copy Link",
+  "@labelCopyLink": {
+    "description": "Post overflow menu item to copy a post link"
+  },
+  "labelDeletePost": "Delete Post",
+  "@labelDeletePost": {
+    "description": "Post overflow menu item to delete a post"
+  },
+  "labelEditPost": "Edit Post",
+  "@labelEditPost": {
+    "description": "Post overflow menu item to edit a post"
+  },
+  "labelLiked": "Liked",
+  "@labelLiked": {
+    "description": "Liked posts tab label"
+  },
+  "labelLikedBy": "LIKED BY",
+  "@labelLikedBy": {
+    "description": "Post interactions sheet section label for users who liked a post"
+  },
+  "labelLikedPost": "Liked Post",
+  "@labelLikedPost": {
+    "description": "Fallback liked-post card title"
+  },
+  "labelLocal": "Local",
+  "@labelLocal": {
+    "description": "Local saved-post source tab label"
+  },
+  "labelOpenPost": "Open post",
+  "@labelOpenPost": {
+    "description": "Tooltip to open a post"
+  },
+  "labelQuotePost": "Quote Post",
+  "@labelQuotePost": {
+    "description": "Post action label to quote a post"
+  },
+  "labelQuoteReposts": "QUOTE / REPOSTS",
+  "@labelQuoteReposts": {
+    "description": "Heading for quote and repost bottom sheet"
+  },
+  "labelQuotes": "Quotes",
+  "@labelQuotes": {
+    "description": "Quotes section title"
+  },
+  "labelRemoveFromBluesky": "Remove from Bluesky",
+  "@labelRemoveFromBluesky": {
+    "description": "Post save menu item to remove a cloud bookmark"
+  },
+  "labelRemoveLocalSave": "Remove local save",
+  "@labelRemoveLocalSave": {
+    "description": "Post save menu item to remove a local bookmark"
+  },
+  "labelReportPost": "Report Post",
+  "@labelReportPost": {
+    "description": "Post overflow menu item to report a post"
+  },
+  "labelRepost": "Repost",
+  "@labelRepost": {
+    "description": "Post action label to repost a post"
+  },
+  "labelRepostedBy": "REPOSTED BY",
+  "@labelRepostedBy": {
+    "description": "Post interactions sheet section label for users who reposted a post"
+  },
+  "labelReposts": "Reposts",
+  "@labelReposts": {
+    "description": "Reposts section title"
+  },
+  "labelSaveImage": "Save image",
+  "@labelSaveImage": {
+    "description": "Image context menu item to save an image"
+  },
+  "labelSaveLocally": "Save locally",
+  "@labelSaveLocally": {
+    "description": "Post save menu item to create a local bookmark"
+  },
+  "labelSaveToBluesky": "Save to Bluesky",
+  "@labelSaveToBluesky": {
+    "description": "Post save menu item to create a cloud bookmark"
+  },
   "labelSavedAccounts": "Saved accounts",
   "@labelSavedAccounts": {
     "description": "Saved accounts section label on login screen"
@@ -526,6 +818,14 @@
   "labelSemanticSearch": "Semantic Search",
   "@labelSemanticSearch": {
     "description": "Semantic search settings label"
+  },
+  "labelShowLikedUsers": "Show Liked Users",
+  "@labelShowLikedUsers": {
+    "description": "Post overflow menu item to open users who liked a post"
+  },
+  "labelShowQuoteRepostList": "Show Quote/Repost List",
+  "@labelShowQuoteRepostList": {
+    "description": "Post overflow menu item to open quote and repost lists"
   },
   "labelSettings": "Settings",
   "@labelSettings": {
@@ -566,6 +866,22 @@
   "labelTroubleshooting": "Troubleshooting",
   "@labelTroubleshooting": {
     "description": "Troubleshooting settings section label"
+  },
+  "labelTopics": "Topics",
+  "@labelTopics": {
+    "description": "Trending topics section label"
+  },
+  "labelTrending": "Trending",
+  "@labelTrending": {
+    "description": "Trending screen title and tooltip label"
+  },
+  "labelSuggested": "Suggested",
+  "@labelSuggested": {
+    "description": "Trending suggested topics section label"
+  },
+  "labelUnrepost": "Unrepost",
+  "@labelUnrepost": {
+    "description": "Post action label to undo a repost"
   },
   "labelTypeaheadProvider": "Typeahead Provider",
   "@labelTypeaheadProvider": {
@@ -655,6 +971,14 @@
   "@messageFeedsSubtitle": {
     "description": "Settings subtitle for feeds"
   },
+  "messageLinkCopiedToClipboard": "Link copied to clipboard",
+  "@messageLinkCopiedToClipboard": {
+    "description": "Snackbar message after copying a post link"
+  },
+  "messageLoadingTrendingTopics": "Loading trending topics",
+  "@messageLoadingTrendingTopics": {
+    "description": "Loading message while trending topics load"
+  },
   "messageForceNextXrpc401Subtitle": "Debug-only: next network request returns Unauthorized to test token refresh",
   "@messageForceNextXrpc401Subtitle": {
     "description": "Developer setting subtitle for forced 401"
@@ -663,12 +987,14 @@
   "@messageManageSemanticSearchSubtitle": {
     "description": "Settings subtitle for semantic search management"
   },
-
+  "messageMetadataTemporarilyUnavailable": "Metadata temporarily unavailable",
+  "@messageMetadataTemporarilyUnavailable": {
+    "description": "Trending banner shown when supplemental metadata cannot be loaded"
+  },
   "messageModeratedContentCannotReveal": "Hidden by your moderation settings and cannot be revealed here.",
   "@messageModeratedContentCannotReveal": {
     "description": "Moderation overlay description when content cannot be revealed"
   },
-
   "messageModeratedContentCanReveal": "Hidden by your moderation settings. You can reveal it for this view.",
   "@messageModeratedContentCanReveal": {
     "description": "Moderation overlay description when content can be revealed"
@@ -676,6 +1002,90 @@
   "messageProviderDiagnosticsSubtitle": "Moderation/ranking can differ by provider. Verify health and recent fallback state.",
   "@messageProviderDiagnosticsSubtitle": {
     "description": "Settings subtitle for provider diagnostics"
+  },
+  "messageLikedPostsUnavailable": "Liked posts are unavailable right now.",
+  "@messageLikedPostsUnavailable": {
+    "description": "Message shown when liked posts dependencies are unavailable"
+  },
+  "messageNoBookmarks": "No bookmarks",
+  "@messageNoBookmarks": {
+    "description": "Empty state title when there are no bookmarks"
+  },
+  "messageNoBookmarksSubtitle": "Posts you bookmark will appear here",
+  "@messageNoBookmarksSubtitle": {
+    "description": "Empty state subtitle when there are no bookmarks"
+  },
+  "messageNoBookmarksInSource": "No bookmarks in this source",
+  "@messageNoBookmarksInSource": {
+    "description": "Empty state title when a bookmark source tab is empty"
+  },
+  "messageNoBookmarksInSourceSubtitle": "Try switching tabs or saving posts to this source",
+  "@messageNoBookmarksInSourceSubtitle": {
+    "description": "Empty state subtitle when a bookmark source tab is empty"
+  },
+  "messageNoInteractionsYet": "No interactions yet",
+  "@messageNoInteractionsYet": {
+    "description": "Empty state message when a post has no likes or reposts"
+  },
+  "messageNoLikedPosts": "No liked posts",
+  "@messageNoLikedPosts": {
+    "description": "Empty state title when there are no liked posts"
+  },
+  "messageNoLikedPostsSubtitle": "Posts you like will appear here after sync",
+  "@messageNoLikedPostsSubtitle": {
+    "description": "Empty state subtitle when there are no liked posts"
+  },
+  "messageNoQuotesYet": "No quotes yet",
+  "@messageNoQuotesYet": {
+    "description": "Empty state message when a post has no quote posts"
+  },
+  "messageNoRepostsYet": "No reposts yet",
+  "@messageNoRepostsYet": {
+    "description": "Empty state message when a post has no reposts"
+  },
+  "messageNoTrendingTopicsRightNow": "No trending topics right now",
+  "@messageNoTrendingTopicsRightNow": {
+    "description": "Empty state message when there are no trending topics"
+  },
+  "messagePostDeleted": "Post deleted",
+  "@messagePostDeleted": {
+    "description": "Snackbar message after deleting a post"
+  },
+  "messageQuotePostSubtitle": "Quote this post with your own text",
+  "@messageQuotePostSubtitle": {
+    "description": "Post action subtitle for quote post"
+  },
+  "messageQuotedPostBlocked": "Quoted post is blocked",
+  "@messageQuotedPostBlocked": {
+    "description": "Quoted embed unavailable message for blocked quoted posts"
+  },
+  "messageQuotedPostNotFound": "Quoted post not found",
+  "@messageQuotedPostNotFound": {
+    "description": "Quoted embed unavailable message for missing quoted posts"
+  },
+  "messageQuotedPostUnavailable": "Quoted post is unavailable",
+  "@messageQuotedPostUnavailable": {
+    "description": "Quoted embed unavailable message for detached or unavailable quoted posts"
+  },
+  "messageRemoveRepostSubtitle": "Remove this repost",
+  "@messageRemoveRepostSubtitle": {
+    "description": "Post action subtitle for removing a repost"
+  },
+  "messageReplyInThread": "Reply in a thread",
+  "@messageReplyInThread": {
+    "description": "Post card reply context label when parent post details are unavailable"
+  },
+  "messageShareThisPostSubtitle": "Share this post",
+  "@messageShareThisPostSubtitle": {
+    "description": "Post action subtitle for reposting a post"
+  },
+  "messageShowLikedUsersSubtitle": "View who liked this post",
+  "@messageShowLikedUsersSubtitle": {
+    "description": "Post overflow subtitle for viewing users who liked a post"
+  },
+  "messageShowQuoteRepostListSubtitle": "View quote posts and expand reposts",
+  "@messageShowQuoteRepostListSubtitle": {
+    "description": "Post overflow subtitle for viewing quotes and reposts"
   },
   "messageRefreshProviderHealthSubtitle": "Probe public AppView endpoints now",
   "@messageRefreshProviderHealthSubtitle": {

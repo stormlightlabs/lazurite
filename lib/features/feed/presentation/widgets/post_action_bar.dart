@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_web_links.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
-import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/helpers/share_helper.dart';
@@ -74,7 +74,7 @@ class PostActionBar extends StatelessWidget {
           activeIcon: Icons.chat_bubble,
           count: replyCount,
           onTap: isOffline ? null : onReply,
-          tooltip: isOffline ? offlineActionMessage('reply to this post') : null,
+          tooltip: isOffline ? context.l10n.formatOfflineReconnectAction(context.l10n.actionReplyToThisPost) : null,
           color: context.colorScheme.onSurfaceVariant,
         ),
         _ActionButton(
@@ -87,7 +87,7 @@ class PostActionBar extends StatelessWidget {
           onTap: isOffline ? null : onRepost,
           activeColor: Colors.green,
           onLongPress: !isOffline && onRepost != null ? () => _showRepostOptions(context) : null,
-          tooltip: isOffline ? offlineActionMessage('repost this post') : null,
+          tooltip: isOffline ? context.l10n.formatOfflineReconnectAction(context.l10n.actionRepostThisPost) : null,
         ),
         _ActionButton(
           icon: Icons.favorite_outline,
@@ -98,7 +98,7 @@ class PostActionBar extends StatelessWidget {
           animateOnTap: true,
           onTap: isOffline ? null : onLike,
           activeColor: Colors.pink,
-          tooltip: isOffline ? offlineActionMessage('like this post') : null,
+          tooltip: isOffline ? context.l10n.formatOfflineReconnectAction(context.l10n.actionLikeThisPost) : null,
         ),
         _ActionButton(
           icon: isSaved ? Icons.bookmark : Icons.bookmark_outline,
@@ -137,15 +137,15 @@ class PostActionBar extends StatelessWidget {
       items: [
         OptionsSheetItem(
           leading: Icon(Icons.repeat, color: isReposted ? Colors.green : null),
-          title: isReposted ? 'Unrepost' : 'Repost',
-          subtitle: isReposted ? 'Remove this repost' : 'Share this post',
+          title: isReposted ? context.l10n.labelUnrepost : context.l10n.labelRepost,
+          subtitle: isReposted ? context.l10n.messageRemoveRepostSubtitle : context.l10n.messageShareThisPostSubtitle,
           onTap: onRepost,
         ),
         if (!isReposted)
           OptionsSheetItem(
             leading: const Icon(Icons.format_quote),
-            title: 'Quote Post',
-            subtitle: 'Quote this post with your own text',
+            title: context.l10n.labelQuotePost,
+            subtitle: context.l10n.messageQuotePostSubtitle,
             onTap: onQuote,
           ),
       ],
@@ -164,7 +164,7 @@ class PostActionBar extends StatelessWidget {
             isLocalSaved ? Icons.bookmark_remove_outlined : Icons.bookmark_add_outlined,
             color: Colors.amber,
           ),
-          title: isLocalSaved ? 'Remove local save' : 'Save locally',
+          title: isLocalSaved ? context.l10n.labelRemoveLocalSave : context.l10n.labelSaveLocally,
           onTap: onSave,
         ),
         OptionsSheetItem(
@@ -172,7 +172,7 @@ class PostActionBar extends StatelessWidget {
             isCloudSaved ? Icons.cloud_off_outlined : Icons.cloud_outlined,
             color: context.colorScheme.primary,
           ),
-          title: isCloudSaved ? 'Remove from Bluesky' : 'Save to Bluesky',
+          title: isCloudSaved ? context.l10n.labelRemoveFromBluesky : context.l10n.labelSaveToBluesky,
           onTap: isCloudSaved ? onCloudUnsave : onCloudSave,
         ),
       ],

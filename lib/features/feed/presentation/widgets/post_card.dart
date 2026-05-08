@@ -2,6 +2,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
@@ -44,7 +45,9 @@ class PostCard extends StatelessWidget {
     final moderationService = maybeModerationService(context);
     final postUi = moderationService?.postUi(post, moderationContext) ?? const bsky_moderation.ModerationUI();
 
-    final resolvedFooter = actionBar ?? PostCardFooter(timestamp: formatPostTime(record?.createdAt ?? post.indexedAt));
+    final resolvedFooter =
+        actionBar ??
+        PostCardFooter(timestamp: formatPostTime(record?.createdAt ?? post.indexedAt, nowLabel: context.l10n.labelNow));
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 1),
@@ -134,7 +137,7 @@ class PostCard extends StatelessWidget {
           const SizedBox(width: 6),
           Flexible(
             child: Text(
-              'Reply in a thread',
+              context.l10n.messageReplyInThread,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
@@ -157,7 +160,7 @@ class PostCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Replying to @${parentPost.author.handle}',
+            context.l10n.formatReplyingToHandle(parentPost.author.handle),
             style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
           ),
           if (parentText.isNotEmpty) ...[
