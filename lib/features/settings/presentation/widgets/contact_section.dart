@@ -8,33 +8,27 @@ class _ContactLink extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
-    return Row(
-      children: [
-        Text(pre, style: textTheme.bodyMedium),
-        const SizedBox(width: 4),
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Text(
-              label,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.primary,
-                decoration: TextDecoration.underline,
-                decorationColor: colorScheme.primary,
-              ),
+  Widget build(BuildContext context) => Row(
+    children: [
+      Text(pre, style: Theme.of(context).textTheme.bodyMedium),
+      const SizedBox(width: 4),
+      InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              decoration: TextDecoration.underline,
+              decorationColor: Theme.of(context).colorScheme.primary,
             ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }
 
 class ContactSection extends StatelessWidget {
@@ -44,26 +38,22 @@ class ContactSection extends StatelessWidget {
   final VoidCallback onEmailTap;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Contact',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: colorScheme.primary),
-          ),
-          const SizedBox(height: 6),
-          _ContactLink(pre: 'Visit our website:', label: 'Stormlight Labs', onTap: onStormlightLabsTap),
-          const SizedBox(height: 6),
-          _ContactLink(pre: 'Email us at', label: 'info@stormlightlabs.org', onTap: onEmailTap),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 18),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Contact',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary),
+        ),
+        const SizedBox(height: 6),
+        _ContactLink(pre: 'Visit our website:', label: 'Stormlight Labs', onTap: onStormlightLabsTap),
+        const SizedBox(height: 6),
+        _ContactLink(pre: 'Email us at', label: 'info@stormlightlabs.org', onTap: onEmailTap),
+      ],
+    ),
+  );
 }

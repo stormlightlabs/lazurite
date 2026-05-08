@@ -57,9 +57,17 @@
   "@buttonClear": {
     "description": "Clear button label"
   },
+  "buttonCopyReport": "Copy report",
+  "@buttonCopyReport": {
+    "description": "Button label to copy an in-app crash report"
+  },
   "buttonClearAll": "Clear all",
   "@buttonClearAll": {
     "description": "Clear all filters button label"
+  },
+  "buttonEmailReport": "Email report",
+  "@buttonEmailReport": {
+    "description": "Button label to open an email draft for an in-app crash report"
   },
   "buttonOpen": "Open",
   "@buttonOpen": {
@@ -675,6 +683,22 @@
   "@labelCrashlyticsTestCrash": {
     "description": "Developer setting to trigger a test crash"
   },
+  "labelCrashReportScreenTest": "Crash Report Screen Test",
+  "@labelCrashReportScreenTest": {
+    "description": "Developer setting to trigger a recoverable Flutter crash report screen"
+  },
+  "labelCrashReportError": "Error",
+  "@labelCrashReportError": {
+    "description": "Crash report section title for the error message"
+  },
+  "labelCrashReportRelevantLogs": "Relevant logs",
+  "@labelCrashReportRelevantLogs": {
+    "description": "Crash report section title for related app logs"
+  },
+  "labelCrashReportStackTrace": "Stack trace",
+  "@labelCrashReportStackTrace": {
+    "description": "Crash report section title for the stack trace"
+  },
   "labelCrossProviderFallback": "Cross-Provider Fallback",
   "@labelCrossProviderFallback": {
     "description": "Cross-provider fallback setting label"
@@ -1147,6 +1171,40 @@
   "@messageCrashlyticsTestCrashSubtitle": {
     "description": "Developer setting subtitle for test crash"
   },
+  "messageCrashReportScreenTestSubtitle": "Open a recoverable Flutter error screen with copy and email actions",
+  "@messageCrashReportScreenTestSubtitle": {
+    "description": "Developer setting subtitle for testing the in-app crash report screen"
+  },
+  "messageCrashReportCopied": "Crash report copied",
+  "@messageCrashReportCopied": {
+    "description": "Snackbar message after copying a crash report"
+  },
+  "messageCrashReportInstructions": "You can copy the crash report or open an email to send a summary to Stormlight Labs.",
+  "@messageCrashReportInstructions": {
+    "description": "Instructions shown on the in-app crash report screen"
+  },
+  "messageCrashReportPartial": "Some report details could not be loaded. A minimal report is still available.",
+  "@messageCrashReportPartial": {
+    "description": "Message shown when the in-app crash report could not load all diagnostics"
+  },
+  "messageCrashReportEmailStackTraceTruncated": "[Stack trace truncated for email]",
+  "@messageCrashReportEmailStackTraceTruncated": {
+    "description": "Marker appended when a crash report stack trace is shortened for an email draft"
+  },
+  "formatCrashReportEmailBody": "A Lazurite screen crashed.\n\nThe full report may be too large for email. Please use Copy report in the app if support asks for the full details.\n\nError:\n{error}\n\nStack trace:\n{stackTrace}",
+  "@formatCrashReportEmailBody": {
+    "description": "Email body for an in-app crash report. Keep this compact because it is encoded into a mailto URL.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Bad state: failed to load"
+      },
+      "stackTrace": {
+        "type": "String",
+        "example": "#0 Widget.build"
+      }
+    }
+  },
   "messageCrossProviderFallbackSubtitle": "Retry public reads on the alternate AppView when transient errors occur",
   "@messageCrossProviderFallbackSubtitle": {
     "description": "Settings subtitle for cross-provider fallback"
@@ -1162,6 +1220,10 @@
   "messageLoadingSavedAccounts": "Loading saved accounts...",
   "@messageLoadingSavedAccounts": {
     "description": "Loading message while saved accounts load"
+  },
+  "messageNoRecentLogLinesAvailable": "No recent log lines were available.",
+  "@messageNoRecentLogLinesAvailable": {
+    "description": "Crash report message when there are no relevant log lines"
   },
   "messageFeedLayoutCompact": "Compact",
   "@messageFeedLayoutCompact": {
@@ -3335,6 +3397,10 @@
   "@messageUnableToOpenShareSheet": {
     "description": "Snackbar when the log share sheet cannot open"
   },
+  "messageUnableToOpenEmailApp": "Unable to open email app. Please copy the report instead.",
+  "@messageUnableToOpenEmailApp": {
+    "description": "Snackbar when the crash report email draft cannot open"
+  },
   "placeholderHandleDidOrAtUri": "Handle, DID, or at:// URI",
   "@placeholderHandleDidOrAtUri": {
     "description": "Devtools search input placeholder"
@@ -3350,6 +3416,10 @@
   "subjectLazuriteLogs": "Lazurite logs",
   "@subjectLazuriteLogs": {
     "description": "Share sheet subject for log files"
+  },
+  "subjectLazuriteCrashReport": "Lazurite crash report",
+  "@subjectLazuriteCrashReport": {
+    "description": "Email subject for an in-app crash report"
   },
   "tooltipClearAllLogs": "Clear all logs",
   "@tooltipClearAllLogs": {

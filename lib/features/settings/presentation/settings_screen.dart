@@ -8,7 +8,6 @@ import 'package:lazurite/core/cache/local_cache_maintenance_service.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
-import 'package:lazurite/core/network/atproto_host_resolver.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
@@ -20,6 +19,11 @@ import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
+import 'package:lazurite/features/settings/presentation/screens/recoverable_crash_test_screen.dart';
+import 'package:lazurite/features/settings/presentation/widgets/atproto_connection.dart';
+import 'package:lazurite/features/settings/presentation/widgets/connection_detail.dart';
+import 'package:lazurite/features/settings/presentation/widgets/settings_tiles.dart';
+import 'package:lazurite/features/settings/presentation/widgets/theme_palette_row.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
@@ -101,21 +105,21 @@ class SettingsScreen extends StatelessWidget {
           if (showAccountSettings) ...[
             const SizedBox(height: 24),
             _buildSectionHeader(context, l10n.labelAccount),
-            const _AtProtocolConnectionCard(),
+            const AtProtoConnectionCard(),
             const SizedBox(height: 12),
-            _SettingsTile(
+            SettingsTile(
               icon: Icons.dynamic_feed_outlined,
               title: l10n.labelFeeds,
               subtitle: l10n.messageFeedsSubtitle,
               onTap: () => context.push('/feeds'),
             ),
-            _SettingsTile(
+            SettingsTile(
               icon: Icons.bookmark_outline,
               title: l10n.labelBookmarksAndLikes,
               subtitle: l10n.messageBookmarksAndLikesSubtitle,
               onTap: () => context.push('/bookmarks'),
             ),
-            _SettingsTile(
+            SettingsTile(
               icon: Icons.videocam_outlined,
               title: l10n.labelVideoUploadLimits,
               subtitle: l10n.messageVideoUploadLimitsSubtitle,
@@ -123,7 +127,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             _buildSectionHeader(context, l10n.labelAccountMaintenance),
-            _SettingsTile(
+            SettingsTile(
               icon: Icons.cleaning_services_outlined,
               title: l10n.labelCleanFollows,
               subtitle: l10n.messageCleanFollowsSubtitle,
@@ -137,31 +141,31 @@ class SettingsScreen extends StatelessWidget {
           _buildSectionHeader(context, l10n.labelTroubleshooting),
           _buildTroubleshootingSettings(context),
           const SizedBox(height: 24),
-          if (!kReleaseMode || kDebugMode) ...[
+          if (!kReleaseMode) ...[
             _buildSectionHeader(context, l10n.labelDeveloper),
             _buildDeveloperSettings(context),
             const SizedBox(height: 24),
           ],
           _buildSectionHeader(context, l10n.labelAbout),
-          _SettingsTile(
+          SettingsTile(
             icon: Icons.explore_outlined,
             title: l10n.labelAtExplorer,
             subtitle: 'View PDS Records',
             onTap: () => context.push('/settings/devtools'),
           ),
-          _SettingsTile(
+          SettingsTile(
             icon: Icons.info_outline,
             title: l10n.labelAbout,
             subtitle: 'Stormlight Labs',
             onTap: () => context.push('/settings/about'),
           ),
-          _SettingsTile(
+          SettingsTile(
             icon: Icons.gavel_outlined,
             title: l10n.labelTermsOfService,
             subtitle: 'Usage rules and responsibilities',
             onTap: () => context.push('/terms'),
           ),
-          _SettingsTile(
+          SettingsTile(
             icon: Icons.privacy_tip_outlined,
             title: l10n.labelPrivacyPolicy,
             subtitle: 'How Lazurite handles data',
@@ -170,7 +174,7 @@ class SettingsScreen extends StatelessWidget {
           if (showAccountSettings) ...[
             const SizedBox(height: 24),
             _buildSectionHeader(context, l10n.labelDangerZone),
-            _SettingsTile(
+            SettingsTile(
               icon: Icons.logout,
               title: l10n.labelLogOut,
               isDestructive: true,
@@ -217,26 +221,26 @@ class SettingsScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Center(
-                  child: SegmentedButton<_AppearanceMode>(
+                  child: SegmentedButton<AppearanceMode>(
                     style: SegmentedButton.styleFrom(
                       selectedBackgroundColor: theme.colorScheme.primary,
                       selectedForegroundColor: theme.colorScheme.onPrimary,
                     ),
                     segments: [
-                      ButtonSegment(value: _AppearanceMode.system, label: Text(l10n.labelSystem)),
-                      ButtonSegment(value: _AppearanceMode.light, label: Text(l10n.labelLight)),
-                      ButtonSegment(value: _AppearanceMode.dark, label: Text(l10n.labelDark)),
+                      ButtonSegment(value: AppearanceMode.system, label: Text(l10n.labelSystem)),
+                      ButtonSegment(value: AppearanceMode.light, label: Text(l10n.labelLight)),
+                      ButtonSegment(value: AppearanceMode.dark, label: Text(l10n.labelDark)),
                     ],
-                    selected: {_AppearanceMode.fromState(state)},
+                    selected: {AppearanceMode.fromState(state)},
                     onSelectionChanged: (selected) {
                       final mode = selected.first;
                       switch (mode) {
-                        case _AppearanceMode.system:
+                        case AppearanceMode.system:
                           settingsCubit.setUseSystemTheme(true);
-                        case _AppearanceMode.light:
+                        case AppearanceMode.light:
                           settingsCubit.setUseSystemTheme(false);
                           settingsCubit.setThemeVariant(AppThemeVariant.light);
-                        case _AppearanceMode.dark:
+                        case AppearanceMode.dark:
                           settingsCubit.setUseSystemTheme(false);
                           settingsCubit.setThemeVariant(AppThemeVariant.dark);
                       }
@@ -256,7 +260,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               for (final palette in AppThemePalette.values)
-                _ThemePaletteRow(
+                ThemePaletteRow(
                   palette: palette,
                   isSelected: state.themePalette == palette,
                   onTap: () => settingsCubit.setThemePalette(palette),
@@ -286,7 +290,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _SettingsDropdownTile<FeedLayout>(
+              SettingsDropdownTile<FeedLayout>(
                 title: l10n.labelFeedLayout,
                 value: state.feedLayout,
                 options: FeedLayout.values,
@@ -301,7 +305,7 @@ class SettingsScreen extends StatelessWidget {
                 },
               ),
               const Divider(height: 1),
-              _SettingsDropdownTile<int?>(
+              SettingsDropdownTile<int?>(
                 title: l10n.labelThreadAutoCollapse,
                 subtitle: l10n.messageThreadAutoCollapseSubtitle,
                 value: state.threadAutoCollapseDepth,
@@ -310,7 +314,7 @@ class SettingsScreen extends StatelessWidget {
                 onChanged: settingsCubit.setThreadAutoCollapseDepth,
               ),
               const Divider(height: 1),
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.motion_photos_off_outlined,
                 title: l10n.labelAnimations,
                 subtitle: l10n.messageTurnOffNonEssentialMotion,
@@ -369,7 +373,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const Divider(height: 1),
                 ],
-                _SettingsTile(
+                SettingsTile(
                   icon: Icons.manage_search_outlined,
                   title: l10n.labelSemanticSearch,
                   subtitle: l10n.messageManageSemanticSearchSubtitle,
@@ -398,23 +402,35 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.cloud_off_outlined,
                 title: l10n.labelGoOffline,
                 subtitle: l10n.messageDeveloperGoOfflineSubtitle,
                 trailing: Switch.adaptive(value: state.simulateOffline, onChanged: settingsCubit.setSimulateOffline),
               ),
               const Divider(height: 1),
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.bug_report_outlined,
                 title: l10n.labelCrashlyticsTestCrash,
                 subtitle: l10n.messageCrashlyticsTestCrashSubtitle,
                 trailing: const Icon(Icons.warning_amber_rounded),
                 onTap: crashReportingService?.crash,
               ),
+              const Divider(height: 1),
+              SettingsTile(
+                icon: Icons.integration_instructions_outlined,
+                title: l10n.labelCrashReportScreenTest,
+                subtitle: l10n.messageCrashReportScreenTestSubtitle,
+                trailing: const Icon(Icons.open_in_new_outlined),
+                onTap: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(
+                    builder: (_) => RecoverableCrashTestScreen(title: l10n.labelCrashReportScreenTest),
+                  ),
+                ),
+              ),
               if (kDebugMode || kProfileMode) ...[
                 const Divider(height: 1),
-                _SettingsTile(
+                SettingsTile(
                   icon: Icons.lock_reset_outlined,
                   title: l10n.labelForceNextXrpc401,
                   subtitle: l10n.messageForceNextXrpc401Subtitle,
@@ -456,16 +472,16 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.description_outlined,
                 title: l10n.labelLogs,
                 subtitle: 'View app log files',
                 onTap: () => context.push('/settings/logs'),
               ),
               const Divider(height: 1),
-              _ConstellationUrlTile(currentUrl: state.constellationUrl),
+              ConstellationUrlTile(currentUrl: state.constellationUrl),
               const Divider(height: 1),
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.route_outlined,
                 title: l10n.labelAppViewProvider,
                 subtitle: _appViewSubtitle(context, state.appViewProvider),
@@ -492,7 +508,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const Divider(height: 1),
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.compare_arrows_outlined,
                 title: l10n.labelCrossProviderFallback,
                 subtitle: l10n.messageCrossProviderFallbackSubtitle,
@@ -502,7 +518,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const Divider(height: 1),
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.alt_route_outlined,
                 title: l10n.labelSlingshotIdentityFallback,
                 subtitle: l10n.messageSlingshotIdentityFallbackSubtitle,
@@ -512,7 +528,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const Divider(height: 1),
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.bug_report_outlined,
                 title: l10n.labelCrashReporting,
                 subtitle: state.crashReportingEnabled
@@ -524,33 +540,33 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const Divider(height: 1),
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.monitor_heart_outlined,
                 title: l10n.labelProviderDiagnostics,
                 subtitle: l10n.messageProviderDiagnosticsSubtitle,
               ),
-              _ConnectionDetailRow(
+              ConnectionDetailRow(
                 label: l10n.labelActiveProvider,
                 value: AppViewProviders.providerDisplayName(state.appViewProvider),
               ),
               const Divider(height: 1),
-              _ConnectionDetailRow(
+              ConnectionDetailRow(
                 label: l10n.labelHealth,
                 value: state.appViewHealthSummary ?? l10n.commonNotCheckedYet,
               ),
               const Divider(height: 1),
-              _ConnectionDetailRow(
+              ConnectionDetailRow(
                 label: l10n.labelLastHealthCheck,
                 value: state.appViewHealthCheckedAt == null
                     ? l10n.commonNever
                     : formatTimestamp(state.appViewHealthCheckedAt!.toLocal()),
               ),
               const Divider(height: 1),
-              _ConnectionDetailRow(label: l10n.labelLastFallback, value: state.appViewLastFallback ?? l10n.commonNone),
+              ConnectionDetailRow(label: l10n.labelLastFallback, value: state.appViewLastFallback ?? l10n.commonNone),
               const Divider(height: 1),
-              _ConnectionDetailRow(label: l10n.labelLastError, value: state.appViewLastError ?? l10n.commonNone),
+              ConnectionDetailRow(label: l10n.labelLastError, value: state.appViewLastError ?? l10n.commonNone),
               const Divider(height: 1),
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.medical_information_outlined,
                 title: l10n.labelRefreshProviderHealth,
                 subtitle: l10n.messageRefreshProviderHealthSubtitle,
@@ -626,14 +642,14 @@ class SettingsScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _SettingsTile(
+          SettingsTile(
             icon: Icons.cached_outlined,
             title: l10n.labelClearCache,
             subtitle: l10n.messageClearCacheSubtitle,
             onTap: () => unawaited(_confirmAndClearCaches(context)),
           ),
           const Divider(height: 1),
-          _SettingsTile(
+          SettingsTile(
             icon: Icons.manage_accounts_outlined,
             title: l10n.labelResetSignInData,
             subtitle: l10n.messageResetSignInDataSubtitle,
@@ -749,7 +765,7 @@ class _ModerationSettingsPreviewState extends State<_ModerationSettingsPreview> 
     final service = _service;
     final l10n = context.l10n;
     if (service == null) {
-      return _SettingsTile(
+      return SettingsTile(
         icon: Icons.shield_outlined,
         title: l10n.labelContentModeration,
         subtitle: l10n.messageContentModerationSubtitle,
@@ -767,14 +783,14 @@ class _ModerationSettingsPreviewState extends State<_ModerationSettingsPreview> 
 
         return Column(
           children: [
-            _SettingsTile(
+            SettingsTile(
               icon: Icons.visibility_outlined,
               title: l10n.labelAdultContent,
               subtitle: adultEnabled ? l10n.messageAdultContentEnabled : l10n.messageAdultContentRequired,
               trailing: Switch.adaptive(value: adultEnabled, onChanged: _isUpdating ? null : _toggleAdultContent),
             ),
             const Divider(height: 1),
-            _SettingsTile(
+            SettingsTile(
               icon: Icons.policy_outlined,
               title: l10n.labelContentModeration,
               subtitle: l10n.formatContentModerationCustomLabelers(customLabelers),
@@ -783,227 +799,6 @@ class _ModerationSettingsPreviewState extends State<_ModerationSettingsPreview> 
           ],
         );
       },
-    );
-  }
-}
-
-class _AtProtocolConnectionCard extends StatelessWidget {
-  const _AtProtocolConnectionCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, authState) {
-        final tokens = authState.tokens;
-        if (!authState.isAuthenticated || tokens == null) {
-          return const SizedBox.shrink();
-        }
-
-        final pds = resolvePdsHost(tokens);
-        final theme = Theme.of(context);
-        final l10n = context.l10n;
-        return Container(
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: theme.dividerColor),
-              bottom: BorderSide(color: theme.dividerColor),
-            ),
-            color: theme.cardColor,
-          ),
-          child: SelectionArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                  child: Text(l10n.labelAtProtocolConnection, style: context.textTheme.titleMedium),
-                ),
-                const Divider(height: 1),
-                _ConnectionDetailRow(label: 'Handle', value: '@${tokens.handle}'),
-                const Divider(height: 1),
-                _ConnectionDetailRow(
-                  label: 'DID',
-                  value: tokens.did,
-                  onTap: () => context.push('/settings/devtools?query=${Uri.encodeQueryComponent(tokens.did)}'),
-                ),
-                const Divider(height: 1),
-                _ConnectionDetailRow(label: 'PDS', value: pds),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-enum _AppearanceMode {
-  system,
-  light,
-  dark;
-
-  static _AppearanceMode fromState(SettingsState state) {
-    if (state.useSystemTheme) return system;
-    return state.themeVariant == AppThemeVariant.light ? light : dark;
-  }
-}
-
-class _ThemePaletteRow extends StatelessWidget {
-  const _ThemePaletteRow({required this.palette, required this.isSelected, required this.onTap});
-
-  final AppThemePalette palette;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final swatches = AppTheme.getSwatchColors(palette);
-
-    return ListTile(
-      onTap: onTap,
-      title: Text(AppTheme.getPaletteName(palette)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final color in swatches)
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
-              ),
-            ),
-          if (isSelected) ...[
-            const SizedBox(width: 12),
-            Icon(Icons.check, color: context.colorScheme.primary, size: 20),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SettingsDropdownTile<T> extends StatelessWidget {
-  const _SettingsDropdownTile({
-    required this.title,
-    required this.value,
-    required this.options,
-    required this.labelBuilder,
-    required this.onChanged,
-    this.subtitle,
-  });
-
-  final String title;
-  final String? subtitle;
-  final T value;
-  final List<T> options;
-  final String Function(T value) labelBuilder;
-  final ValueChanged<T?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(title),
-      subtitle: subtitle != null ? Text(subtitle!) : null,
-      trailing: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          onChanged: onChanged,
-          items: [for (final option in options) DropdownMenuItem<T>(value: option, child: Text(labelBuilder(option)))],
-        ),
-      ),
-    );
-  }
-}
-
-class _ConnectionDetailRow extends StatelessWidget {
-  const _ConnectionDetailRow({required this.label, required this.value, this.onTap});
-
-  final String label;
-  final String value;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    final content = Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label.toUpperCase(),
-                  style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
-                ),
-                const SizedBox(height: 4),
-                Text(value, style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'JetBrains Mono')),
-              ],
-            ),
-          ),
-          if (onTap != null) ...[
-            const SizedBox(width: 12),
-            Icon(Icons.open_in_new, size: 18, color: theme.colorScheme.onSurfaceVariant),
-          ],
-        ],
-      ),
-    );
-
-    if (onTap == null) {
-      return content;
-    }
-
-    return InkWell(onTap: onTap, child: content);
-  }
-}
-
-class _ConstellationUrlTile extends StatelessWidget {
-  const _ConstellationUrlTile({required this.currentUrl});
-
-  final String currentUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.hub_outlined),
-      title: const Text('Constellation URL'),
-      subtitle: Text(currentUrl, maxLines: 1, overflow: TextOverflow.ellipsis),
-    );
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({
-    required this.title,
-    this.subtitle,
-    this.icon,
-    this.trailing,
-    this.isDestructive = false,
-    this.onTap,
-  });
-
-  final String title;
-  final String? subtitle;
-  final IconData? icon;
-  final Widget? trailing;
-  final bool isDestructive;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isDestructive ? context.colorScheme.error : null;
-
-    return ListTile(
-      leading: icon != null ? Icon(icon, color: color) : null,
-      title: Text(title, style: TextStyle(color: color)),
-      subtitle: subtitle != null ? Text(subtitle!) : null,
-      trailing: trailing ?? (onTap != null ? const Icon(Icons.chevron_right) : null),
-      onTap: onTap,
     );
   }
 }

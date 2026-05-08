@@ -14,6 +14,7 @@ import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/embedding/embedding_service.dart';
+import 'package:lazurite/core/error_reporting/crash_report_screen.dart';
 import 'package:lazurite/core/l10n/app_localizations.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/logging/logging_bloc_observer.dart';
@@ -96,9 +97,12 @@ Future<void> main() async {
   final previousFlutterErrorHandler = FlutterError.onError;
   FlutterError.onError = (details) {
     previousFlutterErrorHandler?.call(details);
+    log.f('Flutter fatal error', error: details.exception, stackTrace: details.stack);
     crashReportingService.recordFlutterFatalError(details);
   };
+  ErrorWidget.builder = (details) => CrashReportScreen(details: details);
   PlatformDispatcher.instance.onError = (error, stackTrace) {
+    log.f('Platform fatal error', error: error, stackTrace: stackTrace);
     unawaited(crashReportingService.recordError(error, stackTrace, fatal: true));
     return true;
   };
@@ -181,6 +185,7 @@ Future<void> main() async {
       );
     },
     (error, stackTrace) {
+      log.f('Zone fatal error', error: error, stackTrace: stackTrace);
       unawaited(crashReportingService.recordError(error, stackTrace, fatal: true));
     },
   );

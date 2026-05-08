@@ -51,7 +51,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buttonClear => 'Clear';
 
   @override
+  String get buttonCopyReport => 'Copy report';
+
+  @override
   String get buttonClearAll => 'Clear all';
+
+  @override
+  String get buttonEmailReport => 'Email report';
 
   @override
   String get buttonOpen => 'Open';
@@ -461,6 +467,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelCrashlyticsTestCrash => 'Crashlytics Test Crash';
 
   @override
+  String get labelCrashReportScreenTest => 'Crash Report Screen Test';
+
+  @override
+  String get labelCrashReportError => 'Error';
+
+  @override
+  String get labelCrashReportRelevantLogs => 'Relevant logs';
+
+  @override
+  String get labelCrashReportStackTrace => 'Stack trace';
+
+  @override
   String get labelCrossProviderFallback => 'Cross-Provider Fallback';
 
   @override
@@ -817,6 +835,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageCrashlyticsTestCrashSubtitle => 'Intentionally crash to validate Crashlytics reports';
 
   @override
+  String get messageCrashReportScreenTestSubtitle =>
+      'Open a recoverable Flutter error screen with copy and email actions';
+
+  @override
+  String get messageCrashReportCopied => 'Crash report copied';
+
+  @override
+  String get messageCrashReportInstructions =>
+      'You can copy the crash report or open an email to send a summary to Stormlight Labs.';
+
+  @override
+  String get messageCrashReportPartial =>
+      'Some report details could not be loaded. A minimal report is still available.';
+
+  @override
+  String get messageCrashReportEmailStackTraceTruncated => '[Stack trace truncated for email]';
+
+  @override
+  String formatCrashReportEmailBody(String error, String stackTrace) {
+    return 'A Lazurite screen crashed.\n\nThe full report may be too large for email. Please use Copy report in the app if support asks for the full details.\n\nError:\n$error\n\nStack trace:\n$stackTrace';
+  }
+
+  @override
   String get messageCrossProviderFallbackSubtitle =>
       'Retry public reads on the alternate AppView when transient errors occur';
 
@@ -828,6 +869,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messageLoadingSavedAccounts => 'Loading saved accounts...';
+
+  @override
+  String get messageNoRecentLogLinesAvailable => 'No recent log lines were available.';
 
   @override
   String get messageFeedLayoutCompact => 'Compact';
@@ -2345,6 +2389,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageUnableToOpenShareSheet => 'Unable to open share sheet. Please try again.';
 
   @override
+  String get messageUnableToOpenEmailApp => 'Unable to open email app. Please copy the report instead.';
+
+  @override
   String get placeholderHandleDidOrAtUri => 'Handle, DID, or at:// URI';
 
   @override
@@ -2355,6 +2402,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subjectLazuriteLogs => 'Lazurite logs';
+
+  @override
+  String get subjectLazuriteCrashReport => 'Lazurite crash report';
 
   @override
   String get tooltipClearAllLogs => 'Clear all logs';

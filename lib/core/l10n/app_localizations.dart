@@ -175,11 +175,23 @@ abstract class AppLocalizations {
   /// **'Clear'**
   String get buttonClear;
 
+  /// Button label to copy an in-app crash report
+  ///
+  /// In en, this message translates to:
+  /// **'Copy report'**
+  String get buttonCopyReport;
+
   /// Clear all filters button label
   ///
   /// In en, this message translates to:
   /// **'Clear all'**
   String get buttonClearAll;
+
+  /// Button label to open an email draft for an in-app crash report
+  ///
+  /// In en, this message translates to:
+  /// **'Email report'**
+  String get buttonEmailReport;
 
   /// Open button label
   ///
@@ -834,6 +846,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Crashlytics Test Crash'**
   String get labelCrashlyticsTestCrash;
+
+  /// Developer setting to trigger a recoverable Flutter crash report screen
+  ///
+  /// In en, this message translates to:
+  /// **'Crash Report Screen Test'**
+  String get labelCrashReportScreenTest;
+
+  /// Crash report section title for the error message
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get labelCrashReportError;
+
+  /// Crash report section title for related app logs
+  ///
+  /// In en, this message translates to:
+  /// **'Relevant logs'**
+  String get labelCrashReportRelevantLogs;
+
+  /// Crash report section title for the stack trace
+  ///
+  /// In en, this message translates to:
+  /// **'Stack trace'**
+  String get labelCrashReportStackTrace;
 
   /// Cross-provider fallback setting label
   ///
@@ -1543,6 +1579,42 @@ abstract class AppLocalizations {
   /// **'Intentionally crash to validate Crashlytics reports'**
   String get messageCrashlyticsTestCrashSubtitle;
 
+  /// Developer setting subtitle for testing the in-app crash report screen
+  ///
+  /// In en, this message translates to:
+  /// **'Open a recoverable Flutter error screen with copy and email actions'**
+  String get messageCrashReportScreenTestSubtitle;
+
+  /// Snackbar message after copying a crash report
+  ///
+  /// In en, this message translates to:
+  /// **'Crash report copied'**
+  String get messageCrashReportCopied;
+
+  /// Instructions shown on the in-app crash report screen
+  ///
+  /// In en, this message translates to:
+  /// **'You can copy the crash report or open an email to send a summary to Stormlight Labs.'**
+  String get messageCrashReportInstructions;
+
+  /// Message shown when the in-app crash report could not load all diagnostics
+  ///
+  /// In en, this message translates to:
+  /// **'Some report details could not be loaded. A minimal report is still available.'**
+  String get messageCrashReportPartial;
+
+  /// Marker appended when a crash report stack trace is shortened for an email draft
+  ///
+  /// In en, this message translates to:
+  /// **'[Stack trace truncated for email]'**
+  String get messageCrashReportEmailStackTraceTruncated;
+
+  /// Email body for an in-app crash report. Keep this compact because it is encoded into a mailto URL.
+  ///
+  /// In en, this message translates to:
+  /// **'A Lazurite screen crashed.\n\nThe full report may be too large for email. Please use Copy report in the app if support asks for the full details.\n\nError:\n{error}\n\nStack trace:\n{stackTrace}'**
+  String formatCrashReportEmailBody(String error, String stackTrace);
+
   /// Settings subtitle for cross-provider fallback
   ///
   /// In en, this message translates to:
@@ -1566,6 +1638,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading saved accounts...'**
   String get messageLoadingSavedAccounts;
+
+  /// Crash report message when there are no relevant log lines
+  ///
+  /// In en, this message translates to:
+  /// **'No recent log lines were available.'**
+  String get messageNoRecentLogLinesAvailable;
 
   /// Feed layout compact option
   ///
@@ -4285,6 +4363,12 @@ abstract class AppLocalizations {
   /// **'Unable to open share sheet. Please try again.'**
   String get messageUnableToOpenShareSheet;
 
+  /// Snackbar when the crash report email draft cannot open
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open email app. Please copy the report instead.'**
+  String get messageUnableToOpenEmailApp;
+
   /// Devtools search input placeholder
   ///
   /// In en, this message translates to:
@@ -4308,6 +4392,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lazurite logs'**
   String get subjectLazuriteLogs;
+
+  /// Email subject for an in-app crash report
+  ///
+  /// In en, this message translates to:
+  /// **'Lazurite crash report'**
+  String get subjectLazuriteCrashReport;
 
   /// Tooltip for clearing all log files
   ///
