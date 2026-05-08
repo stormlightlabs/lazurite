@@ -318,6 +318,51 @@ void main() {
     });
   });
 
+  group('FollowAuditRepository.fetchFollowPage', () {
+    test('returns one page of follow records and cursor', () async {
+      final client = _bluesky(
+        pages: [
+          [(_uri('did:plc:alice', 'rkey123'), 'did:plc:alice')],
+          [(_uri('did:plc:bob', 'rkey456'), 'did:plc:bob')],
+        ],
+      );
+      final repo = _repo(client);
+
+      final page = await repo.fetchFollowPage(_ownerDid);
+
+      expect(page.records.length, 1);
+      expect(page.records.first.rkey, 'rkey123');
+      expect(page.cursor, 'page1');
+    });
+  });
+
+  group('FollowAuditRepository.scanFollows', () {
+    test('streams classified pages as they are processed', () async {
+      final aliceProfile = _profile('did:plc:alice', 'alice.bsky.social', blockedBy: true);
+      final bobProfile = _profile('did:plc:bob', 'bob.bsky.social', blocking: true);
+      final client = _bluesky(
+        pages: [
+          [(_uri('did:plc:alice'), 'did:plc:alice')],
+          [(_uri('did:plc:bob'), 'did:plc:bob')],
+        ],
+        batchProfiles: {'did:plc:alice': aliceProfile, 'did:plc:bob': bobProfile},
+      );
+      final repo = _repo(client);
+
+      final batches = await repo.scanFollows(_ownerDid).toList();
+
+      expect(batches.length, 2);
+      expect(batches.first.scannedCount, 1);
+      expect(batches.first.classifiedCount, 1);
+      expect(batches.first.results.single.status, FollowStatus.blockedBy);
+      expect(batches.first.isComplete, isFalse);
+      expect(batches.last.scannedCount, 2);
+      expect(batches.last.classifiedCount, 2);
+      expect(batches.last.results.single.status, FollowStatus.blocking);
+      expect(batches.last.isComplete, isTrue);
+    });
+  });
+
   group('FollowAuditRepository.classifyFollows', () {
     test('healthy account is not included in results', () async {
       final healthyProfile = _profile('did:plc:alice', 'alice.bsky.social');

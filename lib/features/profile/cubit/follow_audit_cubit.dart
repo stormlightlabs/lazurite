@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -73,50 +75,114 @@ class FollowAuditCubit extends Cubit<FollowAuditState> {
 
   final FollowAuditRepository _repository;
   final String _ownDid;
+  StreamSubscription<FollowAuditBatch>? _scanSubscription;
+  Completer<void>? _scanCompleter;
+  int _auditGeneration = 0;
 
-  /// Fetches all follows then classifies them, emitting progress states along the way.
+  @override
+  Future<void> close() {
+    _auditGeneration++;
+    unawaited(_scanSubscription?.cancel());
+    _scanSubscription = null;
+    if (_scanCompleter?.isCompleted == false) {
+      _scanCompleter?.complete();
+    }
+    _scanCompleter = null;
+    return super.close();
+  }
+
+  /// Scans follows and appends classified results as each page is processed.
   Future<void> audit() async {
-    emit(state.copyWith(status: FollowAuditStatus.fetching, progress: 0, clearError: true));
+    unawaited(_scanSubscription?.cancel());
+    if (_scanCompleter?.isCompleted == false) {
+      _scanCompleter?.complete();
+    }
+    final generation = ++_auditGeneration;
+    final completer = Completer<void>();
+    _scanCompleter = completer;
 
-    List<FollowRecord> records;
-    try {
-      records = await _repository.fetchAllFollows(
-        _ownDid,
-        onProgress: (fetched) {
-          emit(state.copyWith(status: FollowAuditStatus.fetching, progress: fetched));
-        },
-      );
-    } catch (error, stackTrace) {
-      log.e('FollowAuditCubit: fetch failed', error: error, stackTrace: stackTrace);
-      emit(state.copyWith(status: FollowAuditStatus.error, errorMessage: error.toString()));
+    emit(
+      state.copyWith(
+        status: FollowAuditStatus.classifying,
+        results: const [],
+        totalFollows: 0,
+        progress: 0,
+        failedProfiles: 0,
+        unfollowedCount: 0,
+        visibleStatuses: FollowStatus.values.toSet(),
+        clearError: true,
+      ),
+    );
+
+    _scanSubscription = _repository
+        .scanFollows(_ownDid)
+        .listen(
+          (batch) {
+            if (!_isActiveAudit(generation)) {
+              return;
+            }
+            emit(
+              state.copyWith(
+                status: batch.isComplete ? FollowAuditStatus.ready : FollowAuditStatus.classifying,
+                results: [...state.results, ...batch.results],
+                totalFollows: batch.scannedCount,
+                progress: batch.classifiedCount,
+                failedProfiles: batch.failedCount,
+                visibleStatuses: FollowStatus.values.toSet(),
+              ),
+            );
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            log.e('FollowAuditCubit: scan failed', error: error, stackTrace: stackTrace);
+            if (_isActiveAudit(generation)) {
+              emit(state.copyWith(status: FollowAuditStatus.error, errorMessage: error.toString()));
+            }
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+            if (identical(_scanCompleter, completer)) {
+              _scanCompleter = null;
+            }
+          },
+          onDone: () {
+            if (_isActiveAudit(generation) && state.status == FollowAuditStatus.classifying) {
+              emit(state.copyWith(status: FollowAuditStatus.ready));
+            }
+            if (_isActiveAudit(generation)) {
+              _scanSubscription = null;
+            }
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+            if (identical(_scanCompleter, completer)) {
+              _scanCompleter = null;
+            }
+          },
+          cancelOnError: true,
+        );
+
+    await completer.future;
+  }
+
+  Future<void> cancelAudit() async {
+    final subscription = _scanSubscription;
+    if (subscription == null || state.status != FollowAuditStatus.classifying) {
       return;
     }
 
-    emit(state.copyWith(status: FollowAuditStatus.classifying, totalFollows: records.length, progress: 0));
-
-    try {
-      final (:results, :failedCount) = await _repository.classifyFollows(
-        records,
-        _ownDid,
-        onProgress: (classified) {
-          emit(state.copyWith(status: FollowAuditStatus.classifying, progress: classified));
-        },
-      );
-
-      emit(
-        state.copyWith(
-          status: FollowAuditStatus.ready,
-          results: results,
-          failedProfiles: failedCount,
-          progress: records.length,
-          visibleStatuses: FollowStatus.values.toSet(),
-        ),
-      );
-    } catch (error, stackTrace) {
-      log.e('FollowAuditCubit: classify failed', error: error, stackTrace: stackTrace);
-      emit(state.copyWith(status: FollowAuditStatus.error, errorMessage: error.toString()));
+    _auditGeneration++;
+    unawaited(subscription.cancel());
+    if (identical(_scanSubscription, subscription)) {
+      _scanSubscription = null;
     }
+    if (_scanCompleter?.isCompleted == false) {
+      _scanCompleter?.complete();
+    }
+    _scanCompleter = null;
+    emit(state.copyWith(status: FollowAuditStatus.ready));
   }
+
+  bool _isActiveAudit(int generation) => !isClosed && generation == _auditGeneration;
 
   /// Toggles the selection of the result at [index].
   void toggleSelection(int index) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/profile/cubit/follow_audit_cubit.dart';
@@ -7,32 +9,41 @@ class _FakeFollowAuditRepository implements FollowAuditRepository {
   _FakeFollowAuditRepository({
     List<FollowRecord> fetchResult = const [],
     List<ClassifiedFollow> classifyResult = const [],
+    List<FollowAuditBatch>? scanBatches,
     int classifyFailedCount = 0,
     int batchUnfollowResult = 0,
     Exception? fetchError,
     Exception? classifyError,
+    Exception? scanError,
     Exception? unfollowError,
     List<int>? fetchProgressValues,
     List<int>? classifyProgressValues,
+    Completer<void>? scanGate,
   }) : _fetchResult = fetchResult,
        _classifyResult = classifyResult,
+       _scanBatches = scanBatches,
        _classifyFailedCount = classifyFailedCount,
        _batchUnfollowResult = batchUnfollowResult,
        _fetchError = fetchError,
        _classifyError = classifyError,
+       _scanError = scanError,
        _unfollowError = unfollowError,
        _fetchProgressValues = fetchProgressValues,
-       _classifyProgressValues = classifyProgressValues;
+       _classifyProgressValues = classifyProgressValues,
+       _scanGate = scanGate;
 
   final List<FollowRecord> _fetchResult;
   final List<ClassifiedFollow> _classifyResult;
+  final List<FollowAuditBatch>? _scanBatches;
   final int _classifyFailedCount;
   final int _batchUnfollowResult;
   final Exception? _fetchError;
   final Exception? _classifyError;
+  final Exception? _scanError;
   final Exception? _unfollowError;
   final List<int>? _fetchProgressValues;
   final List<int>? _classifyProgressValues;
+  final Completer<void>? _scanGate;
 
   @override
   Future<List<FollowRecord>> fetchAllFollows(String did, {void Function(int fetched)? onProgress}) async {
@@ -64,6 +75,33 @@ class _FakeFollowAuditRepository implements FollowAuditRepository {
   Future<int> batchUnfollow(List<ClassifiedFollow> selected, String ownDid) async {
     if (_unfollowError != null) throw _unfollowError;
     return _batchUnfollowResult;
+  }
+
+  @override
+  Stream<FollowAuditBatch> scanFollows(String did) async* {
+    if (_scanError != null) throw _scanError;
+
+    final batches = _scanBatches;
+    if (batches != null) {
+      for (final batch in batches) {
+        yield batch;
+        await Future<void>.delayed(Duration.zero);
+      }
+      await _scanGate?.future;
+      return;
+    }
+
+    if (_fetchError != null) throw _fetchError;
+    if (_classifyError != null) throw _classifyError;
+    final scanned = _fetchResult.length;
+    yield FollowAuditBatch(
+      scannedCount: scanned,
+      classifiedCount: scanned,
+      results: _classifyResult,
+      failedCount: _classifyFailedCount,
+      isComplete: true,
+    );
+    await _scanGate?.future;
   }
 
   @override
@@ -125,7 +163,7 @@ void main() {
 
   group('FollowAuditCubit.audit', () {
     blocTest<FollowAuditCubit, FollowAuditState>(
-      'transitions initial → fetching → classifying → ready',
+      'transitions initial → classifying → ready',
       build: () => _cubit(
         _FakeFollowAuditRepository(
           fetchResult: [_record('did:plc:alice')],
@@ -134,8 +172,9 @@ void main() {
       ),
       act: (cubit) => cubit.audit(),
       expect: () => [
-        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.fetching),
-        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.classifying),
+        isA<FollowAuditState>()
+            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
+            .having((s) => s.results, 'results', isEmpty),
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.ready)
             .having((s) => s.results.length, 'results', 1)
@@ -144,64 +183,87 @@ void main() {
     );
 
     blocTest<FollowAuditCubit, FollowAuditState>(
-      'emits progress updates during fetch phase',
+      'appends streamed classified batches',
       build: () => _cubit(
         _FakeFollowAuditRepository(
-          fetchResult: [_record('did:plc:a'), _record('did:plc:b'), _record('did:plc:c')],
-          fetchProgressValues: [1, 2, 3],
-          classifyResult: [],
+          scanBatches: [
+            FollowAuditBatch(
+              scannedCount: 2,
+              classifiedCount: 2,
+              results: [_classified('did:plc:a', FollowStatus.deleted)],
+              failedCount: 0,
+              isComplete: false,
+            ),
+            FollowAuditBatch(
+              scannedCount: 3,
+              classifiedCount: 3,
+              results: [_classified('did:plc:b', FollowStatus.blockedBy)],
+              failedCount: 1,
+              isComplete: true,
+            ),
+          ],
         ),
       ),
       act: (cubit) => cubit.audit(),
       expect: () => [
         isA<FollowAuditState>()
-            .having((s) => s.status, 'status', FollowAuditStatus.fetching)
-            .having((s) => s.progress, 'progress', 0),
+            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
+            .having((s) => s.results, 'results', isEmpty),
         isA<FollowAuditState>()
-            .having((s) => s.status, 'status', FollowAuditStatus.fetching)
+            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
+            .having((s) => s.progress, 'progress', 2)
+            .having((s) => s.totalFollows, 'totalFollows', 2)
+            .having((s) => s.results.length, 'results', 1),
+        isA<FollowAuditState>()
+            .having((s) => s.status, 'status', FollowAuditStatus.ready)
+            .having((s) => s.progress, 'progress', 3)
+            .having((s) => s.totalFollows, 'totalFollows', 3)
+            .having((s) => s.results.length, 'results', 2)
+            .having((s) => s.failedProfiles, 'failedProfiles', 1),
+      ],
+    );
+
+    blocTest<FollowAuditCubit, FollowAuditState>(
+      'can cancel streaming scan and keep partial results ready for unfollow',
+      build: () => _cubit(
+        _FakeFollowAuditRepository(
+          scanBatches: [
+            FollowAuditBatch(
+              scannedCount: 1,
+              classifiedCount: 1,
+              results: [_classified('did:plc:a', FollowStatus.deleted).copyWith(selected: true)],
+              failedCount: 0,
+              isComplete: false,
+            ),
+          ],
+          scanGate: Completer<void>(),
+        ),
+      ),
+      act: (cubit) async {
+        unawaited(cubit.audit());
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        await cubit.cancelAudit();
+      },
+      expect: () => [
+        isA<FollowAuditState>()
+            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
+            .having((s) => s.results, 'results', isEmpty),
+        isA<FollowAuditState>()
+            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
             .having((s) => s.progress, 'progress', 1),
         isA<FollowAuditState>()
-            .having((s) => s.status, 'status', FollowAuditStatus.fetching)
-            .having((s) => s.progress, 'progress', 2),
-        isA<FollowAuditState>()
-            .having((s) => s.status, 'status', FollowAuditStatus.fetching)
-            .having((s) => s.progress, 'progress', 3),
+            .having((s) => s.status, 'status', FollowAuditStatus.ready)
+            .having((s) => s.results.length, 'results', 1),
+      ],
+    );
+
+    blocTest<FollowAuditCubit, FollowAuditState>(
+      'transitions to error when scan fails',
+      build: () => _cubit(_FakeFollowAuditRepository(scanError: Exception('network error'))),
+      act: (cubit) => cubit.audit(),
+      expect: () => [
         isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.classifying),
-        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.ready),
-      ],
-    );
-
-    blocTest<FollowAuditCubit, FollowAuditState>(
-      'emits progress updates during classify phase',
-      build: () => _cubit(
-        _FakeFollowAuditRepository(
-          fetchResult: [_record('did:plc:a'), _record('did:plc:b')],
-          classifyProgressValues: [1, 2],
-          classifyResult: [],
-        ),
-      ),
-      act: (cubit) => cubit.audit(),
-      expect: () => [
-        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.fetching),
-        isA<FollowAuditState>()
-            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
-            .having((s) => s.progress, 'progress', 0),
-        isA<FollowAuditState>()
-            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
-            .having((s) => s.progress, 'progress', 1),
-        isA<FollowAuditState>()
-            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
-            .having((s) => s.progress, 'progress', 2),
-        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.ready),
-      ],
-    );
-
-    blocTest<FollowAuditCubit, FollowAuditState>(
-      'transitions to error when fetch fails',
-      build: () => _cubit(_FakeFollowAuditRepository(fetchError: Exception('network error'))),
-      act: (cubit) => cubit.audit(),
-      expect: () => [
-        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.fetching),
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.error)
             .having((s) => s.errorMessage, 'errorMessage', isNotNull),
@@ -215,7 +277,6 @@ void main() {
       ),
       act: (cubit) => cubit.audit(),
       expect: () => [
-        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.fetching),
         isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.classifying),
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.ready)
@@ -231,7 +292,6 @@ void main() {
       ),
       act: (cubit) => cubit.audit(),
       expect: () => [
-        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.fetching),
         isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.classifying),
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.ready)

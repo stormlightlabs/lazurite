@@ -39,6 +39,17 @@ class _ScriptedFollowAuditRepository implements FollowAuditRepository {
   }
 
   @override
+  Stream<FollowAuditBatch> scanFollows(String did) async* {
+    yield FollowAuditBatch(
+      scannedCount: records.length,
+      classifiedCount: records.length,
+      results: classified,
+      failedCount: 0,
+      isComplete: true,
+    );
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

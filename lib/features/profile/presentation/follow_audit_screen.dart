@@ -1,10 +1,10 @@
 import 'dart:math' as math;
-import 'package:lazurite/core/l10n/l10n.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/profile/cubit/follow_audit_cubit.dart';
 import 'package:lazurite/features/profile/data/follow_audit_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
@@ -171,14 +171,21 @@ class _AuditActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (status == FollowAuditStatus.initial ||
-        status == FollowAuditStatus.fetching ||
-        status == FollowAuditStatus.classifying) {
+    if (status == FollowAuditStatus.initial || status == FollowAuditStatus.fetching) {
       return FilledButton.icon(
         key: const Key('follow_audit_scan_button'),
         onPressed: isBusy ? null : () => context.read<FollowAuditCubit>().audit(),
         icon: const Icon(Icons.manage_search_outlined),
         label: Text(context.l10n.buttonScan),
+      );
+    }
+
+    if (status == FollowAuditStatus.classifying) {
+      return OutlinedButton.icon(
+        key: const Key('follow_audit_cancel_button'),
+        onPressed: () => context.read<FollowAuditCubit>().cancelAudit(),
+        icon: const Icon(Icons.stop_circle_outlined),
+        label: Text(context.l10n.buttonCancel),
       );
     }
 
@@ -446,15 +453,27 @@ class _ResultsPanelState extends State<_ResultsPanel> {
       );
     }
 
+    if (widget.state.results.isEmpty && widget.state.status == FollowAuditStatus.classifying) {
+      return Center(
+        child: Text(
+          context.l10n.formatClassifyingProgress(widget.state.progress, math.max(widget.state.totalFollows, 1)),
+          key: const Key('follow_audit_streaming_empty_message'),
+        ),
+      );
+    }
+
     if (widget.visibleEntries.isEmpty && widget.state.results.isNotEmpty) {
       return Center(child: Text(context.l10n.messageNoResultsForFilters));
     }
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      itemCount: widget.visibleEntries.length,
+      itemCount: widget.visibleEntries.length + (widget.state.status == FollowAuditStatus.classifying ? 1 : 0),
       separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
+        if (index >= widget.visibleEntries.length) {
+          return _ScanningFooter(state: widget.state);
+        }
         final entry = widget.visibleEntries[index];
         final rowKey = '${entry.item.record.subjectDid}:${entry.item.record.rkey}';
         return StaggeredEntrance(
@@ -464,6 +483,34 @@ class _ResultsPanelState extends State<_ResultsPanel> {
           child: _ResultRow(index: entry.index, item: entry.item),
         );
       },
+    );
+  }
+}
+
+class _ScanningFooter extends StatelessWidget {
+  const _ScanningFooter({required this.state});
+
+  final FollowAuditState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              context.l10n.formatClassifyingProgress(state.progress, math.max(state.totalFollows, 1)),
+              key: const Key('follow_audit_scanning_footer'),
+              textAlign: TextAlign.center,
+              style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

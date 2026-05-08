@@ -17,6 +17,29 @@ class FollowRecord {
   final String subjectDid;
 }
 
+class FollowRecordPage {
+  const FollowRecordPage({required this.records, required this.cursor});
+
+  final List<FollowRecord> records;
+  final String? cursor;
+}
+
+class FollowAuditBatch {
+  const FollowAuditBatch({
+    required this.scannedCount,
+    required this.classifiedCount,
+    required this.results,
+    required this.failedCount,
+    required this.isComplete,
+  });
+
+  final int scannedCount;
+  final int classifiedCount;
+  final List<ClassifiedFollow> results;
+  final int failedCount;
+  final bool isComplete;
+}
+
 class ClassifiedFollow extends Equatable {
   const ClassifiedFollow({
     required this.record,
@@ -73,25 +96,70 @@ class FollowAuditRepository {
     String? cursor;
 
     do {
-      final response = await _bluesky.atproto.repo.listRecords(
-        repo: did,
-        collection: 'app.bsky.graph.follow',
-        limit: 100,
-        cursor: cursor,
-      );
-
-      final rawRecords = response.data.records as List<dynamic>;
-      for (final raw in rawRecords) {
-        final uri = raw.uri.toString();
-        final rkey = AtUri.parse(uri).rkey;
-        final subjectDid = raw.value['subject'] as String;
-        records.add(FollowRecord(uri: uri, rkey: rkey, subjectDid: subjectDid));
-      }
-      cursor = response.data.cursor as String?;
+      final page = await fetchFollowPage(did, cursor: cursor);
+      records.addAll(page.records);
+      cursor = page.cursor;
       onProgress?.call(records.length);
     } while (cursor != null);
 
     return records;
+  }
+
+  Future<FollowRecordPage> fetchFollowPage(String did, {String? cursor, int limit = 100}) async {
+    _assertCurrentSessionRepoAccess(did: did, operation: 'fetchFollowPage');
+    final response = await _bluesky.atproto.repo.listRecords(
+      repo: did,
+      collection: 'app.bsky.graph.follow',
+      limit: limit.clamp(1, 100),
+      cursor: cursor,
+    );
+
+    final records = <FollowRecord>[];
+    final rawRecords = response.data.records as List<dynamic>;
+    for (final raw in rawRecords) {
+      final uri = raw.uri.toString();
+      final rkey = AtUri.parse(uri).rkey;
+      final subjectDid = raw.value['subject'] as String;
+      records.add(FollowRecord(uri: uri, rkey: rkey, subjectDid: subjectDid));
+    }
+
+    return FollowRecordPage(records: records, cursor: response.data.cursor as String?);
+  }
+
+  Stream<FollowAuditBatch> scanFollows(String did) async* {
+    _assertCurrentSessionRepoAccess(did: did, operation: 'scanFollows');
+    var scannedCount = 0;
+    var classifiedCount = 0;
+    var failedCount = 0;
+    String? cursor;
+
+    do {
+      final page = await fetchFollowPage(did, cursor: cursor);
+      cursor = page.cursor;
+      scannedCount += page.records.length;
+
+      if (page.records.isEmpty) {
+        yield FollowAuditBatch(
+          scannedCount: scannedCount,
+          classifiedCount: classifiedCount,
+          results: const [],
+          failedCount: failedCount,
+          isComplete: cursor == null,
+        );
+        continue;
+      }
+
+      final classified = await classifyFollows(page.records, did);
+      classifiedCount += page.records.length;
+      failedCount += classified.failedCount;
+      yield FollowAuditBatch(
+        scannedCount: scannedCount,
+        classifiedCount: classifiedCount,
+        results: classified.results,
+        failedCount: failedCount,
+        isComplete: cursor == null,
+      );
+    } while (cursor != null);
   }
 
   Future<({List<ClassifiedFollow> results, int failedCount})> classifyFollows(
